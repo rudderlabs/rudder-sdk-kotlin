@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <bytecodeTargetLevel target="1.6">
+      <module name="My_Application.buildSrc" target="1.8" />
+      <module name="My_Application.buildSrc.main" target="1.8" />
+      <module name="My_Application.buildSrc.test" target="1.8" />
+    </bytecodeTargetLevel>
+  </component>
+</project>
