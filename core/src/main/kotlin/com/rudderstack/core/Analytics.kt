@@ -52,7 +52,7 @@ open class Analytics(
         process(event)
     }
 
-    fun process(event: Message) {
+    private fun process(event: Message) {
         event.applyBaseData()
         analyticsScope.launch(analyticsDispatcher) {
             pluginChain.process(event)
