@@ -9,7 +9,7 @@ import com.rudderstack.core.internals.storage.Storage
 typealias EventCallBack = (Message, status: Int, message: String) -> Unit
 
 open class Configuration @JvmOverloads constructor(
-    val apiKey: String,
+    open val writeKey: String,
     open val flushQueueSize: Int = FLUSH_QUEUE_SIZE,
     open val maxFlushInterval: Long = MAX_FLUSH_INTERVAL,
     open var optOut: Boolean = false,
@@ -18,7 +18,7 @@ open class Configuration @JvmOverloads constructor(
     open val dataPlaneUrl: String = DATA_PLANE_URL,
     open val controlPlaneUrl: String = CONTROL_PLANE_URL,
     open val logger: Logger = KotlinLogger(initialLogLevel = Logger.DEFAULT_LOG_LEVEL),
-    open val storageProvider: Storage = BasicStorageProvider.getStorage(apiKey, "test application"),
+    open val storageProvider: Storage = BasicStorageProvider.getStorage(writeKey, "test application"),
     open var offline: Boolean? = false,
     open var callback: EventCallBack? = null
 ) {

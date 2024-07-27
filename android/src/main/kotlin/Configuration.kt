@@ -7,7 +7,7 @@ import com.rudderstack.core.internals.logger.Logger
 import com.rudderstack.core.internals.storage.Storage
 
 data class Configuration @JvmOverloads constructor(
-    val writeKey: String,
+    override val writeKey: String,
     val application: Application,
     override val storageProvider: Storage = AndroidStorageProvider.getStorage(writeKey, application),
     val logLevel: Logger.LogLevel = Logger.DEFAULT_LOG_LEVEL,
@@ -28,7 +28,7 @@ data class Configuration @JvmOverloads constructor(
     override val dataPlaneUrl: String = DEFAULT_ANDROID_DATAPLANE_URL,
     override val controlPlaneUrl: String = DEFAULT_ANDROID_CONTROLPLANE_URL,
 ) : Configuration(
-    apiKey = writeKey,
+    writeKey = writeKey,
     storageProvider = storageProvider,
     flushQueueSize = flushQueueSize,
     maxFlushInterval = maxFlushInterval,
