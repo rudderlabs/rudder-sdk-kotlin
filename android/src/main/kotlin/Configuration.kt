@@ -6,8 +6,8 @@ import com.rudderstack.core.Configuration
 import com.rudderstack.core.internals.logger.Logger
 import com.rudderstack.core.internals.storage.Storage
 
-open class Configuration @JvmOverloads constructor(
-    writeKey: String,
+data class Configuration @JvmOverloads constructor(
+    val writeKey: String,
     val application: Application,
     override val storageProvider: Storage = AndroidStorageProvider.getStorage(writeKey, application),
     val logLevel: Logger.LogLevel = Logger.DEFAULT_LOG_LEVEL,
