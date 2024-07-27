@@ -4,6 +4,7 @@ import com.rudderstack.core.internals.models.Message
 import com.rudderstack.core.internals.models.Properties
 import com.rudderstack.core.internals.models.RudderOption
 import com.rudderstack.core.internals.models.TrackEvent
+import com.rudderstack.core.internals.models.emptyJsonObject
 import com.rudderstack.core.internals.plugins.Plugin
 import com.rudderstack.core.internals.plugins.PluginChain
 import com.rudderstack.core.plugins.PocPlugin
@@ -40,13 +41,13 @@ open class Analytics(
     @JvmOverloads
     fun track(
         name: String,
+        properties: Properties = emptyJsonObject,
         options: RudderOption,
-        properties: Properties,
     ) {
         val event = TrackEvent(
             event = name,
+            properties = properties,
             options = options,
-            properties = properties
         )
         process(event)
     }
