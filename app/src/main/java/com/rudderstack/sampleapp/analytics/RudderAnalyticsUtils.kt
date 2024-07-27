@@ -10,7 +10,11 @@ object RudderAnalyticsUtils {
     fun initialize(application: Application) {
         analytics = Analytics(
             application = application,
-            configuration = com.rudderstack.android.Configuration(writeKey = "sdfsdfsd", application = application)
+            configuration = com.rudderstack.android.Configuration(
+                writeKey = "sdfsdfsd",
+                application = application,
+                dataPlaneUrl = "<DATA_PLANE_URL>",
+            )
         )
     }
 
