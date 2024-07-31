@@ -4,15 +4,15 @@ import com.rudderstack.core.internals.models.Message
 import com.rudderstack.core.internals.models.Properties
 import com.rudderstack.core.internals.models.RudderOption
 import com.rudderstack.core.internals.models.TrackEvent
+import com.rudderstack.core.internals.models.emptyJsonObject
 import com.rudderstack.core.internals.plugins.Plugin
 import com.rudderstack.core.internals.plugins.PluginChain
 import com.rudderstack.core.plugins.PocPlugin
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.launch
-import java.util.concurrent.Executors
 
 open class Analytics(
     val configuration: Configuration
@@ -20,11 +20,11 @@ open class Analytics(
 
     private val pluginChain: PluginChain = PluginChain().also { it.analytics = this }
 
-    internal val analyticsScope: CoroutineScope = CoroutineScope(SupervisorJob())
-    internal val analyticsDispatcher: CoroutineDispatcher = Executors.newCachedThreadPool().asCoroutineDispatcher()
-    internal val retryDispatcher: CoroutineDispatcher = Executors.newCachedThreadPool().asCoroutineDispatcher()
-    internal val storageIODispatcher: CoroutineDispatcher = Executors.newCachedThreadPool().asCoroutineDispatcher()
-    internal val networkIODispatcher: CoroutineDispatcher = Executors.newCachedThreadPool().asCoroutineDispatcher()
+    internal val analyticsScope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    internal val analyticsDispatcher: CoroutineDispatcher = Dispatchers.IO
+    internal val retryDispatcher: CoroutineDispatcher = Dispatchers.IO
+    internal val storageIODispatcher: CoroutineDispatcher = Dispatchers.IO
+    internal val networkIODispatcher: CoroutineDispatcher = Dispatchers.IO
 
     init {
         setup()
@@ -41,18 +41,18 @@ open class Analytics(
     @JvmOverloads
     fun track(
         name: String,
+        properties: Properties = emptyJsonObject,
         options: RudderOption,
-        properties: Properties,
     ) {
         val event = TrackEvent(
             event = name,
+            properties = properties,
             options = options,
-            properties = properties
         )
         process(event)
     }
 
-    fun process(event: Message) {
+    private fun process(event: Message) {
         event.applyBaseData()
         analyticsScope.launch(analyticsDispatcher) {
             pluginChain.process(event)

@@ -22,8 +22,8 @@ internal const val ENDPOINT = "v1/batch"
 
 open class EventPipeline(
     private val analytics: Analytics,
-    apiKey: String,
-    var apiHost: String = Configuration.DATA_PLANE_URL
+    writeKey: String,
+    var dataPlaneUrl: String,
 ) {
 
     private var writeChannel: Channel<Message>

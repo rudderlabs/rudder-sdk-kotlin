@@ -6,9 +6,10 @@ import com.rudderstack.core.Configuration
 import com.rudderstack.core.internals.logger.Logger
 import com.rudderstack.core.internals.storage.Storage
 
-open class Configuration @JvmOverloads constructor(
-    writeKey: String,
+data class Configuration @JvmOverloads constructor(
+    override val writeKey: String,
     val application: Application,
+    override val dataPlaneUrl: String,
     override val storageProvider: Storage = AndroidStorageProvider.getStorage(writeKey, application),
     val logLevel: Logger.LogLevel = Logger.DEFAULT_LOG_LEVEL,
     val trackLifecycleEvents: Boolean = TRACK_LIFECYCLE_EVENTS,
@@ -25,10 +26,9 @@ open class Configuration @JvmOverloads constructor(
     override val maxFlushInterval: Long = DEFAULT_MAX_FLUSH_INTERVAL,
     override val shouldVerifySdk: Boolean = SHOULD_VERIFY_SDK,
     override val gzipEnabled: Boolean = GZIP_ENABLED,
-    override val dataPlaneUrl: String = DEFAULT_ANDROID_DATAPLANE_URL,
     override val controlPlaneUrl: String = DEFAULT_ANDROID_CONTROLPLANE_URL,
 ) : Configuration(
-    apiKey = writeKey,
+    writeKey = writeKey,
     storageProvider = storageProvider,
     flushQueueSize = flushQueueSize,
     maxFlushInterval = maxFlushInterval,
@@ -42,7 +42,6 @@ open class Configuration @JvmOverloads constructor(
     companion object {
 
         const val COLLECT_DEVICE_ID: Boolean = true
-        const val DEFAULT_ANDROID_DATAPLANE_URL = "https://hosted.rudderlabs.com"
         const val DEFAULT_ANDROID_CONTROLPLANE_URL = "https://api.rudderlabs.com"
         const val GZIP_ENABLED: Boolean = true
         const val SHOULD_VERIFY_SDK: Boolean = true
