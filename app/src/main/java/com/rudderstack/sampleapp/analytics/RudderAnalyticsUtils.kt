@@ -9,7 +9,6 @@ object RudderAnalyticsUtils {
 
     fun initialize(application: Application) {
         analytics = Analytics(
-            application = application,
             configuration = com.rudderstack.android.Configuration(
                 writeKey = "sdfsdfsd",
                 application = application,
@@ -17,10 +16,4 @@ object RudderAnalyticsUtils {
             )
         )
     }
-
-    fun interface InitializationListener {
-
-        fun onAnalyticsInitialized(writeKey: String, success: Boolean, message: String?)
-    }
-
 }

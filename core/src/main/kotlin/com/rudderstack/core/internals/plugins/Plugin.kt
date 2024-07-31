@@ -1,7 +1,7 @@
 package com.rudderstack.core.internals.plugins
 
 import com.rudderstack.core.Analytics
-import com.rudderstack.core.internals.models.Message
+import com.rudderstack.core.internals.models.MessageEvent
 
 interface Plugin {
 
@@ -13,7 +13,7 @@ interface Plugin {
         this.analytics = analytics
     }
 
-    fun execute(event: Message): Message? {
+    fun execute(event: MessageEvent): MessageEvent? {
         return event
     }
 

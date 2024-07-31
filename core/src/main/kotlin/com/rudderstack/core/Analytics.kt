@@ -1,12 +1,11 @@
 package com.rudderstack.core
 
-import com.rudderstack.core.internals.models.Message
-import com.rudderstack.core.internals.models.Properties
-import com.rudderstack.core.internals.models.RudderOption
+import com.rudderstack.core.internals.models.MessageEvent
 import com.rudderstack.core.internals.models.TrackEvent
-import com.rudderstack.core.internals.models.emptyJsonObject
 import com.rudderstack.core.internals.plugins.Plugin
 import com.rudderstack.core.internals.plugins.PluginChain
+import com.rudderstack.core.internals.utils.safeJsonObject
+import com.rudderstack.core.internals.utils.toJsonElement
 import com.rudderstack.core.plugins.PocPlugin
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -19,12 +18,8 @@ open class Analytics(
 ) {
 
     private val pluginChain: PluginChain = PluginChain().also { it.analytics = this }
-
-    internal val analyticsScope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-    internal val analyticsDispatcher: CoroutineDispatcher = Dispatchers.IO
-    internal val retryDispatcher: CoroutineDispatcher = Dispatchers.IO
-    internal val storageIODispatcher: CoroutineDispatcher = Dispatchers.IO
-    internal val networkIODispatcher: CoroutineDispatcher = Dispatchers.IO
+    private val analyticsScope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private val analyticsDispatcher: CoroutineDispatcher = Dispatchers.IO
 
     init {
         setup()
@@ -41,19 +36,18 @@ open class Analytics(
     @JvmOverloads
     fun track(
         name: String,
-        properties: Properties = emptyJsonObject,
-        options: RudderOption,
+        properties: Map<String, Any> = emptyMap(),
+        options: Map<String, Any> = emptyMap(),
     ) {
         val event = TrackEvent(
             event = name,
-            properties = properties,
-            options = options,
+            properties = properties.toJsonElement().safeJsonObject,
+            options = options.toJsonElement().safeJsonObject,
         )
         process(event)
     }
 
-    private fun process(event: Message) {
-        event.applyBaseData()
+    private fun process(event: MessageEvent) {
         analyticsScope.launch(analyticsDispatcher) {
             pluginChain.process(event)
         }

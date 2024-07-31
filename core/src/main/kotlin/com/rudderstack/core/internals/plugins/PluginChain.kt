@@ -1,7 +1,7 @@
 package com.rudderstack.core.internals.plugins
 
 import com.rudderstack.core.Analytics
-import com.rudderstack.core.internals.models.Message
+import com.rudderstack.core.internals.models.MessageEvent
 
 internal class PluginChain(
     private val pluginList: Map<Plugin.PluginType, PluginInteractor> = mapOf(
@@ -14,7 +14,7 @@ internal class PluginChain(
 
     lateinit var analytics: Analytics
 
-    fun process(incomingEvent: Message) {
+    fun process(incomingEvent: MessageEvent) {
         if (analytics.configuration.optOut) {
             return
         }
@@ -44,15 +44,15 @@ internal class PluginChain(
         }
     }
 
-    private fun applyPlugins(pluginType: Plugin.PluginType, event: Message?): Message? {
-        var result: Message? = event
+    private fun applyPlugins(pluginType: Plugin.PluginType, event: MessageEvent?): MessageEvent? {
+        var result: MessageEvent? = event
         val mediator = pluginList[pluginType]
         result = applyPlugins(mediator, result)
         return result
     }
 
-    private fun applyPlugins(mediator: PluginInteractor?, event: Message?): Message? {
-        var result: Message? = event
+    private fun applyPlugins(mediator: PluginInteractor?, event: MessageEvent?): MessageEvent? {
+        var result: MessageEvent? = event
         result?.let { e ->
             result = mediator?.execute(e)
         }

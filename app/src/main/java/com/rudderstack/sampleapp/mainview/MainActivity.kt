@@ -111,43 +111,12 @@ class MainActivity : ComponentActivity() {
                             .CenterHorizontally
                     ),
             )
+
             CreateRowOfApis(
                 names = arrayOf(
-                    AnalyticsState.ShutDownAnalytics,
-                    AnalyticsState.ForceFlush,
-                    AnalyticsState.OptInAnalytics
-                ), weight = .5f, viewModel = viewModel
-            )
-            CreateRowOfApis(
-                names = arrayOf(
-                    AnalyticsState.AliasEvent,
                     AnalyticsState.TrackEvent,
-                    AnalyticsState.ScreenEvent
                 ),
                 weight = .3f,
-                viewModel = viewModel
-            )
-            CreateRowOfApis(
-                names = arrayOf(AnalyticsState.IdentifyEvent, AnalyticsState.GroupEvent),
-                weight = .5f,
-                viewModel = viewModel
-            )
-            CreateRowOfApis(
-                names = arrayOf(AnalyticsState.StartManualSession, AnalyticsState.EndSession),
-                weight = .5f,
-                viewModel = viewModel
-            )
-            CreateRowOfApis(
-                names = arrayOf(AnalyticsState.EnableAutoTracking, AnalyticsState.DisableAutoTracking),
-                weight = .5f,
-                viewModel = viewModel
-            )
-            CreateRowOfApis(
-                names = arrayOf(
-                    AnalyticsState.SendError,
-                    AnalyticsState.ClearAnalytics,
-                ),
-                weight = .5f,
                 viewModel = viewModel
             )
             Spacer(modifier = Modifier.height(2.dp))
