@@ -9,26 +9,42 @@ import com.rudderstack.core.internals.plugins.Plugin
 import com.rudderstack.core.internals.plugins.PluginChain
 import com.rudderstack.core.plugins.PocPlugin
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
-open class Analytics(
-    val configuration: Configuration
-) {
+open class Analytics protected constructor(
+    val configuration: Configuration,
+    coroutineConfig: CoroutineConfiguration,
+) : CoroutineConfiguration by coroutineConfig {
 
     private val pluginChain: PluginChain = PluginChain().also { it.analytics = this }
-
-    internal val analyticsScope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-    internal val analyticsDispatcher: CoroutineDispatcher = Dispatchers.IO
-    internal val retryDispatcher: CoroutineDispatcher = Dispatchers.IO
-    internal val storageIODispatcher: CoroutineDispatcher = Dispatchers.IO
-    internal val networkIODispatcher: CoroutineDispatcher = Dispatchers.IO
 
     init {
         setup()
     }
+
+    constructor(
+        configuration: Configuration,
+    ) : this(
+        configuration = configuration,
+        coroutineConfig = object : CoroutineConfiguration {
+            private val handler = CoroutineExceptionHandler { _, exception ->
+                TODO("Handle the exception as needed")
+            }
+
+            override val analyticsScope: CoroutineScope =
+                CoroutineScope(SupervisorJob() + handler)
+            override val analyticsDispatcher: CoroutineDispatcher = Dispatchers.IO
+
+            @OptIn(ExperimentalCoroutinesApi::class)
+            override val networkDispatcher: CoroutineDispatcher =
+                Dispatchers.IO.limitedParallelism(1)
+        }
+    )
 
     private fun setup() {
         add(PocPlugin())

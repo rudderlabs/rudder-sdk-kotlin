@@ -5,6 +5,8 @@ import com.rudderstack.core.internals.logger.Logger
 import com.rudderstack.core.internals.models.Message
 import com.rudderstack.core.internals.storage.BasicStorageProvider
 import com.rudderstack.core.internals.storage.Storage
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 
 typealias EventCallBack = (Message, status: Int, message: String) -> Unit
 
@@ -29,4 +31,12 @@ open class Configuration @JvmOverloads constructor(
         const val MAX_FLUSH_INTERVAL = 10 * 1000L //10 seconds
         const val CONTROL_PLANE_URL = "https://api.rudderstack.com/"
     }
+}
+
+interface CoroutineConfiguration {
+    val analyticsScope: CoroutineScope
+
+    val analyticsDispatcher: CoroutineDispatcher
+
+    val networkDispatcher: CoroutineDispatcher
 }
