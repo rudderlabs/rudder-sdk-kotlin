@@ -30,3 +30,6 @@ fun String?.parseFilePaths(): List<String> {
 }
 
 fun String.Companion.empty(): String = ""
+
+val String.validatedBaseUrl
+    get() = if (this.endsWith('/')) this else "$this/"
