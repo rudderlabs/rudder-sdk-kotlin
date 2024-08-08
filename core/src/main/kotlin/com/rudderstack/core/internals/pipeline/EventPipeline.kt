@@ -1,7 +1,6 @@
 package com.rudderstack.core.internals.pipeline
 
 import com.rudderstack.core.Analytics
-import com.rudderstack.core.Configuration
 import com.rudderstack.core.internals.logger.TAG
 import com.rudderstack.core.internals.models.Message
 import com.rudderstack.core.internals.storage.StorageKeys
@@ -32,9 +31,6 @@ open class EventPipeline(
     //protected open val httpClient: HTTPClient = HTTPClient(apiKey, analytics.configuration.requestFactory)
 
     protected open val storage get() = analytics.configuration.storageProvider
-    protected open val scope get() = analytics.analyticsScope
-    protected open val fileIODispatcher get() = analytics.storageIODispatcher
-    protected open val networkIODispatcher get() = analytics.networkIODispatcher
 
     var running: Boolean
         private set
@@ -75,7 +71,7 @@ open class EventPipeline(
         return Json.encodeToString(payload)
     }
 
-    private fun write() = scope.launch(fileIODispatcher) {
+    private fun write() = analytics.analyticsScope.launch(analytics.storageDispatcher) {
         for (event in writeChannel) {
             // write to storage
             val isPoison = (event.messageId == FLUSH_POISON)
@@ -94,10 +90,10 @@ open class EventPipeline(
         }
     }
 
-    private fun upload() = scope.launch(networkIODispatcher) {
+    private fun upload() = analytics.analyticsScope.launch(analytics.networkDispatcher) {
         uploadChannel.consumeEach {
             analytics.configuration.logger.debug(TAG, "performing flush")
-            withContext(fileIODispatcher) {
+            withContext(analytics.storageDispatcher) {
                 storage.rollover()
             }
 
