@@ -33,7 +33,7 @@ open class Analytics protected constructor(
         configuration = configuration,
         coroutineConfig = object : CoroutineConfiguration {
             private val handler = CoroutineExceptionHandler { _, exception ->
-                TODO("Handle the exception as needed")
+                configuration.logger.error(log = exception.stackTraceToString())
             }
 
             override val analyticsScope: CoroutineScope =
