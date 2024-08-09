@@ -34,7 +34,10 @@ open class Analytics protected constructor(
 
             override val analyticsScope: CoroutineScope =
                 CoroutineScope(SupervisorJob() + handler)
+
             override val analyticsDispatcher: CoroutineDispatcher = Dispatchers.IO
+
+            override val storageDispatcher: CoroutineDispatcher = Dispatchers.IO
 
             @OptIn(ExperimentalCoroutinesApi::class)
             override val networkDispatcher: CoroutineDispatcher =
