@@ -14,11 +14,12 @@ import java.util.Locale
 import java.util.zip.GZIPOutputStream
 
 class WebServiceImpl(
-    var baseUrl: String,
-    val authHeaderString: String,
-    val isGZIPEnabled: Boolean,
-    val anonymousIdHeaderString: String,
-    val customHeaders: Map<String, String> = emptyMap(),
+    private var baseUrl: String,
+    authHeaderString: String,
+    private val isGZIPEnabled: Boolean,
+    private val anonymousIdHeaderString: String,
+    private val customHeaders: Map<String, String> = emptyMap(),
+    private val connectionFactory: HttpURLConnectionFactory = DefaultHttpURLConnectionFactory()
 ) : WebService {
 
     private val defaultHeaders = mapOf(
@@ -38,7 +39,7 @@ class WebServiceImpl(
 
     override fun connectionFactory(endpoint: String): HttpURLConnection {
         val url = URL("${baseUrl.validatedBaseUrl}$endpoint")
-        return (url.openConnection() as HttpURLConnection).apply {
+        return connectionFactory.createConnection(url).apply {
             connectTimeout = DEFAULT_CONNECTION_TIMEOUT
             readTimeout = DEFAULT_READ_TIMEOUT
             (defaultHeaders + customHeaders).forEach(::setRequestProperty)
@@ -51,8 +52,9 @@ class WebServiceImpl(
             connect()
             constructResponse()
         } catch (e: Exception) {
-            disconnect()
             Failure(status = ErrorStatus.ERROR, error = e)
+        } finally {
+            disconnect()
         }
     }
 
@@ -79,4 +81,10 @@ class WebServiceImpl(
                 )
             )
         }
+}
+
+class DefaultHttpURLConnectionFactory : HttpURLConnectionFactory {
+    override fun createConnection(url: URL): HttpURLConnection {
+        return url.openConnection() as HttpURLConnection
+    }
 }

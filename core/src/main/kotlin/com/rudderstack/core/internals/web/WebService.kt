@@ -1,6 +1,7 @@
 package com.rudderstack.core.internals.web
 
 import java.net.HttpURLConnection
+import java.net.URL
 
 interface WebService {
 
@@ -15,4 +16,8 @@ enum class ErrorStatus {
     ERROR,
     RESOURCE_NOT_FOUND,
     BAD_REQUEST,
+}
+
+interface HttpURLConnectionFactory {
+    fun createConnection(url: URL): HttpURLConnection
 }
