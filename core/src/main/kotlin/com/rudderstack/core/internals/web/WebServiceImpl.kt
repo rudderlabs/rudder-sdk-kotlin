@@ -1,19 +1,24 @@
 package com.rudderstack.core.internals.web
 
+import com.rudderstack.core.Constants.DEFAULT_CONNECTION_TIMEOUT
+import com.rudderstack.core.Constants.DEFAULT_READ_TIMEOUT
+import com.rudderstack.core.internals.utils.getErrorResponse
+import com.rudderstack.core.internals.utils.getErrorStatus
+import com.rudderstack.core.internals.utils.getSuccessResponse
 import com.rudderstack.core.internals.utils.validatedBaseUrl
-import java.io.BufferedReader
+import com.rudderstack.core.internals.utils.writeBodyToStream
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.Locale
+import java.util.zip.GZIPOutputStream
 
 class WebServiceImpl(
-    override var baseUrl: String,
-    override val authHeaderString: String,
-    override val isGzipEnabled: Boolean,
-    override val connectTimeOut: Int = 10_000,
-    override val readTimeOut: Int = 20_000,
-    override val customHeaders: Map<String, String> = emptyMap(),
+    var baseUrl: String,
+    val authHeaderString: String,
+    val isGZIPEnabled: Boolean,
+    val anonymousIdHeaderString: String,
+    val customHeaders: Map<String, String> = emptyMap(),
 ) : WebService {
 
     private val defaultHeaders = mapOf(
@@ -23,59 +28,55 @@ class WebServiceImpl(
         )
     )
 
-    override fun getSourceConfig(endpoint: String): Result<String> {
-        val connection = connectionFactory(endpoint)
-        return handleConnection(connection)
-    }
+    override fun getData(endpoint: String): Result<String> =
+        connectionFactory(endpoint).useConnection()
+
+    override fun sendData(endPoint: String, body: String): Result<String> =
+        connectionFactory(endPoint).useConnection {
+            setupPostConnection(body)
+        }
 
     override fun connectionFactory(endpoint: String): HttpURLConnection {
-        val urlStr = "${baseUrl.validatedBaseUrl}$endpoint"
-        val url = URL(urlStr)
-        return (url.openConnection() as HttpURLConnection).also {
-            it.connectTimeout = connectTimeOut
-            it.readTimeout = readTimeOut
-            val defaultReadTimeOut = it.readTimeout
-            println(defaultReadTimeOut)
-
-            defaultHeaders.forEach(it::setRequestProperty)
-            customHeaders.forEach(it::setRequestProperty)
+        val url = URL("${baseUrl.validatedBaseUrl}$endpoint")
+        return (url.openConnection() as HttpURLConnection).apply {
+            connectTimeout = DEFAULT_CONNECTION_TIMEOUT
+            readTimeout = DEFAULT_READ_TIMEOUT
+            (defaultHeaders + customHeaders).forEach(::setRequestProperty)
         }
     }
 
-    private fun handleConnection(connection: HttpURLConnection): Result<String> = try {
-        connection.connect()
-        constructResponse(connection)
-    } catch (e: Exception) {
-        connection.disconnect()
-        Failure(
-            status = NetworkStatus.ERROR,
-            error = e
-        )
-    }
-
-    private fun constructResponse(
-        connection: HttpURLConnection
-    ): Result<String> = if (connection.responseCode in 200..299) {
-        Success(response = getInputResponseBody(connection))
-    } else {
-        Failure(
-            status = getNetworkStatus(connection.responseCode),
-            error = IOException("HTTP ${connection.responseCode}, URL:${connection.url} and Error: ${getErrorResponseBody(connection)}")
-        )
-    }
-
-    private fun getInputResponseBody(connection: HttpURLConnection) =
-        connection.inputStream.bufferedReader().use(BufferedReader::readText)
-
-    private fun getErrorResponseBody(connection: HttpURLConnection) =
-        connection.errorStream.bufferedReader().use(BufferedReader::readText)
-
-    private fun getNetworkStatus(responseCode: Int): NetworkStatus {
-        return when (responseCode) {
-            200 -> NetworkStatus.SUCCESS
-            404 -> NetworkStatus.RESOURCE_NOT_FOUND
-            400 -> NetworkStatus.BAD_REQUEST
-            else -> NetworkStatus.ERROR
+    private fun HttpURLConnection.useConnection(setup: HttpURLConnection.() -> Unit = {}): Result<String> {
+        return try {
+            this.apply(setup)
+            connect()
+            constructResponse()
+        } catch (e: Exception) {
+            disconnect()
+            Failure(status = ErrorStatus.ERROR, error = e)
         }
     }
+
+    private fun HttpURLConnection.setupPostConnection(body: String) = apply {
+        doOutput = true
+        setChunkedStreamingMode(0)
+        setRequestProperty("AnonymousId", anonymousIdHeaderString)
+        if (isGZIPEnabled) {
+            setRequestProperty("Content-Encoding", "gzip")
+            GZIPOutputStream(outputStream).writeBodyToStream(body)
+        } else {
+            outputStream.writeBodyToStream(body)
+        }
+    }
+
+    private fun HttpURLConnection.constructResponse(): Result<String> =
+        when (responseCode) {
+            in 200..299 -> Success(response = getSuccessResponse())
+
+            else -> Failure(
+                status = getErrorStatus(responseCode),
+                error = IOException(
+                    "HTTP $responseCode, URL: $url, Error: ${getErrorResponse()}"
+                )
+            )
+        }
 }
