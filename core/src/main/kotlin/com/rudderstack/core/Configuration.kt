@@ -38,5 +38,7 @@ interface CoroutineConfiguration {
 
     val analyticsDispatcher: CoroutineDispatcher
 
+    val storageDispatcher: CoroutineDispatcher
+
     val networkDispatcher: CoroutineDispatcher
 }
