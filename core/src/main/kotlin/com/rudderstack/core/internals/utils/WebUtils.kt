@@ -24,9 +24,9 @@ fun OutputStream.writeBodyToStream(body: String) = this.use {
 }
 
 fun getErrorStatus(responseCode: Int): ErrorStatus = when (responseCode) {
+    400 -> ErrorStatus.BAD_REQUEST
     401 -> ErrorStatus.INVALID_WRITE_KEY
     404 -> ErrorStatus.RESOURCE_NOT_FOUND
-    400 -> ErrorStatus.BAD_REQUEST
     429, in 500..599 -> ErrorStatus.RETRY_ABLE
     else -> ErrorStatus.ERROR
 }
