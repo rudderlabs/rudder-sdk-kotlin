@@ -16,7 +16,7 @@ fun provideWebServiceImplForGetRequest(
         "bv" to "34",
     ),
     customHeaders: Map<String, String> = emptyMap(),
-) = WebServiceImpl.getRequest(
+) = WebServiceImpl.getInstance(
     baseUrl = baseUrl,
     endPoint = endPoint,
     authHeaderString = authHeaderString,
