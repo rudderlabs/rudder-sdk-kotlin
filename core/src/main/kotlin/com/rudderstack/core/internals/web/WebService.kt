@@ -8,9 +8,11 @@ interface WebService {
     val endPoint: String
     val authHeaderString: String
     val getConfig: GetConfig
-    val postConfig: PostConfig
+    var postConfig: PostConfig
     val customHeaders: Map<String, String>
     val connectionFactory: HttpURLConnectionFactory
+
+    fun updateAnonymousIdHeaderString(anonymousIdHeaderString: String)
 
     fun getData(): Result<String>
 

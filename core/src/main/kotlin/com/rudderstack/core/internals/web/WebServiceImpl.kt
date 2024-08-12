@@ -35,7 +35,7 @@ class WebServiceImpl private constructor(
     override val endPoint: String,
     override val authHeaderString: String,
     override val getConfig: GetConfig,
-    override val postConfig: PostConfig,
+    override var postConfig: PostConfig,
     override val customHeaders: Map<String, String>,
     override val connectionFactory: HttpURLConnectionFactory,
 ) : WebService {
@@ -117,6 +117,18 @@ class WebServiceImpl private constructor(
     )
 
     private val headers = defaultHeaders + customHeaders
+
+    /**
+     * Updates the anonymous ID header string used in POST requests as an header.
+     *
+     * @param anonymousIdHeaderString The new custom header string to be used.
+     */
+    override fun updateAnonymousIdHeaderString(anonymousIdHeaderString: String) {
+        postConfig = createPostConfig(
+            isGZIPEnabled = postConfig.isGZIPEnabled,
+            anonymousIdHeaderString = anonymousIdHeaderString,
+        )
+    }
 
     /**
      * Retrieves data from the specified endpoint using an HTTP GET request.
