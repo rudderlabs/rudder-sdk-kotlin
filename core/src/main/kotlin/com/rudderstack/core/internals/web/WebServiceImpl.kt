@@ -87,7 +87,7 @@ class WebServiceImpl private constructor(
          * @param connectionFactory A factory for creating `HttpURLConnection` instances. Defaults to `DefaultHttpURLConnectionFactory()`.
          * @return A configured `WebServiceImpl` instance for POST requests.
          */
-        fun postRequest(
+        fun postInstance(
             baseUrl: String,
             endPoint: String,
             authHeaderString: String,
