@@ -33,7 +33,7 @@ fun provideWebServiceImplForPostRequest(
     isGZIPEnabled: Boolean = DEFAULT_GZIP_STATUS,
     anonymousIdHeaderString: String = "anonymous-id",
     customHeaders: Map<String, String> = emptyMap(),
-) = WebServiceImpl.postRequest(
+) = WebServiceImpl.postInstance(
     baseUrl = baseUrl,
     endPoint = endPoint,
     authHeaderString = authHeaderString,
