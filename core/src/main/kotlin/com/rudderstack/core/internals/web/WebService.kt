@@ -4,22 +4,31 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 interface WebService {
+    val baseUrl: String
+    val endPoint: String
+    val authHeaderString: String
+    val getConfig: GetConfig
+    val postConfig: PostConfig
+    val customHeaders: Map<String, String>
+    val connectionFactory: HttpURLConnectionFactory
 
-    fun getData(endpoint: String): Result<String>
+    fun getData(): Result<String>
 
-    fun sendData(endPoint: String, body: String): Result<String>
-
-    fun connectionFactory(endpoint: String): HttpURLConnection
+    fun sendData(body: String): Result<String>
 }
 
-enum class ErrorStatus {
-    INVALID_WRITE_KEY,
-    ERROR,
-    RESOURCE_NOT_FOUND,
-    BAD_REQUEST,
-    RETRY_ABLE,
+interface GetConfig {
+    val query: Map<String, String>
+}
+
+interface PostConfig {
+    val isGZIPEnabled: Boolean
+    val anonymousIdHeaderString: String
 }
 
 interface HttpURLConnectionFactory {
-    fun createConnection(url: URL): HttpURLConnection
+    fun createConnection(
+        url: URL,
+        headers: Map<String, String>,
+    ): HttpURLConnection
 }
