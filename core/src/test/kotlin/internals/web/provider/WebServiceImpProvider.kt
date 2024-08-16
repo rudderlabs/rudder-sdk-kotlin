@@ -16,7 +16,7 @@ fun provideWebServiceImplForGetRequest(
         "bv" to "34",
     ),
     customHeaders: Map<String, String> = emptyMap(),
-) = WebServiceImpl.getInstance(
+) = WebServiceImpl.createGetWebService(
     baseUrl = baseUrl,
     endPoint = endPoint,
     authHeaderString = authHeaderString,
@@ -33,7 +33,7 @@ fun provideWebServiceImplForPostRequest(
     isGZIPEnabled: Boolean = DEFAULT_GZIP_STATUS,
     anonymousIdHeaderString: String = "anonymous-id",
     customHeaders: Map<String, String> = emptyMap(),
-) = WebServiceImpl.postInstance(
+) = WebServiceImpl.createPostWebService(
     baseUrl = baseUrl,
     endPoint = endPoint,
     authHeaderString = authHeaderString,
