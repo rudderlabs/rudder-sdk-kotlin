@@ -1,8 +1,6 @@
-package com.rudderstack.core.internals.utils
+package com.rudderstack.core.internals.web
 
-import com.rudderstack.core.internals.web.ErrorStatus
-import com.rudderstack.core.internals.web.GetConfig
-import com.rudderstack.core.internals.web.PostConfig
+import com.rudderstack.core.internals.utils.empty
 import java.io.BufferedReader
 import java.io.OutputStream
 import java.net.HttpURLConnection

@@ -1,7 +1,7 @@
 package internals.web
 
-import com.rudderstack.core.internals.utils.getErrorResponse
-import com.rudderstack.core.internals.utils.getSuccessResponse
+import com.rudderstack.core.internals.web.getErrorResponse
+import com.rudderstack.core.internals.web.getSuccessResponse
 import com.rudderstack.core.internals.web.ErrorStatus
 import com.rudderstack.core.internals.web.Failure
 import com.rudderstack.core.internals.web.HttpURLConnectionFactory
@@ -48,7 +48,7 @@ class HttpClientImplTest {
         every { mockConnectionFactory.createConnection(any(), any()) } returns mockConnection
 
         // Mock extension functions:
-        mockkStatic("com.rudderstack.core.internals.utils.WebUtilsKt")
+        mockkStatic("com.rudderstack.core.internals.web.WebUtilsKt")
         every { mockConnection.getSuccessResponse() } returns SUCCESS_RESPONSE
         every { mockConnection.getErrorResponse() } returns ERROR_RESPONSE
 
