@@ -17,7 +17,7 @@ open class Configuration @JvmOverloads constructor(
     open val maxFlushInterval: Long = MAX_FLUSH_INTERVAL,
     open var optOut: Boolean = false,
     open val shouldVerifySdk: Boolean = false,
-    open val gzipEnabled: Boolean = Constants.DEFAULT_GZIP_STATUS,
+    open val gzipEnabled: Boolean = DEFAULT_GZIP_STATUS,
     open val controlPlaneUrl: String = CONTROL_PLANE_URL,
     open val logger: Logger = KotlinLogger(initialLogLevel = Logger.DEFAULT_LOG_LEVEL),
     open val storageProvider: Storage = BasicStorageProvider.getStorage(writeKey, "test application"),
@@ -30,6 +30,7 @@ open class Configuration @JvmOverloads constructor(
         const val FLUSH_QUEUE_SIZE = 30
         const val MAX_FLUSH_INTERVAL = 10 * 1000L //10 seconds
         const val CONTROL_PLANE_URL = "https://api.rudderstack.com/"
+        const val DEFAULT_GZIP_STATUS: Boolean = true
     }
 }
 

@@ -1,6 +1,6 @@
 package internals.web.provider
 
-import com.rudderstack.core.Constants.DEFAULT_GZIP_STATUS
+import com.rudderstack.core.Configuration.Companion.DEFAULT_GZIP_STATUS
 import com.rudderstack.core.internals.web.HttpURLConnectionFactory
 import com.rudderstack.core.internals.web.HttpClientImpl
 import java.net.HttpURLConnection

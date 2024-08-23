@@ -1,7 +1,5 @@
 package com.rudderstack.core.internals.web
 
-import com.rudderstack.core.Constants.DEFAULT_CONNECTION_TIMEOUT
-import com.rudderstack.core.Constants.DEFAULT_READ_TIMEOUT
 import com.rudderstack.core.internals.utils.validatedBaseUrl
 import com.rudderstack.core.internals.web.ErrorStatus.Companion.getErrorStatus
 import java.io.IOException
@@ -17,6 +15,9 @@ private const val BASIC = "Basic"
 private const val ANONYMOUS_ID_HEADER = "AnonymousId"
 private const val CONTENT_ENCODING = "Content-Encoding"
 private const val GZIP = "gzip"
+
+private const val DEFAULT_CONNECTION_TIMEOUT: Int = 10_000
+private const val DEFAULT_READ_TIMEOUT: Int = 20_000
 
 /**
  * `HttpClientImpl` is a concrete implementation of the `HttpClient` interface that manages
