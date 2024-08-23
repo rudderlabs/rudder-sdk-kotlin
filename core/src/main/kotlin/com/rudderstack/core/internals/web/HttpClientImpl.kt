@@ -15,6 +15,14 @@ import java.net.URL
 import java.util.Locale
 import java.util.zip.GZIPOutputStream
 
+private const val CONTENT_TYPE = "Content-Type"
+private const val APPLICATION_JSON = "application/json"
+private const val AUTHORIZATION = "Authorization"
+private const val BASIC = "Basic"
+private const val ANONYMOUS_ID_HEADER = "AnonymousId"
+private const val CONTENT_ENCODING = "Content-Encoding"
+private const val GZIP = "gzip"
+
 /**
  * `HttpClientImpl` is a concrete implementation of the `HttpClient` interface that manages
  * HTTP connections for sending and retrieving data. This class is designed to handle both
@@ -110,9 +118,9 @@ class HttpClientImpl private constructor(
     }
 
     private val defaultHeaders = mapOf(
-        "Content-Type" to "application/json",
-        "Authorization" to String.format(
-            Locale.US, "Basic $authHeaderString",
+        CONTENT_TYPE to APPLICATION_JSON,
+        AUTHORIZATION to String.format(
+            Locale.US, BASIC + authHeaderString,
         )
     )
 
@@ -174,9 +182,9 @@ class HttpClientImpl private constructor(
     private fun HttpURLConnection.setupPostConnection(body: String) = apply {
         doOutput = true
         setChunkedStreamingMode(0)
-        setRequestProperty("AnonymousId", postConfig.anonymousIdHeaderString)
+        setRequestProperty(ANONYMOUS_ID_HEADER, postConfig.anonymousIdHeaderString)
         if (postConfig.isGZIPEnabled) {
-            setRequestProperty("Content-Encoding", "gzip")
+            setRequestProperty(CONTENT_ENCODING, GZIP)
             GZIPOutputStream(outputStream).writeBodyToStream(body)
         } else {
             outputStream.writeBodyToStream(body)
