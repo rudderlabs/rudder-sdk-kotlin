@@ -7,10 +7,10 @@ import com.rudderstack.core.internals.web.Failure
 import com.rudderstack.core.internals.web.HttpURLConnectionFactory
 import com.rudderstack.core.internals.web.Result
 import com.rudderstack.core.internals.web.Success
-import com.rudderstack.core.internals.web.WebServiceImpl
+import com.rudderstack.core.internals.web.HttpClientImpl
 import internals.web.provider.provideErrorMessage
-import internals.web.provider.provideWebServiceImplForGetRequest
-import internals.web.provider.provideWebServiceImplForPostRequest
+import internals.web.provider.provideHttpClientImplForGetRequest
+import internals.web.provider.provideHttpClientImplForPostRequest
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import org.junit.Assert.assertEquals
@@ -29,7 +29,7 @@ private const val SUCCESS_RESPONSE = "Success Response"
 private const val ERROR_RESPONSE = "Some error occurred"
 private const val REQUEST_BODY = "body"
 
-class WebServiceImplTest {
+class HttpClientImplTest {
 
     @MockK
     private lateinit var mockConnectionFactory: HttpURLConnectionFactory
@@ -37,8 +37,8 @@ class WebServiceImplTest {
     @MockK
     private lateinit var mockConnection: HttpURLConnection
 
-    private lateinit var getWebService: WebServiceImpl
-    private lateinit var postWebService: WebServiceImpl
+    private lateinit var getHttpClient: HttpClientImpl
+    private lateinit var postHttpClient: HttpClientImpl
 
 
     @Before
@@ -52,15 +52,15 @@ class WebServiceImplTest {
         every { mockConnection.getSuccessResponse() } returns SUCCESS_RESPONSE
         every { mockConnection.getErrorResponse() } returns ERROR_RESPONSE
 
-        getWebService = provideWebServiceImplForGetRequest(connectionFactory = mockConnectionFactory)
-        postWebService = provideWebServiceImplForPostRequest(connectionFactory = mockConnectionFactory)
+        getHttpClient = provideHttpClientImplForGetRequest(connectionFactory = mockConnectionFactory)
+        postHttpClient = provideHttpClientImplForPostRequest(connectionFactory = mockConnectionFactory)
     }
 
     @Test
     fun `given connection is successful, when getData is called, then return Success`() {
         every { mockConnection.responseCode } returns 200
 
-        val result = getWebService.getData()
+        val result = getHttpClient.getData()
 
         assertSuccess(result)
     }
@@ -69,7 +69,7 @@ class WebServiceImplTest {
     fun `given connection is successful and response code is 2xx, when getData is called, then return Success`() {
         every { mockConnection.responseCode } returns 299
 
-        val result = getWebService.getData()
+        val result = getHttpClient.getData()
 
         assertSuccess(result)
     }
@@ -79,7 +79,7 @@ class WebServiceImplTest {
         val exception = UnknownHostException(ERROR_RESPONSE)
         every { mockConnection.connect() } throws exception
 
-        val result = getWebService.getData()
+        val result = getHttpClient.getData()
 
         assertFailure(result, ErrorStatus.ERROR, exception)
     }
@@ -88,7 +88,7 @@ class WebServiceImplTest {
     fun `given connection is unsuccessful and response code is 400, when getData is called, then return Failure`() {
         every { mockConnection.responseCode } returns 400
 
-        val result = getWebService.getData()
+        val result = getHttpClient.getData()
 
         assertFailure(
             result,
@@ -101,7 +101,7 @@ class WebServiceImplTest {
     fun `given connection is unsuccessful and response code is 404, when getData is called, then return Failure`() {
         every { mockConnection.responseCode } returns 404
 
-        val result = getWebService.getData()
+        val result = getHttpClient.getData()
 
         assertFailure(
             result,
@@ -114,7 +114,7 @@ class WebServiceImplTest {
     fun `given connection is unsuccessful and response code is 5XX, when getData is called, then return retry able Failure`() {
         every { mockConnection.responseCode } returns 500
 
-        val result = getWebService.getData()
+        val result = getHttpClient.getData()
 
         assertFailure(
             result,
@@ -127,7 +127,7 @@ class WebServiceImplTest {
     fun `given connection is unsuccessful and response code is 429, when getData is called, then return retry able Failure`() {
         every { mockConnection.responseCode } returns 429
 
-        val result = getWebService.getData()
+        val result = getHttpClient.getData()
 
         assertFailure(
             result,
@@ -140,7 +140,7 @@ class WebServiceImplTest {
     fun `given connection is unsuccessful and response code is 4XX, when getData is called, then return Failure`() {
         every { mockConnection.responseCode } returns 450
 
-        val result = getWebService.getData()
+        val result = getHttpClient.getData()
 
         assertFailure(
             result,
@@ -151,18 +151,18 @@ class WebServiceImplTest {
 
     @Test(expected = MalformedURLException::class)
     fun `given wrong url, when getData is called, then throw MalformedURLException`() {
-        getWebService = provideWebServiceImplForGetRequest(
+        getHttpClient = provideHttpClientImplForGetRequest(
             connectionFactory = mockConnectionFactory,
             baseUrl = WRONG_BASE_URL,
         )
-        getWebService.getData()
+        getHttpClient.getData()
     }
 
     @Test
     fun `given invalid write key, when getData is called, then return write key Failure`() {
         every { mockConnection.responseCode } returns 401
 
-        val result = getWebService.getData()
+        val result = getHttpClient.getData()
 
         assertFailure(
             result,
@@ -175,7 +175,7 @@ class WebServiceImplTest {
     fun `given connection is successful, when sendData is called, then return Success`() {
         every { mockConnection.responseCode } returns 200
 
-        val result = getWebService.sendData(REQUEST_BODY)
+        val result = getHttpClient.sendData(REQUEST_BODY)
 
         assertSuccess(result)
     }
@@ -184,7 +184,7 @@ class WebServiceImplTest {
     fun `given connection is successful and response code is 2xx, when sendData is called, then return Success`() {
         every { mockConnection.responseCode } returns 299
 
-        val result = postWebService.sendData(REQUEST_BODY)
+        val result = postHttpClient.sendData(REQUEST_BODY)
 
         assertSuccess(result)
     }
@@ -194,7 +194,7 @@ class WebServiceImplTest {
         val exception = IOException(ERROR_RESPONSE)
         every { mockConnection.connect() } throws exception
 
-        val result = postWebService.sendData(REQUEST_BODY)
+        val result = postHttpClient.sendData(REQUEST_BODY)
 
         assertFailure(result, ErrorStatus.ERROR, exception)
     }
@@ -203,7 +203,7 @@ class WebServiceImplTest {
     fun `given connection is unsuccessful and response code is 400, when sendData is called, then return Failure`() {
         every { mockConnection.responseCode } returns 400
 
-        val result = postWebService.sendData(REQUEST_BODY)
+        val result = postHttpClient.sendData(REQUEST_BODY)
 
         assertFailure(
             result,
@@ -216,7 +216,7 @@ class WebServiceImplTest {
     fun `given connection is unsuccessful and response code is 404, when sendData is called, then return Failure`() {
         every { mockConnection.responseCode } returns 404
 
-        val result = postWebService.sendData(REQUEST_BODY)
+        val result = postHttpClient.sendData(REQUEST_BODY)
 
         assertFailure(
             result,
@@ -229,7 +229,7 @@ class WebServiceImplTest {
     fun `given connection is unsuccessful and response code is 429, when sendData is called, then return retry able Failure`() {
         every { mockConnection.responseCode } returns 429
 
-        val result = postWebService.sendData(REQUEST_BODY)
+        val result = postHttpClient.sendData(REQUEST_BODY)
 
         assertFailure(
             result,
@@ -242,7 +242,7 @@ class WebServiceImplTest {
     fun `given connection is unsuccessful and response code is 4XX, when sendData is called, then return Failure`() {
         every { mockConnection.responseCode } returns 450
 
-        val result = postWebService.sendData(REQUEST_BODY)
+        val result = postHttpClient.sendData(REQUEST_BODY)
 
         assertFailure(
             result,
@@ -255,7 +255,7 @@ class WebServiceImplTest {
     fun `given connection is unsuccessful and response code is 5XX, when sendData is called, then return retry able Failure`() {
         every { mockConnection.responseCode } returns 500
 
-        val result = postWebService.sendData(REQUEST_BODY)
+        val result = postHttpClient.sendData(REQUEST_BODY)
 
         assertFailure(
             result,
@@ -266,18 +266,18 @@ class WebServiceImplTest {
 
     @Test(expected = MalformedURLException::class)
     fun `given wrong url, when sendData is called, then throw MalformedURLException`() {
-        postWebService = provideWebServiceImplForGetRequest(
+        postHttpClient = provideHttpClientImplForGetRequest(
             connectionFactory = mockConnectionFactory,
             baseUrl = WRONG_BASE_URL,
         )
-        postWebService.sendData(REQUEST_BODY)
+        postHttpClient.sendData(REQUEST_BODY)
     }
 
     @Test
     fun `given invalid write key, when sendData is called, then return write key Failure`() {
         every { mockConnection.responseCode } returns 401
 
-        val result = postWebService.sendData(REQUEST_BODY)
+        val result = postHttpClient.sendData(REQUEST_BODY)
 
         assertFailure(
             result,
@@ -287,8 +287,8 @@ class WebServiceImplTest {
     }
 
     @Test
-    fun `when two different instances of WebServiceImpl are created for get and post requests, then they should not be equal`() {
-        assertNotEquals(getWebService, postWebService)
+    fun `when two different instances of HttpClient are created for get and post requests, then they should not be equal`() {
+        assertNotEquals(getHttpClient, postHttpClient)
     }
 
     private fun assertSuccess(result: Result<String>) {

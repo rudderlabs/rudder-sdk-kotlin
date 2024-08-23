@@ -2,10 +2,10 @@ package internals.web.provider
 
 import com.rudderstack.core.Constants.DEFAULT_GZIP_STATUS
 import com.rudderstack.core.internals.web.HttpURLConnectionFactory
-import com.rudderstack.core.internals.web.WebServiceImpl
+import com.rudderstack.core.internals.web.HttpClientImpl
 import java.net.HttpURLConnection
 
-fun provideWebServiceImplForGetRequest(
+fun provideHttpClientImplForGetRequest(
     connectionFactory: HttpURLConnectionFactory,
     baseUrl: String = "https://api.example.com",
     endPoint: String = "/test",
@@ -16,7 +16,7 @@ fun provideWebServiceImplForGetRequest(
         "bv" to "34",
     ),
     customHeaders: Map<String, String> = emptyMap(),
-) = WebServiceImpl.createGetWebService(
+) = HttpClientImpl.createGetHttpClient(
     baseUrl = baseUrl,
     endPoint = endPoint,
     authHeaderString = authHeaderString,
@@ -25,7 +25,7 @@ fun provideWebServiceImplForGetRequest(
     connectionFactory = connectionFactory,
 )
 
-fun provideWebServiceImplForPostRequest(
+fun provideHttpClientImplForPostRequest(
     connectionFactory: HttpURLConnectionFactory,
     baseUrl: String = "https://api.example.com",
     endPoint: String = "/test",
@@ -33,7 +33,7 @@ fun provideWebServiceImplForPostRequest(
     isGZIPEnabled: Boolean = DEFAULT_GZIP_STATUS,
     anonymousIdHeaderString: String = "anonymous-id",
     customHeaders: Map<String, String> = emptyMap(),
-) = WebServiceImpl.createPostWebService(
+) = HttpClientImpl.createPostHttpClient(
     baseUrl = baseUrl,
     endPoint = endPoint,
     authHeaderString = authHeaderString,

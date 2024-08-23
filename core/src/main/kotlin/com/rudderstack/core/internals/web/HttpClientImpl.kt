@@ -16,12 +16,12 @@ import java.util.Locale
 import java.util.zip.GZIPOutputStream
 
 /**
- * `WebServiceImpl` is a concrete implementation of the `WebService` interface that manages
+ * `HttpClientImpl` is a concrete implementation of the `HttpClient` interface that manages
  * HTTP connections for sending and retrieving data. This class is designed to handle both
  * GET and POST requests, offering support for custom headers, GZIP compression, and robust
  * error handling.
  *
- * @property baseUrl The base URL for the web service to which requests are sent.
+ * @property baseUrl The base URL for the HttpClient to which requests are sent.
  * @property endPoint The specific endpoint appended to the base URL for each request.
  * @property authHeaderString The authorization header string, typically used for Basic Auth.
  * @property getConfig Configuration options specific to GET requests, such as query parameters.
@@ -30,7 +30,7 @@ import java.util.zip.GZIPOutputStream
  * @property customHeaders Additional HTTP headers to include in the request.
  * @property connectionFactory A factory responsible for creating instances of `HttpURLConnection`.
  */
-class WebServiceImpl private constructor(
+class HttpClientImpl private constructor(
     override val baseUrl: String,
     override val endPoint: String,
     override val authHeaderString: String,
@@ -38,31 +38,31 @@ class WebServiceImpl private constructor(
     override var postConfig: PostConfig,
     override val customHeaders: Map<String, String>,
     override val connectionFactory: HttpURLConnectionFactory,
-) : WebService {
+) : HttpClient {
 
     companion object {
         /**
-         * Creates a new instance of `WebServiceImpl` configured for making HTTP GET requests.
+         * Creates a new instance of `HttpClientImpl` configured for making HTTP GET requests.
          *
-         * This method configures a `WebServiceImpl` object specifically for GET requests,
+         * This method configures a `HttpClientImpl` object specifically for GET requests,
          * with default settings that disable GZIP compression.
          *
-         * @param baseUrl The base URL for the web service.
+         * @param baseUrl The base URL for the HttpClient.
          * @param endPoint The specific endpoint appended to the base URL.
          * @param authHeaderString The authorization header string, typically for Basic Auth.
          * @param query The query parameters appended to the URL. Defaults to an empty map.
          * @param customHeaders Additional HTTP headers for the request. Defaults to an empty map.
          * @param connectionFactory A factory for creating `HttpURLConnection` instances. Defaults to `DefaultHttpURLConnectionFactory()`.
-         * @return A configured `WebServiceImpl` instance for GET requests.
+         * @return A configured `HttpClientImpl` instance for GET requests.
          */
-        fun createGetWebService(
+        fun createGetHttpClient(
             baseUrl: String,
             endPoint: String,
             authHeaderString: String,
             query: Map<String, String> = emptyMap(),
             customHeaders: Map<String, String> = emptyMap(),
             connectionFactory: HttpURLConnectionFactory = DefaultHttpURLConnectionFactory()
-        ) = WebServiceImpl(
+        ) = HttpClientImpl(
             baseUrl = baseUrl,
             endPoint = endPoint,
             authHeaderString = authHeaderString,
@@ -73,21 +73,21 @@ class WebServiceImpl private constructor(
         )
 
         /**
-         * Creates a new instance of `WebServiceImpl` configured for making HTTP POST requests.
+         * Creates a new instance of `HttpClientImpl` configured for making HTTP POST requests.
          *
-         * This method configures a `WebServiceImpl` object specifically for POST requests,
+         * This method configures a `HttpClientImpl` object specifically for POST requests,
          * with options to enable GZIP compression and include a custom identifier header.
          *
-         * @param baseUrl The base URL for the web service.
+         * @param baseUrl The base URL for the HttpClient.
          * @param endPoint The specific endpoint appended to the base URL.
          * @param authHeaderString The authorization header string, typically for Basic Auth.
          * @param isGZIPEnabled A flag indicating whether GZIP compression is enabled for POST requests.
          * @param anonymousIdHeaderString A custom header used to identify anonymous users.
          * @param customHeaders Additional HTTP headers for the request. Defaults to an empty map.
          * @param connectionFactory A factory for creating `HttpURLConnection` instances. Defaults to `DefaultHttpURLConnectionFactory()`.
-         * @return A configured `WebServiceImpl` instance for POST requests.
+         * @return A configured `HttpClientImpl` instance for POST requests.
          */
-        fun createPostWebService(
+        fun createPostHttpClient(
             baseUrl: String,
             endPoint: String,
             authHeaderString: String,
@@ -95,7 +95,7 @@ class WebServiceImpl private constructor(
             anonymousIdHeaderString: String,
             customHeaders: Map<String, String> = emptyMap(),
             connectionFactory: HttpURLConnectionFactory = DefaultHttpURLConnectionFactory()
-        ) = WebServiceImpl(
+        ) = HttpClientImpl(
             baseUrl = baseUrl,
             endPoint = endPoint,
             authHeaderString = authHeaderString,

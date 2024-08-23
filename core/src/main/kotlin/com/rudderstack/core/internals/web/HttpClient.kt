@@ -3,7 +3,7 @@ package com.rudderstack.core.internals.web
 import java.net.HttpURLConnection
 import java.net.URL
 
-interface WebService {
+interface HttpClient {
     val baseUrl: String
     val endPoint: String
     val authHeaderString: String
