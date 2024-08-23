@@ -116,7 +116,7 @@ class HttpClientImpl private constructor(
     private val defaultHeaders = mapOf(
         CONTENT_TYPE to APPLICATION_JSON,
         AUTHORIZATION to String.format(
-            Locale.US, BASIC + authHeaderString,
+            Locale.US, "$BASIC $authHeaderString",
         )
     )
 
