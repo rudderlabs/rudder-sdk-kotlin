@@ -20,14 +20,6 @@ fun OutputStream.writeBodyToStream(body: String) = this.use {
     it.write(body.toByteArray())
 }
 
-fun getErrorStatus(responseCode: Int): ErrorStatus = when (responseCode) {
-    400 -> ErrorStatus.BAD_REQUEST
-    401 -> ErrorStatus.INVALID_WRITE_KEY
-    404 -> ErrorStatus.RESOURCE_NOT_FOUND
-    429, in 500..599 -> ErrorStatus.RETRY_ABLE
-    else -> ErrorStatus.ERROR
-}
-
 fun createGetConfig(query: Map<String, String> = emptyMap()) = object : GetConfig {
     override val query: Map<String, String> = query
 }

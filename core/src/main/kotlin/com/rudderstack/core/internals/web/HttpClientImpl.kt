@@ -3,6 +3,7 @@ package com.rudderstack.core.internals.web
 import com.rudderstack.core.Constants.DEFAULT_CONNECTION_TIMEOUT
 import com.rudderstack.core.Constants.DEFAULT_READ_TIMEOUT
 import com.rudderstack.core.internals.utils.validatedBaseUrl
+import com.rudderstack.core.internals.web.ErrorStatus.Companion.getErrorStatus
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
