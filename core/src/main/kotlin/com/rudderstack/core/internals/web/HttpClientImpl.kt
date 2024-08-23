@@ -4,10 +4,10 @@ import com.rudderstack.core.Constants.DEFAULT_CONNECTION_TIMEOUT
 import com.rudderstack.core.Constants.DEFAULT_READ_TIMEOUT
 import com.rudderstack.core.internals.utils.createGetConfig
 import com.rudderstack.core.internals.utils.createPostConfig
-import com.rudderstack.core.internals.utils.createURL
 import com.rudderstack.core.internals.utils.getErrorResponse
 import com.rudderstack.core.internals.utils.getErrorStatus
 import com.rudderstack.core.internals.utils.getSuccessResponse
+import com.rudderstack.core.internals.utils.validatedBaseUrl
 import com.rudderstack.core.internals.utils.writeBodyToStream
 import java.io.IOException
 import java.net.HttpURLConnection
@@ -165,6 +165,21 @@ class HttpClientImpl private constructor(
             .useConnection {
                 setupPostConnection(body)
             }
+    }
+
+    private fun createURL(baseUrl: String, endPoint: String, query: Map<String, String> = emptyMap()): URL {
+        return buildString {
+            append(baseUrl.validatedBaseUrl)
+            append(endPoint)
+            if (query.isNotEmpty()) {
+                append("?")
+                query.entries.joinToString("&") { (key, value) ->
+                    "$key=$value"
+                }.let { append(it) }
+            }
+        }.let {
+            URL(it)
+        }
     }
 
     private fun HttpURLConnection.useConnection(setup: HttpURLConnection.() -> Unit = {}): Result<String> {

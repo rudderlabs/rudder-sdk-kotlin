@@ -6,7 +6,6 @@ import com.rudderstack.core.internals.web.PostConfig
 import java.io.BufferedReader
 import java.io.OutputStream
 import java.net.HttpURLConnection
-import java.net.URL
 import java.util.zip.GZIPOutputStream
 
 fun HttpURLConnection.getSuccessResponse() =
@@ -29,21 +28,6 @@ fun getErrorStatus(responseCode: Int): ErrorStatus = when (responseCode) {
     404 -> ErrorStatus.RESOURCE_NOT_FOUND
     429, in 500..599 -> ErrorStatus.RETRY_ABLE
     else -> ErrorStatus.ERROR
-}
-
-fun createURL(baseUrl: String, endPoint: String, query: Map<String, String> = emptyMap()): URL {
-    return buildString {
-        append(baseUrl.validatedBaseUrl)
-        append(endPoint)
-        if (query.isNotEmpty()) {
-            append("?")
-            query.entries.joinToString("&") { (key, value) ->
-                "$key=$value"
-            }.let { append(it) }
-        }
-    }.let {
-        URL(it)
-    }
 }
 
 fun createGetConfig(query: Map<String, String> = emptyMap()) = object : GetConfig {
