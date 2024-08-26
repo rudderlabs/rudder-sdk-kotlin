@@ -1,13 +1,13 @@
 package internals.web
 
-import com.rudderstack.core.internals.web.getErrorResponse
-import com.rudderstack.core.internals.web.getSuccessResponse
-import com.rudderstack.core.internals.web.ErrorStatus
-import com.rudderstack.core.internals.web.Failure
-import com.rudderstack.core.internals.web.HttpURLConnectionFactory
-import com.rudderstack.core.internals.web.Result
-import com.rudderstack.core.internals.web.Success
-import com.rudderstack.core.internals.web.HttpClientImpl
+import com.rudderstack.core.internals.network.getErrorResponse
+import com.rudderstack.core.internals.network.getSuccessResponse
+import com.rudderstack.core.internals.network.ErrorStatus
+import com.rudderstack.core.internals.network.Failure
+import com.rudderstack.core.internals.network.HttpURLConnectionFactory
+import com.rudderstack.core.internals.network.Result
+import com.rudderstack.core.internals.network.Success
+import com.rudderstack.core.internals.network.HttpClientImpl
 import internals.web.provider.provideErrorMessage
 import internals.web.provider.provideHttpClientImplForGetRequest
 import internals.web.provider.provideHttpClientImplForPostRequest

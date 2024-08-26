@@ -1,8 +1,8 @@
 package internals.web.provider
 
 import com.rudderstack.core.Configuration.Companion.DEFAULT_GZIP_STATUS
-import com.rudderstack.core.internals.web.HttpURLConnectionFactory
-import com.rudderstack.core.internals.web.HttpClientImpl
+import com.rudderstack.core.internals.network.HttpURLConnectionFactory
+import com.rudderstack.core.internals.network.HttpClientImpl
 import java.net.HttpURLConnection
 
 fun provideHttpClientImplForGetRequest(
@@ -43,5 +43,8 @@ fun provideHttpClientImplForPostRequest(
     connectionFactory = connectionFactory,
 )
 
-fun provideErrorMessage(status: Int, connection: HttpURLConnection, msg: String = "Some error occurred")
- = "HTTP $status, URL: ${connection.url}, Error: $msg"
+fun provideErrorMessage(
+    status: Int,
+    connection: HttpURLConnection,
+    msg: String = "Some error occurred"
+) = "HTTP $status, URL: ${connection.url}, Error: $msg"

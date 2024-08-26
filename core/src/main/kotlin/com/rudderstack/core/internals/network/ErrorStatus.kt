@@ -1,4 +1,4 @@
-package com.rudderstack.core.internals.web
+package com.rudderstack.core.internals.network
 
 enum class ErrorStatus {
     INVALID_WRITE_KEY,

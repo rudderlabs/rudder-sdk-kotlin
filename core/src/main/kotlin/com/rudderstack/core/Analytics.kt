@@ -1,6 +1,10 @@
 package com.rudderstack.core
 
+import com.rudderstack.core.internals.models.Message
+import com.rudderstack.core.internals.models.Properties
+import com.rudderstack.core.internals.models.RudderOption
 import com.rudderstack.core.internals.models.TrackEvent
+import com.rudderstack.core.internals.models.emptyJsonObject
 import com.rudderstack.core.internals.plugins.Plugin
 import com.rudderstack.core.internals.plugins.PluginChain
 import com.rudderstack.core.plugins.PocPlugin
@@ -11,6 +15,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+
 
 open class Analytics protected constructor(
     val configuration: Configuration,
@@ -23,25 +28,17 @@ open class Analytics protected constructor(
         setup()
     }
 
-    constructor(
-        configuration: Configuration,
-    ) : this(
+    constructor(configuration: Configuration) : this(
         configuration = configuration,
         coroutineConfig = object : CoroutineConfiguration {
             private val handler = CoroutineExceptionHandler { _, exception ->
                 configuration.logger.error(log = exception.stackTraceToString())
             }
-
-            override val analyticsScope: CoroutineScope =
-                CoroutineScope(SupervisorJob() + handler)
-
+            override val analyticsScope: CoroutineScope = CoroutineScope(SupervisorJob() + handler)
             override val analyticsDispatcher: CoroutineDispatcher = Dispatchers.IO
 
-            override val storageDispatcher: CoroutineDispatcher = Dispatchers.IO
-
             @OptIn(ExperimentalCoroutinesApi::class)
-            override val networkDispatcher: CoroutineDispatcher =
-                Dispatchers.IO.limitedParallelism(1)
+            override val networkDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(1)
         }
     )
 
@@ -67,7 +64,8 @@ open class Analytics protected constructor(
         process(event)
     }
 
-    private fun process(event: MessageEvent) {
+    private fun process(event: Message) {
+        event.applyBaseData()
         analyticsScope.launch(analyticsDispatcher) {
             pluginChain.process(event)
         }

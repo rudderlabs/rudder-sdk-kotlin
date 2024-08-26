@@ -1,4 +1,4 @@
-package com.rudderstack.core.internals.web
+package com.rudderstack.core.internals.network
 
 import com.rudderstack.core.internals.utils.empty
 import java.io.BufferedReader

@@ -1,4 +1,4 @@
-package com.rudderstack.core.internals.web
+package com.rudderstack.core.internals.network
 
 sealed class Result<out T>
 class Success<out T>(val response: T): Result<T>()

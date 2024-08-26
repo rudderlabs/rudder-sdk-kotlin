@@ -1,27 +1,31 @@
-package com.rudderstack.core.internals.web
+package com.rudderstack.core.internals.network
 
-import com.rudderstack.core.Constants.DEFAULT_CONNECTION_TIMEOUT
-import com.rudderstack.core.Constants.DEFAULT_READ_TIMEOUT
-import com.rudderstack.core.internals.utils.createGetConfig
-import com.rudderstack.core.internals.utils.createPostConfig
-import com.rudderstack.core.internals.utils.createURL
-import com.rudderstack.core.internals.utils.getErrorResponse
-import com.rudderstack.core.internals.utils.getErrorStatus
-import com.rudderstack.core.internals.utils.getSuccessResponse
-import com.rudderstack.core.internals.utils.writeBodyToStream
+import com.rudderstack.core.internals.utils.validatedBaseUrl
+import com.rudderstack.core.internals.network.ErrorStatus.Companion.getErrorStatus
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.Locale
 import java.util.zip.GZIPOutputStream
 
+private const val CONTENT_TYPE = "Content-Type"
+private const val APPLICATION_JSON = "application/json"
+private const val AUTHORIZATION = "Authorization"
+private const val BASIC = "Basic"
+private const val ANONYMOUS_ID_HEADER = "AnonymousId"
+private const val CONTENT_ENCODING = "Content-Encoding"
+private const val GZIP = "gzip"
+
+private const val DEFAULT_CONNECTION_TIMEOUT: Int = 10_000
+private const val DEFAULT_READ_TIMEOUT: Int = 20_000
+
 /**
- * `WebServiceImpl` is a concrete implementation of the `WebService` interface that manages
+ * `HttpClientImpl` is a concrete implementation of the `HttpClient` interface that manages
  * HTTP connections for sending and retrieving data. This class is designed to handle both
  * GET and POST requests, offering support for custom headers, GZIP compression, and robust
  * error handling.
  *
- * @property baseUrl The base URL for the web service to which requests are sent.
+ * @property baseUrl The base URL for the HttpClient to which requests are sent.
  * @property endPoint The specific endpoint appended to the base URL for each request.
  * @property authHeaderString The authorization header string, typically used for Basic Auth.
  * @property getConfig Configuration options specific to GET requests, such as query parameters.
@@ -30,7 +34,7 @@ import java.util.zip.GZIPOutputStream
  * @property customHeaders Additional HTTP headers to include in the request.
  * @property connectionFactory A factory responsible for creating instances of `HttpURLConnection`.
  */
-class WebServiceImpl private constructor(
+class HttpClientImpl private constructor(
     override val baseUrl: String,
     override val endPoint: String,
     override val authHeaderString: String,
@@ -38,31 +42,31 @@ class WebServiceImpl private constructor(
     override var postConfig: PostConfig,
     override val customHeaders: Map<String, String>,
     override val connectionFactory: HttpURLConnectionFactory,
-) : WebService {
+) : HttpClient {
 
     companion object {
         /**
-         * Creates a new instance of `WebServiceImpl` configured for making HTTP GET requests.
+         * Creates a new instance of `HttpClientImpl` configured for making HTTP GET requests.
          *
-         * This method configures a `WebServiceImpl` object specifically for GET requests,
+         * This method configures a `HttpClientImpl` object specifically for GET requests,
          * with default settings that disable GZIP compression.
          *
-         * @param baseUrl The base URL for the web service.
+         * @param baseUrl The base URL for the HttpClient.
          * @param endPoint The specific endpoint appended to the base URL.
          * @param authHeaderString The authorization header string, typically for Basic Auth.
          * @param query The query parameters appended to the URL. Defaults to an empty map.
          * @param customHeaders Additional HTTP headers for the request. Defaults to an empty map.
          * @param connectionFactory A factory for creating `HttpURLConnection` instances. Defaults to `DefaultHttpURLConnectionFactory()`.
-         * @return A configured `WebServiceImpl` instance for GET requests.
+         * @return A configured `HttpClientImpl` instance for GET requests.
          */
-        fun createGetWebService(
+        fun createGetHttpClient(
             baseUrl: String,
             endPoint: String,
             authHeaderString: String,
             query: Map<String, String> = emptyMap(),
             customHeaders: Map<String, String> = emptyMap(),
             connectionFactory: HttpURLConnectionFactory = DefaultHttpURLConnectionFactory()
-        ) = WebServiceImpl(
+        ) = HttpClientImpl(
             baseUrl = baseUrl,
             endPoint = endPoint,
             authHeaderString = authHeaderString,
@@ -73,21 +77,21 @@ class WebServiceImpl private constructor(
         )
 
         /**
-         * Creates a new instance of `WebServiceImpl` configured for making HTTP POST requests.
+         * Creates a new instance of `HttpClientImpl` configured for making HTTP POST requests.
          *
-         * This method configures a `WebServiceImpl` object specifically for POST requests,
+         * This method configures a `HttpClientImpl` object specifically for POST requests,
          * with options to enable GZIP compression and include a custom identifier header.
          *
-         * @param baseUrl The base URL for the web service.
+         * @param baseUrl The base URL for the HttpClient.
          * @param endPoint The specific endpoint appended to the base URL.
          * @param authHeaderString The authorization header string, typically for Basic Auth.
          * @param isGZIPEnabled A flag indicating whether GZIP compression is enabled for POST requests.
          * @param anonymousIdHeaderString A custom header used to identify anonymous users.
          * @param customHeaders Additional HTTP headers for the request. Defaults to an empty map.
          * @param connectionFactory A factory for creating `HttpURLConnection` instances. Defaults to `DefaultHttpURLConnectionFactory()`.
-         * @return A configured `WebServiceImpl` instance for POST requests.
+         * @return A configured `HttpClientImpl` instance for POST requests.
          */
-        fun createPostWebService(
+        fun createPostHttpClient(
             baseUrl: String,
             endPoint: String,
             authHeaderString: String,
@@ -95,7 +99,7 @@ class WebServiceImpl private constructor(
             anonymousIdHeaderString: String,
             customHeaders: Map<String, String> = emptyMap(),
             connectionFactory: HttpURLConnectionFactory = DefaultHttpURLConnectionFactory()
-        ) = WebServiceImpl(
+        ) = HttpClientImpl(
             baseUrl = baseUrl,
             endPoint = endPoint,
             authHeaderString = authHeaderString,
@@ -110,9 +114,9 @@ class WebServiceImpl private constructor(
     }
 
     private val defaultHeaders = mapOf(
-        "Content-Type" to "application/json",
-        "Authorization" to String.format(
-            Locale.US, "Basic $authHeaderString",
+        CONTENT_TYPE to APPLICATION_JSON,
+        AUTHORIZATION to String.format(
+            Locale.US, "$BASIC $authHeaderString",
         )
     )
 
@@ -159,6 +163,21 @@ class WebServiceImpl private constructor(
             }
     }
 
+    private fun createURL(baseUrl: String, endPoint: String, query: Map<String, String> = emptyMap()): URL {
+        return buildString {
+            append(baseUrl.validatedBaseUrl)
+            append(endPoint)
+            if (query.isNotEmpty()) {
+                append("?")
+                query.entries.joinToString("&") { (key, value) ->
+                    "$key=$value"
+                }.let { append(it) }
+            }
+        }.let {
+            URL(it)
+        }
+    }
+
     private fun HttpURLConnection.useConnection(setup: HttpURLConnection.() -> Unit = {}): Result<String> {
         return try {
             this.apply(setup)
@@ -174,26 +193,24 @@ class WebServiceImpl private constructor(
     private fun HttpURLConnection.setupPostConnection(body: String) = apply {
         doOutput = true
         setChunkedStreamingMode(0)
-        setRequestProperty("AnonymousId", postConfig.anonymousIdHeaderString)
+        setRequestProperty(ANONYMOUS_ID_HEADER, postConfig.anonymousIdHeaderString)
         if (postConfig.isGZIPEnabled) {
-            setRequestProperty("Content-Encoding", "gzip")
+            setRequestProperty(CONTENT_ENCODING, GZIP)
             GZIPOutputStream(outputStream).writeBodyToStream(body)
         } else {
             outputStream.writeBodyToStream(body)
         }
     }
 
-    private fun HttpURLConnection.constructResponse(): Result<String> =
-        when (responseCode) {
-            in 200..299 -> Success(response = getSuccessResponse())
-
-            else -> Failure(
-                status = getErrorStatus(responseCode),
-                error = IOException(
-                    "HTTP $responseCode, URL: $url, Error: ${getErrorResponse()}"
-                )
+    private fun HttpURLConnection.constructResponse(): Result<String> = when (responseCode) {
+        in 200..299 -> Success(response = getSuccessResponse())
+        else -> Failure(
+            status = getErrorStatus(responseCode),
+            error = IOException(
+                "HTTP $responseCode, URL: $url, Error: ${getErrorResponse()}"
             )
-        }
+        )
+    }
 }
 
 class DefaultHttpURLConnectionFactory : HttpURLConnectionFactory {

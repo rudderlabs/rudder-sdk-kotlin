@@ -2,7 +2,7 @@ package com.rudderstack.core.plugins
 
 import com.rudderstack.core.Analytics
 import com.rudderstack.core.internals.logger.TAG
-import com.rudderstack.core.internals.models.MessageEvent
+import com.rudderstack.core.internals.models.Message
 import com.rudderstack.core.internals.plugins.Plugin
 
 class PocPlugin : Plugin {
@@ -11,9 +11,8 @@ class PocPlugin : Plugin {
 
     override lateinit var analytics: Analytics
 
-    override fun execute(event: MessageEvent): MessageEvent {
+    override fun execute(event: Message): Message {
         analytics.configuration.logger.debug(TAG, "PocPlugin running")
         return event
     }
-
 }

@@ -1,4 +1,4 @@
-package com.rudderstack.core.internals.web
+package com.rudderstack.core.internals.network
 
 import java.net.HttpURLConnection
 import java.net.URL
