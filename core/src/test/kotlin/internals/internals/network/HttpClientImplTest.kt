@@ -1,4 +1,4 @@
-package internals.web
+package internals.internals.network
 
 import com.rudderstack.core.internals.network.getErrorResponse
 import com.rudderstack.core.internals.network.getSuccessResponse
@@ -8,9 +8,9 @@ import com.rudderstack.core.internals.network.HttpURLConnectionFactory
 import com.rudderstack.core.internals.network.Result
 import com.rudderstack.core.internals.network.Success
 import com.rudderstack.core.internals.network.HttpClientImpl
-import internals.web.provider.provideErrorMessage
-import internals.web.provider.provideHttpClientImplForGetRequest
-import internals.web.provider.provideHttpClientImplForPostRequest
+import internals.internals.network.provider.provideErrorMessage
+import internals.internals.network.provider.provideHttpClientImplForGetRequest
+import internals.internals.network.provider.provideHttpClientImplForPostRequest
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import org.junit.Assert.assertEquals

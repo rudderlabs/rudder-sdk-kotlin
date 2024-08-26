@@ -1,4 +1,4 @@
-package internals.web.provider
+package internals.internals.network.provider
 
 import com.rudderstack.core.Configuration.Companion.DEFAULT_GZIP_STATUS
 import com.rudderstack.core.internals.network.HttpURLConnectionFactory
