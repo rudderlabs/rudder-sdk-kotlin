@@ -2,7 +2,8 @@
 
 package com.rudderstack.core.internals.utils
 
-import com.rudderstack.core.internals.models.MessageEvent
+import com.rudderstack.core.internals.models.Message
+import com.rudderstack.core.internals.models.TrackEvent
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.builtins.BooleanArraySerializer
@@ -423,11 +424,11 @@ fun Any.toJsonElement(): JsonElement {
     return JsonNull
 }
 
-fun JsonObject.toBaseEvent(): MessageEvent? {
+fun JsonObject.toBaseEvent(): Message? {
     val type = getString("type")
 
     return when (type) {
-        "track" -> LenientJson.decodeFromJsonElement(MessageEvent.serializer(), this)
+        "track" -> LenientJson.decodeFromJsonElement(TrackEvent.serializer(), this)
         else -> null
     }
 }

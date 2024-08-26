@@ -103,13 +103,10 @@ class MainActivity : ComponentActivity() {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Singleton Analytics",
+                text = "Rudderstack Analytics",
                 modifier = Modifier
                     .padding(2.dp)
-                    .align(
-                        Alignment
-                            .CenterHorizontally
-                    ),
+                    .align(Alignment.CenterHorizontally),
             )
 
             CreateRowOfApis(

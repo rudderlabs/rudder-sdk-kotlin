@@ -2,6 +2,8 @@ package com.rudderstack.sampleapp.mainview
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
+import com.rudderstack.core.internals.models.Properties
+import com.rudderstack.core.internals.models.RudderOption
 import com.rudderstack.sampleapp.analytics.RudderAnalyticsUtils
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,6 +20,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             AnalyticsState.TrackEvent -> {
                 RudderAnalyticsUtils.analytics.track(
                     name = "Track at ${Date()}",
+                    properties = Properties(emptyMap()),
+                    options = RudderOption()
                 )
                 "Track message sent"
             }
@@ -31,9 +35,5 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 logDataList = state.logDataList + logData
             )
         }
-    }
-
-    override fun onCleared() {
-        super.onCleared()
     }
 }

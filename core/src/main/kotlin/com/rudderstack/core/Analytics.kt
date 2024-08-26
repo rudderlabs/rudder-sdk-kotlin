@@ -1,29 +1,46 @@
 package com.rudderstack.core
 
-import com.rudderstack.core.internals.models.MessageEvent
+import com.rudderstack.core.internals.models.Message
+import com.rudderstack.core.internals.models.Properties
+import com.rudderstack.core.internals.models.RudderOption
 import com.rudderstack.core.internals.models.TrackEvent
+import com.rudderstack.core.internals.models.emptyJsonObject
 import com.rudderstack.core.internals.plugins.Plugin
 import com.rudderstack.core.internals.plugins.PluginChain
-import com.rudderstack.core.internals.utils.safeJsonObject
-import com.rudderstack.core.internals.utils.toJsonElement
 import com.rudderstack.core.plugins.PocPlugin
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
-open class Analytics(
-    val configuration: Configuration
-) {
+
+open class Analytics protected constructor(
+    val configuration: Configuration,
+    coroutineConfig: CoroutineConfiguration,
+) : CoroutineConfiguration by coroutineConfig {
 
     private val pluginChain: PluginChain = PluginChain().also { it.analytics = this }
-    private val analyticsScope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-    private val analyticsDispatcher: CoroutineDispatcher = Dispatchers.IO
 
     init {
         setup()
     }
+
+    constructor(configuration: Configuration) : this(
+        configuration = configuration,
+        coroutineConfig = object : CoroutineConfiguration {
+            private val handler = CoroutineExceptionHandler { _, exception ->
+                configuration.logger.error(log = exception.stackTraceToString())
+            }
+            override val analyticsScope: CoroutineScope = CoroutineScope(SupervisorJob() + handler)
+            override val analyticsDispatcher: CoroutineDispatcher = Dispatchers.IO
+
+            @OptIn(ExperimentalCoroutinesApi::class)
+            override val networkDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(1)
+        }
+    )
 
     private fun setup() {
         add(PocPlugin())
@@ -36,18 +53,19 @@ open class Analytics(
     @JvmOverloads
     fun track(
         name: String,
-        properties: Map<String, Any> = emptyMap(),
-        options: Map<String, Any> = emptyMap(),
+        properties: Properties = emptyJsonObject,
+        options: RudderOption,
     ) {
         val event = TrackEvent(
             event = name,
-            properties = properties.toJsonElement().safeJsonObject,
-            options = options.toJsonElement().safeJsonObject,
+            properties = properties,
+            options = options,
         )
         process(event)
     }
 
-    private fun process(event: MessageEvent) {
+    private fun process(event: Message) {
+        event.applyBaseData()
         analyticsScope.launch(analyticsDispatcher) {
             pluginChain.process(event)
         }
