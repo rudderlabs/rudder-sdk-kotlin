@@ -11,6 +11,7 @@ open class Configuration @JvmOverloads constructor(
     open val logger: Logger = KotlinLogger(initialLogLevel = Logger.DEFAULT_LOG_LEVEL),
     open var offline: Boolean? = false,
 )
+
 interface CoroutineConfiguration {
     val analyticsScope: CoroutineScope
     val analyticsDispatcher: CoroutineDispatcher
