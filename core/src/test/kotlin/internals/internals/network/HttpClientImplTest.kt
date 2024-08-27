@@ -11,8 +11,11 @@ import com.rudderstack.core.internals.network.HttpClientImpl
 import internals.internals.network.provider.provideErrorMessage
 import internals.internals.network.provider.provideHttpClientImplForGetRequest
 import internals.internals.network.provider.provideHttpClientImplForPostRequest
-import io.mockk.*
+import io.mockk.MockKAnnotations
+import io.mockk.every
 import io.mockk.impl.annotations.MockK
+import io.mockk.mockkStatic
+import io.mockk.verify
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertThrows
