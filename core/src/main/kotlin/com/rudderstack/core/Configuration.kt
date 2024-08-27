@@ -2,12 +2,11 @@ package com.rudderstack.core
 
 import com.rudderstack.core.internals.logger.KotlinLogger
 import com.rudderstack.core.internals.logger.Logger
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
 import com.rudderstack.core.internals.policies.CountFlushPolicy
 import com.rudderstack.core.internals.policies.FlushPolicy
 import com.rudderstack.core.internals.policies.FrequencyFlushPolicy
-
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 
 open class Configuration @JvmOverloads constructor(
     open val writeKey: String,
@@ -26,5 +25,6 @@ open class Configuration @JvmOverloads constructor(
 interface CoroutineConfiguration {
     val analyticsScope: CoroutineScope
     val analyticsDispatcher: CoroutineDispatcher
+    val storageDispatcher: CoroutineDispatcher
     val networkDispatcher: CoroutineDispatcher
 }
