@@ -50,6 +50,10 @@ open class Analytics protected constructor(
         this.pluginChain.add(plugin)
     }
 
+    fun flush() {
+        // TODO("Implement flush")
+    }
+
     @JvmOverloads
     fun track(
         name: String,
