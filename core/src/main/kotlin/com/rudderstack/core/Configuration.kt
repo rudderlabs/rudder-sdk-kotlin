@@ -4,6 +4,10 @@ import com.rudderstack.core.internals.logger.KotlinLogger
 import com.rudderstack.core.internals.logger.Logger
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import com.rudderstack.core.internals.policies.CountFlushPolicy
+import com.rudderstack.core.internals.policies.FlushPolicy
+import com.rudderstack.core.internals.policies.FrequencyFlushPolicy
+
 
 open class Configuration @JvmOverloads constructor(
     open val writeKey: String,
@@ -11,9 +15,11 @@ open class Configuration @JvmOverloads constructor(
     open val logger: Logger = KotlinLogger(initialLogLevel = Logger.LogLevel.DEBUG),
     open val optOut: Boolean = false,
     open val gzipEnabled: Boolean = DEFAULT_GZIP_STATUS,
+    open var flushPolicies: List<FlushPolicy> = DEFAULT_FLUSH_POLICIES,
 ) {
     companion object {
         const val DEFAULT_GZIP_STATUS: Boolean = true
+        val DEFAULT_FLUSH_POLICIES: List<FlushPolicy> = listOf(CountFlushPolicy(), FrequencyFlushPolicy())
     }
 }
 
