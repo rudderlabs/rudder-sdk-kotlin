@@ -8,11 +8,11 @@ import java.io.File
 import java.io.FileOutputStream
 import java.util.concurrent.Semaphore
 
-private const val FILE_INDEX = "rudderstack.message.file.index."
-private const val BATCH_PREFIX = """{"batch":["""
-private const val BATCH_SENT_AT_SUFFIX = "\"],\"sentAt\":\""
-private const val BATCH_WRITE_KEY_SUFFIX = "\",\"writeKey\":\" "
-private const val TMP_SUFFIX = ".tmp"
+internal const val FILE_INDEX = "rudderstack.message.file.index."
+private const val BATCH_PREFIX = "{\"batch\":["
+internal const val BATCH_SENT_AT_SUFFIX = "],\"sentAt\":\""
+private const val BATCH_WRITE_KEY_SUFFIX = "\",\"writeKey\":"
+internal const val TMP_SUFFIX = ".tmp"
 
 class MessageBatchFileManager(
     private val directory: File,
@@ -72,20 +72,26 @@ class MessageBatchFileManager(
         keyValueStorage.save(fileIndexKey, index + 1)
     }
 
-    private fun start(file: File) {
+    internal fun start(file: File) {
         writeToFile(BATCH_PREFIX.toByteArray(), file)
     }
 
-    private fun finish() {
+    internal fun finish() {
         val file = currentFile()
         if (!file.exists()) return
         DateTimeInstant.now()
-        val contents = BATCH_SENT_AT_SUFFIX + DateTimeInstant.now() + BATCH_WRITE_KEY_SUFFIX + writeKey + "}"
+        val contents = BATCH_SENT_AT_SUFFIX + DateTimeInstant.now() + BATCH_WRITE_KEY_SUFFIX + "\"" + writeKey + "\"" + "}"
         writeToFile(contents.toByteArray(), file)
         file.renameTo(File(directory, file.nameWithoutExtension))
         os?.close()
         incrementFileIndex()
         reset()
+    }
+
+    internal fun registerShutdownHook() {
+        Runtime.getRuntime().addShutdownHook(Thread {
+            os?.close()
+        })
     }
 
     private fun currentFile(): File {
@@ -109,12 +115,6 @@ class MessageBatchFileManager(
     private fun reset() {
         os = null
         curFile = null
-    }
-
-    private fun registerShutdownHook() {
-        Runtime.getRuntime().addShutdownHook(Thread {
-            os?.close()
-        })
     }
 
     private suspend fun withLock(block: () -> Unit) {

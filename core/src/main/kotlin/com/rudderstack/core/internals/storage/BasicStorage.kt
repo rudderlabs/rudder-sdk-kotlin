@@ -3,7 +3,7 @@ package com.rudderstack.core.internals.storage
 import com.rudderstack.core.internals.utils.toFileDirectory
 import java.io.File
 
-private const val FILE_DIRECTORY = "/tmp/rudderstack-analytics-kotlin/"
+const val FILE_DIRECTORY = "/tmp/rudderstack-analytics-kotlin/"
 private const val FILE_NAME = "messages"
 
 class BasicStorage(writeKey: String) : Storage {
