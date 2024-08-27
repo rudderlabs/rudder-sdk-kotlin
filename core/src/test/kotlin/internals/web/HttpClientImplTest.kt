@@ -1,18 +1,21 @@
 package internals.web
 
-import com.rudderstack.core.internals.network.getErrorResponse
-import com.rudderstack.core.internals.network.getSuccessResponse
 import com.rudderstack.core.internals.network.ErrorStatus
 import com.rudderstack.core.internals.network.Failure
+import com.rudderstack.core.internals.network.HttpClientImpl
 import com.rudderstack.core.internals.network.HttpURLConnectionFactory
 import com.rudderstack.core.internals.network.Result
 import com.rudderstack.core.internals.network.Success
-import com.rudderstack.core.internals.network.HttpClientImpl
+import com.rudderstack.core.internals.network.getErrorResponse
+import com.rudderstack.core.internals.network.getSuccessResponse
 import internals.web.provider.provideErrorMessage
 import internals.web.provider.provideHttpClientImplForGetRequest
 import internals.web.provider.provideHttpClientImplForPostRequest
-import io.mockk.*
+import io.mockk.MockKAnnotations
+import io.mockk.every
 import io.mockk.impl.annotations.MockK
+import io.mockk.mockkStatic
+import io.mockk.verify
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertThrows
@@ -48,7 +51,7 @@ class HttpClientImplTest {
         every { mockConnectionFactory.createConnection(any(), any()) } returns mockConnection
 
         // Mock extension functions:
-        mockkStatic("com.rudderstack.core.internals.web.WebUtilsKt")
+        mockkStatic("com.rudderstack.core.internals.network.WebUtilsKt")
         every { mockConnection.getSuccessResponse() } returns SUCCESS_RESPONSE
         every { mockConnection.getErrorResponse() } returns ERROR_RESPONSE
 
