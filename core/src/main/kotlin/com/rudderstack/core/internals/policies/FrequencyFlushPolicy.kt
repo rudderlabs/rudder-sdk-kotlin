@@ -10,6 +10,14 @@ import kotlinx.coroutines.launch
 const val DEFAULT_FLUSH_INTERVAL_IN_MILLIS = 10_000L
 const val DEFAULT_MIN_SLEEP_TIMEOUT = 1L
 
+/**
+ * FrequencyFlushPolicy is a concrete implementation of the FlushPolicy interface
+ * that automatically triggers a flush action at a specified interval, once scheduled.
+ *
+ * @property flushIntervalInMillis The interval in milliseconds between each flush.
+ *                                 If set below [DEFAULT_MIN_SLEEP_TIMEOUT], it defaults
+ *                                 to [DEFAULT_FLUSH_INTERVAL_IN_MILLIS].
+ */
 class FrequencyFlushPolicy(private var flushIntervalInMillis: Long = DEFAULT_FLUSH_INTERVAL_IN_MILLIS) : FlushPolicy {
 
     private var flushJob: Job? = null
