@@ -191,7 +191,7 @@ class MessageBatchFileManagerTest {
 
 
     @Test
-    fun `given an empty list, when read is executed then no events are stored no events stored`() {
+    fun `given an empty list, when read is executed then no events are stored`() {
         val file = MessageBatchFileManager(directory, writeKey, keyValueStorage)
         assertTrue(file.read().isEmpty())
     }
