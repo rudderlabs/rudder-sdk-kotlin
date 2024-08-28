@@ -19,14 +19,14 @@ class PropertiesFile(
     private val logger: Logger? = KotlinLogger()
 ) : KeyValueStorage {
 
-    private var underlyingProperties: Properties = Properties()
+    private var properties: Properties = Properties()
     private val propertiesFile = File(directory, writeKey.toPropertiesFileName(PROPERTIES_PREFIX, PROPERTIES_SUFFIX))
 
     fun load() {
         if (propertiesFile.exists()) {
             try {
                 FileInputStream(propertiesFile).use {
-                    underlyingProperties.load(it)
+                    properties.load(it)
                 }
                 return
             } catch (e: Throwable) {
@@ -43,50 +43,50 @@ class PropertiesFile(
 
     private fun save() {
         FileOutputStream(propertiesFile).use {
-            underlyingProperties.store(it, null)
+            properties.store(it, null)
         }
     }
 
     override fun getInt(key: String, defaultVal: Int): Int {
-        return underlyingProperties.getProperty(key, String.empty()).toIntOrNull() ?: defaultVal
+        return properties.getProperty(key, String.empty()).toIntOrNull() ?: defaultVal
     }
 
     override fun getBoolean(key: String, defaultVal: Boolean): Boolean {
-        return underlyingProperties.getProperty(key, String.empty()).toBoolean()
+        return properties.getProperty(key, String.empty()).toBoolean()
     }
 
     override fun getString(key: String, defaultVal: String): String {
-        return underlyingProperties.getProperty(key, String.empty()).toString()
+        return properties.getProperty(key, String.empty()).toString()
     }
 
     override fun getLong(key: String, defaultVal: Long): Long {
-        return underlyingProperties.getProperty(key, String.empty()).toLong()
+        return properties.getProperty(key, String.empty()).toLong()
     }
 
     override fun save(key: String, value: Int) {
-        underlyingProperties.setProperty(key, value.toString())
+        properties.setProperty(key, value.toString())
     }
 
     override fun save(key: String, value: Boolean) {
-        underlyingProperties.setProperty(key, value.toString())
+        properties.setProperty(key, value.toString())
     }
 
     override fun save(key: String, value: String) {
-        underlyingProperties.setProperty(key, value)
+        properties.setProperty(key, value)
         save()
     }
 
     override fun save(key: String, value: Long) {
-        underlyingProperties.setProperty(key, value.toString())
+        properties.setProperty(key, value.toString())
         save()
     }
 
     override fun clear(key: String) {
-        underlyingProperties.clear()
+        properties.clear()
     }
 
     fun remove(key: String): Boolean {
-        underlyingProperties.remove(key)
+        properties.remove(key)
         save()
         return true
     }
