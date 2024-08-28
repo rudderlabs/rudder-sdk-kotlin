@@ -104,7 +104,6 @@ class MessageBatchFileManagerTest {
         assertTrue(newFile.exists())
 
         val actualContents = newFile.readText()
-        println(actualContents)
         assertEquals(expectedContents, actualContents)
     }
 
