@@ -8,7 +8,6 @@ import com.rudderstack.core.internals.logger.Logger
 import com.rudderstack.core.internals.logger.TAG
 import com.rudderstack.core.internals.models.Properties
 import com.rudderstack.core.internals.models.RudderOption
-import com.rudderstack.core.internals.storage.BasicStorageProvider
 import java.util.Date
 
 private lateinit var analytics: Analytics
@@ -21,7 +20,6 @@ fun main() {
             logger = KotlinLogger(initialLogLevel = Logger.LogLevel.DEBUG),
             optOut = false,
             gzipEnabled = DEFAULT_GZIP_STATUS,
-            storageProvider = BasicStorageProvider.getStorage("<WRITE KEY>", "Rudderstack jvm application"),
         )
     )
 
