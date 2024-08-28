@@ -44,8 +44,7 @@ class MessageBatchFileManagerTest {
     }
 
     @Test
-    fun `given no batch file exists, when storeEvent is called, then a file is created`() = runBlocking {
-        messageBatchFileManager.rollover()
+    fun `when storeEvent is called, then a file is created`() = runBlocking {
         messageBatchFileManager.storeEvent(provideEvent())
 
         val files = directory.listFiles()
@@ -54,7 +53,8 @@ class MessageBatchFileManagerTest {
     }
 
     @Test
-    fun `given the batch file exists, when storeEvent is called, then a file is created`() = runBlocking {
+    fun `given no batch file exists, when storeEvent is called, then a file is created`() = runBlocking {
+        messageBatchFileManager.rollover()
         messageBatchFileManager.storeEvent(provideEvent())
 
         val files = directory.listFiles()
