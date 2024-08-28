@@ -11,7 +11,6 @@ import java.util.concurrent.Semaphore
 internal const val FILE_INDEX = "rudderstack.message.file.index."
 private const val BATCH_PREFIX = "{\"batch\":["
 internal const val BATCH_SENT_AT_SUFFIX = "],\"sentAt\":\""
-private const val BATCH_WRITE_KEY_SUFFIX = "\",\"writeKey\":"
 internal const val TMP_SUFFIX = ".tmp"
 
 class MessageBatchFileManager(
@@ -80,7 +79,7 @@ class MessageBatchFileManager(
         val file = currentFile()
         if (!file.exists()) return
         DateTimeInstant.now()
-        val contents = BATCH_SENT_AT_SUFFIX + DateTimeInstant.now() + BATCH_WRITE_KEY_SUFFIX + "\"" + writeKey + "\"" + "}"
+        val contents = BATCH_SENT_AT_SUFFIX + DateTimeInstant.now() + "}"
         writeToFile(contents.toByteArray(), file)
         file.renameTo(File(directory, file.nameWithoutExtension))
         os?.close()
