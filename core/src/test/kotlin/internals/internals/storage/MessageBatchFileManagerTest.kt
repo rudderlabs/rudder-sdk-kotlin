@@ -145,7 +145,7 @@ class MessageBatchFileManagerTest {
         val fileUrls = messageBatchFileManager.read()
         assertEquals(1, fileUrls.size)
 
-        val expectedContents = """ {"batch":[${event}],"sentAt":"$epochTimestamp","writeKey":"$writeKey"}""".trim()
+        val expectedContents = """ {"batch":[${event}],"sentAt":"$epochTimestamp}""".trim()
         val newFile = File(directory, fileName)
         assertTrue(newFile.exists())
 
@@ -203,7 +203,7 @@ class MessageBatchFileManagerTest {
         messageBatchFileManager.read().let {
             assertEquals(1, it.size)
             val expectedContents =
-                """ {"batch":[${provideEvent()}],"sentAt":"$epochTimestamp","writeKey":"$writeKey"}""".trim()
+                """ {"batch":[${provideEvent()}],"sentAt":"$epochTimestamp}""".trim()
             val newFile = File(directory, fileName)
             assertTrue(newFile.exists())
             val actualContents = newFile.readText()
