@@ -1,5 +1,3 @@
-### [PR title](https://linear.app/rudderstack/issue/SDK-xxx/link)
-
 ## Description
 <!-- Please include a summary of the change and which issue is fixed or features are added. Also, provide relevant motivation and context. If this is a breaking change, explain why and what to expect. -->
 
