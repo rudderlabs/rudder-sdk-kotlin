@@ -1,10 +1,5 @@
-package internals.internals.storage
+package com.rudderstack.core.internals.storage
 
-import com.rudderstack.core.internals.storage.FILE_DIRECTORY
-import com.rudderstack.core.internals.storage.FILE_INDEX
-import com.rudderstack.core.internals.storage.MessageBatchFileManager
-import com.rudderstack.core.internals.storage.PropertiesFile
-import com.rudderstack.core.internals.storage.TMP_SUFFIX
 import com.rudderstack.core.internals.utils.DateTimeInstant
 import io.mockk.*
 import junit.framework.TestCase.assertEquals
