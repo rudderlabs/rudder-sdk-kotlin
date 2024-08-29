@@ -29,7 +29,7 @@ class MessageBatchFileManager(
     private var curFile: File? = null
     private val semaphore = Semaphore(1)
 
-    suspend fun storeMessage(message: String) = withLock {
+    suspend fun storeMessage(messagePayload: String) = withLock {
         var newFile = false
         var file = currentFile()
 
@@ -47,7 +47,7 @@ class MessageBatchFileManager(
             newFile = true
         }
 
-        val contents = if (newFile) message else ",$message"
+        val contents = if (newFile) messagePayload else ",$messagePayload"
         writeToFile(contents.toByteArray(), file)
     }
 
