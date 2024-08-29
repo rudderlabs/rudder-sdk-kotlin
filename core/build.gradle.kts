@@ -10,9 +10,13 @@ java {
 }
 
 dependencies {
+    //api
     api(libs.kotlinx.serialization.json)
+
+    //implementation
     implementation(libs.kotlinx.coroutines.core)
 
+    //compileOnly
     compileOnly(libs.gson)
     compileOnly(libs.jackson.core)
     compileOnly(libs.jackson.module)
@@ -20,6 +24,9 @@ dependencies {
     compileOnly(libs.moshi.kotlin)
     compileOnly(libs.moshi.adapters)
 
+
+    //testImplementation
+    testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.awaitility)
     testImplementation(libs.junit)
     testImplementation(libs.hamcrest)
