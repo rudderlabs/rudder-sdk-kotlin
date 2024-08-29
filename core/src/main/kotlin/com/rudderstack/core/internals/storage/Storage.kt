@@ -21,6 +21,7 @@ interface Storage {
 
 enum class StorageKeys(val key: String) {
     RUDDER_EVENT("rl_event"),
+    RUDDER_OPTIONAL("")
 }
 
 interface StorageProvider {
