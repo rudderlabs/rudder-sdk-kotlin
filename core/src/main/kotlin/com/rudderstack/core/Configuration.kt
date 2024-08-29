@@ -23,5 +23,6 @@ open class Configuration @JvmOverloads constructor(
 interface CoroutineConfiguration {
     val analyticsScope: CoroutineScope
     val analyticsDispatcher: CoroutineDispatcher
+    val storageDispatcher: CoroutineDispatcher
     val networkDispatcher: CoroutineDispatcher
 }
