@@ -20,9 +20,10 @@ interface Plugin {
     fun teardown() {}
 
     enum class PluginType {
-        PreProcess,
-        OnProcess,
-        Integrations,
-        Utility,
+        PreProcess, // Executed before event processing begins.
+        OnProcess, // Executed as the first level of event processing.
+        Destination, // Executed as events begin to pass off to destinations
+        After, // Executed after all event processing is completed.  This can be used to perform cleanup operations, etc.
+        Manual //  Executed only when called manually, such as Session.
     }
 }
