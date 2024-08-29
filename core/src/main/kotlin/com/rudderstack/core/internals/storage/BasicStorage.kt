@@ -79,6 +79,10 @@ class BasicStorage(writeKey: String) : Storage {
             propertiesFile.getString(key.key, defaultVal)
         }
     }
+
+    override fun readEventsContent(): List<String> {
+        return eventsFile.read()
+    }
 }
 
 object BasicStorageProvider : StorageProvider {
