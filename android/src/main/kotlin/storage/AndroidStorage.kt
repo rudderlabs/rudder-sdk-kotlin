@@ -20,7 +20,7 @@ class AndroidStorage(
 ) : Storage {
 
     private val storageDirectory: File = context.getDir(DIRECTORY_NAME, Context.MODE_PRIVATE)
-    private val eventsFile = MessageBatchFileManager(storageDirectory, writeKey, rudderPrefsRepo)
+    private val messageBatchFile = MessageBatchFileManager(storageDirectory, writeKey, rudderPrefsRepo)
 
     override suspend fun write(key: StorageKeys, value: Boolean) {
         if (key != StorageKeys.RUDDER_EVENT) {
@@ -31,7 +31,7 @@ class AndroidStorage(
     override suspend fun write(key: StorageKeys, value: String) {
         if (key == StorageKeys.RUDDER_EVENT) {
             if (value.length < MAX_EVENT_SIZE) {
-                eventsFile.storeEvent(value)
+                messageBatchFile.storeEvent(value)
             } else {
                 throw Exception("queued payload is too large")
             }
@@ -57,11 +57,11 @@ class AndroidStorage(
     }
 
     override fun remove(filePath: String) {
-        eventsFile.remove(filePath)
+        messageBatchFile.remove(filePath)
     }
 
     override suspend fun rollover() {
-        eventsFile.rollover()
+        messageBatchFile.rollover()
     }
 
     override fun readInt(key: StorageKeys, defaultVal: Int): Int {
@@ -78,14 +78,14 @@ class AndroidStorage(
 
     override fun readString(key: StorageKeys, defaultVal: String): String {
         return if (key == StorageKeys.RUDDER_EVENT) {
-            eventsFile.read().joinToString()
+            messageBatchFile.read().joinToString()
         } else {
             rudderPrefsRepo.getString(key.key, defaultVal)
         }
     }
 
     override fun readEventsContent(): List<String> {
-        return eventsFile.read()
+        return messageBatchFile.read()
     }
 }
 
