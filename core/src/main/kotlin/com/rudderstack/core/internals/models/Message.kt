@@ -30,6 +30,7 @@ enum class MessageType {
 
 /**
  * Principal type class for any message type and will be one of
+ * @see FlushMessage
  * @see TrackEvent
  * @see FlushMessage
  */
