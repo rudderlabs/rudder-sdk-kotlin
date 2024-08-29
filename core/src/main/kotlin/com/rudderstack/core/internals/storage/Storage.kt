@@ -16,6 +16,7 @@ interface Storage {
     fun readLong(key: StorageKeys, defaultVal: Long): Long
     fun readString(key: StorageKeys, defaultVal: String): String
     fun remove(filePath: String) {}
+    fun readEventsContent(): List<String>
 }
 
 enum class StorageKeys(val key: String) {
