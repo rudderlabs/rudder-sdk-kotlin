@@ -2,7 +2,7 @@ package com.rudderstack.android.storage
 
 import android.content.Context
 import com.rudderstack.core.internals.storage.KeyValueStorage
-import com.rudderstack.core.internals.storage.MAX_EVENT_SIZE
+import com.rudderstack.core.internals.storage.MAX_PAYLOAD_SIZE
 import com.rudderstack.core.internals.storage.MessageBatchFileManager
 import com.rudderstack.core.internals.storage.Storage
 import com.rudderstack.core.internals.storage.StorageKeys
@@ -23,15 +23,15 @@ class AndroidStorage(
     private val messageBatchFile = MessageBatchFileManager(storageDirectory, writeKey, rudderPrefsRepo)
 
     override suspend fun write(key: StorageKeys, value: Boolean) {
-        if (key != StorageKeys.RUDDER_EVENT) {
+        if (key != StorageKeys.RUDDER_MESSAGE) {
             rudderPrefsRepo.save(key.key, value)
         }
     }
 
     override suspend fun write(key: StorageKeys, value: String) {
-        if (key == StorageKeys.RUDDER_EVENT) {
-            if (value.length < MAX_EVENT_SIZE) {
-                messageBatchFile.storeEvent(value)
+        if (key == StorageKeys.RUDDER_MESSAGE) {
+            if (value.length < MAX_PAYLOAD_SIZE) {
+                messageBatchFile.storeMessage(value)
             } else {
                 throw Exception("queued payload is too large")
             }
@@ -41,13 +41,13 @@ class AndroidStorage(
     }
 
     override suspend fun write(key: StorageKeys, value: Int) {
-        if (key != StorageKeys.RUDDER_EVENT) {
+        if (key != StorageKeys.RUDDER_MESSAGE) {
             rudderPrefsRepo.save(key.key, value)
         }
     }
 
     override suspend fun write(key: StorageKeys, value: Long) {
-        if (key != StorageKeys.RUDDER_EVENT) {
+        if (key != StorageKeys.RUDDER_MESSAGE) {
             rudderPrefsRepo.save(key.key, value)
         }
     }
@@ -77,14 +77,14 @@ class AndroidStorage(
     }
 
     override fun readString(key: StorageKeys, defaultVal: String): String {
-        return if (key == StorageKeys.RUDDER_EVENT) {
+        return if (key == StorageKeys.RUDDER_MESSAGE) {
             messageBatchFile.read().joinToString()
         } else {
             rudderPrefsRepo.getString(key.key, defaultVal)
         }
     }
 
-    override fun readEventsContent(): List<String> {
+    override fun readMessageContent(): List<String> {
         return messageBatchFile.read()
     }
 }

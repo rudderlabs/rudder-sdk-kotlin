@@ -15,11 +15,11 @@ internal class PluginChain(
 
     lateinit var analytics: Analytics
 
-    fun process(incomingEvent: Message) {
+    fun process(message: Message) {
         if (analytics.configuration.optOut) {
             return
         }
-        val preProcessResult = applyPlugins(Plugin.PluginType.PreProcess, incomingEvent)
+        val preProcessResult = applyPlugins(Plugin.PluginType.PreProcess, message)
         val onProcessResult = applyPlugins(Plugin.PluginType.OnProcess, preProcessResult)
         applyPlugins(Plugin.PluginType.Destination, onProcessResult)
     }
@@ -45,15 +45,15 @@ internal class PluginChain(
         }
     }
 
-    private fun applyPlugins(pluginType: Plugin.PluginType, event: Message?): Message? {
-        var result: Message? = event
+    private fun applyPlugins(pluginType: Plugin.PluginType, message: Message?): Message? {
+        var result: Message? = message
         val mediator = pluginList[pluginType]
         result = applyPlugins(mediator, result)
         return result
     }
 
-    private fun applyPlugins(mediator: PluginInteractor?, event: Message?): Message? {
-        var result: Message? = event
+    private fun applyPlugins(mediator: PluginInteractor?, message: Message?): Message? {
+        var result: Message? = message
         result?.let { e ->
             result = mediator?.execute(e)
         }

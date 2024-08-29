@@ -1,7 +1,7 @@
 package com.rudderstack.android.storage
 
 import android.content.Context
-import com.rudderstack.core.internals.storage.MAX_EVENT_SIZE
+import com.rudderstack.core.internals.storage.MAX_PAYLOAD_SIZE
 import com.rudderstack.core.internals.storage.StorageKeys
 import io.mockk.every
 import io.mockk.mockk
@@ -40,12 +40,12 @@ class AndroidStorageTest {
     }
 
     @Test(expected = Exception::class)
-    fun `given Android storage with large event, when write is called, then test write string value exceeding max size`() =
+    fun `given Android storage with large message, when write is called, then test write string value exceeding max size`() =
         runTest {
-            val key = StorageKeys.RUDDER_EVENT
-            val largeEvent = "x".repeat(MAX_EVENT_SIZE + 1)
+            val key = StorageKeys.RUDDER_MESSAGE
+            val largeMessagePayload = "x".repeat(MAX_PAYLOAD_SIZE + 1)
 
-            storage.write(key, largeEvent)
+            storage.write(key, largeMessagePayload)
         }
 
     @Test

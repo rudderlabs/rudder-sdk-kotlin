@@ -1,6 +1,6 @@
 package com.rudderstack.core.internals.storage
 
-const val MAX_EVENT_SIZE = 32 * 1024 // 32 KB
+const val MAX_PAYLOAD_SIZE = 32 * 1024 // 32 KB
 const val MAX_BATCH_SIZE = 500 * 1024 // 500 KB
 
 interface Storage {
@@ -16,11 +16,11 @@ interface Storage {
     fun readLong(key: StorageKeys, defaultVal: Long): Long
     fun readString(key: StorageKeys, defaultVal: String): String
     fun remove(filePath: String) {}
-    fun readEventsContent(): List<String>
+    fun readMessageContent(): List<String>
 }
 
 enum class StorageKeys(val key: String) {
-    RUDDER_EVENT("rl_event"),
+    RUDDER_MESSAGE("rl_message"),
     RUDDER_OPTIONAL("")
 }
 

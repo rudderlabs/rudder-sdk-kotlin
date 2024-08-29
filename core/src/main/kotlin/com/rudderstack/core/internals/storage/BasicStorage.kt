@@ -9,25 +9,25 @@ private const val FILE_NAME = "messages"
 class BasicStorage(writeKey: String) : Storage {
 
     private val storageDirectory = File(writeKey.toFileDirectory(FILE_DIRECTORY))
-    private val storageDirectoryEvents = File(storageDirectory, FILE_NAME)
+    private val messageStorageDirectory = File(storageDirectory, FILE_NAME)
 
     private val propertiesFile = PropertiesFile(storageDirectory, writeKey)
-    private val eventsFile = MessageBatchFileManager(storageDirectoryEvents, writeKey, propertiesFile)
+    private val messagesFile = MessageBatchFileManager(messageStorageDirectory, writeKey, propertiesFile)
 
     init {
         propertiesFile.load()
     }
 
     override suspend fun write(key: StorageKeys, value: Boolean) {
-        if (key != StorageKeys.RUDDER_EVENT) {
+        if (key != StorageKeys.RUDDER_MESSAGE) {
             propertiesFile.save(key.key, value)
         }
     }
 
     override suspend fun write(key: StorageKeys, value: String) {
-        if (key == StorageKeys.RUDDER_EVENT) {
-            if (value.length < MAX_EVENT_SIZE) {
-                eventsFile.storeEvent(value)
+        if (key == StorageKeys.RUDDER_MESSAGE) {
+            if (value.length < MAX_PAYLOAD_SIZE) {
+                messagesFile.storeMessage(value)
             } else {
                 throw Exception("enqueued payload is too large")
             }
@@ -37,13 +37,13 @@ class BasicStorage(writeKey: String) : Storage {
     }
 
     override suspend fun write(key: StorageKeys, value: Int) {
-        if (key != StorageKeys.RUDDER_EVENT) {
+        if (key != StorageKeys.RUDDER_MESSAGE) {
             propertiesFile.save(key.key, value)
         }
     }
 
     override suspend fun write(key: StorageKeys, value: Long) {
-        if (key != StorageKeys.RUDDER_EVENT) {
+        if (key != StorageKeys.RUDDER_MESSAGE) {
             propertiesFile.save(key.key, value)
         }
     }
@@ -53,11 +53,11 @@ class BasicStorage(writeKey: String) : Storage {
     }
 
     override fun remove(filePath: String) {
-        eventsFile.remove(filePath)
+        messagesFile.remove(filePath)
     }
 
     override suspend fun rollover() {
-        eventsFile.rollover()
+        messagesFile.rollover()
     }
 
     override fun readInt(key: StorageKeys, defaultVal: Int): Int {
@@ -73,15 +73,15 @@ class BasicStorage(writeKey: String) : Storage {
     }
 
     override fun readString(key: StorageKeys, defaultVal: String): String {
-        return if (key == StorageKeys.RUDDER_EVENT) {
-            eventsFile.read().joinToString()
+        return if (key == StorageKeys.RUDDER_MESSAGE) {
+            messagesFile.read().joinToString()
         } else {
             propertiesFile.getString(key.key, defaultVal)
         }
     }
 
-    override fun readEventsContent(): List<String> {
-        return eventsFile.read()
+    override fun readMessageContent(): List<String> {
+        return messagesFile.read()
     }
 }
 

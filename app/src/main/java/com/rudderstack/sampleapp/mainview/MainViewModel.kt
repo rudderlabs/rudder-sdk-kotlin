@@ -15,9 +15,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _state = MutableStateFlow(MainViewModelState())
     val state = _state.asStateFlow()
 
-    internal fun onEventClicked(analytics: AnalyticsState) {
+    internal fun onMessageClicked(analytics: AnalyticsState) {
         val log = when (analytics) {
-            AnalyticsState.TrackEvent -> {
+            AnalyticsState.TrackMessage -> {
                 RudderAnalyticsUtils.analytics.track(
                     name = "Track at ${Date()}",
                     properties = Properties(emptyMap()),

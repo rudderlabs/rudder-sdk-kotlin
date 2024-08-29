@@ -23,10 +23,10 @@ fun main() {
         )
     )
 
-    makeAllEventsDirectlyUsingKotlinEventsAPI(analytics)
+    trackMessageKotlinAPI(analytics)
 }
 
-fun makeAllEventsDirectlyUsingKotlinEventsAPI(analytics: Analytics) {
+fun trackMessageKotlinAPI(analytics: Analytics) {
     analytics.track(
         name = "Track at ${Date()}",
         properties = Properties(emptyMap()),
