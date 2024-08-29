@@ -67,7 +67,7 @@ class MessageQueue(
         writeChannel.cancel()
     }
 
-    open fun stringifyBaseEvent(payload: Message): String {
+    internal fun stringifyBaseEvent(payload: Message): String {
         return Json.encodeToString(payload)
     }
 
@@ -97,8 +97,6 @@ class MessageQueue(
             }
             val fileUrlList = storage.readString(StorageKeys.RUDDER_MESSAGE, String.empty()).parseFilePaths()
             for (url in fileUrlList) {
-                // upload event file
-
                 val file = File(url)
                 analytics.configuration.logger.debug(TAG, "-------> url $url")
                 if (!file.exists()) continue
