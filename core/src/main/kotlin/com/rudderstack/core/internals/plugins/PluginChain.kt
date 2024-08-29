@@ -7,8 +7,9 @@ internal class PluginChain(
     private val pluginList: Map<Plugin.PluginType, PluginInteractor> = mapOf(
         Plugin.PluginType.PreProcess to PluginInteractor(),
         Plugin.PluginType.OnProcess to PluginInteractor(),
-        Plugin.PluginType.Integrations to PluginInteractor(),
-        Plugin.PluginType.Utility to PluginInteractor(),
+        Plugin.PluginType.Destination to PluginInteractor(),
+        Plugin.PluginType.After to PluginInteractor(),
+        Plugin.PluginType.Manual to PluginInteractor(),
     )
 ) {
 
@@ -20,7 +21,7 @@ internal class PluginChain(
         }
         val preProcessResult = applyPlugins(Plugin.PluginType.PreProcess, incomingEvent)
         val onProcessResult = applyPlugins(Plugin.PluginType.OnProcess, preProcessResult)
-        applyPlugins(Plugin.PluginType.Integrations, onProcessResult)
+        applyPlugins(Plugin.PluginType.Destination, onProcessResult)
     }
 
     fun add(plugin: Plugin) {
