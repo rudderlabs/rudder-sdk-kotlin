@@ -23,10 +23,14 @@ enum class MessageType {
 
     @SerialName("track")
     Track,
+
+    @SerialName("flush")
+    Flush
 }
 
 /**
  * Principal type class for any message type and will be one of
+ * @see FlushMessage
  * @see TrackEvent
  */
 
@@ -52,6 +56,10 @@ sealed class Message {
                 name = this.name,
                 options = this.options,
                 properties = this.properties
+            )
+
+            is FlushMessage -> FlushMessage(
+                messageName = this.messageName,
             )
         }.apply {
             messageId = original.messageId
@@ -89,6 +97,39 @@ sealed class Message {
 }
 
 @Serializable
+@SerialName("flush")
+data class FlushMessage(
+    var messageName: String,
+) : Message() {
+
+    override var type: MessageType = MessageType.Flush
+    override lateinit var messageId: String
+    override lateinit var context: AnalyticsContext
+    override var newId: String = ""
+
+    override lateinit var originalTimestamp: String
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        if (!super.equals(other)) return false
+
+        other as FlushMessage
+
+        if (messageName != other.messageName) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = super.hashCode()
+        result = 31 * result + messageName.hashCode()
+        return result
+    }
+}
+
+
+@Serializable
 @SerialName("track")
 data class TrackEvent(
     var name: String,
@@ -122,7 +163,6 @@ data class TrackEvent(
         result = 31 * result + name.hashCode()
         return result
     }
-
 }
 
 object BaseMessageSerializer : JsonContentPolymorphicSerializer<Message>(Message::class) {
