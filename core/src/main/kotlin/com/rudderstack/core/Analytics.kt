@@ -17,6 +17,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 
+@OptIn(ExperimentalCoroutinesApi::class)
 open class Analytics protected constructor(
     val configuration: Configuration,
     coroutineConfig: CoroutineConfiguration,
@@ -36,8 +37,7 @@ open class Analytics protected constructor(
             }
             override val analyticsScope: CoroutineScope = CoroutineScope(SupervisorJob() + handler)
             override val analyticsDispatcher: CoroutineDispatcher = Dispatchers.IO
-
-            @OptIn(ExperimentalCoroutinesApi::class)
+            override val storageDispatcher: CoroutineDispatcher = Dispatchers.IO
             override val networkDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(1)
         }
     )
