@@ -3,7 +3,7 @@ package com.rudderstack.core
 import com.rudderstack.core.internals.models.Message
 import com.rudderstack.core.internals.models.Properties
 import com.rudderstack.core.internals.models.RudderOption
-import com.rudderstack.core.internals.models.TrackMessage
+import com.rudderstack.core.internals.models.TrackEvent
 import com.rudderstack.core.internals.models.emptyJsonObject
 import com.rudderstack.core.internals.plugins.Plugin
 import com.rudderstack.core.internals.plugins.PluginChain
@@ -49,8 +49,8 @@ open class Analytics protected constructor(
         properties: Properties = emptyJsonObject,
         options: RudderOption,
     ) {
-        val message = TrackMessage(
-            messageName = name,
+        val message = TrackEvent(
+            name = name,
             properties = properties,
             options = options,
         )
