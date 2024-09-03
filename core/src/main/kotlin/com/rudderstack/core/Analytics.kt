@@ -75,6 +75,10 @@ open class Analytics protected constructor(
     private fun setup() {
         add(PocPlugin())
         add(RudderstackDataplanePlugin())
+
+        analyticsScope.launch(analyticsDispatcher) {
+            fetchSourceConfig()
+        }
     }
 
     private fun add(plugin: Plugin) {
