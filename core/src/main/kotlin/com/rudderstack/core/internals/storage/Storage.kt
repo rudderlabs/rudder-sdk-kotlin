@@ -17,11 +17,31 @@ interface Storage {
     fun readString(key: StorageKeys, defaultVal: String): String
     fun remove(filePath: String) {}
     fun readMessageContent(): List<String>
+    fun getLibraryVersion(): LibraryVersion
 }
 
 enum class StorageKeys(val key: String) {
     RUDDER_MESSAGE("rl_message"),
     RUDDER_OPTIONAL("")
+}
+
+interface LibraryVersion {
+
+    fun getPlatform(): String
+    fun getVersionName(): String
+    fun getVersionCode(): String
+
+    fun toMap(): Map<String, String> {
+        // This is needed to ensure that URL encoding is done properly
+        if (getPlatform().isEmpty() || getVersionName().isEmpty() || getVersionCode().isEmpty()) {
+            return emptyMap()
+        }
+        return mapOf(
+            "p" to getPlatform(),
+            "v" to getVersionName(),
+            "bv" to getVersionCode()
+        )
+    }
 }
 
 interface StorageProvider {

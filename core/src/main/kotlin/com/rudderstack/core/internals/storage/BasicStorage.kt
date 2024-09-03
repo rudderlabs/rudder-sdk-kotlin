@@ -1,6 +1,7 @@
 package com.rudderstack.core.internals.storage
 
 import com.rudderstack.core.internals.utils.toFileDirectory
+import source.version.VersionConstants
 import java.io.File
 
 const val FILE_DIRECTORY = "/tmp/rudderstack-analytics-kotlin/"
@@ -82,6 +83,16 @@ class BasicStorage(writeKey: String) : Storage {
 
     override fun readMessageContent(): List<String> {
         return messagesFile.read()
+    }
+
+    override fun getLibraryVersion(): LibraryVersion {
+        return object : LibraryVersion {
+            override fun getPlatform(): String = "kotlin"
+
+            override fun getVersionName(): String = VersionConstants.VERSION_NAME
+
+            override fun getVersionCode(): String = VersionConstants.VERSION_CODE
+        }
     }
 }
 
