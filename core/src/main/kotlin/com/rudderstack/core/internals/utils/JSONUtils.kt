@@ -424,7 +424,7 @@ fun Any.toJsonElement(): JsonElement {
     return JsonNull
 }
 
-fun JsonObject.toBaseEvent(): Message? {
+fun JsonObject.toBaseMessage(): Message? {
     val type = getString("type")
 
     return when (type) {

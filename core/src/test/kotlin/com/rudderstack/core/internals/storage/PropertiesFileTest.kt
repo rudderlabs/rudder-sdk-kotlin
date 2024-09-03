@@ -1,6 +1,5 @@
-package internals.internals.storage
+package com.rudderstack.core.internals.storage
 
-import com.rudderstack.core.internals.storage.PropertiesFile
 import junit.framework.TestCase.assertEquals
 import org.junit.Before
 import org.junit.Test

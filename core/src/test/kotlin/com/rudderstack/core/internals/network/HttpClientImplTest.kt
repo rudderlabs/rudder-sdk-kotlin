@@ -1,16 +1,8 @@
-package internals.internals.network
+package com.rudderstack.core.internals.network
 
-import com.rudderstack.core.internals.network.getErrorResponse
-import com.rudderstack.core.internals.network.getSuccessResponse
-import com.rudderstack.core.internals.network.ErrorStatus
-import com.rudderstack.core.internals.network.Failure
-import com.rudderstack.core.internals.network.HttpURLConnectionFactory
-import com.rudderstack.core.internals.network.Result
-import com.rudderstack.core.internals.network.Success
-import com.rudderstack.core.internals.network.HttpClientImpl
-import internals.internals.network.provider.provideErrorMessage
-import internals.internals.network.provider.provideHttpClientImplForGetRequest
-import internals.internals.network.provider.provideHttpClientImplForPostRequest
+import com.rudderstack.core.internals.network.provider.provideErrorMessage
+import com.rudderstack.core.internals.network.provider.provideHttpClientImplForGetRequest
+import com.rudderstack.core.internals.network.provider.provideHttpClientImplForPostRequest
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK

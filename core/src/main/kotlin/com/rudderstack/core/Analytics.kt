@@ -17,6 +17,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 
+@OptIn(ExperimentalCoroutinesApi::class)
 open class Analytics protected constructor(
     val configuration: Configuration,
     coroutineConfig: CoroutineConfiguration,
@@ -36,8 +37,7 @@ open class Analytics protected constructor(
             }
             override val analyticsScope: CoroutineScope = CoroutineScope(SupervisorJob() + handler)
             override val analyticsDispatcher: CoroutineDispatcher = Dispatchers.IO
-
-            @OptIn(ExperimentalCoroutinesApi::class)
+            override val storageDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(2)
             override val networkDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(1)
         }
     )
@@ -56,18 +56,18 @@ open class Analytics protected constructor(
         properties: Properties = emptyJsonObject,
         options: RudderOption,
     ) {
-        val event = TrackEvent(
-            event = name,
+        val message = TrackEvent(
+            name = name,
             properties = properties,
             options = options,
         )
-        process(event)
+        process(message)
     }
 
-    private fun process(event: Message) {
-        event.applyBaseData()
+    private fun process(message: Message) {
+        message.applyBaseData()
         analyticsScope.launch(analyticsDispatcher) {
-            pluginChain.process(event)
+            pluginChain.process(message)
         }
     }
 

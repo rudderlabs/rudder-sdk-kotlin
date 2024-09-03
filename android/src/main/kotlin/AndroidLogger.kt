@@ -5,7 +5,6 @@ import com.rudderstack.core.internals.logger.Logger
 
 /**
  * Logger implementation specifically for android.
- *
  */
 class AndroidLogger(
     initialLogLevel: Logger.LogLevel = Logger.DEFAULT_LOG_LEVEL

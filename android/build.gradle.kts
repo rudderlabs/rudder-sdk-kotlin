@@ -31,11 +31,19 @@ android {
 }
 
 dependencies {
-    implementation(libs.android.core.ktx)
+    //api
     api(project(":core"))
-    testImplementation(project(":core"))
+
+    //compileOnly
     compileOnly(libs.work)
     compileOnly(libs.work.multiprocess)
+
+    //implementation
+    implementation(libs.android.core.ktx)
+
+    //testImplementation
+    testImplementation(project(":core"))
+    testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.android.x.test)
     testImplementation(libs.android.x.testrules)
     testImplementation(libs.android.x.test.ext.junitktx)
@@ -48,6 +56,7 @@ dependencies {
     testImplementation(libs.mockk.agent)
     testImplementation(libs.robolectric)
     testImplementation(libs.work.test)
-
+    
+    //androidTestImplementation
     androidTestImplementation(libs.android.x.test.ext.junitktx)
 }
