@@ -27,7 +27,7 @@ enum class MessageType {
 
 /**
  * Principal type class for any message type and will be one of
- * @see TrackMessage
+ * @see TrackEvent
  */
 
 @Serializable(with = BaseMessageSerializer::class)
@@ -48,8 +48,8 @@ sealed class Message {
     fun <T : Message> copy(): T {
         val original = this
         val copy = when (this) {
-            is TrackMessage -> TrackMessage(
-                messageName = this.messageName,
+            is TrackEvent -> TrackEvent(
+                name = this.name,
                 options = this.options,
                 properties = this.properties
             )
@@ -90,8 +90,8 @@ sealed class Message {
 
 @Serializable
 @SerialName("track")
-data class TrackMessage(
-    var messageName: String,
+data class TrackEvent(
+    var name: String,
     var options: RudderOption,
     var properties: Properties,
 ) : Message() {
@@ -108,10 +108,10 @@ data class TrackMessage(
         if (javaClass != other?.javaClass) return false
         if (!super.equals(other)) return false
 
-        other as TrackMessage
+        other as TrackEvent
 
         if (properties != other.properties) return false
-        if (messageName != other.messageName) return false
+        if (name != other.name) return false
 
         return true
     }
@@ -119,7 +119,7 @@ data class TrackMessage(
     override fun hashCode(): Int {
         var result = super.hashCode()
         result = 31 * result + properties.hashCode()
-        result = 31 * result + messageName.hashCode()
+        result = 31 * result + name.hashCode()
         return result
     }
 
@@ -129,7 +129,7 @@ object BaseMessageSerializer : JsonContentPolymorphicSerializer<Message>(Message
 
     override fun selectDeserializer(element: JsonElement): DeserializationStrategy<out Message> {
         return when (element.jsonObject["type"]?.jsonPrimitive?.content) {
-            "track" -> TrackMessage.serializer()
+            "track" -> TrackEvent.serializer()
             else -> throw Exception("Unknown message: key 'type' not found or does not matches any message type")
         }
     }

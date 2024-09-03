@@ -3,7 +3,7 @@
 package com.rudderstack.core.internals.utils
 
 import com.rudderstack.core.internals.models.Message
-import com.rudderstack.core.internals.models.TrackMessage
+import com.rudderstack.core.internals.models.TrackEvent
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.builtins.BooleanArraySerializer
@@ -428,7 +428,7 @@ fun JsonObject.toBaseMessage(): Message? {
     val type = getString("type")
 
     return when (type) {
-        "track" -> LenientJson.decodeFromJsonElement(TrackMessage.serializer(), this)
+        "track" -> LenientJson.decodeFromJsonElement(TrackEvent.serializer(), this)
         else -> null
     }
 }
