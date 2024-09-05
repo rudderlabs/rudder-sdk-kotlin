@@ -9,7 +9,7 @@ import com.rudderstack.core.internals.utils.LenientJson
 import com.rudderstack.core.internals.utils.encodeToBase64
 import kotlinx.coroutines.withContext
 
-private const val SOURCE_CONFIG_ENDPOINT = "sourceConfig"
+private const val SOURCE_CONFIG_ENDPOINT = "/sourceConfig"
 
 class ServerConfigManager(
     private val analytics: Analytics,
