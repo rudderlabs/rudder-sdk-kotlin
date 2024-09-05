@@ -17,7 +17,7 @@ data class RudderServerConfigSource(
     @SerialName("config") val metricConfig: MetricsConfig? = null,
     @SerialName("enabled") val isSourceEnabled: Boolean,
     val workspaceId: String,
-    val destinations: List<Destination>? = null,
+    val destinations: List<Destination> = emptyList(),
     val updatedAt: String,
 )
 
