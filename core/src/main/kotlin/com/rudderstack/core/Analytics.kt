@@ -3,12 +3,12 @@ package com.rudderstack.core
 import com.rudderstack.core.internals.models.Message
 import com.rudderstack.core.internals.models.Properties
 import com.rudderstack.core.internals.models.RudderOption
-import com.rudderstack.core.internals.models.TrackMessage
+import com.rudderstack.core.internals.models.TrackEvent
 import com.rudderstack.core.internals.models.emptyJsonObject
 import com.rudderstack.core.internals.plugins.Plugin
 import com.rudderstack.core.internals.plugins.PluginChain
 import com.rudderstack.core.plugins.PocPlugin
-import com.rudderstack.core.plugins.RudderstackDataplanePlugin
+import com.rudderstack.core.plugins.RudderStackDataplanePlugin
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -38,7 +38,7 @@ open class Analytics protected constructor(
             }
             override val analyticsScope: CoroutineScope = CoroutineScope(SupervisorJob() + handler)
             override val analyticsDispatcher: CoroutineDispatcher = Dispatchers.IO
-            override val storageDispatcher: CoroutineDispatcher = Dispatchers.IO
+            override val storageDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(2)
             override val networkDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(1)
         }
     )
@@ -49,8 +49,8 @@ open class Analytics protected constructor(
         properties: Properties = emptyJsonObject,
         options: RudderOption,
     ) {
-        val message = TrackMessage(
-            messageName = name,
+        val message = TrackEvent(
+            name = name,
             properties = properties,
             options = options,
         )
@@ -59,7 +59,7 @@ open class Analytics protected constructor(
 
     fun flush() {
         this.pluginChain.applyClosure {
-            if (it is RudderstackDataplanePlugin) {
+            if (it is RudderStackDataplanePlugin) {
                 it.flush()
             }
         }
@@ -74,7 +74,7 @@ open class Analytics protected constructor(
 
     private fun setup() {
         add(PocPlugin())
-        add(RudderstackDataplanePlugin())
+        add(RudderStackDataplanePlugin())
 
         analyticsScope.launch(analyticsDispatcher) {
             ServerConfigManager(analytics = this@Analytics)
