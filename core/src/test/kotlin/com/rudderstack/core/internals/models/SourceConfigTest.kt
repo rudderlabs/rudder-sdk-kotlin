@@ -1,11 +1,9 @@
 package com.rudderstack.core.internals.models
 
 import com.rudderstack.core.internals.utils.LenientJson
+import com.rudderstack.core.readFileAsString
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.io.BufferedReader
 
 private const val ID = "<SOURCE_ID>"
 private const val NAME = "Android"
@@ -30,9 +28,7 @@ class SourceConfigTest {
 
         val sourceConfig = LenientJson.decodeFromString<SourceConfig>(jsonString)
 
-        checkDefaultSourceConfigProperties(sourceConfig)
-        checkMetricsSourceConfigProperties(sourceConfig)
-        assertEquals(0, sourceConfig.source.destinations?.size)
+        assertEquals(provideSourceConfigWithoutDestination(), sourceConfig)
     }
 
     @Test
@@ -41,25 +37,16 @@ class SourceConfigTest {
 
         val sourceConfig = LenientJson.decodeFromString<SourceConfig>(jsonString)
 
-        checkDefaultSourceConfigProperties(sourceConfig)
-        checkMetricsSourceConfigProperties(sourceConfig)
-        assertEquals(1, sourceConfig.source.destinations?.size)
-        val destination = sourceConfig.source.destinations?.get(0)
-        checkDestinationSourceConfigProperties(destination)
+        assertEquals(provideSourceConfigWithOneDestination(), sourceConfig)
     }
 
     @Test
-    fun `given source config with multiple destination, when source config is parsed, then source config object should be created`() {
+    fun `given source config with multiple destinations, when source config is parsed, then source config object should be created`() {
         val jsonString = readFileAsString(sourceConfigWithMultipleDestination)
 
         val sourceConfig = LenientJson.decodeFromString<SourceConfig>(jsonString)
 
-        checkDefaultSourceConfigProperties(sourceConfig)
-        checkMetricsSourceConfigProperties(sourceConfig)
-        assertEquals(2, sourceConfig.source.destinations?.size)
-        for (destination in sourceConfig.source.destinations ?: emptyList()) {
-            checkDestinationSourceConfigProperties(destination)
-        }
+        assertEquals(provideSourceConfigWithMultipleDestinations(), sourceConfig)
     }
 
     @Test
@@ -68,40 +55,108 @@ class SourceConfigTest {
 
         val sourceConfig = LenientJson.decodeFromString<SourceConfig>(jsonString)
 
-        checkDefaultSourceConfigProperties(sourceConfig)
-        assertEquals(null, sourceConfig.source.metricConfig)
-    }
-
-    private fun checkDefaultSourceConfigProperties(sourceConfig: SourceConfig) {
-        assertEquals(ID, sourceConfig.source.sourceId)
-        assertEquals(NAME, sourceConfig.source.sourceName)
-        assertEquals(WRITE_KEY, sourceConfig.source.writeKey)
-        assertEquals(ENABLED, sourceConfig.source.isSourceEnabled)
-        assertEquals(WORKSPACE_ID, sourceConfig.source.workspaceId)
-        assertEquals(UPDATED_AT, sourceConfig.source.updatedAt)
-    }
-
-    private fun checkMetricsSourceConfigProperties(sourceConfig: SourceConfig) {
-        assertEquals(ERROR_COLLECTION_ENABLED, sourceConfig.source.metricConfig?.statsCollection?.errors?.enabled)
-        assertEquals(METRICS_COLLECTION_ENABLED, sourceConfig.source.metricConfig?.statsCollection?.metrics?.enabled)
-    }
-
-    private fun checkDestinationSourceConfigProperties(destination: Destination?) {
-        assertTrue(destination?.destinationId?.isNotEmpty() ?: false)
-        assertTrue(destination?.destinationName?.isNotEmpty() ?: false)
-        assertTrue(destination?.isDestinationEnabled ?: false)
-        assertTrue(destination?.destinationConfig?.isNotEmpty() ?: false)
-        assertTrue(destination?.destinationDefinitionId?.isNotEmpty() ?: false)
-        assertTrue(destination?.destinationDefinition?.name?.isNotEmpty() ?: false)
-        assertTrue(destination?.destinationDefinition?.displayName?.isNotEmpty() ?: false)
-        assertTrue(destination?.updatedAt?.isNotEmpty() ?: false)
-        assertFalse(destination?.shouldApplyDeviceModeTransformation ?: true)
-        assertFalse(destination?.propagateEventsUntransformedOnError ?: true)
-    }
-
-    private fun readFileAsString(fileName: String): String {
-        val inputStream = this::class.java.classLoader.getResourceAsStream(fileName)
-        return inputStream?.bufferedReader()?.use(BufferedReader::readText) ?: ""
+        assertEquals(provideServerConfigWithoutMetrics(), sourceConfig)
     }
 }
 
+private fun provideSourceConfigWithoutDestination() = provideSourceConfig(
+    source = provideRudderServerConfigSource(
+        sourceId = ID,
+        sourceName = NAME,
+        writeKey = WRITE_KEY,
+        isSourceEnabled = ENABLED,
+        workspaceId = WORKSPACE_ID,
+        updatedAt = UPDATED_AT,
+        metricConfig = provideMetricsConfig(
+            statsCollection = provideStatsCollection(
+                errors = provideErrors(
+                    enabled = ERROR_COLLECTION_ENABLED
+                ),
+                metrics = provideMetrics(
+                    enabled = METRICS_COLLECTION_ENABLED
+                )
+            ),
+        ),
+    )
+)
+
+private fun provideSourceConfigWithOneDestination() = provideSourceConfig(
+    source = provideRudderServerConfigSource(
+        sourceId = ID,
+        sourceName = NAME,
+        writeKey = WRITE_KEY,
+        isSourceEnabled = ENABLED,
+        workspaceId = WORKSPACE_ID,
+        updatedAt = UPDATED_AT,
+        destinations = listOf(
+            provideDestination(
+                destinationName = "Braze Android",
+                destinationDefinition = provideDestinationDefinition(
+                    name = "BRAZE",
+                    displayName = "Braze"
+                ),
+                updatedAt = UPDATED_AT,
+            ),
+        ),
+        metricConfig = provideMetricsConfig(
+            statsCollection = provideStatsCollection(
+                errors = provideErrors(
+                    enabled = ERROR_COLLECTION_ENABLED
+                ),
+                metrics = provideMetrics(
+                    enabled = METRICS_COLLECTION_ENABLED
+                )
+            ),
+        ),
+    )
+)
+
+private fun provideSourceConfigWithMultipleDestinations() = provideSourceConfig(
+    source = provideRudderServerConfigSource(
+        sourceId = ID,
+        sourceName = NAME,
+        writeKey = WRITE_KEY,
+        isSourceEnabled = ENABLED,
+        workspaceId = WORKSPACE_ID,
+        updatedAt = UPDATED_AT,
+        destinations = listOf(
+            provideDestination(
+                destinationName = "FullStory Android",
+                destinationDefinition = provideDestinationDefinition(
+                    name = "FULLSTORY",
+                    displayName = "Fullstory"
+                ),
+                updatedAt = UPDATED_AT,
+            ),
+            provideDestination(
+                destinationName = "Braze Android",
+                destinationDefinition = provideDestinationDefinition(
+                    name = "BRAZE",
+                    displayName = "Braze"
+                ),
+                updatedAt = UPDATED_AT,
+            ),
+        ),
+        metricConfig = provideMetricsConfig(
+            statsCollection = provideStatsCollection(
+                errors = provideErrors(
+                    enabled = ERROR_COLLECTION_ENABLED
+                ),
+                metrics = provideMetrics(
+                    enabled = METRICS_COLLECTION_ENABLED
+                )
+            ),
+        ),
+    )
+)
+
+private fun provideServerConfigWithoutMetrics() = provideSourceConfig(
+    source = provideRudderServerConfigSource(
+        sourceId = ID,
+        sourceName = NAME,
+        writeKey = WRITE_KEY,
+        isSourceEnabled = ENABLED,
+        workspaceId = WORKSPACE_ID,
+        updatedAt = UPDATED_AT,
+    )
+)
