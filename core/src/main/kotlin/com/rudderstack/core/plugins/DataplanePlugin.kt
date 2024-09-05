@@ -3,20 +3,20 @@ package com.rudderstack.core.plugins
 import com.rudderstack.core.Analytics
 import com.rudderstack.core.internals.models.FlushMessage
 import com.rudderstack.core.internals.models.Message
-import com.rudderstack.core.internals.models.TrackMessage
+import com.rudderstack.core.internals.models.TrackEvent
 import com.rudderstack.core.internals.queue.MessageQueue
 import com.rudderstack.core.internals.plugins.MessagePlugin
 import com.rudderstack.core.internals.plugins.Plugin
 import com.rudderstack.core.internals.plugins.PluginChain
 
-class RudderstackDataplanePlugin : MessagePlugin {
+class DataplanePlugin : MessagePlugin {
 
     override val pluginType: Plugin.PluginType = Plugin.PluginType.Destination
     private val pluginChain: PluginChain = PluginChain()
     override lateinit var analytics: Analytics
     private var messageQueue: MessageQueue? = null
 
-    override fun track(payload: TrackMessage): Message {
+    override fun track(payload: TrackEvent): Message {
         enqueue(payload)
         return payload
     }
@@ -45,7 +45,7 @@ class RudderstackDataplanePlugin : MessagePlugin {
         val enrichmentResult = pluginChain.applyPlugins(Plugin.PluginType.OnProcess, beforeResult)
         val destinationResult = enrichmentResult?.let {
             when (it) {
-                is TrackMessage -> {
+                is TrackEvent -> {
                     track(it)
                 }
 
