@@ -2,7 +2,7 @@ package com.rudderstack.core.plugins
 
 import com.rudderstack.core.Analytics
 import com.rudderstack.core.internals.models.FlushMessage
-import com.rudderstack.core.internals.models.TrackMessage
+import com.rudderstack.core.internals.models.TrackEvent
 import com.rudderstack.core.internals.queue.MessageQueue
 import com.rudderstack.core.internals.plugins.Plugin
 import com.rudderstack.core.internals.plugins.PluginChain
@@ -11,12 +11,12 @@ import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 
-class RudderstackDataplanePluginTest {
+class DataplanePluginTest {
 
     private lateinit var analytics: Analytics
     private lateinit var messageQueue: MessageQueue
     private lateinit var pluginChain: PluginChain
-    private lateinit var plugin: RudderstackDataplanePlugin
+    private lateinit var plugin: DataplanePlugin
 
     @Before
     fun setUp() {
@@ -24,7 +24,7 @@ class RudderstackDataplanePluginTest {
         messageQueue = mockk(relaxed = true)
         pluginChain = mockk(relaxed = true)
 
-        plugin = spyk(RudderstackDataplanePlugin(), recordPrivateCalls = true)
+        plugin = spyk(DataplanePlugin(), recordPrivateCalls = true)
 
         plugin.analytics = analytics
         pluginChain.analytics = analytics
@@ -41,7 +41,7 @@ class RudderstackDataplanePluginTest {
 
     @Test
     fun `given a track event, when track is called, then the event is enqueued and returned correctly`() {
-        val trackMessage = mockk<TrackMessage>(relaxed = true)
+        val trackMessage = mockk<TrackEvent>(relaxed = true)
 
         val result = plugin.track(trackMessage)
 
