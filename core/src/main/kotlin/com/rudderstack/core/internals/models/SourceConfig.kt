@@ -14,7 +14,7 @@ data class RudderServerConfigSource(
     @SerialName("id") val sourceId: String,
     @SerialName("name") val sourceName: String,
     val writeKey: String,
-    @SerialName("config") val metricConfig: MetricsConfig? = null,
+    @SerialName("config") val metricConfig: MetricsConfig = MetricsConfig(),
     @SerialName("enabled") val isSourceEnabled: Boolean,
     val workspaceId: String,
     val destinations: List<Destination> = emptyList(),
@@ -23,23 +23,23 @@ data class RudderServerConfigSource(
 
 @Serializable
 data class MetricsConfig(
-    val statsCollection: StatsCollection
+    val statsCollection: StatsCollection = StatsCollection()
 )
 
 @Serializable
 data class StatsCollection(
-    val errors: Errors,
-    val metrics: Metrics
+    val errors: Errors = Errors(),
+    val metrics: Metrics = Metrics(),
 )
 
 @Serializable
 data class Errors(
-    val enabled: Boolean
+    val enabled: Boolean = false
 )
 
 @Serializable
 data class Metrics(
-    val enabled: Boolean
+    val enabled: Boolean = false
 )
 
 @Serializable
