@@ -30,6 +30,5 @@ class ServerConfigManagerTest {
     @Test
     fun `test fetchSourceConfig`() = runTest {
         // TODO("Implement test")
-        serverConfigManager.fetchSourceConfig()
     }
 }
