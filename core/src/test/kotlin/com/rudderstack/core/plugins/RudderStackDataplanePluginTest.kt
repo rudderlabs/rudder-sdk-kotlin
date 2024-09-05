@@ -11,12 +11,12 @@ import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 
-class DataplanePluginTest {
+class RudderStackDataplanePluginTest {
 
     private lateinit var analytics: Analytics
     private lateinit var messageQueue: MessageQueue
     private lateinit var pluginChain: PluginChain
-    private lateinit var plugin: DataplanePlugin
+    private lateinit var plugin: RudderStackDataplanePlugin
 
     @Before
     fun setUp() {
@@ -24,7 +24,7 @@ class DataplanePluginTest {
         messageQueue = mockk(relaxed = true)
         pluginChain = mockk(relaxed = true)
 
-        plugin = spyk(DataplanePlugin(), recordPrivateCalls = true)
+        plugin = spyk(RudderStackDataplanePlugin(), recordPrivateCalls = true)
 
         plugin.analytics = analytics
         pluginChain.analytics = analytics

@@ -9,7 +9,7 @@ import com.rudderstack.core.internals.plugins.MessagePlugin
 import com.rudderstack.core.internals.plugins.Plugin
 import com.rudderstack.core.internals.plugins.PluginChain
 
-class DataplanePlugin : MessagePlugin {
+class RudderStackDataplanePlugin : MessagePlugin {
 
     override val pluginType: Plugin.PluginType = Plugin.PluginType.Destination
     private val pluginChain: PluginChain = PluginChain()
