@@ -23,7 +23,7 @@ import java.io.FileNotFoundException
 internal const val UPLOAD_SIG = "#!upload"
 
 @OptIn(DelicateCoroutinesApi::class)
-class MessageQueue(
+internal class MessageQueue(
     private val analytics: Analytics,
 ) {
     private var running: Boolean
