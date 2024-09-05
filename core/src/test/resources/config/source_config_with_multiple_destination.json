@@ -21,11 +21,6 @@
         "name": "FullStory Android",
         "enabled": true,
         "config": {
-          "fs_org": "<ID>",
-          "blacklistedEvents": [],
-          "whitelistedEvents": [],
-          "oneTrustCookieCategories": [],
-          "eventFilteringOption": "disable"
         },
         "destinationDefinitionId": "<DESTINATION_DEFINITION_ID>",
         "destinationDefinition": {
@@ -41,21 +36,6 @@
         "name": "Braze Android",
         "enabled": true,
         "config": {
-          "appKey": "<BRAZE_APP_KEY>",
-          "dataCenter": "US-03",
-          "trackAnonymousUser": false,
-          "enableSubscriptionGroupInGroupCall": false,
-          "enableNestedArrayOperations": false,
-          "supportDedup": false,
-          "blacklistedEvents": [],
-          "whitelistedEvents": [],
-          "oneTrustCookieCategories": [
-            {
-              "oneTrustCookieCategory": ""
-            }
-          ],
-          "eventFilteringOption": "disable",
-          "connectionMode": "device"
         },
         "destinationDefinitionId": "<DESTINATION_DEFINITION_ID>",
         "destinationDefinition": {
