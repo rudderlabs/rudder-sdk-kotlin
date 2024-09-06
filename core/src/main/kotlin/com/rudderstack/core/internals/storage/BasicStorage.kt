@@ -80,7 +80,7 @@ class BasicStorage(writeKey: String) : Storage {
         }
     }
 
-    override fun readMessageContent(): List<String> {
+    override fun readFileList(): List<String> {
         return messagesFile.read()
     }
 }

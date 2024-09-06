@@ -1,6 +1,7 @@
 package com.rudderstack.core.internals.models
 
 import com.rudderstack.core.internals.utils.DateTimeInstant
+import com.rudderstack.core.internals.utils.empty
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -23,10 +24,14 @@ enum class MessageType {
 
     @SerialName("track")
     Track,
+
+    @SerialName("flush")
+    Flush
 }
 
 /**
  * Principal type class for any message type and will be one of
+ * @see FlushEvent
  * @see TrackEvent
  */
 
@@ -53,6 +58,8 @@ sealed class Message {
                 options = this.options,
                 properties = this.properties
             )
+
+            is FlushEvent -> FlushEvent()
         }.apply {
             messageId = original.messageId
             originalTimestamp = original.originalTimestamp
@@ -89,6 +96,39 @@ sealed class Message {
 }
 
 @Serializable
+@SerialName("flush")
+data class FlushEvent(
+    var messageName: String = String.empty(),
+) : Message() {
+
+    override var type: MessageType = MessageType.Flush
+    override lateinit var messageId: String
+    override lateinit var context: AnalyticsContext
+    override var newId: String = ""
+
+    override lateinit var originalTimestamp: String
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        if (!super.equals(other)) return false
+
+        other as FlushEvent
+
+        if (messageName != other.messageName) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = super.hashCode()
+        result = 31 * result + messageName.hashCode()
+        return result
+    }
+}
+
+
+@Serializable
 @SerialName("track")
 data class TrackEvent(
     var name: String,
@@ -122,7 +162,6 @@ data class TrackEvent(
         result = 31 * result + name.hashCode()
         return result
     }
-
 }
 
 object BaseMessageSerializer : JsonContentPolymorphicSerializer<Message>(Message::class) {

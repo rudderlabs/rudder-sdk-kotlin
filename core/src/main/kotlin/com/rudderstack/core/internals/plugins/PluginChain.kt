@@ -45,7 +45,7 @@ internal class PluginChain(
         }
     }
 
-    private fun applyPlugins(pluginType: Plugin.PluginType, message: Message?): Message? {
+    internal fun applyPlugins(pluginType: Plugin.PluginType, message: Message?): Message? {
         var result: Message? = message
         val mediator = pluginList[pluginType]
         result = applyPlugins(mediator, result)

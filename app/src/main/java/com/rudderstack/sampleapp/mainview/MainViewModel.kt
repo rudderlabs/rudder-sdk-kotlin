@@ -25,6 +25,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 )
                 "Track message sent"
             }
+
+            AnalyticsState.ForceFlush -> {
+                RudderAnalyticsUtils.analytics.flush()
+                "Flushing the message pipeline has"
+            }
         }
         if (log.isNotEmpty()) addLogData(LogData(Date(), log))
     }
