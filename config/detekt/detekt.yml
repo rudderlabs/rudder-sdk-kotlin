@@ -1,3 +1,7 @@
+build:
+  weights:
+    TooGenericExceptionCaught: 0
+
 processors:
   active: true
   exclude:
@@ -20,31 +24,26 @@ output-reports:
     - 'MdOutputReport'
     - 'SarifOutputReport'
 
+comments:
+  excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**']
+  active: true
+  UndocumentedPublicClass:
+    active: true
+  UndocumentedPublicFunction:
+    active: true
+  UndocumentedPublicProperty:
+    active: true
+
 complexity:
   excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**']
   active: true
-  ComplexCondition:
+  LongParameterList:
     active: true
-    threshold: 4
-  CyclomaticComplexMethod:
-    active: true
-    threshold: 15
-    ignoreSingleWhenExpression: false
-    ignoreSimpleWhenEntries: false
-    ignoreNestingFunctions: false
-    nestingFunctions:
-      - 'also'
-      - 'apply'
-      - 'forEach'
-      - 'isNotNull'
-      - 'ifNull'
-      - 'let'
-      - 'run'
-      - 'use'
-      - 'with'
-  LabeledExpression:
-    active: false
-    ignoredLabels: []
+    functionThreshold: 12
+    constructorThreshold: 12
+    ignoreDefaultParameters: false
+    ignoreDataClasses: true
+    ignoreAnnotatedParameter: []
   NamedArguments:
     active: true
     threshold: 3
@@ -52,16 +51,11 @@ complexity:
   ReplaceSafeCallChainWithRun:
     active: true
   TooManyFunctions:
-    active: true
-    thresholdInFiles: 20
-    thresholdInClasses: 20
-    thresholdInInterfaces: 20
-    thresholdInObjects: 20
-    thresholdInEnums: 20
-    ignoreDeprecated: false
-    ignorePrivate: false
-    ignoreOverridden: false
-    ignoreAnnotatedFunctions: []
+    thresholdInFiles: 16
+    thresholdInClasses: 16
+    thresholdInInterfaces: 16
+    thresholdInObjects: 16
+    thresholdInEnums: 16
 
 coroutines:
   excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**']
@@ -76,7 +70,7 @@ coroutines:
       - 'Unconfined'
       - 'Main'
   SuspendFunWithCoroutineScopeReceiver:
-    active: false
+    active: true
 
 empty-blocks:
   active: true
@@ -84,14 +78,6 @@ empty-blocks:
 exceptions:
   excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**']
   active: true
-  SwallowedException:
-    active: false
-    ignoredExceptionTypes:
-      - 'InterruptedException'
-      - 'MalformedURLException'
-      - 'NumberFormatException'
-      - 'ParseException'
-    allowedExceptionNameRegex: '_|(ignore|expected).*'
   TooGenericExceptionCaught:
     active: true
     exceptionNames:
@@ -121,10 +107,23 @@ naming:
 performance:
   excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**']
   active: true
+  CouldBeSequence:
+    active: true
+    threshold: 3
+  UnnecessaryPartOfBinaryExpression:
+    active: true
 
 potential-bugs:
   excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**']
   active: true
+  CastNullableToNonNullableType:
+    active: true
+  CastToNullableType:
+    active: true
+  DontDowncastCollectionTypes:
+    active: true
+  ElseCaseInsteadOfExhaustiveWhen:
+    active: true
 
 style:
   excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**']
