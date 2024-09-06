@@ -84,7 +84,7 @@ class AndroidStorage(
         }
     }
 
-    override fun readMessageContent(): List<String> {
+    override fun readFileList(): List<String> {
         return messageBatchFile.read()
     }
 }

@@ -98,18 +98,14 @@ internal class MessageQueue(
             val fileUrlList = storage.readString(StorageKeys.RUDDER_MESSAGE, String.empty()).parseFilePaths()
             for (url in fileUrlList) {
                 val file = File(url)
-                analytics.configuration.logger.debug(TAG, "-------> url $url")
                 if (!file.exists()) continue
                 var shouldCleanup = true
                 try {
-                    analytics.configuration.logger.debug(
-                        TAG,
-                        "-------> storage.readEventsContent() " + storage.readMessageContent()
-                    )
-                    val eventsData = storage.readMessageContent()
-                    for (events in eventsData) {
+                    val filePathList = storage.readFileList()
+                    for (filePath in filePathList) {
                         try {
-                            val text = readFileAsString(events)
+                            //TODO batch API
+                            val text = readFileAsString(filePath)
                             analytics.configuration.logger.debug(TAG, "-------> readFileAsString: $text")
                         } catch (e: FileNotFoundException) {
                             analytics.configuration.logger.debug(TAG, "Message storage file not found")
@@ -120,7 +116,6 @@ internal class MessageQueue(
                 } catch (e: Exception) {
                     shouldCleanup = handleUploadException(e, file)
                 }
-
                 if (shouldCleanup) {
                     storage.remove(file.path)
                 }
