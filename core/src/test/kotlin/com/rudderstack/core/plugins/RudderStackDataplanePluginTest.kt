@@ -1,7 +1,7 @@
 package com.rudderstack.core.plugins
 
 import com.rudderstack.core.Analytics
-import com.rudderstack.core.internals.models.FlushMessage
+import com.rudderstack.core.internals.models.FlushEvent
 import com.rudderstack.core.internals.models.TrackEvent
 import com.rudderstack.core.internals.queue.MessageQueue
 import com.rudderstack.core.internals.plugins.Plugin
@@ -51,12 +51,12 @@ class RudderStackDataplanePluginTest {
 
     @Test
     fun `given a flush event, when flush is called, test flush is enqueued and returned correctly`() {
-        val flushMessage = mockk<FlushMessage>(relaxed = true)
+        val flushEvent = mockk<FlushEvent>(relaxed = true)
 
-        val result = plugin.flush(flushMessage)
+        val result = plugin.flush(flushEvent)
 
-        assertEquals(flushMessage, result)
-        verify { messageQueue.put(flushMessage) }
+        assertEquals(flushEvent, result)
+        verify { messageQueue.put(flushEvent) }
     }
 
     @Test

@@ -1,6 +1,7 @@
 package com.rudderstack.core.internals.models
 
 import com.rudderstack.core.internals.utils.DateTimeInstant
+import com.rudderstack.core.internals.utils.empty
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -30,7 +31,7 @@ enum class MessageType {
 
 /**
  * Principal type class for any message type and will be one of
- * @see FlushMessage
+ * @see FlushEvent
  * @see TrackEvent
  * @see FlushMessage
  */
@@ -59,9 +60,7 @@ sealed class Message {
                 properties = this.properties
             )
 
-            is FlushMessage -> FlushMessage(
-                messageName = this.messageName,
-            )
+            is FlushEvent -> FlushEvent()
         }.apply {
             messageId = original.messageId
             originalTimestamp = original.originalTimestamp
@@ -99,8 +98,8 @@ sealed class Message {
 
 @Serializable
 @SerialName("flush")
-data class FlushMessage(
-    var messageName: String,
+data class FlushEvent(
+    var messageName: String = String.empty(),
 ) : Message() {
 
     override var type: MessageType = MessageType.Flush
@@ -115,7 +114,7 @@ data class FlushMessage(
         if (javaClass != other?.javaClass) return false
         if (!super.equals(other)) return false
 
-        other as FlushMessage
+        other as FlushEvent
 
         if (messageName != other.messageName) return false
 
