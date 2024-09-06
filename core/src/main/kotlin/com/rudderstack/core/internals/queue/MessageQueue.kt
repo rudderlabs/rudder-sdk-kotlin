@@ -3,7 +3,7 @@ package com.rudderstack.core.internals.queue
 import com.rudderstack.core.Analytics
 import com.rudderstack.core.internals.logger.TAG
 import com.rudderstack.core.internals.models.MessageType
-import com.rudderstack.core.internals.models.FlushMessage
+import com.rudderstack.core.internals.models.FlushEvent
 import com.rudderstack.core.internals.models.Message
 import com.rudderstack.core.internals.storage.StorageKeys
 import com.rudderstack.core.internals.utils.empty
@@ -56,7 +56,7 @@ internal class MessageQueue(
     }
 
     fun flush() {
-        writeChannel.trySend(FlushMessage(""))
+        writeChannel.trySend(FlushEvent(""))
     }
 
     fun stop() {

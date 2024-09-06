@@ -1,6 +1,6 @@
 package com.rudderstack.core.internals.plugins
 
-import com.rudderstack.core.internals.models.FlushMessage
+import com.rudderstack.core.internals.models.FlushEvent
 import com.rudderstack.core.internals.models.Message
 import com.rudderstack.core.internals.models.TrackEvent
 
@@ -9,12 +9,12 @@ interface MessagePlugin : Plugin {
         return payload
     }
 
-    fun flush(payload: FlushMessage): Message {
+    fun flush(payload: FlushEvent): Message {
         return payload
     }
 
     override fun execute(message: Message): Message? = when (message) {
         is TrackEvent -> track(message)
-        is FlushMessage -> flush(message)
+        is FlushEvent -> flush(message)
     }
 }
