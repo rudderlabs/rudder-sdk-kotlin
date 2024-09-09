@@ -9,6 +9,7 @@ data class Configuration @JvmOverloads constructor(
     val application: Application,
     override val writeKey: String,
     override val dataPlaneUrl: String,
+    override val controlPlaneUrl: String = DEFAULT_CONTROL_PLANE_URL,
     override val logger: Logger = AndroidLogger(initialLogLevel = Logger.LogLevel.DEBUG),
 ) : Configuration(
     writeKey = writeKey,

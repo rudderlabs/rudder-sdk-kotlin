@@ -1,7 +1,9 @@
 package com.rudderstack.android.storage
 
 import android.content.Context
+import com.rudderstack.android2.BuildConfig
 import com.rudderstack.core.internals.storage.KeyValueStorage
+import com.rudderstack.core.internals.storage.LibraryVersion
 import com.rudderstack.core.internals.storage.MAX_PAYLOAD_SIZE
 import com.rudderstack.core.internals.storage.MessageBatchFileManager
 import com.rudderstack.core.internals.storage.Storage
@@ -86,6 +88,16 @@ class AndroidStorage(
 
     override fun readFileList(): List<String> {
         return messageBatchFile.read()
+    }
+
+    override fun getLibraryVersion(): LibraryVersion {
+        return object : LibraryVersion {
+            override fun getPlatform(): String = "Android"
+
+            override fun getVersionName(): String = BuildConfig.VERSION_NAME
+
+            override fun getVersionCode(): String = BuildConfig.VERSION_CODE
+        }
     }
 }
 

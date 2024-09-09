@@ -8,11 +8,20 @@ android {
     namespace = "com.rudderstack.android2"
     compileSdk = 34
 
+    buildFeatures {
+        buildFeatures {
+            buildConfig = true
+        }
+    }
+
     defaultConfig {
         minSdk = 26
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
+
+        buildConfigField("String", "VERSION_NAME", RudderStackBuildConfig.Version.VERSION_NAME)
+        buildConfigField("String", "VERSION_CODE", RudderStackBuildConfig.Version.VERSION_CODE)
     }
 
     buildTypes {
