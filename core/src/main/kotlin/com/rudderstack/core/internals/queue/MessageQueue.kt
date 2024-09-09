@@ -3,7 +3,7 @@ package com.rudderstack.core.internals.queue
 import com.rudderstack.core.Analytics
 import com.rudderstack.core.internals.logger.TAG
 import com.rudderstack.core.internals.models.MessageType
-import com.rudderstack.core.internals.models.FlushMessage
+import com.rudderstack.core.internals.models.FlushEvent
 import com.rudderstack.core.internals.models.Message
 import com.rudderstack.core.internals.storage.StorageKeys
 import com.rudderstack.core.internals.utils.empty
@@ -56,7 +56,7 @@ internal class MessageQueue(
     }
 
     fun flush() {
-        writeChannel.trySend(FlushMessage(""))
+        writeChannel.trySend(FlushEvent(""))
     }
 
     fun stop() {
@@ -98,18 +98,14 @@ internal class MessageQueue(
             val fileUrlList = storage.readString(StorageKeys.RUDDER_MESSAGE, String.empty()).parseFilePaths()
             for (url in fileUrlList) {
                 val file = File(url)
-                analytics.configuration.logger.debug(TAG, "-------> url $url")
                 if (!file.exists()) continue
                 var shouldCleanup = true
                 try {
-                    analytics.configuration.logger.debug(
-                        TAG,
-                        "-------> storage.readEventsContent() " + storage.readMessageContent()
-                    )
-                    val eventsData = storage.readMessageContent()
-                    for (events in eventsData) {
+                    val filePathList = storage.readFileList()
+                    for (filePath in filePathList) {
                         try {
-                            val text = readFileAsString(events)
+                            //TODO batch API
+                            val text = readFileAsString(filePath)
                             analytics.configuration.logger.debug(TAG, "-------> readFileAsString: $text")
                         } catch (e: FileNotFoundException) {
                             analytics.configuration.logger.debug(TAG, "Message storage file not found")
@@ -120,7 +116,6 @@ internal class MessageQueue(
                 } catch (e: Exception) {
                     shouldCleanup = handleUploadException(e, file)
                 }
-
                 if (shouldCleanup) {
                     storage.remove(file.path)
                 }

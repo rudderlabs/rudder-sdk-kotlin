@@ -1,7 +1,7 @@
 package com.rudderstack.core.plugins
 
 import com.rudderstack.core.Analytics
-import com.rudderstack.core.internals.models.FlushMessage
+import com.rudderstack.core.internals.models.FlushEvent
 import com.rudderstack.core.internals.models.Message
 import com.rudderstack.core.internals.models.TrackEvent
 import com.rudderstack.core.internals.queue.MessageQueue
@@ -21,7 +21,7 @@ class RudderStackDataplanePlugin : MessagePlugin {
         return payload
     }
 
-    override fun flush(payload: FlushMessage): Message {
+    override fun flush(payload: FlushEvent): Message {
         enqueue(payload)
         return payload
     }
@@ -49,7 +49,7 @@ class RudderStackDataplanePlugin : MessagePlugin {
                     track(it)
                 }
 
-                is FlushMessage -> {
+                is FlushEvent -> {
                     flush(it)
                 }
             }
