@@ -2,6 +2,8 @@ package com.rudderstack.core
 
 import com.rudderstack.core.internals.logger.KotlinLogger
 import com.rudderstack.core.internals.logger.Logger
+import com.rudderstack.core.internals.storage.BasicStorageProvider
+import com.rudderstack.core.internals.storage.Storage
 import com.rudderstack.core.internals.policies.CountFlushPolicy
 import com.rudderstack.core.internals.policies.FlushPolicy
 import com.rudderstack.core.internals.policies.FrequencyFlushPolicy
@@ -14,6 +16,7 @@ open class Configuration @JvmOverloads constructor(
     open val logger: Logger = KotlinLogger(initialLogLevel = Logger.LogLevel.DEBUG),
     open val optOut: Boolean = false,
     open val gzipEnabled: Boolean = DEFAULT_GZIP_STATUS,
+    open val storageProvider: Storage = BasicStorageProvider.getStorage(writeKey, "test application"),
     open var flushPolicies: List<FlushPolicy> = DEFAULT_FLUSH_POLICIES,
 ) {
     companion object {

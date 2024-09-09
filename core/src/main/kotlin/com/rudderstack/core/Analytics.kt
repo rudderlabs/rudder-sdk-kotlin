@@ -8,6 +8,7 @@ import com.rudderstack.core.internals.models.emptyJsonObject
 import com.rudderstack.core.internals.plugins.Plugin
 import com.rudderstack.core.internals.plugins.PluginChain
 import com.rudderstack.core.plugins.PocPlugin
+import com.rudderstack.core.plugins.RudderStackDataplanePlugin
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -17,6 +18,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 
+@OptIn(ExperimentalCoroutinesApi::class)
 open class Analytics protected constructor(
     val configuration: Configuration,
     coroutineConfig: CoroutineConfiguration,
@@ -36,24 +38,10 @@ open class Analytics protected constructor(
             }
             override val analyticsScope: CoroutineScope = CoroutineScope(SupervisorJob() + handler)
             override val analyticsDispatcher: CoroutineDispatcher = Dispatchers.IO
-            override val storageDispatcher: CoroutineDispatcher = Dispatchers.IO
-
-            @OptIn(ExperimentalCoroutinesApi::class)
+            override val storageDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(2)
             override val networkDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(1)
         }
     )
-
-    private fun setup() {
-        add(PocPlugin())
-    }
-
-    private fun add(plugin: Plugin) {
-        this.pluginChain.add(plugin)
-    }
-
-    fun flush() {
-        // TODO("Implement flush")
-    }
 
     @JvmOverloads
     fun track(
@@ -61,19 +49,35 @@ open class Analytics protected constructor(
         properties: Properties = emptyJsonObject,
         options: RudderOption,
     ) {
-        val event = TrackEvent(
-            event = name,
+        val message = TrackEvent(
+            name = name,
             properties = properties,
             options = options,
         )
-        process(event)
+        process(message)
     }
 
-    private fun process(event: Message) {
-        event.applyBaseData()
-        analyticsScope.launch(analyticsDispatcher) {
-            pluginChain.process(event)
+    fun flush() {
+        this.pluginChain.applyClosure {
+            if (it is RudderStackDataplanePlugin) {
+                it.flush()
+            }
         }
     }
 
+    private fun process(message: Message) {
+        message.applyBaseData()
+        analyticsScope.launch(analyticsDispatcher) {
+            pluginChain.process(message)
+        }
+    }
+
+    private fun setup() {
+        add(PocPlugin())
+        add(RudderStackDataplanePlugin())
+    }
+
+    private fun add(plugin: Plugin) {
+        this.pluginChain.add(plugin)
+    }
 }

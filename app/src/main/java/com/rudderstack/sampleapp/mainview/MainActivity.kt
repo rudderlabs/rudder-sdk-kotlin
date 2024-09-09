@@ -84,7 +84,7 @@ class MainActivity : ComponentActivity() {
         ) {
             names.forEach {
                 Button(modifier = Modifier.weight(weight = weight, fill = true), onClick = {
-                    viewModel.onEventClicked(it)
+                    viewModel.onMessageClicked(it)
                 }) {
                     Text(text = it.eventName)
                 }
@@ -111,7 +111,8 @@ class MainActivity : ComponentActivity() {
 
             CreateRowOfApis(
                 names = arrayOf(
-                    AnalyticsState.TrackEvent,
+                    AnalyticsState.TrackMessage,
+                    AnalyticsState.ForceFlush,
                 ),
                 weight = .3f,
                 viewModel = viewModel

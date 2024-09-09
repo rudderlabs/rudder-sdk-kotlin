@@ -23,3 +23,4 @@ rootProject.name = "Kotlin SDK POC"
 include(":app")
 include(":core")
 include(":android")
+include(":kotlin-jvm-app")

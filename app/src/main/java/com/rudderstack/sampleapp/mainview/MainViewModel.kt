@@ -15,15 +15,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _state = MutableStateFlow(MainViewModelState())
     val state = _state.asStateFlow()
 
-    internal fun onEventClicked(analytics: AnalyticsState) {
+    internal fun onMessageClicked(analytics: AnalyticsState) {
         val log = when (analytics) {
-            AnalyticsState.TrackEvent -> {
+            AnalyticsState.TrackMessage -> {
                 RudderAnalyticsUtils.analytics.track(
                     name = "Track at ${Date()}",
                     properties = Properties(emptyMap()),
                     options = RudderOption()
                 )
                 "Track message sent"
+            }
+
+            AnalyticsState.ForceFlush -> {
+                RudderAnalyticsUtils.analytics.flush()
+                "Flushing the message pipeline has"
             }
         }
         if (log.isNotEmpty()) addLogData(LogData(Date(), log))
