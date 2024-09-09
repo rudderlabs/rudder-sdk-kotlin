@@ -1,0 +1,35 @@
+{
+  "source": {
+    "id": "<SOURCE_ID>",
+    "name": "Android",
+    "writeKey": "<WRITE_KEY>",
+    "config": {
+      "statsCollection": {
+        "errors": {
+          "enabled": true
+        },
+        "metrics": {
+          "enabled": false
+        }
+      }
+    },
+    "enabled": true,
+    "workspaceId": "<WORKSPACE_ID>",
+    "destinations": [],
+    "updatedAt": "2024-08-28T12:53:34.870Z",
+    "dataplanes": {}
+  },
+  "updatedAt": "2024-08-28T12:53:34.870Z",
+  "consentManagementMetadata": {
+    "providers": [
+      {
+        "provider": "oneTrust",
+        "resolutionStrategy": "and"
+      },
+      {
+        "provider": "ketch",
+        "resolutionStrategy": "or"
+      }
+    ]
+  }
+}
