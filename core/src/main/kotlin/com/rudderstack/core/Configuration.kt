@@ -13,6 +13,7 @@ import kotlinx.coroutines.CoroutineScope
 open class Configuration @JvmOverloads constructor(
     open val writeKey: String,
     open val dataPlaneUrl: String,
+    open val controlPlaneUrl: String = DEFAULT_CONTROL_PLANE_URL,
     open val logger: Logger = KotlinLogger(initialLogLevel = Logger.LogLevel.DEBUG),
     open val optOut: Boolean = false,
     open val gzipEnabled: Boolean = DEFAULT_GZIP_STATUS,
@@ -21,6 +22,7 @@ open class Configuration @JvmOverloads constructor(
 ) {
     companion object {
         const val DEFAULT_GZIP_STATUS: Boolean = true
+        const val DEFAULT_CONTROL_PLANE_URL = "https://api.rudderlabs.com"
         val DEFAULT_FLUSH_POLICIES: List<FlushPolicy> = listOf(CountFlushPolicy(), FrequencyFlushPolicy())
     }
 }
