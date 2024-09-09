@@ -4,7 +4,7 @@ const val DEFAULT_FLUSH_AT = 30
 
 /**
  * CountFlushPolicy is a concrete implementation of the FlushPolicy interface
- * that triggers a flush action based on a predefined count threshold.
+ * that indicates if flush action should be trigger based on a predefined count threshold.
  *
  * @property flushAt The threshold count at which a flush should be triggered.
  *                   It defaults to [DEFAULT_FLUSH_AT] if not specified or if
