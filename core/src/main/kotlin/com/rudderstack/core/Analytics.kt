@@ -8,6 +8,7 @@ import com.rudderstack.core.internals.models.emptyJsonObject
 import com.rudderstack.core.internals.plugins.Plugin
 import com.rudderstack.core.internals.plugins.PluginChain
 import com.rudderstack.core.plugins.PocPlugin
+import com.rudderstack.core.plugins.RudderStackDataplanePlugin
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -42,14 +43,6 @@ open class Analytics protected constructor(
         }
     )
 
-    private fun setup() {
-        add(PocPlugin())
-    }
-
-    private fun add(plugin: Plugin) {
-        this.pluginChain.add(plugin)
-    }
-
     @JvmOverloads
     fun track(
         name: String,
@@ -64,6 +57,14 @@ open class Analytics protected constructor(
         process(message)
     }
 
+    fun flush() {
+        this.pluginChain.applyClosure {
+            if (it is RudderStackDataplanePlugin) {
+                it.flush()
+            }
+        }
+    }
+
     private fun process(message: Message) {
         message.applyBaseData()
         analyticsScope.launch(analyticsDispatcher) {
@@ -71,4 +72,12 @@ open class Analytics protected constructor(
         }
     }
 
+    private fun setup() {
+        add(PocPlugin())
+        add(RudderStackDataplanePlugin())
+    }
+
+    private fun add(plugin: Plugin) {
+        this.pluginChain.add(plugin)
+    }
 }

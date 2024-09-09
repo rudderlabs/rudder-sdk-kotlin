@@ -9,6 +9,7 @@ data class MainViewModelState(
 
 data class LogData(val time: Date, val log: String)
 
-sealed class AnalyticsState(val messageName: String) {
+sealed class AnalyticsState(val eventName: String) {
     object TrackMessage : AnalyticsState("Track")
+    object ForceFlush : AnalyticsState("Flush")
 }
