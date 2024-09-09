@@ -2,9 +2,10 @@ package com.rudderstack.core.internals.queue
 
 import com.rudderstack.core.Analytics
 import com.rudderstack.core.internals.logger.TAG
-import com.rudderstack.core.internals.models.MessageType
 import com.rudderstack.core.internals.models.FlushEvent
 import com.rudderstack.core.internals.models.Message
+import com.rudderstack.core.internals.models.MessageType
+import com.rudderstack.core.internals.policies.FlushPoliciesFacade
 import com.rudderstack.core.internals.storage.StorageKeys
 import com.rudderstack.core.internals.utils.empty
 import com.rudderstack.core.internals.utils.parseFilePaths
@@ -29,6 +30,8 @@ internal class MessageQueue(
     private var running: Boolean
     private var writeChannel: Channel<Message>
     private var uploadChannel: Channel<String>
+    private var flushPoliciesFacade: FlushPoliciesFacade =
+        FlushPoliciesFacade(analytics.configuration.flushPolicies)
 
     private val storage get() = analytics.configuration.storageProvider
 
@@ -51,6 +54,7 @@ internal class MessageQueue(
             writeChannel = Channel(UNLIMITED)
             uploadChannel = Channel(UNLIMITED)
         }
+        flushPoliciesFacade.schedule(analytics)
         write()
         upload()
     }
@@ -65,6 +69,7 @@ internal class MessageQueue(
 
         uploadChannel.cancel()
         writeChannel.cancel()
+        flushPoliciesFacade.cancelSchedule()
     }
 
     internal fun stringifyBaseEvent(payload: Message): String {
@@ -79,12 +84,14 @@ internal class MessageQueue(
                 val stringVal = stringifyBaseEvent(message)
                 analytics.configuration.logger.debug(TAG, "running $stringVal")
                 storage.write(StorageKeys.RUDDER_MESSAGE, stringVal)
+                flushPoliciesFacade.updateState()
             } catch (e: Exception) {
                 analytics.configuration.logger.error(TAG, "Error adding payload: $message", e)
             }
 
-            if (isFlushSignal) {
+            if (isFlushSignal || flushPoliciesFacade.shouldFlush()) {
                 uploadChannel.trySend(UPLOAD_SIG)
+                flushPoliciesFacade.reset()
             }
         }
     }
