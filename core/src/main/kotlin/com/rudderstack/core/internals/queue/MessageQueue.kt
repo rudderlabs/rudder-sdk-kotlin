@@ -111,48 +111,47 @@ internal class MessageQueue(
                 storage.rollover()
             }
             val fileUrlList = storage.readString(StorageKeys.RUDDER_MESSAGE, String.empty()).parseFilePaths()
-            for (url in fileUrlList) {
-                val file = File(url)
+            for (filePath in fileUrlList) {
+                val file = File(filePath)
                 if (!file.exists()) continue
-                var shouldCleanup = true
-                try {
-                    val filePathList = storage.readFileList()
-                    for (filePath in filePathList) {
-                        try {
-                            val batchPayload = readFileAsString(filePath)
-                            analytics.configuration.logger.debug(
-                                TAG,
-                                "-------> readFileAsString: $batchPayload"
-                            )
-                            when (
-                                val result: Result<String> =
-                                    httpClientFactory.sendData(batchPayload)
-                            ) {
-                                is Result.Success -> {
-                                    analytics.configuration.logger.debug(
-                                        log = "Event uploaded successfully. Server response: ${result.response}"
-                                    )
-                                    shouldCleanup = true
-                                }
 
-                                is Result.Failure -> {
-                                    analytics.configuration.logger.debug(
-                                        log = "Error when uploading event due to ${result.status} ${result.error}"
-                                    )
-                                }
-                            }
-                        } catch (e: FileNotFoundException) {
-                            analytics.configuration.logger.error(TAG, "Message storage file not found", e)
-                        } catch (e: Exception) {
-                            analytics.configuration.logger.error(TAG, "Error when uploading event", e)
+                var shouldCleanup = false
+                try {
+                    val batchPayload = readFileAsString(filePath)
+                    analytics.configuration.logger.debug(
+                        TAG,
+                        "-------> readFileAsString: $batchPayload"
+                    )
+                    when (
+                        val result: Result<String> =
+                            httpClientFactory.sendData(batchPayload)
+                    ) {
+                        is Result.Success -> {
+                            analytics.configuration.logger.debug(
+                                log = "Event uploaded successfully. Server response: ${result.response}"
+                            )
+                            shouldCleanup = true
+                        }
+
+                        is Result.Failure -> {
+                            analytics.configuration.logger.debug(
+                                log = "Error when uploading event due to ${result.status} ${result.error}"
+                            )
                         }
                     }
+                } catch (e: FileNotFoundException) {
+                    analytics.configuration.logger.error(TAG, "Message storage file not found", e)
                 } catch (e: Exception) {
-                    analytics.configuration.logger.error(TAG, "Upload Exception", e)
+                    analytics.configuration.logger.error(TAG, "Error when uploading event", e)
                     //  shouldCleanup = handleUploadException(e, file)
                 }
+
                 if (shouldCleanup) {
-                    storage.remove(file.path)
+                    storage.remove(file.path).let {
+                        analytics.configuration.logger.debug(
+                            log = "Removed file: $filePath"
+                        )
+                    }
                 }
             }
         }
