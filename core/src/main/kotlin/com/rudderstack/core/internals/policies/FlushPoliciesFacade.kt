@@ -10,9 +10,9 @@ import com.rudderstack.core.Analytics
  *
  * @property flushPolicies A list of flush policies that this facade will manage.
  */
-class FlushPoliciesFacade(private val flushPolicies: List<FlushPolicy>) {
+internal class FlushPoliciesFacade(private val flushPolicies: List<FlushPolicy>) {
 
-    fun shouldFlush(): Boolean = flushPolicies.any {
+    internal fun shouldFlush(): Boolean = flushPolicies.any {
         when (it) {
             is CountFlushPolicy -> it.shouldFlush()
             is StartupFlushPolicy -> it.shouldFlush()
@@ -20,7 +20,7 @@ class FlushPoliciesFacade(private val flushPolicies: List<FlushPolicy>) {
         }
     }
 
-    fun updateState() {
+    internal fun updateState() {
         flushPolicies.forEach {
             if (it is CountFlushPolicy) {
                 it.updateState()
@@ -28,7 +28,7 @@ class FlushPoliciesFacade(private val flushPolicies: List<FlushPolicy>) {
         }
     }
 
-    fun reset() {
+    internal fun reset() {
         flushPolicies.forEach {
             if (it is CountFlushPolicy) {
                 it.reset()
@@ -36,7 +36,7 @@ class FlushPoliciesFacade(private val flushPolicies: List<FlushPolicy>) {
         }
     }
 
-    fun schedule(analytics: Analytics) {
+    internal fun schedule(analytics: Analytics) {
         flushPolicies.forEach {
             if (it is FrequencyFlushPolicy) {
                 it.schedule(analytics)
@@ -44,7 +44,7 @@ class FlushPoliciesFacade(private val flushPolicies: List<FlushPolicy>) {
         }
     }
 
-    fun cancelSchedule() {
+    internal fun cancelSchedule() {
         flushPolicies.forEach {
             if (it is FrequencyFlushPolicy) {
                 it.cancelSchedule()

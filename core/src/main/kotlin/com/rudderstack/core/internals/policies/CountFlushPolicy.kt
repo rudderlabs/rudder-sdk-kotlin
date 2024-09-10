@@ -1,6 +1,8 @@
 package com.rudderstack.core.internals.policies
 
-const val DEFAULT_FLUSH_AT = 30
+internal const val DEFAULT_FLUSH_AT = 30
+private const val MIN_THRESHOLD = 1
+private const val MAX_THRESHOLD = 100
 
 /**
  * CountFlushPolicy is a concrete implementation of the FlushPolicy interface
@@ -16,20 +18,20 @@ class CountFlushPolicy(private var flushAt: Int = DEFAULT_FLUSH_AT) : FlushPolic
 
     init {
         flushAt = when {
-            flushAt in 1..100 -> flushAt
+            flushAt in MIN_THRESHOLD..MAX_THRESHOLD -> flushAt
             else -> DEFAULT_FLUSH_AT
         }
     }
 
-    fun shouldFlush(): Boolean {
+    internal fun shouldFlush(): Boolean {
         return count >= flushAt
     }
 
-    fun updateState() {
+    internal fun updateState() {
         count++
     }
 
-    fun reset() {
+    internal fun reset() {
         count = 0
     }
 }

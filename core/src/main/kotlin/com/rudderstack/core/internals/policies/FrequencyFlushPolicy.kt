@@ -7,8 +7,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
-const val DEFAULT_FLUSH_INTERVAL_IN_MILLIS = 10_000L
-const val DEFAULT_MIN_SLEEP_TIMEOUT = 1L
+internal const val DEFAULT_FLUSH_INTERVAL_IN_MILLIS = 10_000L
+internal const val DEFAULT_MIN_SLEEP_TIMEOUT = 1L
 
 /**
  * FrequencyFlushPolicy is a concrete implementation of the FlushPolicy interface
@@ -29,7 +29,7 @@ class FrequencyFlushPolicy(private var flushIntervalInMillis: Long = DEFAULT_FLU
         }
     }
 
-    fun schedule(analytics: Analytics) {
+    internal fun schedule(analytics: Analytics) {
         runOnce {
             flushJob = analytics.analyticsScope.launch(analytics.storageDispatcher) {
                 if (flushIntervalInMillis > 0) {
@@ -42,7 +42,7 @@ class FrequencyFlushPolicy(private var flushIntervalInMillis: Long = DEFAULT_FLU
         }
     }
 
-    fun cancelSchedule() {
+    internal fun cancelSchedule() {
         flushJob?.cancel()
     }
 }

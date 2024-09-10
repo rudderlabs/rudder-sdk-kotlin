@@ -1,12 +1,15 @@
 package com.rudderstack.core
 
+import com.rudderstack.core.Configuration.Companion.DEFAULT_CONTROL_PLANE_URL
+import com.rudderstack.core.Configuration.Companion.DEFAULT_FLUSH_POLICIES
+import com.rudderstack.core.Configuration.Companion.DEFAULT_GZIP_STATUS
 import com.rudderstack.core.internals.logger.KotlinLogger
 import com.rudderstack.core.internals.logger.Logger
-import com.rudderstack.core.internals.storage.BasicStorageProvider
-import com.rudderstack.core.internals.storage.Storage
 import com.rudderstack.core.internals.policies.CountFlushPolicy
 import com.rudderstack.core.internals.policies.FlushPolicy
 import com.rudderstack.core.internals.policies.FrequencyFlushPolicy
+import com.rudderstack.core.internals.storage.BasicStorageProvider
+import com.rudderstack.core.internals.storage.Storage
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 
@@ -21,6 +24,7 @@ import kotlinx.coroutines.CoroutineScope
  * @property optOut A flag indicating whether to opt out of data collection. If set to true, no data will be sent. Defaults to false.
  * @property gzipEnabled A flag indicating whether GZIP compression is enabled for network requests. Defaults to [DEFAULT_GZIP_STATUS].
  * @property storageProvider The storage provider responsible for managing the data storage. Defaults to [BasicStorageProvider].
+ * @property flushPolicies A list of flush policies that determine when to flush events to the data plane. Defaults to [DEFAULT_FLUSH_POLICIES].
  */
 open class Configuration @JvmOverloads constructor(
     open val writeKey: String,
@@ -44,6 +48,11 @@ open class Configuration @JvmOverloads constructor(
          * The default URL for the control plane, used for fetching configuration settings.
          */
         const val DEFAULT_CONTROL_PLANE_URL = "https://api.rudderlabs.com"
+
+        /**
+         * The default flush policies for `CountFlushPolicy` and `FrequencyFlushPolicy`,
+         * which define the conditions under which events are flushed to the server.
+         */
         val DEFAULT_FLUSH_POLICIES: List<FlushPolicy> = listOf(CountFlushPolicy(), FrequencyFlushPolicy())
     }
 }
