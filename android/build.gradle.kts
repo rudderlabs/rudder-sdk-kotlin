@@ -1,7 +1,23 @@
+import io.gitlab.arturbosch.detekt.Detekt
+
 @Suppress("DSL_SCOPE_VIOLATION") // TODO: Remove once KTIJ-19369 is fixed
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.detekt)
+}
+
+detekt {
+    config.setFrom("$rootDir/config/detekt/detekt.yml")
+    buildUponDefaultConfig = true
+    autoCorrect = true
+    parallel = true
+}
+
+tasks.withType<Detekt>().configureEach {
+    reports {
+        html.required.set(true) // observe findings in your browser with structure and code snippets
+    }
 }
 
 android {
@@ -46,6 +62,9 @@ dependencies {
     //compileOnly
     compileOnly(libs.work)
     compileOnly(libs.work.multiprocess)
+
+    // detekt plugins
+    detektPlugins(libs.detekt.formatting)
 
     //implementation
     implementation(libs.android.core.ktx)

@@ -1,8 +1,8 @@
 package com.rudderstack.core.internals.storage
 
-import com.rudderstack.core.internals.logger.TAG
 import com.rudderstack.core.internals.logger.KotlinLogger
 import com.rudderstack.core.internals.logger.Logger
+import com.rudderstack.core.internals.logger.TAG
 import com.rudderstack.core.internals.utils.empty
 import com.rudderstack.core.internals.utils.toPropertiesFileName
 import java.io.File
@@ -13,44 +13,64 @@ import java.util.Properties
 private const val PROPERTIES_PREFIX = "rudder"
 private const val PROPERTIES_SUFFIX = ".properties"
 
-class PropertiesFile(
+internal class PropertiesFile(
     directory: File,
     writeKey: String,
     private val logger: Logger? = KotlinLogger()
 ) : KeyValueStorage {
 
     private var properties: Properties = Properties()
-    private val propertiesFile = File(directory, writeKey.toPropertiesFileName(PROPERTIES_PREFIX, PROPERTIES_SUFFIX))
+    private val propsFile = File(directory, writeKey.toPropertiesFileName(PROPERTIES_PREFIX, PROPERTIES_SUFFIX))
 
+    /**
+     * Loads properties from the file. If the file does not exist or fails to load, it creates a new file.
+     */
+    @Suppress("TooGenericExceptionCaught")
     fun load() {
-        if (propertiesFile.exists()) {
+        if (propsFile.exists()) {
             try {
-                FileInputStream(propertiesFile).use {
+                FileInputStream(propsFile).use {
                     properties.load(it)
                 }
-                return
             } catch (e: Throwable) {
-                propertiesFile.delete()
+                propsFile.delete()
                 logger?.error(
                     TAG,
-                    "Failed to load property file with path ${propertiesFile.absolutePath}, error stacktrace: ${e.stackTraceToString()}"
+                    "Failed to load property file with path " +
+                        "${propsFile.absolutePath}, error stacktrace: ${e.stackTraceToString()}"
                 )
             }
+        } else {
+            propsFile.parentFile.mkdirs()
+            propsFile.createNewFile()
         }
-        propertiesFile.parentFile.mkdirs()
-        propertiesFile.createNewFile()
     }
 
+    /**
+     * Saves the current properties to the file.
+     */
     private fun save() {
-        FileOutputStream(propertiesFile).use {
+        FileOutputStream(propsFile).use {
             properties.store(it, null)
         }
     }
 
+    /**
+     * Retrieves an integer value from properties.
+     * @param key The property key.
+     * @param defaultVal The default value if the key does not exist or cannot be converted.
+     * @return The integer value associated with the key.
+     */
     override fun getInt(key: String, defaultVal: Int): Int {
         return properties.getProperty(key, String.empty()).toIntOrNull() ?: defaultVal
     }
 
+    /**
+     * Retrieves a boolean value from properties.
+     * @param key The property key.
+     * @param defaultVal The default value if the key does not exist or cannot be converted.
+     * @return The boolean value associated with the key.
+     */
     override fun getBoolean(key: String, defaultVal: Boolean): Boolean {
         return properties.getProperty(key, String.empty()).toBoolean()
     }

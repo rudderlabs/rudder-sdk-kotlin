@@ -29,6 +29,7 @@ work = "2.9.0"
 runner = "1.0.2"
 com-android-support-test-espresso-espresso-core = "3.0.2"
 appcompat-v7 = "28.0.0"
+detekt = "1.23.6"
 
 [libraries]
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -48,6 +49,7 @@ android-x-test-espresso = { group = "androidx.test.espresso", name = "espresso-c
 android-x-annotation = { group = "androidx.annotation", name = "annotation", version.ref = "android-x-annotation" }
 android-x-testrunner = { group = "androidx.test", name = "runner", version.ref = "android-x-testrunner" }
 awaitility = { group = "org.awaitility", name = "awaitility", version.ref = "awaitility" }
+detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
 gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
 hamcrest = { group = "org.hamcrest", name = "hamcrest", version.ref = "hamcrest" }
 jackson-core = { group = "com.fasterxml.jackson.core", name = "jackson-databind", version.ref = "jackson-core" }
@@ -75,3 +77,4 @@ android-library = { id = "com.android.library", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }

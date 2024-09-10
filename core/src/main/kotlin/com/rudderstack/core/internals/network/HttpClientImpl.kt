@@ -1,7 +1,7 @@
 package com.rudderstack.core.internals.network
 
+import com.rudderstack.core.internals.network.ErrorStatus.Companion.toErrorStatus
 import com.rudderstack.core.internals.utils.validatedBaseUrl
-import com.rudderstack.core.internals.network.ErrorStatus.Companion.getErrorStatus
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
@@ -15,6 +15,9 @@ private const val BASIC = "Basic"
 private const val ANONYMOUS_ID_HEADER = "AnonymousId"
 private const val CONTENT_ENCODING = "Content-Encoding"
 private const val GZIP = "gzip"
+
+private const val OK_RESPONSE_CODE = 200
+private const val SUCCESSFUL_TRANSACTION_CODE = 299
 
 private const val DEFAULT_CONNECTION_TIMEOUT: Int = 10_000
 private const val DEFAULT_READ_TIMEOUT: Int = 20_000
@@ -178,13 +181,14 @@ class HttpClientImpl private constructor(
         }
     }
 
+    @Suppress("TooGenericExceptionCaught")
     private fun HttpURLConnection.useConnection(setup: HttpURLConnection.() -> Unit = {}): Result<String> {
         return try {
             this.apply(setup)
             connect()
             constructResponse()
         } catch (e: Exception) {
-            Failure(status = ErrorStatus.ERROR, error = e)
+            Result.Failure(status = ErrorStatus.GENERAL_ERROR, error = e)
         } finally {
             disconnect()
         }
@@ -203,9 +207,12 @@ class HttpClientImpl private constructor(
     }
 
     private fun HttpURLConnection.constructResponse(): Result<String> = when (responseCode) {
-        in 200..299 -> Success(response = getSuccessResponse())
-        else -> Failure(
-            status = getErrorStatus(responseCode),
+        in OK_RESPONSE_CODE..SUCCESSFUL_TRANSACTION_CODE -> Result.Success(
+            response = getSuccessResponse()
+        )
+
+        else -> Result.Failure(
+            status = toErrorStatus(responseCode),
             error = IOException(
                 "HTTP $responseCode, URL: $url, Error: ${getErrorResponse()}"
             )
@@ -213,11 +220,12 @@ class HttpClientImpl private constructor(
     }
 }
 
+/**
+ * Default implementation of the `HttpURLConnectionFactory` that creates `HttpURLConnection` objects.
+ * Provides default settings such as connection timeout and read timeout.
+ */
 class DefaultHttpURLConnectionFactory : HttpURLConnectionFactory {
-    override fun createConnection(
-        url: URL,
-        headers: Map<String, String>,
-    ): HttpURLConnection {
+    override fun createConnection(url: URL, headers: Map<String, String>): HttpURLConnection {
         val connection = url.openConnection() as HttpURLConnection
         return connection.apply {
             connectTimeout = DEFAULT_CONNECTION_TIMEOUT

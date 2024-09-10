@@ -76,7 +76,7 @@ class HttpClientImplTest {
 
         val result = getHttpClient.getData()
 
-        assertFailure(result, ErrorStatus.ERROR, exception)
+        assertFailure(result, ErrorStatus.GENERAL_ERROR, exception)
     }
 
     @Test
@@ -113,7 +113,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            ErrorStatus.RETRY_ABLE,
+            ErrorStatus.SERVER_ERROR,
             IOException(provideErrorMessage(500, mockConnection))
         )
     }
@@ -126,7 +126,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            ErrorStatus.RETRY_ABLE,
+            ErrorStatus.TOO_MANY_REQUESTS,
             IOException(provideErrorMessage(429, mockConnection))
         )
     }
@@ -139,7 +139,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            ErrorStatus.ERROR,
+            ErrorStatus.GENERAL_ERROR,
             IOException(provideErrorMessage(450, mockConnection))
         )
     }
@@ -191,7 +191,7 @@ class HttpClientImplTest {
 
         val result = postHttpClient.sendData(REQUEST_BODY)
 
-        assertFailure(result, ErrorStatus.ERROR, exception)
+        assertFailure(result, ErrorStatus.GENERAL_ERROR, exception)
     }
 
     @Test
@@ -228,7 +228,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            ErrorStatus.RETRY_ABLE,
+            ErrorStatus.TOO_MANY_REQUESTS,
             IOException(provideErrorMessage(429, mockConnection))
         )
     }
@@ -241,7 +241,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            ErrorStatus.ERROR,
+            ErrorStatus.GENERAL_ERROR,
             IOException(provideErrorMessage(450, mockConnection))
         )
     }
@@ -254,7 +254,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            ErrorStatus.RETRY_ABLE,
+            ErrorStatus.SERVER_ERROR,
             IOException(provideErrorMessage(500, mockConnection))
         )
     }
@@ -287,7 +287,7 @@ class HttpClientImplTest {
     }
 
     private fun assertSuccess(result: Result<String>) {
-        assertTrue(result is Success)
+        assertTrue(result is Result.Success)
         verify { mockConnection.connect() }
         verify { mockConnection.disconnect() }
     }
@@ -297,11 +297,11 @@ class HttpClientImplTest {
         expectedStatus: ErrorStatus,
         expectedException: Exception
     ) {
-        assertTrue(result is Failure)
+        assertTrue(result is Result.Failure)
         verify { mockConnection.connect() }
         verify { mockConnection.disconnect() }
 
-        result as Failure // Safe cast after assertTrue
+        result as Result.Failure // Safe cast after assertTrue
 
         assertEquals(expectedStatus, result.status)
         assertThrows(expectedException::class.java) { throw result.error }

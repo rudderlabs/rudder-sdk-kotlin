@@ -1,0 +1,11 @@
+#!/bin/bash
+
+echo "Running lint check..."
+./gradlew detekt
+
+if [ $? -ne 0 ]; then
+    echo "Detekt failed, please fix the issues before committing."
+    exit 1
+fi
+
+exit 0

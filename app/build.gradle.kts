@@ -123,3 +123,24 @@ android {
         implementation(project(":core"))
     }
 }
+
+tasks.named("preBuild").configure {
+    doFirst {
+        val oldCommitFile = file("${rootProject.rootDir}/.git/hooks/pre-commit")
+
+        val newCommitFile = file("${rootProject.rootDir}/scripts/pre-commit")
+
+        if (oldCommitFile.length() != newCommitFile.length()) {
+            oldCommitFile.delete()
+            println("Old hooks are deleted.")
+
+            copy {
+                from("${rootProject.rootDir}/scripts/")
+                into("${rootProject.rootDir}/.git/hooks/")
+                // to make the git hook executable
+                fileMode = "0777".toInt(8)
+            }
+            println("New hooks are copied.")
+        }
+    }
+}

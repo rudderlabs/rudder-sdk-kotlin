@@ -6,7 +6,7 @@ import androidx.core.content.edit
 import com.rudderstack.core.internals.storage.KeyValueStorage
 import java.io.File
 
-class SharedPrefsStore(
+internal class SharedPrefsStore(
     private val context: Context,
     prefsName: String,
 ) : KeyValueStorage {
@@ -53,13 +53,13 @@ class SharedPrefsStore(
         }
     }
 
-    fun delete(fileName: String) {
+    private fun delete(fileName: String) {
         if (useCase.isAndroidVersionNougatAndAbove()) {
             context.deleteSharedPreferences(fileName)
         } else {
             context.getSharedPreferences(fileName, Context.MODE_PRIVATE).edit().clear().apply()
             val dir = File(context.applicationInfo.dataDir, "shared_prefs")
-            File(dir, "${fileName}.xml").delete()
+            File(dir, "$fileName.xml").delete()
         }
     }
 
