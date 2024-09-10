@@ -1,7 +1,10 @@
+import io.gitlab.arturbosch.detekt.Detekt
+
 plugins {
     id("java-library")
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.detekt)
 }
 
 java {
@@ -39,6 +42,19 @@ tasks.named("compileKotlin") {
 // Include the generated source folder in the source set
 sourceSets["main"].java.srcDir(layout.buildDirectory.dir("generated"))
 
+detekt {
+    config.setFrom("$rootDir/config/detekt/detekt.yml")
+    buildUponDefaultConfig = true
+    autoCorrect = true
+    parallel = true
+}
+
+tasks.withType<Detekt>().configureEach {
+    reports {
+        html.required.set(true) // observe findings in your browser with structure and code snippets
+    }
+}
+
 dependencies {
     //api
     api(libs.kotlinx.serialization.json)
@@ -54,6 +70,8 @@ dependencies {
     compileOnly(libs.moshi.kotlin)
     compileOnly(libs.moshi.adapters)
 
+    // detekt plugins
+    detektPlugins(libs.detekt.formatting)
 
     //testImplementation
     testImplementation(libs.kotlinx.coroutines.test)
