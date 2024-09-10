@@ -2,9 +2,9 @@ package com.rudderstack.core.internals.queue
 
 import com.rudderstack.core.Analytics
 import com.rudderstack.core.internals.logger.TAG
-import com.rudderstack.core.internals.models.MessageType
 import com.rudderstack.core.internals.models.FlushEvent
 import com.rudderstack.core.internals.models.Message
+import com.rudderstack.core.internals.models.MessageType
 import com.rudderstack.core.internals.storage.StorageKeys
 import com.rudderstack.core.internals.utils.empty
 import com.rudderstack.core.internals.utils.parseFilePaths
@@ -71,16 +71,19 @@ internal class MessageQueue(
         return Json.encodeToString(payload)
     }
 
+    @Suppress("TooGenericExceptionCaught")
     private fun write() = analytics.analyticsScope.launch(analytics.storageDispatcher) {
         for (message in writeChannel) {
             val isFlushSignal = (message.type == MessageType.Flush)
 
-            if (!isFlushSignal) try {
-                val stringVal = stringifyBaseEvent(message)
-                analytics.configuration.logger.debug(TAG, "running $stringVal")
-                storage.write(StorageKeys.RUDDER_MESSAGE, stringVal)
-            } catch (e: Exception) {
-                analytics.configuration.logger.error(TAG, "Error adding payload: $message", e)
+            if (!isFlushSignal) {
+                try {
+                    val stringVal = stringifyBaseEvent(message)
+                    analytics.configuration.logger.debug(TAG, "running $stringVal")
+                    storage.write(StorageKeys.RUDDER_MESSAGE, stringVal)
+                } catch (e: Exception) {
+                    analytics.configuration.logger.error(TAG, "Error adding payload: $message", e)
+                }
             }
 
             if (isFlushSignal) {
@@ -89,6 +92,7 @@ internal class MessageQueue(
         }
     }
 
+    @Suppress("TooGenericExceptionCaught")
     private fun upload() = analytics.analyticsScope.launch(analytics.networkDispatcher) {
         uploadChannel.consumeEach {
             analytics.configuration.logger.debug(TAG, "performing flush")
@@ -104,17 +108,18 @@ internal class MessageQueue(
                     val filePathList = storage.readFileList()
                     for (filePath in filePathList) {
                         try {
-                            //TODO batch API
+                            // TODO batch API
                             val text = readFileAsString(filePath)
                             analytics.configuration.logger.debug(TAG, "-------> readFileAsString: $text")
                         } catch (e: FileNotFoundException) {
-                            analytics.configuration.logger.debug(TAG, "Message storage file not found")
+                            analytics.configuration.logger.error(TAG, "Message storage file not found", e)
                         } catch (e: Exception) {
-                            analytics.configuration.logger.debug(TAG, "Error when uploading event")
+                            analytics.configuration.logger.error(TAG, "Error when uploading event", e)
                         }
                     }
                 } catch (e: Exception) {
-                    shouldCleanup = handleUploadException(e, file)
+                    analytics.configuration.logger.error(TAG, "Upload Exception", e)
+                    //  shouldCleanup = handleUploadException(e, file)
                 }
                 if (shouldCleanup) {
                     storage.remove(file.path)
@@ -128,14 +133,14 @@ internal class MessageQueue(
         return File(filePath).readText()
     }
 
-    private fun handleUploadException(e: Exception, file: File): Boolean {
-        var shouldCleanup = false
+//   private fun handleUploadException(e: Exception, file: File): Boolean {
+//       var shouldCleanup = false
 //        if (e is HTTPException) {
 //            ... handle the exception
 //            )
 //        }
-        return shouldCleanup
-    }
+//        return shouldCleanup
+//    }
 
     private fun registerShutdownHook() {
         Runtime.getRuntime().addShutdownHook(object : Thread() {

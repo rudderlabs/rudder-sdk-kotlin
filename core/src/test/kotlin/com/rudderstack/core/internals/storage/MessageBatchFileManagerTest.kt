@@ -1,7 +1,8 @@
 package com.rudderstack.core.internals.storage
 
-import com.rudderstack.core.internals.utils.DateTimeInstant
-import io.mockk.*
+import com.rudderstack.core.internals.utils.DateTimeUtils
+import io.mockk.every
+import io.mockk.mockkObject
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertNotNull
@@ -29,8 +30,8 @@ class MessageBatchFileManagerTest {
     @Before
     fun setup() {
         messageBatchFileManager = MessageBatchFileManager(directory, writeKey, keyValueStorage)
-        mockkObject(DateTimeInstant)
-        every { DateTimeInstant.now() } returns Date(0).toInstant().toString()
+        mockkObject(DateTimeUtils)
+        every { DateTimeUtils.now() } returns Date(0).toInstant().toString()
     }
 
     @After
@@ -140,7 +141,7 @@ class MessageBatchFileManagerTest {
         val fileUrls = messageBatchFileManager.read()
         assertEquals(1, fileUrls.size)
 
-        val expectedContents = """ {"batch":[${expectedPayload}],"sentAt":"$epochTimestamp}""".trim()
+        val expectedContents = """ {"batch":[${expectedPayload}],"sentAt":"$epochTimestamp"}""".trim()
         val newFile = File(directory, fileName)
         assertTrue(newFile.exists())
 
@@ -198,7 +199,7 @@ class MessageBatchFileManagerTest {
         messageBatchFileManager.read().let {
             assertEquals(1, it.size)
             val expectedContents =
-                """ {"batch":[${provideMessagePayload()}],"sentAt":"$epochTimestamp}""".trim()
+                """ {"batch":[${provideMessagePayload()}],"sentAt":"$epochTimestamp"}""".trim()
             val newFile = File(directory, fileName)
             assertTrue(newFile.exists())
             val actualContents = newFile.readText()

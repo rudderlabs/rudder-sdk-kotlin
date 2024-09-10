@@ -78,21 +78,6 @@ class MessageQueueTest {
     }
 
     @Test
-    fun `given a file, when an exception happens, then verify that handleUploadException does not cleanup file on exception`() {
-        val file = mockk<File>()
-        val exception = Exception("Test exception")
-
-        val shouldCleanup = messageQueue::class.java.getDeclaredMethod(
-            "handleUploadException",
-            Exception::class.java, File::class.java
-        ).apply {
-            isAccessible = true
-        }.invoke(messageQueue, exception, file) as Boolean
-
-        assertTrue(!shouldCleanup)
-    }
-
-    @Test
     fun `test readFileAsString reads file correctly`() {
         val filePath = "test_file_path"
         val fileContent = "test content"
