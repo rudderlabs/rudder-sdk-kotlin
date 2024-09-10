@@ -117,7 +117,6 @@ class HttpClientImpl private constructor(
     }
 
     private val defaultHeaders = mapOf(
-        CONTENT_TYPE to APPLICATION_JSON,
         AUTHORIZATION to String.format(
             Locale.US, "$BASIC $authHeaderString",
         )
@@ -197,6 +196,7 @@ class HttpClientImpl private constructor(
     private fun HttpURLConnection.setupPostConnection(body: String) = apply {
         doOutput = true
         setChunkedStreamingMode(0)
+        setRequestProperty(CONTENT_TYPE, APPLICATION_JSON)
         setRequestProperty(ANONYMOUS_ID_HEADER, postConfig.anonymousIdHeaderString)
         if (postConfig.isGZIPEnabled) {
             setRequestProperty(CONTENT_ENCODING, GZIP)
