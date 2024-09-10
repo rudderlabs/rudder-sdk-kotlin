@@ -1,21 +1,49 @@
 package com.rudderstack.core.internals.storage
 
+import com.rudderstack.core.internals.storage.exception.PayloadTooLargeException
 import com.rudderstack.core.internals.utils.toFileDirectory
 import source.version.VersionConstants
 import java.io.File
 
+/**
+ * The directory where the message files are stored.
+ * */
 const val FILE_DIRECTORY = "/tmp/rudderstack-analytics-kotlin/"
 private const val FILE_NAME = "messages"
 
-class BasicStorage(writeKey: String) : Storage {
+/**
+ * Implementation of the [Storage] interface that provides a basic file-based storage mechanism.
+ *
+ * This class handles storing, retrieving, and managing key-value pairs in files. It supports various data types for storage
+ * and manages message files separately from properties files.
+ *
+ * @property writeKey The key used to create a unique storage directory.
+ */
+@Suppress("Detekt.TooManyFunctions")
+internal class BasicStorage(writeKey: String) : Storage {
 
+    /**
+     * The directory where the storage files are kept, determined by the provided [writeKey].
+     */
     private val storageDirectory = File(writeKey.toFileDirectory(FILE_DIRECTORY))
+
+    /**
+     * The subdirectory within [storageDirectory] where message files are stored.
+     */
     private val messageStorageDirectory = File(storageDirectory, FILE_NAME)
 
+    /**
+     * Manages properties files, including loading and saving properties.
+     */
     private val propertiesFile = PropertiesFile(storageDirectory, writeKey)
+
+    /**
+     * Manages message batch files, including storing and reading messages.
+     */
     private val messagesFile = MessageBatchFileManager(messageStorageDirectory, writeKey, propertiesFile)
 
     init {
+        // Load properties from the properties file during initialization.
         propertiesFile.load()
     }
 
@@ -30,7 +58,7 @@ class BasicStorage(writeKey: String) : Storage {
             if (value.length < MAX_PAYLOAD_SIZE) {
                 messagesFile.storeMessage(value)
             } else {
-                throw Exception("enqueued payload is too large")
+                throw PayloadTooLargeException()
             }
         } else {
             propertiesFile.save(key.key, value)
@@ -96,8 +124,18 @@ class BasicStorage(writeKey: String) : Storage {
     }
 }
 
+/**
+ * Implementation of [StorageProvider] that provides instances of [BasicStorage].
+ */
 object BasicStorageProvider : StorageProvider {
 
+    /**
+     * Provides an instance of [BasicStorage] for the given write key and application.
+     *
+     * @param writeKey The key used to create a unique storage instance.
+     * @param application The application object, which may be used for additional context or configuration.
+     * @return A new instance of [BasicStorage] configured with the provided write key.
+     */
     override fun getStorage(writeKey: String, application: Any): Storage {
         return BasicStorage(writeKey = writeKey)
     }

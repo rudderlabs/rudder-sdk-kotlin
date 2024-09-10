@@ -4,7 +4,7 @@ import com.rudderstack.core.internals.models.FlushEvent
 import com.rudderstack.core.internals.models.Message
 import com.rudderstack.core.internals.models.TrackEvent
 
-interface MessagePlugin : Plugin {
+internal interface MessagePlugin : Plugin {
     fun track(payload: TrackEvent): Message? {
         return payload
     }

@@ -5,7 +5,7 @@ import com.rudderstack.core.internals.logger.TAG
 import com.rudderstack.core.internals.models.Message
 import com.rudderstack.core.internals.plugins.Plugin
 
-class PocPlugin : Plugin {
+internal class PocPlugin : Plugin {
 
     override val pluginType: Plugin.PluginType = Plugin.PluginType.PreProcess
 
