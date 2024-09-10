@@ -4,12 +4,12 @@ import com.rudderstack.core.Analytics
 import com.rudderstack.core.internals.models.FlushEvent
 import com.rudderstack.core.internals.models.Message
 import com.rudderstack.core.internals.models.TrackEvent
-import com.rudderstack.core.internals.queue.MessageQueue
 import com.rudderstack.core.internals.plugins.MessagePlugin
 import com.rudderstack.core.internals.plugins.Plugin
 import com.rudderstack.core.internals.plugins.PluginChain
+import com.rudderstack.core.internals.queue.MessageQueue
 
-class RudderStackDataplanePlugin : MessagePlugin {
+internal class RudderStackDataplanePlugin : MessagePlugin {
 
     override val pluginType: Plugin.PluginType = Plugin.PluginType.Destination
     private val pluginChain: PluginChain = PluginChain()
@@ -32,11 +32,11 @@ class RudderStackDataplanePlugin : MessagePlugin {
         messageQueue = MessageQueue(analytics).apply { start() }
     }
 
-    fun remove(plugin: Plugin) {
+    internal fun remove(plugin: Plugin) {
         pluginChain.remove(plugin)
     }
 
-    fun flush() {
+    internal fun flush() {
         messageQueue?.flush()
     }
 

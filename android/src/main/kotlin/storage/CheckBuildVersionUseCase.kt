@@ -4,7 +4,7 @@ import android.annotation.SuppressLint
 import android.os.Build
 import androidx.annotation.ChecksSdkIntAtLeast
 
-class CheckBuildVersionUseCase {
+internal class CheckBuildVersionUseCase {
 
     /**
      * @return true, if user has a device with Android 7 (API level 24) or higher
