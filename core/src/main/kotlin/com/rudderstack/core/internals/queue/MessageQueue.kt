@@ -113,7 +113,7 @@ internal class MessageQueue(
             val fileUrlList = storage.readString(StorageKeys.RUDDER_MESSAGE, String.empty()).parseFilePaths()
             for (filePath in fileUrlList) {
                 val file = File(filePath)
-                if (!file.exists()) continue
+                if (!isFileExists(file)) continue
 
                 var shouldCleanup = false
                 try {
@@ -156,6 +156,9 @@ internal class MessageQueue(
             }
         }
     }
+
+    @VisibleForTesting
+    fun isFileExists(file: File) = file.exists()
 
     @VisibleForTesting
     fun readFileAsString(filePath: String): String {
