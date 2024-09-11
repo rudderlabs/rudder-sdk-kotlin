@@ -5,8 +5,12 @@ import com.rudderstack.core.internals.logger.TAG
 import com.rudderstack.core.internals.models.FlushEvent
 import com.rudderstack.core.internals.models.Message
 import com.rudderstack.core.internals.models.MessageType
+import com.rudderstack.core.internals.network.HttpClient
+import com.rudderstack.core.internals.network.HttpClientImpl
+import com.rudderstack.core.internals.network.Result
 import com.rudderstack.core.internals.storage.StorageKeys
 import com.rudderstack.core.internals.utils.empty
+import com.rudderstack.core.internals.utils.encodeToBase64
 import com.rudderstack.core.internals.utils.parseFilePaths
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.channels.Channel
@@ -21,10 +25,12 @@ import java.io.File
 import java.io.FileNotFoundException
 
 internal const val UPLOAD_SIG = "#!upload"
+private const val BATCH_ENDPOINT = "/v1/batch"
 
 @OptIn(DelicateCoroutinesApi::class)
 internal class MessageQueue(
     private val analytics: Analytics,
+    private val httpClientFactory: HttpClient = analytics.createPostHttpClientFactory(),
 ) {
     private var running: Boolean
     private var writeChannel: Channel<Message>
@@ -38,6 +44,11 @@ internal class MessageQueue(
         uploadChannel = Channel(UNLIMITED)
         registerShutdownHook()
     }
+
+    // TODO("Listen for anonymousID state change through state management library")
+//    private fun updateAnonymousId(newAnonymousId: String) {
+//        httpClientFactory.updateAnonymousIdHeaderString(newAnonymousId.encodeToBase64())
+//    }
 
     fun put(message: Message) {
         writeChannel.trySend(message)
@@ -100,33 +111,54 @@ internal class MessageQueue(
                 storage.rollover()
             }
             val fileUrlList = storage.readString(StorageKeys.RUDDER_MESSAGE, String.empty()).parseFilePaths()
-            for (url in fileUrlList) {
-                val file = File(url)
-                if (!file.exists()) continue
-                var shouldCleanup = true
+            for (filePath in fileUrlList) {
+                val file = File(filePath)
+                if (!isFileExists(file)) continue
+
+                var shouldCleanup = false
                 try {
-                    val filePathList = storage.readFileList()
-                    for (filePath in filePathList) {
-                        try {
-                            // TODO batch API
-                            val text = readFileAsString(filePath)
-                            analytics.configuration.logger.debug(TAG, "-------> readFileAsString: $text")
-                        } catch (e: FileNotFoundException) {
-                            analytics.configuration.logger.error(TAG, "Message storage file not found", e)
-                        } catch (e: Exception) {
-                            analytics.configuration.logger.error(TAG, "Error when uploading event", e)
+                    val batchPayload = readFileAsString(filePath)
+                    analytics.configuration.logger.debug(
+                        TAG,
+                        "-------> readFileAsString: $batchPayload"
+                    )
+                    when (
+                        val result: Result<String> =
+                            httpClientFactory.sendData(batchPayload)
+                    ) {
+                        is Result.Success -> {
+                            analytics.configuration.logger.debug(
+                                log = "Event uploaded successfully. Server response: ${result.response}"
+                            )
+                            shouldCleanup = true
+                        }
+
+                        is Result.Failure -> {
+                            analytics.configuration.logger.debug(
+                                log = "Error when uploading event due to ${result.status} ${result.error}"
+                            )
                         }
                     }
+                } catch (e: FileNotFoundException) {
+                    analytics.configuration.logger.error(TAG, "Message storage file not found", e)
                 } catch (e: Exception) {
-                    analytics.configuration.logger.error(TAG, "Upload Exception", e)
+                    analytics.configuration.logger.error(TAG, "Error when uploading event", e)
                     //  shouldCleanup = handleUploadException(e, file)
                 }
+
                 if (shouldCleanup) {
-                    storage.remove(file.path)
+                    storage.remove(file.path).let {
+                        analytics.configuration.logger.debug(
+                            log = "Removed file: $filePath"
+                        )
+                    }
                 }
             }
         }
     }
+
+    @VisibleForTesting
+    fun isFileExists(file: File) = file.exists()
 
     @VisibleForTesting
     fun readFileAsString(filePath: String): String {
@@ -149,4 +181,19 @@ internal class MessageQueue(
             }
         })
     }
+}
+
+private fun Analytics.createPostHttpClientFactory(): HttpClient {
+    val authHeaderString: String = configuration.writeKey.encodeToBase64()
+    val isGzipEnabled = configuration.gzipEnabled
+    // TODO("Add the way to get the anonymousId")
+    val anonymousIdHeaderString = "<ANONYMOUS_ID_HEADER_STRING>".encodeToBase64()
+
+    return HttpClientImpl.createPostHttpClient(
+        baseUrl = configuration.dataPlaneUrl,
+        endPoint = BATCH_ENDPOINT,
+        authHeaderString = authHeaderString,
+        isGZIPEnabled = isGzipEnabled,
+        anonymousIdHeaderString = anonymousIdHeaderString,
+    )
 }
