@@ -115,42 +115,42 @@ class MessageQueueTest {
     @Test
     fun `given multiple batch is ready to be sent to the server and server returns success, when flush is called, then all the batches are sent to the server and removed from the storage`() =
         runTest {
-        val storage = mockAnalytics.configuration.storageProvider
-        // Two batch files are ready to be sent
-        val filePaths = listOf(
-            "/data/user/0/com.rudderstack.android.sampleapp/app_rudder-android-store/<WRITE_KEY>-0",
-            "/data/user/0/com.rudderstack.android.sampleapp/app_rudder-android-store/<WRITE_KEY>-1"
-        )
-        val fileUrlList = filePaths.joinToString(",")
+            val storage = mockAnalytics.configuration.storageProvider
+            // Two batch files are ready to be sent
+            val filePaths = listOf(
+                "/data/user/0/com.rudderstack.android.sampleapp/app_rudder-android-store/<WRITE_KEY>-0",
+                "/data/user/0/com.rudderstack.android.sampleapp/app_rudder-android-store/<WRITE_KEY>-1"
+            )
+            val fileUrlList = filePaths.joinToString(",")
 
-        // Mock storage read
-        coEvery {
-            storage.readString(StorageKeys.RUDDER_MESSAGE, String.empty())
-        } returns fileUrlList
+            // Mock storage read
+            coEvery {
+                storage.readString(StorageKeys.RUDDER_MESSAGE, String.empty())
+            } returns fileUrlList
 
-        // Mock file existence check
-        every { messageQueue.isFileExists(any()) } returns true
+            // Mock file existence check
+            every { messageQueue.isFileExists(any()) } returns true
 
-        val batchPayload = "test content"
+            val batchPayload = "test content"
 
-        // Mock messageQueue file reading
-        filePaths.forEach { path ->
-            every { messageQueue.readFileAsString(path) } returns batchPayload
-        }
+            // Mock messageQueue file reading
+            filePaths.forEach { path ->
+                every { messageQueue.readFileAsString(path) } returns batchPayload
+            }
 
-        // Mock the behavior for HttpClient
-        every { mockHttpClient.sendData(batchPayload) } returns Result.Success("Ok")
+            // Mock the behavior for HttpClient
+            every { mockHttpClient.sendData(batchPayload) } returns Result.Success("Ok")
 
-        // Execute messageQueue actions
-        messageQueue.start()
-        messageQueue.flush()
+            // Execute messageQueue actions
+            messageQueue.start()
+            messageQueue.flush()
             testDispatcher.scheduler.advanceUntilIdle()
 
-        // Verify the expected behavior
-        filePaths.forEach { path ->
-            verify(exactly = 1) { storage.remove(path) }
+            // Verify the expected behavior
+            filePaths.forEach { path ->
+                verify(exactly = 1) { storage.remove(path) }
+            }
         }
-    }
 
     @Test
     fun `given batch is ready to be sent to the server and server returns error, when flush is called, then the batch is not removed from storage`() {
