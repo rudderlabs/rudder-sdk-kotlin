@@ -1,16 +1,15 @@
 package com.rudderstack.core.internals.policies
 
 import com.rudderstack.core.internals.utils.mockAnalytics
+import com.rudderstack.core.utils.advanceTimeBy
 import io.mockk.coVerify
-import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Test
 
 class FrequencyFlushPolicyTest {
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    private val testDispatcher = UnconfinedTestDispatcher()
+    private val testDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
     private val mockAnalytics = mockAnalytics(testScope, testDispatcher)
 
@@ -20,7 +19,7 @@ class FrequencyFlushPolicyTest {
 
         frequencyFlushPolicy.schedule(mockAnalytics)
 
-        advanceTimeBy(DEFAULT_FLUSH_INTERVAL_IN_MILLIS)
+        testDispatcher.advanceTimeBy()
         coVerify(exactly = 1) {
             mockAnalytics.flush()
         }
@@ -32,7 +31,7 @@ class FrequencyFlushPolicyTest {
 
         frequencyFlushPolicy.schedule(mockAnalytics)
 
-        advanceTimeBy(DEFAULT_FLUSH_INTERVAL_IN_MILLIS - 1)
+        testDispatcher.advanceTimeBy(DEFAULT_FLUSH_INTERVAL_IN_MILLIS - 1)
         coVerify(exactly = 0) {
             mockAnalytics.flush()
         }
@@ -45,19 +44,19 @@ class FrequencyFlushPolicyTest {
         frequencyFlushPolicy.schedule(mockAnalytics)
 
         // After the first interval, it should flush
-        advanceTimeBy(DEFAULT_FLUSH_INTERVAL_IN_MILLIS)
+        testDispatcher.advanceTimeBy()
         coVerify(exactly = 1) {
             mockAnalytics.flush()
         }
 
         // After the second interval, it should flush again
-        advanceTimeBy(DEFAULT_FLUSH_INTERVAL_IN_MILLIS)
+        testDispatcher.advanceTimeBy()
         coVerify(exactly = 2) {
             mockAnalytics.flush()
         }
 
         // After the third interval, it should flush again
-        advanceTimeBy(DEFAULT_FLUSH_INTERVAL_IN_MILLIS)
+        testDispatcher.advanceTimeBy()
         coVerify(exactly = 3) {
             mockAnalytics.flush()
         }
@@ -65,7 +64,7 @@ class FrequencyFlushPolicyTest {
         // Cancel the scheduler
         frequencyFlushPolicy.cancelSchedule()
 
-        advanceTimeBy(DEFAULT_FLUSH_INTERVAL_IN_MILLIS)
+        testDispatcher.advanceTimeBy()
         // Should not flush after cancelling
         coVerify(exactly = 3) {
             mockAnalytics.flush()
@@ -74,11 +73,12 @@ class FrequencyFlushPolicyTest {
 
     @Test
     fun `given flush interval is set to 1, when the policy is scheduled, then it should flush after the scheduled interval`() {
-        val frequencyFlushPolicy = FrequencyFlushPolicy(1)
+        val flushInterval = 1L
+        val frequencyFlushPolicy = FrequencyFlushPolicy(flushInterval)
 
         frequencyFlushPolicy.schedule(mockAnalytics)
 
-        advanceTimeBy(1)
+        testDispatcher.advanceTimeBy(flushInterval)
         coVerify(exactly = 1) {
             mockAnalytics.flush()
         }
@@ -86,11 +86,12 @@ class FrequencyFlushPolicyTest {
 
     @Test
     fun `given flush interval is set to 100s, when the policy is scheduled, then it should flush after the scheduled interval`() {
-        val frequencyFlushPolicy = FrequencyFlushPolicy(100_000)
+        val flushInterval = 100_000L
+        val frequencyFlushPolicy = FrequencyFlushPolicy(flushInterval)
 
         frequencyFlushPolicy.schedule(mockAnalytics)
 
-        advanceTimeBy(100_000)
+        testDispatcher.advanceTimeBy(flushInterval)
         coVerify(exactly = 1) {
             mockAnalytics.flush()
         }
@@ -98,11 +99,12 @@ class FrequencyFlushPolicyTest {
 
     @Test
     fun `given flush interval is set to 0, when the policy is scheduled, then it should flush after the default interval`() {
-        val frequencyFlushPolicy = FrequencyFlushPolicy(0)
+        val flushInterval = 0L
+        val frequencyFlushPolicy = FrequencyFlushPolicy(flushInterval)
 
         frequencyFlushPolicy.schedule(mockAnalytics)
 
-        advanceTimeBy(DEFAULT_FLUSH_INTERVAL_IN_MILLIS)
+        testDispatcher.advanceTimeBy()
         coVerify(exactly = 1) {
             mockAnalytics.flush()
         }
@@ -115,7 +117,7 @@ class FrequencyFlushPolicyTest {
         frequencyFlushPolicy.schedule(mockAnalytics)
         frequencyFlushPolicy.cancelSchedule()
 
-        advanceTimeBy(DEFAULT_FLUSH_INTERVAL_IN_MILLIS)
+        testDispatcher.advanceTimeBy()
         coVerify(exactly = 0) {
             mockAnalytics.flush()
         }
@@ -129,13 +131,13 @@ class FrequencyFlushPolicyTest {
         frequencyFlushPolicy.schedule(mockAnalytics)
         frequencyFlushPolicy.schedule(mockAnalytics)
 
-        advanceTimeBy(DEFAULT_FLUSH_INTERVAL_IN_MILLIS)
+        testDispatcher.advanceTimeBy()
         coVerify(exactly = 1) {
             mockAnalytics.flush()
         }
 
         // After the second interval, it should flush again only once
-        advanceTimeBy(DEFAULT_FLUSH_INTERVAL_IN_MILLIS)
+        testDispatcher.advanceTimeBy()
         coVerify(exactly = 2) {
             mockAnalytics.flush()
         }
@@ -143,16 +145,10 @@ class FrequencyFlushPolicyTest {
         // Cancel the scheduler
         frequencyFlushPolicy.cancelSchedule()
 
-        advanceTimeBy(DEFAULT_FLUSH_INTERVAL_IN_MILLIS)
+        testDispatcher.advanceTimeBy()
         // Should not flush after cancelling
         coVerify(exactly = 2) {
             mockAnalytics.flush()
         }
-    }
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    private fun advanceTimeBy(timeInMillis: Long) {
-        testDispatcher.scheduler.advanceTimeBy(timeInMillis)
-        testDispatcher.scheduler.runCurrent()
     }
 }

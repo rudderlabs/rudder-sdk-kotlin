@@ -1,18 +1,17 @@
 package com.rudderstack.core.internals.policies
 
 import com.rudderstack.core.internals.utils.mockAnalytics
+import com.rudderstack.core.utils.advanceTimeBy
 import io.mockk.coVerify
-import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class FlushPoliciesTest {
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    private val testDispatcher = UnconfinedTestDispatcher()
+    private val testDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
     private val mockAnalytics = mockAnalytics(testScope, testDispatcher)
 
@@ -52,7 +51,7 @@ class FlushPoliciesTest {
 
         flushPoliciesFacade.schedule(mockAnalytics)
 
-        advanceTimeBy(DEFAULT_FLUSH_INTERVAL_IN_MILLIS)
+        testDispatcher.advanceTimeBy()
         coVerify(exactly = 1) {
             mockAnalytics.flush()
         }
@@ -93,7 +92,7 @@ class FlushPoliciesTest {
         // It should not flush before the default interval
         assertFalse(flushPoliciesFacade.shouldFlush())
 
-        advanceTimeBy(DEFAULT_FLUSH_INTERVAL_IN_MILLIS)
+        testDispatcher.advanceTimeBy()
         coVerify(exactly = 1) {
             mockAnalytics.flush()
         }
@@ -128,7 +127,7 @@ class FlushPoliciesTest {
         assertFalse(flushPoliciesFacade.shouldFlush())
 
         // FrequencyFlushPolicy should flush after the default interval
-        advanceTimeBy(DEFAULT_FLUSH_INTERVAL_IN_MILLIS)
+        testDispatcher.advanceTimeBy()
         coVerify(exactly = 1) {
             mockAnalytics.flush()
         }
@@ -136,15 +135,9 @@ class FlushPoliciesTest {
         // Cancel the scheduler of FrequencyFlushPolicy
         flushPoliciesFacade.cancelSchedule()
 
-        advanceTimeBy(DEFAULT_FLUSH_INTERVAL_IN_MILLIS)
+        testDispatcher.advanceTimeBy()
         coVerify(exactly = 1) {
             mockAnalytics.flush()
         }
-    }
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    private fun advanceTimeBy(timeInMillis: Long) {
-        testDispatcher.scheduler.advanceTimeBy(timeInMillis)
-        testDispatcher.scheduler.runCurrent()
     }
 }
