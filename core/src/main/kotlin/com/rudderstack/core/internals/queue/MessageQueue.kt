@@ -32,12 +32,12 @@ private const val BATCH_ENDPOINT = "/v1/batch"
 internal class MessageQueue(
     private val analytics: Analytics,
     private val httpClientFactory: HttpClient = analytics.createPostHttpClientFactory(),
+    private var flushPoliciesFacade: FlushPoliciesFacade =
+        FlushPoliciesFacade(analytics.configuration.flushPolicies)
 ) {
     private var running: Boolean
     private var writeChannel: Channel<Message>
     private var uploadChannel: Channel<String>
-    private var flushPoliciesFacade: FlushPoliciesFacade =
-        FlushPoliciesFacade(analytics.configuration.flushPolicies)
 
     private val storage get() = analytics.configuration.storageProvider
 
