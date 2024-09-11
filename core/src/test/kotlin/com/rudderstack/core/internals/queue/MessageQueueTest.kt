@@ -148,7 +148,7 @@ class MessageQueueTest {
 
         // Verify the expected behavior
         filePaths.forEach { path ->
-            verify { storage.remove(path) }
+            verify(exactly = 1) { storage.remove(path) }
         }
     }
 
