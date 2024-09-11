@@ -3,13 +3,19 @@ package com.rudderstack.core.internals.queue
 import com.rudderstack.core.Analytics
 import com.rudderstack.core.internals.logger.Logger
 import com.rudderstack.core.internals.models.Message
+import com.rudderstack.core.internals.network.ErrorStatus
 import com.rudderstack.core.internals.network.HttpClient
+import com.rudderstack.core.internals.network.Result
 import com.rudderstack.core.internals.storage.Storage
+import com.rudderstack.core.internals.storage.StorageKeys
+import com.rudderstack.core.internals.utils.empty
 import io.mockk.MockKAnnotations
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.mockk
 import io.mockk.spyk
+import io.mockk.verify
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
@@ -19,6 +25,8 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import java.io.FileNotFoundException
+import java.io.IOException
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class MessageQueueTest {
@@ -104,5 +112,158 @@ class MessageQueueTest {
                 .invoke(messageQueue, filePath)
 
         assertEquals(fileContent, result)
+    }
+
+    @Test
+    fun `given multiple batch is ready to be sent to the server and server returns success, when flush is called, then all the batches are sent to the server and removed from the storage`() {
+        val storage = mockAnalytics.configuration.storageProvider
+        // Two batch files are ready to be sent
+        val filePaths = listOf(
+            "/data/user/0/com.rudderstack.android.sampleapp/app_rudder-android-store/<WRITE_KEY>-0",
+            "/data/user/0/com.rudderstack.android.sampleapp/app_rudder-android-store/<WRITE_KEY>-1"
+        )
+        val fileUrlList = filePaths.joinToString(",")
+
+        // Mock storage read
+        coEvery {
+            storage.readString(StorageKeys.RUDDER_MESSAGE, String.empty())
+        } returns fileUrlList
+
+        // Mock file existence check
+        every { messageQueue.isFileExists(any()) } returns true
+
+        val batchPayload = "test content"
+
+        // Mock messageQueue file reading
+        filePaths.forEach { path ->
+            every { messageQueue.readFileAsString(path) } returns batchPayload
+        }
+
+        // Mock the behavior for HttpClient
+        every { mockHttpClient.sendData(batchPayload) } returns Result.Success("Ok")
+
+        // Execute messageQueue actions
+        messageQueue.start()
+        messageQueue.flush()
+
+        // Verify the expected behavior
+        filePaths.forEach { path ->
+            verify { storage.remove(path) }
+        }
+    }
+
+    @Test
+    fun `given batch is ready to be sent to the server and server returns error, when flush is called, then the batch is not removed from storage`() {
+        val storage = mockAnalytics.configuration.storageProvider
+        // Two batch files are ready to be sent
+        val filePaths = listOf(
+            "/data/user/0/com.rudderstack.android.sampleapp/app_rudder-android-store/<WRITE_KEY>-0",
+            "/data/user/0/com.rudderstack.android.sampleapp/app_rudder-android-store/<WRITE_KEY>-1"
+        )
+        val fileUrlList = filePaths.joinToString(",")
+
+        // Mock storage read
+        coEvery {
+            storage.readString(StorageKeys.RUDDER_MESSAGE, String.empty())
+        } returns fileUrlList
+
+        // Mock file existence check
+        every { messageQueue.isFileExists(any()) } returns true
+
+        val batchPayload = "test content"
+
+        // Mock messageQueue file reading
+        filePaths.forEach { path ->
+            every { messageQueue.readFileAsString(path) } returns batchPayload
+        }
+
+        // Mock the behavior for HttpClient
+        every { mockHttpClient.sendData(batchPayload) } returns Result.Failure(
+            ErrorStatus.GENERAL_ERROR,
+            IOException("Internal Server Error")
+        )
+
+        // Execute messageQueue actions
+        messageQueue.start()
+        messageQueue.flush()
+
+        // Verify the expected behavior
+        filePaths.forEach { path ->
+            verify(exactly = 0) { storage.remove(path) }
+        }
+    }
+
+    @Test
+    fun `given batch is ready to be sent to the server and file is not found, when flush is called, then the exception is thrown and handled`() {
+        val storage = mockAnalytics.configuration.storageProvider
+        // Two batch files are ready to be sent
+        val filePaths = listOf(
+            "/data/user/0/com.rudderstack.android.sampleapp/app_rudder-android-store/<WRITE_KEY>-0",
+            "/data/user/0/com.rudderstack.android.sampleapp/app_rudder-android-store/<WRITE_KEY>-1"
+        )
+        val fileUrlList = filePaths.joinToString(",")
+
+        // Mock storage read
+        coEvery {
+            storage.readString(StorageKeys.RUDDER_MESSAGE, String.empty())
+        } returns fileUrlList
+
+        // Mock file existence check
+        every { messageQueue.isFileExists(any()) } returns true
+
+        // Throw file not found exception while reading the file
+        val exception = FileNotFoundException("File not found")
+        filePaths.forEach { path ->
+            every { messageQueue.readFileAsString(path) } throws exception
+        }
+
+        // Execute messageQueue actions
+        messageQueue.start()
+        messageQueue.flush()
+
+        verify(exactly = filePaths.size) {
+            mockLogger.error(
+                tag = "Rudder-Analytics",
+                log = "Message storage file not found",
+                exception
+            )
+        }
+    }
+
+    @Test
+    fun `given batch is ready to be sent to the server and some exception occurs while reading the file, when flush is called, then the exception is thrown and handled`() {
+        val storage = mockAnalytics.configuration.storageProvider
+        // Two batch files are ready to be sent
+        val filePaths = listOf(
+            "/data/user/0/com.rudderstack.android.sampleapp/app_rudder-android-store/<WRITE_KEY>-0",
+            "/data/user/0/com.rudderstack.android.sampleapp/app_rudder-android-store/<WRITE_KEY>-1"
+        )
+        val fileUrlList = filePaths.joinToString(",")
+
+        // Mock storage read
+        coEvery {
+            storage.readString(StorageKeys.RUDDER_MESSAGE, String.empty())
+        } returns fileUrlList
+
+        // Mock file existence check
+        every { messageQueue.isFileExists(any()) } returns true
+
+        // Throw generic exception while reading the file
+        val exception = Exception("File not found")
+        filePaths.forEach { path ->
+            every { messageQueue.readFileAsString(path) } throws exception
+        }
+
+        // Execute messageQueue actions
+        messageQueue.start()
+        messageQueue.flush()
+
+        verify(exactly = filePaths.size) {
+            mockLogger.error(
+                tag = "Rudder-Analytics",
+                log = "Error when uploading event",
+                exception
+            )
+        }
     }
 }
