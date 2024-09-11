@@ -1,13 +1,11 @@
-package internals.policies
+package com.rudderstack.core.internals.policies
 
-import com.rudderstack.core.internals.policies.DEFAULT_FLUSH_INTERVAL_IN_MILLIS
-import com.rudderstack.core.internals.policies.FrequencyFlushPolicy
+import com.rudderstack.core.internals.utils.mockAnalytics
 import io.mockk.coVerify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Test
-import utils.mockAnalytics
 
 class FrequencyFlushPolicyTest {
 

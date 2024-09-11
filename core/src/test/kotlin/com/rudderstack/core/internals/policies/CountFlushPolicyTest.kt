@@ -1,7 +1,5 @@
-package internals.policies
+package com.rudderstack.core.internals.policies
 
-import com.rudderstack.core.internals.policies.CountFlushPolicy
-import com.rudderstack.core.internals.policies.DEFAULT_FLUSH_AT
 import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertTrue
 import org.junit.Test

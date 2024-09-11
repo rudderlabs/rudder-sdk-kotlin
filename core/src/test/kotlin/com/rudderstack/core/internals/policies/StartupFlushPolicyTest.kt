@@ -1,6 +1,5 @@
-package internals.policies
+package com.rudderstack.core.internals.policies
 
-import com.rudderstack.core.internals.policies.StartupFlushPolicy
 import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertTrue
 import org.junit.Test

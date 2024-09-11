@@ -1,4 +1,4 @@
-package utils
+package com.rudderstack.core.internals.utils
 
 import com.rudderstack.core.Analytics
 import io.mockk.every
