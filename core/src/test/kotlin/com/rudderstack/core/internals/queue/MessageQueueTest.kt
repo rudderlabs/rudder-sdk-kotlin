@@ -409,6 +409,7 @@ class MessageQueueTest {
         val mockMessage: Message = mockk(relaxed = true)
         val jsonString = """{"type":"track","event":"Test Event"}"""
         every { messageQueue.stringifyBaseEvent(mockMessage) } returns jsonString
+        // Mock the behavior when no flush policies are enabled
         every { mockFlushPoliciesFacade.shouldFlush() } returns false
 
         // Execute messageQueue actions
