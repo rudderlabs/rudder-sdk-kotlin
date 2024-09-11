@@ -9,6 +9,7 @@ import com.rudderstack.core.internals.network.Result
 import com.rudderstack.core.internals.storage.Storage
 import com.rudderstack.core.internals.storage.StorageKeys
 import com.rudderstack.core.internals.utils.empty
+import com.rudderstack.core.utils.mockAnalytics
 import io.mockk.MockKAnnotations
 import io.mockk.coEvery
 import io.mockk.every
@@ -16,10 +17,10 @@ import io.mockk.impl.annotations.MockK
 import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -28,11 +29,8 @@ import org.junit.Test
 import java.io.FileNotFoundException
 import java.io.IOException
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class MessageQueueTest {
 
-    @MockK
-    private lateinit var mockAnalytics: Analytics
 
     @MockK
     private lateinit var mockStorage: Storage
@@ -43,7 +41,10 @@ class MessageQueueTest {
     @MockK
     private lateinit var mockLogger: Logger
 
-    private val testDispatcher = UnconfinedTestDispatcher()
+    private val testDispatcher = StandardTestDispatcher()
+    private val testScope = TestScope(testDispatcher)
+    private val mockAnalytics: Analytics = mockAnalytics(testScope, testDispatcher)
+
     private lateinit var messageQueue: MessageQueue
 
     @Before
@@ -52,9 +53,6 @@ class MessageQueueTest {
 
         every { mockAnalytics.configuration.storageProvider } returns mockStorage
         every { mockAnalytics.configuration.logger } returns mockLogger
-        every { mockAnalytics.analyticsScope } returns CoroutineScope(testDispatcher)
-        every { mockAnalytics.storageDispatcher } returns testDispatcher
-        every { mockAnalytics.networkDispatcher } returns testDispatcher
 
         messageQueue = spyk(MessageQueue(mockAnalytics, mockHttpClient))
     }
@@ -115,7 +113,8 @@ class MessageQueueTest {
     }
 
     @Test
-    fun `given multiple batch is ready to be sent to the server and server returns success, when flush is called, then all the batches are sent to the server and removed from the storage`() {
+    fun `given multiple batch is ready to be sent to the server and server returns success, when flush is called, then all the batches are sent to the server and removed from the storage`() =
+        runTest {
         val storage = mockAnalytics.configuration.storageProvider
         // Two batch files are ready to be sent
         val filePaths = listOf(
@@ -145,6 +144,7 @@ class MessageQueueTest {
         // Execute messageQueue actions
         messageQueue.start()
         messageQueue.flush()
+            testDispatcher.scheduler.advanceUntilIdle()
 
         // Verify the expected behavior
         filePaths.forEach { path ->
@@ -186,6 +186,7 @@ class MessageQueueTest {
         // Execute messageQueue actions
         messageQueue.start()
         messageQueue.flush()
+        testDispatcher.scheduler.advanceUntilIdle()
 
         // Verify the expected behavior
         filePaths.forEach { path ->
@@ -220,6 +221,7 @@ class MessageQueueTest {
         // Execute messageQueue actions
         messageQueue.start()
         messageQueue.flush()
+        testDispatcher.scheduler.advanceUntilIdle()
 
         verify(exactly = filePaths.size) {
             mockLogger.error(
@@ -257,6 +259,7 @@ class MessageQueueTest {
         // Execute messageQueue actions
         messageQueue.start()
         messageQueue.flush()
+        testDispatcher.scheduler.advanceUntilIdle()
 
         verify(exactly = filePaths.size) {
             mockLogger.error(
