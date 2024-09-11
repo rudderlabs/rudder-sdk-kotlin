@@ -3,41 +3,52 @@ package com.rudderstack.core.internals.queue
 import com.rudderstack.core.Analytics
 import com.rudderstack.core.internals.logger.Logger
 import com.rudderstack.core.internals.models.Message
+import com.rudderstack.core.internals.network.HttpClient
 import com.rudderstack.core.internals.storage.Storage
+import io.mockk.MockKAnnotations
 import io.mockk.every
+import io.mockk.impl.annotations.MockK
 import io.mockk.mockk
 import io.mockk.spyk
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import java.io.File
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class MessageQueueTest {
 
-    private val testDispatcher = StandardTestDispatcher()
+    @MockK
+    private lateinit var mockAnalytics: Analytics
 
-    private lateinit var analytics: Analytics
-    private lateinit var storage: Storage
+    @MockK
+    private lateinit var mockStorage: Storage
+
+    @MockK
+    private lateinit var mockHttpClient: HttpClient
+
+    @MockK
+    private lateinit var mockLogger: Logger
+
+    private val testDispatcher = UnconfinedTestDispatcher()
     private lateinit var messageQueue: MessageQueue
 
     @Before
     fun setUp() {
-        analytics = mockk(relaxed = true)
-        storage = mockk(relaxed = true)
-        val logger = mockk<Logger>(relaxed = true)
+        MockKAnnotations.init(this, relaxed = true)
 
-        every { analytics.configuration.storageProvider } returns storage
-        every { analytics.configuration.logger } returns logger
-        every { analytics.analyticsScope } returns CoroutineScope(testDispatcher)
-        every { analytics.storageDispatcher } returns testDispatcher
-        every { analytics.networkDispatcher } returns testDispatcher
+        every { mockAnalytics.configuration.storageProvider } returns mockStorage
+        every { mockAnalytics.configuration.logger } returns mockLogger
+        every { mockAnalytics.analyticsScope } returns CoroutineScope(testDispatcher)
+        every { mockAnalytics.storageDispatcher } returns testDispatcher
+        every { mockAnalytics.networkDispatcher } returns testDispatcher
 
-        messageQueue = spyk(MessageQueue(analytics))
+        messageQueue = spyk(MessageQueue(mockAnalytics, mockHttpClient))
     }
 
     @After
@@ -59,12 +70,15 @@ class MessageQueueTest {
         messageQueue.stop()
 
         val running =
-            messageQueue::class.java.getDeclaredField("running").apply { isAccessible = true }.getBoolean(messageQueue)
+            messageQueue::class.java.getDeclaredField("running").apply { isAccessible = true }
+                .getBoolean(messageQueue)
         assertTrue(!running)
-        assertTrue(messageQueue::class.java.getDeclaredField("writeChannel").apply { isAccessible = true }
-            .get(messageQueue) is Channel<*>)
-        assertTrue(messageQueue::class.java.getDeclaredField("uploadChannel").apply { isAccessible = true }
-            .get(messageQueue) is Channel<*>)
+        assertTrue(
+            messageQueue::class.java.getDeclaredField("writeChannel").apply { isAccessible = true }
+                .get(messageQueue) is Channel<*>)
+        assertTrue(
+            messageQueue::class.java.getDeclaredField("uploadChannel").apply { isAccessible = true }
+                .get(messageQueue) is Channel<*>)
     }
 
     @Test
@@ -84,9 +98,10 @@ class MessageQueueTest {
 
         every { messageQueue.readFileAsString(filePath) } returns fileContent
 
-        val result = messageQueue::class.java.getDeclaredMethod("readFileAsString", String::class.java)
-            .apply { isAccessible = true }
-            .invoke(messageQueue, filePath)
+        val result =
+            messageQueue::class.java.getDeclaredMethod("readFileAsString", String::class.java)
+                .apply { isAccessible = true }
+                .invoke(messageQueue, filePath)
 
         assertEquals(fileContent, result)
     }
