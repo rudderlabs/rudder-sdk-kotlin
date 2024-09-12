@@ -26,13 +26,13 @@ internal class AndroidStorage(
     private val messageBatchFile = MessageBatchFileManager(storageDirectory, writeKey, rudderPrefsRepo)
 
     override suspend fun write(key: StorageKeys, value: Boolean) {
-        if (key != StorageKeys.RUDDER_MESSAGE) {
+        if (key != StorageKeys.MESSAGE) {
             rudderPrefsRepo.save(key.key, value)
         }
     }
 
     override suspend fun write(key: StorageKeys, value: String) {
-        if (key == StorageKeys.RUDDER_MESSAGE) {
+        if (key == StorageKeys.MESSAGE) {
             if (value.length < MAX_PAYLOAD_SIZE) {
                 messageBatchFile.storeMessage(value)
             } else {
@@ -44,13 +44,13 @@ internal class AndroidStorage(
     }
 
     override suspend fun write(key: StorageKeys, value: Int) {
-        if (key != StorageKeys.RUDDER_MESSAGE) {
+        if (key != StorageKeys.MESSAGE) {
             rudderPrefsRepo.save(key.key, value)
         }
     }
 
     override suspend fun write(key: StorageKeys, value: Long) {
-        if (key != StorageKeys.RUDDER_MESSAGE) {
+        if (key != StorageKeys.MESSAGE) {
             rudderPrefsRepo.save(key.key, value)
         }
     }
@@ -80,7 +80,7 @@ internal class AndroidStorage(
     }
 
     override fun readString(key: StorageKeys, defaultVal: String): String {
-        return if (key == StorageKeys.RUDDER_MESSAGE) {
+        return if (key == StorageKeys.MESSAGE) {
             messageBatchFile.read().joinToString()
         } else {
             rudderPrefsRepo.getString(key.key, defaultVal)

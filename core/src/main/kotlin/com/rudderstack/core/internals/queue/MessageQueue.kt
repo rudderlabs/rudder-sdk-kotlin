@@ -96,7 +96,7 @@ internal class MessageQueue(
                 try {
                     val stringVal = stringifyBaseEvent(message)
                     analytics.configuration.logger.debug(TAG, "running $stringVal")
-                    storage.write(StorageKeys.RUDDER_MESSAGE, stringVal)
+                    storage.write(StorageKeys.MESSAGE, stringVal)
                     flushPoliciesFacade.updateState()
                 } catch (e: Exception) {
                     analytics.configuration.logger.error(TAG, "Error adding payload: $message", e)
@@ -117,7 +117,7 @@ internal class MessageQueue(
             withContext(analytics.storageDispatcher) {
                 storage.rollover()
             }
-            val fileUrlList = storage.readString(StorageKeys.RUDDER_MESSAGE, String.empty()).parseFilePaths()
+            val fileUrlList = storage.readString(StorageKeys.MESSAGE, String.empty()).parseFilePaths()
             for (filePath in fileUrlList) {
                 val file = File(filePath)
                 if (!isFileExists(file)) continue
@@ -125,14 +125,8 @@ internal class MessageQueue(
                 var shouldCleanup = false
                 try {
                     val batchPayload = readFileAsString(filePath)
-                    analytics.configuration.logger.debug(
-                        TAG,
-                        "-------> readFileAsString: $batchPayload"
-                    )
-                    when (
-                        val result: Result<String> =
-                            httpClientFactory.sendData(batchPayload)
-                    ) {
+                    analytics.configuration.logger.debug(TAG, "-------> readFileAsString: $batchPayload")
+                    when (val result: Result<String> = httpClientFactory.sendData(batchPayload)) {
                         is Result.Success -> {
                             analytics.configuration.logger.debug(
                                 log = "Event uploaded successfully. Server response: ${result.response}"
