@@ -10,7 +10,7 @@ import java.util.WeakHashMap
  * garbage collection of keys (instances) that are no longer in use, thus preventing
  * memory leaks.
  */
-object ExecutionManager {
+internal object ExecutionManager {
 
     // A WeakHashMap to keep track of whether a task has been executed for a specific instance.
     private val executionState = WeakHashMap<Any, Boolean>()
@@ -21,7 +21,7 @@ object ExecutionManager {
      * @receiver Any instance for which the task should be executed.
      * @param task The lambda function representing the task to be executed.
      */
-    fun Any.runOnce(task: () -> Unit) {
+    internal fun Any.runOnce(task: () -> Unit) {
         synchronized(executionState) {
             // Check if the task has already been executed for this instance
             if (executionState.containsKey(this)) return
