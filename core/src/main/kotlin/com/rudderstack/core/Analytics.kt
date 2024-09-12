@@ -7,8 +7,10 @@ import com.rudderstack.core.internals.models.TrackEvent
 import com.rudderstack.core.internals.models.emptyJsonObject
 import com.rudderstack.core.internals.plugins.Plugin
 import com.rudderstack.core.internals.plugins.PluginChain
+import com.rudderstack.core.internals.statemanagement.SingleThreadStore
 import com.rudderstack.core.plugins.PocPlugin
 import com.rudderstack.core.plugins.RudderStackDataplanePlugin
+import com.rudderstack.core.state.SourceConfigState
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -39,9 +41,14 @@ open class Analytics protected constructor(
 
     // Initial setup of the plugin chain, associating it with this Analytics instance
     private val pluginChain: PluginChain = PluginChain().also { it.analytics = this }
+    private var store: SingleThreadStore<SourceConfigState, SourceConfigState.Update>
 
     init {
         setup()
+        store = SingleThreadStore(
+            state = SourceConfigState.initialState(),
+            reducer = SourceConfigState.SaveSourceConfigValues(configuration.storageProvider, stateScope),
+        )
     }
 
     /**
@@ -57,6 +64,7 @@ open class Analytics protected constructor(
                 configuration.logger.error(log = exception.stackTraceToString())
             }
             override val analyticsScope: CoroutineScope = CoroutineScope(SupervisorJob() + handler)
+            override val stateScope: CoroutineScope = CoroutineScope(Dispatchers.IO)
             override val analyticsDispatcher: CoroutineDispatcher = Dispatchers.IO
             override val storageDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(2)
             override val networkDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(1)
@@ -102,7 +110,7 @@ open class Analytics protected constructor(
         add(RudderStackDataplanePlugin())
 
         analyticsScope.launch(analyticsDispatcher) {
-            ServerConfigManager(analytics = this@Analytics).fetchSourceConfig()
+            ServerConfigManager(analytics = this@Analytics, store = store).fetchSourceConfig()
         }
     }
 
