@@ -6,12 +6,14 @@ import com.rudderstack.core.internals.models.Message
 import com.rudderstack.core.internals.network.ErrorStatus
 import com.rudderstack.core.internals.network.HttpClient
 import com.rudderstack.core.internals.network.Result
+import com.rudderstack.core.internals.policies.FlushPoliciesFacade
 import com.rudderstack.core.internals.storage.Storage
 import com.rudderstack.core.internals.storage.StorageKeys
 import com.rudderstack.core.internals.utils.empty
 import com.rudderstack.core.utils.mockAnalytics
 import io.mockk.MockKAnnotations
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.mockk
@@ -31,7 +33,6 @@ import java.io.IOException
 
 class MessageQueueTest {
 
-
     @MockK
     private lateinit var mockStorage: Storage
 
@@ -40,6 +41,9 @@ class MessageQueueTest {
 
     @MockK
     private lateinit var mockLogger: Logger
+
+    @MockK
+    private lateinit var mockFlushPoliciesFacade: FlushPoliciesFacade
 
     private val testDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
@@ -54,7 +58,13 @@ class MessageQueueTest {
         every { mockAnalytics.configuration.storageProvider } returns mockStorage
         every { mockAnalytics.configuration.logger } returns mockLogger
 
-        messageQueue = spyk(MessageQueue(mockAnalytics, mockHttpClient))
+        messageQueue = spyk(
+            MessageQueue(
+                analytics = mockAnalytics,
+                httpClientFactory = mockHttpClient,
+                flushPoliciesFacade = mockFlushPoliciesFacade,
+            )
+        )
     }
 
     @After
@@ -267,6 +277,157 @@ class MessageQueueTest {
                 log = "Error when uploading event",
                 exception
             )
+        }
+    }
+
+    @Test
+    fun `given default flush policies are enabled, when message queue is started, then flush policies should be scheduled`() {
+        messageQueue.start()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        verify(exactly = 1) {
+            mockFlushPoliciesFacade.schedule(mockAnalytics)
+        }
+    }
+
+    @Test
+    fun `given default flush policies are enabled, when first event is made, then flush call should be triggered`() {
+        val storage = mockAnalytics.configuration.storageProvider
+        val mockMessage: Message = mockk(relaxed = true)
+        val jsonString = """{"type":"track","event":"Test Event"}"""
+        every { messageQueue.stringifyBaseEvent(mockMessage) } returns jsonString
+        // Mock the behavior for StartupFlushPolicy
+        every { mockFlushPoliciesFacade.shouldFlush() } returns true
+
+        // Execute messageQueue actions
+        messageQueue.start()
+        messageQueue.put(mockMessage)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify(exactly = 1) {
+            mockFlushPoliciesFacade.reset()
+            storage.rollover()
+        }
+    }
+
+    @Test
+    fun `given default flush policies are enabled, when 30 events are made, then flush call should be triggered`() {
+        val storage = mockAnalytics.configuration.storageProvider
+        val mockMessage: Message = mockk(relaxed = true)
+        val jsonString = """{"type":"track","event":"Test Event"}"""
+        every { messageQueue.stringifyBaseEvent(mockMessage) } returns jsonString
+        // Mock the behavior for StartupFlushPolicy
+        every { mockFlushPoliciesFacade.shouldFlush() } returns true
+
+        // Execute messageQueue actions
+        messageQueue.start()
+
+        // Make the first event
+        messageQueue.put(mockMessage)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify(exactly = 1) {
+            mockFlushPoliciesFacade.reset()
+            storage.rollover()
+        }
+
+        // Mock the behavior for CountFlushPolicy
+        every { mockFlushPoliciesFacade.shouldFlush() } returns false
+
+        repeat(29) {
+            messageQueue.put(mockMessage)
+        }
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // No new flush should be triggered
+        coVerify(exactly = 1) {
+            mockFlushPoliciesFacade.reset()
+            storage.rollover()
+        }
+
+        // Mock the behavior for CountFlushPolicy
+        every { mockFlushPoliciesFacade.shouldFlush() } returns true
+
+        // Make the 30th event
+        messageQueue.put(mockMessage)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify(exactly = 2) {
+            mockFlushPoliciesFacade.reset()
+            storage.rollover()
+        }
+    }
+
+    @Test
+    fun `given default flush policies are enabled, when events are made, then the flush policies state should be updated`() {
+        val storage = mockAnalytics.configuration.storageProvider
+        val times = 20
+        val mockMessage: Message = mockk(relaxed = true)
+        val jsonString = """{"type":"track","event":"Test Event"}"""
+        every { messageQueue.stringifyBaseEvent(mockMessage) } returns jsonString
+
+        // Execute messageQueue actions
+        messageQueue.start()
+
+        repeat(times) {
+            messageQueue.put(mockMessage)
+        }
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify(exactly = times) {
+            storage.write(StorageKeys.RUDDER_MESSAGE, jsonString)
+            mockFlushPoliciesFacade.updateState()
+        }
+    }
+
+    @Test
+    fun `given default flush policies are enabled, when flush is called, then flush policies should be reset`() {
+        messageQueue.start()
+        messageQueue.flush()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        verify(exactly = 1) {
+            mockFlushPoliciesFacade.reset()
+        }
+    }
+
+    @Test
+    fun `given default flush policies are enabled, when stop is called, then flush policies should be cancelled`() {
+        messageQueue.start()
+        messageQueue.stop()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        verify(exactly = 1) {
+            mockFlushPoliciesFacade.cancelSchedule()
+        }
+    }
+
+    @Test
+    fun `given no policies are enabled, when explicit flush call is made, then rollover should happen`() {
+        val storage = mockAnalytics.configuration.storageProvider
+        val times = 100
+        val mockMessage: Message = mockk(relaxed = true)
+        val jsonString = """{"type":"track","event":"Test Event"}"""
+        every { messageQueue.stringifyBaseEvent(mockMessage) } returns jsonString
+        // Mock the behavior when no flush policies are enabled
+        every { mockFlushPoliciesFacade.shouldFlush() } returns false
+
+        // Execute messageQueue actions
+        messageQueue.start()
+        repeat(times) {
+            messageQueue.put(mockMessage)
+        }
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify(exactly = 0) {
+            storage.rollover()
+        }
+
+        messageQueue.flush()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify(exactly = 1) {
+            storage.rollover()
         }
     }
 }

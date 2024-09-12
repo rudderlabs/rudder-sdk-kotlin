@@ -82,4 +82,5 @@ dependencies {
     testImplementation(libs.mockito.kotlin)
     testImplementation(libs.mockk)
     testImplementation(libs.json.assert)
+    testImplementation(libs.kotlinx.coroutines.test)
 }

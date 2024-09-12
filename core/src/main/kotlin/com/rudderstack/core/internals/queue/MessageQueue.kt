@@ -8,6 +8,7 @@ import com.rudderstack.core.internals.models.MessageType
 import com.rudderstack.core.internals.network.HttpClient
 import com.rudderstack.core.internals.network.HttpClientImpl
 import com.rudderstack.core.internals.network.Result
+import com.rudderstack.core.internals.policies.FlushPoliciesFacade
 import com.rudderstack.core.internals.storage.StorageKeys
 import com.rudderstack.core.internals.utils.empty
 import com.rudderstack.core.internals.utils.encodeToBase64
@@ -31,6 +32,8 @@ private const val BATCH_ENDPOINT = "/v1/batch"
 internal class MessageQueue(
     private val analytics: Analytics,
     private val httpClientFactory: HttpClient = analytics.createPostHttpClientFactory(),
+    private var flushPoliciesFacade: FlushPoliciesFacade =
+        FlushPoliciesFacade(analytics.configuration.flushPolicies)
 ) {
     private var running: Boolean
     private var writeChannel: Channel<Message>
@@ -62,6 +65,7 @@ internal class MessageQueue(
             writeChannel = Channel(UNLIMITED)
             uploadChannel = Channel(UNLIMITED)
         }
+        flushPoliciesFacade.schedule(analytics)
         write()
         upload()
     }
@@ -76,6 +80,7 @@ internal class MessageQueue(
 
         uploadChannel.cancel()
         writeChannel.cancel()
+        flushPoliciesFacade.cancelSchedule()
     }
 
     internal fun stringifyBaseEvent(payload: Message): String {
@@ -92,13 +97,15 @@ internal class MessageQueue(
                     val stringVal = stringifyBaseEvent(message)
                     analytics.configuration.logger.debug(TAG, "running $stringVal")
                     storage.write(StorageKeys.RUDDER_MESSAGE, stringVal)
+                    flushPoliciesFacade.updateState()
                 } catch (e: Exception) {
                     analytics.configuration.logger.error(TAG, "Error adding payload: $message", e)
                 }
             }
 
-            if (isFlushSignal) {
+            if (isFlushSignal || flushPoliciesFacade.shouldFlush()) {
                 uploadChannel.trySend(UPLOAD_SIG)
+                flushPoliciesFacade.reset()
             }
         }
     }
