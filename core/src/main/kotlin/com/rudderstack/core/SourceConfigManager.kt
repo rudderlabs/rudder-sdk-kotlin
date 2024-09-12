@@ -4,25 +4,24 @@ import com.rudderstack.core.internals.models.SourceConfig
 import com.rudderstack.core.internals.network.HttpClient
 import com.rudderstack.core.internals.network.HttpClientImpl
 import com.rudderstack.core.internals.network.Result
+import com.rudderstack.core.internals.statemanagement.SingleThreadStore
 import com.rudderstack.core.internals.utils.LenientJson
 import com.rudderstack.core.internals.utils.encodeToBase64
+import com.rudderstack.core.state.SourceConfigState
 import kotlinx.coroutines.withContext
 
 private const val SOURCE_CONFIG_ENDPOINT = "/sourceConfig"
 
 internal class ServerConfigManager(
     private val analytics: Analytics,
+    private val store: SingleThreadStore<SourceConfigState, SourceConfigState.Update>,
     private val httpClientFactory: HttpClient = analytics.createGetHttpClientFactory(),
 ) {
 
     suspend fun fetchSourceConfig() {
         withContext(analytics.networkDispatcher) {
             val sourceConfig: SourceConfig? = downloadSourceConfig()
-
-            sourceConfig?.let {
-                // Store the sourceConfig in the storage
-                storeSourceConfig(it)
-            }
+            sourceConfig?.let { storeSourceConfig(it) }
         }
     }
 
@@ -50,8 +49,7 @@ internal class ServerConfigManager(
     }
 
     private fun storeSourceConfig(sourceConfig: SourceConfig) {
-        // TODO("Store the sourceConfig in the storage")
-        // TEMPORARY: Log the sourceConfig
+        store.subscribe { _, dispatch -> dispatch(SourceConfigState.Update(sourceConfig)) }
         analytics.configuration.logger.debug(log = "SourceConfig: $sourceConfig")
     }
 }
