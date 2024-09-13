@@ -63,7 +63,6 @@ enum class MessageType {
  * @property messageId A unique identifier for the message.
  * @property originalTimestamp The original timestamp when the message was created.
  * @property context The analytics context associated with the message.
- * @property newId A new identifier for the message if needed.
  */
 @Serializable(with = BaseMessageSerializer::class)
 sealed class Message {
@@ -72,7 +71,6 @@ sealed class Message {
     abstract var messageId: String
     abstract var originalTimestamp: String
     abstract var context: AnalyticsContext
-    abstract var newId: String
 
     internal fun applyBaseData() {
         this.originalTimestamp = DateTimeUtils.now()
@@ -100,7 +98,6 @@ sealed class Message {
             messageId = original.messageId
             originalTimestamp = original.originalTimestamp
             context = original.context
-            newId = original.newId
         }
         @Suppress("UNCHECKED_CAST")
         return copy as T // This is ok because resultant type will be same as input type
@@ -123,8 +120,6 @@ data class FlushEvent(
     override var type: MessageType = MessageType.Flush
     override lateinit var messageId: String
     override lateinit var context: AnalyticsContext
-    override var newId: String = ""
-
     override lateinit var originalTimestamp: String
 }
 
@@ -148,8 +143,6 @@ data class TrackEvent(
     override var type: MessageType = MessageType.Track
     override lateinit var messageId: String
     override lateinit var context: AnalyticsContext
-    override var newId: String = ""
-
     override lateinit var originalTimestamp: String
 }
 
