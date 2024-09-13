@@ -67,6 +67,7 @@ enum class MessageType {
  * @property originalTimestamp The original timestamp when the message was created.
  * @property context The analytics context associated with the message.
  * @property integrations The integrations options associated with the message.
+ * @property anonymousId The anonymous ID is the Pseudo-identifier for the user in cases where userId is absent.
  */
 @Serializable(with = BaseMessageSerializer::class)
 sealed class Message {
@@ -76,6 +77,7 @@ sealed class Message {
     abstract var originalTimestamp: String
     abstract var context: AnalyticsContext
     abstract var integrations: Integrations
+    abstract var anonymousId: String
 
     internal fun applyBaseData() {
         this.originalTimestamp = DateTimeUtils.now()
@@ -84,6 +86,15 @@ sealed class Message {
         this.integrations = buildJsonObject {
             put("All", true)
         }
+    }
+
+    // TODO("Add Store as a function parameter"): It is needed to fetch the anonymousId, userId, traits, externalId etc. from the store
+    internal fun updateStoreData(anonymousId: String, integrations: JsonObject = emptyJsonObject) {
+        this.anonymousId = anonymousId
+
+        // Giving priority to the integrations passed in the function
+        // TODO: Check if this is the correct way to update integrations
+        this.integrations = JsonObject(this.integrations + integrations)
     }
 
     /**
@@ -130,6 +141,7 @@ data class FlushEvent(
     override lateinit var context: AnalyticsContext
     override lateinit var originalTimestamp: String
     override lateinit var integrations: Integrations
+    override lateinit var anonymousId: String
 }
 
 /**
@@ -154,6 +166,7 @@ data class TrackEvent(
     override lateinit var context: AnalyticsContext
     override lateinit var originalTimestamp: String
     override lateinit var integrations: Integrations
+    override lateinit var anonymousId: String
 }
 
 /**
