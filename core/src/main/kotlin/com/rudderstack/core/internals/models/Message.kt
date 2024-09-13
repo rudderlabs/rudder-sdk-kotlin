@@ -105,30 +105,6 @@ sealed class Message {
         @Suppress("UNCHECKED_CAST")
         return copy as T // This is ok because resultant type will be same as input type
     }
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as Message
-
-        if (type != other.type) return false
-        if (messageId != other.messageId) return false
-        if (originalTimestamp != other.originalTimestamp) return false
-        if (context != other.context) return false
-        if (newId != other.newId) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = type.hashCode()
-        result = 31 * result + messageId.hashCode()
-        result = 31 * result + originalTimestamp.hashCode()
-        result = 31 * result + context.hashCode()
-        result = 31 * result + newId.hashCode()
-        return result
-    }
 }
 
 /**
@@ -150,24 +126,6 @@ data class FlushEvent(
     override var newId: String = ""
 
     override lateinit var originalTimestamp: String
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-        if (!super.equals(other)) return false
-
-        other as FlushEvent
-
-        if (messageName != other.messageName) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = super.hashCode()
-        result = 31 * result + messageName.hashCode()
-        return result
-    }
 }
 
 /**
@@ -193,26 +151,6 @@ data class TrackEvent(
     override var newId: String = ""
 
     override lateinit var originalTimestamp: String
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-        if (!super.equals(other)) return false
-
-        other as TrackEvent
-
-        if (properties != other.properties) return false
-        if (name != other.name) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = super.hashCode()
-        result = 31 * result + properties.hashCode()
-        result = 31 * result + name.hashCode()
-        return result
-    }
 }
 
 /**
