@@ -10,12 +10,15 @@ import kotlinx.serialization.Transient
 import kotlinx.serialization.json.JsonContentPolymorphicSerializer
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
 import java.util.*
 
 typealias AnalyticsContext = JsonObject
 typealias Properties = JsonObject
+typealias Integrations = JsonObject
 
 /**
  * Represents an empty JSON object.
@@ -29,7 +32,7 @@ val emptyJsonObject = JsonObject(emptyMap())
  * @property externalIds A list of maps representing external IDs associated with the message.
  */
 data class RudderOption(
-    val integrations: Map<String, Boolean> = emptyMap(),
+    val integrations: Integrations = emptyJsonObject,
     val externalIds: List<Map<String, String>> = emptyList(),
 )
 
@@ -63,6 +66,7 @@ enum class MessageType {
  * @property messageId A unique identifier for the message.
  * @property originalTimestamp The original timestamp when the message was created.
  * @property context The analytics context associated with the message.
+ * @property integrations The integrations options associated with the message.
  */
 @Serializable(with = BaseMessageSerializer::class)
 sealed class Message {
@@ -71,11 +75,15 @@ sealed class Message {
     abstract var messageId: String
     abstract var originalTimestamp: String
     abstract var context: AnalyticsContext
+    abstract var integrations: Integrations
 
     internal fun applyBaseData() {
         this.originalTimestamp = DateTimeUtils.now()
         this.context = emptyJsonObject
         this.messageId = UUID.randomUUID().toString()
+        this.integrations = buildJsonObject {
+            put("All", true)
+        }
     }
 
     /**
@@ -121,6 +129,7 @@ data class FlushEvent(
     override lateinit var messageId: String
     override lateinit var context: AnalyticsContext
     override lateinit var originalTimestamp: String
+    override lateinit var integrations: Integrations
 }
 
 /**
@@ -144,6 +153,7 @@ data class TrackEvent(
     override lateinit var messageId: String
     override lateinit var context: AnalyticsContext
     override lateinit var originalTimestamp: String
+    override lateinit var integrations: Integrations
 }
 
 /**
