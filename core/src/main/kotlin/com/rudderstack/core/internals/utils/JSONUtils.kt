@@ -2,7 +2,11 @@
 
 package com.rudderstack.core.internals.utils
 
+import com.rudderstack.core.internals.models.Message
+import com.rudderstack.core.internals.models.emptyJsonObject
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
 
 /**
  * `LenientJson` is a predefined instance of the `Json` class configured with lenient settings to handle JSON serialization and deserialization.
@@ -31,4 +35,16 @@ val LenientJson = Json {
      * Encodes the default values of the properties.
      */
     encodeDefaults = true
+}
+
+/**
+ * Encodes the message to a JSON string, filtering out empty JSON objects.
+ */
+fun Message.encodeToString(): String {
+    val stringMessage = LenientJson.encodeToString(this)
+    val filteredMessage = LenientJson.parseToJsonElement(stringMessage)
+        .jsonObject.filterNot { (k, v) ->
+            (k == "properties" && v == emptyJsonObject)
+        }
+    return LenientJson.encodeToString(filteredMessage)
 }
