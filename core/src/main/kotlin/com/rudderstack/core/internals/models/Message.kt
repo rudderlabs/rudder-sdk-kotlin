@@ -6,6 +6,7 @@ import com.rudderstack.core.internals.utils.empty
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import kotlinx.serialization.json.JsonContentPolymorphicSerializer
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -27,7 +28,6 @@ val emptyJsonObject = JsonObject(emptyMap())
  * @property integrations A map of integration names to a boolean indicating if they are enabled.
  * @property externalIds A list of maps representing external IDs associated with the message.
  */
-@Serializable
 data class RudderOption(
     val integrations: Map<String, Boolean> = emptyMap(),
     val externalIds: List<Map<String, String>> = emptyList(),
@@ -137,7 +137,7 @@ data class FlushEvent(
 data class TrackEvent(
     var name: String,
     var properties: Properties,
-    var options: RudderOption,
+    @Transient var options: RudderOption = RudderOption(),
 ) : Message() {
 
     override var type: MessageType = MessageType.Track
