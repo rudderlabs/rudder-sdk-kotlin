@@ -1,6 +1,7 @@
 package com.rudderstack.android
 
 import com.rudderstack.core.Analytics
+import plugins.AndroidLifecyclePlugin
 
 /**
  * `Analytics` class in the `com.rudderstack.android` package.
@@ -33,4 +34,12 @@ class Analytics(
     configuration: Configuration,
 ) : Analytics(
     configuration
-)
+) {
+    init {
+        setup()
+    }
+
+    private fun setup() {
+        add(AndroidLifecyclePlugin())
+    }
+}
