@@ -51,7 +51,6 @@ class ServerConfigManagerTest {
     fun `given a response on fetchSourceConfig, when the response is successful, then source config store should be subscribed`() =
         runTest {
             val jsonString = readFileAsString(sourceConfigSuccess)
-            val sourceConfig = LenientJson.decodeFromString<SourceConfig>(jsonString)
 
             coEvery { httpClient.getData() } returns Result.Success(jsonString)
 
