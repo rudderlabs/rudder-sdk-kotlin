@@ -117,6 +117,8 @@ sealed class Message {
             messageId = original.messageId
             originalTimestamp = original.originalTimestamp
             context = original.context
+            integrations = original.integrations
+            anonymousId = original.anonymousId
         }
         @Suppress("UNCHECKED_CAST")
         return copy as T // This is ok because resultant type will be same as input type
