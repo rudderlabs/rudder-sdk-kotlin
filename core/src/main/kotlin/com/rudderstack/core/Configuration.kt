@@ -23,7 +23,7 @@ import kotlinx.coroutines.CoroutineScope
  * @property logger The logger instance used for logging events, errors, and debug information. Defaults to a logger with the DEBUG log level.
  * @property optOut A flag indicating whether to opt out of data collection. If set to true, no data will be sent. Defaults to false.
  * @property gzipEnabled A flag indicating whether GZIP compression is enabled for network requests. Defaults to [DEFAULT_GZIP_STATUS].
- * @property storageProvider The storage provider responsible for managing the data storage. Defaults to [BasicStorageProvider].
+ * @property storage An instance of [Storage] responsible for managing data storage. Defaults to [BasicStorage].
  * @property flushPolicies A list of flush policies that determine when to flush events to the data plane. Defaults to [DEFAULT_FLUSH_POLICIES].
  */
 open class Configuration @JvmOverloads constructor(
@@ -33,7 +33,7 @@ open class Configuration @JvmOverloads constructor(
     open val logger: Logger = KotlinLogger(initialLogLevel = Logger.LogLevel.DEBUG),
     open val optOut: Boolean = false,
     open val gzipEnabled: Boolean = DEFAULT_GZIP_STATUS,
-    open val storageProvider: Storage = BasicStorageProvider.getStorage(writeKey, "test application"),
+    open val storage: Storage = BasicStorageProvider.getStorage(writeKey, "test application"),
     open var flushPolicies: List<FlushPolicy> = DEFAULT_FLUSH_POLICIES,
 ) {
 

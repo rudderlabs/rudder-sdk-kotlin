@@ -42,7 +42,7 @@ internal class AndroidLifecyclePlugin : Plugin, DefaultLifecycleObserver {
             application = config.application as? Application
                 ?: logAndThrowError("no android application context registered")
             shouldTrackApplicationLifecycleEvents = config.trackApplicationLifecycleEvents
-            storage = config.storageProvider as? AndroidStorage ?: logAndThrowError("Android Storage required")
+            storage = config.storage as? AndroidStorage ?: logAndThrowError("Android Storage required")
         }
         lifecycle = ProcessLifecycleOwner.get().lifecycle
 

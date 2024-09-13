@@ -55,7 +55,7 @@ class MessageQueueTest {
     fun setUp() {
         MockKAnnotations.init(this, relaxed = true)
 
-        every { mockAnalytics.configuration.storageProvider } returns mockStorage
+        every { mockAnalytics.configuration.storage } returns mockStorage
         every { mockAnalytics.configuration.logger } returns mockLogger
 
         messageQueue = spyk(
@@ -125,7 +125,7 @@ class MessageQueueTest {
     @Test
     fun `given multiple batch is ready to be sent to the server and server returns success, when flush is called, then all the batches are sent to the server and removed from the storage`() =
         runTest {
-            val storage = mockAnalytics.configuration.storageProvider
+            val storage = mockAnalytics.configuration.storage
             // Two batch files are ready to be sent
             val filePaths = listOf(
                 "/data/user/0/com.rudderstack.android.sampleapp/app_rudder-android-store/<WRITE_KEY>-0",
@@ -164,7 +164,7 @@ class MessageQueueTest {
 
     @Test
     fun `given batch is ready to be sent to the server and server returns error, when flush is called, then the batch is not removed from storage`() {
-        val storage = mockAnalytics.configuration.storageProvider
+        val storage = mockAnalytics.configuration.storage
         // Two batch files are ready to be sent
         val filePaths = listOf(
             "/data/user/0/com.rudderstack.android.sampleapp/app_rudder-android-store/<WRITE_KEY>-0",
@@ -206,7 +206,7 @@ class MessageQueueTest {
 
     @Test
     fun `given batch is ready to be sent to the server and file is not found, when flush is called, then the exception is thrown and handled`() {
-        val storage = mockAnalytics.configuration.storageProvider
+        val storage = mockAnalytics.configuration.storage
         // Two batch files are ready to be sent
         val filePaths = listOf(
             "/data/user/0/com.rudderstack.android.sampleapp/app_rudder-android-store/<WRITE_KEY>-0",
@@ -244,7 +244,7 @@ class MessageQueueTest {
 
     @Test
     fun `given batch is ready to be sent to the server and some exception occurs while reading the file, when flush is called, then the exception is thrown and handled`() {
-        val storage = mockAnalytics.configuration.storageProvider
+        val storage = mockAnalytics.configuration.storage
         // Two batch files are ready to be sent
         val filePaths = listOf(
             "/data/user/0/com.rudderstack.android.sampleapp/app_rudder-android-store/<WRITE_KEY>-0",
