@@ -9,6 +9,7 @@ import com.rudderstack.core.internals.utils.LenientJson
 import com.rudderstack.core.internals.utils.encodeToBase64
 import com.rudderstack.core.state.SourceConfigState
 import kotlinx.coroutines.withContext
+import org.jetbrains.annotations.VisibleForTesting
 
 private const val SOURCE_CONFIG_ENDPOINT = "/sourceConfig"
 
@@ -48,7 +49,8 @@ internal class ServerConfigManager(
         }
     }
 
-    private fun storeSourceConfig(sourceConfig: SourceConfig) {
+    @VisibleForTesting
+    fun storeSourceConfig(sourceConfig: SourceConfig) {
         store.subscribe { _, dispatch -> dispatch(SourceConfigState.Update(sourceConfig)) }
         analytics.configuration.logger.debug(log = "SourceConfig: $sourceConfig")
     }
