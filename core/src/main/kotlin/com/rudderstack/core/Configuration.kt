@@ -81,4 +81,9 @@ interface CoroutineConfiguration {
      * The [CoroutineDispatcher] dedicated to executing network-related tasks, such as sending events to the data plane.
      */
     val networkDispatcher: CoroutineDispatcher
+
+    /**
+     * The [CoroutineDispatcher] dedicated to operations which requires main thread.
+     */
+    val mainDispatcher: CoroutineDispatcher
 }

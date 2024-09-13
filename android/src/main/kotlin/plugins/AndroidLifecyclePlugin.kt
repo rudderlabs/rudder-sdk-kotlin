@@ -14,7 +14,6 @@ import com.rudderstack.core.internals.models.RudderOption
 import com.rudderstack.core.internals.plugins.Plugin
 import com.rudderstack.core.internals.storage.StorageKeys
 import com.rudderstack.core.internals.utils.empty
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -137,8 +136,8 @@ internal class AndroidLifecyclePlugin : Plugin, DefaultLifecycleObserver {
         }
     }
 
-    private fun runOnMainThread(block: () -> Unit) {
-        analytics.analyticsScope.launch(Dispatchers.Main) {
+    private fun runOnMainThread(block: () -> Unit) = with(analytics) {
+        analyticsScope.launch(mainDispatcher) {
             block()
         }
     }

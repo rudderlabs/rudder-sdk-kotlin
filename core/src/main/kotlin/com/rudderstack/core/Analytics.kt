@@ -60,6 +60,7 @@ open class Analytics protected constructor(
             override val analyticsDispatcher: CoroutineDispatcher = Dispatchers.IO
             override val storageDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(2)
             override val networkDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(1)
+            override val mainDispatcher: CoroutineDispatcher = Dispatchers.Main
         }
     )
 
