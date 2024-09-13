@@ -15,8 +15,6 @@ import kotlinx.serialization.json.jsonObject
  *
  * This configuration can be beneficial when working with APIs or data sources that might evolve over time or provide inconsistent JSON data.
  *
- * @property ignoreUnknownKeys A flag that, when set to true, instructs the JSON parser to ignore any unknown keys found in the JSON input. This allows for forward compatibility with future changes in JSON structures.
- * @property isLenient A flag that, when set to true, allows the JSON parser to be lenient in parsing the JSON input. This enables the parser to handle malformed or non-standard JSON without throwing an exception.
  */
 val LenientJson = Json {
     /**
