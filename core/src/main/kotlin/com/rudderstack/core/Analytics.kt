@@ -74,7 +74,7 @@ open class Analytics protected constructor(
     @JvmOverloads
     fun track(name: String, properties: Properties = emptyJsonObject, options: RudderOption) {
         val message = TrackEvent(
-            name = name,
+            event = name,
             properties = properties,
             options = options,
         )

@@ -96,7 +96,7 @@ sealed class Message {
         val original = this
         val copy = when (this) {
             is TrackEvent -> TrackEvent(
-                name = this.name,
+                event = this.event,
                 options = this.options,
                 properties = this.properties
             )
@@ -137,14 +137,14 @@ data class FlushEvent(
  *
  * This data class encapsulates the properties required for a track message.
  *
- * @property name The name of the track event.
+ * @property event The name of the track event.
  * @property options Additional options for the event, encapsulated in a [RudderOption] instance.
  * @property properties The properties associated with the track event.
  */
 @Serializable
 @SerialName("track")
 data class TrackEvent(
-    var name: String,
+    var event: String,
     var properties: Properties,
     @Transient var options: RudderOption = RudderOption(),
 ) : Message() {
