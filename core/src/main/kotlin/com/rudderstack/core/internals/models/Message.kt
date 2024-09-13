@@ -141,8 +141,8 @@ data class FlushEvent(
 @SerialName("track")
 data class TrackEvent(
     var name: String,
-    var options: RudderOption,
     var properties: Properties,
+    var options: RudderOption,
 ) : Message() {
 
     override var type: MessageType = MessageType.Track
