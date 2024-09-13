@@ -26,4 +26,9 @@ val LenientJson = Json {
      * This setting is useful when dealing with JSON input that might not strictly adhere to the standard format.
      */
     isLenient = true
+
+    /**
+     * Encodes the default values of the properties.
+     */
+    encodeDefaults = true
 }
