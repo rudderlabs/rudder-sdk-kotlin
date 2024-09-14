@@ -5,6 +5,8 @@ import com.rudderstack.core.internals.models.Properties
 import com.rudderstack.core.internals.models.RudderOption
 import com.rudderstack.core.internals.models.TrackEvent
 import com.rudderstack.core.internals.models.emptyJsonObject
+import com.rudderstack.core.internals.platform.Platform
+import com.rudderstack.core.internals.platform.PlatformType
 import com.rudderstack.core.internals.plugins.Plugin
 import com.rudderstack.core.internals.plugins.PluginChain
 import com.rudderstack.core.plugins.PocPlugin
@@ -35,7 +37,7 @@ import kotlinx.coroutines.launch
 open class Analytics protected constructor(
     val configuration: Configuration,
     coroutineConfig: CoroutineConfiguration,
-) : CoroutineConfiguration by coroutineConfig {
+) : CoroutineConfiguration by coroutineConfig, Platform {
 
     // Initial setup of the plugin chain, associating it with this Analytics instance
     private val pluginChain: PluginChain = PluginChain().also { it.analytics = this }
@@ -129,4 +131,6 @@ open class Analytics protected constructor(
             pluginChain.process(message)
         }
     }
+
+    override fun getPlatformType(): PlatformType = PlatformType.Server
 }

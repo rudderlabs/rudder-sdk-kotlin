@@ -1,6 +1,8 @@
 package com.rudderstack.android
 
 import com.rudderstack.core.Analytics
+import com.rudderstack.core.internals.platform.Platform
+import com.rudderstack.core.internals.platform.PlatformType
 
 /**
  * `Analytics` class in the `com.rudderstack.android` package.
@@ -33,4 +35,7 @@ class Analytics(
     configuration: Configuration,
 ) : Analytics(
     configuration
-)
+),
+    Platform {
+    override fun getPlatformType(): PlatformType = PlatformType.Mobile
+}
