@@ -127,7 +127,7 @@ open class Analytics protected constructor(
         message.applyBaseData()
         analyticsScope.launch(analyticsDispatcher) {
             // TODO: Update with actual anonymous ID
-            message.updateStoreData("<anonymous-id>")
+            message.updateStoreData("<anonymous-id>", getPlatformType())
             pluginChain.process(message)
         }
     }

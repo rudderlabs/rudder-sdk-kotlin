@@ -1,6 +1,7 @@
 package com.rudderstack.core.internals.models
 
 import com.rudderstack.core.internals.models.exception.UnknownMessageKeyException
+import com.rudderstack.core.internals.platform.PlatformType
 import com.rudderstack.core.internals.utils.DateTimeUtils
 import com.rudderstack.core.internals.utils.empty
 import kotlinx.serialization.DeserializationStrategy
@@ -68,6 +69,7 @@ enum class MessageType {
  * @property context The analytics context associated with the message.
  * @property integrations The integrations options associated with the message.
  * @property anonymousId The anonymous ID is the Pseudo-identifier for the user in cases where userId is absent.
+ * @property channel The platform type associated with the message.
  */
 @Serializable(with = BaseMessageSerializer::class)
 sealed class Message {
@@ -78,6 +80,7 @@ sealed class Message {
     abstract var context: AnalyticsContext
     abstract var integrations: Integrations
     abstract var anonymousId: String
+    abstract var channel: PlatformType
 
     internal fun applyBaseData() {
         this.originalTimestamp = DateTimeUtils.now()
@@ -89,8 +92,9 @@ sealed class Message {
     }
 
     // TODO("Add Store as a function parameter"): It is needed to fetch the anonymousId, userId, traits, externalId etc. from the store
-    internal fun updateStoreData(anonymousId: String, integrations: JsonObject = emptyJsonObject) {
+    internal fun updateStoreData(anonymousId: String, platform: PlatformType, integrations: JsonObject = emptyJsonObject) {
         this.anonymousId = anonymousId
+        this.channel = platform
 
         // Giving priority to the integrations passed in the function
         // TODO: Check if this is the correct way to update integrations
@@ -119,6 +123,7 @@ sealed class Message {
             context = original.context
             integrations = original.integrations
             anonymousId = original.anonymousId
+            channel = original.channel
         }
         @Suppress("UNCHECKED_CAST")
         return copy as T // This is ok because resultant type will be same as input type
@@ -144,6 +149,7 @@ data class FlushEvent(
     override lateinit var originalTimestamp: String
     override lateinit var integrations: Integrations
     override lateinit var anonymousId: String
+    override lateinit var channel: PlatformType
 }
 
 /**
@@ -169,6 +175,7 @@ data class TrackEvent(
     override lateinit var originalTimestamp: String
     override lateinit var integrations: Integrations
     override lateinit var anonymousId: String
+    override lateinit var channel: PlatformType
 }
 
 /**
