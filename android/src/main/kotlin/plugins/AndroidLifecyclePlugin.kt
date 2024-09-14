@@ -8,10 +8,10 @@ import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
-import com.rudderstack.android.storage.AndroidStorage
 import com.rudderstack.core.Analytics
 import com.rudderstack.core.internals.models.RudderOption
 import com.rudderstack.core.internals.plugins.Plugin
+import com.rudderstack.core.internals.storage.Storage
 import com.rudderstack.core.internals.storage.StorageKeys
 import com.rudderstack.core.internals.utils.empty
 import kotlinx.coroutines.launch
@@ -27,7 +27,7 @@ internal class AndroidLifecyclePlugin : Plugin, DefaultLifecycleObserver {
     override lateinit var analytics: Analytics
 
     private lateinit var lifecycle: Lifecycle
-    private lateinit var storage: AndroidStorage
+    private lateinit var storage: Storage
     private lateinit var packageInfo: PackageInfo
     private lateinit var application: Application
 
@@ -42,7 +42,7 @@ internal class AndroidLifecyclePlugin : Plugin, DefaultLifecycleObserver {
             application = config.application as? Application
                 ?: logAndThrowError("no android application context registered")
             shouldTrackApplicationLifecycleEvents = config.trackApplicationLifecycleEvents
-            storage = config.storage as? AndroidStorage ?: logAndThrowError("Android Storage required")
+            storage = config.storage
         }
         lifecycle = ProcessLifecycleOwner.get().lifecycle
 
