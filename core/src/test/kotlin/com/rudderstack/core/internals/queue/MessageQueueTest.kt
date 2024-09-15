@@ -292,7 +292,7 @@ class MessageQueueTest {
 
     @Test
     fun `given default flush policies are enabled, when first event is made, then flush call should be triggered`() {
-        val storage = mockAnalytics.configuration.storageProvider
+        val storage = mockAnalytics.configuration.storage
         val mockMessage: Message = mockk(relaxed = true)
         val jsonString = """{"type":"track","event":"Test Event"}"""
         every { messageQueue.stringifyBaseEvent(mockMessage) } returns jsonString
@@ -312,7 +312,7 @@ class MessageQueueTest {
 
     @Test
     fun `given default flush policies are enabled, when 30 events are made, then flush call should be triggered`() {
-        val storage = mockAnalytics.configuration.storageProvider
+        val storage = mockAnalytics.configuration.storage
         val mockMessage: Message = mockk(relaxed = true)
         val jsonString = """{"type":"track","event":"Test Event"}"""
         every { messageQueue.stringifyBaseEvent(mockMessage) } returns jsonString
@@ -360,7 +360,7 @@ class MessageQueueTest {
 
     @Test
     fun `given default flush policies are enabled, when events are made, then the flush policies state should be updated`() {
-        val storage = mockAnalytics.configuration.storageProvider
+        val storage = mockAnalytics.configuration.storage
         val times = 20
         val mockMessage: Message = mockk(relaxed = true)
         val jsonString = """{"type":"track","event":"Test Event"}"""
@@ -404,7 +404,7 @@ class MessageQueueTest {
 
     @Test
     fun `given no policies are enabled, when explicit flush call is made, then rollover should happen`() {
-        val storage = mockAnalytics.configuration.storageProvider
+        val storage = mockAnalytics.configuration.storage
         val times = 100
         val mockMessage: Message = mockk(relaxed = true)
         val jsonString = """{"type":"track","event":"Test Event"}"""

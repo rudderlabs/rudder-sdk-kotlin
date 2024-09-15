@@ -87,7 +87,7 @@ class AndroidLifecyclePluginTest {
             set(plugin, application)
         }
 
-        plugin::class.java.getDeclaredField("com/rudderstack/android/storage").apply {
+        plugin::class.java.getDeclaredField("storage").apply {
             isAccessible = true
             set(plugin, storage)
         }
