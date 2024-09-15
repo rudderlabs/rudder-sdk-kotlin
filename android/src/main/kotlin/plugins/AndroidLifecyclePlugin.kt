@@ -155,13 +155,13 @@ internal class AndroidLifecyclePlugin : Plugin, DefaultLifecycleObserver {
 
     companion object {
 
-        private const val APPLICATION_INSTALLED = "Application Installed"
-        private const val APPLICATION_OPENED = "Application Opened"
-        private const val APPLICATION_UPDATED = "Application Updated"
-        private const val APPLICATION_BACKGROUNDED = "Application Backgrounded"
-        private const val VERSION_KEY = "version"
-        private const val BUILD_KEY = "build"
-        private const val FROM_BACKGROUND = "from_background"
+        internal const val APPLICATION_INSTALLED = "Application Installed"
+        internal const val APPLICATION_OPENED = "Application Opened"
+        internal const val APPLICATION_UPDATED = "Application Updated"
+        internal const val APPLICATION_BACKGROUNDED = "Application Backgrounded"
+        internal const val VERSION_KEY = "version"
+        internal const val BUILD_KEY = "build"
+        internal const val FROM_BACKGROUND = "from_background"
     }
 }
 
