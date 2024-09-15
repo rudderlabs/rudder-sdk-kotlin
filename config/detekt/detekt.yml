@@ -102,7 +102,7 @@ naming:
     active: true
     allowedPattern: '^(is|has|are|should)'
   InvalidPackageDeclaration:
-    active: false
+    active: true
 
 performance:
   excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**']
