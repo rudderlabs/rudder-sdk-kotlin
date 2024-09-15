@@ -1,7 +1,7 @@
 package com.rudderstack.android
 
+import com.rudderstack.android.plugins.AndroidLifecyclePlugin
 import com.rudderstack.core.Analytics
-import plugins.AndroidLifecyclePlugin
 
 /**
  * `Analytics` class in the `com.rudderstack.android` package.

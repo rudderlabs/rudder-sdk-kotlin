@@ -28,15 +28,14 @@ import kotlinx.serialization.json.buildJsonObject
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
-import plugins.AndroidLifecyclePlugin
-import plugins.AndroidLifecyclePlugin.Companion.APPLICATION_INSTALLED
-import plugins.AndroidLifecyclePlugin.Companion.BUILD_KEY
+import com.rudderstack.android.plugins.AndroidLifecyclePlugin.Companion.APPLICATION_INSTALLED
+import com.rudderstack.android.plugins.AndroidLifecyclePlugin.Companion.BUILD_KEY
 import kotlinx.serialization.json.put
-import plugins.AndroidLifecyclePlugin.Companion.APPLICATION_BACKGROUNDED
-import plugins.AndroidLifecyclePlugin.Companion.APPLICATION_OPENED
-import plugins.AndroidLifecyclePlugin.Companion.APPLICATION_UPDATED
-import plugins.AndroidLifecyclePlugin.Companion.FROM_BACKGROUND
-import plugins.AndroidLifecyclePlugin.Companion.VERSION_KEY
+import com.rudderstack.android.plugins.AndroidLifecyclePlugin.Companion.APPLICATION_BACKGROUNDED
+import com.rudderstack.android.plugins.AndroidLifecyclePlugin.Companion.APPLICATION_OPENED
+import com.rudderstack.android.plugins.AndroidLifecyclePlugin.Companion.APPLICATION_UPDATED
+import com.rudderstack.android.plugins.AndroidLifecyclePlugin.Companion.FROM_BACKGROUND
+import com.rudderstack.android.plugins.AndroidLifecyclePlugin.Companion.VERSION_KEY
 import java.util.concurrent.atomic.AtomicBoolean
 
 class AndroidLifecyclePluginTest {
@@ -88,7 +87,7 @@ class AndroidLifecyclePluginTest {
             set(plugin, application)
         }
 
-        plugin::class.java.getDeclaredField("storage").apply {
+        plugin::class.java.getDeclaredField("com/rudderstack/android/storage").apply {
             isAccessible = true
             set(plugin, storage)
         }

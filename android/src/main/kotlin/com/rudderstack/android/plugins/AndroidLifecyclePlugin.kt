@@ -1,4 +1,4 @@
-package plugins
+package com.rudderstack.android.plugins
 
 import android.app.Application
 import android.content.pm.PackageInfo
