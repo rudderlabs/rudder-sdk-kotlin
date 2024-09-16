@@ -110,7 +110,7 @@ open class Analytics protected constructor(
         add(RudderStackDataplanePlugin())
 
         analyticsScope.launch(analyticsDispatcher) {
-            ServerConfigManager(analytics = this@Analytics, store = store).fetchSourceConfig()
+            SourceConfigManager(analytics = this@Analytics, store = store).fetchSourceConfig()
         }
     }
 

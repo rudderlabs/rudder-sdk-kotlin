@@ -13,7 +13,7 @@ import org.jetbrains.annotations.VisibleForTesting
 
 private const val SOURCE_CONFIG_ENDPOINT = "/sourceConfig"
 
-internal class ServerConfigManager(
+internal class SourceConfigManager(
     private val analytics: Analytics,
     private val store: SingleThreadStore<SourceConfigState, SourceConfigState.Update>,
     private val httpClientFactory: HttpClient = analytics.createGetHttpClientFactory(),

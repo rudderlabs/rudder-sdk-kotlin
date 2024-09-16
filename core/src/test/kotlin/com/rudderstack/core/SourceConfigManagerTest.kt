@@ -26,12 +26,12 @@ import org.mockito.kotlin.any
 private const val sourceConfigSuccess = "config/source_config_without_destination.json"
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class ServerConfigManagerTest {
+class SourceConfigManagerTest {
 
     private val analytics: Analytics = mockk(relaxed = true)
     private val store: SingleThreadStore<SourceConfigState, SourceConfigState.Update> = mockk(relaxed = true)
     private val httpClient: HttpClient = mockk()
-    private lateinit var serverConfigManager: ServerConfigManager
+    private lateinit var sourceConfigManager: SourceConfigManager
 
     private val testDispatcher = UnconfinedTestDispatcher()
 
@@ -39,7 +39,7 @@ class ServerConfigManagerTest {
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         every { analytics.networkDispatcher } returns testDispatcher
-        serverConfigManager = ServerConfigManager(analytics, store, httpClient)
+        sourceConfigManager = SourceConfigManager(analytics, store, httpClient)
     }
 
     @After
@@ -54,7 +54,7 @@ class ServerConfigManagerTest {
 
             coEvery { httpClient.getData() } returns Result.Success(jsonString)
 
-            serverConfigManager.fetchSourceConfig()
+            sourceConfigManager.fetchSourceConfig()
 
             coVerify { store.subscribe(any()) }
         }
@@ -67,7 +67,7 @@ class ServerConfigManagerTest {
 
             coEvery { httpClient.getData() } returns Result.Success(jsonString)
 
-            serverConfigManager.fetchSourceConfig()
+            sourceConfigManager.fetchSourceConfig()
 
             verify { analytics.configuration.logger.debug(log = "SourceConfig: $sourceConfig") }
         }
@@ -80,7 +80,7 @@ class ServerConfigManagerTest {
                 status = ErrorStatus.SERVER_ERROR
             )
 
-            serverConfigManager.fetchSourceConfig()
+            sourceConfigManager.fetchSourceConfig()
 
             coVerify(exactly = 0) { store.subscribe(any()) } // Ensure storeSourceConfig is not called
         }
@@ -93,7 +93,7 @@ class ServerConfigManagerTest {
                 status = ErrorStatus.SERVER_ERROR
             )
 
-            serverConfigManager.fetchSourceConfig()
+            sourceConfigManager.fetchSourceConfig()
 
             verify { analytics.configuration.logger.error(any(), any()) }
         }
@@ -106,7 +106,7 @@ class ServerConfigManagerTest {
                 status = ErrorStatus.SERVER_ERROR
             )
 
-            serverConfigManager.fetchSourceConfig()
+            sourceConfigManager.fetchSourceConfig()
 
             coVerify(exactly = 0) { store.subscribe(any()) }
             verify { analytics.configuration.logger.error(any(), any()) }
