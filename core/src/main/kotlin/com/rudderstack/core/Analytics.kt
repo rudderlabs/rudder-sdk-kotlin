@@ -126,8 +126,8 @@ open class Analytics protected constructor(
     private fun process(message: Message) {
         message.applyBaseData()
         analyticsScope.launch(analyticsDispatcher) {
-            // TODO: Update with actual anonymous ID
-            message.updateStoreData("<anonymous-id>", getPlatformType())
+            // TODO: Pass actual anonymous ID, or the way to fetch such values
+            message.updateData("<anonymous-id>", getPlatformType())
             pluginChain.process(message)
         }
     }

@@ -11,10 +11,8 @@ import kotlinx.serialization.Transient
 import kotlinx.serialization.json.JsonContentPolymorphicSerializer
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.put
 import java.util.*
 
 typealias AnalyticsContext = JsonObject
@@ -75,19 +73,13 @@ sealed class Message {
         this.originalTimestamp = DateTimeUtils.now()
         this.context = emptyJsonObject
         this.messageId = UUID.randomUUID().toString()
-        this.integrations = buildJsonObject {
-            put("All", true)
-        }
     }
 
     // TODO("Add Store as a function parameter"): It is needed to fetch the anonymousId, userId, traits, externalId etc. from the store
-    internal fun updateStoreData(anonymousId: String, platform: PlatformType, integrations: JsonObject = emptyJsonObject) {
+    internal fun updateData(anonymousId: String, platform: PlatformType) {
         this.anonymousId = anonymousId
         this.channel = platform
-
-        // Giving priority to the integrations passed in the function
-        // TODO: Check if this is the correct way to update integrations
-        this.integrations = JsonObject(this.integrations + integrations)
+        this.updateIntegrations()
     }
 
     /**
@@ -159,6 +151,7 @@ data class TrackEvent(
 ) : Message() {
 
     override var type: MessageType = MessageType.Track
+
     override lateinit var messageId: String
     override lateinit var context: AnalyticsContext
     override lateinit var originalTimestamp: String
