@@ -6,6 +6,7 @@ import com.rudderstack.core.internals.models.Message
 import com.rudderstack.core.internals.models.emptyJsonObject
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 
 /**
@@ -45,4 +46,13 @@ fun Message.encodeToString(): String {
             (k == "properties" && v == emptyJsonObject)
         }
     return LenientJson.encodeToString(filteredMessage)
+}
+
+/**
+ * Merges the current JSON object with another JSON object, giving higher priority to the other JSON object.
+ *
+ * @param other The JSON object to merge with the current JSON object.
+ */
+infix fun JsonObject.mergeWithHigherPriorityTo(other: JsonObject): JsonObject {
+    return JsonObject(this.toMap() + other.toMap())
 }
