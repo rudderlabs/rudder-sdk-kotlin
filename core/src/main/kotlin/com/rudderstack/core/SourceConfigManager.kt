@@ -4,7 +4,7 @@ import com.rudderstack.core.internals.models.SourceConfig
 import com.rudderstack.core.internals.network.HttpClient
 import com.rudderstack.core.internals.network.HttpClientImpl
 import com.rudderstack.core.internals.network.Result
-import com.rudderstack.core.internals.statemanagement.SingleThreadStore
+import com.rudderstack.core.internals.statemanagement.Store
 import com.rudderstack.core.internals.utils.LenientJson
 import com.rudderstack.core.internals.utils.encodeToBase64
 import com.rudderstack.core.state.SourceConfigState
@@ -15,7 +15,7 @@ private const val SOURCE_CONFIG_ENDPOINT = "/sourceConfig"
 
 internal class SourceConfigManager(
     private val analytics: Analytics,
-    private val store: SingleThreadStore<SourceConfigState, SourceConfigState.Update>,
+    private val store: Store<SourceConfigState, SourceConfigState.Update>,
     private val httpClientFactory: HttpClient = analytics.createGetHttpClientFactory(),
 ) {
 
