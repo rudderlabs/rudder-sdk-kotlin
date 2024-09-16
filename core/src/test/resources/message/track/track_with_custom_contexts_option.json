@@ -1,0 +1,25 @@
+{
+  "event" : "Track event 1",
+  "type" : "track",
+  "messageId" : "<message-id>",
+  "context" : {
+    "key-1" : "String value",
+    "key-2" : 123,
+    "key-3" : true,
+    "key-4" : 123.456,
+    "key-5" : {
+      "key-6" : "String value",
+      "key-7" : 123,
+      "key-8" : true,
+      "key-9" : 123.456
+    },
+    "key-10" : [ "String value", 123, true, 123.456 ],
+    "key-11" : { }
+  },
+  "originalTimestamp" : "<original-timestamp>",
+  "integrations" : {
+    "All" : true
+  },
+  "anonymousId" : "<anonymous-id>",
+  "channel" : "mobile"
+}
