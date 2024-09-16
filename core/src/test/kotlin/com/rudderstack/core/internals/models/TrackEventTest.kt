@@ -22,7 +22,7 @@ private const val trackWithAllArgumentsFromServer =
 private const val EVENT_NAME = "Track event 1"
 private const val ANONYMOUS_ID = "<anonymous-id>"
 
-class TrackMessageTest {
+class TrackEventTest {
 
     @Test
     fun `given track event with default arguments, when serialized, then it matches expected JSON`() {
