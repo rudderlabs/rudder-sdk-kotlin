@@ -74,7 +74,7 @@ open class Analytics protected constructor(
      * @param options A [RudderOption] object to specify additional event options.
      */
     @JvmOverloads
-    fun track(name: String, properties: Properties = emptyJsonObject, options: RudderOption) {
+    fun track(name: String, properties: Properties = emptyJsonObject, options: RudderOption = RudderOption()) {
         val message = TrackEvent(
             event = name,
             properties = properties,
