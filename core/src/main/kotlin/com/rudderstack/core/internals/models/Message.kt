@@ -17,7 +17,6 @@ import java.util.*
 
 typealias AnalyticsContext = JsonObject
 typealias Properties = JsonObject
-typealias Integrations = JsonObject
 
 /**
  * Represents an empty JSON object.
@@ -65,7 +64,7 @@ sealed class Message {
     abstract var messageId: String
     abstract var originalTimestamp: String
     abstract var context: AnalyticsContext
-    abstract var integrations: Integrations
+    abstract var integrations: Map<String, Boolean>
     abstract var anonymousId: String
     abstract var channel: PlatformType
 
@@ -93,8 +92,8 @@ sealed class Message {
         val copy = when (this) {
             is TrackEvent -> TrackEvent(
                 event = this.event,
+                properties = this.properties,
                 options = this.options,
-                properties = this.properties
             )
 
             is FlushEvent -> FlushEvent()
@@ -128,7 +127,7 @@ data class FlushEvent(
     override lateinit var messageId: String
     override lateinit var context: AnalyticsContext
     override lateinit var originalTimestamp: String
-    override lateinit var integrations: Integrations
+    override lateinit var integrations: Map<String, Boolean>
     override lateinit var anonymousId: String
     override lateinit var channel: PlatformType
 }
@@ -155,7 +154,7 @@ data class TrackEvent(
     override lateinit var messageId: String
     override lateinit var context: AnalyticsContext
     override lateinit var originalTimestamp: String
-    override lateinit var integrations: Integrations
+    override lateinit var integrations: Map<String, Boolean>
     override lateinit var anonymousId: String
     override lateinit var channel: PlatformType
 }
