@@ -78,7 +78,7 @@ sealed class Message {
     internal fun updateData(anonymousId: String, platform: PlatformType) {
         this.anonymousId = anonymousId
         this.channel = platform
-        this.updateIntegrations()
+        this.updateOption()
     }
 
     /**
