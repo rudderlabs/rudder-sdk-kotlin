@@ -42,8 +42,7 @@ internal class AndroidLifecyclePlugin : Plugin, DefaultLifecycleObserver {
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
         (analytics.configuration as? AndroidConfiguration)?.let { config ->
-            application = config.application as? Application
-                ?: analytics.logAndThrowError("no android application context registered")
+            application = config.application
             shouldTrackApplicationLifecycleEvents = config.trackApplicationLifecycleEvents
             storage = config.storage
         }
