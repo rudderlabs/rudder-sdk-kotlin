@@ -26,6 +26,13 @@ import com.rudderstack.android.Configuration as AndroidConfiguration
 
 @DelicateCoroutinesApi
 private val MAIN_DISPATCHER = Dispatchers.Main
+internal const val APPLICATION_INSTALLED = "Application Installed"
+internal const val APPLICATION_OPENED = "Application Opened"
+internal const val APPLICATION_UPDATED = "Application Updated"
+internal const val APPLICATION_BACKGROUNDED = "Application Backgrounded"
+internal const val VERSION_KEY = "version"
+internal const val BUILD_KEY = "build"
+internal const val FROM_BACKGROUND = "from_background"
 
 // plugin to manage default lifecycle events
 internal class AndroidLifecyclePlugin : Plugin, DefaultLifecycleObserver {
@@ -156,17 +163,6 @@ internal class AndroidLifecyclePlugin : Plugin, DefaultLifecycleObserver {
         analyticsScope.launch(MAIN_DISPATCHER) {
             block()
         }
-    }
-
-    companion object {
-
-        internal const val APPLICATION_INSTALLED = "Application Installed"
-        internal const val APPLICATION_OPENED = "Application Opened"
-        internal const val APPLICATION_UPDATED = "Application Updated"
-        internal const val APPLICATION_BACKGROUNDED = "Application Backgrounded"
-        internal const val VERSION_KEY = "version"
-        internal const val BUILD_KEY = "build"
-        internal const val FROM_BACKGROUND = "from_background"
     }
 }
 
