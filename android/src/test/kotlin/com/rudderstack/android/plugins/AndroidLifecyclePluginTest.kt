@@ -336,6 +336,21 @@ class AndroidLifecyclePluginTest {
             }
         }
 
+    @Test
+    fun `given trackApplicationLifecycleEvents is false, when onCreate is called, then build and version are still stored in memory`() =
+        runTest(testDispatcher) {
+            // given
+            pluginSetup(false)
+
+            // when
+            plugin.onCreate(lifecycleOwner)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            // then
+            assert(storage.readLong(StorageKeys.APP_BUILD, -1L) == 100L)
+            assert(storage.readString(StorageKeys.APP_VERSION, "") == "1.0.0")
+        }
+
     private fun pluginSetup(trackingEnabled: Boolean = true) {
 
         shouldTrackApplicationLifecycleEvents = trackingEnabled

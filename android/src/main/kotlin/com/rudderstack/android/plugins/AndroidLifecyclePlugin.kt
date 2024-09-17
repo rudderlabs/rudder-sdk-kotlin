@@ -71,9 +71,13 @@ internal class AndroidLifecyclePlugin : Plugin, DefaultLifecycleObserver {
 
     override fun onCreate(owner: LifecycleOwner) {
         super.onCreate(owner)
-        if (shouldTrackApplicationLifecycleEvents && !trackedApplicationLifecycleEvents.getAndSet(true)) {
-            firstLaunch.set(true)
-            trackApplicationLifecycleEvents()
+        if (!trackedApplicationLifecycleEvents.getAndSet(true)) {
+            if (shouldTrackApplicationLifecycleEvents) {
+                firstLaunch.set(true)
+                trackApplicationLifecycleEvents()
+            }
+            // update the app version code and build regardless of tracking enabled or not.
+            updateVersionAndBuild()
         }
     }
 
@@ -129,8 +133,13 @@ internal class AndroidLifecyclePlugin : Plugin, DefaultLifecycleObserver {
                 RudderOption()
             )
         }
+    }
 
-        // Update the recorded version.
+    private fun updateVersionAndBuild() {
+        val packageInfo = packageInfo
+        val currentVersion = packageInfo.versionName
+        val currentBuild = packageInfo.getVersionCode()
+
         runOnAnalyticsThread {
             storage.write(StorageKeys.APP_VERSION, currentVersion)
             storage.write(StorageKeys.APP_BUILD, currentBuild.toLong())
