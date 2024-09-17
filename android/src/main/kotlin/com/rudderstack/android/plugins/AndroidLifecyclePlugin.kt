@@ -16,12 +16,16 @@ import com.rudderstack.core.internals.storage.StorageKeys
 import com.rudderstack.core.internals.utils.empty
 import com.rudderstack.core.internals.utils.logAndThrowError
 import com.rudderstack.core.internals.utils.runOnAnalyticsThread
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import java.util.concurrent.atomic.AtomicBoolean
 import com.rudderstack.android.Configuration as AndroidConfiguration
+
+@DelicateCoroutinesApi
+private val MAIN_DISPATCHER = Dispatchers.Main
 
 // plugin to manage default lifecycle events
 internal class AndroidLifecyclePlugin : Plugin, DefaultLifecycleObserver {
@@ -147,8 +151,9 @@ internal class AndroidLifecyclePlugin : Plugin, DefaultLifecycleObserver {
         }
     }
 
+    @OptIn(DelicateCoroutinesApi::class)
     private fun runOnMainThread(block: () -> Unit) = with(analytics) {
-        analyticsScope.launch(Dispatchers.Main) {
+        analyticsScope.launch(MAIN_DISPATCHER) {
             block()
         }
     }
