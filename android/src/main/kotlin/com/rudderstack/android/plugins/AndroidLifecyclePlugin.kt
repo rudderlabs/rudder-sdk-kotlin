@@ -14,6 +14,8 @@ import com.rudderstack.core.internals.plugins.Plugin
 import com.rudderstack.core.internals.storage.Storage
 import com.rudderstack.core.internals.storage.StorageKeys
 import com.rudderstack.core.internals.utils.empty
+import com.rudderstack.core.internals.utils.logAndThrowError
+import com.rudderstack.core.internals.utils.runOnAnalyticsThread
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.buildJsonObject
@@ -41,7 +43,7 @@ internal class AndroidLifecyclePlugin : Plugin, DefaultLifecycleObserver {
         super.setup(analytics)
         (analytics.configuration as? AndroidConfiguration)?.let { config ->
             application = config.application as? Application
-                ?: logAndThrowError("no android application context registered")
+                ?: analytics.logAndThrowError("no android application context registered")
             shouldTrackApplicationLifecycleEvents = config.trackApplicationLifecycleEvents
             storage = config.storage
         }
@@ -52,7 +54,7 @@ internal class AndroidLifecyclePlugin : Plugin, DefaultLifecycleObserver {
             packageManager.getPackageInfo(application.packageName, 0)
         } catch (e: PackageManager.NameNotFoundException) {
             val message = "Package not found: ${application.packageName}"
-            logAndThrowError(message = message, throwable = e)
+            analytics.logAndThrowError(message = message, throwable = e)
         }
 
         runOnMainThread {
@@ -140,7 +142,7 @@ internal class AndroidLifecyclePlugin : Plugin, DefaultLifecycleObserver {
         val currentVersion = packageInfo.versionName
         val currentBuild = packageInfo.getVersionCode()
 
-        runOnAnalyticsThread {
+        analytics.runOnAnalyticsThread {
             storage.write(StorageKeys.APP_VERSION, currentVersion)
             storage.write(StorageKeys.APP_BUILD, currentBuild.toLong())
         }
@@ -150,17 +152,6 @@ internal class AndroidLifecyclePlugin : Plugin, DefaultLifecycleObserver {
         analyticsScope.launch(Dispatchers.Main) {
             block()
         }
-    }
-
-    private fun runOnAnalyticsThread(block: suspend () -> Unit) = with(analytics) {
-        analyticsScope.launch(analyticsDispatcher) {
-            block()
-        }
-    }
-
-    private fun logAndThrowError(message: String, throwable: Throwable? = null): Nothing {
-        analytics.configuration.logger.error(log = message)
-        throw throwable ?: error(message)
     }
 
     companion object {
