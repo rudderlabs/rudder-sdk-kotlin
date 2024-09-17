@@ -71,7 +71,6 @@ class AndroidLifecyclePluginTest {
         analytics = mockk(relaxed = true)
         every { analytics.analyticsScope } returns testScope
         every { analytics.analyticsDispatcher } returns testDispatcher
-        every { analytics.mainDispatcher } returns testDispatcher
         every { analytics.track(any<String>(), any<JsonObject>(), any<RudderOption>()) } returns Unit
 
         val packageManager = mockk<PackageManager> {
