@@ -5,7 +5,6 @@ import com.rudderstack.android.storage.AndroidStorageProvider
 import com.rudderstack.core.Configuration
 import com.rudderstack.core.internals.logger.Logger
 import com.rudderstack.core.internals.policies.FlushPolicy
-import com.rudderstack.core.internals.storage.Storage
 
 /**
  * `Configuration` data class used for initializing RudderStack analytics in an Android application.
@@ -24,7 +23,6 @@ import com.rudderstack.core.internals.storage.Storage
  * - `dataPlaneUrl`: The URL of the RudderStack data plane where events are sent.
  * - `logger`: An instance of `Logger` used for logging and debugging. The default value is
  *   `AndroidLogger` with an initial log level set to `Logger.LogLevel.DEBUG`.
- * - `storage`: An instance of `Storage` used for data storage.
  *
  * ## Constructor
  * @param application The Android `Application` instance required for initializing the analytics library.
@@ -32,7 +30,6 @@ import com.rudderstack.core.internals.storage.Storage
  * @param writeKey The write key for authenticating with RudderStack.
  * @param dataPlaneUrl The URL of the RudderStack data plane to which events are sent.
  * @param logger An instance of `Logger` for debugging (optional; default is `AndroidLogger` with log level set to DEBUG).
- * @param storage An instance of `Storage` used for data storage.
  *
  * ## Example
  * ```kotlin
@@ -41,7 +38,6 @@ import com.rudderstack.core.internals.storage.Storage
  *     writeKey = "your_write_key",
  *     dataPlaneUrl = "https://your-dataplane-url",
  *     logger = AndroidLogger(Logger.LogLevel.INFO) // Optional: Customize the logger if needed
- *     storage = AndroidStorageProvider.getStorage(writeKey, application) // Optional
  * )
  * ```
  *
@@ -57,11 +53,10 @@ data class Configuration @JvmOverloads constructor(
     override val controlPlaneUrl: String = DEFAULT_CONTROL_PLANE_URL,
     override val logger: Logger = AndroidLogger(initialLogLevel = Logger.LogLevel.DEBUG),
     override var flushPolicies: List<FlushPolicy> = DEFAULT_FLUSH_POLICIES,
-    override val storage: Storage = AndroidStorageProvider.getStorage(writeKey, application)
 ) : Configuration(
     writeKey = writeKey,
     dataPlaneUrl = dataPlaneUrl,
-    storage = storage,
+    storage = AndroidStorageProvider.getStorage(writeKey, application),
     logger = logger,
     flushPolicies = flushPolicies,
 )
