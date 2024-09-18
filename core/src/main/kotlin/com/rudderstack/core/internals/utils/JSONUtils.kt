@@ -17,7 +17,7 @@ import kotlinx.serialization.json.jsonObject
  * This configuration can be beneficial when working with APIs or data sources that might evolve over time or provide inconsistent JSON data.
  *
  */
-val LenientJson = Json {
+internal val LenientJson = Json {
     /**
      * Instructs the parser to ignore any unknown keys in the JSON input.
      * This setting is useful when the data source might include additional fields that are not defined in the data model.
@@ -39,7 +39,7 @@ val LenientJson = Json {
 /**
  * Encodes the message to a JSON string, filtering out empty JSON objects.
  */
-fun Message.encodeToString(): String {
+internal fun Message.encodeToString(): String {
     val stringMessage = LenientJson.encodeToString(this)
     val filteredMessage = LenientJson.parseToJsonElement(stringMessage)
         .jsonObject.filterNot { (k, v) ->
@@ -53,6 +53,6 @@ fun Message.encodeToString(): String {
  *
  * @param other The JSON object to merge with the current JSON object.
  */
-infix fun JsonObject.mergeWithHigherPriorityTo(other: JsonObject): JsonObject {
+internal infix fun JsonObject.mergeWithHigherPriorityTo(other: JsonObject): JsonObject {
     return JsonObject(this.toMap() + other.toMap())
 }
