@@ -140,7 +140,17 @@ enum class StorageKeys(val key: String) {
     /**
      * Key for storing or retrieving optional Rudder values.
      */
-    RUDDER_OPTIONAL("")
+    RUDDER_OPTIONAL(""),
+
+    /**
+     *Key for storing client app version.
+     */
+    APP_VERSION("rudder.app_version"),
+
+    /**
+     * Key for storing client app build number.
+     */
+    APP_BUILD("rudder.app_build")
 }
 
 /**
