@@ -4,10 +4,12 @@ import android.app.Application
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.os.Build
+import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
+import com.rudderstack.android.models.AppVersion
 import com.rudderstack.core.Analytics
 import com.rudderstack.core.internals.models.RudderOption
 import com.rudderstack.core.internals.plugins.Plugin
@@ -42,13 +44,12 @@ internal class AndroidLifecyclePlugin : Plugin, DefaultLifecycleObserver {
 
     private lateinit var lifecycle: Lifecycle
     private lateinit var storage: Storage
-    private lateinit var packageInfo: PackageInfo
+    private lateinit var appVersion: AppVersion
     private lateinit var application: Application
 
     // state variables
     private var shouldTrackApplicationLifecycleEvents: Boolean = true
-    private val firstLaunch = AtomicBoolean(false)
-    private val trackedApplicationLifecycleEvents = AtomicBoolean(false)
+    private val firstLaunch = AtomicBoolean(true)
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
@@ -57,14 +58,14 @@ internal class AndroidLifecyclePlugin : Plugin, DefaultLifecycleObserver {
             shouldTrackApplicationLifecycleEvents = config.trackApplicationLifecycleEvents
             storage = config.storage
         }
-        lifecycle = ProcessLifecycleOwner.get().lifecycle
+        lifecycle = getProcessLifecycle()
 
-        val packageManager: PackageManager = application.packageManager
-        packageInfo = try {
-            packageManager.getPackageInfo(application.packageName, 0)
-        } catch (e: PackageManager.NameNotFoundException) {
-            val message = "Package not found: ${application.packageName}"
-            analytics.logAndThrowError(message = message, throwable = e)
+        // update the app version code and build regardless of tracking enabled or not.
+        appVersion = getAppVersion()
+        updateAppVersion()
+
+        if (shouldTrackApplicationLifecycleEvents) {
+            trackApplicationLifecycleEvents()
         }
 
         runOnMainThread {
@@ -81,24 +82,12 @@ internal class AndroidLifecyclePlugin : Plugin, DefaultLifecycleObserver {
         }
     }
 
-    override fun onCreate(owner: LifecycleOwner) {
-        super.onCreate(owner)
-        if (!trackedApplicationLifecycleEvents.getAndSet(true)) {
-            if (shouldTrackApplicationLifecycleEvents) {
-                firstLaunch.set(true)
-                trackApplicationLifecycleEvents()
-            }
-            // update the app version code and build regardless of tracking enabled or not.
-            updateVersionAndBuild()
-        }
-    }
-
     override fun onStart(owner: LifecycleOwner) {
         super.onStart(owner)
         if (shouldTrackApplicationLifecycleEvents) {
             val properties = buildJsonObject {
                 if (firstLaunch.get()) {
-                    put(VERSION_KEY, packageInfo.versionName)
+                    put(VERSION_KEY, appVersion.currentVersionName)
                 }
                 put(FROM_BACKGROUND, !firstLaunch.getAndSet(false))
             }
@@ -114,47 +103,57 @@ internal class AndroidLifecyclePlugin : Plugin, DefaultLifecycleObserver {
     }
 
     private fun trackApplicationLifecycleEvents() {
-        // Get the current version.
-        val packageInfo = packageInfo
-        val currentVersion = packageInfo.versionName
-        val currentBuild = packageInfo.getVersionCode()
-
-        // Get the previous recorded version.
-        val previousVersion = storage.readString(StorageKeys.APP_VERSION, String.empty())
-        val previousBuild = storage.readLong(StorageKeys.APP_BUILD, -1L)
-
         // Check and track Application Installed or Application Updated.
-        if (previousBuild == -1L) {
+        if (appVersion.previousBuild == -1L) {
             analytics.track(
                 APPLICATION_INSTALLED,
                 buildJsonObject {
-                    put(VERSION_KEY, currentVersion)
-                    put(BUILD_KEY, currentBuild)
+                    put(VERSION_KEY, appVersion.currentVersionName)
+                    put(BUILD_KEY, appVersion.currentBuild)
                 },
                 RudderOption()
             )
-        } else if (currentBuild != previousBuild) {
+        } else if (appVersion.currentBuild != appVersion.previousBuild) {
             analytics.track(
                 APPLICATION_UPDATED,
                 buildJsonObject {
-                    put(VERSION_KEY, currentVersion)
-                    put(BUILD_KEY, currentBuild)
-                    put("previous_$VERSION_KEY", previousVersion)
-                    put("previous_$BUILD_KEY", previousBuild)
+                    put(VERSION_KEY, appVersion.currentVersionName)
+                    put(BUILD_KEY, appVersion.currentBuild)
+                    put("previous_$VERSION_KEY", appVersion.previousVersionName)
+                    put("previous_$BUILD_KEY", appVersion.previousBuild)
                 },
                 RudderOption()
             )
         }
     }
 
-    private fun updateVersionAndBuild() {
-        val packageInfo = packageInfo
-        val currentVersion = packageInfo.versionName
-        val currentBuild = packageInfo.getVersionCode()
+    @VisibleForTesting
+    internal fun getProcessLifecycle(): Lifecycle {
+        return ProcessLifecycleOwner.get().lifecycle
+    }
 
+    @VisibleForTesting
+    internal fun getAppVersion(): AppVersion {
+        val packageManager: PackageManager = application.packageManager
+        val packageInfo = try {
+            packageManager.getPackageInfo(application.packageName, 0)
+        } catch (e: PackageManager.NameNotFoundException) {
+            val message = "Package not found: ${application.packageName}"
+            analytics.logAndThrowError(message = message, throwable = e)
+        }
+
+        return AppVersion(
+            currentVersionName = packageInfo.versionName,
+            currentBuild = packageInfo.getVersionCode().toLong(),
+            previousVersionName = storage.readString(StorageKeys.APP_VERSION, String.empty()),
+            previousBuild = storage.readLong(StorageKeys.APP_BUILD, -1L)
+        )
+    }
+
+    private fun updateAppVersion() {
         analytics.runOnAnalyticsThread {
-            storage.write(StorageKeys.APP_VERSION, currentVersion)
-            storage.write(StorageKeys.APP_BUILD, currentBuild.toLong())
+            storage.write(StorageKeys.APP_VERSION, appVersion.currentVersionName)
+            storage.write(StorageKeys.APP_BUILD, appVersion.currentBuild)
         }
     }
 
