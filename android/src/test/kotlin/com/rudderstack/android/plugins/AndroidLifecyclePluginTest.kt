@@ -1,18 +1,21 @@
 package com.rudderstack.android.plugins
 
 import android.app.Application
-import android.content.pm.PackageInfo
-import android.content.pm.PackageManager
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
+import com.rudderstack.android.Configuration
+import com.rudderstack.android.models.AppVersion
 import com.rudderstack.android.utils.MockMemoryStorage
-import com.rudderstack.core.Analytics
+import com.rudderstack.android.utils.mockAnalytics
 import com.rudderstack.core.internals.models.Properties
 import com.rudderstack.core.internals.models.RudderOption
 import com.rudderstack.core.internals.storage.Storage
 import com.rudderstack.core.internals.storage.StorageKeys
+import com.rudderstack.core.internals.utils.empty
+import io.mockk.MockKAnnotations
 import io.mockk.Ordering
 import io.mockk.every
+import io.mockk.impl.annotations.MockK
 import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
@@ -25,92 +28,46 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
-import kotlinx.serialization.json.put
-import java.util.concurrent.atomic.AtomicBoolean
 
 class AndroidLifecyclePluginTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
 
-    private lateinit var plugin: AndroidLifecyclePlugin
-    private lateinit var analytics: Analytics
-    private lateinit var lifecycle: Lifecycle
-    private lateinit var storage: Storage
-    private lateinit var packageInfo: PackageInfo
-    private lateinit var application: Application
+    private val plugin = spyk(AndroidLifecyclePlugin())
 
-    private var shouldTrackApplicationLifecycleEvents: Boolean = true
-    private val firstLaunch = AtomicBoolean(false)
-    private val trackedApplicationLifecycleEvents = AtomicBoolean(false)
+    private val mockAnalytics = mockAnalytics(testScope, testDispatcher)
 
-    private val lifecycleOwner: LifecycleOwner = mockk(relaxed = true)
+    @MockK
+    private lateinit var mockLifecycleOwner: LifecycleOwner
 
+    @MockK
+    private lateinit var mockLifecycle: Lifecycle
+
+    private lateinit var mockStorage: Storage
+
+    @MockK
+    private lateinit var mockApplication: Application
+
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Before
-    @ExperimentalCoroutinesApi
-    fun setUp() {
+    fun setup() {
+        MockKAnnotations.init(this, relaxed = true)
         Dispatchers.setMain(testDispatcher)
 
-        packageInfo = PackageInfo()
-        packageInfo.versionCode = 100
-        packageInfo.versionName = "1.0.0"
+        mockStorage = MockMemoryStorage()
 
-        storage = MockMemoryStorage()
-        application = mockk(relaxed = true)
-        lifecycle = mockk(relaxed = true)
-        analytics = mockk(relaxed = true)
-        every { analytics.analyticsScope } returns testScope
-        every { analytics.analyticsDispatcher } returns testDispatcher
-        every { analytics.track(any<String>(), any<JsonObject>(), any<RudderOption>()) } returns Unit
+        every { plugin.getProcessLifecycle() } returns mockLifecycle
 
-        val packageManager = mockk<PackageManager> {
-            every { getPackageInfo("com.foo", 0) } returns packageInfo
-        }
-        every { application.packageName } returns "com.foo"
-        every { application.packageManager } returns packageManager
-
-        plugin = spyk(AndroidLifecyclePlugin(), recordPrivateCalls = true)
-
-        plugin::class.java.getDeclaredField("application").apply {
-            isAccessible = true
-            set(plugin, application)
-        }
-
-        plugin::class.java.getDeclaredField("storage").apply {
-            isAccessible = true
-            set(plugin, storage)
-        }
-        plugin::class.java.getDeclaredField("packageInfo").apply {
-            isAccessible = true
-            set(plugin, packageInfo)
-        }
-        plugin::class.java.getDeclaredField("lifecycle").apply {
-            isAccessible = true
-            set(plugin, lifecycle)
-        }
-
-        firstLaunch.set(false)
-        plugin::class.java.getDeclaredField("firstLaunch").apply {
-            isAccessible = true
-            set(plugin, firstLaunch)
-        }
-
-        trackedApplicationLifecycleEvents.set(false)
-        plugin::class.java.getDeclaredField("trackedApplicationLifecycleEvents").apply {
-            isAccessible = true
-            set(plugin, trackedApplicationLifecycleEvents)
-        }
-
-        plugin::class.java.getDeclaredField("analytics").apply {
-            set(plugin, analytics)
-        }
+        every { mockAnalytics.track(any<String>(), any<JsonObject>(), any<RudderOption>()) } returns Unit
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @After
-    @ExperimentalCoroutinesApi
     fun tearDown() {
         Dispatchers.resetMain()
     }
@@ -121,15 +78,14 @@ class AndroidLifecyclePluginTest {
         pluginSetup(trackingEnabled = false)
 
         // when
-        plugin.onCreate(lifecycleOwner)
-        plugin.onStart(lifecycleOwner)
+        plugin.onStart(mockLifecycleOwner)
 
         // then
-        verify(exactly = 0) { analytics.track(any<String>(), any<JsonObject>(), any<RudderOption>()) }
+        verify(exactly = 0) { mockAnalytics.track(any<String>(), any<JsonObject>(), any<RudderOption>()) }
     }
 
     @Test
-    fun `given trackApplicationLifecycleEvents is true and storage does not have build and version stored, when onCreate and onStart are called, then events called with correct properties`() =
+    fun `given trackApplicationLifecycleEvents is true and storage does not have build and version stored, when setup and onStart are called, then events called with correct properties`() =
         runTest(testDispatcher) {
             // given
             pluginSetup()
@@ -144,39 +100,38 @@ class AndroidLifecyclePluginTest {
             }
 
             // when
-            plugin.onCreate(lifecycleOwner)
-            plugin.onStart(lifecycleOwner)
+            plugin.onStart(mockLifecycleOwner)
 
             // Advance the test dispatcher to run coroutines
             testDispatcher.scheduler.advanceUntilIdle()
 
             // then
             verify(exactly = 1) {
-                analytics.track(
+                mockAnalytics.track(
                     name = eq(APPLICATION_INSTALLED),
                     options = eq(RudderOption()),
                     properties = eq(installedProperties)
                 )
             }
             verify(exactly = 1) {
-                analytics.track(
+                mockAnalytics.track(
                     name = eq(APPLICATION_OPENED),
                     options = eq(RudderOption()),
                     properties = eq(openedProperties)
                 )
             }
             // verify that storage has now the correct version and build written
-            assert(storage.readLong(StorageKeys.APP_BUILD, -1L) == 100L)
-            assert(storage.readString(StorageKeys.APP_VERSION, "") == "1.0.0")
+            assert(mockStorage.readLong(StorageKeys.APP_BUILD, -1L) == 100L)
+            assert(mockStorage.readString(StorageKeys.APP_VERSION, "") == "1.0.0")
         }
 
     @Test
-    fun `given trackApplicationLifecycleEvents is true and storage does have build and version stored, when onCreate and onStart are called, then events called with correct properties`() =
+    fun `given trackApplicationLifecycleEvents is true and storage does have build and version stored, when setup and onStart are called, then events called with correct properties`() =
         runTest(testDispatcher) {
             // given
+            mockStorage.write(StorageKeys.APP_BUILD, 100L)
+            mockStorage.write(StorageKeys.APP_VERSION, "1.0.0")
             pluginSetup()
-            storage.write(StorageKeys.APP_BUILD, 100L)
-            storage.write(StorageKeys.APP_VERSION, "1.0.0")
 
             val installedProperties = buildJsonObject {
                 put(VERSION_KEY, "1.0.0")
@@ -188,19 +143,18 @@ class AndroidLifecyclePluginTest {
             }
 
             // when
-            plugin.onCreate(lifecycleOwner)
-            plugin.onStart(lifecycleOwner)
+            plugin.onStart(mockLifecycleOwner)
 
             // then
             verify(exactly = 0) {
-                analytics.track(
+                mockAnalytics.track(
                     name = eq(APPLICATION_INSTALLED),
                     options = eq(RudderOption()),
                     properties = eq(installedProperties)
                 )
             }
             verify(exactly = 1) {
-                analytics.track(
+                mockAnalytics.track(
                     name = eq(APPLICATION_OPENED),
                     options = eq(RudderOption()),
                     properties = eq(openedProperties)
@@ -209,12 +163,12 @@ class AndroidLifecyclePluginTest {
         }
 
     @Test
-    fun `given trackApplicationLifecycleEvents is true and storage does have build and version stored, when onCreate, onStart, onStop, onStart are called in order, then events called with correct properties`() =
+    fun `given trackApplicationLifecycleEvents is true and storage does have build and version stored, when setup, onStart, onStop, onStart are called in order, then events called with correct properties`() =
         runTest(testDispatcher) {
             // given
+            mockStorage.write(StorageKeys.APP_BUILD, 100L)
+            mockStorage.write(StorageKeys.APP_VERSION, "1.0.0")
             pluginSetup()
-            storage.write(StorageKeys.APP_BUILD, 100L)
-            storage.write(StorageKeys.APP_VERSION, "1.0.0")
 
             val installedProperties = buildJsonObject {
                 put(VERSION_KEY, "1.0.0")
@@ -229,31 +183,30 @@ class AndroidLifecyclePluginTest {
             }
 
             // when
-            plugin.onCreate(lifecycleOwner)
-            plugin.onStart(lifecycleOwner)
-            plugin.onStop(lifecycleOwner)
-            plugin.onStart(lifecycleOwner)
+            plugin.onStart(mockLifecycleOwner)
+            plugin.onStop(mockLifecycleOwner)
+            plugin.onStart(mockLifecycleOwner)
 
             // then
             verify(exactly = 0) {
-                analytics.track(
+                mockAnalytics.track(
                     name = eq(APPLICATION_INSTALLED),
                     options = eq(RudderOption()),
                     properties = eq(installedProperties)
                 )
             }
             verify(ordering = Ordering.ORDERED) {
-                analytics.track(
+                mockAnalytics.track(
                     name = eq(APPLICATION_OPENED),
                     options = eq(RudderOption()),
                     properties = eq(openedFirstTimeProperties)
                 )
-                analytics.track(
+                mockAnalytics.track(
                     name = eq(APPLICATION_BACKGROUNDED),
                     options = eq(RudderOption()),
                     properties = eq(Properties(emptyMap()))
                 )
-                analytics.track(
+                mockAnalytics.track(
                     name = eq(APPLICATION_OPENED),
                     options = eq(RudderOption()),
                     properties = eq(openedSecondTimeProperties)
@@ -262,10 +215,9 @@ class AndroidLifecyclePluginTest {
         }
 
     @Test
-    fun `given trackApplicationLifecycleEvents is true and stored and current versions are different, when onCreate and onStart called, then events called with correct properties`() =
+    fun `given trackApplicationLifecycleEvents is true and stored and current versions are different, when setup and onStart called, then events called with correct properties`() =
         runTest(testDispatcher) {
             // given
-            pluginSetup()
             val oldVersion = "0.5.1"
             val oldBuildNumber = 99L
             val installedProperties = buildJsonObject {
@@ -282,30 +234,30 @@ class AndroidLifecyclePluginTest {
                 put(FROM_BACKGROUND, false)
                 put(VERSION_KEY, "1.0.0")
             }
-            storage.write(StorageKeys.APP_BUILD, oldBuildNumber)
-            storage.write(StorageKeys.APP_VERSION, oldVersion)
+            mockStorage.write(StorageKeys.APP_BUILD, oldBuildNumber)
+            mockStorage.write(StorageKeys.APP_VERSION, oldVersion)
+            pluginSetup()
 
             // when
-            plugin.onCreate(lifecycleOwner)
-            plugin.onStart(lifecycleOwner)
+            plugin.onStart(mockLifecycleOwner)
 
             // then
             verify(exactly = 0) {
-                analytics.track(
+                mockAnalytics.track(
                     name = eq(APPLICATION_INSTALLED),
                     options = eq(RudderOption()),
                     properties = eq(installedProperties)
                 )
             }
             verify(exactly = 1) {
-                analytics.track(
+                mockAnalytics.track(
                     name = eq(APPLICATION_UPDATED),
                     options = eq(RudderOption()),
                     properties = eq(updatedProperties)
                 )
             }
             verify(exactly = 1) {
-                analytics.track(
+                mockAnalytics.track(
                     name = eq(APPLICATION_OPENED),
                     options = eq(RudderOption()),
                     properties = eq(openedProperties)
@@ -325,32 +277,43 @@ class AndroidLifecyclePluginTest {
 
             // then
             verify(exactly = 1) {
-                lifecycle.removeObserver(plugin)
+                mockLifecycle.removeObserver(plugin)
             }
         }
 
     @Test
-    fun `given trackApplicationLifecycleEvents is false, when onCreate is called, then build and version are still stored in memory`() =
+    fun `given trackApplicationLifecycleEvents is false, when setup is called, then build and version are still stored in memory`() =
         runTest(testDispatcher) {
-            // given
-            pluginSetup(false)
-
             // when
-            plugin.onCreate(lifecycleOwner)
+            pluginSetup(false)
             testDispatcher.scheduler.advanceUntilIdle()
 
             // then
-            assert(storage.readLong(StorageKeys.APP_BUILD, -1L) == 100L)
-            assert(storage.readString(StorageKeys.APP_VERSION, "") == "1.0.0")
+            assert(mockStorage.readLong(StorageKeys.APP_BUILD, -1L) == 100L)
+            assert(mockStorage.readString(StorageKeys.APP_VERSION, "") == "1.0.0")
         }
 
     private fun pluginSetup(trackingEnabled: Boolean = true) {
 
-        shouldTrackApplicationLifecycleEvents = trackingEnabled
-
-        plugin::class.java.getDeclaredField("shouldTrackApplicationLifecycleEvents").apply {
-            isAccessible = true
-            set(plugin, shouldTrackApplicationLifecycleEvents)
+        val mockConfiguration = mockk<Configuration> {
+            every { application } returns mockApplication
+            every { storage } returns mockStorage
+            every { trackApplicationLifecycleEvents } returns trackingEnabled
+            every { writeKey } returns ""
+            every { dataPlaneUrl } returns ""
+            every { logger } returns mockk(relaxed = true)
+            every { flushPolicies } returns emptyList()
         }
+
+        every { mockAnalytics.configuration } returns mockConfiguration
+
+        every { plugin.getAppVersion() } returns AppVersion(
+            currentBuild = 100L,
+            currentVersionName = "1.0.0",
+            previousBuild = mockStorage.readLong(StorageKeys.APP_BUILD, -1L),
+            previousVersionName = mockStorage.readString(StorageKeys.APP_VERSION, String.empty())
+        )
+
+        plugin.setup(analytics = mockAnalytics)
     }
 }
