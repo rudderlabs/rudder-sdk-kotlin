@@ -42,13 +42,13 @@ open class Analytics protected constructor(
 
     // Initial setup of the plugin chain, associating it with this Analytics instance
     private val pluginChain: PluginChain = PluginChain().also { it.analytics = this }
-    private var store: Store<SourceConfigState, SourceConfigState.Update>
+
+    private var store: Store<SourceConfigState, SourceConfigState.UpdateAction> = SingleThreadStore(
+        state = SourceConfigState.initialState(),
+        reducer = SourceConfigState.SaveSourceConfigValuesReducer(configuration.storageProvider, stateScope),
+    )
 
     init {
-        store = SingleThreadStore(
-            state = SourceConfigState.initialState(),
-            reducer = SourceConfigState.SaveSourceConfigValues(configuration.storageProvider, stateScope),
-        )
         setup()
     }
 

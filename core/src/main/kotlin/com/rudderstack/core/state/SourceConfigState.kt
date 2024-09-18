@@ -35,9 +35,9 @@ internal data class SourceConfigState(
     internal class UpdateAction(val updatedSourceConfig: SourceConfig) : Action
 
     internal class SaveSourceConfigValuesReducer(val storage: Storage, private val stateScope: CoroutineScope) :
-        Reducer<SourceConfigState, Update> {
+        Reducer<SourceConfigState, UpdateAction> {
 
-        override fun invoke(currentState: SourceConfigState, action: Update): SourceConfigState {
+        override fun invoke(currentState: SourceConfigState, action: UpdateAction): SourceConfigState {
             stateScope.launch {
                 storage.apply {
                     write(SOURCE_CONFIG_PAYLOAD, Json.encodeToString(SourceConfig.serializer(), action.updatedSourceConfig))

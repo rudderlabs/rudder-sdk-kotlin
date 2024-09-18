@@ -15,7 +15,7 @@ private const val SOURCE_CONFIG_ENDPOINT = "/sourceConfig"
 
 internal class SourceConfigManager(
     private val analytics: Analytics,
-    private val store: Store<SourceConfigState, SourceConfigState.Update>,
+    private val store: Store<SourceConfigState, SourceConfigState.UpdateAction>,
     private val httpClientFactory: HttpClient = analytics.createGetHttpClientFactory(),
 ) {
 
@@ -51,7 +51,7 @@ internal class SourceConfigManager(
 
     @VisibleForTesting
     fun storeSourceConfig(sourceConfig: SourceConfig) {
-        store.subscribe { _, dispatch -> dispatch(SourceConfigState.Update(sourceConfig)) }
+        store.subscribe { _, dispatch -> dispatch(SourceConfigState.UpdateAction(sourceConfig)) }
         analytics.configuration.logger.debug(log = "SourceConfig: $sourceConfig")
     }
 }
