@@ -68,12 +68,6 @@ interface CoroutineConfiguration {
     val analyticsScope: CoroutineScope
 
     /**
-     * The [CoroutineScope] used for managing state-related tasks. This scope controls the lifecycle of coroutines
-     * associated with managing and updating the internal state of the SDK.
-     */
-    val stateScope: CoroutineScope
-
-    /**
      * The [CoroutineDispatcher] used for executing general analytics tasks in the SDK.
      */
     val analyticsDispatcher: CoroutineDispatcher

@@ -45,7 +45,7 @@ open class Analytics protected constructor(
 
     private var store: Store<SourceConfigState, SourceConfigState.UpdateAction> = SingleThreadStore(
         state = SourceConfigState.initialState(),
-        reducer = SourceConfigState.SaveSourceConfigValuesReducer(configuration.storageProvider, stateScope),
+        reducer = SourceConfigState.SaveSourceConfigValuesReducer(configuration.storageProvider, analyticsScope),
     )
 
     init {
@@ -65,7 +65,6 @@ open class Analytics protected constructor(
                 configuration.logger.error(log = exception.stackTraceToString())
             }
             override val analyticsScope: CoroutineScope = CoroutineScope(SupervisorJob() + handler)
-            override val stateScope: CoroutineScope = CoroutineScope(Dispatchers.IO)
             override val analyticsDispatcher: CoroutineDispatcher = Dispatchers.IO
             override val storageDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(2)
             override val networkDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(1)
