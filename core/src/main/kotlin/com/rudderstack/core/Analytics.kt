@@ -45,11 +45,11 @@ open class Analytics protected constructor(
     private var store: Store<SourceConfigState, SourceConfigState.Update>
 
     init {
-        setup()
         store = SingleThreadStore(
             state = SourceConfigState.initialState(),
             reducer = SourceConfigState.SaveSourceConfigValues(configuration.storageProvider, stateScope),
         )
+        setup()
     }
 
     /**
