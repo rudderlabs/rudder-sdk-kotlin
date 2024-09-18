@@ -1,6 +1,6 @@
-package com.rudderstack.statestore.statemanagement
+package com.rudderstack.core.internals.statemanagement
 
-class SubscriptionManager<S : State, A : Action> {
+internal class SubscriptionManager<S : State, A : Action> {
     private val subscriptions = mutableListOf<Subscription<S, A>>()
 
     /**

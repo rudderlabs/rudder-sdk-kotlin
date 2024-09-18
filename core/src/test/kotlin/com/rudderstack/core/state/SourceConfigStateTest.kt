@@ -27,7 +27,7 @@ class SourceConfigStateTest {
     private val storage: Storage = mockk(relaxed = true)
     private val testScope = TestScope(UnconfinedTestDispatcher())
     private val initialState = SourceConfigState.initialState()
-    private val reducer = SourceConfigState.SaveSourceConfigValues(storage, testScope)
+    private val reducer = SourceConfigState.SaveSourceConfigValuesReducer(storage, testScope)
 
     @Before
     fun setup() {
@@ -52,7 +52,7 @@ class SourceConfigStateTest {
             )
         )
 
-        val updateAction = SourceConfigState.Update(newSourceConfig)
+        val updateAction = SourceConfigState.UpdateAction(newSourceConfig)
         val newState = reducer.invoke(initialState, updateAction)
 
         assertEquals(newSourceConfig, newState.sourceConfig)
@@ -71,7 +71,7 @@ class SourceConfigStateTest {
             )
         )
 
-        val updateAction = SourceConfigState.Update(newSourceConfig)
+        val updateAction = SourceConfigState.UpdateAction(newSourceConfig)
         reducer.invoke(initialState, updateAction)
         advanceUntilIdle()
 

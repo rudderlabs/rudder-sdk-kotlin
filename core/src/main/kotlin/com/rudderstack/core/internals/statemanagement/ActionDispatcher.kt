@@ -1,6 +1,6 @@
-package com.rudderstack.statestore.statemanagement
+package com.rudderstack.core.internals.statemanagement
 
-class ActionDispatcher<S : State, A : Action>(
+internal class ActionDispatcher<S : State, A : Action>(
     internal var state: S,
     private val reducer: Reducer<S, A>,
     private val middleware: List<Middleware<S, A>>,

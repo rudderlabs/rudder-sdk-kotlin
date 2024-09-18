@@ -104,42 +104,43 @@ class SingleThreadStoreTest {
 
     @Test
     fun `when unsubscribe is called, then subscribers should be removed`() {
-        val initialState = provideInitialState()
-        val store = SingleThreadStore(initialState, provideReducer())
+        val testPayload = 2
         var notifiedState: TestState? = null
-
-        val unsubscribe = store.subscribe { state, _ ->
+        val store = SingleThreadStore(provideInitialState(), provideReducer())
+        val subscription: Subscription<TestState, TestAction> = { state, dispatch ->
             notifiedState = state
         }
-        unsubscribe()
-        store.dispatch(provideAction(type = TestAction.ActionType.INCREMENT.name, payload = 2))
 
-        assertEquals(initialState, notifiedState)
+        store.subscribe(subscription)
+        store.dispatch(provideAction(type = TestAction.ActionType.INCREMENT.name, payload = testPayload))
+        store.unsubscribe(subscription)
+
+        assertEquals(TestState(testPayload), notifiedState)
     }
 
     @Test
     fun `when no subscribers exist, then dispose middleware`() {
-        val initialState = provideInitialState()
         var isMiddlewareDisposed = false
-        val disposableMiddleware: Middleware<TestState, TestAction> =
-            object : Middleware<TestState, TestAction> {
-                override fun invoke(
-                    state: TestState,
-                    action: TestAction,
-                    dispatch: Dispatch<TestAction>,
-                    next: Next<TestState, TestAction>
-                ): TestAction {
-                    return next(state, action, dispatch)
-                }
-
-                override fun dispose() {
-                    isMiddlewareDisposed = true
-                }
+        val disposableMiddleware: Middleware<TestState, TestAction> = object : Middleware<TestState, TestAction> {
+            override fun invoke(
+                state: TestState,
+                action: TestAction,
+                dispatch: Dispatch<TestAction>,
+                next: Next<TestState, TestAction>
+            ): TestAction {
+                return next(state, action, dispatch)
             }
 
-        val store = SingleThreadStore(initialState, provideReducer(), listOf(disposableMiddleware))
-        val unsubscribe = store.subscribe { _, _ -> }
-        unsubscribe()
+            override fun dispose() {
+                isMiddlewareDisposed = true
+            }
+        }
+
+        val store = SingleThreadStore(provideInitialState(), provideReducer(), listOf(disposableMiddleware))
+        val subscription: Subscription<TestState, TestAction> = { state, dispatch -> }
+
+        store.subscribe(subscription)
+        store.unsubscribe(subscription)
 
         assertTrue(isMiddlewareDisposed)
     }

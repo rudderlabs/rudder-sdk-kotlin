@@ -1,42 +1,48 @@
 package com.rudderstack.core.internals.statemanagement
 
-import org.jetbrains.annotations.VisibleForTesting
-
 internal class SingleThreadStore<S : State, A : Action>(
-    private var state: S,
-    private val reducer: Reducer<S, A>,
+    initialState: S,
+    reducer: Reducer<S, A>,
     private val middleware: List<Middleware<S, A>> = emptyList()
 ) : Store<S, A> {
 
-    @VisibleForTesting
-    private val subscriptions = mutableListOf<Subscription<S, A>>()
+    private val subscriptionManager = SubscriptionManager<S, A>()
+    private val actionDispatcher = ActionDispatcher(initialState, reducer, middleware, subscriptionManager)
 
-    override fun subscribe(subscription: Subscription<S, A>): Unsubscribe {
-        subscriptions.add(subscription)
-        subscription(state, ::dispatch)
+    /**
+     * Adds a subscription to state changes and notifies the subscriber immediately.
+     *
+     * @param subscription The subscription function.
+     */
+    override fun subscribe(subscription: Subscription<S, A>) {
+        subscriptionManager.addSubscription(actionDispatcher.state, actionDispatcher::dispatch, subscription)
+    }
 
-        return {
-            subscriptions.remove(subscription)
-            if (subscriptions.isEmpty()) disposeMiddleware()
+    /**
+     * Unsubscribes from state changes.
+     *
+     * @param subscription The subscription to remove.
+     */
+    override fun unsubscribe(subscription: Subscription<S, A>) {
+        subscriptionManager.removeSubscription(subscription)
+        if (!subscriptionManager.hasSubscriptions()) {
+            disposeMiddleware()
         }
     }
 
-    @VisibleForTesting
-    internal fun dispatch(action: A) {
-        val newState = reducer(state, applyMiddleware(state, action, 0))
-        if (newState != state) {
-            state = newState
-            subscriptions.forEach { it(state, ::dispatch) }
-        }
+    /**
+     * Dispatches an action to the store.
+     *
+     * @param action The action to dispatch.
+     */
+    override fun dispatch(action: A) {
+        actionDispatcher.dispatch(action)
     }
 
-    private fun applyMiddleware(currentState: S, action: A, index: Int): A {
-        return if (index < middleware.size) {
-            middleware[index](currentState, action, ::dispatch) { s, a, d -> applyMiddleware(s, a, index + 1) }
-        } else {
-            action
-        }
+    /**
+     * Disposes of middleware resources if needed.
+     */
+    private fun disposeMiddleware() {
+        middleware.forEach { it.dispose() }
     }
-
-    private fun disposeMiddleware() = middleware.forEach { it.dispose() }
 }

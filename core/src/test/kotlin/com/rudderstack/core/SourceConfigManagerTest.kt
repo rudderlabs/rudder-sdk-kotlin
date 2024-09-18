@@ -29,7 +29,7 @@ private const val sourceConfigSuccess = "config/source_config_without_destinatio
 class SourceConfigManagerTest {
 
     private val analytics: Analytics = mockk(relaxed = true)
-    private val store: SingleThreadStore<SourceConfigState, SourceConfigState.Update> = mockk(relaxed = true)
+    private val store: SingleThreadStore<SourceConfigState, SourceConfigState.UpdateAction> = mockk(relaxed = true)
     private val httpClient: HttpClient = mockk()
     private lateinit var sourceConfigManager: SourceConfigManager
 

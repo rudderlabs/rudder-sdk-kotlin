@@ -51,7 +51,8 @@ internal class SourceConfigManager(
 
     @VisibleForTesting
     fun storeSourceConfig(sourceConfig: SourceConfig) {
-        store.subscribe { _, dispatch -> dispatch(SourceConfigState.UpdateAction(sourceConfig)) }
+        store.subscribe { _, _ -> analytics.configuration.logger.debug(log = "SourceConfigState subscribed") }
+        store.dispatch(action = SourceConfigState.UpdateAction(sourceConfig))
         analytics.configuration.logger.debug(log = "SourceConfig: $sourceConfig")
     }
 }
