@@ -24,6 +24,7 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.properties.Delegates
 import com.rudderstack.android.Configuration as AndroidConfiguration
 
 @DelicateCoroutinesApi
@@ -48,7 +49,7 @@ internal class AndroidLifecyclePlugin : Plugin, DefaultLifecycleObserver {
     private lateinit var application: Application
 
     // state variables
-    private var shouldTrackApplicationLifecycleEvents: Boolean = true
+    private var shouldTrackApplicationLifecycleEvents by Delegates.notNull<Boolean>()
     private val firstLaunch = AtomicBoolean(true)
 
     override fun setup(analytics: Analytics) {
