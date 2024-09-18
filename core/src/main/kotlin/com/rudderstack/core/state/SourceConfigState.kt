@@ -32,7 +32,7 @@ internal data class SourceConfigState(
         )
     }
 
-    internal class Update(val updatedSourceConfig: SourceConfig) : Action
+    internal class UpdateAction(val updatedSourceConfig: SourceConfig) : Action
 
     internal class SaveSourceConfigValues(val storage: Storage, private val stateScope: CoroutineScope) :
         Reducer<SourceConfigState, Update> {
