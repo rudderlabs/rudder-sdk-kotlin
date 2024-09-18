@@ -10,14 +10,14 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import com.rudderstack.android.models.AppVersion
+import com.rudderstack.android.utils.logAndThrowError
+import com.rudderstack.android.utils.runOnAnalyticsThread
 import com.rudderstack.core.Analytics
 import com.rudderstack.core.internals.models.RudderOption
 import com.rudderstack.core.internals.plugins.Plugin
 import com.rudderstack.core.internals.storage.Storage
 import com.rudderstack.core.internals.storage.StorageKeys
 import com.rudderstack.core.internals.utils.empty
-import com.rudderstack.core.internals.utils.logAndThrowError
-import com.rudderstack.core.internals.utils.runOnAnalyticsThread
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

@@ -1,4 +1,4 @@
-package com.rudderstack.core.internals.utils
+package com.rudderstack.android.utils
 
 import com.rudderstack.core.Analytics
 import kotlinx.coroutines.launch
@@ -8,7 +8,7 @@ import kotlinx.coroutines.launch
  *
  * @param block The suspend block which needs to be executed.
  */
-fun Analytics.runOnAnalyticsThread(block: suspend () -> Unit) = analyticsScope.launch(analyticsDispatcher) {
+internal fun Analytics.runOnAnalyticsThread(block: suspend () -> Unit) = analyticsScope.launch(analyticsDispatcher) {
     block()
 }
 
@@ -18,7 +18,7 @@ fun Analytics.runOnAnalyticsThread(block: suspend () -> Unit) = analyticsScope.l
  * @param message The error message to be logged.
  * @param throwable The error to be thrown.
  */
-fun Analytics.logAndThrowError(message: String, throwable: Throwable? = null): Nothing {
+internal fun Analytics.logAndThrowError(message: String, throwable: Throwable? = null): Nothing {
     configuration.logger.error(log = message)
     throw throwable ?: error(message)
 }
