@@ -59,7 +59,7 @@ internal class SourceConfigManager(
 
 internal fun Analytics.createGetHttpClientFactory(): HttpClient {
     val authHeaderString: String = configuration.writeKey.encodeToBase64()
-    val query = configuration.storageProvider.getLibraryVersion().toMap()
+    val query = configuration.storage.getLibraryVersion().toMap()
 
     return HttpClientImpl.createGetHttpClient(
         baseUrl = configuration.controlPlaneUrl,

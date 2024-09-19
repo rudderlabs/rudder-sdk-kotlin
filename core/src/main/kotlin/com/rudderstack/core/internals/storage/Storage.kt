@@ -140,6 +140,16 @@ enum class StorageKeys(val key: String) {
     SOURCE_CONFIG_PAYLOAD("source_config_payload"),
 
     SOURCE_IS_ENABLED("source_is_enabled"),
+
+    /**
+     *Key for storing client app version.
+     */
+    APP_VERSION("rudder.app_version"),
+
+    /**
+     * Key for storing client app build number.
+     */
+    APP_BUILD("rudder.app_build")
 }
 
 /**

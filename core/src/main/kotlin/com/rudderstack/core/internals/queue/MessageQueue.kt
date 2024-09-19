@@ -39,7 +39,7 @@ internal class MessageQueue(
     private var writeChannel: Channel<Message>
     private var uploadChannel: Channel<String>
 
-    private val storage get() = analytics.configuration.storageProvider
+    private val storage get() = analytics.configuration.storage
 
     init {
         running = false

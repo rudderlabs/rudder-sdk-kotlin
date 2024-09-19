@@ -68,6 +68,7 @@ dependencies {
 
     //implementation
     implementation(libs.android.core.ktx)
+    implementation(libs.lifecycle.process)
 
     //testImplementation
     testImplementation(project(":core"))
