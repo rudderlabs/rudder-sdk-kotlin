@@ -4,7 +4,7 @@ import com.rudderstack.core.internals.models.provider.provideSampleExternalIdsPa
 import com.rudderstack.core.internals.models.provider.provideSampleIntegrationsPayload
 import com.rudderstack.core.internals.models.provider.provideSampleJsonPayload
 import com.rudderstack.core.internals.platform.PlatformType
-import com.rudderstack.core.internals.utils.applyTestBaseDate
+import com.rudderstack.core.internals.utils.applyMockedValues
 import com.rudderstack.core.internals.utils.encodeToString
 import com.rudderstack.core.readFileTrimmed
 import org.junit.Assert.assertEquals
@@ -32,7 +32,7 @@ class TrackEventTest {
             properties = emptyJsonObject,
             options = RudderOption(),
         ).also {
-            it.applyTestBaseDate()
+            it.applyMockedValues()
             it.updateData(ANONYMOUS_ID, PlatformType.Mobile)
         }
 
@@ -49,7 +49,7 @@ class TrackEventTest {
             properties = provideSampleJsonPayload(),
             options = RudderOption(),
         ).also {
-            it.applyTestBaseDate()
+            it.applyMockedValues()
             it.updateData(ANONYMOUS_ID, PlatformType.Mobile)
         }
 
@@ -68,7 +68,7 @@ class TrackEventTest {
                 integrations = provideSampleIntegrationsPayload(),
             ),
         ).also {
-            it.applyTestBaseDate()
+            it.applyMockedValues()
             it.updateData(ANONYMOUS_ID, PlatformType.Mobile)
         }
 
@@ -87,7 +87,7 @@ class TrackEventTest {
                 customContexts = provideSampleJsonPayload(),
             )
         ).also {
-            it.applyTestBaseDate()
+            it.applyMockedValues()
             it.updateData(ANONYMOUS_ID, PlatformType.Mobile)
         }
 
@@ -106,7 +106,7 @@ class TrackEventTest {
                 externalIds = provideSampleExternalIdsPayload(),
             )
         ).also {
-            it.applyTestBaseDate()
+            it.applyMockedValues()
             it.updateData(ANONYMOUS_ID, PlatformType.Mobile)
         }
 
@@ -127,7 +127,7 @@ class TrackEventTest {
                 externalIds = provideSampleExternalIdsPayload(),
             )
         ).also {
-            it.applyTestBaseDate()
+            it.applyMockedValues()
             it.updateData(ANONYMOUS_ID, PlatformType.Mobile)
         }
 
@@ -148,7 +148,7 @@ class TrackEventTest {
                 externalIds = provideSampleExternalIdsPayload(),
             )
         ).also {
-            it.applyTestBaseDate()
+            it.applyMockedValues()
             it.updateData(ANONYMOUS_ID, PlatformType.Server)
         }
 

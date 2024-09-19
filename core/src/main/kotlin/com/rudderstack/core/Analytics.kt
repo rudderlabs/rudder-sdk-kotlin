@@ -132,7 +132,6 @@ open class Analytics protected constructor(
      * @param message The [Message] object representing an event or action to be processed.
      */
     private fun process(message: Message) {
-        message.applyBaseData()
         analyticsScope.launch(analyticsDispatcher) {
             // TODO: Pass actual anonymous ID, or the way to fetch such values
             message.updateData("<anonymous-id>", getPlatformType())

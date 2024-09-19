@@ -17,7 +17,7 @@ fun mockAnalytics(testScope: TestScope, testDispatcher: TestDispatcher): Analyti
     return mock
 }
 
-fun Message.applyTestBaseDate() {
+fun Message.applyMockedValues() {
     this.originalTimestamp = "<original-timestamp>"
     this.context = emptyJsonObject
     this.messageId = "<message-id>"

@@ -61,18 +61,12 @@ enum class MessageType {
 sealed class Message {
 
     abstract var type: MessageType
-    abstract var messageId: String
-    abstract var originalTimestamp: String
-    abstract var context: AnalyticsContext
+    open var messageId: String = UUID.randomUUID().toString()
+    open var originalTimestamp: String = DateTimeUtils.now()
+    open var context: AnalyticsContext = emptyJsonObject
     abstract var integrations: Map<String, Boolean>
     abstract var anonymousId: String
     abstract var channel: PlatformType
-
-    internal fun applyBaseData() {
-        this.originalTimestamp = DateTimeUtils.now()
-        this.context = emptyJsonObject
-        this.messageId = UUID.randomUUID().toString()
-    }
 
     // TODO("Add Store as a function parameter"): It is needed to fetch the anonymousId, userId, traits, externalId etc. from the store
     internal fun updateData(anonymousId: String, platform: PlatformType) {
@@ -124,9 +118,6 @@ data class FlushEvent(
 ) : Message() {
 
     override var type: MessageType = MessageType.Flush
-    override lateinit var messageId: String
-    override lateinit var context: AnalyticsContext
-    override lateinit var originalTimestamp: String
     override lateinit var integrations: Map<String, Boolean>
     override lateinit var anonymousId: String
     override lateinit var channel: PlatformType
@@ -150,10 +141,9 @@ data class TrackEvent(
 ) : Message() {
 
     override var type: MessageType = MessageType.Track
-
-    override lateinit var messageId: String
-    override lateinit var context: AnalyticsContext
-    override lateinit var originalTimestamp: String
+    override var messageId: String = super.messageId
+    override var context: AnalyticsContext = super.context
+    override var originalTimestamp: String = super.originalTimestamp
     override lateinit var integrations: Map<String, Boolean>
     override lateinit var anonymousId: String
     override lateinit var channel: PlatformType
