@@ -135,7 +135,7 @@ class MessageQueueTest {
 
             // Mock storage read
             coEvery {
-                storage.readString(StorageKeys.RUDDER_MESSAGE, String.empty())
+                storage.readString(StorageKeys.MESSAGE, String.empty())
             } returns fileUrlList
 
             // Mock file existence check
@@ -174,7 +174,7 @@ class MessageQueueTest {
 
         // Mock storage read
         coEvery {
-            storage.readString(StorageKeys.RUDDER_MESSAGE, String.empty())
+            storage.readString(StorageKeys.MESSAGE, String.empty())
         } returns fileUrlList
 
         // Mock file existence check
@@ -216,7 +216,7 @@ class MessageQueueTest {
 
         // Mock storage read
         coEvery {
-            storage.readString(StorageKeys.RUDDER_MESSAGE, String.empty())
+            storage.readString(StorageKeys.MESSAGE, String.empty())
         } returns fileUrlList
 
         // Mock file existence check
@@ -254,7 +254,7 @@ class MessageQueueTest {
 
         // Mock storage read
         coEvery {
-            storage.readString(StorageKeys.RUDDER_MESSAGE, String.empty())
+            storage.readString(StorageKeys.MESSAGE, String.empty())
         } returns fileUrlList
 
         // Mock file existence check
@@ -375,7 +375,7 @@ class MessageQueueTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         coVerify(exactly = times) {
-            storage.write(StorageKeys.RUDDER_MESSAGE, jsonString)
+            storage.write(StorageKeys.MESSAGE, jsonString)
             mockFlushPoliciesFacade.updateState()
         }
     }

@@ -135,12 +135,11 @@ enum class StorageKeys(val key: String) {
     /**
      * Key for storing or retrieving Rudder messages.
      */
-    RUDDER_MESSAGE("rl_message"),
+    MESSAGE("message"),
 
-    /**
-     * Key for storing or retrieving optional Rudder values.
-     */
-    RUDDER_OPTIONAL(""),
+    SOURCE_CONFIG_PAYLOAD("source_config_payload"),
+
+    SOURCE_IS_ENABLED("source_is_enabled"),
 
     /**
      *Key for storing client app version.
