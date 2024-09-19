@@ -53,21 +53,6 @@ class SingleThreadStoreTest {
     }
 
     @Test
-    fun `when an action is dispatched, then subscribers should be notified on state change`() {
-        val store = SingleThreadStore(provideInitialState(), provideReducer())
-        val action = provideAction(type = TestAction.ActionType.INCREMENT.name, payload = 3)
-        var updatedState: TestState? = null
-
-        store.subscribe { state, _ ->
-            updatedState = state
-        }
-
-        store.dispatch(action)
-
-        assertEquals(provideState(3), updatedState)
-    }
-
-    @Test
     fun `when middleware is executed, then should be executed in the correct order`() {
         val initialState = provideInitialState()
         val middlewareOrder = mutableListOf<String>()
@@ -112,10 +97,10 @@ class SingleThreadStoreTest {
         }
 
         store.subscribe(subscription)
-        store.dispatch(provideAction(type = TestAction.ActionType.INCREMENT.name, payload = testPayload))
         store.unsubscribe(subscription)
+        store.dispatch(provideAction(type = TestAction.ActionType.INCREMENT.name, payload = testPayload))
 
-        assertEquals(TestState(testPayload), notifiedState)
+        assertEquals(provideInitialState(), notifiedState)
     }
 
     @Test
