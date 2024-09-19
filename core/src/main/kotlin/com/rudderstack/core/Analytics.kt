@@ -9,8 +9,11 @@ import com.rudderstack.core.internals.platform.Platform
 import com.rudderstack.core.internals.platform.PlatformType
 import com.rudderstack.core.internals.plugins.Plugin
 import com.rudderstack.core.internals.plugins.PluginChain
+import com.rudderstack.core.internals.statemanagement.SingleThreadStore
+import com.rudderstack.core.internals.statemanagement.Store
 import com.rudderstack.core.plugins.PocPlugin
 import com.rudderstack.core.plugins.RudderStackDataplanePlugin
+import com.rudderstack.core.state.SourceConfigState
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -41,6 +44,11 @@ open class Analytics protected constructor(
 
     // Initial setup of the plugin chain, associating it with this Analytics instance
     private val pluginChain: PluginChain = PluginChain().also { it.analytics = this }
+
+    private var store: Store<SourceConfigState, SourceConfigState.UpdateAction> = SingleThreadStore(
+        initialState = SourceConfigState.initialState(),
+        reducer = SourceConfigState.SaveSourceConfigValuesReducer(configuration.storage, analyticsScope),
+    )
 
     init {
         setup()
@@ -104,7 +112,7 @@ open class Analytics protected constructor(
         add(RudderStackDataplanePlugin())
 
         analyticsScope.launch(analyticsDispatcher) {
-            ServerConfigManager(analytics = this@Analytics).fetchSourceConfig()
+            SourceConfigManager(analytics = this@Analytics, store = store).fetchSourceConfig()
         }
     }
 
