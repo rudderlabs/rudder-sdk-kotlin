@@ -53,6 +53,7 @@ enum class MessageType {
  * @property messageId A unique identifier for the message.
  * @property originalTimestamp The original timestamp when the message was created.
  * @property context The analytics context associated with the message.
+ * @property sentAt The timestamp when the message is sent to the server.
  * @property integrations The integrations options associated with the message.
  * @property anonymousId The anonymous ID is the Pseudo-identifier for the user in cases where userId is absent.
  * @property channel The platform type associated with the message.
@@ -64,6 +65,9 @@ sealed class Message {
     open var messageId: String = UUID.randomUUID().toString()
     open var originalTimestamp: String = DateTimeUtils.now()
     open var context: AnalyticsContext = emptyJsonObject
+
+    // this sentAt timestamp value will be updated before sending the payload to server
+    open var sentAt: String = DateTimeUtils.now()
     abstract var integrations: Map<String, Boolean>
     abstract var anonymousId: String
     abstract var channel: PlatformType
@@ -95,6 +99,7 @@ sealed class Message {
             messageId = original.messageId
             originalTimestamp = original.originalTimestamp
             context = original.context
+            sentAt = original.sentAt
             integrations = original.integrations
             anonymousId = original.anonymousId
             channel = original.channel
@@ -144,6 +149,7 @@ data class TrackEvent(
     override var messageId: String = super.messageId
     override var context: AnalyticsContext = super.context
     override var originalTimestamp: String = super.originalTimestamp
+    override var sentAt: String = super.sentAt
     override lateinit var integrations: Map<String, Boolean>
     override lateinit var anonymousId: String
     override lateinit var channel: PlatformType
