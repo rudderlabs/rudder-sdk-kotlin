@@ -1,5 +1,6 @@
 package com.rudderstack.core.internals.storage
 
+import com.rudderstack.core.internals.models.DEFAULT_SENT_AT_TIMESTAMP
 import com.rudderstack.core.internals.utils.DateTimeUtils
 import io.mockk.every
 import io.mockk.mockkObject
@@ -21,7 +22,7 @@ class MessageBatchFileManagerTest {
 
     private val writeKey = TEST_WRITE_KEY
     private val fileName = "$writeKey-0"
-    private val epochTimestamp = Date(0).toInstant().toString()
+    private val epochTimestamp = DEFAULT_SENT_AT_TIMESTAMP
     private val directory = File(FILE_DIRECTORY)
     private val keyValueStorage = PropertiesFile(directory.parentFile, writeKey)
 
