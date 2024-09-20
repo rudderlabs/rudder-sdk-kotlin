@@ -18,6 +18,13 @@ import java.util.*
 typealias AnalyticsContext = JsonObject
 typealias Properties = JsonObject
 
+/*
+ * Default timestamp value of sentAt field in Message class.
+ * CAUTION: Do not modify this variable's value as it is used by regex to replace sentAt with updated value of timestamp.
+ * Do not use it anywhere else.
+ */
+internal const val DEFAULT_SENT_AT_TIMESTAMP = "2024-09-20T05:33:09.980Z"
+
 /**
  * Represents an empty JSON object.
  */
@@ -66,8 +73,9 @@ sealed class Message {
     open var originalTimestamp: String = DateTimeUtils.now()
     open var context: AnalyticsContext = emptyJsonObject
 
-    // this sentAt timestamp value will be updated before sending the payload to server
-    open var sentAt: String = DateTimeUtils.now()
+    // this sentAt timestamp value will be updated just before sending the payload to server
+    // CAUTION: Do not change the default value for this param.
+    open var sentAt: String = DEFAULT_SENT_AT_TIMESTAMP
     abstract var integrations: Map<String, Boolean>
     abstract var anonymousId: String
     abstract var channel: PlatformType

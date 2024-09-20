@@ -2,6 +2,7 @@ package com.rudderstack.core.internals.queue
 
 import com.rudderstack.core.Analytics
 import com.rudderstack.core.internals.logger.TAG
+import com.rudderstack.core.internals.models.DEFAULT_SENT_AT_TIMESTAMP
 import com.rudderstack.core.internals.models.FlushEvent
 import com.rudderstack.core.internals.models.Message
 import com.rudderstack.core.internals.models.MessageType
@@ -27,7 +28,7 @@ import java.io.FileNotFoundException
 
 internal const val UPLOAD_SIG = "#!upload"
 private const val BATCH_ENDPOINT = "/v1/batch"
-private const val SENT_AT_REGEX_PATTERN = """"sentAt":"[^"]*""""
+private const val SENT_AT_REGEX_PATTERN = """"sentAt":"$DEFAULT_SENT_AT_TIMESTAMP""""
 
 @OptIn(DelicateCoroutinesApi::class)
 internal class MessageQueue(

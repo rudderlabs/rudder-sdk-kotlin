@@ -1,6 +1,6 @@
 package com.rudderstack.core.internals.storage
 
-import com.rudderstack.core.internals.utils.DateTimeUtils
+import com.rudderstack.core.internals.models.DEFAULT_SENT_AT_TIMESTAMP
 import com.rudderstack.core.internals.utils.toFileDirectory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -140,7 +140,7 @@ class MessageBatchFileManager(
     fun finish() {
         val file = currentFile()
         if (!file.exists()) return
-        val contents = BATCH_SENT_AT_SUFFIX + DateTimeUtils.now() + "\"}"
+        val contents = "$BATCH_SENT_AT_SUFFIX$DEFAULT_SENT_AT_TIMESTAMP\"}"
         writeToFile(contents.toByteArray(), file)
         file.renameTo(File(directory, file.nameWithoutExtension))
         os?.close()
