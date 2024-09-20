@@ -2,7 +2,6 @@ package com.rudderstack.core.internals.queue
 
 import com.rudderstack.core.Analytics
 import com.rudderstack.core.internals.logger.TAG
-import com.rudderstack.core.internals.models.DEFAULT_SENT_AT_TIMESTAMP
 import com.rudderstack.core.internals.models.FlushEvent
 import com.rudderstack.core.internals.models.Message
 import com.rudderstack.core.internals.models.MessageType
@@ -11,7 +10,7 @@ import com.rudderstack.core.internals.network.HttpClientImpl
 import com.rudderstack.core.internals.network.Result
 import com.rudderstack.core.internals.policies.FlushPoliciesFacade
 import com.rudderstack.core.internals.storage.StorageKeys
-import com.rudderstack.core.internals.utils.DateTimeUtils
+import com.rudderstack.core.internals.utils.JsonSentAtUpdater
 import com.rudderstack.core.internals.utils.empty
 import com.rudderstack.core.internals.utils.encodeToBase64
 import com.rudderstack.core.internals.utils.encodeToString
@@ -28,14 +27,14 @@ import java.io.FileNotFoundException
 
 internal const val UPLOAD_SIG = "#!upload"
 private const val BATCH_ENDPOINT = "/v1/batch"
-private const val SENT_AT_REGEX_PATTERN = """"sentAt":"$DEFAULT_SENT_AT_TIMESTAMP""""
 
 @OptIn(DelicateCoroutinesApi::class)
 internal class MessageQueue(
     private val analytics: Analytics,
     private val httpClientFactory: HttpClient = analytics.createPostHttpClientFactory(),
     private var flushPoliciesFacade: FlushPoliciesFacade =
-        FlushPoliciesFacade(analytics.configuration.flushPolicies)
+        FlushPoliciesFacade(analytics.configuration.flushPolicies),
+    private val jsonSentAtUpdater: JsonSentAtUpdater = JsonSentAtUpdater()
 ) {
     private var running: Boolean
     private var writeChannel: Channel<Message>
@@ -126,7 +125,7 @@ internal class MessageQueue(
 
                 var shouldCleanup = false
                 try {
-                    val batchPayload = updateSentAtTimestamp(readFileAsString(filePath))
+                    val batchPayload = jsonSentAtUpdater.updateSentAt(readFileAsString(filePath))
                     analytics.configuration.logger.debug(TAG, "-------> readFileAsString: $batchPayload")
                     when (val result: Result<String> = httpClientFactory.sendData(batchPayload)) {
                         is Result.Success -> {
@@ -199,15 +198,4 @@ private fun Analytics.createPostHttpClientFactory(): HttpClient {
         isGZIPEnabled = isGzipEnabled,
         anonymousIdHeaderString = anonymousIdHeaderString,
     )
-}
-
-private fun updateSentAtTimestamp(jsonString: String): String {
-    val latestTimestamp = DateTimeUtils.now()
-
-    val updatedJsonString = jsonString.replace(
-        SENT_AT_REGEX_PATTERN.toRegex(),
-        """"sentAt":"$latestTimestamp""""
-    )
-
-    return updatedJsonString
 }
