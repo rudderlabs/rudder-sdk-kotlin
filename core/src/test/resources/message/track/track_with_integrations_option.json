@@ -4,6 +4,7 @@
   "messageId" : "<message-id>",
   "context" : { },
   "originalTimestamp" : "<original-timestamp>",
+  "sentAt" : "<sent-at-timestamp>",
   "integrations" : {
     "All" : false,
     "Amplitude" : true,

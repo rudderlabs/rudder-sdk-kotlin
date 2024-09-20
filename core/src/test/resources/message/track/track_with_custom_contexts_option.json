@@ -17,6 +17,7 @@
     "key-11" : { }
   },
   "originalTimestamp" : "<original-timestamp>",
+  "sentAt" : "<sent-at-timestamp>",
   "integrations" : {
     "All" : true
   },

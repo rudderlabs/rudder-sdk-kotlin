@@ -21,4 +21,5 @@ fun Message.applyMockedValues() {
     this.originalTimestamp = "<original-timestamp>"
     this.context = emptyJsonObject
     this.messageId = "<message-id>"
+    this.sentAt = "<sent-at-timestamp>"
 }
