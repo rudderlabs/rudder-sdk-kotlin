@@ -1,6 +1,8 @@
 package com.rudderstack.core.internals.utils
 
 import com.rudderstack.core.Analytics
+import com.rudderstack.core.internals.models.Message
+import com.rudderstack.core.internals.models.emptyJsonObject
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.TestDispatcher
@@ -13,4 +15,10 @@ fun mockAnalytics(testScope: TestScope, testDispatcher: TestDispatcher): Analyti
     every { mock.storageDispatcher } returns testDispatcher
     every { mock.networkDispatcher } returns testDispatcher
     return mock
+}
+
+fun Message.applyMockedValues() {
+    this.originalTimestamp = "<original-timestamp>"
+    this.context = emptyJsonObject
+    this.messageId = "<message-id>"
 }

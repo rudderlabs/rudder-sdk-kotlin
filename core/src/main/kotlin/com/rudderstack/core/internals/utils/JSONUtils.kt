@@ -2,7 +2,12 @@
 
 package com.rudderstack.core.internals.utils
 
+import com.rudderstack.core.internals.models.Message
+import com.rudderstack.core.internals.models.emptyJsonObject
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonObject
 
 /**
  * `LenientJson` is a predefined instance of the `Json` class configured with lenient settings to handle JSON serialization and deserialization.
@@ -11,10 +16,8 @@ import kotlinx.serialization.json.Json
  *
  * This configuration can be beneficial when working with APIs or data sources that might evolve over time or provide inconsistent JSON data.
  *
- * @property ignoreUnknownKeys A flag that, when set to true, instructs the JSON parser to ignore any unknown keys found in the JSON input. This allows for forward compatibility with future changes in JSON structures.
- * @property isLenient A flag that, when set to true, allows the JSON parser to be lenient in parsing the JSON input. This enables the parser to handle malformed or non-standard JSON without throwing an exception.
  */
-val LenientJson = Json {
+internal val LenientJson = Json {
     /**
      * Instructs the parser to ignore any unknown keys in the JSON input.
      * This setting is useful when the data source might include additional fields that are not defined in the data model.
@@ -26,4 +29,30 @@ val LenientJson = Json {
      * This setting is useful when dealing with JSON input that might not strictly adhere to the standard format.
      */
     isLenient = true
+
+    /**
+     * Encodes the default values of the properties.
+     */
+    encodeDefaults = true
+}
+
+/**
+ * Encodes the message to a JSON string, filtering out empty JSON objects.
+ */
+internal fun Message.encodeToString(): String {
+    val stringMessage = LenientJson.encodeToString(this)
+    val filteredMessage = LenientJson.parseToJsonElement(stringMessage)
+        .jsonObject.filterNot { (k, v) ->
+            (k == "properties" && v == emptyJsonObject)
+        }
+    return LenientJson.encodeToString(filteredMessage)
+}
+
+/**
+ * Merges the current JSON object with another JSON object, giving higher priority to the other JSON object.
+ *
+ * @param other The JSON object to merge with the current JSON object.
+ */
+internal infix fun JsonObject.mergeWithHigherPriorityTo(other: JsonObject): JsonObject {
+    return JsonObject(this.toMap() + other.toMap())
 }

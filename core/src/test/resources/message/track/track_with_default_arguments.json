@@ -1,0 +1,12 @@
+{
+  "event" : "Track event 1",
+  "type" : "track",
+  "messageId" : "<message-id>",
+  "context" : {},
+  "originalTimestamp" : "<original-timestamp>",
+  "integrations" : {
+    "All" : true
+  },
+  "anonymousId" : "<anonymous-id>",
+  "channel" : "mobile"
+}

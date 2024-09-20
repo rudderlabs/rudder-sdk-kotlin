@@ -133,6 +133,8 @@ style:
   ReturnCount:
     active: true
     max: 4
+  ForbiddenComment:
+    active: false
 
 formatting:
   excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**']

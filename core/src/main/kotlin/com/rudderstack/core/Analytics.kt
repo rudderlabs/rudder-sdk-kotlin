@@ -5,6 +5,8 @@ import com.rudderstack.core.internals.models.Properties
 import com.rudderstack.core.internals.models.RudderOption
 import com.rudderstack.core.internals.models.TrackEvent
 import com.rudderstack.core.internals.models.emptyJsonObject
+import com.rudderstack.core.internals.platform.Platform
+import com.rudderstack.core.internals.platform.PlatformType
 import com.rudderstack.core.internals.plugins.Plugin
 import com.rudderstack.core.internals.plugins.PluginChain
 import com.rudderstack.core.internals.statemanagement.SingleThreadStore
@@ -38,7 +40,7 @@ import kotlinx.coroutines.launch
 open class Analytics protected constructor(
     val configuration: Configuration,
     coroutineConfig: CoroutineConfiguration,
-) : CoroutineConfiguration by coroutineConfig {
+) : CoroutineConfiguration by coroutineConfig, Platform {
 
     // Initial setup of the plugin chain, associating it with this Analytics instance
     private val pluginChain: PluginChain = PluginChain().also { it.analytics = this }
@@ -80,9 +82,9 @@ open class Analytics protected constructor(
      * @param options A [RudderOption] object to specify additional event options.
      */
     @JvmOverloads
-    fun track(name: String, properties: Properties = emptyJsonObject, options: RudderOption) {
+    fun track(name: String, properties: Properties = emptyJsonObject, options: RudderOption = RudderOption()) {
         val message = TrackEvent(
-            name = name,
+            event = name,
             properties = properties,
             options = options,
         )
@@ -130,9 +132,12 @@ open class Analytics protected constructor(
      * @param message The [Message] object representing an event or action to be processed.
      */
     private fun process(message: Message) {
-        message.applyBaseData()
         analyticsScope.launch(analyticsDispatcher) {
+            // TODO: Pass actual anonymous ID, or the way to fetch such values
+            message.updateData("<anonymous-id>", getPlatformType())
             pluginChain.process(message)
         }
     }
+
+    override fun getPlatformType(): PlatformType = PlatformType.Server
 }

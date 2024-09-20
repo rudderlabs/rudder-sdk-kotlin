@@ -12,6 +12,7 @@ import com.rudderstack.core.internals.policies.FlushPoliciesFacade
 import com.rudderstack.core.internals.storage.StorageKeys
 import com.rudderstack.core.internals.utils.empty
 import com.rudderstack.core.internals.utils.encodeToBase64
+import com.rudderstack.core.internals.utils.encodeToString
 import com.rudderstack.core.internals.utils.parseFilePaths
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.channels.Channel
@@ -19,8 +20,6 @@ import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import org.jetbrains.annotations.VisibleForTesting
 import java.io.File
 import java.io.FileNotFoundException
@@ -84,7 +83,7 @@ internal class MessageQueue(
     }
 
     internal fun stringifyBaseEvent(payload: Message): String {
-        return Json.encodeToString(payload)
+        return payload.encodeToString()
     }
 
     @Suppress("TooGenericExceptionCaught")

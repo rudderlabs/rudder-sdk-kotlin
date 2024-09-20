@@ -1,11 +1,13 @@
 package com.rudderstack.core.internals.models
 
 import com.rudderstack.core.internals.models.exception.UnknownMessageKeyException
+import com.rudderstack.core.internals.platform.PlatformType
 import com.rudderstack.core.internals.utils.DateTimeUtils
 import com.rudderstack.core.internals.utils.empty
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import kotlinx.serialization.json.JsonContentPolymorphicSerializer
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -20,18 +22,6 @@ typealias Properties = JsonObject
  * Represents an empty JSON object.
  */
 val emptyJsonObject = JsonObject(emptyMap())
-
-/**
- * Represents options that can be passed with a message in the RudderStack analytics context.
- *
- * @property integrations A map of integration names to a boolean indicating if they are enabled.
- * @property externalIds A list of maps representing external IDs associated with the message.
- */
-@Serializable
-data class RudderOption(
-    val integrations: Map<String, Boolean> = emptyMap(),
-    val externalIds: List<Map<String, String>> = emptyList(),
-)
 
 /**
  * Enum class representing the type of message being handled by RudderStack.
@@ -63,21 +53,26 @@ enum class MessageType {
  * @property messageId A unique identifier for the message.
  * @property originalTimestamp The original timestamp when the message was created.
  * @property context The analytics context associated with the message.
- * @property newId A new identifier for the message if needed.
+ * @property integrations The integrations options associated with the message.
+ * @property anonymousId The anonymous ID is the Pseudo-identifier for the user in cases where userId is absent.
+ * @property channel The platform type associated with the message.
  */
 @Serializable(with = BaseMessageSerializer::class)
 sealed class Message {
 
     abstract var type: MessageType
-    abstract var messageId: String
-    abstract var originalTimestamp: String
-    abstract var context: AnalyticsContext
-    abstract var newId: String
+    open var messageId: String = UUID.randomUUID().toString()
+    open var originalTimestamp: String = DateTimeUtils.now()
+    open var context: AnalyticsContext = emptyJsonObject
+    abstract var integrations: Map<String, Boolean>
+    abstract var anonymousId: String
+    abstract var channel: PlatformType
 
-    internal fun applyBaseData() {
-        this.originalTimestamp = DateTimeUtils.now()
-        this.context = emptyJsonObject
-        this.messageId = UUID.randomUUID().toString()
+    // TODO("Add Store as a function parameter"): It is needed to fetch the anonymousId, userId, traits, externalId etc. from the store
+    internal fun updateData(anonymousId: String, platform: PlatformType) {
+        this.anonymousId = anonymousId
+        this.channel = platform
+        this.updateOption()
     }
 
     /**
@@ -90,9 +85,9 @@ sealed class Message {
         val original = this
         val copy = when (this) {
             is TrackEvent -> TrackEvent(
-                name = this.name,
+                event = this.event,
+                properties = this.properties,
                 options = this.options,
-                properties = this.properties
             )
 
             is FlushEvent -> FlushEvent()
@@ -100,34 +95,12 @@ sealed class Message {
             messageId = original.messageId
             originalTimestamp = original.originalTimestamp
             context = original.context
-            newId = original.newId
+            integrations = original.integrations
+            anonymousId = original.anonymousId
+            channel = original.channel
         }
         @Suppress("UNCHECKED_CAST")
         return copy as T // This is ok because resultant type will be same as input type
-    }
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as Message
-
-        if (type != other.type) return false
-        if (messageId != other.messageId) return false
-        if (originalTimestamp != other.originalTimestamp) return false
-        if (context != other.context) return false
-        if (newId != other.newId) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = type.hashCode()
-        result = 31 * result + messageId.hashCode()
-        result = 31 * result + originalTimestamp.hashCode()
-        result = 31 * result + context.hashCode()
-        result = 31 * result + newId.hashCode()
-        return result
     }
 }
 
@@ -145,29 +118,9 @@ data class FlushEvent(
 ) : Message() {
 
     override var type: MessageType = MessageType.Flush
-    override lateinit var messageId: String
-    override lateinit var context: AnalyticsContext
-    override var newId: String = ""
-
-    override lateinit var originalTimestamp: String
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-        if (!super.equals(other)) return false
-
-        other as FlushEvent
-
-        if (messageName != other.messageName) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = super.hashCode()
-        result = 31 * result + messageName.hashCode()
-        return result
-    }
+    override lateinit var integrations: Map<String, Boolean>
+    override lateinit var anonymousId: String
+    override lateinit var channel: PlatformType
 }
 
 /**
@@ -175,44 +128,25 @@ data class FlushEvent(
  *
  * This data class encapsulates the properties required for a track message.
  *
- * @property name The name of the track event.
+ * @property event The name of the track event.
  * @property options Additional options for the event, encapsulated in a [RudderOption] instance.
  * @property properties The properties associated with the track event.
  */
 @Serializable
 @SerialName("track")
 data class TrackEvent(
-    var name: String,
-    var options: RudderOption,
+    var event: String,
     var properties: Properties,
+    @Transient var options: RudderOption = RudderOption(),
 ) : Message() {
 
     override var type: MessageType = MessageType.Track
-    override lateinit var messageId: String
-    override lateinit var context: AnalyticsContext
-    override var newId: String = ""
-
-    override lateinit var originalTimestamp: String
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-        if (!super.equals(other)) return false
-
-        other as TrackEvent
-
-        if (properties != other.properties) return false
-        if (name != other.name) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = super.hashCode()
-        result = 31 * result + properties.hashCode()
-        result = 31 * result + name.hashCode()
-        return result
-    }
+    override var messageId: String = super.messageId
+    override var context: AnalyticsContext = super.context
+    override var originalTimestamp: String = super.originalTimestamp
+    override lateinit var integrations: Map<String, Boolean>
+    override lateinit var anonymousId: String
+    override lateinit var channel: PlatformType
 }
 
 /**

@@ -2,6 +2,8 @@ package com.rudderstack.android
 
 import com.rudderstack.android.plugins.AndroidLifecyclePlugin
 import com.rudderstack.core.Analytics
+import com.rudderstack.core.internals.platform.Platform
+import com.rudderstack.core.internals.platform.PlatformType
 
 /**
  * `Analytics` class in the `com.rudderstack.android` package.
@@ -32,7 +34,7 @@ import com.rudderstack.core.Analytics
  */
 class Analytics(
     configuration: Configuration,
-) : Analytics(
+) : Platform, Analytics(
     configuration
 ) {
     init {
@@ -42,4 +44,6 @@ class Analytics(
     private fun setup() {
         add(AndroidLifecyclePlugin())
     }
+
+    override fun getPlatformType(): PlatformType = PlatformType.Mobile
 }
