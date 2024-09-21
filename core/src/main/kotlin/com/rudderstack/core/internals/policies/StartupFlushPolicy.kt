@@ -1,7 +1,5 @@
 package com.rudderstack.core.internals.policies
 
-import com.rudderstack.core.internals.utils.ExecutionManager.runOnce
-
 /**
  * StartupFlushPolicy is a concrete implementation of the FlushPolicy interface
  * that triggers a flush action only once during the startup phase.
@@ -9,11 +7,12 @@ import com.rudderstack.core.internals.utils.ExecutionManager.runOnce
  */
 class StartupFlushPolicy : FlushPolicy {
 
-    private var flushedAtStartup = true
+    private var flushedAtStartup = false
 
-    internal fun shouldFlush(): Boolean = flushedAtStartup.also {
-        runOnce {
-            flushedAtStartup = false
-        }
+    internal fun shouldFlush(): Boolean = if (flushedAtStartup) {
+        false
+    } else {
+        flushedAtStartup = true
+        true
     }
 }
