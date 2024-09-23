@@ -1,8 +1,6 @@
 package com.rudderstack.core.internals.storage
 
-import com.rudderstack.core.internals.utils.DateTimeUtils
-import io.mockk.every
-import io.mockk.mockkObject
+import com.rudderstack.core.internals.models.DEFAULT_SENT_AT_TIMESTAMP
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertNotNull
@@ -13,7 +11,6 @@ import org.junit.Before
 import org.junit.Test
 import java.io.File
 import java.io.FileOutputStream
-import java.util.Date
 
 private const val TEST_WRITE_KEY = "asdf"
 
@@ -21,7 +18,7 @@ class MessageBatchFileManagerTest {
 
     private val writeKey = TEST_WRITE_KEY
     private val fileName = "$writeKey-0"
-    private val epochTimestamp = Date(0).toInstant().toString()
+    private val epochTimestamp = DEFAULT_SENT_AT_TIMESTAMP
     private val directory = File(FILE_DIRECTORY)
     private val keyValueStorage = PropertiesFile(directory.parentFile, writeKey)
 
@@ -30,8 +27,6 @@ class MessageBatchFileManagerTest {
     @Before
     fun setup() {
         messageBatchFileManager = MessageBatchFileManager(directory, writeKey, keyValueStorage)
-        mockkObject(DateTimeUtils)
-        every { DateTimeUtils.now() } returns Date(0).toInstant().toString()
     }
 
     @After

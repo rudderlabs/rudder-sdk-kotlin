@@ -10,6 +10,7 @@ import com.rudderstack.core.internals.network.HttpClientImpl
 import com.rudderstack.core.internals.network.Result
 import com.rudderstack.core.internals.policies.FlushPoliciesFacade
 import com.rudderstack.core.internals.storage.StorageKeys
+import com.rudderstack.core.internals.utils.JsonSentAtUpdater
 import com.rudderstack.core.internals.utils.empty
 import com.rudderstack.core.internals.utils.encodeToBase64
 import com.rudderstack.core.internals.utils.encodeToString
@@ -32,7 +33,8 @@ internal class MessageQueue(
     private val analytics: Analytics,
     private val httpClientFactory: HttpClient = analytics.createPostHttpClientFactory(),
     private var flushPoliciesFacade: FlushPoliciesFacade =
-        FlushPoliciesFacade(analytics.configuration.flushPolicies)
+        FlushPoliciesFacade(analytics.configuration.flushPolicies),
+    private val jsonSentAtUpdater: JsonSentAtUpdater = JsonSentAtUpdater()
 ) {
     private var running: Boolean
     private var writeChannel: Channel<Message>
@@ -123,7 +125,7 @@ internal class MessageQueue(
 
                 var shouldCleanup = false
                 try {
-                    val batchPayload = readFileAsString(filePath)
+                    val batchPayload = jsonSentAtUpdater.updateSentAt(readFileAsString(filePath))
                     analytics.configuration.logger.debug(TAG, "-------> readFileAsString: $batchPayload")
                     when (val result: Result<String> = httpClientFactory.sendData(batchPayload)) {
                         is Result.Success -> {

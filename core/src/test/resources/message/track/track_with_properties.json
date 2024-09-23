@@ -18,6 +18,7 @@
   "messageId" : "<message-id>",
   "context" : { },
   "originalTimestamp" : "<original-timestamp>",
+  "sentAt" : "{{ RSA_DEF_SENT_AT_TS }}",
   "integrations" : {
     "All" : true
   },
