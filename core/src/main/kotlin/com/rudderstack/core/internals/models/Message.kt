@@ -145,8 +145,8 @@ data class FlushEvent(
  * This data class encapsulates the properties required for a track message.
  *
  * @property event The name of the track event.
- * @property options Additional options for the event, encapsulated in a [RudderOption] instance.
  * @property properties The properties associated with the track event.
+ * @property options Additional options for the event, encapsulated in a [RudderOption] instance.
  */
 @Serializable
 @SerialName("track")
