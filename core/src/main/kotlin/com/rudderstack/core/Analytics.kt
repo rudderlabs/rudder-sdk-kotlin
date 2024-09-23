@@ -20,6 +20,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
@@ -132,11 +133,9 @@ open class Analytics protected constructor(
      * @param message The [Message] object representing an event or action to be processed.
      */
     private fun process(message: Message) {
-        analyticsScope.launch(analyticsDispatcher) {
-            // TODO: Pass actual anonymous ID, or the way to fetch such values
-            message.updateData("<anonymous-id>", getPlatformType())
-            pluginChain.process(message)
-        }
+        // TODO: Pass actual anonymous ID, or the way to fetch such values
+        message.updateData("<anonymous-id>", getPlatformType())
+        pluginChain.process(message)
     }
 
     override fun getPlatformType(): PlatformType = PlatformType.Server

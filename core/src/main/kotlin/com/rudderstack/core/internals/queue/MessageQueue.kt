@@ -31,8 +31,7 @@ private const val BATCH_ENDPOINT = "/v1/batch"
 internal class MessageQueue(
     private val analytics: Analytics,
     private val httpClientFactory: HttpClient = analytics.createPostHttpClientFactory(),
-    private var flushPoliciesFacade: FlushPoliciesFacade =
-        FlushPoliciesFacade(analytics.configuration.flushPolicies)
+    private var flushPoliciesFacade: FlushPoliciesFacade = FlushPoliciesFacade(analytics.configuration.flushPolicies)
 ) {
     private var running: Boolean
     private var writeChannel: Channel<Message>
@@ -47,7 +46,7 @@ internal class MessageQueue(
         registerShutdownHook()
     }
 
-    // TODO("Listen for anonymousID state change through state management library")
+// TODO("Listen for anonymousID state change through state management library")
 //    private fun updateAnonymousId(newAnonymousId: String) {
 //        httpClientFactory.updateAnonymousIdHeaderString(newAnonymousId.encodeToBase64())
 //    }

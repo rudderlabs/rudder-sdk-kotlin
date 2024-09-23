@@ -12,9 +12,9 @@ object RudderAnalyticsUtils {
         analytics = Analytics(
             configuration = Configuration(
                 trackApplicationLifecycleEvents = true,
-                writeKey = "<WRITE_KEY>",
+                writeKey = "2bdKKpiBaIwBuqdAyH6OpUc1bXD",
                 application = application,
-                dataPlaneUrl = "<DATA_PLANE_URL>",
+                dataPlaneUrl = "https://rudderstaciwbf.dataplane.rudderstack.com",
             )
         )
     }
