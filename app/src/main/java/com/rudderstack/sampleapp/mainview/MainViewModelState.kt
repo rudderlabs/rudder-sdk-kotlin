@@ -11,5 +11,6 @@ data class LogData(val time: Date, val log: String)
 
 sealed class AnalyticsState(val eventName: String) {
     object TrackMessage : AnalyticsState("Track")
+    object ScreenMessage : AnalyticsState("Screen")
     object ForceFlush : AnalyticsState("Flush")
 }
