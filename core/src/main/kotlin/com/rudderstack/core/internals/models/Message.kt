@@ -20,10 +20,10 @@ typealias Properties = JsonObject
 
 /*
  * Default timestamp value of sentAt field in Message class.
- * CAUTION: Do not modify this variable's value as it is used by regex to replace sentAt with updated value of timestamp.
+ * CAUTION: Do not modify this variable's value as it is used by JsonSentAtUpdater to replace sentAt with updated value of timestamp.
  * Do not use it anywhere else.
  */
-internal const val DEFAULT_SENT_AT_TIMESTAMP = "2024-09-20T05:33:09.980Z"
+internal const val DEFAULT_SENT_AT_TIMESTAMP = "{{ RSA_DEF_SENT_AT_TS }}"
 
 /**
  * Represents an empty JSON object.
