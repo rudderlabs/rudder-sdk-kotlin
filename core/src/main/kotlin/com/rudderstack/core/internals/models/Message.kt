@@ -13,7 +13,7 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import java.util.*
+import java.util.UUID
 
 typealias AnalyticsContext = JsonObject
 typealias Properties = JsonObject
@@ -39,7 +39,10 @@ enum class MessageType {
      * Indicates a flush message type.
      */
     @SerialName("flush")
-    Flush
+    Flush,
+
+    @SerialName("screen")
+    Screen
 }
 
 /**
@@ -154,6 +157,32 @@ data class TrackEvent(
 ) : Message() {
 
     override var type: MessageType = MessageType.Track
+    override var messageId: String = super.messageId
+    override var context: AnalyticsContext = super.context
+    override var originalTimestamp: String = super.originalTimestamp
+    override lateinit var integrations: Map<String, Boolean>
+    override lateinit var anonymousId: String
+    override lateinit var channel: PlatformType
+}
+
+/**
+ * Represents a screen event message in RudderStack.
+ *
+ * This data class encapsulates the properties required for a screen message.
+ *
+ * @property event The name of the screen event.
+ * @property properties The properties associated with the screen event.
+ * @property options Additional options for the event, encapsulated in a [RudderOption] instance.
+ */
+@Serializable
+@SerialName("screen")
+data class ScreenEvent(
+    var event: String,
+    var properties: Properties,
+    @Transient override var options: RudderOption = RudderOption(),
+) : Message() {
+
+    override var type: MessageType = MessageType.Screen
     override var messageId: String = super.messageId
     override var context: AnalyticsContext = super.context
     override var originalTimestamp: String = super.originalTimestamp
