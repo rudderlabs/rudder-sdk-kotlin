@@ -8,6 +8,7 @@ import com.rudderstack.core.internals.plugins.MessagePlugin
 import com.rudderstack.core.internals.plugins.Plugin
 import com.rudderstack.core.internals.plugins.PluginChain
 import com.rudderstack.core.internals.queue.MessageQueue
+import kotlinx.coroutines.launch
 
 internal class RudderStackDataplanePlugin : MessagePlugin {
 
@@ -37,7 +38,9 @@ internal class RudderStackDataplanePlugin : MessagePlugin {
     }
 
     internal fun flush() {
-        messageQueue?.flush()
+        analytics.analyticsScope.launch(analytics.storageDispatcher) {
+            messageQueue?.flush()
+        }
     }
 
     override fun execute(message: Message): Message? {
@@ -59,6 +62,8 @@ internal class RudderStackDataplanePlugin : MessagePlugin {
     }
 
     private fun enqueue(message: Message) {
-        this.messageQueue?.put(message)
+        analytics.analyticsScope.launch(analytics.storageDispatcher) {
+            messageQueue?.put(message)
+        }
     }
 }

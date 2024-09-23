@@ -18,13 +18,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     internal fun onMessageClicked(analytics: AnalyticsState) {
         val log = when (analytics) {
             AnalyticsState.TrackMessage -> {
-                repeat(100) {
-                    RudderAnalyticsUtils.analytics.track(
-                        name = "Track at ${it}",
-                        properties = Properties(emptyMap()),
-                        options = RudderOption()
-                    )
-                }
+                RudderAnalyticsUtils.analytics.track(
+                    name = "Track at ${Date()}",
+                    properties = Properties(emptyMap()),
+                    options = RudderOption()
+                )
                 "Track message sent"
             }
 
