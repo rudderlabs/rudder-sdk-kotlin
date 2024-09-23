@@ -12,9 +12,9 @@ import kotlinx.serialization.json.put
 import kotlin.properties.Delegates
 import com.rudderstack.android.Configuration as AndroidConfiguration
 
-private const val REFERRING_APPLICATION_KEY = "referring_application"
-private const val URL_KEY = "url"
-private const val DEEPLINK_OPENED_KEY = "Deep Link Opened"
+internal const val REFERRING_APPLICATION_KEY = "referring_application"
+internal const val URL_KEY = "url"
+internal const val DEEPLINK_OPENED_KEY = "Deep Link Opened"
 
 internal class DeeplinkPlugin : Plugin, Application.ActivityLifecycleCallbacks {
 
