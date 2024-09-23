@@ -75,7 +75,7 @@ sealed class Message {
 
     // this sentAt timestamp value will be updated just before sending the payload to server
     // CAUTION: Do not change the default value for this param.
-    open var sentAt: String = DEFAULT_SENT_AT_TIMESTAMP
+    open val sentAt: String = DEFAULT_SENT_AT_TIMESTAMP
     abstract var integrations: Map<String, Boolean>
     abstract var anonymousId: String
     abstract var channel: PlatformType
@@ -107,7 +107,6 @@ sealed class Message {
             messageId = original.messageId
             originalTimestamp = original.originalTimestamp
             context = original.context
-            sentAt = original.sentAt
             integrations = original.integrations
             anonymousId = original.anonymousId
             channel = original.channel
@@ -157,7 +156,7 @@ data class TrackEvent(
     override var messageId: String = super.messageId
     override var context: AnalyticsContext = super.context
     override var originalTimestamp: String = super.originalTimestamp
-    override var sentAt: String = super.sentAt
+    override val sentAt: String = super.sentAt
     override lateinit var integrations: Map<String, Boolean>
     override lateinit var anonymousId: String
     override lateinit var channel: PlatformType
