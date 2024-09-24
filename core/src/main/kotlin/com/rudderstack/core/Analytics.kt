@@ -113,7 +113,7 @@ open class Analytics protected constructor(
         val updatedProperties = addNameAndCategoryToProperties(screenName, category, properties)
 
         val message = ScreenEvent(
-            event = screenName,
+            screenName = screenName,
             properties = updatedProperties,
             options = options,
         )

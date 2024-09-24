@@ -110,7 +110,7 @@ sealed class Message {
             )
 
             is ScreenEvent -> ScreenEvent(
-                event = this.event,
+                screenName = this.screenName,
                 properties = this.properties,
                 options = this.options,
             )
@@ -183,14 +183,14 @@ data class TrackEvent(
  *
  * This data class encapsulates the properties required for a screen message.
  *
- * @property event The name of the screen event.
+ * @property screenName The name of the screen event.
  * @property properties The properties associated with the screen event.
  * @property options Additional options for the event, encapsulated in a [RudderOption] instance.
  */
 @Serializable
 @SerialName("screen")
 data class ScreenEvent(
-    var event: String,
+    @SerialName("event") var screenName: String,
     var properties: Properties,
     @Transient override var options: RudderOption = RudderOption(),
 ) : Message() {
