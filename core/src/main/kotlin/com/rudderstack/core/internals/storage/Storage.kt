@@ -1,5 +1,7 @@
 package com.rudderstack.core.internals.storage
 
+import com.rudderstack.core.internals.utils.empty
+
 /**
  * MAX_PAYLOAD_SIZE represents the maximum size in bytes for a single message payload.
  */
@@ -172,6 +174,14 @@ interface LibraryVersion {
      * @return The version name as a [String].
      */
     fun getVersionName(): String
+
+    /**
+     * Returns the build version of the library.
+     * This method is optional and can return an empty string if the build version is not available.
+     *
+     * @return The build version as a [String].
+     */
+    fun getBuildVersion(): String = String.empty()
 
     /**
      * Returns the version code of the library.
