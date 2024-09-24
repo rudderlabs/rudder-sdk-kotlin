@@ -4,6 +4,7 @@ import com.rudderstack.core.internals.models.provider.provideSampleExternalIdsPa
 import com.rudderstack.core.internals.models.provider.provideSampleIntegrationsPayload
 import com.rudderstack.core.internals.models.provider.provideSampleJsonPayload
 import com.rudderstack.core.internals.platform.PlatformType
+import com.rudderstack.core.internals.utils.ANONYMOUS_ID
 import com.rudderstack.core.internals.utils.applyMockedValues
 import com.rudderstack.core.internals.utils.encodeToString
 import com.rudderstack.core.readFileTrimmed
@@ -20,7 +21,6 @@ private const val trackWithAllArgumentsFromServer =
     "message/track/track_with_all_arguments_from_server.json"
 
 private const val EVENT_NAME = "Track event 1"
-private const val ANONYMOUS_ID = "<anonymous-id>"
 
 class TrackEventTest {
 
