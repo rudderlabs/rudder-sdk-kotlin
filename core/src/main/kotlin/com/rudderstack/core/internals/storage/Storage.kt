@@ -175,13 +175,6 @@ interface LibraryVersion {
      * @return The build version as a [String].
      */
     fun getBuildVersion(): String = String.empty()
-
-    /**
-     * Returns the version code of the library.
-     *
-     * @return The version code as a [String].
-     */
-    fun getVersionCode(): String
 }
 
 /**

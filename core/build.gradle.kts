@@ -27,7 +27,6 @@ tasks.register("generateVersionConstants") {
 
             object VersionConstants {
                 const val VERSION_NAME = ${RudderStackBuildConfig.Version.VERSION_NAME}
-                const val VERSION_CODE = ${RudderStackBuildConfig.Version.VERSION_CODE}
             }
             """.trimIndent()
         )
