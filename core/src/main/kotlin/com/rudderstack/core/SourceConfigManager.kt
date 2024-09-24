@@ -4,6 +4,7 @@ import com.rudderstack.core.internals.models.SourceConfig
 import com.rudderstack.core.internals.network.HttpClient
 import com.rudderstack.core.internals.network.HttpClientImpl
 import com.rudderstack.core.internals.network.Result
+import com.rudderstack.core.internals.platform.PlatformType
 import com.rudderstack.core.internals.statemanagement.Store
 import com.rudderstack.core.internals.utils.LenientJson
 import com.rudderstack.core.internals.utils.encodeToBase64
@@ -59,7 +60,7 @@ internal class SourceConfigManager(
 
 internal fun Analytics.createGetHttpClientFactory(): HttpClient {
     val authHeaderString: String = configuration.writeKey.encodeToBase64()
-    val query = configuration.storage.getLibraryVersion().toMap()
+    val query = getQuery()
 
     return HttpClientImpl.createGetHttpClient(
         baseUrl = configuration.controlPlaneUrl,
@@ -67,4 +68,21 @@ internal fun Analytics.createGetHttpClientFactory(): HttpClient {
         authHeaderString = authHeaderString,
         query = query,
     )
+}
+
+private fun Analytics.getQuery() = when (getPlatformType()) {
+    PlatformType.Mobile -> {
+        mapOf(
+            "p" to "android",
+            "v" to this.configuration.storage.getLibraryVersion().getVersionName(),
+            "bv" to this.configuration.storage.getLibraryVersion().getBuildVersion()
+        )
+    }
+
+    PlatformType.Server -> {
+        mapOf(
+            "p" to "kotlin",
+            "v" to this.configuration.storage.getLibraryVersion().getVersionName(),
+        )
+    }
 }
