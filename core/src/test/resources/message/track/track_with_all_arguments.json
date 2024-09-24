@@ -31,6 +31,7 @@
     "key-11" : { }
   },
   "originalTimestamp" : "<original-timestamp>",
+  "sentAt" : "{{ RSA_DEF_SENT_AT_TS }}",
   "integrations" : {
     "All" : false,
     "Amplitude" : true,

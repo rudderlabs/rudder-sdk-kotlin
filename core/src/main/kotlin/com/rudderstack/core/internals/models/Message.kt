@@ -18,6 +18,13 @@ import java.util.UUID
 typealias AnalyticsContext = JsonObject
 typealias Properties = JsonObject
 
+/*
+ * Default timestamp value of sentAt field in Message class.
+ * CAUTION: Do not modify this variable's value as it is used by JsonSentAtUpdater to replace sentAt with updated value of timestamp.
+ * Do not use it anywhere else.
+ */
+internal const val DEFAULT_SENT_AT_TIMESTAMP = "{{ RSA_DEF_SENT_AT_TS }}"
+
 /**
  * Represents an empty JSON object.
  */
@@ -56,6 +63,7 @@ enum class MessageType {
  * @property messageId A unique identifier for the message.
  * @property originalTimestamp The original timestamp when the message was created.
  * @property context The analytics context associated with the message.
+ * @property sentAt The timestamp when the message is sent to the server.
  * @property integrations The integrations options associated with the message.
  * @property anonymousId The anonymous ID is the Pseudo-identifier for the user in cases where userId is absent.
  * @property channel The platform type associated with the message.
@@ -68,6 +76,10 @@ sealed class Message {
     open var messageId: String = UUID.randomUUID().toString()
     open var originalTimestamp: String = DateTimeUtils.now()
     open var context: AnalyticsContext = emptyJsonObject
+
+    // this sentAt timestamp value will be updated just before sending the payload to server
+    // CAUTION: Do not change the default value for this param.
+    open val sentAt: String = DEFAULT_SENT_AT_TIMESTAMP
     abstract var integrations: Map<String, Boolean>
     abstract var anonymousId: String
     abstract var channel: PlatformType
@@ -160,6 +172,7 @@ data class TrackEvent(
     override var messageId: String = super.messageId
     override var context: AnalyticsContext = super.context
     override var originalTimestamp: String = super.originalTimestamp
+    override val sentAt: String = super.sentAt
     override lateinit var integrations: Map<String, Boolean>
     override lateinit var anonymousId: String
     override lateinit var channel: PlatformType
