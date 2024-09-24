@@ -13,6 +13,11 @@ import kotlinx.coroutines.withContext
 import org.jetbrains.annotations.VisibleForTesting
 
 private const val SOURCE_CONFIG_ENDPOINT = "/sourceConfig"
+private const val PLATFORM = "p"
+private const val VERSION = "v"
+private const val BUILD_VERSION = "bv"
+private const val ANDROID = "android"
+private const val KOTLIN = "kotlin"
 
 internal class SourceConfigManager(
     private val analytics: Analytics,
@@ -73,16 +78,16 @@ internal fun Analytics.createGetHttpClientFactory(): HttpClient {
 private fun Analytics.getQuery() = when (getPlatformType()) {
     PlatformType.Mobile -> {
         mapOf(
-            "p" to "android",
-            "v" to this.configuration.storage.getLibraryVersion().getVersionName(),
-            "bv" to this.configuration.storage.getLibraryVersion().getBuildVersion()
+            PLATFORM to ANDROID,
+            VERSION to this.configuration.storage.getLibraryVersion().getVersionName(),
+            BUILD_VERSION to this.configuration.storage.getLibraryVersion().getBuildVersion()
         )
     }
 
     PlatformType.Server -> {
         mapOf(
-            "p" to "kotlin",
-            "v" to this.configuration.storage.getLibraryVersion().getVersionName(),
+            PLATFORM to KOTLIN,
+            VERSION to this.configuration.storage.getLibraryVersion().getVersionName(),
         )
     }
 }
