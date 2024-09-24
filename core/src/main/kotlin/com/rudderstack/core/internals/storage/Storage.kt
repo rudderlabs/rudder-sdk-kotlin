@@ -189,30 +189,6 @@ interface LibraryVersion {
      * @return The version code as a [String].
      */
     fun getVersionCode(): String
-
-    /**
-     * Converts the library version details into a map representation.
-     * The keys in the map are abbreviated:
-     * - "p" for platform,
-     * - "v" for version name,
-     * - "bv" for version code.
-     *
-     * This method ensures proper URL encoding by checking that the platform,
-     * version name, and version code are not empty.
-     *
-     * @return A [Map] containing the library version details, or an empty map if any detail is missing.
-     */
-    fun toMap(): Map<String, String> {
-        // This is needed to ensure that URL encoding is done properly
-        if (getPlatform().isEmpty() || getVersionName().isEmpty() || getVersionCode().isEmpty()) {
-            return emptyMap()
-        }
-        return mapOf(
-            "p" to getPlatform(),
-            "v" to getVersionName(),
-            "bv" to getVersionCode()
-        )
-    }
 }
 
 /**
