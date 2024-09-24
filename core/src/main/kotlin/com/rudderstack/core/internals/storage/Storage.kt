@@ -162,13 +162,6 @@ enum class StorageKeys(val key: String) {
 interface LibraryVersion {
 
     /**
-     * Returns the platform name of the library (e.g., "Android", "iOS").
-     *
-     * @return The platform name as a [String].
-     */
-    fun getPlatform(): String
-
-    /**
      * Returns the version name of the library.
      *
      * @return The version name as a [String].

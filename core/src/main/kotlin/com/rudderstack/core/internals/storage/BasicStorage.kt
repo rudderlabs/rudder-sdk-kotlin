@@ -115,8 +115,6 @@ internal class BasicStorage(writeKey: String) : Storage {
 
     override fun getLibraryVersion(): LibraryVersion {
         return object : LibraryVersion {
-            override fun getPlatform(): String = "kotlin"
-
             override fun getVersionName(): String = VersionConstants.VERSION_NAME
 
             override fun getVersionCode(): String = VersionConstants.VERSION_CODE
