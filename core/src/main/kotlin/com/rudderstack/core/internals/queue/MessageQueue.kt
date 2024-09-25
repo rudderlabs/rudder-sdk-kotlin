@@ -7,7 +7,6 @@ import com.rudderstack.core.internals.models.Message
 import com.rudderstack.core.internals.models.MessageType
 import com.rudderstack.core.internals.network.HttpClient
 import com.rudderstack.core.internals.network.HttpClientImpl
-import com.rudderstack.core.internals.network.Result
 import com.rudderstack.core.internals.policies.FlushPoliciesFacade
 import com.rudderstack.core.internals.storage.StorageKeys
 import com.rudderstack.core.internals.utils.JsonSentAtUpdater
@@ -127,20 +126,23 @@ internal class MessageQueue(
                 try {
                     val batchPayload = jsonSentAtUpdater.updateSentAt(readFileAsString(filePath))
                     analytics.configuration.logger.debug(TAG, "-------> readFileAsString: $batchPayload")
-                    when (val result: Result<String> = httpClientFactory.sendData(batchPayload)) {
-                        is Result.Success -> {
-                            analytics.configuration.logger.debug(
-                                log = "Event uploaded successfully. Server response: ${result.response}"
-                            )
-                            shouldCleanup = true
-                        }
-
-                        is Result.Failure -> {
-                            analytics.configuration.logger.debug(
-                                log = "Error when uploading event due to ${result.status} ${result.error}"
-                            )
-                        }
-                    }
+//                    when (val result: Result<String> = httpClientFactory.sendData(batchPayload)) {
+//                        is Result.Success -> {
+//                            analytics.configuration.logger.debug(
+//                                log = "Event uploaded successfully. Server response: ${result.response}"
+//                            )
+//                            shouldCleanup = true
+//                        }
+//
+//                        is Result.Failure -> {
+//                            analytics.configuration.logger.debug(
+//                                log = "Error when uploading event due to ${result.status} ${result.error}"
+//                            )
+//                        }
+//                    }
+                    val time = 1000L
+                    Thread.sleep(time)
+                    shouldCleanup = true
                 } catch (e: FileNotFoundException) {
                     analytics.configuration.logger.error(TAG, "Message storage file not found", e)
                 } catch (e: Exception) {

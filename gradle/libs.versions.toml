@@ -31,6 +31,9 @@ runner = "1.0.2"
 com-android-support-test-espresso-espresso-core = "3.0.2"
 appcompat-v7 = "28.0.0"
 detekt = "1.23.6"
+benchmark = "1.2.4"
+junit-version = "1.2.1"
+benchmark-junit4 = "1.3.1"
 
 [libraries]
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -71,6 +74,8 @@ work-test = { group = "androidx.work", name = "work-testing", version.ref = "wor
 runner = { group = "com.android.support.test", name = "runner", version.ref = "runner" }
 com-android-support-test-espresso-espresso-core = { group = "com.android.support.test.espresso", name = "espresso-core", version.ref = "com-android-support-test-espresso-espresso-core" }
 appcompat-v7 = { group = "com.android.support", name = "appcompat-v7", version.ref = "appcompat-v7" }
+ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junit-version" }
+benchmark-junit4 = { group = "androidx.benchmark", name = "benchmark-junit4", version.ref = "benchmark-junit4" }
 
 
 [plugins]
@@ -80,3 +85,4 @@ kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
+benchmark = { id = "androidx.benchmark", version.ref = "benchmark" }

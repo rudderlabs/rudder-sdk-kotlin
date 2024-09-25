@@ -21,6 +21,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlin.system.measureTimeMillis
 
 /**
  * The `Analytics` class is the core of the RudderStack SDK, responsible for tracking events,
@@ -50,8 +51,11 @@ open class Analytics protected constructor(
         reducer = SourceConfigState.SaveSourceConfigValuesReducer(configuration.storage, analyticsScope),
     )
 
+//    private val requestChannel: Channel<Message> = Channel(Channel.UNLIMITED)
+
     init {
         setup()
+//        submitRequest()
     }
 
     /**
@@ -136,8 +140,24 @@ open class Analytics protected constructor(
             // TODO: Pass actual anonymous ID, or the way to fetch such values
             message.updateData("<anonymous-id>", getPlatformType())
             pluginChain.process(message)
+
+            measureTimeMillis {
+                process(message)
+            }
         }
     }
+//    private fun process(message: Message) {
+//        requestChannel.trySend(message)
+//    }
+
+//    private fun submitRequest() {
+//        analyticsScope.launch(analyticsDispatcher) {
+//            for (message in requestChannel) {
+//                message.updateData("<anonymous-id>", getPlatformType())
+//                pluginChain.process(message)
+//            }
+//        }
+//    }
 
     override fun getPlatformType(): PlatformType = PlatformType.Server
 }
