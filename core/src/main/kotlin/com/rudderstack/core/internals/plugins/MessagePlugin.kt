@@ -10,7 +10,9 @@ internal interface MessagePlugin : Plugin {
         return payload
     }
 
-    fun screen(payload: ScreenEvent): Message?
+    fun screen(payload: ScreenEvent): Message? {
+        return payload
+    }
 
     fun flush(payload: FlushEvent): Message {
         return payload
