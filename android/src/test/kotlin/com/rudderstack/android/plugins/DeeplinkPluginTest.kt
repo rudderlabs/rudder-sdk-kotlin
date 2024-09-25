@@ -52,8 +52,6 @@ class DeeplinkPluginTest {
 
         every { mockActivity.intent.data } returns mockUri()
         every { mockActivity.referrer } returns mockUri(scheme = "app", host = "testApplication")
-
-        pluginSetup()
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -63,59 +61,52 @@ class DeeplinkPluginTest {
     }
 
     @Test
-    fun `given trackDeeplinks is false, when pluginSetup called again, then registerActivityLifecycleCallbacks is not called again`() =
+    fun `given trackDeepLinks is false, when pluginSetup is called, then registerActivityLifecycleCallbacks should not be called`() =
         runTest {
-            pluginSetup(trackingEnabled = false)
+            val trackingEnabled = false
+            val mockConfiguration = mockk<Configuration> {
+                every { application } returns mockApplication
+                every { trackDeeplinks } returns trackingEnabled
+            }
+            every { mockAnalytics.configuration } returns mockConfiguration
+
+            plugin.setup(analytics = mockAnalytics)
+
+            verify(exactly = 0) { mockApplication.registerActivityLifecycleCallbacks(plugin) }
+        }
+
+    @Test
+    fun `given trackDeepLinks is true, when pluginSetup called again, then registerActivityLifecycleCallbacks is called once`() =
+        runTest {
+            val trackingEnabled = true
+            val mockConfiguration = mockk<Configuration> {
+                every { application } returns mockApplication
+                every { trackDeeplinks } returns trackingEnabled
+            }
+            every { mockAnalytics.configuration } returns mockConfiguration
+
+            plugin.setup(analytics = mockAnalytics)
 
             verify(exactly = 1) { mockApplication.registerActivityLifecycleCallbacks(plugin) }
         }
 
     @Test
-    fun `given trackDeeplinks is true, when pluginSetup called again, then registerActivityLifecycleCallbacks is called again`() =
+    fun `given trackDeepLinks is enabled, when onActivityCreated is called, then Deeplink opened event called with correct properties`() =
         runTest {
-            pluginSetup(trackingEnabled = true)
-
-            verify(exactly = 2) { mockApplication.registerActivityLifecycleCallbacks(plugin) }
-        }
-
-    @Test
-    fun `when onActivityCreated is called, then Deeplink opened event called with correct properties`() = runTest {
-        val eventProperties = buildJsonObject {
-            put(REFERRING_APPLICATION_KEY, "app://testApplication")
-            put(URL_KEY, "https://www.test.com")
-        }
-
-        plugin.onActivityCreated(mockActivity, null)
-
-        verify(exactly = 1) {
-            mockAnalytics.track(name = DEEPLINK_OPENED_KEY, properties = eq(eventProperties), options = eq(RudderOption()))
-        }
-    }
-
-    @Test
-    fun `when teardown is called, then unregisterActivityLifecycleCallbacks is called`() = runTest(testDispatcher) {
-        plugin.teardown()
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        verify(exactly = 1) { mockApplication.unregisterActivityLifecycleCallbacks(plugin) }
-    }
-
-    @Test
-    fun `given a uri with query params, when onActivityCreated is called, then Deeplink opened event has query params also in properties`() =
-        runTest {
-            every { mockActivity.intent.data } returns mockUri(
-                queryParameters = mapOf("param1" to "value1", "param2" to "value2"),
-                isHierarchical = true
-            )
-            val eventProperties = buildJsonObject {
-                put(REFERRING_APPLICATION_KEY, "app://testApplication")
-                put(URL_KEY, "https://www.test.com?param1=value1&param2=value2")
-                put("param1", "value1")
-                put("param2", "value2")
+            val trackingEnabled = true
+            val mockConfiguration = mockk<Configuration> {
+                every { application } returns mockApplication
+                every { trackDeeplinks } returns trackingEnabled
             }
+            every { mockAnalytics.configuration } returns mockConfiguration
 
+            plugin.setup(analytics = mockAnalytics)
             plugin.onActivityCreated(mockActivity, null)
 
+            val eventProperties = buildJsonObject {
+                put(REFERRING_APPLICATION_KEY, "app://testApplication")
+                put(URL_KEY, "https://www.test.com")
+            }
             verify(exactly = 1) {
                 mockAnalytics.track(
                     name = DEEPLINK_OPENED_KEY,
@@ -125,15 +116,52 @@ class DeeplinkPluginTest {
             }
         }
 
-    private fun pluginSetup(trackingEnabled: Boolean = true) {
+    @Test
+    fun `given trackDeepLinks is enabled, when teardown is called, then unregisterActivityLifecycleCallbacks is called`() =
+        runTest(testDispatcher) {
+            val trackingEnabled = true
+            val mockConfiguration = mockk<Configuration> {
+                every { application } returns mockApplication
+                every { trackDeeplinks } returns trackingEnabled
+            }
+            every { mockAnalytics.configuration } returns mockConfiguration
 
-        val mockConfiguration = mockk<Configuration> {
-            every { application } returns mockApplication
-            every { trackDeeplinks } returns trackingEnabled
+            plugin.setup(analytics = mockAnalytics)
+            plugin.teardown()
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify(exactly = 1) { mockApplication.unregisterActivityLifecycleCallbacks(plugin) }
         }
 
-        every { mockAnalytics.configuration } returns mockConfiguration
+    @Test
+    fun `given trackDeepLinks is enabled and uri with query params is passed, when onActivityCreated is called, then Deeplink opened event has query params also in properties`() =
+        runTest {
+            val trackingEnabled = true
+            val mockConfiguration = mockk<Configuration> {
+                every { application } returns mockApplication
+                every { trackDeeplinks } returns trackingEnabled
+            }
+            every { mockAnalytics.configuration } returns mockConfiguration
+            every { mockActivity.intent.data } returns mockUri(
+                queryParameters = mapOf("param1" to "value1", "param2" to "value2"),
+                isHierarchical = true
+            )
 
-        plugin.setup(analytics = mockAnalytics)
-    }
+            plugin.setup(analytics = mockAnalytics)
+            plugin.onActivityCreated(mockActivity, null)
+
+            val eventProperties = buildJsonObject {
+                put(REFERRING_APPLICATION_KEY, "app://testApplication")
+                put(URL_KEY, "https://www.test.com?param1=value1&param2=value2")
+                put("param1", "value1")
+                put("param2", "value2")
+            }
+            verify(exactly = 1) {
+                mockAnalytics.track(
+                    name = DEEPLINK_OPENED_KEY,
+                    properties = eq(eventProperties),
+                    options = eq(RudderOption())
+                )
+            }
+        }
 }
