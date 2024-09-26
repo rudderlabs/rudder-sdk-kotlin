@@ -1,0 +1,17 @@
+{
+  "event": "Test Screen 1",
+  "properties": {
+    "name": "Test Screen 1",
+    "category": "Main"
+  },
+  "type": "screen",
+  "messageId": "<message-id>",
+  "context": {},
+  "originalTimestamp": "<original-timestamp>",
+  "sentAt": "{{ RSA_DEF_SENT_AT_TS }}",
+  "integrations": {
+    "All": true
+  },
+  "anonymousId": "<anonymous-id>",
+  "channel": "mobile"
+}

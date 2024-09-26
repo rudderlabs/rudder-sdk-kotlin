@@ -13,7 +13,7 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import java.util.*
+import java.util.UUID
 
 typealias AnalyticsContext = JsonObject
 typealias Properties = JsonObject
@@ -46,7 +46,10 @@ enum class MessageType {
      * Indicates a flush message type.
      */
     @SerialName("flush")
-    Flush
+    Flush,
+
+    @SerialName("screen")
+    Screen
 }
 
 /**
@@ -64,6 +67,7 @@ enum class MessageType {
  * @property integrations The integrations options associated with the message.
  * @property anonymousId The anonymous ID is the Pseudo-identifier for the user in cases where userId is absent.
  * @property channel The platform type associated with the message.
+ * @property options RudderOption associated with the message, represented as a [RudderOption] instance. This is transient.
  */
 @Serializable(with = BaseMessageSerializer::class)
 sealed class Message {
@@ -79,6 +83,9 @@ sealed class Message {
     abstract var integrations: Map<String, Boolean>
     abstract var anonymousId: String
     abstract var channel: PlatformType
+
+    @Transient
+    abstract var options: RudderOption
 
     // TODO("Add Store as a function parameter"): It is needed to fetch the anonymousId, userId, traits, externalId etc. from the store
     internal fun updateData(anonymousId: String, platform: PlatformType) {
@@ -98,6 +105,12 @@ sealed class Message {
         val copy = when (this) {
             is TrackEvent -> TrackEvent(
                 event = this.event,
+                properties = this.properties,
+                options = this.options,
+            )
+
+            is ScreenEvent -> ScreenEvent(
+                screenName = this.screenName,
                 properties = this.properties,
                 options = this.options,
             )
@@ -133,6 +146,9 @@ data class FlushEvent(
     override lateinit var integrations: Map<String, Boolean>
     override lateinit var anonymousId: String
     override lateinit var channel: PlatformType
+
+    @Transient
+    override var options: RudderOption = RudderOption()
 }
 
 /**
@@ -141,18 +157,45 @@ data class FlushEvent(
  * This data class encapsulates the properties required for a track message.
  *
  * @property event The name of the track event.
- * @property options Additional options for the event, encapsulated in a [RudderOption] instance.
  * @property properties The properties associated with the track event.
+ * @property options Additional options for the event, encapsulated in a [RudderOption] instance.
  */
 @Serializable
 @SerialName("track")
 data class TrackEvent(
     var event: String,
     var properties: Properties,
-    @Transient var options: RudderOption = RudderOption(),
+    @Transient override var options: RudderOption = RudderOption(),
 ) : Message() {
 
     override var type: MessageType = MessageType.Track
+    override var messageId: String = super.messageId
+    override var context: AnalyticsContext = super.context
+    override var originalTimestamp: String = super.originalTimestamp
+    override val sentAt: String = super.sentAt
+    override lateinit var integrations: Map<String, Boolean>
+    override lateinit var anonymousId: String
+    override lateinit var channel: PlatformType
+}
+
+/**
+ * Represents a screen event message in RudderStack.
+ *
+ * This data class encapsulates the properties required for a screen message.
+ *
+ * @property screenName The name of the screen event.
+ * @property properties The properties associated with the screen event.
+ * @property options Additional options for the event, encapsulated in a [RudderOption] instance.
+ */
+@Serializable
+@SerialName("screen")
+data class ScreenEvent(
+    @SerialName("event") var screenName: String,
+    var properties: Properties,
+    @Transient override var options: RudderOption = RudderOption(),
+) : Message() {
+
+    override var type: MessageType = MessageType.Screen
     override var messageId: String = super.messageId
     override var context: AnalyticsContext = super.context
     override var originalTimestamp: String = super.originalTimestamp

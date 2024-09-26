@@ -3,6 +3,7 @@ package com.rudderstack.core
 import com.rudderstack.core.internals.models.Message
 import com.rudderstack.core.internals.models.Properties
 import com.rudderstack.core.internals.models.RudderOption
+import com.rudderstack.core.internals.models.ScreenEvent
 import com.rudderstack.core.internals.models.TrackEvent
 import com.rudderstack.core.internals.models.emptyJsonObject
 import com.rudderstack.core.internals.platform.Platform
@@ -11,6 +12,8 @@ import com.rudderstack.core.internals.plugins.Plugin
 import com.rudderstack.core.internals.plugins.PluginChain
 import com.rudderstack.core.internals.statemanagement.SingleThreadStore
 import com.rudderstack.core.internals.statemanagement.Store
+import com.rudderstack.core.internals.utils.addNameAndCategoryToProperties
+import com.rudderstack.core.internals.utils.empty
 import com.rudderstack.core.plugins.PocPlugin
 import com.rudderstack.core.plugins.RudderStackDataplanePlugin
 import com.rudderstack.core.state.SourceConfigState
@@ -79,7 +82,7 @@ open class Analytics protected constructor(
      *
      * @param name The name of the event to be tracked.
      * @param properties A [Properties] object containing key-value pairs of event properties. Defaults to an empty JSON object.
-     * @param options A [RudderOption] object to specify additional event options.
+     * @param options A [RudderOption] object to specify additional event options. Defaults to an empty RudderOption object.
      */
     @JvmOverloads
     fun track(name: String, properties: Properties = emptyJsonObject, options: RudderOption = RudderOption()) {
@@ -88,6 +91,33 @@ open class Analytics protected constructor(
             properties = properties,
             options = options,
         )
+        process(message)
+    }
+
+    /**
+     * Record a custom screen view event with the specified screen name, category, properties, and options.
+     * This function constructs a `ScreenEvent` message and processes it through the plugin chain.
+     *
+     * @param screenName The name of the screen to be tracked.
+     * @param category The category of the screen to be tracked. Defaults to an empty string.
+     * @param properties A [Properties] object containing key-value pairs of event properties. Defaults to an empty JSON object.
+     * @param options A [RudderOption] object to specify additional event options. Defaults to an empty RudderOption object.
+     */
+    @JvmOverloads
+    fun screen(
+        screenName: String,
+        category: String = String.empty(),
+        properties: Properties = emptyJsonObject,
+        options: RudderOption = RudderOption()
+    ) {
+        val updatedProperties = addNameAndCategoryToProperties(screenName, category, properties)
+
+        val message = ScreenEvent(
+            screenName = screenName,
+            properties = updatedProperties,
+            options = options,
+        )
+
         process(message)
     }
 

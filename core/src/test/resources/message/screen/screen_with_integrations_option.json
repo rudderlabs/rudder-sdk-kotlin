@@ -1,0 +1,19 @@
+{
+  "event": "Test Screen 1",
+  "properties": {
+    "name": "Test Screen 1"
+  },
+  "type": "screen",
+  "messageId": "<message-id>",
+  "context": {},
+  "originalTimestamp": "<original-timestamp>",
+  "sentAt": "{{ RSA_DEF_SENT_AT_TS }}",
+  "integrations": {
+    "All": false,
+    "Amplitude": true,
+    "Firebase": true,
+    "Braze": false
+  },
+  "anonymousId": "<anonymous-id>",
+  "channel": "mobile"
+}

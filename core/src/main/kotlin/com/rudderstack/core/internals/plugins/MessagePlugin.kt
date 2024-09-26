@@ -2,10 +2,15 @@ package com.rudderstack.core.internals.plugins
 
 import com.rudderstack.core.internals.models.FlushEvent
 import com.rudderstack.core.internals.models.Message
+import com.rudderstack.core.internals.models.ScreenEvent
 import com.rudderstack.core.internals.models.TrackEvent
 
 internal interface MessagePlugin : Plugin {
     fun track(payload: TrackEvent): Message? {
+        return payload
+    }
+
+    fun screen(payload: ScreenEvent): Message? {
         return payload
     }
 
@@ -15,6 +20,7 @@ internal interface MessagePlugin : Plugin {
 
     override fun execute(message: Message): Message? = when (message) {
         is TrackEvent -> track(message)
+        is ScreenEvent -> screen(message)
         is FlushEvent -> flush(message)
     }
 }
