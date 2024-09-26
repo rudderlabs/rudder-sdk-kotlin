@@ -8,6 +8,8 @@ import com.rudderstack.sampleapp.analytics.RudderAnalyticsUtils
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import java.util.Date
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
@@ -24,6 +26,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     options = RudderOption()
                 )
                 "Track message sent"
+            }
+
+            AnalyticsState.ScreenMessage -> {
+                RudderAnalyticsUtils.analytics.screen(
+                    screenName = "Screen at ${Date()}",
+                    category = "Main",
+                    properties = buildJsonObject {
+                        put("key-1", "value-1")
+                    }
+                )
+                "Screen message sent"
             }
 
             AnalyticsState.ForceFlush -> {

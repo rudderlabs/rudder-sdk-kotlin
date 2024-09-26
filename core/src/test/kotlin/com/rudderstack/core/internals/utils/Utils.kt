@@ -8,6 +8,8 @@ import io.mockk.mockk
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.TestScope
 
+const val ANONYMOUS_ID = "<anonymous-id>"
+
 fun mockAnalytics(testScope: TestScope, testDispatcher: TestDispatcher): Analytics {
     val mock = mockk<Analytics>(relaxed = true)
     every { mock.analyticsScope } returns testScope

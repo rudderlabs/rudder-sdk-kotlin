@@ -32,5 +32,12 @@ fun trackMessageKotlinAPI(analytics: Analytics) {
         properties = Properties(emptyMap()),
         options = RudderOption(),
     )
+
+    analytics.screen(
+        screenName = "Screen at ${Date()}",
+        category = "Main",
+        properties = Properties(emptyMap()),
+        options = RudderOption(),
+    )
     analytics.configuration.logger.debug(tag = TAG, log = "Message sent")
 }

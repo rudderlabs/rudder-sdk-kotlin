@@ -3,6 +3,7 @@ package com.rudderstack.core.plugins
 import com.rudderstack.core.Analytics
 import com.rudderstack.core.internals.models.FlushEvent
 import com.rudderstack.core.internals.models.Message
+import com.rudderstack.core.internals.models.ScreenEvent
 import com.rudderstack.core.internals.models.TrackEvent
 import com.rudderstack.core.internals.plugins.MessagePlugin
 import com.rudderstack.core.internals.plugins.Plugin
@@ -17,6 +18,11 @@ internal class RudderStackDataplanePlugin : MessagePlugin {
     private var messageQueue: MessageQueue? = null
 
     override fun track(payload: TrackEvent): Message {
+        enqueue(payload)
+        return payload
+    }
+
+    override fun screen(payload: ScreenEvent): Message {
         enqueue(payload)
         return payload
     }
@@ -47,6 +53,10 @@ internal class RudderStackDataplanePlugin : MessagePlugin {
             when (it) {
                 is TrackEvent -> {
                     track(it)
+                }
+
+                is ScreenEvent -> {
+                    screen(it)
                 }
 
                 is FlushEvent -> {
