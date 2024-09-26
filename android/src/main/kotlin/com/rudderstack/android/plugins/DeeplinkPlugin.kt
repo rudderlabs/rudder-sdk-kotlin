@@ -2,8 +2,11 @@ package com.rudderstack.android.plugins
 
 import android.app.Activity
 import android.app.Application
+import android.content.Intent
+import android.net.ParseException
 import android.net.Uri
 import android.os.Bundle
+import com.rudderstack.android.storage.CheckBuildVersionUseCase
 import com.rudderstack.core.Analytics
 import com.rudderstack.core.internals.plugins.Plugin
 import kotlinx.serialization.json.JsonObjectBuilder
@@ -16,7 +19,9 @@ internal const val REFERRING_APPLICATION_KEY = "referring_application"
 internal const val URL_KEY = "url"
 internal const val DEEPLINK_OPENED_KEY = "Deep Link Opened"
 
-internal class DeeplinkPlugin : Plugin, Application.ActivityLifecycleCallbacks {
+internal class DeeplinkPlugin(
+    private val checkBuildVersionUseCase: CheckBuildVersionUseCase = CheckBuildVersionUseCase()
+) : Plugin, Application.ActivityLifecycleCallbacks {
 
     override val pluginType: Plugin.PluginType = Plugin.PluginType.Manual
 
@@ -91,7 +96,30 @@ internal class DeeplinkPlugin : Plugin, Application.ActivityLifecycleCallbacks {
     }
 
     private fun Activity.getReferrerString(): String? {
-        return this.referrer?.toString()
+        return if (checkBuildVersionUseCase.isAndroidVersionLollipopAndAbove()) {
+            this.referrer?.toString()
+        } else {
+            getReferrerCompatible(this)?.toString()
+        }
+    }
+
+    private fun getReferrerCompatible(activity: Activity): Uri? {
+        var referrerUri: Uri?
+        val intent = activity.intent
+        referrerUri = intent.getParcelableExtra(Intent.EXTRA_REFERRER)
+
+        if (referrerUri == null) {
+            // Intent.EXTRA_REFERRER_NAME
+            referrerUri = intent.getStringExtra("android.intent.extra.REFERRER_NAME")?.let {
+                // Try parsing the referrer URL; if it's invalid, return null
+                try {
+                    Uri.parse(it)
+                } catch (ignored: ParseException) {
+                    null
+                }
+            }
+        }
+        return referrerUri
     }
 
     private fun JsonObjectBuilder.putUriParams(uri: Uri) {

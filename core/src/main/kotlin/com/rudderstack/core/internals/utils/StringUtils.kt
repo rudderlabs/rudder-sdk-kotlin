@@ -1,6 +1,5 @@
 package com.rudderstack.core.internals.utils
 
-import java.util.Base64
 import java.util.Locale
 
 private const val EMPTY_STRING = ""
@@ -16,7 +15,7 @@ private const val EMPTY_STRING = ""
 fun String.encodeToBase64(): String {
     val formattedString = String.format(Locale.US, "%s:", this)
     val bytes = formattedString.toByteArray(Charsets.UTF_8)
-    return Base64.getEncoder().encodeToString(bytes)
+    return Base64Encoder.encode(bytes)
 }
 
 /**
