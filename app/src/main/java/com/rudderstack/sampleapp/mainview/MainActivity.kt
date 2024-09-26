@@ -113,6 +113,7 @@ class MainActivity : ComponentActivity() {
                 names = arrayOf(
                     AnalyticsState.TrackMessage,
                     AnalyticsState.ScreenMessage,
+                    AnalyticsState.GroupMessage,
                     AnalyticsState.ForceFlush,
                 ),
                 weight = .3f,

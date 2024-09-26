@@ -1,0 +1,16 @@
+{
+  "groupId": "Group Id 1",
+  "type": "group",
+  "messageId": "<message-id>",
+  "context": {},
+  "originalTimestamp": "<original-timestamp>",
+  "sentAt": "{{ RSA_DEF_SENT_AT_TS }}",
+  "integrations": {
+    "All": false,
+    "Amplitude": true,
+    "Firebase": true,
+    "Braze": false
+  },
+  "anonymousId": "<anonymous-id>",
+  "channel": "mobile"
+}

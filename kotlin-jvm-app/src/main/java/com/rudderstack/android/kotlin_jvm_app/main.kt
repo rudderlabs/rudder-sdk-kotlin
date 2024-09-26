@@ -8,6 +8,7 @@ import com.rudderstack.core.internals.logger.Logger
 import com.rudderstack.core.internals.logger.TAG
 import com.rudderstack.core.internals.models.Properties
 import com.rudderstack.core.internals.models.RudderOption
+import com.rudderstack.core.internals.models.RudderTraits
 import java.util.Date
 
 private lateinit var analytics: Analytics
@@ -38,6 +39,12 @@ fun trackMessageKotlinAPI(analytics: Analytics) {
         category = "Main",
         properties = Properties(emptyMap()),
         options = RudderOption(),
+    )
+
+    analytics.group(
+        groupId = "Group at ${Date()}",
+        traits = RudderTraits(emptyMap()),
+        options = RudderOption()
     )
     analytics.configuration.logger.debug(tag = TAG, log = "Message sent")
 }

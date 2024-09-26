@@ -39,6 +39,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 "Screen message sent"
             }
 
+            AnalyticsState.GroupMessage -> {
+                RudderAnalyticsUtils.analytics.group(
+                    groupId = "Group at ${Date()}",
+                    traits = buildJsonObject {
+                        put("key-1", "value-1")
+                    },
+                    options = RudderOption()
+                )
+                "Group message sent"
+            }
+
             AnalyticsState.ForceFlush -> {
                 RudderAnalyticsUtils.analytics.flush()
                 "Flushing the message pipeline has"

@@ -3,6 +3,7 @@ package com.rudderstack.core.internals.models
 import com.rudderstack.core.internals.models.exception.UnknownMessageKeyException
 import com.rudderstack.core.internals.platform.PlatformType
 import com.rudderstack.core.internals.utils.DateTimeUtils
+import com.rudderstack.core.internals.utils.addAnonymousIdToTraits
 import com.rudderstack.core.internals.utils.empty
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerialName
@@ -17,6 +18,7 @@ import java.util.UUID
 
 typealias AnalyticsContext = JsonObject
 typealias Properties = JsonObject
+typealias RudderTraits = JsonObject
 
 /*
  * Default timestamp value of sentAt field in Message class.
@@ -49,7 +51,10 @@ enum class MessageType {
     Flush,
 
     @SerialName("screen")
-    Screen
+    Screen,
+
+    @SerialName("group")
+    Group
 }
 
 /**
@@ -90,6 +95,7 @@ sealed class Message {
     // TODO("Add Store as a function parameter"): It is needed to fetch the anonymousId, userId, traits, externalId etc. from the store
     internal fun updateData(anonymousId: String, platform: PlatformType) {
         this.anonymousId = anonymousId
+        this.addAnonymousIdToTraits()
         this.channel = platform
         this.updateOption()
     }
@@ -113,6 +119,12 @@ sealed class Message {
                 screenName = this.screenName,
                 properties = this.properties,
                 options = this.options,
+            )
+
+            is GroupEvent -> GroupEvent(
+                groupId = this.groupId,
+                traits = this.traits,
+                options = this.options
             )
 
             is FlushEvent -> FlushEvent()
@@ -196,6 +208,33 @@ data class ScreenEvent(
 ) : Message() {
 
     override var type: MessageType = MessageType.Screen
+    override var messageId: String = super.messageId
+    override var context: AnalyticsContext = super.context
+    override var originalTimestamp: String = super.originalTimestamp
+    override val sentAt: String = super.sentAt
+    override lateinit var integrations: Map<String, Boolean>
+    override lateinit var anonymousId: String
+    override lateinit var channel: PlatformType
+}
+
+/**
+ * Represents a group event message in RudderStack.
+ *
+ * This data class encapsulates the properties required for a group message.
+ *
+ * @property groupId The group id of group event.
+ * @property traits The traits associated with the group. event.
+ * @property options Additional options for the event, encapsulated in a [RudderOption] instance.
+ */
+@Serializable
+@SerialName("group")
+data class GroupEvent(
+    var groupId: String,
+    var traits: RudderTraits = emptyJsonObject,
+    @Transient override var options: RudderOption = RudderOption(),
+) : Message() {
+
+    override var type: MessageType = MessageType.Group
     override var messageId: String = super.messageId
     override var context: AnalyticsContext = super.context
     override var originalTimestamp: String = super.originalTimestamp

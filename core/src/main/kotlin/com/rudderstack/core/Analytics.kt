@@ -1,8 +1,10 @@
 package com.rudderstack.core
 
+import com.rudderstack.core.internals.models.GroupEvent
 import com.rudderstack.core.internals.models.Message
 import com.rudderstack.core.internals.models.Properties
 import com.rudderstack.core.internals.models.RudderOption
+import com.rudderstack.core.internals.models.RudderTraits
 import com.rudderstack.core.internals.models.ScreenEvent
 import com.rudderstack.core.internals.models.TrackEvent
 import com.rudderstack.core.internals.models.emptyJsonObject
@@ -115,6 +117,25 @@ open class Analytics protected constructor(
         val message = ScreenEvent(
             screenName = screenName,
             properties = updatedProperties,
+            options = options,
+        )
+
+        process(message)
+    }
+
+    /**
+     * Add the user to a group.
+     * This function constructs a `GroupEvent` message and processes it through the plugin chain.
+     *
+     * @param groupId Group ID you want your user to attach to
+     * @param traits A [RudderTraits] object containing key-value pairs of event traits. Defaults to an empty JSON object.
+     * @param options A [RudderOption] object to specify additional event options. Defaults to an empty RudderOption object.
+     */
+    @JvmOverloads
+    fun group(groupId: String, traits: RudderTraits = emptyJsonObject, options: RudderOption = RudderOption()) {
+        val message = GroupEvent(
+            groupId = groupId,
+            traits = traits,
             options = options,
         )
 
