@@ -1,6 +1,7 @@
 package com.rudderstack.core.internals.plugins
 
 import com.rudderstack.core.internals.models.FlushEvent
+import com.rudderstack.core.internals.models.GroupEvent
 import com.rudderstack.core.internals.models.Message
 import com.rudderstack.core.internals.models.ScreenEvent
 import com.rudderstack.core.internals.models.TrackEvent
@@ -14,6 +15,10 @@ internal interface MessagePlugin : Plugin {
         return payload
     }
 
+    fun group(payload: GroupEvent): Message? {
+        return payload
+    }
+
     fun flush(payload: FlushEvent): Message {
         return payload
     }
@@ -21,6 +26,7 @@ internal interface MessagePlugin : Plugin {
     override fun execute(message: Message): Message? = when (message) {
         is TrackEvent -> track(message)
         is ScreenEvent -> screen(message)
+        is GroupEvent -> group(message)
         is FlushEvent -> flush(message)
     }
 }

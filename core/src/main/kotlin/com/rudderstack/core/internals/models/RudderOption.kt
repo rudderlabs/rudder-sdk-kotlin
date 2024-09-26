@@ -24,7 +24,7 @@ private val defaultIntegrations by lazy {
 
 internal fun Message.updateOption() {
     when (this) {
-        is TrackEvent, is ScreenEvent -> {
+        is TrackEvent, is ScreenEvent, is GroupEvent -> {
             this.integrations = defaultIntegrations mergeWithHigherPriorityTo options.integrations
             this.context = options.customContexts mergeWithHigherPriorityTo context
         }

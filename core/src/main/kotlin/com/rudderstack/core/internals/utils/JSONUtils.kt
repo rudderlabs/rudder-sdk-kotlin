@@ -43,7 +43,7 @@ internal fun Message.encodeToString(): String {
     val stringMessage = LenientJson.encodeToString(this)
     val filteredMessage = LenientJson.parseToJsonElement(stringMessage)
         .jsonObject.filterNot { (k, v) ->
-            (k == "properties" && v == emptyJsonObject)
+            (k == "properties" && v == emptyJsonObject) || (k == "traits" && v == emptyJsonObject)
         }
     return LenientJson.encodeToString(filteredMessage)
 }
