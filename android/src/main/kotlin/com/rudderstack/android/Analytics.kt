@@ -1,6 +1,7 @@
 package com.rudderstack.android
 
 import com.rudderstack.android.plugins.AndroidLifecyclePlugin
+import com.rudderstack.android.plugins.DeeplinkPlugin
 import com.rudderstack.core.Analytics
 import com.rudderstack.core.internals.platform.Platform
 import com.rudderstack.core.internals.platform.PlatformType
@@ -43,6 +44,7 @@ class Analytics(
 
     private fun setup() {
         add(AndroidLifecyclePlugin())
+        add(DeeplinkPlugin())
     }
 
     override fun getPlatformType(): PlatformType = PlatformType.Mobile
