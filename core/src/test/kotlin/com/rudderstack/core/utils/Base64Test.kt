@@ -10,7 +10,7 @@ import kotlin.random.Random.Default.nextBytes
 class Base64Test {
 
     @Test
-    fun encodeDecode() {
+    fun `given a byte array, when encoded and decoded using Base64 class, then the results match with java encoder results`() {
         (0..100).forEach { i ->
             val input = nextBytes(i * 10)
 
