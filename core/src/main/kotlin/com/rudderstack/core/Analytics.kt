@@ -25,6 +25,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 
 /**
@@ -55,8 +56,12 @@ open class Analytics protected constructor(
         reducer = SourceConfigState.SaveSourceConfigValuesReducer(configuration.storage, analyticsScope),
     )
 
+    // TODO("Add a way to stop this channel")
+    private val processMessageChannel: Channel<Message> = Channel(Channel.UNLIMITED)
+
     init {
         setup()
+        process()
     }
 
     /**
@@ -93,7 +98,8 @@ open class Analytics protected constructor(
             properties = properties,
             options = options,
         )
-        process(message)
+
+        processMessageChannel.trySend(message)
     }
 
     /**
@@ -120,7 +126,7 @@ open class Analytics protected constructor(
             options = options,
         )
 
-        process(message)
+        processMessageChannel.trySend(message)
     }
 
     /**
@@ -139,7 +145,7 @@ open class Analytics protected constructor(
             options = options,
         )
 
-        process(message)
+        processMessageChannel.trySend(message)
     }
 
     /**
@@ -182,11 +188,13 @@ open class Analytics protected constructor(
      *
      * @param message The [Message] object representing an event or action to be processed.
      */
-    private fun process(message: Message) {
+    private fun process() {
         analyticsScope.launch(analyticsDispatcher) {
-            // TODO: Pass actual anonymous ID, or the way to fetch such values
-            message.updateData("<anonymous-id>", getPlatformType())
-            pluginChain.process(message)
+            for (message in processMessageChannel) {
+                // TODO: Pass actual anonymous ID, or the way to fetch such values
+                message.updateData("<anonymous-id>", getPlatformType())
+                pluginChain.process(message)
+            }
         }
     }
 
