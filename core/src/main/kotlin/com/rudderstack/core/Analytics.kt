@@ -183,10 +183,11 @@ open class Analytics protected constructor(
     }
 
     /**
-     * Processes a message through the plugin chain. This method applies base data to the message,
-     * then launches a coroutine to asynchronously process the message using the configured `analyticsDispatcher`.
+     * Processes each message sequentially through the plugin chain and applies base data to the message.
+     * All operations are executed within the `analyticsDispatcher` coroutine context.
      *
-     * @param message The [Message] object representing an event or action to be processed.
+     * **NOTE**: This method can be called either before or after the initialization of all plugins (plugin setup occurs in the `init` method).
+     * Events sent before this function is invoked will be queued and processed once this function is called, ensuring no events are lost.
      */
     private fun process() {
         analyticsScope.launch(analyticsDispatcher) {
