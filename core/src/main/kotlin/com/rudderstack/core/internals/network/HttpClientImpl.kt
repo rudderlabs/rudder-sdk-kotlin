@@ -230,7 +230,9 @@ class DefaultHttpURLConnectionFactory : HttpURLConnectionFactory {
         return connection.apply {
             connectTimeout = DEFAULT_CONNECTION_TIMEOUT
             readTimeout = DEFAULT_READ_TIMEOUT
-            headers.forEach(::setRequestProperty)
+            headers.forEach { (k, v) ->
+                setRequestProperty(k, v)
+            }
         }
     }
 }

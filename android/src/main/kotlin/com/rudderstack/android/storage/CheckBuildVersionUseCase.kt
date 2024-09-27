@@ -15,4 +15,10 @@ internal class CheckBuildVersionUseCase {
     fun isAndroidVersionNougatAndAbove(): Boolean {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.N
     }
+
+    @ChecksSdkIntAtLeast(api = Build.VERSION_CODES.LOLLIPOP_MR1)
+    @SuppressLint("ObsoleteSdkInt")
+    fun isAndroidVersionLollipopAndAbove(): Boolean {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1
+    }
 }

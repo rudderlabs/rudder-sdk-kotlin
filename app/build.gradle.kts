@@ -17,7 +17,7 @@ android {
     val jvm = 17
     val composeCompilerVersion = "1.4.8"//RudderstackBuildConfig.Kotlin.COMPILER_EXTENSION_VERSION
     val androidCompileSdkVersion = 34//RudderstackBuildConfig.Android.COMPILE_SDK
-    val androidMinSdkVersion = 26
+    val androidMinSdkVersion = 21
     val majorVersion = 0
     val minVersion = 1
     val patchVersion = 0
