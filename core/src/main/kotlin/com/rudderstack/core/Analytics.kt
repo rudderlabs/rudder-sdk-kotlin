@@ -60,8 +60,8 @@ open class Analytics protected constructor(
     private val processMessageChannel: Channel<Message> = Channel(Channel.UNLIMITED)
 
     init {
-        setup()
         processMessages()
+        setup()
     }
 
     /**
