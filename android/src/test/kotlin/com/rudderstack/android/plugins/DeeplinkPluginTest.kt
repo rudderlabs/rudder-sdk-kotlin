@@ -2,7 +2,10 @@ package com.rudderstack.android.plugins
 
 import android.app.Activity
 import android.app.Application
+import android.content.Intent
+import android.net.Uri
 import com.rudderstack.android.Configuration
+import com.rudderstack.android.storage.CheckBuildVersionUseCase
 import com.rudderstack.android.utils.mockAnalytics
 import com.rudderstack.android.utils.mockUri
 import com.rudderstack.core.internals.models.RudderOption
@@ -30,8 +33,6 @@ class DeeplinkPluginTest {
     private val testDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
 
-    private val plugin = DeeplinkPlugin()
-
     private val mockAnalytics = mockAnalytics(testScope, testDispatcher)
 
     @MockK
@@ -40,18 +41,27 @@ class DeeplinkPluginTest {
     @MockK
     private lateinit var mockActivity: Activity
 
+    @MockK
+    private lateinit var mockCheckBuildVersionUseCase: CheckBuildVersionUseCase
+
+    private lateinit var plugin: DeeplinkPlugin
+
     @OptIn(ExperimentalCoroutinesApi::class)
     @Before
     fun setup() {
         MockKAnnotations.init(this, relaxed = true)
         Dispatchers.setMain(testDispatcher)
 
+        plugin = DeeplinkPlugin(mockCheckBuildVersionUseCase)
         every { mockAnalytics.track(any<String>(), any<JsonObject>(), any<RudderOption>()) } returns Unit
         every { mockApplication.registerActivityLifecycleCallbacks(plugin) } returns Unit
         every { mockApplication.unregisterActivityLifecycleCallbacks(plugin) } returns Unit
 
         every { mockActivity.intent.data } returns mockUri()
         every { mockActivity.referrer } returns mockUri(scheme = "app", host = "testApplication")
+        every { mockActivity.intent.getParcelableExtra<Uri?>(Intent.EXTRA_REFERRER) } returns mockUri(scheme = "app", host = "testApplication")
+
+        every { mockCheckBuildVersionUseCase.isAndroidVersionLollipopAndAbove() } returns true
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -94,6 +104,33 @@ class DeeplinkPluginTest {
     fun `given trackDeepLinks is enabled, when onActivityCreated is called, then Deeplink opened event called with correct properties`() =
         runTest {
             val trackingEnabled = true
+            val mockConfiguration = mockk<Configuration> {
+                every { application } returns mockApplication
+                every { trackDeeplinks } returns trackingEnabled
+            }
+            every { mockAnalytics.configuration } returns mockConfiguration
+
+            plugin.setup(analytics = mockAnalytics)
+            plugin.onActivityCreated(mockActivity, null)
+
+            val eventProperties = buildJsonObject {
+                put(REFERRING_APPLICATION_KEY, "app://testApplication")
+                put(URL_KEY, "https://www.test.com")
+            }
+            verify(exactly = 1) {
+                mockAnalytics.track(
+                    name = DEEPLINK_OPENED_KEY,
+                    properties = eq(eventProperties),
+                    options = eq(RudderOption())
+                )
+            }
+        }
+
+    @Test
+    fun `given trackDeepLinks is enabled and api level is 21, when onActivityCreated is called, then Deeplink opened event called with correct properties`() =
+        runTest {
+            val trackingEnabled = true
+            every { mockCheckBuildVersionUseCase.isAndroidVersionLollipopAndAbove() } returns false
             val mockConfiguration = mockk<Configuration> {
                 every { application } returns mockApplication
                 every { trackDeeplinks } returns trackingEnabled
