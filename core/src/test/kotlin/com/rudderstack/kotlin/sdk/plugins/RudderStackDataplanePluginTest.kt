@@ -3,8 +3,6 @@ package com.rudderstack.kotlin.sdk.plugins
 import com.rudderstack.kotlin.sdk.Analytics
 import com.rudderstack.kotlin.sdk.internals.models.FlushEvent
 import com.rudderstack.kotlin.sdk.internals.models.TrackEvent
-import com.rudderstack.kotlin.sdk.internals.plugins.Plugin
-import com.rudderstack.kotlin.sdk.internals.plugins.PluginChain
 import com.rudderstack.kotlin.sdk.internals.queue.MessageQueue
 import io.mockk.mockk
 import io.mockk.spyk
@@ -17,23 +15,16 @@ class RudderStackDataplanePluginTest {
 
     private lateinit var analytics: Analytics
     private lateinit var messageQueue: MessageQueue
-    private lateinit var pluginChain: PluginChain
     private lateinit var plugin: RudderStackDataplanePlugin
 
     @Before
     fun setUp() {
         analytics = mockk(relaxed = true)
         messageQueue = mockk(relaxed = true)
-        pluginChain = mockk(relaxed = true)
 
         plugin = spyk(RudderStackDataplanePlugin(), recordPrivateCalls = true)
 
         plugin.analytics = analytics
-        pluginChain.analytics = analytics
-        plugin::class.java.getDeclaredField("pluginChain").apply {
-            isAccessible = true
-            set(plugin, pluginChain)
-        }
 
         plugin::class.java.getDeclaredField("messageQueue").apply {
             isAccessible = true
@@ -59,15 +50,6 @@ class RudderStackDataplanePluginTest {
 
         assertEquals(flushEvent, result)
         verify { messageQueue.put(flushEvent) }
-    }
-
-    @Test
-    fun `given a plugin, when a plugin is removed from the chain, then verify that remove method is called`() {
-        val pluginToRemove = mockk<Plugin>(relaxed = true)
-
-        plugin.remove(pluginToRemove)
-
-        verify { pluginChain.remove(pluginToRemove) }
     }
 
     @Test
