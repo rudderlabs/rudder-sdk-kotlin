@@ -73,16 +73,8 @@ internal class MockMemoryStorage : Storage {
 
     override fun getLibraryVersion(): LibraryVersion {
         return object : LibraryVersion {
-            override fun getPlatform(): String {
-                return "Test"
-            }
-
             override fun getVersionName(): String {
                 return "1.0.0"
-            }
-
-            override fun getVersionCode(): String {
-                return "100"
             }
         }
     }
