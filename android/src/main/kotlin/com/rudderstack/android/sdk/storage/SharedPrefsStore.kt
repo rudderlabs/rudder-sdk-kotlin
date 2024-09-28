@@ -1,4 +1,4 @@
-package com.rudderstack.android.storage
+package com.rudderstack.android.sdk.storage
 
 import android.content.Context
 import android.content.SharedPreferences

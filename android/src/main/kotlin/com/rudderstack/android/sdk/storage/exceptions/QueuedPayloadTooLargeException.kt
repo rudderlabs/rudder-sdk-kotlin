@@ -1,4 +1,4 @@
-package com.rudderstack.android.storage.exceptions
+package com.rudderstack.android.sdk.storage.exceptions
 
 internal class QueuedPayloadTooLargeException(
     message: String,

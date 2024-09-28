@@ -1,4 +1,4 @@
-package com.rudderstack.android.utils
+package com.rudderstack.android.sdk.utils
 
 import com.rudderstack.core.Analytics
 import kotlinx.coroutines.launch

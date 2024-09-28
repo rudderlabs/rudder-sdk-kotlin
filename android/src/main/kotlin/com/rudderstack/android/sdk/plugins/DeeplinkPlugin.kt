@@ -1,4 +1,4 @@
-package com.rudderstack.android.plugins
+package com.rudderstack.android.sdk.plugins
 
 import android.app.Activity
 import android.app.Application
@@ -6,14 +6,14 @@ import android.content.Intent
 import android.net.ParseException
 import android.net.Uri
 import android.os.Bundle
-import com.rudderstack.android.storage.CheckBuildVersionUseCase
+import com.rudderstack.android.sdk.storage.CheckBuildVersionUseCase
 import com.rudderstack.core.Analytics
 import com.rudderstack.core.internals.plugins.Plugin
 import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlin.properties.Delegates
-import com.rudderstack.android.Configuration as AndroidConfiguration
+import com.rudderstack.android.sdk.Configuration as AndroidConfiguration
 
 internal const val REFERRING_APPLICATION_KEY = "referring_application"
 internal const val URL_KEY = "url"

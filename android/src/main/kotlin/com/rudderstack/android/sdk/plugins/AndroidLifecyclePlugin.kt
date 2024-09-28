@@ -1,4 +1,4 @@
-package com.rudderstack.android.plugins
+package com.rudderstack.android.sdk.plugins
 
 import android.app.Application
 import android.content.pm.PackageInfo
@@ -9,9 +9,9 @@ import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
-import com.rudderstack.android.models.AppVersion
-import com.rudderstack.android.utils.logAndThrowError
-import com.rudderstack.android.utils.runOnAnalyticsThread
+import com.rudderstack.android.sdk.models.AppVersion
+import com.rudderstack.android.sdk.utils.logAndThrowError
+import com.rudderstack.android.sdk.utils.runOnAnalyticsThread
 import com.rudderstack.core.Analytics
 import com.rudderstack.core.internals.models.RudderOption
 import com.rudderstack.core.internals.plugins.Plugin
@@ -25,7 +25,7 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.properties.Delegates
-import com.rudderstack.android.Configuration as AndroidConfiguration
+import com.rudderstack.android.sdk.Configuration as AndroidConfiguration
 
 @DelicateCoroutinesApi
 private val MAIN_DISPATCHER = Dispatchers.Main

@@ -1,7 +1,7 @@
-package com.rudderstack.android
+package com.rudderstack.android.sdk
 
 import android.app.Application
-import com.rudderstack.android.storage.AndroidStorageProvider
+import com.rudderstack.android.sdk.storage.AndroidStorageProvider
 import com.rudderstack.core.Configuration
 import com.rudderstack.core.internals.logger.Logger
 import com.rudderstack.core.internals.policies.FlushPolicy

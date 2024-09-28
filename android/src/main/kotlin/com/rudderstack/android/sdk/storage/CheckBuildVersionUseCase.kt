@@ -1,4 +1,4 @@
-package com.rudderstack.android.storage
+package com.rudderstack.android.sdk.storage
 
 import android.annotation.SuppressLint
 import android.os.Build

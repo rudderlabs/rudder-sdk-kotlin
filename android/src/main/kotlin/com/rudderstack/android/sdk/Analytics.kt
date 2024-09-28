@@ -1,7 +1,7 @@
-package com.rudderstack.android
+package com.rudderstack.android.sdk
 
-import com.rudderstack.android.plugins.AndroidLifecyclePlugin
-import com.rudderstack.android.plugins.DeeplinkPlugin
+import com.rudderstack.android.sdk.plugins.AndroidLifecyclePlugin
+import com.rudderstack.android.sdk.plugins.DeeplinkPlugin
 import com.rudderstack.core.Analytics
 import com.rudderstack.core.internals.platform.Platform
 import com.rudderstack.core.internals.platform.PlatformType

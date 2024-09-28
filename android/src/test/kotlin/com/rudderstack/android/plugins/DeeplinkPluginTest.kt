@@ -4,8 +4,12 @@ import android.app.Activity
 import android.app.Application
 import android.content.Intent
 import android.net.Uri
-import com.rudderstack.android.Configuration
-import com.rudderstack.android.storage.CheckBuildVersionUseCase
+import com.rudderstack.android.sdk.Configuration
+import com.rudderstack.android.sdk.plugins.DEEPLINK_OPENED_KEY
+import com.rudderstack.android.sdk.plugins.DeeplinkPlugin
+import com.rudderstack.android.sdk.plugins.REFERRING_APPLICATION_KEY
+import com.rudderstack.android.sdk.plugins.URL_KEY
+import com.rudderstack.android.sdk.storage.CheckBuildVersionUseCase
 import com.rudderstack.android.utils.mockAnalytics
 import com.rudderstack.android.utils.mockUri
 import com.rudderstack.core.internals.models.RudderOption

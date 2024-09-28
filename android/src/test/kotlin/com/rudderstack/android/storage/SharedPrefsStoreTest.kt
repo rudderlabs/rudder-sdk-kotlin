@@ -2,6 +2,8 @@ package com.rudderstack.android.storage
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.rudderstack.android.sdk.storage.CheckBuildVersionUseCase
+import com.rudderstack.android.sdk.storage.SharedPrefsStore
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify

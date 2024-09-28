@@ -1,14 +1,12 @@
 package com.rudderstack.android.storage
 
 import android.content.Context
+import com.rudderstack.android.sdk.storage.AndroidStorage
+import com.rudderstack.android.sdk.storage.SharedPrefsStore
 import com.rudderstack.core.internals.storage.MAX_PAYLOAD_SIZE
 import com.rudderstack.core.internals.storage.StorageKeys
-import io.mockk.every
 import io.mockk.mockk
-import io.mockk.verify
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 import java.io.File

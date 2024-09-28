@@ -1,4 +1,4 @@
-package com.rudderstack.android.models
+package com.rudderstack.android.sdk.models
 
 internal data class AppVersion(
     val previousBuild: Long,
