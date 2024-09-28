@@ -21,6 +21,10 @@ object RudderStackBuildConfig {
         val VERSION_CODE = "\"1\""
     }
 
+    object PacakageName {
+        val KOTLIN = "\"com.rudderstack.kotlin.sdk\""
+    }
+
     object Kotlin {
 
         val COMPILER_EXTENSION_VERSION = "1.4.8"
