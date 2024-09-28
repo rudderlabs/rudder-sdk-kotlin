@@ -2,9 +2,9 @@ package com.rudderstack.android.sdk
 
 import com.rudderstack.android.sdk.plugins.AndroidLifecyclePlugin
 import com.rudderstack.android.sdk.plugins.DeeplinkPlugin
-import com.rudderstack.core.Analytics
-import com.rudderstack.core.internals.platform.Platform
-import com.rudderstack.core.internals.platform.PlatformType
+import com.rudderstack.kotlin.Analytics
+import com.rudderstack.kotlin.internals.platform.Platform
+import com.rudderstack.kotlin.internals.platform.PlatformType
 
 /**
  * `Analytics` class in the `com.rudderstack.android` package.
@@ -31,7 +31,7 @@ import com.rudderstack.core.internals.platform.PlatformType
  * val analytics = Analytics(configuration)
  * ```
  *
- * @see com.rudderstack.core.Analytics
+ * @see com.rudderstack.kotlin.Analytics
  */
 class Analytics(
     configuration: Configuration,

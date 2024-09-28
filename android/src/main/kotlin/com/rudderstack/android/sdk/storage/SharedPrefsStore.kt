@@ -3,7 +3,7 @@ package com.rudderstack.android.sdk.storage
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
-import com.rudderstack.core.internals.storage.KeyValueStorage
+import com.rudderstack.kotlin.internals.storage.KeyValueStorage
 import java.io.File
 
 internal class SharedPrefsStore(

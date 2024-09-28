@@ -3,14 +3,14 @@ package com.rudderstack.android.sdk.storage
 import android.content.Context
 import com.rudderstack.android.sdk.BuildConfig
 import com.rudderstack.android.sdk.storage.exceptions.QueuedPayloadTooLargeException
-import com.rudderstack.core.internals.storage.KeyValueStorage
-import com.rudderstack.core.internals.storage.LibraryVersion
-import com.rudderstack.core.internals.storage.MAX_PAYLOAD_SIZE
-import com.rudderstack.core.internals.storage.MessageBatchFileManager
-import com.rudderstack.core.internals.storage.Storage
-import com.rudderstack.core.internals.storage.StorageKeys
-import com.rudderstack.core.internals.storage.StorageProvider
-import com.rudderstack.core.internals.utils.toAndroidPrefsKey
+import com.rudderstack.kotlin.internals.storage.KeyValueStorage
+import com.rudderstack.kotlin.internals.storage.LibraryVersion
+import com.rudderstack.kotlin.internals.storage.MAX_PAYLOAD_SIZE
+import com.rudderstack.kotlin.internals.storage.MessageBatchFileManager
+import com.rudderstack.kotlin.internals.storage.Storage
+import com.rudderstack.kotlin.internals.storage.StorageKeys
+import com.rudderstack.kotlin.internals.storage.StorageProvider
+import com.rudderstack.kotlin.internals.utils.toAndroidPrefsKey
 import java.io.File
 
 private const val RUDDER_PREFS = "rl_prefs"

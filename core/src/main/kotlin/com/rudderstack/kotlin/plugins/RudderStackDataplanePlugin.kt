@@ -1,0 +1,84 @@
+package com.rudderstack.kotlin.plugins
+
+import com.rudderstack.kotlin.Analytics
+import com.rudderstack.kotlin.internals.models.FlushEvent
+import com.rudderstack.kotlin.internals.models.GroupEvent
+import com.rudderstack.kotlin.internals.models.Message
+import com.rudderstack.kotlin.internals.models.ScreenEvent
+import com.rudderstack.kotlin.internals.models.TrackEvent
+import com.rudderstack.kotlin.internals.plugins.MessagePlugin
+import com.rudderstack.kotlin.internals.plugins.Plugin
+import com.rudderstack.kotlin.internals.plugins.PluginChain
+import com.rudderstack.kotlin.internals.queue.MessageQueue
+
+internal class RudderStackDataplanePlugin : MessagePlugin {
+
+    override val pluginType: Plugin.PluginType = Plugin.PluginType.Destination
+    private val pluginChain: PluginChain = PluginChain()
+    override lateinit var analytics: Analytics
+    private var messageQueue: MessageQueue? = null
+
+    override fun track(payload: TrackEvent): Message {
+        enqueue(payload)
+        return payload
+    }
+
+    override fun screen(payload: ScreenEvent): Message {
+        enqueue(payload)
+        return payload
+    }
+
+    override fun group(payload: GroupEvent): Message? {
+        enqueue(payload)
+        return payload
+    }
+
+    override fun flush(payload: FlushEvent): Message {
+        enqueue(payload)
+        return payload
+    }
+
+    override fun setup(analytics: Analytics) {
+        super.setup(analytics)
+        pluginChain.analytics = analytics
+        messageQueue = MessageQueue(analytics).apply { start() }
+    }
+
+    internal fun remove(plugin: Plugin) {
+        pluginChain.remove(plugin)
+    }
+
+    internal fun flush() {
+        messageQueue?.flush()
+    }
+
+    override fun execute(message: Message): Message? {
+        val beforeResult = pluginChain.applyPlugins(Plugin.PluginType.PreProcess, message)
+        val enrichmentResult = pluginChain.applyPlugins(Plugin.PluginType.OnProcess, beforeResult)
+        val destinationResult = enrichmentResult?.let {
+            when (it) {
+                is TrackEvent -> {
+                    track(it)
+                }
+
+                is ScreenEvent -> {
+                    screen(it)
+                }
+
+                is GroupEvent -> {
+                    group(it)
+                }
+
+                is FlushEvent -> {
+                    flush(it)
+                }
+            }
+        }
+        val afterResult = pluginChain.applyPlugins(Plugin.PluginType.After, destinationResult)
+        return afterResult
+    }
+
+    private fun enqueue(message: Message) {
+        this.messageQueue?.put(message)
+    }
+}

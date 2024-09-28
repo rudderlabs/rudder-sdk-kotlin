@@ -15,11 +15,11 @@ import com.rudderstack.android.sdk.plugins.FROM_BACKGROUND
 import com.rudderstack.android.sdk.plugins.VERSION_KEY
 import com.rudderstack.android.utils.MockMemoryStorage
 import com.rudderstack.android.utils.mockAnalytics
-import com.rudderstack.core.internals.models.Properties
-import com.rudderstack.core.internals.models.RudderOption
-import com.rudderstack.core.internals.storage.Storage
-import com.rudderstack.core.internals.storage.StorageKeys
-import com.rudderstack.core.internals.utils.empty
+import com.rudderstack.kotlin.internals.models.Properties
+import com.rudderstack.kotlin.internals.models.RudderOption
+import com.rudderstack.kotlin.internals.storage.Storage
+import com.rudderstack.kotlin.internals.storage.StorageKeys
+import com.rudderstack.kotlin.internals.utils.empty
 import io.mockk.MockKAnnotations
 import io.mockk.Ordering
 import io.mockk.every

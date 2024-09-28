@@ -2,9 +2,9 @@ package com.rudderstack.android.sdk
 
 import android.app.Application
 import com.rudderstack.android.sdk.storage.AndroidStorageProvider
-import com.rudderstack.core.Configuration
-import com.rudderstack.core.internals.logger.Logger
-import com.rudderstack.core.internals.policies.FlushPolicy
+import com.rudderstack.kotlin.Configuration
+import com.rudderstack.kotlin.internals.logger.Logger
+import com.rudderstack.kotlin.internals.policies.FlushPolicy
 
 /**
  * `Configuration` data class used for initializing RudderStack analytics in an Android application.
@@ -44,7 +44,7 @@ import com.rudderstack.core.internals.policies.FlushPolicy
  *
  * This `Configuration` instance can then be used to initialize the `Analytics` object for RudderStack.
  *
- * @see com.rudderstack.core.Configuration
+ * @see com.rudderstack.kotlin.Configuration
  */
 data class Configuration @JvmOverloads constructor(
     val application: Application,

@@ -12,7 +12,7 @@ import com.rudderstack.android.sdk.plugins.URL_KEY
 import com.rudderstack.android.sdk.storage.CheckBuildVersionUseCase
 import com.rudderstack.android.utils.mockAnalytics
 import com.rudderstack.android.utils.mockUri
-import com.rudderstack.core.internals.models.RudderOption
+import com.rudderstack.kotlin.internals.models.RudderOption
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK

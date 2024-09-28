@@ -7,8 +7,8 @@ import android.net.ParseException
 import android.net.Uri
 import android.os.Bundle
 import com.rudderstack.android.sdk.storage.CheckBuildVersionUseCase
-import com.rudderstack.core.Analytics
-import com.rudderstack.core.internals.plugins.Plugin
+import com.rudderstack.kotlin.Analytics
+import com.rudderstack.kotlin.internals.plugins.Plugin
 import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
