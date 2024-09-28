@@ -1,4 +1,4 @@
-package com.rudderstack.android.utils
+package com.rudderstack.android.sdk.utils
 
 import android.net.Uri
 import com.rudderstack.kotlin.sdk.Analytics

@@ -1,20 +1,12 @@
-package com.rudderstack.android.plugins
+package com.rudderstack.android.sdk.plugins
 
 import android.app.Application
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import com.rudderstack.android.sdk.Configuration
 import com.rudderstack.android.sdk.models.AppVersion
-import com.rudderstack.android.sdk.plugins.APPLICATION_BACKGROUNDED
-import com.rudderstack.android.sdk.plugins.APPLICATION_INSTALLED
-import com.rudderstack.android.sdk.plugins.APPLICATION_OPENED
-import com.rudderstack.android.sdk.plugins.APPLICATION_UPDATED
-import com.rudderstack.android.sdk.plugins.AndroidLifecyclePlugin
-import com.rudderstack.android.sdk.plugins.BUILD_KEY
-import com.rudderstack.android.sdk.plugins.FROM_BACKGROUND
-import com.rudderstack.android.sdk.plugins.VERSION_KEY
-import com.rudderstack.android.utils.MockMemoryStorage
-import com.rudderstack.android.utils.mockAnalytics
+import com.rudderstack.android.sdk.utils.MockMemoryStorage
+import com.rudderstack.android.sdk.utils.mockAnalytics
 import com.rudderstack.kotlin.sdk.internals.models.Properties
 import com.rudderstack.kotlin.sdk.internals.models.RudderOption
 import com.rudderstack.kotlin.sdk.internals.storage.Storage

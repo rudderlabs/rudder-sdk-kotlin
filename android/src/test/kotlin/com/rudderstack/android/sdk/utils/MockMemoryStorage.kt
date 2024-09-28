@@ -1,4 +1,4 @@
-package com.rudderstack.android.utils
+package com.rudderstack.android.sdk.utils
 
 import com.rudderstack.kotlin.sdk.internals.storage.LibraryVersion
 import com.rudderstack.kotlin.sdk.internals.storage.Storage
