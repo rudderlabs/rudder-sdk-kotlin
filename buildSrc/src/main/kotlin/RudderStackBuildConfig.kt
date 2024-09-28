@@ -22,6 +22,7 @@ object RudderStackBuildConfig {
     }
 
     object PacakageName {
+        val ANDROID = "com.rudderstack.android.sdk"
         val KOTLIN = "\"com.rudderstack.kotlin.sdk\""
     }
 

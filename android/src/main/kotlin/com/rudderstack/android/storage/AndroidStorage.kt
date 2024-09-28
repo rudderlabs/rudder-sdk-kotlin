@@ -1,8 +1,8 @@
 package com.rudderstack.android.storage
 
 import android.content.Context
+import com.rudderstack.android.sdk.BuildConfig
 import com.rudderstack.android.storage.exceptions.QueuedPayloadTooLargeException
-import com.rudderstack.android2.BuildConfig
 import com.rudderstack.core.internals.storage.KeyValueStorage
 import com.rudderstack.core.internals.storage.LibraryVersion
 import com.rudderstack.core.internals.storage.MAX_PAYLOAD_SIZE
