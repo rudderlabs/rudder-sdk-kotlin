@@ -2,9 +2,11 @@ package com.rudderstack.core.internals.models
 
 import com.rudderstack.core.internals.models.exception.UnknownMessageKeyException
 import com.rudderstack.core.internals.platform.PlatformType
+import com.rudderstack.core.internals.statemanagement.Store
 import com.rudderstack.core.internals.utils.DateTimeUtils
 import com.rudderstack.core.internals.utils.addAnonymousIdToTraits
 import com.rudderstack.core.internals.utils.empty
+import com.rudderstack.core.state.UserIdentityState
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -92,9 +94,17 @@ sealed class Message {
     @Transient
     abstract var options: RudderOption
 
-    // TODO("Add Store as a function parameter"): It is needed to fetch the anonymousId, userId, traits, externalId etc. from the store
-    internal fun updateData(anonymousId: String, platform: PlatformType) {
-        this.anonymousId = anonymousId
+    internal fun subscribeToUserIdentityState(
+        userInfoStore: Store<UserIdentityState, UserIdentityState.SetIdentityAction>,
+        platform: PlatformType
+    ) {
+        userInfoStore.subscribe { userOptionsState, _ ->
+            updateData(userOptionsState.userIdentity.anonymousID, platform)
+        }
+    }
+
+    internal fun updateData(anonymousID: String, platform: PlatformType) {
+        this.anonymousId = anonymousID
         this.addAnonymousIdToTraits()
         this.channel = platform
         this.updateOption()
