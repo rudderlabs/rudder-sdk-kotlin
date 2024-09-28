@@ -1,7 +1,6 @@
 package com.rudderstack.kotlin.internals.models.provider
 
-
-import com.rudderstack.kotlin.internals.models.emptyJsonObject
+import com.rudderstack.kotlin.sdk.internals.models.emptyJsonObject
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject

@@ -1,7 +1,7 @@
 package com.rudderstack.android.sdk
 
 import android.util.Log
-import com.rudderstack.kotlin.internals.logger.Logger
+import com.rudderstack.kotlin.sdk.internals.logger.Logger
 
 /**
  * Logger implementation specifically for android.
@@ -20,25 +20,25 @@ class AndroidLogger(
     }
 
     override fun info(tag: String, log: String) {
-        if (com.rudderstack.kotlin.internals.logger.Logger.LogLevel.INFO >= logLevel) {
+        if (Logger.LogLevel.INFO >= logLevel) {
             Log.i(tag, log)
         }
     }
 
     override fun debug(tag: String, log: String) {
-        if (com.rudderstack.kotlin.internals.logger.Logger.LogLevel.DEBUG >= logLevel) {
+        if (Logger.LogLevel.DEBUG >= logLevel) {
             Log.d(tag, log)
         }
     }
 
     override fun warn(tag: String, log: String) {
-        if (com.rudderstack.kotlin.internals.logger.Logger.LogLevel.WARN >= logLevel) {
+        if (Logger.LogLevel.WARN >= logLevel) {
             Log.w(tag, log)
         }
     }
 
     override fun error(tag: String, log: String, throwable: Throwable?) {
-        if (com.rudderstack.kotlin.internals.logger.Logger.LogLevel.ERROR >= logLevel) {
+        if (Logger.LogLevel.ERROR >= logLevel) {
             Log.e(tag, log, throwable)
         }
     }

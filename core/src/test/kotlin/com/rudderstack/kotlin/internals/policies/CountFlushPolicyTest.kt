@@ -1,5 +1,7 @@
 package com.rudderstack.kotlin.internals.policies
 
+import com.rudderstack.kotlin.sdk.internals.policies.CountFlushPolicy
+import com.rudderstack.kotlin.sdk.internals.policies.DEFAULT_FLUSH_AT
 import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertTrue
 import org.junit.Test

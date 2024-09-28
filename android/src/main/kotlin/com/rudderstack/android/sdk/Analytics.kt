@@ -2,9 +2,9 @@ package com.rudderstack.android.sdk
 
 import com.rudderstack.android.sdk.plugins.AndroidLifecyclePlugin
 import com.rudderstack.android.sdk.plugins.DeeplinkPlugin
-import com.rudderstack.kotlin.Analytics
-import com.rudderstack.kotlin.internals.platform.Platform
-import com.rudderstack.kotlin.internals.platform.PlatformType
+import com.rudderstack.kotlin.sdk.Analytics
+import com.rudderstack.kotlin.sdk.internals.platform.Platform
+import com.rudderstack.kotlin.sdk.internals.platform.PlatformType
 
 /**
  * `Analytics` class in the `com.rudderstack.android` package.

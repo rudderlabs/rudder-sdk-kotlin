@@ -1,7 +1,7 @@
 package com.rudderstack.kotlin.utils
 
-import com.rudderstack.kotlin.Analytics
-import com.rudderstack.kotlin.internals.policies.DEFAULT_FLUSH_INTERVAL_IN_MILLIS
+import com.rudderstack.kotlin.sdk.Analytics
+import com.rudderstack.kotlin.sdk.internals.policies.DEFAULT_FLUSH_INTERVAL_IN_MILLIS
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi

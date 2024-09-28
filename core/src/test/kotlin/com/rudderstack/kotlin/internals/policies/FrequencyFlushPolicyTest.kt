@@ -1,6 +1,8 @@
 package com.rudderstack.kotlin.internals.policies
 
 import com.rudderstack.kotlin.internals.utils.mockAnalytics
+import com.rudderstack.kotlin.sdk.internals.policies.DEFAULT_FLUSH_INTERVAL_IN_MILLIS
+import com.rudderstack.kotlin.sdk.internals.policies.FrequencyFlushPolicy
 import com.rudderstack.kotlin.utils.advanceTimeBy
 import io.mockk.coVerify
 import kotlinx.coroutines.test.StandardTestDispatcher

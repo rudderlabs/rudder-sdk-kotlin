@@ -3,6 +3,14 @@ package com.rudderstack.kotlin.internals.statemanagement
 import com.rudderstack.kotlin.internals.statemanagement.TestAction.Companion.provideAction
 import com.rudderstack.kotlin.internals.statemanagement.TestState.Companion.provideInitialState
 import com.rudderstack.kotlin.internals.statemanagement.TestState.Companion.provideState
+import com.rudderstack.kotlin.sdk.internals.statemanagement.Action
+import com.rudderstack.kotlin.sdk.internals.statemanagement.Dispatch
+import com.rudderstack.kotlin.sdk.internals.statemanagement.Middleware
+import com.rudderstack.kotlin.sdk.internals.statemanagement.Next
+import com.rudderstack.kotlin.sdk.internals.statemanagement.Reducer
+import com.rudderstack.kotlin.sdk.internals.statemanagement.SingleThreadStore
+import com.rudderstack.kotlin.sdk.internals.statemanagement.State
+import com.rudderstack.kotlin.sdk.internals.statemanagement.Subscription
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test

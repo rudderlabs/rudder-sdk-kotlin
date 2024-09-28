@@ -1,8 +1,8 @@
 package com.rudderstack.android.utils
 
-import com.rudderstack.kotlin.internals.storage.LibraryVersion
-import com.rudderstack.kotlin.internals.storage.Storage
-import com.rudderstack.kotlin.internals.storage.StorageKeys
+import com.rudderstack.kotlin.sdk.internals.storage.LibraryVersion
+import com.rudderstack.kotlin.sdk.internals.storage.Storage
+import com.rudderstack.kotlin.sdk.internals.storage.StorageKeys
 
 internal class MockMemoryStorage : Storage {
 

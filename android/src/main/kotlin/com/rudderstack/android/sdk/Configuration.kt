@@ -2,9 +2,9 @@ package com.rudderstack.android.sdk
 
 import android.app.Application
 import com.rudderstack.android.sdk.storage.AndroidStorageProvider
-import com.rudderstack.kotlin.Configuration
-import com.rudderstack.kotlin.internals.logger.Logger
-import com.rudderstack.kotlin.internals.policies.FlushPolicy
+import com.rudderstack.kotlin.sdk.Configuration
+import com.rudderstack.kotlin.sdk.internals.logger.Logger
+import com.rudderstack.kotlin.sdk.internals.policies.FlushPolicy
 
 /**
  * `Configuration` data class used for initializing RudderStack analytics in an Android application.

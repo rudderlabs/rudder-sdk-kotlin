@@ -1,8 +1,8 @@
 package com.rudderstack.kotlin.internals.network.provider
 
-import com.rudderstack.kotlin.Configuration.Companion.DEFAULT_GZIP_STATUS
-import com.rudderstack.kotlin.internals.network.HttpURLConnectionFactory
-import com.rudderstack.kotlin.internals.network.HttpClientImpl
+import com.rudderstack.kotlin.sdk.Configuration.Companion.DEFAULT_GZIP_STATUS
+import com.rudderstack.kotlin.sdk.internals.network.HttpClientImpl
+import com.rudderstack.kotlin.sdk.internals.network.HttpURLConnectionFactory
 import java.net.HttpURLConnection
 
 fun provideHttpClientImplForGetRequest(

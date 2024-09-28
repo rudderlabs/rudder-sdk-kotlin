@@ -1,7 +1,8 @@
 package com.rudderstack.kotlin.internals.models
 
-import com.rudderstack.kotlin.internals.utils.LenientJson
 import com.rudderstack.kotlin.readFileAsString
+import com.rudderstack.kotlin.sdk.internals.models.SourceConfig
+import com.rudderstack.kotlin.sdk.internals.utils.LenientJson
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

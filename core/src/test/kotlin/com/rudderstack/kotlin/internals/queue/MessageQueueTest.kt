@@ -1,15 +1,16 @@
 package com.rudderstack.kotlin.internals.queue
 
-import com.rudderstack.kotlin.Analytics
-import com.rudderstack.kotlin.internals.logger.Logger
-import com.rudderstack.kotlin.internals.models.Message
-import com.rudderstack.kotlin.internals.network.ErrorStatus
-import com.rudderstack.kotlin.internals.network.HttpClient
-import com.rudderstack.kotlin.internals.network.Result
-import com.rudderstack.kotlin.internals.policies.FlushPoliciesFacade
-import com.rudderstack.kotlin.internals.storage.Storage
-import com.rudderstack.kotlin.internals.storage.StorageKeys
-import com.rudderstack.kotlin.internals.utils.empty
+import com.rudderstack.kotlin.sdk.Analytics
+import com.rudderstack.kotlin.sdk.internals.logger.Logger
+import com.rudderstack.kotlin.sdk.internals.models.Message
+import com.rudderstack.kotlin.sdk.internals.network.ErrorStatus
+import com.rudderstack.kotlin.sdk.internals.network.HttpClient
+import com.rudderstack.kotlin.sdk.internals.network.Result
+import com.rudderstack.kotlin.sdk.internals.policies.FlushPoliciesFacade
+import com.rudderstack.kotlin.sdk.internals.queue.MessageQueue
+import com.rudderstack.kotlin.sdk.internals.storage.Storage
+import com.rudderstack.kotlin.sdk.internals.storage.StorageKeys
+import com.rudderstack.kotlin.sdk.internals.utils.empty
 import com.rudderstack.kotlin.utils.mockAnalytics
 import io.mockk.MockKAnnotations
 import io.mockk.coEvery

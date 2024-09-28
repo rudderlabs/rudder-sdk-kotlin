@@ -2,8 +2,8 @@ package com.rudderstack.sampleapp.mainview
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
-import com.rudderstack.kotlin.internals.models.Properties
-import com.rudderstack.kotlin.internals.models.RudderOption
+import com.rudderstack.kotlin.sdk.internals.models.Properties
+import com.rudderstack.kotlin.sdk.internals.models.RudderOption
 import com.rudderstack.sampleapp.analytics.RudderAnalyticsUtils
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow

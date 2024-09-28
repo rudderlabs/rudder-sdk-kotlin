@@ -1,12 +1,14 @@
 package com.rudderstack.kotlin
 
-import com.rudderstack.kotlin.internals.models.SourceConfig
-import com.rudderstack.kotlin.internals.network.ErrorStatus
-import com.rudderstack.kotlin.internals.network.HttpClient
-import com.rudderstack.kotlin.internals.network.Result
-import com.rudderstack.kotlin.internals.statemanagement.SingleThreadStore
-import com.rudderstack.kotlin.internals.utils.LenientJson
-import com.rudderstack.kotlin.state.SourceConfigState
+import com.rudderstack.kotlin.sdk.Analytics
+import com.rudderstack.kotlin.sdk.SourceConfigManager
+import com.rudderstack.kotlin.sdk.internals.models.SourceConfig
+import com.rudderstack.kotlin.sdk.internals.network.ErrorStatus
+import com.rudderstack.kotlin.sdk.internals.network.HttpClient
+import com.rudderstack.kotlin.sdk.internals.network.Result
+import com.rudderstack.kotlin.sdk.internals.statemanagement.SingleThreadStore
+import com.rudderstack.kotlin.sdk.internals.utils.LenientJson
+import com.rudderstack.kotlin.sdk.state.SourceConfigState
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every

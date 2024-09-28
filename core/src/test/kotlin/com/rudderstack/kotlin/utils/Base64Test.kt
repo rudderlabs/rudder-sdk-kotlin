@@ -1,7 +1,7 @@
 package com.rudderstack.kotlin.utils
 
-import com.rudderstack.kotlin.internals.utils.Base64.decodeFromBase64
-import com.rudderstack.kotlin.internals.utils.Base64.encodeToBase64
+import com.rudderstack.kotlin.sdk.internals.utils.Base64.decodeFromBase64
+import com.rudderstack.kotlin.sdk.internals.utils.Base64.encodeToBase64
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Test

@@ -1,10 +1,11 @@
 package com.rudderstack.kotlin.state
 
-import com.rudderstack.kotlin.internals.models.RudderServerConfigSource
-import com.rudderstack.kotlin.internals.models.SourceConfig
-import com.rudderstack.kotlin.internals.storage.Storage
-import com.rudderstack.kotlin.internals.storage.StorageKeys.SOURCE_CONFIG_PAYLOAD
-import com.rudderstack.kotlin.internals.storage.StorageKeys.SOURCE_IS_ENABLED
+import com.rudderstack.kotlin.sdk.internals.models.RudderServerConfigSource
+import com.rudderstack.kotlin.sdk.internals.models.SourceConfig
+import com.rudderstack.kotlin.sdk.internals.storage.Storage
+import com.rudderstack.kotlin.sdk.internals.storage.StorageKeys.SOURCE_CONFIG_PAYLOAD
+import com.rudderstack.kotlin.sdk.internals.storage.StorageKeys.SOURCE_IS_ENABLED
+import com.rudderstack.kotlin.sdk.state.SourceConfigState
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers

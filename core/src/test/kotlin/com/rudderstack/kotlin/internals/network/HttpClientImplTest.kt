@@ -3,6 +3,12 @@ package com.rudderstack.kotlin.internals.network
 import com.rudderstack.kotlin.internals.network.provider.provideErrorMessage
 import com.rudderstack.kotlin.internals.network.provider.provideHttpClientImplForGetRequest
 import com.rudderstack.kotlin.internals.network.provider.provideHttpClientImplForPostRequest
+import com.rudderstack.kotlin.sdk.internals.network.ErrorStatus
+import com.rudderstack.kotlin.sdk.internals.network.HttpClientImpl
+import com.rudderstack.kotlin.sdk.internals.network.HttpURLConnectionFactory
+import com.rudderstack.kotlin.sdk.internals.network.Result
+import com.rudderstack.kotlin.sdk.internals.network.getErrorResponse
+import com.rudderstack.kotlin.sdk.internals.network.getSuccessResponse
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK

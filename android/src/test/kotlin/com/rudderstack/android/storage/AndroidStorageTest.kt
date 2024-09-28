@@ -3,8 +3,8 @@ package com.rudderstack.android.storage
 import android.content.Context
 import com.rudderstack.android.sdk.storage.AndroidStorage
 import com.rudderstack.android.sdk.storage.SharedPrefsStore
-import com.rudderstack.kotlin.internals.storage.MAX_PAYLOAD_SIZE
-import com.rudderstack.kotlin.internals.storage.StorageKeys
+import com.rudderstack.kotlin.sdk.internals.storage.MAX_PAYLOAD_SIZE
+import com.rudderstack.kotlin.sdk.internals.storage.StorageKeys
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.Before

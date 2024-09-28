@@ -1,7 +1,7 @@
 package com.rudderstack.android.utils
 
 import android.net.Uri
-import com.rudderstack.kotlin.Analytics
+import com.rudderstack.kotlin.sdk.Analytics
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.TestDispatcher

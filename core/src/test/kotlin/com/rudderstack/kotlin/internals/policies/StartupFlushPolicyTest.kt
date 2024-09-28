@@ -1,5 +1,6 @@
 package com.rudderstack.kotlin.internals.policies
 
+import com.rudderstack.kotlin.sdk.internals.policies.StartupFlushPolicy
 import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertTrue
 import org.junit.Test

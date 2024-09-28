@@ -1,5 +1,6 @@
 package com.rudderstack.kotlin.internals.storage
 
+import com.rudderstack.kotlin.sdk.internals.storage.PropertiesFile
 import junit.framework.TestCase.assertEquals
 import org.junit.Before
 import org.junit.Test

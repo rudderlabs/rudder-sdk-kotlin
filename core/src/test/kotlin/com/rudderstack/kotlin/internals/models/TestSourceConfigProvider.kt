@@ -1,5 +1,14 @@
 package com.rudderstack.kotlin.internals.models
 
+import com.rudderstack.kotlin.sdk.internals.models.Destination
+import com.rudderstack.kotlin.sdk.internals.models.DestinationDefinition
+import com.rudderstack.kotlin.sdk.internals.models.Errors
+import com.rudderstack.kotlin.sdk.internals.models.Metrics
+import com.rudderstack.kotlin.sdk.internals.models.MetricsConfig
+import com.rudderstack.kotlin.sdk.internals.models.RudderServerConfigSource
+import com.rudderstack.kotlin.sdk.internals.models.SourceConfig
+import com.rudderstack.kotlin.sdk.internals.models.StatsCollection
+import com.rudderstack.kotlin.sdk.internals.models.emptyJsonObject
 import kotlinx.serialization.json.JsonObject
 
 fun provideSourceConfig(

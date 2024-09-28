@@ -1,8 +1,8 @@
 package com.rudderstack.kotlin.internals.utils
 
-import com.rudderstack.kotlin.Analytics
-import com.rudderstack.kotlin.internals.models.Message
-import com.rudderstack.kotlin.internals.models.emptyJsonObject
+import com.rudderstack.kotlin.sdk.Analytics
+import com.rudderstack.kotlin.sdk.internals.models.Message
+import com.rudderstack.kotlin.sdk.internals.models.emptyJsonObject
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.TestDispatcher

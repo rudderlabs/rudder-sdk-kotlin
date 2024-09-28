@@ -1,12 +1,15 @@
 package com.rudderstack.kotlin.plugins
 
-import com.rudderstack.kotlin.Analytics
-import com.rudderstack.kotlin.internals.models.FlushEvent
-import com.rudderstack.kotlin.internals.models.TrackEvent
-import com.rudderstack.kotlin.internals.queue.MessageQueue
-import com.rudderstack.kotlin.internals.plugins.Plugin
-import com.rudderstack.kotlin.internals.plugins.PluginChain
-import io.mockk.*
+import com.rudderstack.kotlin.sdk.Analytics
+import com.rudderstack.kotlin.sdk.internals.models.FlushEvent
+import com.rudderstack.kotlin.sdk.internals.models.TrackEvent
+import com.rudderstack.kotlin.sdk.internals.plugins.Plugin
+import com.rudderstack.kotlin.sdk.internals.plugins.PluginChain
+import com.rudderstack.kotlin.sdk.internals.queue.MessageQueue
+import com.rudderstack.kotlin.sdk.plugins.RudderStackDataplanePlugin
+import io.mockk.mockk
+import io.mockk.spyk
+import io.mockk.verify
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test

@@ -3,11 +3,14 @@ package com.rudderstack.kotlin.internals.models
 import com.rudderstack.kotlin.internals.models.provider.provideSampleExternalIdsPayload
 import com.rudderstack.kotlin.internals.models.provider.provideSampleIntegrationsPayload
 import com.rudderstack.kotlin.internals.models.provider.provideSampleJsonPayload
-import com.rudderstack.kotlin.internals.platform.PlatformType
 import com.rudderstack.kotlin.internals.utils.ANONYMOUS_ID
 import com.rudderstack.kotlin.internals.utils.applyMockedValues
-import com.rudderstack.kotlin.internals.utils.encodeToString
 import com.rudderstack.kotlin.readFileTrimmed
+import com.rudderstack.kotlin.sdk.internals.models.RudderOption
+import com.rudderstack.kotlin.sdk.internals.models.TrackEvent
+import com.rudderstack.kotlin.sdk.internals.models.emptyJsonObject
+import com.rudderstack.kotlin.sdk.internals.platform.PlatformType
+import com.rudderstack.kotlin.sdk.internals.utils.encodeToString
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

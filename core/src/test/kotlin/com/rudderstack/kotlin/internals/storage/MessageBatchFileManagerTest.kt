@@ -1,6 +1,11 @@
 package com.rudderstack.kotlin.internals.storage
 
-import com.rudderstack.kotlin.internals.models.DEFAULT_SENT_AT_TIMESTAMP
+import com.rudderstack.kotlin.sdk.internals.models.DEFAULT_SENT_AT_TIMESTAMP
+import com.rudderstack.kotlin.sdk.internals.storage.FILE_DIRECTORY
+import com.rudderstack.kotlin.sdk.internals.storage.FILE_INDEX
+import com.rudderstack.kotlin.sdk.internals.storage.MessageBatchFileManager
+import com.rudderstack.kotlin.sdk.internals.storage.PropertiesFile
+import com.rudderstack.kotlin.sdk.internals.storage.TMP_SUFFIX
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertNotNull
