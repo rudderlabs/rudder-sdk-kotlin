@@ -7,6 +7,7 @@ import com.rudderstack.kotlin.sdk.internals.models.emptyJsonObject
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.jsonObject
 
 /**
@@ -55,4 +56,19 @@ internal fun Message.encodeToString(): String {
  */
 internal infix fun JsonObject.mergeWithHigherPriorityTo(other: JsonObject): JsonObject {
     return JsonObject(this.toMap() + other.toMap())
+}
+
+/**
+ * Adds all key-value pairs from the given `JsonObject` to the current `JsonObjectBuilder`.
+ *
+ * This method iterates over all entries in the specified `JsonObject` and inserts each key-value pair
+ * into the `JsonObjectBuilder`. It is typically used when constructing a new `JsonObject` that needs
+ * to include values from an existing JSON object.
+ *
+ * @param jsonObject The `JsonObject` whose key-value pairs are to be added to the current builder.
+ */
+fun JsonObjectBuilder.putAll(jsonObject: JsonObject) {
+    jsonObject.forEach { (key, value) ->
+        put(key, value)
+    }
 }
