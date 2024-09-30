@@ -1,5 +1,6 @@
 package com.rudderstack.android.sdk
 
+import com.rudderstack.android.plugins.DeviceInfoPlugin
 import com.rudderstack.android.sdk.plugins.AndroidLifecyclePlugin
 import com.rudderstack.android.sdk.plugins.DeeplinkPlugin
 import com.rudderstack.kotlin.sdk.Analytics
@@ -43,6 +44,7 @@ class Analytics(
     }
 
     private fun setup() {
+        add(DeviceInfoPlugin())
         add(AndroidLifecyclePlugin())
         add(DeeplinkPlugin())
     }
