@@ -3,8 +3,6 @@ package com.rudderstack.kotlin.sdk.plugins
 import com.rudderstack.kotlin.sdk.Analytics
 import com.rudderstack.kotlin.sdk.internals.models.FlushEvent
 import com.rudderstack.kotlin.sdk.internals.models.TrackEvent
-import com.rudderstack.kotlin.sdk.internals.plugins.Plugin
-import com.rudderstack.kotlin.sdk.internals.plugins.PluginChain
 import com.rudderstack.kotlin.sdk.internals.queue.MessageQueue
 import io.mockk.mockk
 import io.mockk.spyk
