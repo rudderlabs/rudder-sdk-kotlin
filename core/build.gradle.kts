@@ -27,6 +27,7 @@ tasks.register("generateVersionConstants") {
 
             object VersionConstants {
                 const val VERSION_NAME = ${RudderStackBuildConfig.Version.VERSION_NAME}
+                const val LIBRARY_PACKAGE_NAME = ${RudderStackBuildConfig.PacakageName.KOTLIN}
             }
             """.trimIndent()
         )
