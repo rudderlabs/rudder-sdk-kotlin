@@ -66,7 +66,6 @@ dependencies {
     detektPlugins(libs.detekt.formatting)
 
     //testImplementation
-    testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
     testImplementation(libs.json.assert)
