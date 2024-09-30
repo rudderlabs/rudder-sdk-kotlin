@@ -21,7 +21,7 @@ tasks.withType<Detekt>().configureEach {
 }
 
 android {
-    namespace = "com.rudderstack.android2"
+    namespace = RudderStackBuildConfig.PacakageName.ANDROID
     compileSdk = 34
 
     buildFeatures {
@@ -37,7 +37,7 @@ android {
         consumerProguardFiles("consumer-rules.pro")
 
         buildConfigField("String", "VERSION_NAME", RudderStackBuildConfig.Version.VERSION_NAME)
-        buildConfigField("String", "VERSION_CODE", RudderStackBuildConfig.Version.VERSION_CODE)
+        buildConfigField("int", "VERSION_CODE", RudderStackBuildConfig.Version.VERSION_CODE)
     }
 
     buildTypes {
