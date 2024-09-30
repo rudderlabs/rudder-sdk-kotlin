@@ -1,6 +1,5 @@
 package com.rudderstack.kotlin.sdk.internals.models
 
-
 import com.rudderstack.kotlin.sdk.internals.models.exception.UnknownMessageKeyException
 import com.rudderstack.kotlin.sdk.internals.platform.PlatformType
 import com.rudderstack.kotlin.sdk.internals.statemanagement.Store

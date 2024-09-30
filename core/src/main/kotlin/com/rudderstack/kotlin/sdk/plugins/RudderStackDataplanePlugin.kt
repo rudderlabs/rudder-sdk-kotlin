@@ -8,11 +8,13 @@ import com.rudderstack.kotlin.sdk.internals.models.ScreenEvent
 import com.rudderstack.kotlin.sdk.internals.models.TrackEvent
 import com.rudderstack.kotlin.sdk.internals.plugins.MessagePlugin
 import com.rudderstack.kotlin.sdk.internals.plugins.Plugin
+import com.rudderstack.kotlin.sdk.internals.plugins.PluginChain
 import com.rudderstack.kotlin.sdk.internals.queue.MessageQueue
 
 internal class RudderStackDataplanePlugin : MessagePlugin {
 
     override val pluginType: Plugin.PluginType = Plugin.PluginType.Destination
+    private val pluginChain: PluginChain = PluginChain()
     override lateinit var analytics: Analytics
     private var messageQueue: MessageQueue? = null
 
@@ -38,11 +40,42 @@ internal class RudderStackDataplanePlugin : MessagePlugin {
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
+        pluginChain.analytics = analytics
         messageQueue = MessageQueue(analytics).apply { start() }
+    }
+
+    internal fun remove(plugin: Plugin) {
+        pluginChain.remove(plugin)
     }
 
     internal fun flush() {
         messageQueue?.flush()
+    }
+
+    override fun execute(message: Message): Message? {
+        val beforeResult = pluginChain.applyPlugins(Plugin.PluginType.PreProcess, message)
+        val enrichmentResult = pluginChain.applyPlugins(Plugin.PluginType.OnProcess, beforeResult)
+        val destinationResult = enrichmentResult?.let {
+            when (it) {
+                is TrackEvent -> {
+                    track(it)
+                }
+
+                is ScreenEvent -> {
+                    screen(it)
+                }
+
+                is GroupEvent -> {
+                    group(it)
+                }
+
+                is FlushEvent -> {
+                    flush(it)
+                }
+            }
+        }
+        val afterResult = pluginChain.applyPlugins(Plugin.PluginType.After, destinationResult)
+        return afterResult
     }
 
     private fun enqueue(message: Message) {
