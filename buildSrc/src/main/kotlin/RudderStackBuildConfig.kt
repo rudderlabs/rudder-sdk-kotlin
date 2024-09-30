@@ -18,7 +18,12 @@ object RudderStackBuildConfig {
     object Version {
 
         val VERSION_NAME = "\"1.0.0\""
-        val VERSION_CODE = "\"1\""
+        val VERSION_CODE = "1"
+    }
+
+    object PacakageName {
+        val ANDROID = "com.rudderstack.android.sdk"
+        val KOTLIN = "\"com.rudderstack.kotlin.sdk\""
     }
 
     object Kotlin {

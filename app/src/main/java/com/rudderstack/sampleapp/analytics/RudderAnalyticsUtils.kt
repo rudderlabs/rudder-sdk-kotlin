@@ -1,8 +1,8 @@
 package com.rudderstack.sampleapp.analytics
 
 import android.app.Application
-import com.rudderstack.android.Configuration
-import com.rudderstack.android.Analytics
+import com.rudderstack.android.sdk.Analytics
+import com.rudderstack.android.sdk.Configuration
 
 object RudderAnalyticsUtils {
 
