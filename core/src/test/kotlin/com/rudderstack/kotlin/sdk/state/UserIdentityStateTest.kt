@@ -1,12 +1,11 @@
-package com.rudderstack.core.state
+package com.rudderstack.kotlin.sdk.state
 
-import com.rudderstack.core.internals.models.UserIdentity
-import com.rudderstack.core.internals.storage.Storage
-import com.rudderstack.core.internals.storage.StorageKeys.ANONYMOUS_ID
-import com.rudderstack.core.internals.storage.StorageKeys.IS_ANONYMOUS_ID_BY_CLIENT
-import com.rudderstack.core.internals.utils.empty
-import com.rudderstack.core.state.UserIdentityState.GenerateUserAnonymousID
-import com.rudderstack.core.state.UserIdentityState.SetIdentityAction
+import com.rudderstack.kotlin.sdk.internals.models.UserIdentity
+import com.rudderstack.kotlin.sdk.internals.storage.Storage
+import com.rudderstack.kotlin.sdk.internals.storage.StorageKeys
+import com.rudderstack.kotlin.sdk.internals.utils.empty
+import com.rudderstack.kotlin.sdk.state.UserIdentityState.GenerateUserAnonymousID
+import com.rudderstack.kotlin.sdk.state.UserIdentityState.SetIdentityAction
 import io.mockk.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
@@ -44,7 +43,7 @@ class UserIdentityStateTest {
     @Test
     fun `given no anonymous id is stored in the storage, when currentState is called, then UserIdentityState should return empty anonymous id`() {
         val expected = String.empty()
-        every { storage.readString(ANONYMOUS_ID, any()) } returns expected
+        every { storage.readString(StorageKeys.ANONYMOUS_ID, any()) } returns expected
 
         val actual = UserIdentityState.currentState(storage).userIdentity.anonymousID
 
@@ -54,7 +53,7 @@ class UserIdentityStateTest {
     @Test
     fun `given storage has an anonymous id, when currentState is called, then UserIdentityState should use the stored anonymous id`() {
         val expected = "<anonymous-id>"
-        every { storage.readString(ANONYMOUS_ID, any()) } returns expected
+        every { storage.readString(StorageKeys.ANONYMOUS_ID, any()) } returns expected
 
         val actual = UserIdentityState.currentState(storage).userIdentity.anonymousID
 
@@ -75,8 +74,8 @@ class UserIdentityStateTest {
         testScope.advanceUntilIdle()
 
         assertEquals(expected, actual)
-        coVerify(exactly = 1) { storage.write(ANONYMOUS_ID, expected) }
-        coVerify(exactly = 1) { storage.write(IS_ANONYMOUS_ID_BY_CLIENT, false) }
+        coVerify(exactly = 1) { storage.write(StorageKeys.ANONYMOUS_ID, expected) }
+        coVerify(exactly = 1) { storage.write(StorageKeys.IS_ANONYMOUS_ID_BY_CLIENT, false) }
 
         unmockkStatic(UUID::class)
     }
@@ -91,8 +90,8 @@ class UserIdentityStateTest {
         testScope.advanceUntilIdle() // Ensure coroutines complete
 
         assertEquals(expected, actual)
-        coVerify(exactly = 1) { storage.write(ANONYMOUS_ID, expected) }
-        coVerify(exactly = 1) { storage.write(IS_ANONYMOUS_ID_BY_CLIENT, true) }
+        coVerify(exactly = 1) { storage.write(StorageKeys.ANONYMOUS_ID, expected) }
+        coVerify(exactly = 1) { storage.write(StorageKeys.IS_ANONYMOUS_ID_BY_CLIENT, true) }
     }
 
     @Test
@@ -108,8 +107,8 @@ class UserIdentityStateTest {
         testScope.advanceUntilIdle()
 
         assertEquals(expected, actual)
-        coVerify(exactly = 1) { storage.write(ANONYMOUS_ID, expected) }
-        coVerify(exactly = 1) { storage.write(IS_ANONYMOUS_ID_BY_CLIENT, false) }
+        coVerify(exactly = 1) { storage.write(StorageKeys.ANONYMOUS_ID, expected) }
+        coVerify(exactly = 1) { storage.write(StorageKeys.IS_ANONYMOUS_ID_BY_CLIENT, false) }
     }
 
     @Test
@@ -126,7 +125,7 @@ class UserIdentityStateTest {
         testScope.advanceUntilIdle()
 
         assertEquals(expected, actual)
-        coVerify { storage.write(ANONYMOUS_ID, expected) }
+        coVerify { storage.write(StorageKeys.ANONYMOUS_ID, expected) }
 
         unmockkStatic(UUID::class)
     }

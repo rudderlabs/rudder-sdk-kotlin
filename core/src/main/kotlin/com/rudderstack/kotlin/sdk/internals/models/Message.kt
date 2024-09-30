@@ -7,6 +7,7 @@ import com.rudderstack.kotlin.sdk.internals.statemanagement.Store
 import com.rudderstack.kotlin.sdk.internals.utils.DateTimeUtils
 import com.rudderstack.kotlin.sdk.internals.utils.addAnonymousIdToTraits
 import com.rudderstack.kotlin.sdk.internals.utils.empty
+import com.rudderstack.kotlin.sdk.state.UserIdentityState
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

@@ -1,4 +1,4 @@
-package com.rudderstack.core.internals.models
+package com.rudderstack.kotlin.sdk.internals.models
 
 /**
  * Data class representing a user's identity within the application.

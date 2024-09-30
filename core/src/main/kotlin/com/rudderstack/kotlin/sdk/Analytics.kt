@@ -19,6 +19,7 @@ import com.rudderstack.kotlin.sdk.internals.utils.empty
 import com.rudderstack.kotlin.sdk.plugins.PocPlugin
 import com.rudderstack.kotlin.sdk.plugins.RudderStackDataplanePlugin
 import com.rudderstack.kotlin.sdk.state.SourceConfigState
+import com.rudderstack.kotlin.sdk.state.UserIdentityState
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope

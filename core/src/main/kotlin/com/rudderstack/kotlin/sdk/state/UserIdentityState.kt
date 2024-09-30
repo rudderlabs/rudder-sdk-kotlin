@@ -1,27 +1,25 @@
-package com.rudderstack.core.state
+package com.rudderstack.kotlin.sdk.state
 
-import com.rudderstack.core.internals.models.UserIdentity
-import com.rudderstack.core.internals.statemanagement.Action
-import com.rudderstack.core.internals.statemanagement.Reducer
-import com.rudderstack.core.internals.statemanagement.State
-import com.rudderstack.core.internals.storage.Storage
-import com.rudderstack.core.internals.storage.StorageKeys.ANONYMOUS_ID
-import com.rudderstack.core.internals.storage.StorageKeys.IS_ANONYMOUS_ID_BY_CLIENT
-import com.rudderstack.core.internals.utils.empty
+import com.rudderstack.kotlin.sdk.internals.models.UserIdentity
+import com.rudderstack.kotlin.sdk.internals.statemanagement.Action
+import com.rudderstack.kotlin.sdk.internals.statemanagement.Reducer
+import com.rudderstack.kotlin.sdk.internals.statemanagement.State
+import com.rudderstack.kotlin.sdk.internals.storage.Storage
+import com.rudderstack.kotlin.sdk.internals.storage.StorageKeys
+import com.rudderstack.kotlin.sdk.internals.utils.empty
+
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.util.UUID
 
-internal data class UserIdentityState(
-    val userIdentity: UserIdentity
-) : State {
+internal data class UserIdentityState(val userIdentity: UserIdentity) : State {
 
     companion object {
 
         fun currentState(storage: Storage): UserIdentityState {
             return UserIdentityState(
                 userIdentity = UserIdentity(
-                    anonymousID = storage.readString(ANONYMOUS_ID, defaultVal = String.empty()),
+                    anonymousID = storage.readString(StorageKeys.ANONYMOUS_ID, defaultVal = String.empty()),
                     userId = String.empty()
                 )
             )
@@ -42,9 +40,9 @@ internal data class UserIdentityState(
             }
             val isAnonymousByClient = action.anonymousID.isNotEmpty()
             stateScope.launch {
-                action.storage.write(ANONYMOUS_ID, updatedAnonymousID)
+                action.storage.write(StorageKeys.ANONYMOUS_ID, updatedAnonymousID)
                 // not sure if we need to know if anonymous id was set from the client, thought it might be helpful in the future.
-                action.storage.write(IS_ANONYMOUS_ID_BY_CLIENT, isAnonymousByClient)
+                action.storage.write(StorageKeys.IS_ANONYMOUS_ID_BY_CLIENT, isAnonymousByClient)
             }
 
             return currentState.copy(
