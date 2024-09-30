@@ -104,6 +104,8 @@ android {
     }
 
     dependencies {
+
+        implementation("com.google.android.gms:play-services-ads:23.3.0")
         implementation("com.google.android.material:material:1.12.0")
         //compose
         implementation("androidx.compose.ui:ui:1.6.7")
