@@ -3,6 +3,8 @@ package com.rudderstack.sampleapp.analytics
 import android.app.Application
 import com.rudderstack.android.sdk.Analytics
 import com.rudderstack.android.sdk.Configuration
+import com.rudderstack.sampleapp.analytics.customPlugins.AndroidAdvertisingIdPlugin
+import com.rudderstack.sampleapp.analytics.customPlugins.AndroidAdvertisingIdPlugin.Companion.isAdvertisingLibraryAvailable
 
 object RudderAnalyticsUtils {
 
@@ -17,5 +19,8 @@ object RudderAnalyticsUtils {
                 dataPlaneUrl = "<DATA_PLANE_URL>",
             )
         )
+        if (isAdvertisingLibraryAvailable()) {
+            analytics.add(AndroidAdvertisingIdPlugin())
+        }
     }
 }
