@@ -25,6 +25,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 
 /**
@@ -55,7 +56,11 @@ open class Analytics protected constructor(
         reducer = SourceConfigState.SaveSourceConfigValuesReducer(configuration.storage, analyticsScope),
     )
 
+    // TODO("Add a way to stop this channel")
+    private val processMessageChannel: Channel<Message> = Channel(Channel.UNLIMITED)
+
     init {
+        processMessages()
         setup()
     }
 
@@ -93,7 +98,8 @@ open class Analytics protected constructor(
             properties = properties,
             options = options,
         )
-        process(message)
+
+        processMessageChannel.trySend(message)
     }
 
     /**
@@ -120,7 +126,7 @@ open class Analytics protected constructor(
             options = options,
         )
 
-        process(message)
+        processMessageChannel.trySend(message)
     }
 
     /**
@@ -139,7 +145,7 @@ open class Analytics protected constructor(
             options = options,
         )
 
-        process(message)
+        processMessageChannel.trySend(message)
     }
 
     /**
@@ -177,16 +183,19 @@ open class Analytics protected constructor(
     }
 
     /**
-     * Processes a message through the plugin chain. This method applies base data to the message,
-     * then launches a coroutine to asynchronously process the message using the configured `analyticsDispatcher`.
+     * Processes each message sequentially through the plugin chain and applies base data to the message.
+     * All operations are executed within the `analyticsDispatcher` coroutine context.
      *
-     * @param message The [Message] object representing an event or action to be processed.
+     * **NOTE**: This method can be called either before or after the initialization of all plugins (plugin setup occurs in the `init` method).
+     * Events sent before this function is invoked will be queued and processed once this function is called, ensuring no events are lost.
      */
-    private fun process(message: Message) {
+    private fun processMessages() {
         analyticsScope.launch(analyticsDispatcher) {
-            // TODO: Pass actual anonymous ID, or the way to fetch such values
-            message.updateData("<anonymous-id>", getPlatformType())
-            pluginChain.process(message)
+            for (message in processMessageChannel) {
+                // TODO: Pass actual anonymous ID, or the way to fetch such values
+                message.updateData("<anonymous-id>", getPlatformType())
+                pluginChain.process(message)
+            }
         }
     }
 
