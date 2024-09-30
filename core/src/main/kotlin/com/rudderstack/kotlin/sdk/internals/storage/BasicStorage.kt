@@ -115,6 +115,8 @@ internal class BasicStorage(writeKey: String) : Storage {
 
     override fun getLibraryVersion(): LibraryVersion {
         return object : LibraryVersion {
+            override fun getPackageName(): String = VersionConstants.LIBRARY_PACKAGE_NAME
+
             override fun getVersionName(): String = VersionConstants.VERSION_NAME
         }
     }
