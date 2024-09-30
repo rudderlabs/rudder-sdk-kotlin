@@ -28,6 +28,7 @@ import com.rudderstack.kotlin.sdk.internals.policies.FlushPolicy
  * @param application The Android `Application` instance required for initializing the analytics library.
  * @param trackApplicationLifecycleEvents automatically send track for Lifecycle events (eg: Application Opened, Application Backgrounded, etc.), defaults to `true`
  * @param trackDeeplinks automatically tracks deeplinks opened based on the intent fired, defaults to `true`.
+ * @param collectDeviceId automatically collects the device id of the client's device
  * @param writeKey The write key for authenticating with RudderStack.
  * @param dataPlaneUrl The URL of the RudderStack data plane to which events are sent.
  * @param logger An instance of `Logger` for debugging (optional; default is `AndroidLogger` with log level set to DEBUG).
@@ -50,6 +51,7 @@ data class Configuration @JvmOverloads constructor(
     val application: Application,
     val trackApplicationLifecycleEvents: Boolean = true,
     val trackDeeplinks: Boolean = true,
+    val collectDeviceId: Boolean = true,
     override val writeKey: String,
     override val dataPlaneUrl: String,
     override val controlPlaneUrl: String = DEFAULT_CONTROL_PLANE_URL,
