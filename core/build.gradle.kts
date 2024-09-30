@@ -62,24 +62,12 @@ dependencies {
     //implementation
     implementation(libs.kotlinx.coroutines.core)
 
-    //compileOnly
-    compileOnly(libs.gson)
-    compileOnly(libs.jackson.core)
-    compileOnly(libs.jackson.module)
-    compileOnly(libs.moshi)
-    compileOnly(libs.moshi.kotlin)
-    compileOnly(libs.moshi.adapters)
-
     // detekt plugins
     detektPlugins(libs.detekt.formatting)
 
     //testImplementation
     testImplementation(libs.kotlinx.coroutines.test)
-    testImplementation(libs.awaitility)
     testImplementation(libs.junit)
-    testImplementation(libs.hamcrest)
-    testImplementation(libs.mockito.core)
-    testImplementation(libs.mockito.kotlin)
     testImplementation(libs.mockk)
     testImplementation(libs.json.assert)
     testImplementation(libs.kotlinx.coroutines.test)

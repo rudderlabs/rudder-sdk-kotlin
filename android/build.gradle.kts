@@ -59,10 +59,6 @@ dependencies {
     //api
     api(project(":core"))
 
-    //compileOnly
-    compileOnly(libs.work)
-    compileOnly(libs.work.multiprocess)
-
     // detekt plugins
     detektPlugins(libs.detekt.formatting)
 
@@ -71,21 +67,12 @@ dependencies {
     implementation(libs.lifecycle.process)
 
     //testImplementation
-    testImplementation(project(":core"))
     testImplementation(libs.kotlinx.coroutines.test)
-    testImplementation(libs.android.x.test)
-    testImplementation(libs.android.x.testrules)
-    testImplementation(libs.android.x.test.ext.junitktx)
-    testImplementation(libs.awaitility)
-    testImplementation(libs.hamcrest)
     testImplementation(libs.junit)
-    testImplementation(libs.mockito.core)
-    testImplementation(libs.mockito.kotlin)
     testImplementation(libs.mockk)
     testImplementation(libs.mockk.agent)
     testImplementation(libs.robolectric)
-    testImplementation(libs.work.test)
-    
+
     //androidTestImplementation
     androidTestImplementation(libs.android.x.test.ext.junitktx)
 }
