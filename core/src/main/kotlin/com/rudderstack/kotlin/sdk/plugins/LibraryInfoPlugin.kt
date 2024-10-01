@@ -5,6 +5,7 @@ import com.rudderstack.kotlin.sdk.internals.logger.TAG
 import com.rudderstack.kotlin.sdk.internals.models.Message
 import com.rudderstack.kotlin.sdk.internals.plugins.Plugin
 import com.rudderstack.kotlin.sdk.internals.utils.mergeWithHigherPriorityTo
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
@@ -17,26 +18,24 @@ internal class LibraryInfoPlugin : Plugin {
     override val pluginType: Plugin.PluginType = Plugin.PluginType.PreProcess
 
     override lateinit var analytics: Analytics
-    private lateinit var name: String
-    private lateinit var version: String
 
-    private val libraryContext by lazy {
-        buildJsonObject {
-            put(
-                LIBRARY_KEY,
-                buildJsonObject {
-                    put(LIBRARY_NAME_KEY, name)
-                    put(LIBRARY_VERSION_KEY, version)
-                }
-            )
-        }
-    }
+    private lateinit var libraryContext: JsonObject
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
         analytics.configuration.storage.getLibraryVersion().let {
-            name = it.getPackageName()
-            version = it.getVersionName()
+            val name = it.getPackageName()
+            val version = it.getVersionName()
+
+            libraryContext = buildJsonObject {
+                put(
+                    LIBRARY_KEY,
+                    buildJsonObject {
+                        put(LIBRARY_NAME_KEY, name)
+                        put(LIBRARY_VERSION_KEY, version)
+                    }
+                )
+            }
         }
     }
 
