@@ -139,8 +139,14 @@ enum class StorageKeys(val key: String) {
      */
     MESSAGE("message"),
 
+    /**
+     * Key for storing or retrieving the whole source config payload.
+     */
     SOURCE_CONFIG_PAYLOAD("source_config_payload"),
 
+    /**
+     * Key for storing if source if enabled to send events
+     */
     SOURCE_IS_ENABLED("source_is_enabled"),
 
     /**
@@ -149,9 +155,19 @@ enum class StorageKeys(val key: String) {
     APP_VERSION("rudder.app_version"),
 
     /**
-     * Key for storing client app build number.
+     *Key for storing client app build.
      */
-    APP_BUILD("rudder.app_build")
+    APP_BUILD("rudder.app_build"),
+
+    /**
+     *Key for storing the anonymous id of the client.
+     */
+    ANONYMOUS_ID("anonymous_id"),
+
+    /**
+     *Key for storing if the anonymous id has been set by the client.
+     */
+    IS_ANONYMOUS_ID_BY_CLIENT("is_anonymous_id_by_client"),
 }
 
 /**

@@ -24,6 +24,7 @@ import kotlinx.coroutines.withContext
 import org.jetbrains.annotations.VisibleForTesting
 import java.io.File
 import java.io.FileNotFoundException
+import java.util.UUID
 
 internal const val UPLOAD_SIG = "#!upload"
 private const val BATCH_ENDPOINT = "/v1/batch"
@@ -31,10 +32,17 @@ private const val BATCH_ENDPOINT = "/v1/batch"
 @OptIn(DelicateCoroutinesApi::class)
 internal class MessageQueue(
     private val analytics: Analytics,
-    private val httpClientFactory: HttpClient = analytics.createPostHttpClientFactory(),
-    private var flushPoliciesFacade: FlushPoliciesFacade =
-        FlushPoliciesFacade(analytics.configuration.flushPolicies),
-    private val jsonSentAtUpdater: JsonSentAtUpdater = JsonSentAtUpdater()
+    private var flushPoliciesFacade: FlushPoliciesFacade = FlushPoliciesFacade(analytics.configuration.flushPolicies),
+    private val jsonSentAtUpdater: JsonSentAtUpdater = JsonSentAtUpdater(),
+    private val httpClientFactory: HttpClient = with(analytics.configuration) {
+        return@with HttpClientImpl.createPostHttpClient(
+            baseUrl = dataPlaneUrl,
+            endPoint = BATCH_ENDPOINT,
+            authHeaderString = writeKey.encodeToBase64(),
+            isGZIPEnabled = gzipEnabled,
+            anonymousIdHeaderString = storage.readString(StorageKeys.ANONYMOUS_ID, defaultVal = UUID.randomUUID().toString())
+        )
+    }
 ) {
     private var running: Boolean
     private var writeChannel: Channel<Message>
@@ -47,12 +55,14 @@ internal class MessageQueue(
         writeChannel = Channel(UNLIMITED)
         uploadChannel = Channel(UNLIMITED)
         registerShutdownHook()
+        updateAnonymousId()
     }
 
-    // TODO("Listen for anonymousID state change through state management library")
-//    private fun updateAnonymousId(newAnonymousId: String) {
-//        httpClientFactory.updateAnonymousIdHeaderString(newAnonymousId.encodeToBase64())
-//    }
+    private fun updateAnonymousId() {
+        analytics.userIdentityStore.subscribe { userOptionsState, _ ->
+            httpClientFactory.updateAnonymousIdHeaderString(userOptionsState.userIdentity.anonymousID.encodeToBase64())
+        }
+    }
 
     fun put(message: Message) {
         writeChannel.trySend(message)
@@ -183,19 +193,4 @@ internal class MessageQueue(
             }
         })
     }
-}
-
-private fun Analytics.createPostHttpClientFactory(): HttpClient {
-    val authHeaderString: String = configuration.writeKey.encodeToBase64()
-    val isGzipEnabled = configuration.gzipEnabled
-    // TODO("Add the way to get the anonymousId")
-    val anonymousIdHeaderString = "<ANONYMOUS_ID_HEADER_STRING>".encodeToBase64()
-
-    return HttpClientImpl.createPostHttpClient(
-        baseUrl = configuration.dataPlaneUrl,
-        endPoint = BATCH_ENDPOINT,
-        authHeaderString = authHeaderString,
-        isGZIPEnabled = isGzipEnabled,
-        anonymousIdHeaderString = anonymousIdHeaderString,
-    )
 }
