@@ -44,9 +44,12 @@ class Analytics(
     }
 
     private fun setup() {
+        // Add context plugins first in the chains
+        add(AppInfoPlugin())
+
+        // Add these plugins at last in chain
         add(AndroidLifecyclePlugin())
         add(DeeplinkPlugin())
-        add(AppInfoPlugin())
     }
 
     override fun getPlatformType(): PlatformType = PlatformType.Mobile
