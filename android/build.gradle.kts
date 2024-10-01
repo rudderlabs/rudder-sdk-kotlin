@@ -85,6 +85,7 @@ dependencies {
     testImplementation(libs.mockk.agent)
     testImplementation(libs.robolectric)
     testImplementation(libs.work.test)
+    testImplementation(libs.json.assert)
     
     //androidTestImplementation
     androidTestImplementation(libs.android.x.test.ext.junitktx)
