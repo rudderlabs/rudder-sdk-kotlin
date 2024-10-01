@@ -20,6 +20,11 @@ private const val APP_NAME_KEY = "name"
 private const val APP_NAMESPACE_KEY = "namespace"
 private const val APP_VERSION_KEY = "version"
 
+/**
+ * Plugin to attach app info to the message context payload
+ *
+ * **NOTE**: This plugin needs to be added early in the plugin chain to ensure that the app info is attached to all messages
+ */
 internal class AppInfoPlugin : Plugin {
 
     override val pluginType: Plugin.PluginType = Plugin.PluginType.PreProcess

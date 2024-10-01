@@ -13,6 +13,9 @@ private const val LIBRARY_KEY = "library"
 private const val LIBRARY_NAME_KEY = "name"
 private const val LIBRARY_VERSION_KEY = "version"
 
+/**
+ * Plugin to attach library info to the message context payload
+ */
 internal class LibraryInfoPlugin : Plugin {
 
     override val pluginType: Plugin.PluginType = Plugin.PluginType.PreProcess
