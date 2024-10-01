@@ -48,7 +48,7 @@ class LocaleInfoPluginTest {
     }
 
     @Test
-    fun `given package info is not found, when exception occurs, then empty context is attached to the message`() {
+    fun `given some context is present, when app info is merged with other context, then it is given higher priority`() {
         val message = provideEvent()
         every { localeInfoPlugin.constructLocaleContext() } returns provideLocaleContextPayload()
 
