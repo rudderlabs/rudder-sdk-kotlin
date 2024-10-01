@@ -21,7 +21,6 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
-import org.mockito.kotlin.any
 
 private const val sourceConfigSuccess = "config/source_config_without_destination.json"
 
@@ -76,7 +75,7 @@ class SourceConfigManagerTest {
     fun `given a response on fetchSourceConfig, when the response is not successful, then source config store should not be subscribed`() =
         runTest {
             coEvery { httpClient.getData() } returns Result.Failure(
-                error = Exception(any<String>()),
+                error = Exception(),
                 status = ErrorStatus.SERVER_ERROR
             )
 
@@ -89,7 +88,7 @@ class SourceConfigManagerTest {
     fun `given a response on fetchSourceConfig, when the response is not successful, then an error should be logged`() =
         runTest {
             coEvery { httpClient.getData() } returns Result.Failure(
-                error = Exception(any<String>()),
+                error = Exception(),
                 status = ErrorStatus.SERVER_ERROR
             )
 
@@ -102,7 +101,7 @@ class SourceConfigManagerTest {
     fun `given a response on fetchSourceConfig, when a exception is thrown, then source config store should not be subscribed`() =
         runTest {
             coEvery { httpClient.getData() } returns Result.Failure(
-                error = Exception(any<String>()),
+                error = Exception(),
                 status = ErrorStatus.SERVER_ERROR
             )
 
@@ -112,4 +111,5 @@ class SourceConfigManagerTest {
             verify { analytics.configuration.logger.error(any(), any()) }
         }
 }
+
 
