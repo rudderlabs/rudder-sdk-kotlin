@@ -32,7 +32,7 @@ private const val EVENT_NAME = "Sample Event"
 class LibraryInfoPluginTest {
 
     @MockK
-    private lateinit var analytics: Analytics
+    private lateinit var mockAnalytics: Analytics
 
     @Before
     fun setup() {
@@ -41,16 +41,16 @@ class LibraryInfoPluginTest {
 
     @Test
     fun `given mobile platform, when library info plugin is executed, then library info is attached to the context`() {
-        every { analytics.configuration.storage.getLibraryVersion() } returns provideLibraryInfo(PlatformType.Mobile)
+        every { mockAnalytics.configuration.storage.getLibraryVersion() } returns provideLibraryVersion(PlatformType.Mobile)
         val message = provideEvent()
         val libraryInfoPlugin = LibraryInfoPlugin()
 
-        libraryInfoPlugin.setup(analytics)
+        libraryInfoPlugin.setup(mockAnalytics)
         libraryInfoPlugin.execute(message)
 
         val actual = message.context
         JSONAssert.assertEquals(
-            provideDefaultContextPayload(PlatformType.Mobile).toString(),
+            provideLibraryContextPayload(PlatformType.Mobile).toString(),
             actual.toString(),
             true
         )
@@ -58,16 +58,16 @@ class LibraryInfoPluginTest {
 
     @Test
     fun `given server platform, when library info plugin is executed, then library info is attached to the context`() {
-        every { analytics.configuration.storage.getLibraryVersion() } returns provideLibraryInfo(PlatformType.Server)
+        every { mockAnalytics.configuration.storage.getLibraryVersion() } returns provideLibraryVersion(PlatformType.Server)
         val message = provideEvent()
         val libraryInfoPlugin = LibraryInfoPlugin()
 
-        libraryInfoPlugin.setup(analytics)
+        libraryInfoPlugin.setup(mockAnalytics)
         libraryInfoPlugin.execute(message)
 
         val actual = message.context
         JSONAssert.assertEquals(
-            provideDefaultContextPayload(PlatformType.Server).toString(),
+            provideLibraryContextPayload(PlatformType.Server).toString(),
             actual.toString(),
             true
         )
@@ -75,11 +75,11 @@ class LibraryInfoPluginTest {
 
     @Test
     fun `given mobile platform, when library info is merged with other context, then library info is given higher priority`() {
-        every { analytics.configuration.storage.getLibraryVersion() } returns provideLibraryInfo(PlatformType.Mobile)
+        every { mockAnalytics.configuration.storage.getLibraryVersion() } returns provideLibraryVersion(PlatformType.Mobile)
         val message = provideEvent()
         val libraryInfoPlugin = LibraryInfoPlugin()
 
-        libraryInfoPlugin.setup(analytics)
+        libraryInfoPlugin.setup(mockAnalytics)
         message.context = buildJsonObject {
             put(LIBRARY_KEY, String.empty())
         }
@@ -87,7 +87,7 @@ class LibraryInfoPluginTest {
 
         val actual = message.context
         JSONAssert.assertEquals(
-            provideDefaultContextPayload(PlatformType.Mobile).toString(),
+            provideLibraryContextPayload(PlatformType.Mobile).toString(),
             actual.toString(),
             true
         )
@@ -99,7 +99,7 @@ private fun provideEvent(): Message = TrackEvent(
     properties = emptyJsonObject,
 )
 
-private fun provideLibraryInfo(platform: PlatformType): LibraryVersion = when (platform) {
+private fun provideLibraryVersion(platform: PlatformType): LibraryVersion = when (platform) {
     PlatformType.Mobile -> object : LibraryVersion {
         override fun getPackageName(): String = ANDROID_LIBRARY_NAME
         override fun getVersionName(): String = ANDROID_LIBRARY_VERSION
@@ -111,7 +111,7 @@ private fun provideLibraryInfo(platform: PlatformType): LibraryVersion = when (p
     }
 }
 
-private fun provideDefaultContextPayload(platform: PlatformType): JsonObject = when (platform) {
+private fun provideLibraryContextPayload(platform: PlatformType): JsonObject = when (platform) {
     PlatformType.Mobile -> {
         buildJsonObject {
             put(LIBRARY_KEY, buildJsonObject {
