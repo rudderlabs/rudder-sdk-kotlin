@@ -3,6 +3,15 @@ package com.rudderstack.android.sdk.utils.network
 import android.content.Context
 import com.rudderstack.kotlin.sdk.internals.logger.Logger
 
+/**
+ * A class that provides information about the network state.
+ * This class uses both a [NetworkCallbackUtils] and a [DefaultNetworkUtils] to get information about the network.
+ *
+ * The [NetworkCallbackUtils] is used to get information about the cellular and wifi connection state.
+ *
+ * The [DefaultNetworkUtils] is used to get information about the carrier and bluetooth connection state
+ * and also as a fallback for the cellular and wifi connection state.
+ */
 internal class NetworkUtils(
     private var networkCallbackUtils: NetworkCallbackUtils? = null,
     private var defaultNetworkUtils: DefaultNetworkUtils = DefaultNetworkUtils(),
