@@ -8,6 +8,7 @@ import android.content.pm.PackageManager
 import android.net.wifi.WifiManager
 import android.provider.Settings
 import android.telephony.TelephonyManager
+import com.rudderstack.android.sdk.utils.hasPermission
 
 private const val DEFAULT_CARRIER = "NA"
 
@@ -34,7 +35,10 @@ internal class DefaultNetworkUtils(
         false
     }
 
-    internal fun isWifiEnabled(): Boolean = wifiManager?.isWifiEnabled ?: false
+    internal fun isWifiEnabled(): Boolean {
+        if (!hasPermission(context, permission.ACCESS_WIFI_STATE)) return false
+        return wifiManager?.isWifiEnabled ?: false
+    }
 
     internal fun isBluetoothEnabled(): Boolean =
         if (context.checkCallingOrSelfPermission(permission.BLUETOOTH) == PackageManager.PERMISSION_GRANTED) {
