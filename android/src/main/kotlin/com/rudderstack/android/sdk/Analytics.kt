@@ -3,6 +3,7 @@ package com.rudderstack.android.sdk
 import com.rudderstack.android.sdk.plugins.AndroidLifecyclePlugin
 import com.rudderstack.android.sdk.plugins.AppInfoPlugin
 import com.rudderstack.android.sdk.plugins.DeeplinkPlugin
+import com.rudderstack.android.sdk.plugins.NetworkInfoPlugin
 import com.rudderstack.kotlin.sdk.Analytics
 import com.rudderstack.kotlin.sdk.internals.platform.Platform
 import com.rudderstack.kotlin.sdk.internals.platform.PlatformType
@@ -46,6 +47,7 @@ class Analytics(
     private fun setup() {
         // Add context plugins first in the chains
         add(AppInfoPlugin())
+        add(NetworkInfoPlugin())
 
         // Add these plugins at last in chain
         add(AndroidLifecyclePlugin())
