@@ -11,6 +11,11 @@ import com.rudderstack.android.sdk.utils.hasPermission
 
 private const val DEFAULT_CARRIER = "NA"
 
+/**
+ * A class that provides information about the carrier, cellular, wifi and bluetooth connection state.
+ *
+ * It acts as a fallback for the cellular and wifi connection state.
+ */
 internal class DefaultNetworkUtils(
     private var telephonyManager: TelephonyManager? = null,
     private var bluetoothManager: BluetoothManager? = null,
