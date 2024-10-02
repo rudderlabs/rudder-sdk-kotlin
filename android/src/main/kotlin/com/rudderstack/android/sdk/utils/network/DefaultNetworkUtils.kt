@@ -4,7 +4,6 @@ import android.Manifest.permission
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.content.Context
-import android.content.pm.PackageManager
 import android.net.wifi.WifiManager
 import android.provider.Settings
 import android.telephony.TelephonyManager
@@ -40,12 +39,11 @@ internal class DefaultNetworkUtils(
         return wifiManager?.isWifiEnabled ?: false
     }
 
-    internal fun isBluetoothEnabled(): Boolean =
-        if (context.checkCallingOrSelfPermission(permission.BLUETOOTH) == PackageManager.PERMISSION_GRANTED) {
-            bluetoothManager?.adapter?.let { bluetoothAdapter ->
-                bluetoothAdapter.isEnabled && bluetoothAdapter.state == BluetoothAdapter.STATE_ON
-            } ?: false
-        } else {
-            false
-        }
+    internal fun isBluetoothEnabled(): Boolean = if (hasPermission(context, permission.BLUETOOTH)) {
+        bluetoothManager?.adapter?.let { bluetoothAdapter ->
+            bluetoothAdapter.isEnabled && bluetoothAdapter.state == BluetoothAdapter.STATE_ON
+        } ?: false
+    } else {
+        false
+    }
 }

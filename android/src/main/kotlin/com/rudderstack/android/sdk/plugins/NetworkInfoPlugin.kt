@@ -1,6 +1,6 @@
 package com.rudderstack.android.sdk.plugins
 
-import android.Manifest
+import android.Manifest.permission
 import android.content.Context
 import com.rudderstack.android.sdk.Configuration
 import com.rudderstack.android.sdk.utils.hasPermission
@@ -56,11 +56,14 @@ internal class NetworkInfoPlugin(
         put(
             NETWORK_KEY,
             buildJsonObject {
-                if (hasPermission(context, Manifest.permission.ACCESS_NETWORK_STATE)) {
+                if (hasPermission(context, permission.ACCESS_NETWORK_STATE)) {
                     put(NETWORK_CARRIER_KEY, networkUtils.getCarrier())
                     put(NETWORK_CELLULAR_KEY, networkUtils.isCellularConnected())
                     put(NETWORK_WIFI_KEY, networkUtils.isWifiEnabled())
-                    put(NETWORK_BLUETOOTH_KEY, networkUtils.isBluetoothEnabled())
+                    // As per our spec, set this value only if the permission is granted
+                    if (hasPermission(context, permission.BLUETOOTH)) {
+                        put(NETWORK_BLUETOOTH_KEY, networkUtils.isBluetoothEnabled())
+                    }
                 }
             }
         )
