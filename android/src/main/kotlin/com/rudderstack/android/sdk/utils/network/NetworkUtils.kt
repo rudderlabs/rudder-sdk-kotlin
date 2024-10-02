@@ -40,8 +40,7 @@ internal class NetworkUtils(
     }
 
     internal fun isWifiEnabled(): Boolean {
-        val isWifiViaCallback = networkCallbackUtils?.isWifiEnabled ?: false
-        return isWifiViaCallback || defaultNetworkUtils.isWifiEnabled()
+        return networkCallbackUtils?.isWifiEnabled ?: defaultNetworkUtils.isWifiEnabled()
     }
 
     internal fun isBluetoothEnabled(): Boolean = defaultNetworkUtils.isBluetoothEnabled()

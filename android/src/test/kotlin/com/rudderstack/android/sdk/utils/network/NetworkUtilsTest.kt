@@ -101,15 +101,14 @@ class NetworkUtilsTest {
     @Test
     fun `given network callback utils returns false, when is wifi enabled is called, then default network utils is used to get wifi status`() {
         val networkUtils = NetworkUtils(mockNetworkCallbackUtils, mockDefaultNetworkUtils)
-        val expectedWifiStatus = true
-        every { mockNetworkCallbackUtils.isWifiEnabled } returns false
-        every { mockDefaultNetworkUtils.isWifiEnabled() } returns expectedWifiStatus
+        val expectedWifiStatus = false
+        every { mockNetworkCallbackUtils.isWifiEnabled } returns expectedWifiStatus
 
         val isWifiEnabled = networkUtils.isWifiEnabled()
 
         assertEquals(expectedWifiStatus, isWifiEnabled)
         verify (exactly = 1) { mockNetworkCallbackUtils.isWifiEnabled }
-        verify (exactly = 1) { mockDefaultNetworkUtils.isWifiEnabled() }
+        verify (exactly = 0) { mockDefaultNetworkUtils.isWifiEnabled() }
     }
 
     @Test
