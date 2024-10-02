@@ -5,6 +5,7 @@ import android.content.Context
 import com.rudderstack.android.sdk.Configuration
 import com.rudderstack.android.sdk.utils.hasPermission
 import com.rudderstack.android.sdk.utils.mergeWithHigherPriorityTo
+import com.rudderstack.android.sdk.utils.network.DefaultNetworkUtils
 import com.rudderstack.android.sdk.utils.network.NetworkUtils
 import com.rudderstack.kotlin.sdk.Analytics
 import com.rudderstack.kotlin.sdk.internals.models.Message
@@ -23,7 +24,12 @@ private const val NETWORK_WIFI_KEY = "wifi"
 /**
  * A plugin that attaches network information to the message payload.
  *
- * It requires the `ACCESS_NETWORK_STATE` permission to access network information.
+ * It requires the following permissions:
+ *   1. The `ACCESS_NETWORK_STATE` permission to access network information.
+ *   2. The `BLUETOOTH` permission to access Bluetooth features.
+ *   3. The `ACCESS_WIFI_STATE` permission to access the Wi-Fi state,
+ *   in the default network util plugin [DefaultNetworkUtils.isWifiEnabled].
+ *
  */
 internal class NetworkInfoPlugin(
     private val networkUtils: NetworkUtils = NetworkUtils(),
