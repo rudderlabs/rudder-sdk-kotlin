@@ -2,8 +2,8 @@ package com.rudderstack.android.sdk.plugins
 
 import android.Manifest
 import android.content.Context
-import android.content.pm.PackageManager
 import com.rudderstack.android.sdk.Configuration
+import com.rudderstack.android.sdk.utils.hasPermission
 import com.rudderstack.android.sdk.utils.mergeWithHigherPriorityTo
 import com.rudderstack.android.sdk.utils.network.NetworkUtils
 import com.rudderstack.kotlin.sdk.Analytics
@@ -56,7 +56,7 @@ internal class NetworkInfoPlugin(
         put(
             NETWORK_KEY,
             buildJsonObject {
-                if (hasPermission(context)) {
+                if (hasPermission(context, Manifest.permission.ACCESS_NETWORK_STATE)) {
                     put(NETWORK_CARRIER_KEY, networkUtils.getCarrier())
                     put(NETWORK_CELLULAR_KEY, networkUtils.isCellularConnected())
                     put(NETWORK_WIFI_KEY, networkUtils.isWifiEnabled())
@@ -65,8 +65,4 @@ internal class NetworkInfoPlugin(
             }
         )
     }
-}
-
-private fun hasPermission(context: Context, permission: String = Manifest.permission.ACCESS_NETWORK_STATE): Boolean {
-    return context.checkCallingOrSelfPermission(permission) == PackageManager.PERMISSION_GRANTED
 }
