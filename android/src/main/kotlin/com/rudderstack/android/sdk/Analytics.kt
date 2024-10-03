@@ -6,6 +6,7 @@ import com.rudderstack.android.sdk.plugins.DeeplinkPlugin
 import com.rudderstack.android.sdk.plugins.LocaleInfoPlugin
 import com.rudderstack.android.sdk.plugins.OSInfoPlugin
 import com.rudderstack.android.sdk.plugins.ScreenInfoPlugin
+import com.rudderstack.android.sdk.plugins.TimezoneInfoPlugin
 import com.rudderstack.kotlin.sdk.Analytics
 import com.rudderstack.kotlin.sdk.internals.platform.Platform
 import com.rudderstack.kotlin.sdk.internals.platform.PlatformType
@@ -52,6 +53,7 @@ class Analytics(
         add(LocaleInfoPlugin())
         add(OSInfoPlugin())
         add(ScreenInfoPlugin())
+        add(TimezoneInfoPlugin())
 
         // Add these plugins at last in chain
         add(AndroidLifecyclePlugin())
