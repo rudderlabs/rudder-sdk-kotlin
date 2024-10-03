@@ -4,6 +4,7 @@ import com.rudderstack.android.sdk.plugins.AndroidLifecyclePlugin
 import com.rudderstack.android.sdk.plugins.AppInfoPlugin
 import com.rudderstack.android.sdk.plugins.DeeplinkPlugin
 import com.rudderstack.android.sdk.plugins.LocaleInfoPlugin
+import com.rudderstack.android.sdk.plugins.OSInfoPlugin
 import com.rudderstack.kotlin.sdk.Analytics
 import com.rudderstack.kotlin.sdk.internals.platform.Platform
 import com.rudderstack.kotlin.sdk.internals.platform.PlatformType
@@ -48,6 +49,7 @@ class Analytics(
         // Add context plugins first in the chains
         add(AppInfoPlugin())
         add(LocaleInfoPlugin())
+        add(OSInfoPlugin())
 
         // Add these plugins at last in chain
         add(AndroidLifecyclePlugin())
