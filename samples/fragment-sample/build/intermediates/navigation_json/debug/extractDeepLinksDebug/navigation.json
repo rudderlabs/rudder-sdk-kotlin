@@ -1,0 +1,66 @@
+[
+  {
+    "name": "nav_graph2",
+    "navigationXmlIds": [
+      "nav_graph3"
+    ],
+    "deepLinks": []
+  },
+  {
+    "name": "nav_graph",
+    "navigationXmlIds": [],
+    "deepLinks": []
+  },
+  {
+    "name": "nav_graph3",
+    "navigationXmlIds": [],
+    "deepLinks": [
+      {
+        "schemes": [
+          "fragment-sample"
+        ],
+        "host": "www.example.com",
+        "port": -1,
+        "path": "/fragmentF",
+        "sourceFilePosition": {
+          "mSourceFile": {
+            "mDescription": "nav_graph3.xml"
+          },
+          "mSourcePosition": {
+            "mStartLine": 17,
+            "mStartColumn": 8,
+            "mStartOffset": 697,
+            "mEndLine": 19,
+            "mEndColumn": 68,
+            "mEndOffset": 814
+          }
+        },
+        "isAutoVerify": false,
+        "action": "android.intent.action.VIEW"
+      },
+      {
+        "schemes": [
+          "fragment-sample"
+        ],
+        "host": "www.example.com",
+        "port": -1,
+        "path": "/",
+        "sourceFilePosition": {
+          "mSourceFile": {
+            "mDescription": "nav_graph3.xml"
+          },
+          "mSourcePosition": {
+            "mStartLine": 21,
+            "mStartColumn": 4,
+            "mStartOffset": 835,
+            "mEndLine": 23,
+            "mEndColumn": 54,
+            "mEndOffset": 935
+          }
+        },
+        "isAutoVerify": false,
+        "action": "android.intent.action.VIEW"
+      }
+    ]
+  }
+]
