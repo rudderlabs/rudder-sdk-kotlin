@@ -62,6 +62,9 @@ dependencies {
     // detekt plugins
     detektPlugins(libs.detekt.formatting)
 
+    // compile only
+    compileOnly(libs.navigation.fragment)
+
     //implementation
     implementation(libs.android.core.ktx)
     implementation(libs.lifecycle.process)
