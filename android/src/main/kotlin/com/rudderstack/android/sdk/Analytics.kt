@@ -1,5 +1,6 @@
 package com.rudderstack.android.sdk
 
+import androidx.navigation.NavController
 import com.rudderstack.android.sdk.plugins.AndroidLifecyclePlugin
 import com.rudderstack.android.sdk.plugins.AppInfoPlugin
 import com.rudderstack.android.sdk.plugins.DeeplinkPlugin
@@ -9,9 +10,13 @@ import com.rudderstack.android.sdk.plugins.NetworkInfoPlugin
 import com.rudderstack.android.sdk.plugins.OSInfoPlugin
 import com.rudderstack.android.sdk.plugins.ScreenInfoPlugin
 import com.rudderstack.android.sdk.plugins.TimezoneInfoPlugin
+import com.rudderstack.android.sdk.state.NavControllerState
+import com.rudderstack.android.sdk.plugins.ScreenRecordingPlugin
 import com.rudderstack.kotlin.sdk.Analytics
 import com.rudderstack.kotlin.sdk.internals.platform.Platform
 import com.rudderstack.kotlin.sdk.internals.platform.PlatformType
+import com.rudderstack.kotlin.sdk.internals.statemanagement.SingleThreadStore
+import com.rudderstack.kotlin.sdk.internals.statemanagement.Store
 
 /**
  * `Analytics` class in the `com.rudderstack.android` package.
@@ -45,8 +50,42 @@ class Analytics(
 ) : Platform, Analytics(
     configuration
 ) {
+
+    private var screenRecordingPlugin: ScreenRecordingPlugin? = null
+
+    private val navControllerStore: Store<NavControllerState, NavControllerState.NavControllerAction> by lazy {
+        SingleThreadStore(
+            initialState = NavControllerState.initialState(),
+            reducer = NavControllerState.NavControllerReducer()
+        )
+    }
+
     init {
         setup()
+    }
+
+    @Synchronized
+    fun trackNavigation(navController: NavController) {
+        if (screenRecordingPlugin == null) {
+            screenRecordingPlugin = ScreenRecordingPlugin(navControllerStore).also {
+                add(it)
+            }
+        }
+
+        navControllerStore.dispatch(
+            action = NavControllerState.AddNavControllerAction(
+                navController = navController
+            )
+        )
+    }
+
+    @Synchronized
+    fun removeNavController(navController: NavController) {
+        navControllerStore.dispatch(
+            action = NavControllerState.RemoveNavControllerAction(
+                navController = navController
+            )
+        )
     }
 
     private fun setup() {

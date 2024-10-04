@@ -1,6 +1,6 @@
 package com.rudderstack.kotlin.sdk.internals.statemanagement
 
-internal class SingleThreadStore<S : State, A : Action>(
+class SingleThreadStore<S : State, A : Action>(
     initialState: S,
     reducer: Reducer<S, A>,
     private val middleware: List<Middleware<S, A>> = emptyList()
