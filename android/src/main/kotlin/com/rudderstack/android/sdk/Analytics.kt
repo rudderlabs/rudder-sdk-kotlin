@@ -2,7 +2,13 @@ package com.rudderstack.android.sdk
 
 import com.rudderstack.android.plugins.DeviceInfoPlugin
 import com.rudderstack.android.sdk.plugins.AndroidLifecyclePlugin
+import com.rudderstack.android.sdk.plugins.AppInfoPlugin
 import com.rudderstack.android.sdk.plugins.DeeplinkPlugin
+import com.rudderstack.android.sdk.plugins.NetworkInfoPlugin
+import com.rudderstack.android.sdk.plugins.LocaleInfoPlugin
+import com.rudderstack.android.sdk.plugins.OSInfoPlugin
+import com.rudderstack.android.sdk.plugins.ScreenInfoPlugin
+import com.rudderstack.android.sdk.plugins.TimezoneInfoPlugin
 import com.rudderstack.kotlin.sdk.Analytics
 import com.rudderstack.kotlin.sdk.internals.platform.Platform
 import com.rudderstack.kotlin.sdk.internals.platform.PlatformType
@@ -45,6 +51,15 @@ class Analytics(
 
     private fun setup() {
         add(DeviceInfoPlugin())
+        add(AppInfoPlugin())
+        add(NetworkInfoPlugin())
+        add(LocaleInfoPlugin())
+        add(OSInfoPlugin())
+        add(ScreenInfoPlugin())
+        add(TimezoneInfoPlugin())
+
+        // Add these plugins at last in chain
+
         add(AndroidLifecyclePlugin())
         add(DeeplinkPlugin())
     }

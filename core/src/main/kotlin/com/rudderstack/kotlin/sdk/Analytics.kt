@@ -16,6 +16,7 @@ import com.rudderstack.kotlin.sdk.internals.statemanagement.SingleThreadStore
 import com.rudderstack.kotlin.sdk.internals.statemanagement.Store
 import com.rudderstack.kotlin.sdk.internals.utils.addNameAndCategoryToProperties
 import com.rudderstack.kotlin.sdk.internals.utils.empty
+import com.rudderstack.kotlin.sdk.plugins.LibraryInfoPlugin
 import com.rudderstack.kotlin.sdk.plugins.PocPlugin
 import com.rudderstack.kotlin.sdk.plugins.RudderStackDataplanePlugin
 import com.rudderstack.kotlin.sdk.state.SourceConfigState
@@ -170,6 +171,7 @@ open class Analytics protected constructor(
      * and `RudderStackDataplanePlugin`. This function is called during initialization.
      */
     private fun setup() {
+        add(LibraryInfoPlugin())
         add(PocPlugin())
         add(RudderStackDataplanePlugin())
 
