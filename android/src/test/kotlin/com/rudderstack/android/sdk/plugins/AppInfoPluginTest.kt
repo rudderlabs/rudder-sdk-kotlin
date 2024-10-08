@@ -66,7 +66,7 @@ class AppInfoPluginTest {
     }
 
     @Test
-    fun `given some context is present, when app info is merged with other context, then it is given higher priority`() {
+    fun `given app context is present, when app info is merged with other context, then app info is given higher priority`() {
         val message = provideEvent()
         every { appInfoPlugin.constructAppContext(any(), any()) } returns provideAppContextPayload()
 

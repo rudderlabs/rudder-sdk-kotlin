@@ -74,7 +74,7 @@ class LibraryInfoPluginTest {
     }
 
     @Test
-    fun `given some context is present, when library info is merged with other context, then it is given higher priority`() {
+    fun `given mobile platform, when library info is merged with other context, then library info is given higher priority`() {
         every { mockAnalytics.configuration.storage.getLibraryVersion() } returns provideLibraryVersion(PlatformType.Mobile)
         val message = provideEvent()
         val libraryInfoPlugin = LibraryInfoPlugin()
