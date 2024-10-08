@@ -10,8 +10,8 @@ import com.rudderstack.kotlin.sdk.internals.plugins.Plugin
 import com.rudderstack.kotlin.sdk.internals.statemanagement.Store
 import com.rudderstack.android.sdk.Configuration as AndroidConfiguration
 
-private const val FRAGMENT_NAVIGATOR_NAME = "fragment"
-private const val COMPOSE_NAVIGATOR_NAME = "composable"
+internal const val FRAGMENT_NAVIGATOR_NAME = "fragment"
+internal const val COMPOSE_NAVIGATOR_NAME = "composable"
 
 internal class ScreenRecordingPlugin(
     private val navControllerStore: Store<NavControllerState, NavControllerState.NavControllerAction>
@@ -46,8 +46,7 @@ internal class ScreenRecordingPlugin(
     }
 
     private fun setupAddedNavControllers(updatedNavControllers: NavControllers) {
-        val addedNavControllers =
-            updatedNavControllers.minus(currentNavControllers)
+        val addedNavControllers = updatedNavControllers.minus(currentNavControllers)
         addedNavControllers.forEach { navController ->
             navController.get()?.addOnDestinationChangedListener(this)
         }
