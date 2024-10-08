@@ -20,6 +20,7 @@ import com.rudderstack.kotlin.sdk.plugins.LibraryInfoPlugin
 import com.rudderstack.kotlin.sdk.plugins.PocPlugin
 import com.rudderstack.kotlin.sdk.plugins.RudderStackDataplanePlugin
 import com.rudderstack.kotlin.sdk.state.SourceConfigState
+import com.rudderstack.kotlin.sdk.state.UserIdentityState
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -49,12 +50,15 @@ open class Analytics protected constructor(
     coroutineConfig: CoroutineConfiguration,
 ) : CoroutineConfiguration by coroutineConfig, Platform {
 
-    // Initial setup of the plugin chain, associating it with this Analytics instance
     private val pluginChain: PluginChain = PluginChain().also { it.analytics = this }
 
-    private var store: Store<SourceConfigState, SourceConfigState.UpdateAction> = SingleThreadStore(
+    private var configurationStore: Store<SourceConfigState, SourceConfigState.UpdateAction> = SingleThreadStore(
         initialState = SourceConfigState.initialState(),
         reducer = SourceConfigState.SaveSourceConfigValuesReducer(configuration.storage, analyticsScope),
+    )
+    internal var userIdentityStore: Store<UserIdentityState, UserIdentityState.SetIdentityAction> = SingleThreadStore(
+        initialState = UserIdentityState.currentState(configuration.storage),
+        reducer = UserIdentityState.GenerateUserAnonymousID(analyticsScope),
     )
 
     // TODO("Add a way to stop this channel")
@@ -63,6 +67,7 @@ open class Analytics protected constructor(
     init {
         processMessages()
         setup()
+        initializeUserIdentity()
     }
 
     /**
@@ -171,7 +176,7 @@ open class Analytics protected constructor(
         add(RudderStackDataplanePlugin())
 
         analyticsScope.launch(analyticsDispatcher) {
-            SourceConfigManager(analytics = this@Analytics, store = store).fetchSourceConfig()
+            SourceConfigManager(analytics = this@Analytics, store = configurationStore).fetchSourceConfig()
         }
     }
 
@@ -185,6 +190,26 @@ open class Analytics protected constructor(
     }
 
     /**
+     * Sets or updates the anonymous ID for the current user identity.
+     *
+     * The `setAnonymousId` method is used to update the `anonymousID` value within the `UserIdentityStore`.
+     * This ID is typically generated automatically to track users who have not yet been identified
+     * (e.g., before they log in or sign up). This function dispatches an action to modify the `UserIdentityState`,
+     * ensuring that the new ID is correctly stored and managed.
+     *
+     * @param anonymousId The new anonymous ID to be set for the current user. This ID should be a unique,
+     * non-null string used to represent the user anonymously.
+     */
+    fun setAnonymousId(anonymousId: String) {
+        userIdentityStore.dispatch(
+            action = UserIdentityState.SetIdentityAction(
+                storage = configuration.storage,
+                anonymousID = anonymousId
+            )
+        )
+    }
+
+    /**
      * Processes each message sequentially through the plugin chain and applies base data to the message.
      * All operations are executed within the `analyticsDispatcher` coroutine context.
      *
@@ -194,11 +219,14 @@ open class Analytics protected constructor(
     private fun processMessages() {
         analyticsScope.launch(analyticsDispatcher) {
             for (message in processMessageChannel) {
-                // TODO: Pass actual anonymous ID, or the way to fetch such values
-                message.updateData("<anonymous-id>", getPlatformType())
+                message.subscribeToUserIdentityState(userIdentityStore, getPlatformType())
                 pluginChain.process(message)
             }
         }
+    }
+
+    private fun initializeUserIdentity() {
+        userIdentityStore.dispatch(action = UserIdentityState.SetIdentityAction(configuration.storage))
     }
 
     override fun getPlatformType(): PlatformType = PlatformType.Server
