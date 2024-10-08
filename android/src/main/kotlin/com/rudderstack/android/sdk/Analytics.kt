@@ -65,7 +65,7 @@ class Analytics(
     }
 
     @Synchronized
-    fun trackNavigation(navController: NavController) {
+    fun addNavigationDestinationTracking(navController: NavController) {
         if (screenRecordingPlugin == null) {
             screenRecordingPlugin = ScreenRecordingPlugin(navControllerStore).also {
                 add(it)
@@ -80,7 +80,7 @@ class Analytics(
     }
 
     @Synchronized
-    fun removeNavController(navController: NavController) {
+    fun removeNavigationDestinationTracking(navController: NavController) {
         navControllerStore.dispatch(
             action = NavControllerState.RemoveNavControllerAction(
                 navController = navController
