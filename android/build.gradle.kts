@@ -75,4 +75,5 @@ dependencies {
     testImplementation(libs.mockk)
     testImplementation(libs.mockk.agent)
     testImplementation(libs.json.assert)
+    testImplementation(libs.navigation.runtime)
 }
