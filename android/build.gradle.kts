@@ -71,4 +71,5 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
     testImplementation(libs.mockk.agent)
+    testImplementation(libs.json.assert)
 }

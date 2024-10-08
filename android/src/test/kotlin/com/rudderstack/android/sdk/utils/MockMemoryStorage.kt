@@ -73,6 +73,8 @@ internal class MockMemoryStorage : Storage {
 
     override fun getLibraryVersion(): LibraryVersion {
         return object : LibraryVersion {
+            override fun getPackageName(): String = "com.rudderstack.android.sdk"
+
             override fun getVersionName() = "1.0.0"
         }
     }

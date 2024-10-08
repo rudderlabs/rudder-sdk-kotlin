@@ -178,6 +178,13 @@ enum class StorageKeys(val key: String) {
 interface LibraryVersion {
 
     /**
+     * Returns the package name of the library.
+     *
+     * @return The package name as a [String].
+     */
+    fun getPackageName(): String
+
+    /**
      * Returns the version name of the library.
      *
      * @return The version name as a [String].
