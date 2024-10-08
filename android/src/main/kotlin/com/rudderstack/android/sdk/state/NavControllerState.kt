@@ -44,11 +44,11 @@ internal data class NavControllerState(
                     )
                 }
                 is RemoveNavControllerAction -> {
-                    val controllerToBeDeleted = currentState.navControllers.filter {
+                    val controllerToBeRemoved = currentState.navControllers.filter {
                         it.get() == action.navController || it.get() == null
                     }.toSet()
 
-                    val updatedNavControllers = currentState.navControllers.minus(controllerToBeDeleted)
+                    val updatedNavControllers = currentState.navControllers.minus(controllerToBeRemoved)
 
                     currentState.copy(
                         navControllers = updatedNavControllers
