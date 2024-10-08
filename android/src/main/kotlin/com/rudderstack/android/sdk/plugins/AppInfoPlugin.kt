@@ -35,13 +35,13 @@ internal class AppInfoPlugin : Plugin {
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
-        (analytics.configuration as Configuration).let {
+        (analytics.configuration as Configuration).let { config ->
             appContext = try {
-                val packageManager = it.application.packageManager
-                val packageInfo = packageManager.getPackageInfo(it.application.packageName, 0)
+                val packageManager = config.application.packageManager
+                val packageInfo = packageManager.getPackageInfo(config.application.packageName, 0)
                 constructAppContext(packageInfo, packageManager)
             } catch (e: PackageManager.NameNotFoundException) {
-                analytics.configuration.logger.error("Failed to get package info", e.toString())
+                config.logger.error("Failed to get package info", e.toString())
                 emptyJsonObject
             }
         }
