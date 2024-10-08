@@ -1,6 +1,7 @@
 package com.rudderstack.android.sdk
 
 import androidx.navigation.NavController
+import androidx.navigation.NavController.OnDestinationChangedListener
 import com.rudderstack.android.sdk.plugins.AndroidLifecyclePlugin
 import com.rudderstack.android.sdk.plugins.AppInfoPlugin
 import com.rudderstack.android.sdk.plugins.DeeplinkPlugin
@@ -64,6 +65,62 @@ class Analytics(
         setup()
     }
 
+    /**
+     * Tracks the destination changes for the given [NavController] and automatically sends screen events for it.
+     *
+     * ## Description
+     * The [NavController] class is used to navigate in an app. Whenever a destination change occurs, it can be tracked
+     * using [OnDestinationChangedListener]. This API uses this listener to track destination changes and sends the screen
+     * events.
+     *
+     * ## Example
+     * example code for Compose navigation:
+     * ```
+     * @Composable
+     * fun SunflowerApp() {
+     *     val navController = rememberNavController()
+     *     LaunchedEffect("first_launch") {
+     *         analytics.addNavigationDestinationTracking(navController)
+     *     }
+     *     DisposableEffect(Unit) {
+     *         onDispose {
+     *             analytics.removeNavigationDestinationTracking(navController)
+     *         }
+     *     }
+     *     SunFlowerNavHost(
+     *         navController = navController
+     *     )
+     * }
+     * ```
+     * Example code for Fragment navigation:
+     * ```
+     * class MainActivity : AppCompatActivity() {
+     *
+     *    override fun onCreate(savedInstanceState: Bundle?) {
+     *         super.onCreate(savedInstanceState)
+     *
+     *         val binding = ActivityMainBinding.inflate(layoutInflater)
+     *         setContentView(binding.root)
+     *
+     *         // Get the navigation host fragment from this Activity
+     *         val navHostFragment = supportFragmentManager
+     *             .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+     *         // Instantiate the navController using the NavHostFragment
+     *         navController = navHostFragment.navController
+     *         analytics.addNavigationDestinationTracking(navController)
+     *     }
+     *
+     *     override fun onDestroy() {
+     *         super.onDestroy()
+     *         analytics.removeNavigationDestinationTracking(navController)
+     *     }
+     * }
+     * ```
+     * In case multiple [NavController]s are used, call this method for each of them.
+     * To stop tracking destination changes for a [NavController], call [removeNavigationDestinationTracking]
+     *
+     * @param navController [NavController] to be tracked
+     */
     @Synchronized
     fun addNavigationDestinationTracking(navController: NavController) {
         if (screenRecordingPlugin == null) {
@@ -79,6 +136,16 @@ class Analytics(
         )
     }
 
+    /**
+     * Removes the `navController` from tracking automatic screen events for destination changes.
+     *
+     * ## Description
+     * This should be called in `onDestroy` of the `Activity` which hosts `NavHostFragment` in case of `fragments` or in a `DisposableEffect`
+     * of parent composable of `NavHost` in case of composables.
+     *
+     * @param navController [NavController] to be removed.
+     *
+     */
     @Synchronized
     fun removeNavigationDestinationTracking(navController: NavController) {
         navControllerStore.dispatch(
