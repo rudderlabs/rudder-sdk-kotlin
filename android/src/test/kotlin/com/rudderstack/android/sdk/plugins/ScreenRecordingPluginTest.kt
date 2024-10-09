@@ -58,7 +58,6 @@ class ScreenRecordingPluginTest {
 
     @Test
     fun `when setup called, then it should subscribe to navControllerStore and update navControllers`() = runTest {
-
         val initialState = NavControllerState.initialState()
         val mockDispatch: (NavControllerState.NavControllerAction) -> Unit = mockk(relaxed = true)
 
@@ -76,7 +75,6 @@ class ScreenRecordingPluginTest {
 
     @Test
     fun `when teardown called, then it should clear all navControllers`() = runTest {
-
         val navController1: NavController = mockk(relaxed = true)
         val navController2: NavController = mockk(relaxed = true)
 
@@ -101,7 +99,6 @@ class ScreenRecordingPluginTest {
 
     @Test
     fun `when navControllers are added, then addOnDestinationChangedListener for navControllers gets called`() = runTest {
-
         val navController1: NavController = mockk(relaxed = true)
         val navController2: NavController = mockk(relaxed = true)
 
@@ -128,9 +125,7 @@ class ScreenRecordingPluginTest {
     }
 
     @Test
-    fun `when navControllers are removed, then removeOnDestinationChangedListener for navControllers gets called`() =
-        runTest {
-
+    fun `when navControllers are removed, then removeOnDestinationChangedListener for navControllers gets called`() = runTest {
             val navController1: NavController = mockk(relaxed = true)
             val navController2: NavController = mockk(relaxed = true)
             val weakNavController1 = WeakReference(navController1)
