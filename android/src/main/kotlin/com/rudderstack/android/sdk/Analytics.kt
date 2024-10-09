@@ -3,6 +3,7 @@ package com.rudderstack.android.sdk
 import android.app.Activity
 import androidx.navigation.NavController
 import androidx.navigation.NavController.OnDestinationChangedListener
+import com.rudderstack.android.sdk.plugins.ActivityTrackingPlugin
 import com.rudderstack.android.sdk.plugins.AndroidLifecyclePlugin
 import com.rudderstack.android.sdk.plugins.AppInfoPlugin
 import com.rudderstack.android.sdk.plugins.DeeplinkPlugin
@@ -149,6 +150,7 @@ class Analytics(
         // Add these plugins at last in chain
         add(AndroidLifecyclePlugin())
         add(DeeplinkPlugin())
+        add(ActivityTrackingPlugin())
     }
 
     override fun getPlatformType(): PlatformType = PlatformType.Mobile
