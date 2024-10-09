@@ -18,6 +18,7 @@ import com.rudderstack.kotlin.sdk.internals.platform.Platform
 import com.rudderstack.kotlin.sdk.internals.platform.PlatformType
 import com.rudderstack.kotlin.sdk.internals.statemanagement.SingleThreadStore
 import com.rudderstack.kotlin.sdk.internals.statemanagement.Store
+import org.jetbrains.annotations.ApiStatus.Experimental
 
 /**
  * `Analytics` class in the `com.rudderstack.android` package.
@@ -122,6 +123,7 @@ class Analytics(
      * @param navController [NavController] to be tracked
      */
     @Synchronized
+    @Experimental
     fun addNavigationDestinationTracking(navController: NavController) {
         if (screenRecordingPlugin == null) {
             screenRecordingPlugin = ScreenRecordingPlugin(navControllerStore).also {
@@ -147,6 +149,7 @@ class Analytics(
      *
      */
     @Synchronized
+    @Experimental
     fun removeNavigationDestinationTracking(navController: NavController) {
         navControllerStore.dispatch(
             action = NavControllerState.RemoveNavControllerAction(
