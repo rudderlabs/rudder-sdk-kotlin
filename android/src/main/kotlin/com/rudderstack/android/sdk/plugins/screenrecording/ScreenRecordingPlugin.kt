@@ -1,6 +1,7 @@
 package com.rudderstack.android.sdk.plugins.screenrecording
 
 import android.os.Bundle
+import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.LifecycleOwner
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination
@@ -22,8 +23,11 @@ internal class ScreenRecordingPlugin(
 
     override lateinit var analytics: Analytics
 
-    private val currentNavContexts: MutableSet<NavContext> = mutableSetOf()
-    private val activityObservers: MutableSet<NavControllerActivityObserver> = mutableSetOf()
+    @VisibleForTesting
+    internal val currentNavContexts: MutableSet<NavContext> = mutableSetOf()
+
+    @VisibleForTesting
+    internal val activityObservers: MutableSet<NavControllerActivityObserver> = mutableSetOf()
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
