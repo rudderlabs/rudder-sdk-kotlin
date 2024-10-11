@@ -15,6 +15,7 @@ import com.rudderstack.android.sdk.Configuration as AndroidConfiguration
 internal const val FRAGMENT_NAVIGATOR_NAME = "fragment"
 internal const val COMPOSE_NAVIGATOR_NAME = "composable"
 
+// plugin for automatically tracking navControllers
 internal class ScreenRecordingPlugin(
     internal val navContextStore: Store<NavContextState, NavContextState.NavContextAction>
 ) : Plugin, NavController.OnDestinationChangedListener {
