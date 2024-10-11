@@ -1,5 +1,6 @@
 package com.rudderstack.android.sdk
 
+import android.app.Activity
 import androidx.navigation.NavController
 import androidx.navigation.NavController.OnDestinationChangedListener
 import com.rudderstack.android.sdk.plugins.AndroidLifecyclePlugin
@@ -10,9 +11,10 @@ import com.rudderstack.android.sdk.plugins.LocaleInfoPlugin
 import com.rudderstack.android.sdk.plugins.NetworkInfoPlugin
 import com.rudderstack.android.sdk.plugins.OSInfoPlugin
 import com.rudderstack.android.sdk.plugins.ScreenInfoPlugin
-import com.rudderstack.android.sdk.plugins.ScreenRecordingPlugin
 import com.rudderstack.android.sdk.plugins.TimezoneInfoPlugin
-import com.rudderstack.android.sdk.state.NavControllerState
+import com.rudderstack.android.sdk.plugins.screenrecording.ScreenRecordingPlugin
+import com.rudderstack.android.sdk.state.NavContext
+import com.rudderstack.android.sdk.state.NavContextState
 import com.rudderstack.kotlin.sdk.Analytics
 import com.rudderstack.kotlin.sdk.internals.platform.Platform
 import com.rudderstack.kotlin.sdk.internals.platform.PlatformType
@@ -55,10 +57,10 @@ class Analytics(
 
     private var screenRecordingPlugin: ScreenRecordingPlugin? = null
 
-    private val navControllerStore: Store<NavControllerState, NavControllerState.NavControllerAction> by lazy {
+    private val navContextStore: Store<NavContextState, NavContextState.NavContextAction> by lazy {
         SingleThreadStore(
-            initialState = NavControllerState.initialState(),
-            reducer = NavControllerState.NavControllerReducer()
+            initialState = NavContextState.initialState(),
+            reducer = NavContextState.NavContextReducer()
         )
     }
 
@@ -124,16 +126,19 @@ class Analytics(
      */
     @Synchronized
     @Experimental
-    fun addNavigationDestinationTracking(navController: NavController) {
+    fun addNavigationDestinationTracking(navController: NavController, activity: Activity) {
         if (screenRecordingPlugin == null) {
-            screenRecordingPlugin = ScreenRecordingPlugin(navControllerStore).also {
+            screenRecordingPlugin = ScreenRecordingPlugin(navContextStore).also {
                 add(it)
             }
         }
 
-        navControllerStore.dispatch(
-            action = NavControllerState.AddNavControllerAction(
-                navController = navController
+        navContextStore.dispatch(
+            action = NavContextState.AddNavContextAction(
+                navContext = NavContext(
+                    navController = navController,
+                    callingActivity = activity
+                )
             )
         )
     }
@@ -151,8 +156,8 @@ class Analytics(
     @Synchronized
     @Experimental
     fun removeNavigationDestinationTracking(navController: NavController) {
-        navControllerStore.dispatch(
-            action = NavControllerState.RemoveNavControllerAction(
+        navContextStore.dispatch(
+            action = NavContextState.RemoveNavContextAction(
                 navController = navController
             )
         )

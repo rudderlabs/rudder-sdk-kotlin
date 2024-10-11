@@ -1,9 +1,9 @@
 package com.rudderstack.android.sdk.state
 
 import androidx.navigation.NavController
-import com.rudderstack.android.sdk.state.NavControllerState.AddNavControllerAction
-import com.rudderstack.android.sdk.state.NavControllerState.RemoveNavControllerAction
-import com.rudderstack.android.sdk.state.NavControllerState.NavControllerReducer
+import com.rudderstack.android.sdk.state.NavContextState.AddNavContextAction
+import com.rudderstack.android.sdk.state.NavContextState.RemoveNavContextAction
+import com.rudderstack.android.sdk.state.NavContextState.NavContextReducer
 import io.mockk.MockKAnnotations
 import io.mockk.mockk
 import io.mockk.unmockkAll
@@ -14,14 +14,14 @@ import org.junit.Before
 import org.junit.Test
 import java.lang.ref.WeakReference
 
-class NavControllerStateTest {
+class NavContextStateTest {
 
-    private lateinit var reducer: NavControllerReducer
+    private lateinit var reducer: NavContextReducer
 
     @Before
     fun setUp() {
         MockKAnnotations.init(this)
-        reducer = NavControllerReducer()
+        reducer = NavContextReducer()
     }
 
     @After
@@ -31,7 +31,7 @@ class NavControllerStateTest {
 
     @Test
     fun `when initialState called, then it should return an empty NavControllerState`() {
-        val initialState = NavControllerState.initialState()
+        val initialState = NavContextState.initialState()
 
         // Assert that initial state is empty
         assertTrue(initialState.navControllers.isEmpty())
@@ -42,9 +42,9 @@ class NavControllerStateTest {
         val navController: NavController = mockk()
 
         // Initial state with an empty set of NavControllers
-        val initialState = NavControllerState.initialState()
+        val initialState = NavContextState.initialState()
 
-        val action = AddNavControllerAction(navController)
+        val action = AddNavContextAction(navController)
 
         val newState = reducer.invoke(initialState, action)
 
@@ -61,11 +61,11 @@ class NavControllerStateTest {
         val weakNavController = WeakReference<NavController>(null)
 
         // Initial state with a garbage collected NavController
-        val initialState = NavControllerState(
+        val initialState = NavContextState(
             navControllers = setOf(weakNavController)
         )
 
-        val action = AddNavControllerAction(navController)
+        val action = AddNavContextAction(navController)
 
         val newState = reducer.invoke(initialState, action)
 
@@ -80,14 +80,14 @@ class NavControllerStateTest {
         val navController2: NavController = mockk()
 
         // Initial state with two NavControllers
-        val initialState = NavControllerState(
+        val initialState = NavContextState(
             navControllers = setOf(
                 WeakReference(navController1),
                 WeakReference(navController2)
             )
         )
 
-        val action = RemoveNavControllerAction(navController1)
+        val action = RemoveNavContextAction(navController1)
 
         val newState = reducer.invoke(initialState, action)
 
@@ -103,14 +103,14 @@ class NavControllerStateTest {
         // Simulate a weak reference to a garbage collected NavController
         val weakNavController = WeakReference<NavController>(null)
 
-        val initialState = NavControllerState(
+        val initialState = NavContextState(
             navControllers = setOf(
                 weakNavController,
                 WeakReference(navController)
             )
         )
 
-        val action = RemoveNavControllerAction(navController)
+        val action = RemoveNavContextAction(navController)
 
         val newState = reducer.invoke(initialState, action)
 
