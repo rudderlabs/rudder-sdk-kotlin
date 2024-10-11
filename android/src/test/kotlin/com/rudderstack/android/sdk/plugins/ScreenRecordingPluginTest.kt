@@ -3,7 +3,10 @@ package com.rudderstack.android.sdk.plugins
 import android.os.Bundle
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination
-import com.rudderstack.android.sdk.state.NavControllerState
+import com.rudderstack.android.sdk.plugins.screenrecording.COMPOSE_NAVIGATOR_NAME
+import com.rudderstack.android.sdk.plugins.screenrecording.FRAGMENT_NAVIGATOR_NAME
+import com.rudderstack.android.sdk.plugins.screenrecording.ScreenRecordingPlugin
+import com.rudderstack.android.sdk.state.NavContextState
 import com.rudderstack.android.sdk.utils.mockAnalytics
 import com.rudderstack.kotlin.sdk.internals.statemanagement.Store
 import io.mockk.MockKAnnotations
@@ -36,7 +39,7 @@ class ScreenRecordingPluginTest {
     private val mockAnalytics = mockAnalytics(testScope, testDispatcher)
 
     @MockK
-    private lateinit var mockNavControllerStore: Store<NavControllerState, NavControllerState.NavControllerAction>
+    private lateinit var mockNavControllerStore: Store<NavContextState, NavContextState.NavContextAction>
 
     @Before
     fun setUp() {
@@ -58,11 +61,11 @@ class ScreenRecordingPluginTest {
 
     @Test
     fun `when setup called, then it should subscribe to navControllerStore and update navControllers`() = runTest {
-        val initialState = NavControllerState.initialState()
-        val mockDispatch: (NavControllerState.NavControllerAction) -> Unit = mockk(relaxed = true)
+        val initialState = NavContextState.initialState()
+        val mockDispatch: (NavContextState.NavContextAction) -> Unit = mockk(relaxed = true)
 
         every { mockNavControllerStore.subscribe(any()) } answers {
-            firstArg<(NavControllerState, (NavControllerState.NavControllerAction) -> Unit) -> Unit>().invoke(
+            firstArg<(NavContextState, (NavContextState.NavContextAction) -> Unit) -> Unit>().invoke(
                 initialState,
                 mockDispatch
             )
@@ -78,7 +81,7 @@ class ScreenRecordingPluginTest {
         val navController1: NavController = mockk(relaxed = true)
         val navController2: NavController = mockk(relaxed = true)
 
-        val initialState = NavControllerState(
+        val initialState = NavContextState(
             navControllers = setOf(
                 WeakReference(navController1),
                 WeakReference(navController2)
@@ -86,7 +89,7 @@ class ScreenRecordingPluginTest {
         )
 
         every { mockNavControllerStore.subscribe(any()) } answers {
-            val subscription = firstArg<(NavControllerState, (NavControllerState.NavControllerAction) -> Unit) -> Unit>()
+            val subscription = firstArg<(NavContextState, (NavContextState.NavContextAction) -> Unit) -> Unit>()
             subscription.invoke(initialState, mockk())
         }
 
@@ -102,8 +105,8 @@ class ScreenRecordingPluginTest {
         val navController1: NavController = mockk(relaxed = true)
         val navController2: NavController = mockk(relaxed = true)
 
-        val initialState = NavControllerState.initialState()
-        val updatedState = NavControllerState(
+        val initialState = NavContextState.initialState()
+        val updatedState = NavContextState(
             navControllers = setOf(
                 WeakReference(navController1),
                 WeakReference(navController2)
@@ -111,7 +114,7 @@ class ScreenRecordingPluginTest {
         )
 
         every { mockNavControllerStore.subscribe(any()) } answers {
-            val subscription = firstArg<(NavControllerState, (NavControllerState.NavControllerAction) -> Unit) -> Unit>()
+            val subscription = firstArg<(NavContextState, (NavContextState.NavContextAction) -> Unit) -> Unit>()
             // Simulate first subscribe with initial state (empty set), then updated state with navControllers
             subscription.invoke(initialState, mockk())
             subscription.invoke(updatedState, mockk())
@@ -131,18 +134,18 @@ class ScreenRecordingPluginTest {
             val weakNavController1 = WeakReference(navController1)
             val weakNavController2 = WeakReference(navController2)
 
-            val initialState = NavControllerState(
+            val initialState = NavContextState(
                 navControllers = setOf(
                     weakNavController1,
                     weakNavController2
                 )
             )
-            val updatedState = NavControllerState(
+            val updatedState = NavContextState(
                 navControllers = setOf(weakNavController1) // navController2 removed
             )
 
             every { mockNavControllerStore.subscribe(any()) } answers {
-                val subscription = firstArg<(NavControllerState, (NavControllerState.NavControllerAction) -> Unit) -> Unit>()
+                val subscription = firstArg<(NavContextState, (NavContextState.NavContextAction) -> Unit) -> Unit>()
                 // Simulate state update where navController2 is removed
                 subscription.invoke(initialState, mockk())
                 subscription.invoke(updatedState, mockk())
