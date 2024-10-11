@@ -1,13 +1,16 @@
 package com.rudderstack.android.sdk.plugins
 
 import android.os.Bundle
+import androidx.lifecycle.LifecycleOwner
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination
 import com.rudderstack.android.sdk.plugins.screenrecording.COMPOSE_NAVIGATOR_NAME
 import com.rudderstack.android.sdk.plugins.screenrecording.FRAGMENT_NAVIGATOR_NAME
 import com.rudderstack.android.sdk.plugins.screenrecording.ScreenRecordingPlugin
+import com.rudderstack.android.sdk.state.NavContext
 import com.rudderstack.android.sdk.state.NavContextState
 import com.rudderstack.android.sdk.utils.mockAnalytics
+import com.rudderstack.android.sdk.utils.mockNavContext
 import com.rudderstack.kotlin.sdk.internals.statemanagement.Store
 import io.mockk.MockKAnnotations
 import io.mockk.every
@@ -15,6 +18,8 @@ import io.mockk.impl.annotations.MockK
 import io.mockk.mockk
 import io.mockk.unmockkAll
 import io.mockk.verify
+import junit.framework.TestCase.assertEquals
+import junit.framework.TestCase.assertTrue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -39,14 +44,14 @@ class ScreenRecordingPluginTest {
     private val mockAnalytics = mockAnalytics(testScope, testDispatcher)
 
     @MockK
-    private lateinit var mockNavControllerStore: Store<NavContextState, NavContextState.NavContextAction>
+    private lateinit var mockNavContextStore: Store<NavContextState, NavContextState.NavContextAction>
 
     @Before
     fun setUp() {
         MockKAnnotations.init(this, relaxed = true)
         Dispatchers.setMain(testDispatcher)
 
-        plugin = ScreenRecordingPlugin(mockNavControllerStore)
+        plugin = ScreenRecordingPlugin(mockNavContextStore)
         plugin.analytics = mockAnalytics
 
         val configuration: AndroidConfiguration = mockk()
@@ -60,11 +65,11 @@ class ScreenRecordingPluginTest {
     }
 
     @Test
-    fun `when setup called, then it should subscribe to navControllerStore and update navControllers`() = runTest {
+    fun `when setup called, then it should subscribe to navContextStore`() = runTest {
         val initialState = NavContextState.initialState()
         val mockDispatch: (NavContextState.NavContextAction) -> Unit = mockk(relaxed = true)
 
-        every { mockNavControllerStore.subscribe(any()) } answers {
+        every { mockNavContextStore.subscribe(any()) } answers {
             firstArg<(NavContextState, (NavContextState.NavContextAction) -> Unit) -> Unit>().invoke(
                 initialState,
                 mockDispatch
@@ -73,89 +78,75 @@ class ScreenRecordingPluginTest {
 
         plugin.setup(mockAnalytics)
 
-        verify { mockNavControllerStore.subscribe(any()) }
+        verify { mockNavContextStore.subscribe(any()) }
     }
 
     @Test
-    fun `when teardown called, then it should clear all navControllers`() = runTest {
-        val navController1: NavController = mockk(relaxed = true)
-        val navController2: NavController = mockk(relaxed = true)
-
-        val initialState = NavContextState(
-            navControllers = setOf(
-                WeakReference(navController1),
-                WeakReference(navController2)
-            )
-        )
-
-        every { mockNavControllerStore.subscribe(any()) } answers {
-            val subscription = firstArg<(NavContextState, (NavContextState.NavContextAction) -> Unit) -> Unit>()
-            subscription.invoke(initialState, mockk())
-        }
-
-        plugin.setup(mockAnalytics)
+    fun `when teardown called, then it should dispatch RemoveAllNavContextsAction`() = runTest {
         plugin.teardown()
 
-        verify(exactly = 1) { navController1.removeOnDestinationChangedListener(plugin) }
-        verify(exactly = 1) { navController2.removeOnDestinationChangedListener(plugin) }
+        verify { mockNavContextStore.dispatch(NavContextState.RemoveAllNavContextsAction) }
     }
 
     @Test
-    fun `when navControllers are added, then addOnDestinationChangedListener for navControllers gets called`() = runTest {
-        val navController1: NavController = mockk(relaxed = true)
-        val navController2: NavController = mockk(relaxed = true)
+    fun `when navContexts are added, then addOnDestinationChangedListener called and currentNavContexts & activityObservers updated`() =
+        runTest {
+            val navContext1: NavContext = mockNavContext()
+            val navContext2: NavContext = mockNavContext()
 
-        val initialState = NavContextState.initialState()
-        val updatedState = NavContextState(
-            navControllers = setOf(
-                WeakReference(navController1),
-                WeakReference(navController2)
-            )
-        )
-
-        every { mockNavControllerStore.subscribe(any()) } answers {
-            val subscription = firstArg<(NavContextState, (NavContextState.NavContextAction) -> Unit) -> Unit>()
-            // Simulate first subscribe with initial state (empty set), then updated state with navControllers
-            subscription.invoke(initialState, mockk())
-            subscription.invoke(updatedState, mockk())
-        }
-
-        plugin.setup(mockAnalytics)
-
-        // Verify that addOnDestinationChangedListener was called for each new navController
-        verify(exactly = 1) { navController1.addOnDestinationChangedListener(plugin) }
-        verify(exactly = 1) { navController2.addOnDestinationChangedListener(plugin) }
-    }
-
-    @Test
-    fun `when navControllers are removed, then removeOnDestinationChangedListener for navControllers gets called`() = runTest {
-            val navController1: NavController = mockk(relaxed = true)
-            val navController2: NavController = mockk(relaxed = true)
-            val weakNavController1 = WeakReference(navController1)
-            val weakNavController2 = WeakReference(navController2)
-
-            val initialState = NavContextState(
-                navControllers = setOf(
-                    weakNavController1,
-                    weakNavController2
-                )
-            )
+            val initialState = NavContextState.initialState()
             val updatedState = NavContextState(
-                navControllers = setOf(weakNavController1) // navController2 removed
+                navContexts = setOf(navContext1, navContext2)
             )
 
-            every { mockNavControllerStore.subscribe(any()) } answers {
+            every { mockNavContextStore.subscribe(any()) } answers {
                 val subscription = firstArg<(NavContextState, (NavContextState.NavContextAction) -> Unit) -> Unit>()
-                // Simulate state update where navController2 is removed
+                // Simulate first subscribe with initial state (empty set), then updated state with navControllers
                 subscription.invoke(initialState, mockk())
                 subscription.invoke(updatedState, mockk())
             }
 
             plugin.setup(mockAnalytics)
 
-            // Verify that removeOnDestinationChangedListener was called for the removed navController2
-            verify(exactly = 1) { navController2.removeOnDestinationChangedListener(plugin) }
-            verify(exactly = 0) { navController1.removeOnDestinationChangedListener(plugin) }
+            assertEquals(2, plugin.currentNavContexts.size)
+            assertTrue(plugin.currentNavContexts.contains(navContext1))
+            assertTrue(plugin.currentNavContexts.contains(navContext2))
+            assertEquals(2, plugin.activityObservers.size)
+            verify(exactly = 1) { navContext1.navController.addOnDestinationChangedListener(plugin) }
+            verify(exactly = 1) { navContext2.navController.addOnDestinationChangedListener(plugin) }
+        }
+
+    @Test
+    fun `when navControllers are removed, then removeOnDestinationChangedListener called and currentNavContexts & activityObservers updated`() =
+        runTest {
+            val navContext1 = mockNavContext()
+            val navContext2 = mockNavContext()
+
+            val initialState = NavContextState(
+                navContexts = setOf(navContext1, navContext2)
+            )
+            val updatedState = NavContextState(
+                navContexts = setOf(navContext1) // navContext2 removed
+            )
+
+            every { (navContext2.callingActivity as LifecycleOwner).lifecycle } returns mockk(relaxed = true)
+            every { (navContext2.callingActivity as LifecycleOwner).lifecycle.removeObserver(any()) } returns Unit
+            every { mockNavContextStore.subscribe(any()) } answers {
+                val subscription = firstArg<(NavContextState, (NavContextState.NavContextAction) -> Unit) -> Unit>()
+                // Simulate state update where navContext2 is removed
+                subscription.invoke(initialState, mockk())
+                subscription.invoke(updatedState, mockk())
+            }
+
+            plugin.setup(mockAnalytics)
+
+            // Verify that removeOnDestinationChangedListener was called for the removed navContext2 navController
+            assertEquals(1, plugin.currentNavContexts.size)
+            assertTrue(plugin.currentNavContexts.contains(navContext1))
+            assertEquals(1, plugin.activityObservers.size)
+            verify { (navContext2.callingActivity as LifecycleOwner).lifecycle.removeObserver(any()) }
+            verify(exactly = 1) { navContext2.navController.removeOnDestinationChangedListener(plugin) }
+            verify(exactly = 0) { navContext1.navController.removeOnDestinationChangedListener(plugin) }
         }
 
     @Test
