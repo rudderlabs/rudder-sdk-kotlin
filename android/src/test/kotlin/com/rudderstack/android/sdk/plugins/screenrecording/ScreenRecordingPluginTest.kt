@@ -1,12 +1,9 @@
-package com.rudderstack.android.sdk.plugins
+package com.rudderstack.android.sdk.plugins.screenrecording
 
 import android.os.Bundle
 import androidx.lifecycle.LifecycleOwner
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination
-import com.rudderstack.android.sdk.plugins.screenrecording.COMPOSE_NAVIGATOR_NAME
-import com.rudderstack.android.sdk.plugins.screenrecording.FRAGMENT_NAVIGATOR_NAME
-import com.rudderstack.android.sdk.plugins.screenrecording.ScreenRecordingPlugin
 import com.rudderstack.android.sdk.state.NavContext
 import com.rudderstack.android.sdk.state.NavContextState
 import com.rudderstack.android.sdk.utils.mockAnalytics
@@ -31,7 +28,6 @@ import com.rudderstack.android.sdk.Configuration as AndroidConfiguration
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
-import java.lang.ref.WeakReference
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ScreenRecordingPluginTest {

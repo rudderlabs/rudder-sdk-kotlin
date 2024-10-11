@@ -14,6 +14,8 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.unmockkAll
 import io.mockk.verify
+import junit.framework.TestCase.assertFalse
+import junit.framework.TestCase.assertTrue
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
