@@ -6,6 +6,10 @@ import com.rudderstack.android.sdk.state.NavContext
 import com.rudderstack.android.sdk.state.NavContextState
 import java.util.concurrent.atomic.AtomicBoolean
 
+/*
+* This class is used to attach an observer to a navController's activity, so that destination changes can be tracked
+* when navigating back from a previous activity or when the app is foregrounded.
+* */
 internal class NavControllerActivityObserver(
     private val plugin: ScreenRecordingPlugin,
     private val navContext: NavContext,

@@ -73,8 +73,11 @@ class Analytics(
      *
      * ## Description
      * The [NavController] class is used to navigate in an app. Whenever a destination change occurs, it can be tracked
-     * using [OnDestinationChangedListener]. This API uses this listener to track destination changes and sends the screen
-     * events.
+     * using [OnDestinationChangedListener]. This API uses [OnDestinationChangedListener] and activity's onStart callback to track destination
+     * changes and sends automatic screen events for them.
+     *
+     * Note: This API will send screen events for the currentDestination when the app is foregrounded or when configuration
+     * change occurs.
      *
      * ## Example
      * example code for Compose navigation:
@@ -83,13 +86,9 @@ class Analytics(
      * fun SunflowerApp() {
      *     val navController = rememberNavController()
      *     LaunchedEffect("first_launch") {
-     *         analytics.addNavigationDestinationTracking(navController)
+     *         analytics.addNavigationDestinationTracking(navController, this@MainActivity)
      *     }
-     *     DisposableEffect(Unit) {
-     *         onDispose {
-     *             analytics.removeNavigationDestinationTracking(navController)
-     *         }
-     *     }
+     *
      *     SunFlowerNavHost(
      *         navController = navController
      *     )
@@ -110,12 +109,7 @@ class Analytics(
      *             .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
      *         // Instantiate the navController using the NavHostFragment
      *         navController = navHostFragment.navController
-     *         analytics.addNavigationDestinationTracking(navController)
-     *     }
-     *
-     *     override fun onDestroy() {
-     *         super.onDestroy()
-     *         analytics.removeNavigationDestinationTracking(navController)
+     *         analytics.addNavigationDestinationTracking(navController, this@MainActivity)
      *     }
      * }
      * ```
@@ -123,6 +117,7 @@ class Analytics(
      * To stop tracking destination changes for a [NavController], call [removeNavigationDestinationTracking]
      *
      * @param navController [NavController] to be tracked
+     * @param activity [Activity] of the [NavHostFragment] or the parent composable in which [navController] is instantiated.
      */
     @Synchronized
     @Experimental
@@ -146,12 +141,7 @@ class Analytics(
     /**
      * Removes the `navController` from tracking automatic screen events for destination changes.
      *
-     * ## Description
-     * This should be called in `onDestroy` of the `Activity` which hosts `NavHostFragment` in case of `fragments` or in a `DisposableEffect`
-     * of parent composable of `NavHost` in case of composables.
-     *
      * @param navController [NavController] to be removed.
-     *
      */
     @Synchronized
     @Experimental
