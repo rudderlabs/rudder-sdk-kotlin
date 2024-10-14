@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 * when navigating back from a previous activity or when the app is foregrounded.
 * */
 internal class NavControllerActivityObserver(
-    private val plugin: ScreenRecordingPlugin,
+    private val plugin: NavControllerTrackingPlugin,
     private val navContext: NavContext,
 ) : DefaultLifecycleObserver {
 

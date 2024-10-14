@@ -30,12 +30,12 @@ import org.junit.Before
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class ScreenRecordingPluginTest {
+class NavControllerTrackingPluginTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
 
-    private lateinit var plugin: ScreenRecordingPlugin
+    private lateinit var plugin: NavControllerTrackingPlugin
 
     private val mockAnalytics = mockAnalytics(testScope, testDispatcher)
 
@@ -47,7 +47,7 @@ class ScreenRecordingPluginTest {
         MockKAnnotations.init(this, relaxed = true)
         Dispatchers.setMain(testDispatcher)
 
-        plugin = ScreenRecordingPlugin(mockNavContextStore)
+        plugin = NavControllerTrackingPlugin(mockNavContextStore)
         plugin.analytics = mockAnalytics
 
         val configuration: AndroidConfiguration = mockk()

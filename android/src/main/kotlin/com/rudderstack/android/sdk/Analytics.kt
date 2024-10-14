@@ -12,7 +12,7 @@ import com.rudderstack.android.sdk.plugins.NetworkInfoPlugin
 import com.rudderstack.android.sdk.plugins.OSInfoPlugin
 import com.rudderstack.android.sdk.plugins.ScreenInfoPlugin
 import com.rudderstack.android.sdk.plugins.TimezoneInfoPlugin
-import com.rudderstack.android.sdk.plugins.screenrecording.ScreenRecordingPlugin
+import com.rudderstack.android.sdk.plugins.screenrecording.NavControllerTrackingPlugin
 import com.rudderstack.android.sdk.state.NavContext
 import com.rudderstack.android.sdk.state.NavContextState
 import com.rudderstack.kotlin.sdk.Analytics
@@ -55,7 +55,7 @@ class Analytics(
     configuration
 ) {
 
-    private var screenRecordingPlugin: ScreenRecordingPlugin? = null
+    private var navControllerTrackingPlugin: NavControllerTrackingPlugin? = null
 
     private val navContextStore: Store<NavContextState, NavContextState.NavContextAction> by lazy {
         SingleThreadStore(
@@ -122,8 +122,8 @@ class Analytics(
     @Synchronized
     @Experimental
     fun addNavigationDestinationTracking(navController: NavController, activity: Activity) {
-        if (screenRecordingPlugin == null) {
-            screenRecordingPlugin = ScreenRecordingPlugin(navContextStore).also {
+        if (navControllerTrackingPlugin == null) {
+            navControllerTrackingPlugin = NavControllerTrackingPlugin(navContextStore).also {
                 add(it)
             }
         }

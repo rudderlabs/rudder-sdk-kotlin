@@ -23,7 +23,7 @@ import org.junit.Test
 class NavControllerActivityObserverTest {
 
     @MockK
-    private lateinit var mockPlugin: ScreenRecordingPlugin
+    private lateinit var mockPlugin: NavControllerTrackingPlugin
 
     @MockK
     private lateinit var mockNavContext: NavContext
