@@ -30,7 +30,7 @@ import com.rudderstack.kotlin.sdk.internals.policies.FlushPolicy
  * Defaults to `true`, enabling the SDK to track app start, background, and foreground events.
  * @param trackDeeplinks Flag to enable or disable automatic tracking of deeplink events. Defaults to `true`.
  * @param collectDeviceId Flag to enable or disable automatic collection of the device's ID. Defaults to `true`.
- * @param trackActivities automatically tracks screen events for Activity opened in app.
+ * @param trackActivities automatically tracks activities, calling screen events for them, defaults to `false`.
  * @param writeKey The write key used to authenticate and send data to the backend. This field is required.
  * @param dataPlaneUrl The URL of the data plane to which events are sent. This field is required.
  * @param controlPlaneUrl The URL of the control plane, used for remote configuration management. Defaults to `DEFAULT_CONTROL_PLANE_URL`.
