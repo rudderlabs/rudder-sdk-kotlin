@@ -1,4 +1,4 @@
-package com.rudderstack.android.sdk.plugins
+package com.rudderstack.android.sdk.plugins.screenrecording
 
 import android.app.Activity
 import android.app.Application
