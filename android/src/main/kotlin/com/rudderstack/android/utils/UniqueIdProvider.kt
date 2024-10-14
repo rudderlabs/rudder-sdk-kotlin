@@ -4,7 +4,6 @@ import android.app.Application
 import android.media.MediaDrm
 import android.os.Build
 import android.provider.Settings
-import java.lang.Exception
 import java.security.MessageDigest
 import java.util.UUID
 
@@ -17,7 +16,7 @@ private const val SHA_256 = "SHA-256"
  * which can be used to uniquely identify the device for tracking or analytical purposes.
  * The object also handles exceptions gracefully and ensures that resources are properly released.
  */
-object UniqueIdProvider {
+internal object UniqueIdProvider {
 
     /**
      * Retrieves the Widevine-protected unique device ID.
@@ -60,7 +59,7 @@ object UniqueIdProvider {
      */
     internal fun getDeviceId(application: Application): String? {
         val androidId = Settings.Secure.getString(application.contentResolver, Settings.Secure.ANDROID_ID)
-        val isInvalidId = androidId.isNullOrEmpty() ||
+        val isInvalidId = androidId.isEmpty() ||
             androidId == "9774d56d682e549c" ||
             androidId == "unknown" ||
             androidId == "000000000000000"
