@@ -12,6 +12,7 @@ import com.rudderstack.android.sdk.plugins.NetworkInfoPlugin
 import com.rudderstack.android.sdk.plugins.OSInfoPlugin
 import com.rudderstack.android.sdk.plugins.ScreenInfoPlugin
 import com.rudderstack.android.sdk.plugins.TimezoneInfoPlugin
+import com.rudderstack.android.sdk.plugins.screenrecording.ActivityTrackingPlugin
 import com.rudderstack.android.sdk.plugins.screenrecording.NavControllerTrackingPlugin
 import com.rudderstack.android.sdk.state.NavContext
 import com.rudderstack.android.sdk.state.NavContextState
@@ -149,6 +150,7 @@ class Analytics(
         // Add these plugins at last in chain
         add(AndroidLifecyclePlugin())
         add(DeeplinkPlugin())
+        add(ActivityTrackingPlugin())
     }
 
     override fun getPlatformType(): PlatformType = PlatformType.Mobile

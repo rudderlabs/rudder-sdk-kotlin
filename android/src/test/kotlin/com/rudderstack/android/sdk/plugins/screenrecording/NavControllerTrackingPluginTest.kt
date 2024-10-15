@@ -6,6 +6,7 @@ import androidx.navigation.NavController
 import androidx.navigation.NavDestination
 import com.rudderstack.android.sdk.state.NavContext
 import com.rudderstack.android.sdk.state.NavContextState
+import com.rudderstack.android.sdk.utils.automaticProperty
 import com.rudderstack.android.sdk.utils.mockAnalytics
 import com.rudderstack.android.sdk.utils.mockNavContext
 import com.rudderstack.kotlin.sdk.internals.statemanagement.Store
@@ -154,7 +155,7 @@ class NavControllerTrackingPluginTest {
 
         plugin.onDestinationChanged(navController, destination, bundle)
 
-        verify { mockAnalytics.screen(testDestinationLabel, properties = plugin.automaticProperty()) }
+        verify { mockAnalytics.screen(testDestinationLabel, properties = automaticProperty()) }
     }
 
     @Test
@@ -169,7 +170,7 @@ class NavControllerTrackingPluginTest {
 
         plugin.onDestinationChanged(navController, destination, bundle)
 
-        verify { mockAnalytics.screen(testRoute, properties = plugin.automaticProperty()) }
+        verify { mockAnalytics.screen(testRoute, properties = automaticProperty()) }
     }
 
     @Test
@@ -189,6 +190,6 @@ class NavControllerTrackingPluginTest {
 
         plugin.onDestinationChanged(navController, destination, bundle)
 
-        verify { mockAnalytics.screen(testRouteWithoutArgs, properties = plugin.automaticProperty()) }
+        verify { mockAnalytics.screen(testRouteWithoutArgs, properties = automaticProperty()) }
     }
 }

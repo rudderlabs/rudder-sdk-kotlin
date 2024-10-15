@@ -6,16 +6,14 @@ import androidx.navigation.NavController
 import androidx.navigation.NavDestination
 import com.rudderstack.android.sdk.state.NavContext
 import com.rudderstack.android.sdk.state.NavContextState
+import com.rudderstack.android.sdk.utils.automaticProperty
 import com.rudderstack.kotlin.sdk.Analytics
 import com.rudderstack.kotlin.sdk.internals.plugins.Plugin
 import com.rudderstack.kotlin.sdk.internals.statemanagement.Store
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
 import com.rudderstack.android.sdk.Configuration as AndroidConfiguration
 
 internal const val FRAGMENT_NAVIGATOR_NAME = "fragment"
 internal const val COMPOSE_NAVIGATOR_NAME = "composable"
-internal const val AUTOMATIC_KEY = "automatic"
 
 // plugin for automatically tracking navControllers
 internal class NavControllerTrackingPlugin(
@@ -108,7 +106,4 @@ internal class NavControllerTrackingPlugin(
         }.toString()
         analytics.screen(screenName = screenName, properties = automaticProperty())
     }
-
-    @VisibleForTesting
-    internal fun automaticProperty() = buildJsonObject { put(AUTOMATIC_KEY, true) }
 }
