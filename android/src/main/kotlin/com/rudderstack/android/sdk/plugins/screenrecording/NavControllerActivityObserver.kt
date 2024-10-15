@@ -19,11 +19,7 @@ internal class NavControllerActivityObserver(
     private val isActivityGettingCreated = AtomicBoolean(true)
 
     init {
-        navContext.lifecycle()?.addObserver(this)
-    }
-
-    fun isObserverForContext(navContext: NavContext?): Boolean {
-        return this.navContext == navContext
+        activityLifecycle()?.addObserver(this)
     }
 
     override fun onStart(owner: LifecycleOwner) {
@@ -41,10 +37,11 @@ internal class NavControllerActivityObserver(
     }
 
     override fun onDestroy(owner: LifecycleOwner) {
+        activityLifecycle()?.removeObserver(this)
         plugin.navContextStore.dispatch(NavContextState.RemoveNavContextAction(navContext.navController))
     }
-}
 
-internal fun NavContext.lifecycle(): Lifecycle? {
-    return (this.callingActivity as? LifecycleOwner)?.lifecycle
+    private fun activityLifecycle(): Lifecycle? {
+        return (navContext.callingActivity as? LifecycleOwner)?.lifecycle
+    }
 }

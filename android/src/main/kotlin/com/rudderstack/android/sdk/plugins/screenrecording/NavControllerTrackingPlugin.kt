@@ -2,7 +2,6 @@ package com.rudderstack.android.sdk.plugins.screenrecording
 
 import android.os.Bundle
 import androidx.annotation.VisibleForTesting
-import androidx.lifecycle.LifecycleOwner
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination
 import com.rudderstack.android.sdk.state.NavContext
@@ -26,9 +25,6 @@ internal class NavControllerTrackingPlugin(
 
     @VisibleForTesting
     internal val currentNavContexts: MutableSet<NavContext> = mutableSetOf()
-
-    @VisibleForTesting
-    internal val activityObservers: MutableSet<NavControllerActivityObserver> = mutableSetOf()
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
@@ -61,7 +57,7 @@ internal class NavControllerTrackingPlugin(
     private fun removeDeletedNavContexts(updatedNavContexts: Set<NavContext>) {
         val deletedNavContexts = currentNavContexts.minus(updatedNavContexts)
         deletedNavContexts.forEach { navContext ->
-            removeContextAndObserver(navContext)
+            removeContext(navContext)
         }
     }
 
@@ -72,17 +68,9 @@ internal class NavControllerTrackingPlugin(
         }
     }
 
-    private fun removeContextAndObserver(navContext: NavContext) {
-        // removing navContext
+    private fun removeContext(navContext: NavContext) {
         navContext.navController.removeOnDestinationChangedListener(this)
         currentNavContexts.remove(navContext)
-
-        // removing activity observer
-        val observerToBeRemoved = activityObservers.find { it.isObserverForContext(navContext) }
-        observerToBeRemoved?.let {
-            (navContext.callingActivity as? LifecycleOwner)?.lifecycle?.removeObserver(it)
-        }
-        activityObservers.remove(observerToBeRemoved)
     }
 
     private fun addContextAndObserver(navContext: NavContext) {
@@ -91,11 +79,9 @@ internal class NavControllerTrackingPlugin(
         currentNavContexts.add(navContext)
 
         // adding activity observer
-        activityObservers.add(
-            NavControllerActivityObserver(
-                plugin = this,
-                navContext = navContext
-            )
+        NavControllerActivityObserver(
+            plugin = this,
+            navContext = navContext
         )
     }
 
