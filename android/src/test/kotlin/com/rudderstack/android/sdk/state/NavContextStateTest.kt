@@ -5,7 +5,6 @@ import com.rudderstack.android.sdk.state.NavContextState.RemoveNavContextAction
 import com.rudderstack.android.sdk.state.NavContextState.RemoveAllNavContextsAction
 import com.rudderstack.android.sdk.state.NavContextState.NavContextReducer
 import com.rudderstack.android.sdk.utils.mockNavContext
-import io.mockk.MockKAnnotations
 import io.mockk.unmockkAll
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertTrue
@@ -19,7 +18,6 @@ class NavContextStateTest {
 
     @Before
     fun setUp() {
-        MockKAnnotations.init(this)
         reducer = NavContextReducer()
     }
 
