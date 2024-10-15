@@ -86,7 +86,7 @@ class Analytics(
      * fun SunflowerApp() {
      *     val navController = rememberNavController()
      *     LaunchedEffect("first_launch") {
-     *         analytics.setNavigationDestinations(navController, this@MainActivity)
+     *         analytics.setNavigationDestinationsTracking(navController, this@MainActivity)
      *     }
      *
      *     SunFlowerNavHost(
@@ -109,7 +109,7 @@ class Analytics(
      *             .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
      *         // Instantiate the navController using the NavHostFragment
      *         navController = navHostFragment.navController
-     *         analytics.setNavigationDestinations(navController, this@MainActivity)
+     *         analytics.setNavigationDestinationsTracking(navController, this@MainActivity)
      *     }
      * }
      * ```
@@ -120,7 +120,7 @@ class Analytics(
      */
     @Synchronized
     @Experimental
-    fun setNavigationDestinations(navController: NavController, activity: Activity) {
+    fun setNavigationDestinationsTracking(navController: NavController, activity: Activity) {
         if (navControllerTrackingPlugin == null) {
             navControllerTrackingPlugin = NavControllerTrackingPlugin(navContextStore).also {
                 add(it)
