@@ -154,7 +154,7 @@ class NavControllerTrackingPluginTest {
 
         plugin.onDestinationChanged(navController, destination, bundle)
 
-        verify { mockAnalytics.screen(testDestinationLabel) }
+        verify { mockAnalytics.screen(testDestinationLabel, properties = plugin.automaticProperty()) }
     }
 
     @Test
@@ -169,7 +169,7 @@ class NavControllerTrackingPluginTest {
 
         plugin.onDestinationChanged(navController, destination, bundle)
 
-        verify { mockAnalytics.screen(testRoute) }
+        verify { mockAnalytics.screen(testRoute, properties = plugin.automaticProperty()) }
     }
 
     @Test
@@ -189,6 +189,6 @@ class NavControllerTrackingPluginTest {
 
         plugin.onDestinationChanged(navController, destination, bundle)
 
-        verify { mockAnalytics.screen(testRouteWithoutArgs) }
+        verify { mockAnalytics.screen(testRouteWithoutArgs, properties = plugin.automaticProperty()) }
     }
 }
