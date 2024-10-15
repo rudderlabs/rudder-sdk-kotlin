@@ -3,6 +3,7 @@ package com.rudderstack.android.sdk.plugins.screenrecording
 import android.app.Activity
 import android.app.Application
 import com.rudderstack.android.sdk.Configuration
+import com.rudderstack.android.sdk.utils.automaticProperty
 import com.rudderstack.android.sdk.utils.mockAnalytics
 import com.rudderstack.kotlin.sdk.Analytics
 import io.mockk.*
@@ -79,7 +80,7 @@ class ActivityTrackingPluginTest {
 
         plugin.onActivityStarted(mockActivity)
 
-        verify(exactly = 1) { mockAnalytics.screen(screenName = testActivityName) }
+        verify(exactly = 1) { mockAnalytics.screen(screenName = testActivityName, properties = automaticProperty()) }
     }
 
     @Test
