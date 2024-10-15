@@ -114,7 +114,6 @@ class Analytics(
      * }
      * ```
      * In case multiple [NavController]s are used, call this method for each of them.
-     * To stop tracking destination changes for a [NavController], call [removeNavigationDestinationTracking]
      *
      * @param navController [NavController] to be tracked
      * @param activity [Activity] of the [NavHostFragment] or the parent composable in which [navController] is instantiated.
@@ -134,21 +133,6 @@ class Analytics(
                     navController = navController,
                     callingActivity = activity
                 )
-            )
-        )
-    }
-
-    /**
-     * Removes the `navController` from tracking automatic screen events for destination changes.
-     *
-     * @param navController [NavController] to be removed.
-     */
-    @Synchronized
-    @Experimental
-    fun removeNavigationDestinationTracking(navController: NavController) {
-        navContextStore.dispatch(
-            action = NavContextState.RemoveNavContextAction(
-                navController = navController
             )
         )
     }
