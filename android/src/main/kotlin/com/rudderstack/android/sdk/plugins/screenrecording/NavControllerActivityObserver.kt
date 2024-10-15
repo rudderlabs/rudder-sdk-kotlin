@@ -1,6 +1,7 @@
 package com.rudderstack.android.sdk.plugins.screenrecording
 
 import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import com.rudderstack.android.sdk.state.NavContext
 import com.rudderstack.android.sdk.state.NavContextState
@@ -18,7 +19,7 @@ internal class NavControllerActivityObserver(
     private val isActivityGettingCreated = AtomicBoolean(true)
 
     init {
-        (navContext.callingActivity as? LifecycleOwner)?.lifecycle?.addObserver(this)
+        navContext.lifecycle()?.addObserver(this)
     }
 
     fun isObserverForContext(navContext: NavContext?): Boolean {
@@ -26,7 +27,7 @@ internal class NavControllerActivityObserver(
     }
 
     override fun onStart(owner: LifecycleOwner) {
-        if (!isActivityGettingCreated.get()) {
+        if (!isActivityGettingCreated.getAndSet(false)) {
             val currentController = navContext.navController
             val currentDestination = currentController.currentDestination
             if (currentDestination != null) {
@@ -37,10 +38,13 @@ internal class NavControllerActivityObserver(
                 )
             }
         }
-        isActivityGettingCreated.set(false)
     }
 
     override fun onDestroy(owner: LifecycleOwner) {
         plugin.navContextStore.dispatch(NavContextState.RemoveNavContextAction(navContext.navController))
     }
+}
+
+internal fun NavContext.lifecycle(): Lifecycle? {
+    return (this.callingActivity as? LifecycleOwner)?.lifecycle
 }
