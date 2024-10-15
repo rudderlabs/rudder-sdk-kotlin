@@ -5,10 +5,6 @@ import com.rudderstack.android.sdk.state.NavContextState.RemoveNavContextAction
 import com.rudderstack.android.sdk.state.NavContextState.RemoveAllNavContextsAction
 import com.rudderstack.android.sdk.state.NavContextState.NavContextReducer
 import com.rudderstack.android.sdk.utils.mockNavContext
-<<<<<<< HEAD
-=======
-import io.mockk.MockKAnnotations
->>>>>>> 635872b (test: update ScreenRecordingPluginTest, NavContextStateTest)
 import io.mockk.unmockkAll
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertTrue
