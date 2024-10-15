@@ -1,5 +1,6 @@
 package com.rudderstack.android.sdk.plugins.screenrecording
 
+import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
@@ -41,7 +42,8 @@ internal class NavControllerActivityObserver(
         plugin.navContextStore.dispatch(NavContextState.RemoveNavContextAction(navContext.navController))
     }
 
-    private fun activityLifecycle(): Lifecycle? {
+    @VisibleForTesting
+    internal fun activityLifecycle(): Lifecycle? {
         return (navContext.callingActivity as? LifecycleOwner)?.lifecycle
     }
 }

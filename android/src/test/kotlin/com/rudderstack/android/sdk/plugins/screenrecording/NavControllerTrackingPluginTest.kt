@@ -85,7 +85,7 @@ class NavControllerTrackingPluginTest {
     }
 
     @Test
-    fun `when navContexts are added, then addOnDestinationChangedListener called and currentNavContexts & activityObservers updated`() =
+    fun `when navContexts are added, then addOnDestinationChangedListener called and currentNavContexts updated`() =
         runTest {
             val navContext1: NavContext = mockNavContext()
             val navContext2: NavContext = mockNavContext()
@@ -107,13 +107,12 @@ class NavControllerTrackingPluginTest {
             assertEquals(2, plugin.currentNavContexts.size)
             assertTrue(plugin.currentNavContexts.contains(navContext1))
             assertTrue(plugin.currentNavContexts.contains(navContext2))
-            assertEquals(2, plugin.activityObservers.size)
             verify(exactly = 1) { navContext1.navController.addOnDestinationChangedListener(plugin) }
             verify(exactly = 1) { navContext2.navController.addOnDestinationChangedListener(plugin) }
         }
 
     @Test
-    fun `when navControllers are removed, then removeOnDestinationChangedListener called and currentNavContexts & activityObservers updated`() =
+    fun `when navControllers are removed, then removeOnDestinationChangedListener called and currentNavContexts updated`() =
         runTest {
             val navContext1 = mockNavContext()
             val navContext2 = mockNavContext()
@@ -139,8 +138,6 @@ class NavControllerTrackingPluginTest {
             // Verify that removeOnDestinationChangedListener was called for the removed navContext2 navController
             assertEquals(1, plugin.currentNavContexts.size)
             assertTrue(plugin.currentNavContexts.contains(navContext1))
-            assertEquals(1, plugin.activityObservers.size)
-            verify { (navContext2.callingActivity as LifecycleOwner).lifecycle.removeObserver(any()) }
             verify(exactly = 1) { navContext2.navController.removeOnDestinationChangedListener(plugin) }
             verify(exactly = 0) { navContext1.navController.removeOnDestinationChangedListener(plugin) }
         }

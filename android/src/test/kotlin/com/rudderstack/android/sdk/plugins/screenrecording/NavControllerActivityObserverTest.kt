@@ -14,8 +14,6 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.unmockkAll
 import io.mockk.verify
-import junit.framework.TestCase.assertFalse
-import junit.framework.TestCase.assertTrue
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -55,18 +53,6 @@ class NavControllerActivityObserverTest {
     }
 
     @Test
-    fun `given navContext, when isObserverForContext called, then it returns true for that navContext`() {
-        assertTrue(observer.isObserverForContext(mockNavContext))
-    }
-
-    @Test
-    fun `given different navContext, when isObserverForContext called, then it returns false for that navContext`() {
-        val anotherNavContext: NavContext = mockk()
-
-        assertFalse(observer.isObserverForContext(anotherNavContext))
-    }
-
-    @Test
     fun `given observer is just created, when onStart called, then OnDestinationChanged is not called`() {
         val mockDestination = mockk<NavDestination>(relaxed = true)
         every { mockNavContext.navController.currentDestination } returns mockDestination
@@ -74,6 +60,11 @@ class NavControllerActivityObserverTest {
         observer.onStart(mockActivity)
 
         verify(exactly = 0) { mockPlugin.onDestinationChanged(mockNavContext.navController, mockDestination, any()) }
+    }
+
+    @Test
+    fun `given observer is just created, then observer is also added as LifecycleObserver`() {
+        verify(exactly = 1) { observer.activityLifecycle()?.addObserver(observer) }
     }
 
     @Test
@@ -88,13 +79,14 @@ class NavControllerActivityObserverTest {
     }
 
     @Test
-    fun `given observer, when onDestroyed called, then RemoveNavContextAction dispatched`() {
+    fun `given observer, when onDestroyed called, then observer is removed and RemoveNavContextAction dispatched`() {
         val mockNavController = mockk<NavController>(relaxed = true)
         every { mockNavContext.navController } returns mockNavController
 
         observer.onDestroy(mockActivity)
 
         verify {
+            observer.activityLifecycle()?.removeObserver(observer)
             mockNavContextStore.dispatch(
                 match { it is NavContextState.RemoveNavContextAction && it.navController == mockNavController }
             )
