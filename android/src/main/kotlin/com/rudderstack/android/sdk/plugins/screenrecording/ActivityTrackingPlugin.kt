@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.Application
 import android.os.Bundle
 import com.rudderstack.android.sdk.Configuration
+import com.rudderstack.android.sdk.utils.automaticProperty
 import com.rudderstack.kotlin.sdk.Analytics
 import com.rudderstack.kotlin.sdk.internals.plugins.Plugin
 import kotlin.properties.Delegates
@@ -66,6 +67,6 @@ internal class ActivityTrackingPlugin : Plugin, Application.ActivityLifecycleCal
     }
 
     private fun trackActivity(activity: Activity) {
-        analytics.screen(screenName = activity.localClassName)
+        analytics.screen(screenName = activity.localClassName, properties = automaticProperty())
     }
 }
