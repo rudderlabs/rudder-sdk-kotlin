@@ -25,12 +25,16 @@ import com.rudderstack.kotlin.sdk.internals.policies.FlushPolicy
  *   `AndroidLogger` with an initial log level set to `Logger.LogLevel.DEBUG`.
  *
  * ## Constructor
- * @param application The Android `Application` instance required for initializing the analytics library.
- * @param trackApplicationLifecycleEvents automatically send track for Lifecycle events (eg: Application Opened, Application Backgrounded, etc.), defaults to `true`
- * @param trackDeeplinks automatically tracks deeplinks opened based on the intent fired, defaults to `true`.
- * @param writeKey The write key for authenticating with RudderStack.
- * @param dataPlaneUrl The URL of the RudderStack data plane to which events are sent.
- * @param logger An instance of `Logger` for debugging (optional; default is `AndroidLogger` with log level set to DEBUG).
+ * @param application The application context. Required for accessing Android-specific functionality and tracking lifecycle events.
+ * @param trackApplicationLifecycleEvents Flag to enable or disable automatic tracking of application lifecycle events.
+ * Defaults to `true`, enabling the SDK to track app start, background, and foreground events.
+ * @param trackDeeplinks Flag to enable or disable automatic tracking of deeplink events. Defaults to `true`.
+ * @param collectDeviceId Flag to enable or disable automatic collection of the device's ID. Defaults to `true`.
+ * @param writeKey The write key used to authenticate and send data to the backend. This field is required.
+ * @param dataPlaneUrl The URL of the data plane to which events are sent. This field is required.
+ * @param controlPlaneUrl The URL of the control plane, used for remote configuration management. Defaults to `DEFAULT_CONTROL_PLANE_URL`.
+ * @param logger The logger instance used for SDK logging. By default, it uses an Android logger with the `DEBUG` log level.
+ * @param flushPolicies A list of flush policies defining when and how events should be sent to the backend. Defaults to `DEFAULT_FLUSH_POLICIES`.
  *
  * ## Example
  * ```kotlin
@@ -50,6 +54,7 @@ data class Configuration @JvmOverloads constructor(
     val application: Application,
     val trackApplicationLifecycleEvents: Boolean = true,
     val trackDeeplinks: Boolean = true,
+    val collectDeviceId: Boolean = true,
     override val writeKey: String,
     override val dataPlaneUrl: String,
     override val controlPlaneUrl: String = DEFAULT_CONTROL_PLANE_URL,

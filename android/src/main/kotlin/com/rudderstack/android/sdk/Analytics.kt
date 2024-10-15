@@ -3,8 +3,9 @@ package com.rudderstack.android.sdk
 import com.rudderstack.android.sdk.plugins.AndroidLifecyclePlugin
 import com.rudderstack.android.sdk.plugins.AppInfoPlugin
 import com.rudderstack.android.sdk.plugins.DeeplinkPlugin
-import com.rudderstack.android.sdk.plugins.NetworkInfoPlugin
+import com.rudderstack.android.sdk.plugins.DeviceInfoPlugin
 import com.rudderstack.android.sdk.plugins.LocaleInfoPlugin
+import com.rudderstack.android.sdk.plugins.NetworkInfoPlugin
 import com.rudderstack.android.sdk.plugins.OSInfoPlugin
 import com.rudderstack.android.sdk.plugins.ScreenInfoPlugin
 import com.rudderstack.android.sdk.plugins.TimezoneInfoPlugin
@@ -49,7 +50,7 @@ class Analytics(
     }
 
     private fun setup() {
-        // Add context plugins first in the chains
+        add(DeviceInfoPlugin())
         add(AppInfoPlugin())
         add(NetworkInfoPlugin())
         add(LocaleInfoPlugin())
