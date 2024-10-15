@@ -1,6 +1,10 @@
 package com.rudderstack.kotlin.sdk.internals.statemanagement
 
-internal class SingleThreadStore<S : State, A : Action>(
+// TODO("Restrict the usage of this class for clients.")
+/**
+ * Default implementation of [Store].
+ */
+class SingleThreadStore<S : State, A : Action>(
     initialState: S,
     reducer: Reducer<S, A>,
     private val middleware: List<Middleware<S, A>> = emptyList()
