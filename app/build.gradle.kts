@@ -127,11 +127,19 @@ android {
 tasks.named("preBuild").configure {
     doFirst {
         val oldCommitFile = file("${rootProject.rootDir}/.git/hooks/pre-commit")
-
+        val oldPushFile = file("${rootProject.rootDir}/.git/hooks/pre-push")
+        val oldCommitMessageFile = file("${rootProject.rootDir}/.git/hooks/commit-msg")
         val newCommitFile = file("${rootProject.rootDir}/scripts/pre-commit")
-
-        if (oldCommitFile.length() != newCommitFile.length()) {
+        val newPushFile = file("${rootProject.rootDir}/scripts/pre-push")
+        val newCommitMessageFile = file("${rootProject.rootDir}/scripts/commit-msg")
+        if (
+            oldCommitFile.length() != newCommitFile.length() ||
+            oldPushFile.length() != newPushFile.length() ||
+            oldCommitMessageFile.length() != newCommitMessageFile.length()
+        ) {
             oldCommitFile.delete()
+            oldPushFile.delete()
+            oldCommitMessageFile.delete()
             println("Old hooks are deleted.")
 
             copy {
