@@ -19,6 +19,8 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.annotations.VisibleForTesting
@@ -44,6 +46,7 @@ internal class MessageQueue(
         )
     }
 ) {
+
     private var running: Boolean
     private var writeChannel: Channel<Message>
     private var uploadChannel: Channel<String>
@@ -59,9 +62,9 @@ internal class MessageQueue(
     }
 
     private fun updateAnonymousId() {
-        analytics.userIdentityStore.subscribe { userOptionsState, _ ->
-            httpClientFactory.updateAnonymousIdHeaderString(userOptionsState.userIdentity.anonymousID.encodeToBase64())
-        }
+        analytics.userIdentityState.onEach { userOptionsState ->
+            httpClientFactory.updateAnonymousIdHeaderString(userOptionsState.anonymousID.encodeToBase64())
+        }.launchIn(analytics.analyticsScope)
     }
 
     fun put(message: Message) {
