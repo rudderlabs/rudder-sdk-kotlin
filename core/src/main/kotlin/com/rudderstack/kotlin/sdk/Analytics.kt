@@ -209,14 +209,12 @@ open class Analytics protected constructor(
      * non-null string used to represent the user anonymously.
      */
     fun setAnonymousId(anonymousId: String) {
-        analyticsScope.launch {
-            userIdentityState.dispatch(
-                action = SetIdentityAction(
-                    storage = configuration.storage,
-                    anonymousID = anonymousId
-                )
+        userIdentityState.dispatch(
+            action = SetIdentityAction(
+                storage = configuration.storage,
+                anonymousID = anonymousId
             )
-        }
+        )
     }
 
     /**
@@ -236,9 +234,7 @@ open class Analytics protected constructor(
     }
 
     private fun initializeUserIdentity() {
-        analyticsScope.launch {
-            userIdentityState.dispatch(SetIdentityAction(configuration.storage))
-        }
+        userIdentityState.dispatch(SetIdentityAction(configuration.storage))
     }
 
     override fun getPlatformType(): PlatformType = PlatformType.Server
