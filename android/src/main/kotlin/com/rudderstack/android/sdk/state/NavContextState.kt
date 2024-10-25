@@ -3,13 +3,43 @@ package com.rudderstack.android.sdk.state
 import android.app.Activity
 import androidx.navigation.NavController
 import com.rudderstack.kotlin.sdk.internals.statemanagement.Action
+import com.rudderstack.kotlin.sdk.internals.statemanagement.FlowAction
 import com.rudderstack.kotlin.sdk.internals.statemanagement.Reducer
 import com.rudderstack.kotlin.sdk.internals.statemanagement.State
 
 internal data class NavContext(
     val navController: NavController,
     val callingActivity: Activity,
-)
+) {
+
+    companion object {
+
+        fun initialState() = emptySet<NavContext>()
+    }
+
+    internal sealed interface NavContextAction : FlowAction<Set<NavContext>>
+
+    internal class AddNavContextAction(private val navContext: NavContext) : NavContextAction {
+
+        override fun reduce(currentState: Set<NavContext>): Set<NavContext> {
+            return currentState.plus(navContext)
+        }
+    }
+
+    internal class RemoveNavContextAction(private val navContext: NavContext) : NavContextAction {
+
+        override fun reduce(currentState: Set<NavContext>): Set<NavContext> {
+            return currentState.minus(navContext)
+        }
+    }
+
+    internal object RemoveAllNavContextsAction : NavContextAction {
+
+        override fun reduce(currentState: Set<NavContext>): Set<NavContext> {
+            return emptySet()
+        }
+    }
+}
 
 internal data class NavContextState(
     val navContexts: Set<NavContext>,

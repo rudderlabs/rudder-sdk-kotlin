@@ -5,11 +5,12 @@ import androidx.annotation.VisibleForTesting
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination
 import com.rudderstack.android.sdk.state.NavContext
-import com.rudderstack.android.sdk.state.NavContextState
 import com.rudderstack.android.sdk.utils.automaticProperty
 import com.rudderstack.kotlin.sdk.Analytics
 import com.rudderstack.kotlin.sdk.internals.plugins.Plugin
-import com.rudderstack.kotlin.sdk.internals.statemanagement.Store
+import com.rudderstack.kotlin.sdk.internals.statemanagement.FlowState
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import com.rudderstack.android.sdk.Configuration as AndroidConfiguration
 
 internal const val FRAGMENT_NAVIGATOR_NAME = "fragment"
@@ -17,7 +18,7 @@ internal const val COMPOSE_NAVIGATOR_NAME = "composable"
 
 // plugin for automatically tracking navControllers
 internal class NavControllerTrackingPlugin(
-    internal val navContextStore: Store<NavContextState, NavContextState.NavContextAction>
+    internal val navContextState: FlowState<Set<NavContext>>
 ) : Plugin, NavController.OnDestinationChangedListener {
 
     override val pluginType: Plugin.PluginType = Plugin.PluginType.Manual
@@ -30,15 +31,15 @@ internal class NavControllerTrackingPlugin(
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
         (analytics.configuration as? AndroidConfiguration)?.let {
-            navContextStore.subscribe { currentState, _ ->
-                updateNavContexts(currentState.navContexts)
-            }
+            navContextState.onEach { currentState ->
+                updateNavContexts(currentState)
+            }.launchIn(analytics.analyticsScope)
         }
     }
 
     override fun teardown() {
         super.teardown()
-        navContextStore.dispatch(NavContextState.RemoveAllNavContextsAction)
+        navContextState.dispatch(NavContext.RemoveAllNavContextsAction)
     }
 
     override fun onDestinationChanged(controller: NavController, destination: NavDestination, arguments: Bundle?) {
