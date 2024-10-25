@@ -209,6 +209,13 @@ open class Analytics protected constructor(
     }
 
     /**
+     * The `getAnonymousId` method always retrieves the current anonymous ID.
+     */
+    fun getAnonymousId(): String {
+        return userIdentityState.value.anonymousId
+    }
+
+    /**
      * Processes each message sequentially through the plugin chain and applies base data to the message.
      * All operations are executed within the `analyticsDispatcher` coroutine context.
      *
