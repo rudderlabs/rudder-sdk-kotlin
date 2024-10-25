@@ -19,6 +19,7 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -62,9 +63,13 @@ internal class MessageQueue(
     }
 
     private fun updateAnonymousId() {
-        analytics.userIdentityState.onEach { userOptionsState ->
-            httpClientFactory.updateAnonymousIdHeaderString(userOptionsState.anonymousId.encodeToBase64())
-        }.launchIn(analytics.analyticsScope)
+        analytics.userIdentityState
+            .distinctUntilChanged { old, new ->
+                old.anonymousId == new.anonymousId
+            }
+            .onEach { userOptionsState ->
+                httpClientFactory.updateAnonymousIdHeaderString(userOptionsState.anonymousId.encodeToBase64())
+            }.launchIn(analytics.analyticsScope)
     }
 
     fun put(message: Message) {
