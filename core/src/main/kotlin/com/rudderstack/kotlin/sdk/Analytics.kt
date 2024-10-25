@@ -16,13 +16,11 @@ import com.rudderstack.kotlin.sdk.internals.plugins.PluginChain
 import com.rudderstack.kotlin.sdk.internals.statemanagement.FlowState
 import com.rudderstack.kotlin.sdk.internals.statemanagement.SingleThreadStore
 import com.rudderstack.kotlin.sdk.internals.statemanagement.Store
-import com.rudderstack.kotlin.sdk.internals.storage.StorageKeys
 import com.rudderstack.kotlin.sdk.internals.utils.addNameAndCategoryToProperties
 import com.rudderstack.kotlin.sdk.internals.utils.empty
 import com.rudderstack.kotlin.sdk.plugins.LibraryInfoPlugin
 import com.rudderstack.kotlin.sdk.plugins.PocPlugin
 import com.rudderstack.kotlin.sdk.plugins.RudderStackDataplanePlugin
-import com.rudderstack.kotlin.sdk.state.SetIdentityAction
 import com.rudderstack.kotlin.sdk.state.SourceConfigState
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -60,14 +58,7 @@ open class Analytics protected constructor(
         reducer = SourceConfigState.SaveSourceConfigValuesReducer(configuration.storage, analyticsScope),
     )
 
-    internal val userIdentityState by lazy {
-        FlowState(
-            initialState = UserIdentity(
-                anonymousID = configuration.storage.readString(StorageKeys.ANONYMOUS_ID, defaultVal = String.empty()),
-                userId = String.empty()
-            )
-        )
-    }
+    internal val userIdentityState = FlowState(initialState = UserIdentity.initialState(configuration.storage))
 
     // TODO("Add a way to stop this channel")
     private val processMessageChannel: Channel<Message> = Channel(Channel.UNLIMITED)
@@ -209,12 +200,12 @@ open class Analytics protected constructor(
      * non-null string used to represent the user anonymously.
      */
     fun setAnonymousId(anonymousId: String) {
-        userIdentityState.dispatch(
-            action = SetIdentityAction(
-                storage = configuration.storage,
-                anonymousID = anonymousId
+        userIdentityState.dispatch(UserIdentity.SetAnonymousIdAction(anonymousId))
+        analyticsScope.launch {
+            userIdentityState.value.storeAnonymousId(
+                storage = configuration.storage
             )
-        )
+        }
     }
 
     /**
@@ -234,7 +225,7 @@ open class Analytics protected constructor(
     }
 
     private fun initializeUserIdentity() {
-        userIdentityState.dispatch(SetIdentityAction(configuration.storage))
+        analyticsScope.launch { userIdentityState.value.storeAnonymousId(storage = configuration.storage) }
     }
 
     override fun getPlatformType(): PlatformType = PlatformType.Server

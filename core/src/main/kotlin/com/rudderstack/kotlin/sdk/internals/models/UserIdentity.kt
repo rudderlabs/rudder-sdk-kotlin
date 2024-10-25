@@ -1,5 +1,11 @@
 package com.rudderstack.kotlin.sdk.internals.models
 
+import com.rudderstack.kotlin.sdk.internals.statemanagement.FlowAction
+import com.rudderstack.kotlin.sdk.internals.storage.Storage
+import com.rudderstack.kotlin.sdk.internals.storage.StorageKeys
+import com.rudderstack.kotlin.sdk.internals.utils.empty
+import java.util.UUID
+
 /**
  * Data class representing a user's identity within the application.
  *
@@ -17,4 +23,30 @@ package com.rudderstack.kotlin.sdk.internals.models
 data class UserIdentity(
     var anonymousID: String,
     var userId: String,
-)
+) {
+
+    companion object {
+
+        internal fun initialState(storage: Storage) = UserIdentity(
+            anonymousID = storage.readString(StorageKeys.ANONYMOUS_ID, defaultVal = UUID.randomUUID().toString()),
+            userId = String.empty(),
+        )
+    }
+
+    internal sealed interface UserIdentityAction : FlowAction<UserIdentity>
+
+    internal class SetAnonymousIdAction(
+        private val anonymousId: String
+    ) : UserIdentityAction {
+
+        override fun reduce(currentState: UserIdentity): UserIdentity {
+            return currentState.copy(anonymousID = anonymousId)
+        }
+    }
+
+    internal suspend fun storeAnonymousId(storage: Storage) {
+        val isAnonymousByClient = anonymousID.isNotEmpty()
+        storage.write(StorageKeys.ANONYMOUS_ID, anonymousID)
+        storage.write(StorageKeys.IS_ANONYMOUS_ID_BY_CLIENT, isAnonymousByClient)
+    }
+}
