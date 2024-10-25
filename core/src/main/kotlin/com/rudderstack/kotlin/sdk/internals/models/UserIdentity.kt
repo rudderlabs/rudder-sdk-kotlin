@@ -21,8 +21,8 @@ import java.util.UUID
  * signs up or logs in. If a user is not authenticated, this value can be an empty string or null.
  */
 data class UserIdentity(
-    var anonymousId: String,
-    var userId: String,
+    val anonymousId: String,
+    val userId: String,
 ) {
 
     companion object {
