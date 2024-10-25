@@ -29,7 +29,7 @@ class UserIdentityStateTest {
 
     @Before
     fun setUp() {
-        userIdentityState = UserIdentityState(UserIdentity(anonymousID = String.empty(), userId = String.empty()))
+        userIdentityState = UserIdentityState(UserIdentity(anonymousId = String.empty(), userId = String.empty()))
         setIdentityAction = SetIdentityAction(storage)
 
         every { storage.readString(any(), any()) } returns String.empty()
@@ -45,7 +45,7 @@ class UserIdentityStateTest {
         val expected = String.empty()
         every { storage.readString(StorageKeys.ANONYMOUS_ID, any()) } returns expected
 
-        val actual = UserIdentityState.currentState(storage).userIdentity.anonymousID
+        val actual = UserIdentityState.currentState(storage).userIdentity.anonymousId
 
         assertEquals(expected, actual)
     }
@@ -55,7 +55,7 @@ class UserIdentityStateTest {
         val expected = "<anonymous-id>"
         every { storage.readString(StorageKeys.ANONYMOUS_ID, any()) } returns expected
 
-        val actual = UserIdentityState.currentState(storage).userIdentity.anonymousID
+        val actual = UserIdentityState.currentState(storage).userIdentity.anonymousId
 
         assertEquals(expected, actual)
     }
@@ -69,7 +69,7 @@ class UserIdentityStateTest {
         every { UUID.randomUUID().toString() } returns expected
 
         val newState = reducer(userIdentityState, setIdentityAction)
-        val actual = newState.userIdentity.anonymousID
+        val actual = newState.userIdentity.anonymousId
 
         testScope.advanceUntilIdle()
 
@@ -86,7 +86,7 @@ class UserIdentityStateTest {
 
         val reducer = GenerateUserAnonymousID(testScope)
         val newState = reducer(userIdentityState, SetIdentityAction(storage, anonymousID = expected))
-        val actual = newState.userIdentity.anonymousID
+        val actual = newState.userIdentity.anonymousId
         testScope.advanceUntilIdle() // Ensure coroutines complete
 
         assertEquals(expected, actual)
@@ -98,12 +98,12 @@ class UserIdentityStateTest {
     fun `given an anonymous id already exists in the storage, when action is invoked, then current anonymous id should be retrieved`() {
         val expected = "<existing-anonymous-id>"
         val currentState = userIdentityState.copy(
-            userIdentity = userIdentityState.userIdentity.copy(anonymousID = expected)
+            userIdentity = userIdentityState.userIdentity.copy(anonymousId = expected)
         )
         val reducer = GenerateUserAnonymousID(testScope)
 
         val newState = reducer(currentState, setIdentityAction)
-        val actual = newState.userIdentity.anonymousID
+        val actual = newState.userIdentity.anonymousId
         testScope.advanceUntilIdle()
 
         assertEquals(expected, actual)
@@ -113,7 +113,7 @@ class UserIdentityStateTest {
 
     @Test
     fun `given an anonymous id already exists in the storage, when the action is invoked without anonymous id, then an anonymous id should be generated`() {
-        val emptyState = UserIdentityState(UserIdentity(anonymousID = String.empty(), userId = String.empty()))
+        val emptyState = UserIdentityState(UserIdentity(anonymousId = String.empty(), userId = String.empty()))
         val reducer = GenerateUserAnonymousID(testScope)
         val expected = UUID.randomUUID().toString()
 
@@ -121,7 +121,7 @@ class UserIdentityStateTest {
         every { UUID.randomUUID().toString() } returns expected
 
         val newState = reducer(emptyState, setIdentityAction)
-        val actual = newState.userIdentity.anonymousID
+        val actual = newState.userIdentity.anonymousId
         testScope.advanceUntilIdle()
 
         assertEquals(expected, actual)

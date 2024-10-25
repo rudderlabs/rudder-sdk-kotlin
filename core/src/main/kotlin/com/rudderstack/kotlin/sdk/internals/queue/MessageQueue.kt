@@ -63,7 +63,7 @@ internal class MessageQueue(
 
     private fun updateAnonymousId() {
         analytics.userIdentityState.onEach { userOptionsState ->
-            httpClientFactory.updateAnonymousIdHeaderString(userOptionsState.anonymousID.encodeToBase64())
+            httpClientFactory.updateAnonymousIdHeaderString(userOptionsState.anonymousId.encodeToBase64())
         }.launchIn(analytics.analyticsScope)
     }
 

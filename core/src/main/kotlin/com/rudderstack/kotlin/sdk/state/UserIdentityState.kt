@@ -18,7 +18,7 @@ internal data class UserIdentityState(val userIdentity: UserIdentity) : State {
         fun currentState(storage: Storage): UserIdentityState {
             return UserIdentityState(
                 userIdentity = UserIdentity(
-                    anonymousID = storage.readString(StorageKeys.ANONYMOUS_ID, defaultVal = String.empty()),
+                    anonymousId = storage.readString(StorageKeys.ANONYMOUS_ID, defaultVal = String.empty()),
                     userId = String.empty()
                 )
             )
@@ -33,7 +33,7 @@ internal data class UserIdentityState(val userIdentity: UserIdentity) : State {
 
         override fun invoke(currentState: UserIdentityState, action: SetIdentityAction): UserIdentityState {
             val updatedAnonymousID = action.anonymousID.ifEmpty {
-                currentState.userIdentity.anonymousID.ifEmpty {
+                currentState.userIdentity.anonymousId.ifEmpty {
                     UUID.randomUUID().toString()
                 }
             }
@@ -45,7 +45,7 @@ internal data class UserIdentityState(val userIdentity: UserIdentity) : State {
             }
 
             return currentState.copy(
-                userIdentity = currentState.userIdentity.copy(anonymousID = updatedAnonymousID)
+                userIdentity = currentState.userIdentity.copy(anonymousId = updatedAnonymousID)
             )
         }
     }

@@ -218,7 +218,7 @@ open class Analytics protected constructor(
     private fun processMessages() {
         analyticsScope.launch(analyticsDispatcher) {
             for (message in processMessageChannel) {
-                message.updateData(anonymousID = userIdentityState.value.anonymousID, platform = getPlatformType())
+                message.updateData(anonymousID = userIdentityState.value.anonymousId, platform = getPlatformType())
                 pluginChain.process(message)
             }
         }
