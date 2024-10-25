@@ -1,5 +1,10 @@
 package com.rudderstack.kotlin.sdk.internals.models
 
+import com.rudderstack.kotlin.sdk.internals.storage.Storage
+import com.rudderstack.kotlin.sdk.internals.storage.StorageKeys
+import com.rudderstack.kotlin.sdk.internals.utils.empty
+import java.util.UUID
+
 /**
  * Data class representing a user's identity within the application.
  *
@@ -17,4 +22,13 @@ package com.rudderstack.kotlin.sdk.internals.models
 data class UserIdentity(
     var anonymousID: String,
     var userId: String,
-)
+) {
+
+    companion object {
+
+        internal fun initialState(storage: Storage) = UserIdentity(
+            anonymousID = storage.readString(StorageKeys.ANONYMOUS_ID, defaultVal = UUID.randomUUID().toString()),
+            userId = String.empty(),
+        )
+    }
+}

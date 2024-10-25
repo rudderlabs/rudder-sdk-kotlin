@@ -5,9 +5,6 @@ import com.rudderstack.kotlin.sdk.internals.statemanagement.FlowAction
 import com.rudderstack.kotlin.sdk.internals.storage.Storage
 import com.rudderstack.kotlin.sdk.internals.storage.StorageKeys
 import com.rudderstack.kotlin.sdk.internals.utils.empty
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import java.util.UUID
 
 internal sealed interface UserIdentityAction : FlowAction<UserIdentity>
@@ -17,18 +14,17 @@ internal class SetAnonymousIdAction(
     private val anonymousID: String = String.empty()
 ) : UserIdentityAction {
 
-    override fun reduce(currentState: UserIdentity, scope: CoroutineScope, dispatcher: CoroutineDispatcher): UserIdentity {
+    override suspend fun reduce(currentState: UserIdentity): UserIdentity {
         val updatedAnonymousID = anonymousID.ifEmpty {
             currentState.anonymousID.ifEmpty {
                 UUID.randomUUID().toString()
             }
         }
         val isAnonymousByClient = anonymousID.isNotEmpty()
-        scope.launch(dispatcher) {
-            storage.write(StorageKeys.ANONYMOUS_ID, updatedAnonymousID)
-            // not sure if we need to know if anonymous id was set from the client, thought it might be helpful in the future.
-            storage.write(StorageKeys.IS_ANONYMOUS_ID_BY_CLIENT, isAnonymousByClient)
-        }
+
+        storage.write(StorageKeys.ANONYMOUS_ID, updatedAnonymousID)
+        // not sure if we need to know if anonymous id was set from the client, thought it might be helpful in the future.
+        storage.write(StorageKeys.IS_ANONYMOUS_ID_BY_CLIENT, isAnonymousByClient)
 
         return currentState.copy(anonymousID = updatedAnonymousID)
     }
