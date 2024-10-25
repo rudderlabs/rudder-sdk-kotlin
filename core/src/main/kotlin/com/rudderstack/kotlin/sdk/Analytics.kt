@@ -22,7 +22,7 @@ import com.rudderstack.kotlin.sdk.internals.utils.empty
 import com.rudderstack.kotlin.sdk.plugins.LibraryInfoPlugin
 import com.rudderstack.kotlin.sdk.plugins.PocPlugin
 import com.rudderstack.kotlin.sdk.plugins.RudderStackDataplanePlugin
-import com.rudderstack.kotlin.sdk.state.SetIdentityAction
+import com.rudderstack.kotlin.sdk.state.SetAnonymousIdAction
 import com.rudderstack.kotlin.sdk.state.SourceConfigState
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -65,7 +65,9 @@ open class Analytics protected constructor(
             initialState = UserIdentity(
                 anonymousID = configuration.storage.readString(StorageKeys.ANONYMOUS_ID, defaultVal = String.empty()),
                 userId = String.empty()
-            )
+            ),
+            scope = analyticsScope,
+            dispatcher = analyticsDispatcher
         )
     }
 
@@ -209,14 +211,12 @@ open class Analytics protected constructor(
      * non-null string used to represent the user anonymously.
      */
     fun setAnonymousId(anonymousId: String) {
-        analyticsScope.launch {
-            userIdentityState.dispatch(
-                action = SetIdentityAction(
-                    storage = configuration.storage,
-                    anonymousID = anonymousId
-                )
+        userIdentityState.dispatch(
+            action = SetAnonymousIdAction(
+                storage = configuration.storage,
+                anonymousID = anonymousId
             )
-        }
+        )
     }
 
     /**
@@ -236,9 +236,7 @@ open class Analytics protected constructor(
     }
 
     private fun initializeUserIdentity() {
-        analyticsScope.launch {
-            userIdentityState.dispatch(SetIdentityAction(configuration.storage))
-        }
+        userIdentityState.dispatch(SetAnonymousIdAction(configuration.storage))
     }
 
     override fun getPlatformType(): PlatformType = PlatformType.Server
