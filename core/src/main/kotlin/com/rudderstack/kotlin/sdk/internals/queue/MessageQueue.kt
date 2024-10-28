@@ -27,7 +27,6 @@ import kotlinx.coroutines.withContext
 import org.jetbrains.annotations.VisibleForTesting
 import java.io.File
 import java.io.FileNotFoundException
-import java.util.UUID
 
 internal const val UPLOAD_SIG = "#!upload"
 private const val BATCH_ENDPOINT = "/v1/batch"
@@ -43,7 +42,7 @@ internal class MessageQueue(
             endPoint = BATCH_ENDPOINT,
             authHeaderString = writeKey.encodeToBase64(),
             isGZIPEnabled = gzipEnabled,
-            anonymousIdHeaderString = storage.readString(StorageKeys.ANONYMOUS_ID, defaultVal = UUID.randomUUID().toString())
+            anonymousIdHeaderString = analytics.getAnonymousId()
         )
     }
 ) {
