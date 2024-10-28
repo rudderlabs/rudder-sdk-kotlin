@@ -73,7 +73,7 @@ class Analytics(
 
     private fun setLogger() {
         if (getPlatformType() == PlatformType.Mobile) {
-            LoggerManager.setLogger(logger = AndroidLogger, logLevel = configuration.logLevel)
+            LoggerManager.setup(logger = AndroidLogger, logLevel = configuration.logLevel)
         }
     }
 

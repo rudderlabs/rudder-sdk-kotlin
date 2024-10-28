@@ -75,7 +75,7 @@ open class Analytics protected constructor(
 
     private fun setLogger() {
         if (getPlatformType() == PlatformType.Server) {
-            LoggerManager.setLogger(logger = KotlinLogger, logLevel = configuration.logLevel)
+            LoggerManager.setup(logger = KotlinLogger, logLevel = configuration.logLevel)
         }
     }
 

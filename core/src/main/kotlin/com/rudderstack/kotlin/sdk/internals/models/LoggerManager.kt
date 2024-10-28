@@ -1,6 +1,7 @@
 package com.rudderstack.kotlin.sdk.internals.models
 
 import com.rudderstack.kotlin.sdk.internals.logger.Logger
+import com.rudderstack.kotlin.sdk.internals.logger.TAG
 
 /**
  * `LoggerManager` is a singleton class that manages the logging instance for the SDK, supporting configurable
@@ -8,18 +9,12 @@ import com.rudderstack.kotlin.sdk.internals.logger.Logger
  * logging across different environments.
  *
  * ### Setup
- * Use the `setLogger` method to configure the logger instance and specify a log level:
+ * Use the `setLogger` method to configure the logger instance, specify a log level and optionally set a tag.:
  *
  * ```kotlin
- * LoggerManager.setLogger(logger = AndroidLogger, level = configuration.logLevel)
+ * LoggerManager.setLogger(logger = AndroidLogger, level = configuration.logLevel, tag = "MyTag")
  * // Or for non-Android environments
  * LoggerManager.setLogger(logger = KotlinLogger, level = configuration.logLevel)
- * ```
- *
- * Optionally, set a custom tag for the logger using `setTag`:
- *
- * ```kotlin
- * LoggerManager.setTag("RudderStack")
  * ```
  *
  * ### Usage
@@ -44,19 +39,12 @@ object LoggerManager {
      *
      * @param logger The logger instance to use (e.g., `AndroidLogger` or `KotlinLogger`).
      * @param logLevel The log level to activate for the logger, defining the minimum severity of logs to display.
+     * @param tag A string tag to associate with all log messages. It is optional and defaults to `Rudder-Analytics`.
      */
-    fun setLogger(logger: Logger, logLevel: Logger.LogLevel) {
+    fun setup(logger: Logger, logLevel: Logger.LogLevel, tag: String = TAG) {
         this.logger = logger
-        logger.activate(logLevel)
-    }
-
-    /**
-     * Sets a custom tag for the logger instance, which can be used to group or identify logs.
-     *
-     * @param tag A string tag to associate with all log messages.
-     */
-    fun setTag(tag: String) {
-        logger.setTag(tag)
+        this.logger.activate(logLevel)
+        this.logger.setTag(tag)
     }
 
     /**

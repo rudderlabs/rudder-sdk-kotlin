@@ -64,5 +64,5 @@ fun mockUri(
 }
 
 fun setupLogger(logger: Logger, level: Logger.LogLevel = Logger.LogLevel.VERBOSE) {
-    LoggerManager.setLogger(logger = logger, logLevel = level)
+    LoggerManager.setup(logger = logger, logLevel = level)
 }
