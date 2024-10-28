@@ -66,7 +66,7 @@ open class Analytics protected constructor(
     init {
         processMessages()
         setup()
-        initializeUserIdentity()
+        storeAnonymousId()
     }
 
     /**
@@ -201,11 +201,7 @@ open class Analytics protected constructor(
      */
     fun setAnonymousId(anonymousId: String) {
         userIdentityState.dispatch(UserIdentity.SetAnonymousIdAction(anonymousId))
-        analyticsScope.launch(storageDispatcher) {
-            userIdentityState.value.storeAnonymousId(
-                storage = configuration.storage
-            )
-        }
+        storeAnonymousId()
     }
 
     /**
@@ -231,8 +227,10 @@ open class Analytics protected constructor(
         }
     }
 
-    private fun initializeUserIdentity() {
-        analyticsScope.launch { userIdentityState.value.storeAnonymousId(storage = configuration.storage) }
+    private fun storeAnonymousId() {
+        analyticsScope.launch(storageDispatcher) {
+            userIdentityState.value.storeAnonymousId(storage = configuration.storage)
+        }
     }
 
     override fun getPlatformType(): PlatformType = PlatformType.Server
