@@ -20,22 +20,22 @@ import java.util.UUID
  * @property userId The unique identifier for an authenticated user. This ID is typically assigned when a user
  * signs up or logs in. If a user is not authenticated, this value can be an empty string or null.
  */
-data class UserIdentity(
+internal data class UserIdentity(
     val anonymousId: String,
     val userId: String,
 ) {
 
     companion object {
 
-        internal fun initialState(storage: Storage) = UserIdentity(
+        fun initialState(storage: Storage) = UserIdentity(
             anonymousId = storage.readString(StorageKeys.ANONYMOUS_ID, defaultVal = UUID.randomUUID().toString()),
             userId = String.empty(),
         )
     }
 
-    internal sealed interface UserIdentityAction : FlowAction<UserIdentity>
+    sealed interface UserIdentityAction : FlowAction<UserIdentity>
 
-    internal class SetAnonymousIdAction(
+    class SetAnonymousIdAction(
         private val anonymousId: String
     ) : UserIdentityAction {
 
@@ -44,7 +44,7 @@ data class UserIdentity(
         }
     }
 
-    internal suspend fun storeAnonymousId(storage: Storage) {
+    suspend fun storeAnonymousId(storage: Storage) {
         val isAnonymousByClient = anonymousId.isNotEmpty()
         storage.write(StorageKeys.ANONYMOUS_ID, anonymousId)
         storage.write(StorageKeys.IS_ANONYMOUS_ID_BY_CLIENT, isAnonymousByClient)
