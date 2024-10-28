@@ -2,6 +2,8 @@ package com.rudderstack.android.sdk.utils
 
 import android.net.Uri
 import com.rudderstack.kotlin.sdk.Analytics
+import com.rudderstack.kotlin.sdk.internals.logger.Logger
+import com.rudderstack.kotlin.sdk.internals.models.LoggerManager
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.TestDispatcher
@@ -59,4 +61,8 @@ fun mockUri(
         }
         every { this@mockk.toString() } returns url
     }
+}
+
+fun setupLogger(logger: Logger, level: Logger.LogLevel = Logger.LogLevel.VERBOSE) {
+    LoggerManager.setLogger(logger = logger, level = level)
 }
