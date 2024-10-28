@@ -1,5 +1,6 @@
 package com.rudderstack.kotlin.sdk
 
+import com.rudderstack.kotlin.sdk.internals.logger.KotlinLogger
 import com.rudderstack.kotlin.sdk.internals.models.SourceConfig
 import com.rudderstack.kotlin.sdk.internals.network.ErrorStatus
 import com.rudderstack.kotlin.sdk.internals.network.HttpClient
@@ -7,9 +8,11 @@ import com.rudderstack.kotlin.sdk.internals.network.Result
 import com.rudderstack.kotlin.sdk.internals.statemanagement.SingleThreadStore
 import com.rudderstack.kotlin.sdk.internals.utils.LenientJson
 import com.rudderstack.kotlin.sdk.state.SourceConfigState
+import io.mockk.MockKAnnotations
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
+import io.mockk.impl.annotations.MockK
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
@@ -27,6 +30,9 @@ private const val sourceConfigSuccess = "config/source_config_without_destinatio
 @OptIn(ExperimentalCoroutinesApi::class)
 class SourceConfigManagerTest {
 
+    @MockK
+    private lateinit var mockKotlinLogger: KotlinLogger
+
     private val analytics: Analytics = mockk(relaxed = true)
     private val store: SingleThreadStore<SourceConfigState, SourceConfigState.UpdateAction> = mockk(relaxed = true)
     private val httpClient: HttpClient = mockk()
@@ -36,6 +42,8 @@ class SourceConfigManagerTest {
 
     @Before
     fun setUp() {
+        MockKAnnotations.init(this, relaxed = true)
+        setupLogger(mockKotlinLogger)
         Dispatchers.setMain(testDispatcher)
         every { analytics.networkDispatcher } returns testDispatcher
         sourceConfigManager = SourceConfigManager(analytics, store, httpClient)
@@ -68,7 +76,7 @@ class SourceConfigManagerTest {
 
             sourceConfigManager.fetchSourceConfig()
 
-            verify { analytics.configuration.logger.debug(log = "SourceConfig: $sourceConfig") }
+            verify { mockKotlinLogger.debug(log = "SourceConfig: $sourceConfig") }
         }
 
     @Test
@@ -94,7 +102,7 @@ class SourceConfigManagerTest {
 
             sourceConfigManager.fetchSourceConfig()
 
-            verify { analytics.configuration.logger.error(any(), any()) }
+            verify { mockKotlinLogger.error(any(), any()) }
         }
 
     @Test
@@ -108,7 +116,7 @@ class SourceConfigManagerTest {
             sourceConfigManager.fetchSourceConfig()
 
             coVerify(exactly = 0) { store.subscribe(any()) }
-            verify { analytics.configuration.logger.error(any(), any()) }
+            verify { mockKotlinLogger.error(any(), any()) }
         }
 }
 

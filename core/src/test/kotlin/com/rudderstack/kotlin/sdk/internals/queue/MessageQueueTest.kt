@@ -1,7 +1,7 @@
 package com.rudderstack.kotlin.sdk.internals.queue
 
 import com.rudderstack.kotlin.sdk.Analytics
-import com.rudderstack.kotlin.sdk.internals.logger.Logger
+import com.rudderstack.kotlin.sdk.internals.logger.KotlinLogger
 import com.rudderstack.kotlin.sdk.internals.models.Message
 import com.rudderstack.kotlin.sdk.internals.network.ErrorStatus
 import com.rudderstack.kotlin.sdk.internals.network.HttpClient
@@ -10,6 +10,7 @@ import com.rudderstack.kotlin.sdk.internals.policies.FlushPoliciesFacade
 import com.rudderstack.kotlin.sdk.internals.storage.Storage
 import com.rudderstack.kotlin.sdk.internals.storage.StorageKeys
 import com.rudderstack.kotlin.sdk.internals.utils.empty
+import com.rudderstack.kotlin.sdk.setupLogger
 import com.rudderstack.kotlin.sdk.utils.mockAnalytics
 import io.mockk.MockKAnnotations
 import io.mockk.coEvery
@@ -40,7 +41,7 @@ class MessageQueueTest {
     private lateinit var mockHttpClient: HttpClient
 
     @MockK
-    private lateinit var mockLogger: Logger
+    private lateinit var mockKotlinLogger: KotlinLogger
 
     @MockK
     private lateinit var mockFlushPoliciesFacade: FlushPoliciesFacade
@@ -55,8 +56,9 @@ class MessageQueueTest {
     fun setUp() {
         MockKAnnotations.init(this, relaxed = true)
 
+        setupLogger(mockKotlinLogger)
+
         every { mockAnalytics.configuration.storage } returns mockStorage
-        every { mockAnalytics.configuration.logger } returns mockLogger
 
         messageQueue = spyk(
             MessageQueue(
@@ -234,11 +236,7 @@ class MessageQueueTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         verify(exactly = filePaths.size) {
-            mockLogger.error(
-                tag = "Rudder-Analytics",
-                log = "Message storage file not found",
-                exception
-            )
+            mockKotlinLogger.error("Message storage file not found", exception)
         }
     }
 
@@ -272,11 +270,7 @@ class MessageQueueTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         verify(exactly = filePaths.size) {
-            mockLogger.error(
-                tag = "Rudder-Analytics",
-                log = "Error when uploading event",
-                exception
-            )
+            mockKotlinLogger.error("Error when uploading event", exception)
         }
     }
 

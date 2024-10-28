@@ -1,5 +1,7 @@
 package com.rudderstack.kotlin.sdk
 
+import com.rudderstack.kotlin.sdk.internals.logger.Logger
+import com.rudderstack.kotlin.sdk.internals.models.LoggerManager
 import java.io.BufferedReader
 
 fun Any.readFileAsString(fileName: String): String {
@@ -22,4 +24,8 @@ private fun String.cleanJsonString(): String {
             ""
         }
     }
+}
+
+fun setupLogger(logger: Logger, level: Logger.LogLevel = Logger.LogLevel.VERBOSE) {
+    LoggerManager.setLogger(logger = logger, level = level)
 }
