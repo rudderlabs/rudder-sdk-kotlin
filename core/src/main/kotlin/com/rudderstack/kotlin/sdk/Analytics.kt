@@ -201,7 +201,7 @@ open class Analytics protected constructor(
      */
     fun setAnonymousId(anonymousId: String) {
         userIdentityState.dispatch(UserIdentity.SetAnonymousIdAction(anonymousId))
-        analyticsScope.launch {
+        analyticsScope.launch(storageDispatcher) {
             userIdentityState.value.storeAnonymousId(
                 storage = configuration.storage
             )
