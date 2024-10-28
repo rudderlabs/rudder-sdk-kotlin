@@ -1,6 +1,7 @@
 package com.rudderstack.android.sdk.utils
 
 import com.rudderstack.kotlin.sdk.Analytics
+import com.rudderstack.kotlin.sdk.internals.models.LoggerManager
 import kotlinx.coroutines.launch
 
 /**
@@ -19,6 +20,6 @@ internal fun Analytics.runOnAnalyticsThread(block: suspend () -> Unit) = analyti
  * @param throwable The error to be thrown.
  */
 internal fun Analytics.logAndThrowError(message: String, throwable: Throwable? = null): Nothing {
-    configuration.logger.error(log = message)
+    LoggerManager.error(message)
     throw throwable ?: error(message)
 }

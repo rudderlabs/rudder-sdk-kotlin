@@ -2,15 +2,14 @@ package com.rudderstack.android.sdk
 
 import android.util.Log
 import com.rudderstack.kotlin.sdk.internals.logger.Logger
+import com.rudderstack.kotlin.sdk.internals.logger.TAG
 
 /**
  * Logger implementation specifically for android.
  */
-class AndroidLogger(
-    initialLogLevel: Logger.LogLevel = Logger.DEFAULT_LOG_LEVEL
-) : Logger {
+internal object AndroidLogger : Logger {
 
-    private var logLevel: Logger.LogLevel = initialLogLevel
+    private var logLevel: Logger.LogLevel = Logger.DEFAULT_LOG_LEVEL
         @Synchronized set
 
         @Synchronized get
@@ -19,27 +18,33 @@ class AndroidLogger(
         logLevel = level
     }
 
-    override fun info(tag: String, log: String) {
-        if (Logger.LogLevel.INFO >= logLevel) {
-            Log.i(tag, log)
+    override fun verbose(log: String) {
+        if (Logger.LogLevel.VERBOSE >= logLevel) {
+            Log.v(TAG, log)
         }
     }
 
-    override fun debug(tag: String, log: String) {
+    override fun debug(log: String) {
         if (Logger.LogLevel.DEBUG >= logLevel) {
-            Log.d(tag, log)
+            Log.d(TAG, log)
         }
     }
 
-    override fun warn(tag: String, log: String) {
+    override fun info(log: String) {
+        if (Logger.LogLevel.INFO >= logLevel) {
+            Log.i(TAG, log)
+        }
+    }
+
+    override fun warn(log: String) {
         if (Logger.LogLevel.WARN >= logLevel) {
-            Log.w(tag, log)
+            Log.w(TAG, log)
         }
     }
 
-    override fun error(tag: String, log: String, throwable: Throwable?) {
+    override fun error(log: String, throwable: Throwable?) {
         if (Logger.LogLevel.ERROR >= logLevel) {
-            Log.e(tag, log, throwable)
+            Log.e(TAG, log, throwable)
         }
     }
 

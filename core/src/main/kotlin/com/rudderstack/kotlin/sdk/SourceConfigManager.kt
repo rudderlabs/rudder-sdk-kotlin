@@ -1,5 +1,6 @@
 package com.rudderstack.kotlin.sdk
 
+import com.rudderstack.kotlin.sdk.internals.models.LoggerManager
 import com.rudderstack.kotlin.sdk.internals.models.SourceConfig
 import com.rudderstack.kotlin.sdk.internals.network.HttpClient
 import com.rudderstack.kotlin.sdk.internals.network.HttpClientImpl
@@ -38,28 +39,28 @@ internal class SourceConfigManager(
             when (val sourceConfigResult = httpClientFactory.getData()) {
                 is Result.Success -> {
                     val config = LenientJson.decodeFromString<SourceConfig>(sourceConfigResult.response)
-                    analytics.configuration.logger.info(log = "SourceConfig is fetched successfully: $config")
+                    LoggerManager.info("SourceConfig is fetched successfully: $config")
                     config
                 }
 
                 is Result.Failure -> {
-                    analytics.configuration.logger.error(
-                        log = "Failed to get sourceConfig due to ${sourceConfigResult.status} ${sourceConfigResult.error}"
+                    LoggerManager.error(
+                        "Failed to get sourceConfig due to ${sourceConfigResult.status} ${sourceConfigResult.error}"
                     )
                     null
                 }
             }
         } catch (e: Exception) {
-            analytics.configuration.logger.error(log = "Failed to get sourceConfig due to $e")
+            LoggerManager.error("Failed to get sourceConfig due to $e")
             null
         }
     }
 
     @VisibleForTesting
     fun storeSourceConfig(sourceConfig: SourceConfig) {
-        store.subscribe { _, _ -> analytics.configuration.logger.debug(log = "SourceConfigState subscribed") }
+        store.subscribe { _, _ -> LoggerManager.debug("SourceConfigState subscribed") }
         store.dispatch(action = SourceConfigState.UpdateAction(sourceConfig))
-        analytics.configuration.logger.debug(log = "SourceConfig: $sourceConfig")
+        LoggerManager.debug("SourceConfig: $sourceConfig")
     }
 }
 

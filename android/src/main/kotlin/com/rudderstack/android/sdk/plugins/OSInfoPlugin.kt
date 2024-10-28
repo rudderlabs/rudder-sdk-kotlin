@@ -3,6 +3,7 @@ package com.rudderstack.android.sdk.plugins
 import android.os.Build
 import com.rudderstack.android.sdk.utils.mergeWithHigherPriorityTo
 import com.rudderstack.kotlin.sdk.Analytics
+import com.rudderstack.kotlin.sdk.internals.models.LoggerManager
 import com.rudderstack.kotlin.sdk.internals.models.Message
 import com.rudderstack.kotlin.sdk.internals.plugins.Plugin
 import kotlinx.serialization.json.JsonObject
@@ -46,7 +47,7 @@ internal class OSInfoPlugin : Plugin {
     override fun execute(message: Message): Message = attachOSInfo(message)
 
     private fun attachOSInfo(message: Message): Message {
-        analytics.configuration.logger.debug(log = "Attaching OS info to the message payload")
+        LoggerManager.debug("Attaching OS info to the message payload")
 
         message.context = message.context mergeWithHigherPriorityTo osContext
 

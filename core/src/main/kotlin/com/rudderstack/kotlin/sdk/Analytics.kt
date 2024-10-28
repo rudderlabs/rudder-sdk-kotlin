@@ -1,6 +1,8 @@
 package com.rudderstack.kotlin.sdk
 
+import com.rudderstack.kotlin.sdk.internals.logger.KotlinLogger
 import com.rudderstack.kotlin.sdk.internals.models.GroupEvent
+import com.rudderstack.kotlin.sdk.internals.models.LoggerManager
 import com.rudderstack.kotlin.sdk.internals.models.Message
 import com.rudderstack.kotlin.sdk.internals.models.Properties
 import com.rudderstack.kotlin.sdk.internals.models.RudderOption
@@ -65,9 +67,16 @@ open class Analytics protected constructor(
     private val processMessageChannel: Channel<Message> = Channel(Channel.UNLIMITED)
 
     init {
+        setLogger()
         processMessages()
         setup()
         initializeUserIdentity()
+    }
+
+    private fun setLogger() {
+        if (getPlatformType() == PlatformType.Server) {
+            LoggerManager.setLogger(logger = KotlinLogger, level = configuration.logLevel)
+        }
     }
 
     /**
@@ -80,7 +89,7 @@ open class Analytics protected constructor(
         configuration = configuration,
         coroutineConfig = object : CoroutineConfiguration {
             private val handler = CoroutineExceptionHandler { _, exception ->
-                configuration.logger.error(log = exception.stackTraceToString())
+                LoggerManager.error(exception.stackTraceToString())
             }
             override val analyticsScope: CoroutineScope = CoroutineScope(SupervisorJob() + handler)
             override val analyticsDispatcher: CoroutineDispatcher = Dispatchers.IO
