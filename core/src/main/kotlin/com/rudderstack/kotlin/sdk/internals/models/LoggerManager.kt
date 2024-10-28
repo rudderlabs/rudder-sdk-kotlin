@@ -43,11 +43,11 @@ object LoggerManager {
      * Sets the logger instance and log level for the SDK.
      *
      * @param logger The logger instance to use (e.g., `AndroidLogger` or `KotlinLogger`).
-     * @param level The log level to activate for the logger, defining the minimum severity of logs to display.
+     * @param logLevel The log level to activate for the logger, defining the minimum severity of logs to display.
      */
-    fun setLogger(logger: Logger, level: Logger.LogLevel) {
+    fun setLogger(logger: Logger, logLevel: Logger.LogLevel) {
         this.logger = logger
-        logger.activate(level)
+        logger.activate(logLevel)
     }
 
     /**

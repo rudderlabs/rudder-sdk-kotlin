@@ -27,5 +27,5 @@ private fun String.cleanJsonString(): String {
 }
 
 fun setupLogger(logger: Logger, level: Logger.LogLevel = Logger.LogLevel.VERBOSE) {
-    LoggerManager.setLogger(logger = logger, level = level)
+    LoggerManager.setLogger(logger = logger, logLevel = level)
 }
