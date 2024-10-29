@@ -9,7 +9,6 @@ import com.rudderstack.android.sdk.utils.automaticProperty
 import com.rudderstack.android.sdk.utils.mockAnalytics
 import com.rudderstack.android.sdk.utils.mockNavContext
 import com.rudderstack.kotlin.sdk.internals.statemanagement.FlowState
-import io.mockk.MockKAnnotations
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
@@ -45,7 +44,6 @@ class NavControllerTrackingPluginTest {
 
     @Before
     fun setUp() {
-        MockKAnnotations.init(this, relaxed = true)
         Dispatchers.setMain(testDispatcher)
 
         mockNavContextState = spyk(FlowState(emptySet()))
@@ -63,7 +61,7 @@ class NavControllerTrackingPluginTest {
     }
 
     @Test
-    fun `when setup called, then it should subscribe to navContextStore`() = runTest {
+    fun `when setup called, then it should subscribe to navContextState`() = runTest {
         plugin.setup(mockAnalytics)
         advanceUntilIdle()
 
