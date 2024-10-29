@@ -28,7 +28,7 @@ class NavControllerActivityObserverTest {
     private lateinit var mockActivity: ComponentActivity
 
     @MockK
-    private lateinit var mockNavContextStore: FlowState<Set<NavContext>>
+    private lateinit var mockNavContextState: FlowState<Set<NavContext>>
 
     private lateinit var observer: NavControllerActivityObserver
 
@@ -39,8 +39,8 @@ class NavControllerActivityObserverTest {
         every { mockNavContext.callingActivity } returns mockActivity
         every { mockActivity.lifecycle } returns mockk(relaxed = true)
         every { mockActivity.lifecycle.addObserver(any()) } just Runs
-        every { mockPlugin.navContextState } returns mockNavContextStore
-        every { mockNavContextStore.dispatch(any()) } just Runs
+        every { mockPlugin.navContextState } returns mockNavContextState
+        every { mockNavContextState.dispatch(any()) } just Runs
 
         observer = NavControllerActivityObserver(mockPlugin, mockNavContext)
     }
@@ -82,7 +82,7 @@ class NavControllerActivityObserverTest {
 
         verify {
             observer.activityLifecycle()?.removeObserver(observer)
-            mockNavContextStore.dispatch(
+            mockNavContextState.dispatch(
                 match { it is NavContext.RemoveNavContextAction && it.navContext == mockNavContext }
             )
         }
