@@ -6,6 +6,7 @@ import com.rudderstack.kotlin.sdk.internals.statemanagement.Action
 import com.rudderstack.kotlin.sdk.internals.statemanagement.FlowAction
 import com.rudderstack.kotlin.sdk.internals.statemanagement.Reducer
 import com.rudderstack.kotlin.sdk.internals.statemanagement.State
+import org.jetbrains.annotations.VisibleForTesting
 
 internal data class NavContext(
     val navController: NavController,
@@ -26,7 +27,7 @@ internal data class NavContext(
         }
     }
 
-    internal class RemoveNavContextAction(private val navContext: NavContext) : NavContextAction {
+    internal class RemoveNavContextAction(@VisibleForTesting internal val navContext: NavContext) : NavContextAction {
 
         override fun reduce(currentState: Set<NavContext>): Set<NavContext> {
             return currentState.minus(navContext)
