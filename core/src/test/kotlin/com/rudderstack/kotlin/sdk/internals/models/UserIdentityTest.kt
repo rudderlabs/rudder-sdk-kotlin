@@ -1,5 +1,6 @@
 package com.rudderstack.kotlin.sdk.internals.models
 
+import com.rudderstack.kotlin.sdk.internals.models.useridentity.UserIdentity
 import com.rudderstack.kotlin.sdk.internals.storage.Storage
 import com.rudderstack.kotlin.sdk.internals.storage.StorageKeys
 import io.mockk.MockKAnnotations
@@ -42,7 +43,7 @@ class UserIdentityTest {
 
     @Test
     fun `when SetAnonymousIdAction called, then it should update anonymousId in UserIdentity`() {
-        val initialUserIdentity = UserIdentity(anonymousId = "initialId", userId = "userId")
+        val initialUserIdentity = UserIdentity(anonymousId = "initialId", userId = "userId", traits = emptyJsonObject, externalIds = emptyList())
         val newAnonymousId = "newAnonymousId"
         val action = UserIdentity.SetAnonymousIdAction(newAnonymousId)
 
@@ -54,7 +55,7 @@ class UserIdentityTest {
 
     @Test
     fun `given anonymousId is non-empty, when storeAnonymousId called, then it should store anonymousId and set isAnonymousByClient to true`() = runTest {
-        val userIdentity = UserIdentity(anonymousId = "nonEmptyId", userId = "userId")
+        val userIdentity = UserIdentity(anonymousId = "nonEmptyId", userId = "userId", traits = emptyJsonObject, externalIds = emptyList())
 
         userIdentity.storeAnonymousId(mockStorage)
 
@@ -64,7 +65,7 @@ class UserIdentityTest {
 
     @Test
     fun `given anonymousId is empty, when storeAnonymousId called, then it should set isAnonymousByClient to false`() = runTest {
-        val userIdentity = UserIdentity(anonymousId = "", userId = "userId")
+        val userIdentity = UserIdentity(anonymousId = "", userId = "userId", traits = emptyJsonObject, externalIds = emptyList())
 
         userIdentity.storeAnonymousId(mockStorage)
 
