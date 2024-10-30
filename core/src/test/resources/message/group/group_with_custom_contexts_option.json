@@ -19,7 +19,10 @@
       true,
       123.456
     ],
-    "key-11": {}
+    "key-11": {},
+    "traits": {
+      "anonymousId": "<anonymous-id>"
+    }
   },
   "originalTimestamp": "<original-timestamp>",
   "sentAt": "{{ RSA_DEF_SENT_AT_TS }}",

@@ -2,7 +2,11 @@
   "event" : "Track event 1",
   "type" : "track",
   "messageId" : "<message-id>",
-  "context" : {},
+  "context" : {
+    "traits": {
+      "anonymousId": "<anonymous-id>"
+    }
+  },
   "originalTimestamp" : "<original-timestamp>",
   "sentAt" : "{{ RSA_DEF_SENT_AT_TS }}",
   "integrations" : {
