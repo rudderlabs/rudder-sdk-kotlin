@@ -6,7 +6,6 @@ import com.rudderstack.kotlin.sdk.internals.network.HttpClientImpl
 import com.rudderstack.kotlin.sdk.internals.network.Result
 import com.rudderstack.kotlin.sdk.internals.platform.PlatformType
 import com.rudderstack.kotlin.sdk.internals.statemanagement.FlowState
-import com.rudderstack.kotlin.sdk.internals.storage.Storage
 import com.rudderstack.kotlin.sdk.internals.storage.StorageKeys
 import com.rudderstack.kotlin.sdk.internals.utils.LenientJson
 import com.rudderstack.kotlin.sdk.internals.utils.empty
@@ -27,43 +26,48 @@ internal class SourceConfigManager(
 ) {
 
     suspend fun fetchAndUpdateSourceConfig() {
-        val fetchedSourceConfig = fetchStoredSourceConfig(analytics.configuration.storage)
+        val fetchedSourceConfig = fetchStoredSourceConfig()
         fetchedSourceConfig?.let { updateSourceConfigState(it) }
 
-        withContext(analytics.networkDispatcher) {
-            val downloadedSourceConfig: SourceConfig? = downloadSourceConfig()
-            downloadedSourceConfig?.let {
-                updateSourceConfigState(it)
-                sourceConfigState.value.storeSourceConfig(analytics.configuration.storage)
-            }
+        val downloadedSourceConfig = downloadSourceConfig()
+        downloadedSourceConfig?.let { updateSourceConfigState(it) }
+
+        withContext(analytics.storageDispatcher) {
+            sourceConfigState.value.storeSourceConfig(analytics.configuration.storage)
         }
     }
 
     @Suppress("TooGenericExceptionCaught")
-    private fun downloadSourceConfig(): SourceConfig? {
-        return try {
-            when (val sourceConfigResult = httpClientFactory.getData()) {
-                is Result.Success -> {
-                    val config = LenientJson.decodeFromString<SourceConfig>(sourceConfigResult.response)
-                    analytics.configuration.logger.info(log = "SourceConfig is fetched successfully: $config")
-                    config
-                }
+    private suspend fun downloadSourceConfig(): SourceConfig? {
+        return withContext(analytics.networkDispatcher) {
+            try {
+                when (val sourceConfigResult = httpClientFactory.getData()) {
+                    is Result.Success -> {
+                        val config = LenientJson.decodeFromString<SourceConfig>(sourceConfigResult.response)
+                        analytics.configuration.logger.info(log = "SourceConfig is fetched successfully: $config")
+                        config
+                    }
 
-                is Result.Failure -> {
-                    analytics.configuration.logger.error(
-                        log = "Failed to get sourceConfig due to ${sourceConfigResult.status} ${sourceConfigResult.error}"
-                    )
-                    null
+                    is Result.Failure -> {
+                        analytics.configuration.logger.error(
+                            log = "Failed to get sourceConfig due " +
+                                "to ${sourceConfigResult.status} ${sourceConfigResult.error}"
+                        )
+                        null
+                    }
                 }
+            } catch (e: Exception) {
+                analytics.configuration.logger.error(log = "Failed to get sourceConfig due to $e")
+                null
             }
-        } catch (e: Exception) {
-            analytics.configuration.logger.error(log = "Failed to get sourceConfig due to $e")
-            null
         }
     }
 
-    private fun fetchStoredSourceConfig(storage: Storage): SourceConfig? {
-        val sourceConfigString = storage.readString(StorageKeys.SOURCE_CONFIG_PAYLOAD, defaultVal = String.empty())
+    private fun fetchStoredSourceConfig(): SourceConfig? {
+        val sourceConfigString = analytics.configuration.storage.readString(
+            StorageKeys.SOURCE_CONFIG_PAYLOAD,
+            defaultVal = String.empty()
+        )
 
         return if (sourceConfigString.isNotEmpty()) {
             val sourceConfig = LenientJson.decodeFromString<SourceConfig>(sourceConfigString)
