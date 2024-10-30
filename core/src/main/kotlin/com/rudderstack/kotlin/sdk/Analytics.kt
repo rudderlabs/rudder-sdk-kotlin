@@ -1,14 +1,17 @@
 package com.rudderstack.kotlin.sdk
 
 import com.rudderstack.kotlin.sdk.internals.models.GroupEvent
+import com.rudderstack.kotlin.sdk.internals.models.IdentifyEvent
 import com.rudderstack.kotlin.sdk.internals.models.Message
 import com.rudderstack.kotlin.sdk.internals.models.Properties
 import com.rudderstack.kotlin.sdk.internals.models.RudderOption
 import com.rudderstack.kotlin.sdk.internals.models.RudderTraits
 import com.rudderstack.kotlin.sdk.internals.models.ScreenEvent
 import com.rudderstack.kotlin.sdk.internals.models.TrackEvent
-import com.rudderstack.kotlin.sdk.internals.models.UserIdentity
 import com.rudderstack.kotlin.sdk.internals.models.emptyJsonObject
+import com.rudderstack.kotlin.sdk.internals.models.useridentity.SetUserIdTraitsAndExternalIdsAction
+import com.rudderstack.kotlin.sdk.internals.models.useridentity.UserIdentity
+import com.rudderstack.kotlin.sdk.internals.models.useridentity.storeUserIdTraitsAndExternalIds
 import com.rudderstack.kotlin.sdk.internals.platform.Platform
 import com.rudderstack.kotlin.sdk.internals.platform.PlatformType
 import com.rudderstack.kotlin.sdk.internals.plugins.Plugin
@@ -102,6 +105,7 @@ open class Analytics protected constructor(
             event = name,
             properties = properties,
             options = options,
+            userIdentityState = userIdentityState.value,
         )
 
         processMessageChannel.trySend(message)
@@ -129,6 +133,7 @@ open class Analytics protected constructor(
             screenName = screenName,
             properties = updatedProperties,
             options = options,
+            userIdentityState = userIdentityState.value,
         )
 
         processMessageChannel.trySend(message)
@@ -148,6 +153,34 @@ open class Analytics protected constructor(
             groupId = groupId,
             traits = traits,
             options = options,
+            userIdentityState = userIdentityState.value,
+        )
+
+        processMessageChannel.trySend(message)
+    }
+
+    /**
+     * Identify a user with a unique user ID and traits.
+     */
+    @JvmOverloads
+    fun identify(userId: String, traits: RudderTraits = emptyJsonObject, options: RudderOption = RudderOption()) {
+        userIdentityState.dispatch(
+            SetUserIdTraitsAndExternalIdsAction(
+                newUserId = userId,
+                newTraits = traits,
+                newExternalIds = options.externalIds,
+                analytics = this
+            )
+        )
+        analyticsScope.launch {
+            userIdentityState.value.storeUserIdTraitsAndExternalIds(
+                storage = configuration.storage
+            )
+        }
+
+        val message = IdentifyEvent(
+            options = options,
+            userIdentityState = userIdentityState.value,
         )
 
         processMessageChannel.trySend(message)
@@ -221,7 +254,7 @@ open class Analytics protected constructor(
     private fun processMessages() {
         analyticsScope.launch(analyticsDispatcher) {
             for (message in processMessageChannel) {
-                message.updateData(anonymousID = getAnonymousId(), platform = getPlatformType())
+                message.updateData(platform = getPlatformType())
                 pluginChain.process(message)
             }
         }

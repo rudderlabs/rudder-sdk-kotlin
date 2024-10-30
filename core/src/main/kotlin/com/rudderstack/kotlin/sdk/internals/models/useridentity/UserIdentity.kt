@@ -1,9 +1,14 @@
-package com.rudderstack.kotlin.sdk.internals.models
+package com.rudderstack.kotlin.sdk.internals.models.useridentity
 
+import com.rudderstack.kotlin.sdk.internals.models.ExternalIds
+import com.rudderstack.kotlin.sdk.internals.models.RudderTraits
+import com.rudderstack.kotlin.sdk.internals.models.emptyJsonObject
 import com.rudderstack.kotlin.sdk.internals.statemanagement.FlowAction
 import com.rudderstack.kotlin.sdk.internals.storage.Storage
 import com.rudderstack.kotlin.sdk.internals.storage.StorageKeys
 import com.rudderstack.kotlin.sdk.internals.utils.empty
+import com.rudderstack.kotlin.sdk.internals.utils.readExternalIdAndDecodeOrDefault
+import com.rudderstack.kotlin.sdk.internals.utils.readTraitsAndDecodeOrDefault
 import java.util.UUID
 
 /**
@@ -19,23 +24,34 @@ import java.util.UUID
  *
  * @property userId The unique identifier for an authenticated user. This ID is typically assigned when a user
  * signs up or logs in. If a user is not authenticated, this value can be an empty string or null.
+ *
+ * @property traits A collection of traits associated with the user. Traits are key-value pairs that can be used
+ * to store additional information about a user, such as their name, email, or other properties.
+ *
+ * @property externalIds A list of external identifiers associated with the user. External IDs are used to track
+ * users across different systems and platforms. Each external ID is a key-value pair that includes an ID type
+ * and a value.
  */
-internal data class UserIdentity(
+data class UserIdentity(
     val anonymousId: String,
     val userId: String,
+    val traits: RudderTraits,
+    val externalIds: List<ExternalIds> = emptyList(),
 ) {
 
     companion object {
 
-        fun initialState(storage: Storage) = UserIdentity(
+        internal fun initialState(storage: Storage) = UserIdentity(
             anonymousId = storage.readString(StorageKeys.ANONYMOUS_ID, defaultVal = UUID.randomUUID().toString()),
-            userId = String.empty(),
+            userId = storage.readString(StorageKeys.USER_ID, defaultVal = String.empty()),
+            traits = storage.readTraitsAndDecodeOrDefault(StorageKeys.TRAITS),
+            externalIds = storage.readExternalIdAndDecodeOrDefault(StorageKeys.EXTERNAL_IDS),
         )
     }
 
-    sealed interface UserIdentityAction : FlowAction<UserIdentity>
+    internal sealed interface UserIdentityAction : FlowAction<UserIdentity>
 
-    class SetAnonymousIdAction(
+    internal class SetAnonymousIdAction(
         private val anonymousId: String
     ) : UserIdentityAction {
 
@@ -44,9 +60,11 @@ internal data class UserIdentity(
         }
     }
 
-    suspend fun storeAnonymousId(storage: Storage) {
+    internal suspend fun storeAnonymousId(storage: Storage) {
         val isAnonymousByClient = anonymousId.isNotEmpty()
         storage.write(StorageKeys.ANONYMOUS_ID, anonymousId)
         storage.write(StorageKeys.IS_ANONYMOUS_ID_BY_CLIENT, isAnonymousByClient)
     }
 }
+
+internal fun provideEmptyUserIdentityState() = UserIdentity(String.empty(), String.empty(), emptyJsonObject, emptyList())

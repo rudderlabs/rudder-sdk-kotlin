@@ -2,6 +2,7 @@ package com.rudderstack.kotlin.sdk.internals.plugins
 
 import com.rudderstack.kotlin.sdk.internals.models.FlushEvent
 import com.rudderstack.kotlin.sdk.internals.models.GroupEvent
+import com.rudderstack.kotlin.sdk.internals.models.IdentifyEvent
 import com.rudderstack.kotlin.sdk.internals.models.Message
 import com.rudderstack.kotlin.sdk.internals.models.ScreenEvent
 import com.rudderstack.kotlin.sdk.internals.models.TrackEvent
@@ -19,6 +20,10 @@ internal interface MessagePlugin : Plugin {
         return payload
     }
 
+    fun identify(payload: IdentifyEvent): Message {
+        return payload
+    }
+
     fun flush(payload: FlushEvent): Message {
         return payload
     }
@@ -27,6 +32,7 @@ internal interface MessagePlugin : Plugin {
         is TrackEvent -> track(message)
         is ScreenEvent -> screen(message)
         is GroupEvent -> group(message)
+        is IdentifyEvent -> identify(message)
         is FlushEvent -> flush(message)
     }
 }
