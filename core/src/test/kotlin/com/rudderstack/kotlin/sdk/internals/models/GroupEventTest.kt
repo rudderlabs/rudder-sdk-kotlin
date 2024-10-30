@@ -7,6 +7,7 @@ import com.rudderstack.kotlin.sdk.internals.platform.PlatformType
 import com.rudderstack.kotlin.sdk.internals.utils.ANONYMOUS_ID
 import com.rudderstack.kotlin.sdk.internals.utils.applyMockedValues
 import com.rudderstack.kotlin.sdk.internals.utils.encodeToString
+import com.rudderstack.kotlin.sdk.internals.utils.provideOnlyAnonymousIdState
 import com.rudderstack.kotlin.sdk.readFileTrimmed
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -32,9 +33,10 @@ class GroupEventTest {
             groupId = GROUP_ID,
             traits = emptyJsonObject,
             options = RudderOption(),
+            userIdentityState = provideOnlyAnonymousIdState()
         ).also {
             it.applyMockedValues()
-            it.updateData(ANONYMOUS_ID, PlatformType.Mobile)
+            it.updateData(PlatformType.Mobile)
         }
 
         val actualPayloadString = groupEvent.encodeToString()
@@ -49,9 +51,10 @@ class GroupEventTest {
             groupId = GROUP_ID,
             traits = provideAllTraits(),
             options = RudderOption(),
+            userIdentityState = provideOnlyAnonymousIdState()
         ).also {
             it.applyMockedValues()
-            it.updateData(ANONYMOUS_ID, PlatformType.Mobile)
+            it.updateData(PlatformType.Mobile)
         }
 
         val actualPayloadString = groupEvent.encodeToString()
@@ -67,9 +70,10 @@ class GroupEventTest {
             options = RudderOption(
                 integrations = provideSampleIntegrationsPayload(),
             ),
+            userIdentityState = provideOnlyAnonymousIdState()
         ).also {
             it.applyMockedValues()
-            it.updateData(ANONYMOUS_ID, PlatformType.Mobile)
+            it.updateData(PlatformType.Mobile)
         }
 
         val actualPayloadString = groupEvent.encodeToString()
@@ -85,9 +89,10 @@ class GroupEventTest {
             options = RudderOption(
                 customContexts = provideSampleJsonPayload(),
             ),
+            userIdentityState = provideOnlyAnonymousIdState()
         ).also {
             it.applyMockedValues()
-            it.updateData(ANONYMOUS_ID, PlatformType.Mobile)
+            it.updateData(PlatformType.Mobile)
         }
 
         val actualPayloadString = groupEvent.encodeToString()
@@ -103,9 +108,10 @@ class GroupEventTest {
             options = RudderOption(
                 externalIds = provideSampleExternalIdsPayload(),
             ),
+            userIdentityState = provideOnlyAnonymousIdState()
         ).also {
             it.applyMockedValues()
-            it.updateData(ANONYMOUS_ID, PlatformType.Mobile)
+            it.updateData(PlatformType.Mobile)
         }
 
         val actualPayloadString = groupEvent.encodeToString()
@@ -124,9 +130,10 @@ class GroupEventTest {
                 customContexts = provideSampleJsonPayload(),
                 externalIds = provideSampleExternalIdsPayload(),
             ),
+            userIdentityState = provideOnlyAnonymousIdState()
         ).also {
             it.applyMockedValues()
-            it.updateData(ANONYMOUS_ID, PlatformType.Mobile)
+            it.updateData(PlatformType.Mobile)
         }
 
         val actualPayloadString = groupEvent.encodeToString()
@@ -145,9 +152,10 @@ class GroupEventTest {
                 customContexts = provideSampleJsonPayload(),
                 externalIds = provideSampleExternalIdsPayload(),
             ),
+            userIdentityState = provideOnlyAnonymousIdState()
         ).also {
             it.applyMockedValues()
-            it.updateData(ANONYMOUS_ID, PlatformType.Server)
+            it.updateData(PlatformType.Server)
         }
 
         val actualPayloadString = groupEvent.encodeToString()
