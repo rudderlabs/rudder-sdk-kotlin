@@ -2,13 +2,18 @@
 
 package com.rudderstack.kotlin.sdk.internals.utils
 
+import com.rudderstack.kotlin.sdk.internals.models.ExternalIds
 import com.rudderstack.kotlin.sdk.internals.models.Message
 import com.rudderstack.kotlin.sdk.internals.models.emptyJsonObject
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonArray
+import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.put
 
 /**
  * `LenientJson` is a predefined instance of the `Json` class configured with lenient settings to handle JSON serialization and deserialization.
@@ -44,7 +49,9 @@ internal fun Message.encodeToString(): String {
     val stringMessage = LenientJson.encodeToString(this)
     val filteredMessage = LenientJson.parseToJsonElement(stringMessage)
         .jsonObject.filterNot { (k, v) ->
-            (k == "properties" && v == emptyJsonObject) || (k == "traits" && v == emptyJsonObject)
+            (k == "properties" && v == emptyJsonObject) ||
+                (k == "traits" && v == emptyJsonObject) ||
+                (k == "userId" && v is JsonPrimitive && v.content == String.empty())
         }
     return LenientJson.encodeToString(filteredMessage)
 }
@@ -70,5 +77,39 @@ internal infix fun JsonObject.mergeWithHigherPriorityTo(other: JsonObject): Json
 fun JsonObjectBuilder.putAll(jsonObject: JsonObject) {
     jsonObject.forEach { (key, value) ->
         put(key, value)
+    }
+}
+
+/**
+ * Converts a list of `ExternalIds` to a JSON object in the following format:
+ * ```
+ * "externalId": [
+ *     {
+ *         "id": "<some-value>",
+ *         "type": "brazeExternalId"
+ *     },
+ *     {
+ *         "id": "<some-value>",
+ *         "type": "ga4"
+ *     }
+ * ],
+ * ```
+ */
+internal fun List<ExternalIds>.toJson(): JsonObject {
+    if (this.isEmpty()) return emptyJsonObject
+    return buildJsonObject {
+        put(
+            "externalId",
+            buildJsonArray {
+                this@toJson.forEach {
+                    add(
+                        buildJsonObject {
+                            put("id", it.id)
+                            put("type", it.type)
+                        }
+                    )
+                }
+            }
+        )
     }
 }
