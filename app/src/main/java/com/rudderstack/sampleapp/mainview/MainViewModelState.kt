@@ -13,5 +13,6 @@ sealed class AnalyticsState(val eventName: String) {
     object TrackMessage : AnalyticsState("Track")
     object ScreenMessage : AnalyticsState("Screen")
     object GroupMessage : AnalyticsState("Group")
+    object IdentifyMessage : AnalyticsState("Identify")
     object ForceFlush : AnalyticsState("Flush")
 }

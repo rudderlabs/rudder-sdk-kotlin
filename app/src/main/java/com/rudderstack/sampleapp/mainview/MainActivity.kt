@@ -114,6 +114,7 @@ class MainActivity : ComponentActivity() {
                     AnalyticsState.TrackMessage,
                     AnalyticsState.ScreenMessage,
                     AnalyticsState.GroupMessage,
+                    AnalyticsState.IdentifyMessage,
                     AnalyticsState.ForceFlush,
                 ),
                 weight = .3f,
