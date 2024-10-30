@@ -26,14 +26,13 @@ internal class SourceConfigManager(
 ) {
 
     suspend fun fetchAndUpdateSourceConfig() {
-        val fetchedSourceConfig = fetchStoredSourceConfig()
-        fetchedSourceConfig?.let { updateSourceConfigState(it) }
-
         val downloadedSourceConfig = downloadSourceConfig()
-        downloadedSourceConfig?.let { updateSourceConfigState(it) }
-
-        withContext(analytics.storageDispatcher) {
-            sourceConfigState.value.storeSourceConfig(analytics.configuration.storage)
+        downloadedSourceConfig?.let {
+            updateSourceConfigState(it)
+            storeSourceConfig(it)
+        } ?: run {
+            val fetchedSourceConfig = fetchStoredSourceConfig()
+            fetchedSourceConfig?.let { updateSourceConfigState(it) }
         }
     }
 
@@ -76,6 +75,12 @@ internal class SourceConfigManager(
         } else {
             analytics.configuration.logger.info(log = "SourceConfig not found in storage")
             null
+        }
+    }
+
+    private suspend fun storeSourceConfig(sourceConfig: SourceConfig) {
+        withContext(analytics.storageDispatcher) {
+            sourceConfig.storeSourceConfig(analytics.configuration.storage)
         }
     }
 
