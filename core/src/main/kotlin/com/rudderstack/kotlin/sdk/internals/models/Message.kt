@@ -2,11 +2,9 @@ package com.rudderstack.kotlin.sdk.internals.models
 
 import com.rudderstack.kotlin.sdk.internals.models.exception.UnknownMessageKeyException
 import com.rudderstack.kotlin.sdk.internals.platform.PlatformType
-import com.rudderstack.kotlin.sdk.internals.statemanagement.Store
 import com.rudderstack.kotlin.sdk.internals.utils.DateTimeUtils
 import com.rudderstack.kotlin.sdk.internals.utils.addAnonymousIdToTraits
 import com.rudderstack.kotlin.sdk.internals.utils.empty
-import com.rudderstack.kotlin.sdk.state.UserIdentityState
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -93,15 +91,6 @@ sealed class Message {
 
     @Transient
     abstract var options: RudderOption
-
-    internal fun subscribeToUserIdentityState(
-        userInfoStore: Store<UserIdentityState, UserIdentityState.SetIdentityAction>,
-        platform: PlatformType
-    ) {
-        userInfoStore.subscribe { userOptionsState, _ ->
-            updateData(userOptionsState.userIdentity.anonymousID, platform)
-        }
-    }
 
     internal fun updateData(anonymousID: String, platform: PlatformType) {
         this.anonymousId = anonymousID
