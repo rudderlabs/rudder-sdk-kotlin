@@ -13,7 +13,7 @@ import kotlinx.serialization.json.JsonObject
  */
 data class RudderOption(
     val integrations: Map<String, Boolean> = defaultIntegrations,
-    val externalIds: List<ExternalIds> = emptyList(),
+    val externalIds: List<ExternalId> = emptyList(),
     val customContexts: JsonObject = emptyJsonObject,
 )
 
@@ -24,7 +24,7 @@ data class RudderOption(
  * @property id The ID value.
  */
 @Serializable
-data class ExternalIds(
+data class ExternalId(
     val type: String,
     val id: String,
 )

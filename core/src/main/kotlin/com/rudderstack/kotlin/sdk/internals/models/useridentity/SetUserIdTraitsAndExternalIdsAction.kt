@@ -1,7 +1,7 @@
 package com.rudderstack.kotlin.sdk.internals.models.useridentity
 
 import com.rudderstack.kotlin.sdk.Analytics
-import com.rudderstack.kotlin.sdk.internals.models.ExternalIds
+import com.rudderstack.kotlin.sdk.internals.models.ExternalId
 import com.rudderstack.kotlin.sdk.internals.models.RudderTraits
 import com.rudderstack.kotlin.sdk.internals.storage.Storage
 import com.rudderstack.kotlin.sdk.internals.storage.StorageKeys
@@ -14,7 +14,7 @@ import kotlinx.serialization.encodeToString
 internal class SetUserIdTraitsAndExternalIdsAction(
     private val newUserId: String,
     private val newTraits: RudderTraits,
-    private val newExternalIds: List<ExternalIds>,
+    private val newExternalIds: List<ExternalId>,
     private val analytics: Analytics,
 ) : UserIdentity.UserIdentityAction {
 
@@ -28,7 +28,7 @@ internal class SetUserIdTraitsAndExternalIdsAction(
             isUserIdChanged = isUserIdChanged
         )
 
-        val updatedExternalIds: List<ExternalIds> = getUpdatedValues(
+        val updatedExternalIds: List<ExternalId> = getUpdatedValues(
             currentStateValue = currentState.externalIds,
             newValue = this.newExternalIds,
             mergeWithPriority = { other -> this mergeWithHigherPriorityTo other },

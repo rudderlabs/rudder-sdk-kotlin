@@ -1,6 +1,6 @@
 package com.rudderstack.kotlin.sdk.internals.utils
 
-import com.rudderstack.kotlin.sdk.internals.models.ExternalIds
+import com.rudderstack.kotlin.sdk.internals.models.ExternalId
 import com.rudderstack.kotlin.sdk.internals.models.emptyJsonObject
 import com.rudderstack.kotlin.sdk.internals.storage.Storage
 import com.rudderstack.kotlin.sdk.internals.storage.StorageKeys
@@ -19,7 +19,7 @@ internal fun Storage.readTraitsAndDecodeOrDefault(key: StorageKeys) =
         }
     }
 
-internal fun Storage.readExternalIdAndDecodeOrDefault(key: StorageKeys): List<ExternalIds> =
+internal fun Storage.readExternalIdAndDecodeOrDefault(key: StorageKeys): List<ExternalId> =
     readString(key = key, defaultVal = String.empty()).let {
         if (it.isNotEmpty()) {
             // Parse the JSON string as a JsonObject

@@ -2,7 +2,7 @@ package com.rudderstack.sampleapp.mainview
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
-import com.rudderstack.kotlin.sdk.internals.models.ExternalIds
+import com.rudderstack.kotlin.sdk.internals.models.ExternalId
 import com.rudderstack.kotlin.sdk.internals.models.Properties
 import com.rudderstack.kotlin.sdk.internals.models.RudderOption
 import com.rudderstack.sampleapp.analytics.RudderAnalyticsUtils
@@ -65,7 +65,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                             "Amplitude" to true
                         ),
                         externalIds = listOf(
-                            ExternalIds("brazeExternalId", "value1234"),
+                            ExternalId("brazeExternalId", "value1234"),
                         )
                     )
                 )

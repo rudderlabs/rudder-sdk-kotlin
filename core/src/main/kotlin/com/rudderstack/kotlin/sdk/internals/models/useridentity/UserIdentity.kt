@@ -1,6 +1,6 @@
 package com.rudderstack.kotlin.sdk.internals.models.useridentity
 
-import com.rudderstack.kotlin.sdk.internals.models.ExternalIds
+import com.rudderstack.kotlin.sdk.internals.models.ExternalId
 import com.rudderstack.kotlin.sdk.internals.models.RudderTraits
 import com.rudderstack.kotlin.sdk.internals.models.emptyJsonObject
 import com.rudderstack.kotlin.sdk.internals.statemanagement.FlowAction
@@ -36,7 +36,7 @@ data class UserIdentity(
     val anonymousId: String,
     val userId: String,
     val traits: RudderTraits,
-    val externalIds: List<ExternalIds> = emptyList(),
+    val externalIds: List<ExternalId> = emptyList(),
 ) {
 
     companion object {

@@ -2,7 +2,7 @@
 
 package com.rudderstack.kotlin.sdk.internals.utils
 
-import com.rudderstack.kotlin.sdk.internals.models.ExternalIds
+import com.rudderstack.kotlin.sdk.internals.models.ExternalId
 import com.rudderstack.kotlin.sdk.internals.models.Message
 import com.rudderstack.kotlin.sdk.internals.models.emptyJsonObject
 import kotlinx.serialization.encodeToString
@@ -95,7 +95,7 @@ fun JsonObjectBuilder.putAll(jsonObject: JsonObject) {
  * ],
  * ```
  */
-internal fun List<ExternalIds>.toJson(): JsonObject {
+internal fun List<ExternalId>.toJson(): JsonObject {
     if (this.isEmpty()) return emptyJsonObject
     return buildJsonObject {
         put(
