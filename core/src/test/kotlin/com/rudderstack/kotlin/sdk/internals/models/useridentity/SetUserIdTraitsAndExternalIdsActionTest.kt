@@ -43,12 +43,7 @@ class SetUserIdTraitsAndExternalIdsActionTest {
                 .reduce(userIdentityState)
             testDispatcher.scheduler.advanceUntilIdle()
 
-            val expected = UserIdentity(
-                anonymousId = DEFAULT_ANONYMOUS_ID,
-                userId = USER_1,
-                traits = TRAITS_1,
-                externalIds = EXTERNAL_IDS_1,
-            )
+            val expected = provideUserIdentityStateAfterFirstIdentifyEventIsMade()
             assert(expected == result)
             verifyUserIdChangedBehaviour()
         }
@@ -62,12 +57,7 @@ class SetUserIdTraitsAndExternalIdsActionTest {
                 .reduce(userIdentityState)
             testDispatcher.scheduler.advanceUntilIdle()
 
-            val expected = UserIdentity(
-                anonymousId = DEFAULT_ANONYMOUS_ID,
-                userId = USER_1,
-                traits = TRAITS_1 mergeWithHigherPriorityTo TRAITS_2,
-                externalIds = EXTERNAL_IDS_1 mergeWithHigherPriorityTo EXTERNAL_IDS_2,
-            )
+            val expected = provideUserIdentityWithMergedTraitsAndExternalIds()
             assert(expected == result)
         }
 
@@ -80,12 +70,7 @@ class SetUserIdTraitsAndExternalIdsActionTest {
                 .reduce(userIdentityState)
             testDispatcher.scheduler.advanceUntilIdle()
 
-            val expected = UserIdentity(
-                anonymousId = DEFAULT_ANONYMOUS_ID,
-                userId = USER_1,
-                traits = TRAITS_1_OVERLAP,
-                externalIds = EXTERNAL_IDS_1_OVERLAP
-            )
+            val expected = provideUserIdentityWithOverriddenTraitsAndExternalIds()
             assert(expected == result)
         }
 
@@ -98,12 +83,7 @@ class SetUserIdTraitsAndExternalIdsActionTest {
                 .reduce(userIdentityState)
             testDispatcher.scheduler.advanceUntilIdle()
 
-            val expected = UserIdentity(
-                anonymousId = DEFAULT_ANONYMOUS_ID,
-                userId = USER_2,
-                traits = TRAITS_2,
-                externalIds = EXTERNAL_IDS_2
-            )
+            val expected = provideUserIdentityAfterSecondIdentifyEventIsMade()
             assert(expected == result)
             verifyUserIdChangedBehaviour()
         }
@@ -143,3 +123,25 @@ private fun provideUserIdentityStateAfterFirstIdentifyEventIsMade(): UserIdentit
         traits = TRAITS_1,
         externalIds = EXTERNAL_IDS_1
     )
+
+private fun provideUserIdentityWithMergedTraitsAndExternalIds(): UserIdentity = UserIdentity(
+    anonymousId = DEFAULT_ANONYMOUS_ID,
+    userId = USER_1,
+    traits = TRAITS_1 mergeWithHigherPriorityTo TRAITS_2,
+    externalIds = EXTERNAL_IDS_1 mergeWithHigherPriorityTo EXTERNAL_IDS_2,
+)
+
+private fun provideUserIdentityWithOverriddenTraitsAndExternalIds(): UserIdentity = UserIdentity(
+    anonymousId = DEFAULT_ANONYMOUS_ID,
+    userId = USER_1,
+    traits = TRAITS_1_OVERLAP,
+    externalIds = EXTERNAL_IDS_1_OVERLAP
+)
+
+private fun provideUserIdentityAfterSecondIdentifyEventIsMade(): UserIdentity =
+    UserIdentity(
+        anonymousId = DEFAULT_ANONYMOUS_ID,
+        userId = USER_2,
+        traits = TRAITS_2,
+        externalIds = EXTERNAL_IDS_2
+)
