@@ -5,15 +5,14 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination
 import com.rudderstack.android.sdk.state.NavContext
-import com.rudderstack.android.sdk.state.NavContextState
 import com.rudderstack.android.sdk.utils.automaticProperty
 import com.rudderstack.android.sdk.utils.mockAnalytics
 import com.rudderstack.android.sdk.utils.mockNavContext
-import com.rudderstack.kotlin.sdk.internals.statemanagement.Store
-import io.mockk.MockKAnnotations
+import com.rudderstack.kotlin.sdk.internals.statemanagement.FlowState
+import io.mockk.coVerify
 import io.mockk.every
-import io.mockk.impl.annotations.MockK
 import io.mockk.mockk
+import io.mockk.spyk
 import io.mockk.unmockkAll
 import io.mockk.verify
 import junit.framework.TestCase.assertEquals
@@ -22,6 +21,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -40,15 +40,14 @@ class NavControllerTrackingPluginTest {
 
     private val mockAnalytics = mockAnalytics(testScope, testDispatcher)
 
-    @MockK
-    private lateinit var mockNavContextStore: Store<NavContextState, NavContextState.NavContextAction>
+    private lateinit var mockNavContextState: FlowState<Set<NavContext>>
 
     @Before
     fun setUp() {
-        MockKAnnotations.init(this, relaxed = true)
         Dispatchers.setMain(testDispatcher)
 
-        plugin = NavControllerTrackingPlugin(mockNavContextStore)
+        mockNavContextState = spyk(FlowState(emptySet()))
+        plugin = NavControllerTrackingPlugin(mockNavContextState)
         plugin.analytics = mockAnalytics
 
         val configuration: AndroidConfiguration = mockk()
@@ -62,27 +61,18 @@ class NavControllerTrackingPluginTest {
     }
 
     @Test
-    fun `when setup called, then it should subscribe to navContextStore`() = runTest {
-        val initialState = NavContextState.initialState()
-        val mockDispatch: (NavContextState.NavContextAction) -> Unit = mockk(relaxed = true)
-
-        every { mockNavContextStore.subscribe(any()) } answers {
-            firstArg<(NavContextState, (NavContextState.NavContextAction) -> Unit) -> Unit>().invoke(
-                initialState,
-                mockDispatch
-            )
-        }
-
+    fun `when setup called, then it should subscribe to navContextState`() = runTest {
         plugin.setup(mockAnalytics)
+        advanceUntilIdle()
 
-        verify { mockNavContextStore.subscribe(any()) }
+        coVerify { mockNavContextState.collect(any()) }
     }
 
     @Test
     fun `when teardown called, then it should dispatch RemoveAllNavContextsAction`() = runTest {
         plugin.teardown()
 
-        verify { mockNavContextStore.dispatch(NavContextState.RemoveAllNavContextsAction) }
+        verify { mockNavContextState.dispatch(NavContext.RemoveAllNavContextsAction) }
     }
 
     @Test
@@ -91,20 +81,10 @@ class NavControllerTrackingPluginTest {
             val navContext1: NavContext = mockNavContext()
             val navContext2: NavContext = mockNavContext()
 
-            val initialState = NavContextState.initialState()
-            val updatedState = NavContextState(
-                navContexts = setOf(navContext1, navContext2)
-            )
-
-            every { mockNavContextStore.subscribe(any()) } answers {
-                val subscription = firstArg<(NavContextState, (NavContextState.NavContextAction) -> Unit) -> Unit>()
-                // Simulate first subscribe with initial state (empty set), then updated state with navControllers
-                subscription.invoke(initialState, mockk())
-                subscription.invoke(updatedState, mockk())
-            }
-
             plugin.setup(mockAnalytics)
-
+            mockNavContextState.dispatch(NavContext.AddNavContextAction(navContext1))
+            mockNavContextState.dispatch(NavContext.AddNavContextAction(navContext2))
+            advanceUntilIdle()
             assertEquals(2, plugin.currentNavContexts.size)
             assertTrue(plugin.currentNavContexts.contains(navContext1))
             assertTrue(plugin.currentNavContexts.contains(navContext2))
@@ -118,23 +98,15 @@ class NavControllerTrackingPluginTest {
             val navContext1 = mockNavContext()
             val navContext2 = mockNavContext()
 
-            val initialState = NavContextState(
-                navContexts = setOf(navContext1, navContext2)
-            )
-            val updatedState = NavContextState(
-                navContexts = setOf(navContext1) // navContext2 removed
-            )
-
             every { (navContext2.callingActivity as LifecycleOwner).lifecycle } returns mockk(relaxed = true)
             every { (navContext2.callingActivity as LifecycleOwner).lifecycle.removeObserver(any()) } returns Unit
-            every { mockNavContextStore.subscribe(any()) } answers {
-                val subscription = firstArg<(NavContextState, (NavContextState.NavContextAction) -> Unit) -> Unit>()
-                // Simulate state update where navContext2 is removed
-                subscription.invoke(initialState, mockk())
-                subscription.invoke(updatedState, mockk())
-            }
 
             plugin.setup(mockAnalytics)
+            mockNavContextState.dispatch(NavContext.AddNavContextAction(navContext1))
+            mockNavContextState.dispatch(NavContext.AddNavContextAction(navContext2))
+            advanceUntilIdle()
+            mockNavContextState.dispatch(NavContext.RemoveNavContextAction(navContext2))
+            advanceUntilIdle()
 
             // Verify that removeOnDestinationChangedListener was called for the removed navContext2 navController
             assertEquals(1, plugin.currentNavContexts.size)
