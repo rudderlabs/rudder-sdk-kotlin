@@ -8,6 +8,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import org.jetbrains.annotations.VisibleForTesting
 
 /**
  * Represents the configuration for a source in the RudderStack server.
@@ -33,7 +34,7 @@ internal data class SourceConfig(
         )
     }
 
-    class UpdateAction(private val updatedSourceConfig: SourceConfig) : FlowAction<SourceConfig> {
+    class UpdateAction(@VisibleForTesting internal val updatedSourceConfig: SourceConfig) : FlowAction<SourceConfig> {
 
         override fun reduce(currentState: SourceConfig): SourceConfig {
             return updatedSourceConfig
