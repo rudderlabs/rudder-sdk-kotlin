@@ -5,7 +5,6 @@ import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import com.rudderstack.android.sdk.state.NavContext
-import com.rudderstack.android.sdk.state.NavContextState
 import java.util.concurrent.atomic.AtomicBoolean
 
 /*
@@ -39,7 +38,7 @@ internal class NavControllerActivityObserver(
 
     override fun onDestroy(owner: LifecycleOwner) {
         activityLifecycle()?.removeObserver(this)
-        plugin.navContextStore.dispatch(NavContextState.RemoveNavContextAction(navContext.navController))
+        plugin.navContextState.dispatch(NavContext.RemoveNavContextAction(navContext))
     }
 
     @VisibleForTesting
