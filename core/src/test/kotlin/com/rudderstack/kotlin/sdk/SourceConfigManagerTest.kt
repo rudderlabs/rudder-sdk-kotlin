@@ -53,7 +53,7 @@ class SourceConfigManagerTest {
 
             coEvery { httpClient.getData() } returns Result.Success(jsonString)
 
-            sourceConfigManager.fetchSourceConfig()
+            sourceConfigManager.fetchAndUpdateSourceConfig()
 
             coVerify { store.subscribe(any()) }
         }
@@ -66,7 +66,7 @@ class SourceConfigManagerTest {
 
             coEvery { httpClient.getData() } returns Result.Success(jsonString)
 
-            sourceConfigManager.fetchSourceConfig()
+            sourceConfigManager.fetchAndUpdateSourceConfig()
 
             verify { analytics.configuration.logger.debug(log = "SourceConfig: $sourceConfig") }
         }
@@ -79,7 +79,7 @@ class SourceConfigManagerTest {
                 status = ErrorStatus.SERVER_ERROR
             )
 
-            sourceConfigManager.fetchSourceConfig()
+            sourceConfigManager.fetchAndUpdateSourceConfig()
 
             coVerify(exactly = 0) { store.subscribe(any()) } // Ensure storeSourceConfig is not called
         }
@@ -92,7 +92,7 @@ class SourceConfigManagerTest {
                 status = ErrorStatus.SERVER_ERROR
             )
 
-            sourceConfigManager.fetchSourceConfig()
+            sourceConfigManager.fetchAndUpdateSourceConfig()
 
             verify { analytics.configuration.logger.error(any(), any()) }
         }
@@ -105,7 +105,7 @@ class SourceConfigManagerTest {
                 status = ErrorStatus.SERVER_ERROR
             )
 
-            sourceConfigManager.fetchSourceConfig()
+            sourceConfigManager.fetchAndUpdateSourceConfig()
 
             coVerify(exactly = 0) { store.subscribe(any()) }
             verify { analytics.configuration.logger.error(any(), any()) }
