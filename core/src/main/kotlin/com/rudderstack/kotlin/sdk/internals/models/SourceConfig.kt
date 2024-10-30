@@ -1,7 +1,12 @@
 package com.rudderstack.kotlin.sdk.internals.models
 
+import com.rudderstack.kotlin.sdk.internals.statemanagement.FlowAction
+import com.rudderstack.kotlin.sdk.internals.storage.Storage
+import com.rudderstack.kotlin.sdk.internals.storage.StorageKeys
+import com.rudderstack.kotlin.sdk.internals.utils.empty
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 
 /**
@@ -10,9 +15,36 @@ import kotlinx.serialization.json.JsonObject
  * @property source The configuration details of a RudderStack source.
  */
 @Serializable
-data class SourceConfig(
+internal data class SourceConfig(
     val source: RudderServerConfigSource
-)
+) {
+
+    companion object {
+
+        fun initialState(): SourceConfig = SourceConfig(
+            source = RudderServerConfigSource(
+                sourceId = String.empty(),
+                sourceName = String.empty(),
+                writeKey = String.empty(),
+                isSourceEnabled = false,
+                workspaceId = String.empty(),
+                updatedAt = String.empty()
+            )
+        )
+    }
+
+    class UpdateAction(private val updatedSourceConfig: SourceConfig) : FlowAction<SourceConfig> {
+
+        override fun reduce(currentState: SourceConfig): SourceConfig {
+            return updatedSourceConfig
+        }
+    }
+
+    suspend fun storeSourceConfig(storage: Storage) {
+        storage.write(StorageKeys.SOURCE_CONFIG_PAYLOAD, Json.encodeToString(serializer(), this))
+        storage.write(StorageKeys.SOURCE_IS_ENABLED, source.isSourceEnabled)
+    }
+}
 
 /**
  * Represents the configuration of a source from the RudderStack server.
@@ -27,7 +59,7 @@ data class SourceConfig(
  * @property updatedAt The timestamp of the last update to the source configuration.
  */
 @Serializable
-data class RudderServerConfigSource(
+internal data class RudderServerConfigSource(
     @SerialName("id") val sourceId: String,
     @SerialName("name") val sourceName: String,
     val writeKey: String,
@@ -44,7 +76,7 @@ data class RudderServerConfigSource(
  * @property statsCollection The configuration for collecting statistics, defaulting to a new instance of [StatsCollection].
  */
 @Serializable
-data class MetricsConfig(
+internal data class MetricsConfig(
     val statsCollection: StatsCollection = StatsCollection()
 )
 
@@ -55,7 +87,7 @@ data class MetricsConfig(
  * @property metrics The configuration for general metrics collection, defaulting to a new instance of [Metrics].
  */
 @Serializable
-data class StatsCollection(
+internal data class StatsCollection(
     val errors: Errors = Errors(),
     val metrics: Metrics = Metrics(),
 )
@@ -66,7 +98,7 @@ data class StatsCollection(
  * @property enabled A flag indicating whether error statistics collection is enabled, defaulting to false.
  */
 @Serializable
-data class Errors(
+internal data class Errors(
     val enabled: Boolean = false
 )
 
@@ -76,7 +108,7 @@ data class Errors(
  * @property enabled A flag indicating whether metrics collection is enabled, defaulting to false.
  */
 @Serializable
-data class Metrics(
+internal data class Metrics(
     val enabled: Boolean = false
 )
 
@@ -94,7 +126,7 @@ data class Metrics(
  * @property propagateEventsUntransformedOnError A flag indicating whether to propagate events untransformed in case of an error.
  */
 @Serializable
-data class Destination(
+internal data class Destination(
     @SerialName("id") val destinationId: String,
     @SerialName("name") val destinationName: String,
     @SerialName("enabled") val isDestinationEnabled: Boolean,
@@ -113,7 +145,7 @@ data class Destination(
  * @property displayName The display name of the destination.
  */
 @Serializable
-data class DestinationDefinition(
+internal data class DestinationDefinition(
     val name: String,
     val displayName: String
 )
