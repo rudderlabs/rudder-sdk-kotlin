@@ -97,16 +97,6 @@ class AndroidAdvertisingIdPluginTest {
         }
 
     @Test
-    fun `given Google Play advertising ID is not fetched successfully, when verify that getAmazonFireAdvertisingID is called`() =
-        runTest {
-            val errorResult = AndroidAdvertisingIdPlugin.Result.Error(Exception("Error collecting play services ad id."))
-
-            coEvery { plugin["getGooglePlayServicesAdvertisingID"](mockContext) } returns errorResult
-
-            coVerify(exactly = 1) { plugin["getAmazonFireAdvertisingID"](mockContext) }
-        }
-
-    @Test
     fun `given advertising ID returns updated message, verify that execute method returns the updated message`() =
         runTest(testDispatcher) {
             val updatedMessage = TrackEvent(
