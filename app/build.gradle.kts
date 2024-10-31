@@ -81,23 +81,29 @@ android {
 }
 
 dependencies {
-    implementation("com.google.android.material:material:1.12.0")
-    //compose
-    implementation("androidx.compose.ui:ui:1.6.7")
-    implementation("androidx.compose.ui:ui-tooling-preview:1.6.7")
-    implementation("androidx.compose.ui:ui-tooling:1.6.7")
-    implementation("androidx.compose.foundation:foundation:1.6.7")
-    // Material Design
-    implementation("androidx.compose.material:material:1.6.7")
-    // Integration with activities
-    implementation("androidx.activity:activity-compose:1.9.0")
-    // Integration with ViewModels
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.0")
-    // adding play services to generate advertising id
-    implementation("com.google.android.gms:play-services-ads:22.1.0")
-
     implementation(project(":android"))
     implementation(project(":core"))
+
+    implementation(libs.material)
+    //compose
+    implementation(libs.ui)
+    implementation(libs.ui.tooling.preview)
+    implementation(libs.ui.tooling)
+    implementation(libs.foundation)
+    // Material Design
+    implementation(libs.androidx.material)
+    // Integration with activities
+    implementation(libs.androidx.activity.compose)
+    // Integration with ViewModels
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    // adding play services to generate advertising id
+    implementation(libs.play.services.ads)
+
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.junit)
+    testImplementation(libs.mockk)
+    testImplementation(libs.json.assert)
+    testImplementation(libs.navigation.runtime)
 }
 
 tasks.named("preBuild").configure {
