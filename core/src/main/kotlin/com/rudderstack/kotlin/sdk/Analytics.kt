@@ -163,7 +163,11 @@ open class Analytics protected constructor(
      * Identify a user with a unique user ID and traits.
      */
     @JvmOverloads
-    fun identify(userId: String, traits: RudderTraits = emptyJsonObject, options: RudderOption = RudderOption()) {
+    fun identify(
+        userId: String = String.empty(),
+        traits: RudderTraits = emptyJsonObject,
+        options: RudderOption = RudderOption()
+    ) {
         userIdentityState.dispatch(
             SetUserIdTraitsAndExternalIdsAction(
                 newUserId = userId,
