@@ -7,8 +7,7 @@ import com.rudderstack.kotlin.sdk.internals.statemanagement.FlowAction
 import com.rudderstack.kotlin.sdk.internals.storage.Storage
 import com.rudderstack.kotlin.sdk.internals.storage.StorageKeys
 import com.rudderstack.kotlin.sdk.internals.utils.empty
-import com.rudderstack.kotlin.sdk.internals.utils.readExternalIdAndDecodeOrDefault
-import com.rudderstack.kotlin.sdk.internals.utils.readTraitsAndDecodeOrDefault
+import com.rudderstack.kotlin.sdk.internals.utils.readValuesOrDefault
 import java.util.UUID
 
 /**
@@ -44,8 +43,8 @@ data class UserIdentity(
         internal fun initialState(storage: Storage) = UserIdentity(
             anonymousId = storage.readString(StorageKeys.ANONYMOUS_ID, defaultVal = UUID.randomUUID().toString()),
             userId = storage.readString(StorageKeys.USER_ID, defaultVal = String.empty()),
-            traits = storage.readTraitsAndDecodeOrDefault(StorageKeys.TRAITS),
-            externalIds = storage.readExternalIdAndDecodeOrDefault(StorageKeys.EXTERNAL_IDS),
+            traits = storage.readValuesOrDefault(key = StorageKeys.TRAITS, defaultValue = emptyJsonObject),
+            externalIds = storage.readValuesOrDefault(key = StorageKeys.EXTERNAL_IDS, defaultValue = emptyList()),
         )
     }
 

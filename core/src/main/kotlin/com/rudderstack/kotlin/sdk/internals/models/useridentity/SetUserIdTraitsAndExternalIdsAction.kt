@@ -7,7 +7,6 @@ import com.rudderstack.kotlin.sdk.internals.storage.Storage
 import com.rudderstack.kotlin.sdk.internals.storage.StorageKeys
 import com.rudderstack.kotlin.sdk.internals.utils.LenientJson
 import com.rudderstack.kotlin.sdk.internals.utils.mergeWithHigherPriorityTo
-import com.rudderstack.kotlin.sdk.internals.utils.toJson
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 
@@ -73,5 +72,5 @@ private inline fun <T> getUpdatedValues(
 internal suspend fun UserIdentity.storeUserIdTraitsAndExternalIds(storage: Storage) {
     storage.write(StorageKeys.USER_ID, userId)
     storage.write(StorageKeys.TRAITS, LenientJson.encodeToString(traits))
-    storage.write(StorageKeys.EXTERNAL_IDS, externalIds.toJson().toString())
+    storage.write(StorageKeys.EXTERNAL_IDS, LenientJson.encodeToString(externalIds))
 }
