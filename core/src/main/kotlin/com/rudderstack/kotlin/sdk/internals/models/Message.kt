@@ -185,6 +185,7 @@ data class FlushEvent(
  * @property event The name of the track event.
  * @property properties The properties associated with the track event.
  * @property options Additional options for the event, encapsulated in a [RudderOption] instance.
+ * @property userIdentityState The [UserIdentity] information associated with the track event.
  */
 @Serializable
 @SerialName("track")
@@ -214,6 +215,7 @@ data class TrackEvent(
  * @property screenName The name of the screen event.
  * @property properties The properties associated with the screen event.
  * @property options Additional options for the event, encapsulated in a [RudderOption] instance.
+ * @property userIdentityState The [UserIdentity] information associated with the screen event.
  */
 @Serializable
 @SerialName("screen")
@@ -243,6 +245,7 @@ internal data class ScreenEvent(
  * @property groupId The group id of group event.
  * @property traits The traits associated with the group. event.
  * @property options Additional options for the event, encapsulated in a [RudderOption] instance.
+ * @property userIdentityState The [UserIdentity] information associated with the group event.
  */
 @Serializable
 @SerialName("group")
