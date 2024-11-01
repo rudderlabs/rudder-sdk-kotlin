@@ -4,7 +4,6 @@ import com.rudderstack.kotlin.sdk.internals.models.exception.UnknownMessageKeyEx
 import com.rudderstack.kotlin.sdk.internals.models.useridentity.UserIdentity
 import com.rudderstack.kotlin.sdk.internals.platform.PlatformType
 import com.rudderstack.kotlin.sdk.internals.utils.DateTimeUtils
-import com.rudderstack.kotlin.sdk.internals.utils.addAnonymousIdToTraits
 import com.rudderstack.kotlin.sdk.internals.utils.addPersistedValues
 import com.rudderstack.kotlin.sdk.internals.utils.empty
 import com.rudderstack.kotlin.sdk.internals.utils.provideEmptyUserIdentityState
@@ -102,8 +101,6 @@ sealed class Message {
     abstract var options: RudderOption
 
     internal fun updateData(platform: PlatformType) {
-        this.anonymousId = userIdentityState.anonymousId
-        this.addAnonymousIdToTraits()
         this.channel = platform
         this.updateOption()
         this.addPersistedValues()
