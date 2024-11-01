@@ -160,7 +160,12 @@ open class Analytics protected constructor(
     }
 
     /**
-     * Identify a user with a unique user ID and traits.
+     * The `identify` call allows you to identify a visiting user and associate their actions to that `userId`.
+     * It also lets you record traits about the user like their name, email address, etc.
+     *
+     * @param userId The unique identifier for the user. Defaults to an empty string.
+     * @param traits A [RudderTraits] object containing key-value pairs of user traits. Defaults to an empty JSON object.
+     * @param options A [RudderOption] object to specify additional event options. Defaults to an empty RudderOption object.
      */
     @JvmOverloads
     fun identify(
