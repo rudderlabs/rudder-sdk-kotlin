@@ -21,14 +21,14 @@ internal class SetUserIdTraitsAndExternalIdsAction(
         val isUserIdChanged = isUserIdChanged(currentState = currentState)
 
         val updatedTraits: RudderTraits = getUpdatedValues(
-            currentStateValue = currentState.traits,
+            previousValue = currentState.traits,
             newValue = this.newTraits,
             mergeWithPriority = { other -> this mergeWithHigherPriorityTo other },
             isUserIdChanged = isUserIdChanged
         )
 
         val updatedExternalIds: List<ExternalId> = getUpdatedValues(
-            currentStateValue = currentState.externalIds,
+            previousValue = currentState.externalIds,
             newValue = this.newExternalIds,
             mergeWithPriority = { other -> this mergeWithHigherPriorityTo other },
             isUserIdChanged = isUserIdChanged
@@ -63,11 +63,11 @@ internal class SetUserIdTraitsAndExternalIdsAction(
 }
 
 private inline fun <T> getUpdatedValues(
-    currentStateValue: T,
+    previousValue: T,
     newValue: T,
     mergeWithPriority: T.(T) -> T,
     isUserIdChanged: Boolean
-): T = if (isUserIdChanged) newValue else currentStateValue.mergeWithPriority(newValue)
+): T = if (isUserIdChanged) newValue else previousValue.mergeWithPriority(newValue)
 
 internal suspend fun UserIdentity.storeUserIdTraitsAndExternalIds(storage: Storage) {
     storage.write(StorageKeys.USER_ID, userId)
