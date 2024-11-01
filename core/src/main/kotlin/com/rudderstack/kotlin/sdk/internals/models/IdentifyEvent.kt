@@ -16,6 +16,7 @@ import kotlinx.serialization.Transient
  *
  * @param options Additional configurations for the event, contained within a [RudderOption] instance.
  * @param userIdentityState The [UserIdentity] information associated with the identify event.
+ * @param event The type of event, which is always [MessageType.Identify].
  */
 @Serializable
 @SerialName("identify")
@@ -33,4 +34,5 @@ data class IdentifyEvent(
     override lateinit var integrations: Map<String, Boolean>
     override lateinit var anonymousId: String
     override lateinit var channel: PlatformType
+    val event = MessageType.Identify
 }
