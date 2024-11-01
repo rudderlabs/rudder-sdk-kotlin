@@ -65,7 +65,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                             "Amplitude" to true
                         ),
                         externalIds = listOf(
-                            ExternalId("brazeExternalId", "value1234"),
+                            ExternalId(type= "brazeExternalId", id = "value1234"),
                         )
                     )
                 )
