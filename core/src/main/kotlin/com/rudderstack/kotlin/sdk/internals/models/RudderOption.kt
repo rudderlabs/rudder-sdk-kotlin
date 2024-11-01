@@ -9,12 +9,12 @@ import kotlinx.serialization.json.JsonObject
  *
  * @property integrations A map of integration names to a boolean indicating if they are enabled.
  * @property externalIds A list of maps representing external IDs associated with the message.
- * @property customContext A JSON object representing custom contexts associated with the message.
+ * @property customContexts A JSON object representing custom contexts associated with the message.
  */
 data class RudderOption(
     val integrations: Map<String, Boolean> = defaultIntegrations,
     val externalIds: List<ExternalId> = emptyList(),
-    val customContext: JsonObject = emptyJsonObject,
+    val customContexts: JsonObject = emptyJsonObject,
 )
 
 /**
@@ -39,7 +39,7 @@ internal fun Message.updateOption() {
     when (this) {
         is TrackEvent, is ScreenEvent, is GroupEvent, is IdentifyEvent -> {
             this.integrations = defaultIntegrations mergeWithHigherPriorityTo options.integrations
-            this.context = options.customContext mergeWithHigherPriorityTo context
+            this.context = options.customContexts mergeWithHigherPriorityTo context
         }
 
         else -> {

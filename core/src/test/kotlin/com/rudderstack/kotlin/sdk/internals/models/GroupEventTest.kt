@@ -87,7 +87,7 @@ class GroupEventTest {
         val groupEvent = GroupEvent(
             groupId = GROUP_ID,
             options = RudderOption(
-                customContext = provideSampleJsonPayload(),
+                customContexts = provideSampleJsonPayload(),
             ),
             userIdentityState = provideOnlyAnonymousIdState()
         ).also {
@@ -127,7 +127,7 @@ class GroupEventTest {
             traits = provideAllTraits(),
             options = RudderOption(
                 integrations = provideSampleIntegrationsPayload(),
-                customContext = provideSampleJsonPayload(),
+                customContexts = provideSampleJsonPayload(),
                 externalIds = provideSampleExternalIdsPayload(),
             ),
             userIdentityState = provideOnlyAnonymousIdState()
@@ -149,7 +149,7 @@ class GroupEventTest {
             traits = provideAllTraits(),
             options = RudderOption(
                 integrations = provideSampleIntegrationsPayload(),
-                customContext = provideSampleJsonPayload(),
+                customContexts = provideSampleJsonPayload(),
                 externalIds = provideSampleExternalIdsPayload(),
             ),
             userIdentityState = provideOnlyAnonymousIdState()
