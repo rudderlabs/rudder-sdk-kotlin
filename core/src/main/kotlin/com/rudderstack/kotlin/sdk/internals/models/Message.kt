@@ -219,7 +219,7 @@ data class TrackEvent(
  */
 @Serializable
 @SerialName("screen")
-internal data class ScreenEvent(
+data class ScreenEvent(
     @SerialName("event") var screenName: String,
     var properties: Properties,
     @Transient override var options: RudderOption = RudderOption(),
@@ -249,7 +249,7 @@ internal data class ScreenEvent(
  */
 @Serializable
 @SerialName("group")
-internal data class GroupEvent(
+data class GroupEvent(
     var groupId: String,
     var traits: RudderTraits = emptyJsonObject,
     @Transient override var options: RudderOption = RudderOption(),

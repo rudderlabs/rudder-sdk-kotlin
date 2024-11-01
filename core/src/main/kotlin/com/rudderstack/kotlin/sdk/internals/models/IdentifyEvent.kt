@@ -19,7 +19,7 @@ import kotlinx.serialization.Transient
  */
 @Serializable
 @SerialName("identify")
-internal data class IdentifyEvent(
+data class IdentifyEvent(
     @Transient override var options: RudderOption = RudderOption(),
     @Transient override var userIdentityState: UserIdentity = provideEmptyUserIdentityState()
 ) : Message() {
