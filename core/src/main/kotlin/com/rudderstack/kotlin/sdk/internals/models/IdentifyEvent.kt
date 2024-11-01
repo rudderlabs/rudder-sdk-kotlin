@@ -1,8 +1,8 @@
 package com.rudderstack.kotlin.sdk.internals.models
 
 import com.rudderstack.kotlin.sdk.internals.models.useridentity.UserIdentity
-import com.rudderstack.kotlin.sdk.internals.models.useridentity.provideEmptyUserIdentityState
 import com.rudderstack.kotlin.sdk.internals.platform.PlatformType
+import com.rudderstack.kotlin.sdk.internals.utils.provideEmptyUserIdentityState
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient

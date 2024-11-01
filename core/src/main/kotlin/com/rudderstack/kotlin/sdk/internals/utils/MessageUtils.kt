@@ -3,6 +3,8 @@ package com.rudderstack.kotlin.sdk.internals.utils
 import com.rudderstack.kotlin.sdk.internals.models.GroupEvent
 import com.rudderstack.kotlin.sdk.internals.models.Message
 import com.rudderstack.kotlin.sdk.internals.models.RudderTraits
+import com.rudderstack.kotlin.sdk.internals.models.emptyJsonObject
+import com.rudderstack.kotlin.sdk.internals.models.useridentity.UserIdentity
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -97,3 +99,5 @@ private fun Message.setExternalIdInContext() {
             this.context = this.context mergeWithHigherPriorityTo latestExternalIds
         }
 }
+
+internal fun provideEmptyUserIdentityState() = UserIdentity(String.empty(), String.empty(), emptyJsonObject, emptyList())

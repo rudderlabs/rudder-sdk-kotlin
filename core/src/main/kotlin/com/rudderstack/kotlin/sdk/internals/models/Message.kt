@@ -2,12 +2,12 @@ package com.rudderstack.kotlin.sdk.internals.models
 
 import com.rudderstack.kotlin.sdk.internals.models.exception.UnknownMessageKeyException
 import com.rudderstack.kotlin.sdk.internals.models.useridentity.UserIdentity
-import com.rudderstack.kotlin.sdk.internals.models.useridentity.provideEmptyUserIdentityState
 import com.rudderstack.kotlin.sdk.internals.platform.PlatformType
 import com.rudderstack.kotlin.sdk.internals.utils.DateTimeUtils
 import com.rudderstack.kotlin.sdk.internals.utils.addAnonymousIdToTraits
 import com.rudderstack.kotlin.sdk.internals.utils.addPersistedValues
 import com.rudderstack.kotlin.sdk.internals.utils.empty
+import com.rudderstack.kotlin.sdk.internals.utils.provideEmptyUserIdentityState
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
