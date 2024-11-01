@@ -32,7 +32,7 @@ internal fun addNameAndCategoryToProperties(name: String, category: String, prop
 
 internal fun Message.setGroupEventTraits() {
     if (this is GroupEvent) {
-        this.traits = getUpdatedTraitsWithAnonymousId(anonymousId = anonymousId, traits = this.traits)
+        this.traits = getUpdatedTraitsWithAnonymousId(anonymousId = this.userIdentityState.anonymousId, traits = this.traits)
     }
 }
 
