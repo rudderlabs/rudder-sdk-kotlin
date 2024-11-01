@@ -7,6 +7,7 @@ import com.rudderstack.kotlin.sdk.internals.utils.DateTimeUtils
 import com.rudderstack.kotlin.sdk.internals.utils.addPersistedValues
 import com.rudderstack.kotlin.sdk.internals.utils.empty
 import com.rudderstack.kotlin.sdk.internals.utils.provideEmptyUserIdentityState
+import com.rudderstack.kotlin.sdk.internals.utils.setGroupEventTraits
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -101,6 +102,7 @@ sealed class Message {
     abstract var options: RudderOption
 
     internal fun updateData(platform: PlatformType) {
+        this.setGroupEventTraits()
         this.channel = platform
         this.updateOption()
         this.addPersistedValues()

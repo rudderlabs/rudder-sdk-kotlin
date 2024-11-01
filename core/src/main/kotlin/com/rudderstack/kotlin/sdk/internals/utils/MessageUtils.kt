@@ -30,14 +30,13 @@ internal fun addNameAndCategoryToProperties(name: String, category: String, prop
     return properties mergeWithHigherPriorityTo nameAndCategoryProperties
 }
 
-internal fun Message.setAnonymousIdToGroupEventTraits() {
+internal fun Message.setGroupEventTraits() {
     if (this is GroupEvent) {
-        val updatedTraits = getTraitsWithAnonymousId(anonymousId = anonymousId, traits = this.traits)
-        this.traits = updatedTraits
+        this.traits = getUpdatedTraitsWithAnonymousId(anonymousId = anonymousId, traits = this.traits)
     }
 }
 
-private fun getTraitsWithAnonymousId(anonymousId: String, traits: RudderTraits): RudderTraits {
+private fun getUpdatedTraitsWithAnonymousId(anonymousId: String, traits: RudderTraits): RudderTraits {
     return if (traits.isNotEmpty()) {
         val traitsWithAnonymousId = getDefaultTraits(anonymousId)
         traits mergeWithHigherPriorityTo traitsWithAnonymousId
@@ -48,7 +47,6 @@ private fun getTraitsWithAnonymousId(anonymousId: String, traits: RudderTraits):
 
 internal fun Message.addPersistedValues() {
     this.setAnonymousIdInTheRoot()
-    this.setAnonymousIdToGroupEventTraits()
     this.setUserId()
     this.setTraitsInContext { this.buildTraits() }
     this.setExternalIdInContext()
