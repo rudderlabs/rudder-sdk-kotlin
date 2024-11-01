@@ -62,8 +62,8 @@ private fun Message.setUserId() {
     this.userId = userIdentityState.userId
 }
 
-private fun Message.setTraitsInContext(getTraits: () -> RudderTraits) {
-    getTraits().let { latestTraits ->
+private fun Message.setTraitsInContext(getLatestTraits: () -> RudderTraits) {
+    getLatestTraits().let { latestTraits ->
         this.context = this.context mergeWithHigherPriorityTo latestTraits
     }
 }
