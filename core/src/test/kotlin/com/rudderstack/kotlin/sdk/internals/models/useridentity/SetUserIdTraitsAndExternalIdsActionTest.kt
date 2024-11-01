@@ -97,7 +97,7 @@ class SetUserIdTraitsAndExternalIdsActionTest {
         coVerify {
             mockAnalytics.configuration.storage.write(StorageKeys.USER_ID, USER_1)
             mockAnalytics.configuration.storage.write(StorageKeys.TRAITS, LenientJson.encodeToString(TRAITS_1))
-            mockAnalytics.configuration.storage.write(StorageKeys.EXTERNAL_IDS, EXTERNAL_IDS_1.toJson().toString())
+            mockAnalytics.configuration.storage.write(StorageKeys.EXTERNAL_IDS, LenientJson.encodeToString(EXTERNAL_IDS_1))
         }
     }
 
