@@ -53,12 +53,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
             AnalyticsState.IdentifyMessage -> {
                 RudderAnalyticsUtils.analytics.identify(
-                    userId = "User 2",
+                    userId = "User 1",
                     traits = buildJsonObject {
                         put("key-1", "value-1")
                     },
                     options = RudderOption(
-                        customContext = buildJsonObject {
+                        customContexts = buildJsonObject {
                             put("key-1", "value-1")
                         },
                         integrations = mapOf(
