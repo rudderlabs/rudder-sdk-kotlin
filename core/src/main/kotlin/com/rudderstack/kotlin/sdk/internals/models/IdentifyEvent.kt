@@ -7,6 +7,16 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 
+/**
+ * Represents an identify event message in RudderStack.
+ *
+ * This data class encapsulates the optional [options] and [userIdentityState] related to the identify event.
+ * An identify event enables setting `userId`, `traits`, and `externalIds`, which are persisted in storage
+ * and must be provided within [userIdentityState].
+ *
+ * @param options Additional configurations for the event, contained within a [RudderOption] instance.
+ * @param userIdentityState The [UserIdentity] information associated with the identify event.
+ */
 @Serializable
 @SerialName("identify")
 internal data class IdentifyEvent(
