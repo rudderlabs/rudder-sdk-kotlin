@@ -7,13 +7,13 @@ import com.rudderstack.kotlin.sdk.internals.models.Message
 import com.rudderstack.kotlin.sdk.internals.models.emptyJsonObject
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.put
 
 /**
  * `LenientJson` is a predefined instance of the `Json` class configured with lenient settings to handle JSON serialization and deserialization.
@@ -81,7 +81,11 @@ fun JsonObjectBuilder.putAll(jsonObject: JsonObject) {
 }
 
 /**
- * Converts a list of `ExternalIds` to a JSON object in the following format:
+ * Converts a list of `ExternalIds` to a JsonObject.
+ *
+ * If the list is empty, the method returns an empty JSON object.
+ * Else the method returns a JSON object with the following structure:
+ *
  * ```
  * "externalId": [
  *     {
@@ -95,21 +99,10 @@ fun JsonObjectBuilder.putAll(jsonObject: JsonObject) {
  * ],
  * ```
  */
-internal fun List<ExternalId>.toJson(): JsonObject {
+internal fun List<ExternalId>.toJsonObject(): JsonObject {
     if (this.isEmpty()) return emptyJsonObject
+    val externalIds = LenientJson.encodeToJsonElement(this) as JsonArray
     return buildJsonObject {
-        put(
-            "externalId",
-            buildJsonArray {
-                this@toJson.forEach {
-                    add(
-                        buildJsonObject {
-                            put("id", it.id)
-                            put("type", it.type)
-                        }
-                    )
-                }
-            }
-        )
+        put("externalId", externalIds)
     }
 }

@@ -2,7 +2,8 @@ package com.rudderstack.kotlin.sdk.utils
 
 import com.rudderstack.kotlin.sdk.internals.models.ExternalId
 import com.rudderstack.kotlin.sdk.internals.utils.LenientJson
-import com.rudderstack.kotlin.sdk.internals.utils.toJson
+import com.rudderstack.kotlin.sdk.internals.utils.toJsonObject
+
 import kotlinx.serialization.encodeToString
 import org.junit.Test
 import org.skyscreamer.jsonassert.JSONAssert
@@ -16,7 +17,7 @@ class JSONUtilsTest {
             ExternalId("ga4", "2")
         )
 
-        val externalIdsJson = externalIds.toJson()
+        val externalIdsJson = externalIds.toJsonObject()
         val externalIdsJsonString = LenientJson.encodeToString(externalIdsJson)
 
         val expectedJson = getOneExternalIdsInStringFormat()
@@ -32,7 +33,7 @@ class JSONUtilsTest {
             ExternalId("clevertap", "4")
         )
 
-        val externalIdsJson = externalIds.toJson()
+        val externalIdsJson = externalIds.toJsonObject()
         val externalIdsJsonString = LenientJson.encodeToString(externalIdsJson)
 
         val expectedJson = getMultipleExternalIdsInStringFormat()
@@ -43,7 +44,7 @@ class JSONUtilsTest {
     fun `given empty external ids is passed, when toJson is called on List of ExternalId type values, then it should return an empty JsonObject`() {
         val externalIds = emptyList<ExternalId>()
 
-        val externalIdsJson = externalIds.toJson()
+        val externalIdsJson = externalIds.toJsonObject()
         val externalIdsJsonString = LenientJson.encodeToString(externalIdsJson)
 
         val expectedJson = "{}"

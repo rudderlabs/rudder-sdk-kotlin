@@ -95,10 +95,10 @@ private fun getUserIdAddedTraits(userId: String): RudderTraits = buildJsonObject
 }
 
 private fun Message.setExternalIdInContext() {
-    userIdentityState.externalIds.toJson().takeIf { it.values.isNotEmpty() }
-        ?.let { latestExternalIds ->
-            this.context = this.context mergeWithHigherPriorityTo latestExternalIds
-        }
+    val externalIds = userIdentityState.externalIds.toJsonObject()
+    if (externalIds.isNotEmpty()) {
+        this.context = this.context mergeWithHigherPriorityTo externalIds
+    }
 }
 
 internal fun provideEmptyUserIdentityState() = UserIdentity(String.empty(), String.empty(), emptyJsonObject, emptyList())
