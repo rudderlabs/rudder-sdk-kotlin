@@ -40,9 +40,9 @@ internal class SetUserIdTraitsAndExternalIdsAction(
     }
 
     private fun isUserIdChanged(currentState: UserIdentity): Boolean {
-        val oldUserId = currentState.userId
+        val previousUserId = currentState.userId
         val newUserId = this.newUserId
-        return oldUserId != newUserId
+        return previousUserId != newUserId
     }
 
     private fun resetValuesIfUserIdChanged(isUserIdChanged: Boolean) {
