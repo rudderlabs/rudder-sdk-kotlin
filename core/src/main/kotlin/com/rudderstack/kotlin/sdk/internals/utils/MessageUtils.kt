@@ -46,13 +46,13 @@ private fun getUpdatedTraitsWithAnonymousId(anonymousId: String, traits: RudderT
 }
 
 internal fun Message.addPersistedValues() {
-    this.setAnonymousIdInTheRoot()
+    this.setAnonymousId()
     this.setUserId()
     this.setTraitsInContext { this.buildTraits() }
     this.setExternalIdInContext()
 }
 
-private fun Message.setAnonymousIdInTheRoot() {
+private fun Message.setAnonymousId() {
     this.anonymousId = userIdentityState.anonymousId
 }
 
