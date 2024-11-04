@@ -5,12 +5,12 @@ import com.rudderstack.kotlin.sdk.internals.network.HttpClient
 import com.rudderstack.kotlin.sdk.internals.network.HttpClientImpl
 import com.rudderstack.kotlin.sdk.internals.network.Result
 import com.rudderstack.kotlin.sdk.internals.platform.PlatformType
-import com.rudderstack.kotlin.sdk.internals.statemanagement.Store
+import com.rudderstack.kotlin.sdk.internals.statemanagement.FlowState
+import com.rudderstack.kotlin.sdk.internals.storage.StorageKeys
 import com.rudderstack.kotlin.sdk.internals.utils.LenientJson
+import com.rudderstack.kotlin.sdk.internals.utils.empty
 import com.rudderstack.kotlin.sdk.internals.utils.encodeToBase64
-import com.rudderstack.kotlin.sdk.state.SourceConfigState
 import kotlinx.coroutines.withContext
-import org.jetbrains.annotations.VisibleForTesting
 
 private const val SOURCE_CONFIG_ENDPOINT = "/sourceConfig"
 private const val PLATFORM = "p"
@@ -21,49 +21,75 @@ private const val KOTLIN = "kotlin"
 
 internal class SourceConfigManager(
     private val analytics: Analytics,
-    private val store: Store<SourceConfigState, SourceConfigState.UpdateAction>,
+    private val sourceConfigState: FlowState<SourceConfig>,
     private val httpClientFactory: HttpClient = analytics.createGetHttpClientFactory(),
 ) {
 
-    suspend fun fetchSourceConfig() {
-        withContext(analytics.networkDispatcher) {
-            val sourceConfig: SourceConfig? = downloadSourceConfig()
-            sourceConfig?.let { storeSourceConfig(it) }
+    suspend fun fetchAndUpdateSourceConfig() {
+        val downloadedSourceConfig = downloadSourceConfig()
+        downloadedSourceConfig?.let {
+            updateSourceConfigState(it)
+            storeSourceConfig(it)
+        } ?: run {
+            val fetchedSourceConfig = fetchStoredSourceConfig()
+            fetchedSourceConfig?.let { updateSourceConfigState(it) }
         }
     }
 
     @Suppress("TooGenericExceptionCaught")
-    private fun downloadSourceConfig(): SourceConfig? {
-        return try {
-            when (val sourceConfigResult = httpClientFactory.getData()) {
-                is Result.Success -> {
-                    val config = LenientJson.decodeFromString<SourceConfig>(sourceConfigResult.response)
-                    analytics.configuration.logger.info(log = "SourceConfig is fetched successfully: $config")
-                    config
-                }
+    private suspend fun downloadSourceConfig(): SourceConfig? {
+        return withContext(analytics.networkDispatcher) {
+            try {
+                when (val sourceConfigResult = httpClientFactory.getData()) {
+                    is Result.Success -> {
+                        val config = LenientJson.decodeFromString<SourceConfig>(sourceConfigResult.response)
+                        analytics.configuration.logger.info(log = "SourceConfig is fetched successfully: $config")
+                        config
+                    }
 
-                is Result.Failure -> {
-                    analytics.configuration.logger.error(
-                        log = "Failed to get sourceConfig due to ${sourceConfigResult.status} ${sourceConfigResult.error}"
-                    )
-                    null
+                    is Result.Failure -> {
+                        analytics.configuration.logger.error(
+                            log = "Failed to get sourceConfig due " +
+                                "to ${sourceConfigResult.status} ${sourceConfigResult.error}"
+                        )
+                        null
+                    }
                 }
+            } catch (e: Exception) {
+                analytics.configuration.logger.error(log = "Failed to get sourceConfig due to $e")
+                null
             }
-        } catch (e: Exception) {
-            analytics.configuration.logger.error(log = "Failed to get sourceConfig due to $e")
+        }
+    }
+
+    private fun fetchStoredSourceConfig(): SourceConfig? {
+        val sourceConfigString = analytics.configuration.storage.readString(
+            StorageKeys.SOURCE_CONFIG_PAYLOAD,
+            defaultVal = String.empty()
+        )
+
+        return if (sourceConfigString.isNotEmpty()) {
+            val sourceConfig = LenientJson.decodeFromString<SourceConfig>(sourceConfigString)
+            analytics.configuration.logger.info(log = "SourceConfig fetched from storage: $sourceConfig")
+            sourceConfig
+        } else {
+            analytics.configuration.logger.info(log = "SourceConfig not found in storage")
             null
         }
     }
 
-    @VisibleForTesting
-    fun storeSourceConfig(sourceConfig: SourceConfig) {
-        store.subscribe { _, _ -> analytics.configuration.logger.debug(log = "SourceConfigState subscribed") }
-        store.dispatch(action = SourceConfigState.UpdateAction(sourceConfig))
-        analytics.configuration.logger.debug(log = "SourceConfig: $sourceConfig")
+    private suspend fun storeSourceConfig(sourceConfig: SourceConfig) {
+        withContext(analytics.storageDispatcher) {
+            sourceConfig.storeSourceConfig(analytics.configuration.storage)
+        }
+    }
+
+    private fun updateSourceConfigState(sourceConfig: SourceConfig) {
+        sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfig))
     }
 }
 
-internal fun Analytics.createGetHttpClientFactory(): HttpClient {
+private fun Analytics.createGetHttpClientFactory(): HttpClient {
     val authHeaderString: String = configuration.writeKey.encodeToBase64()
     val query = getQuery()
 
