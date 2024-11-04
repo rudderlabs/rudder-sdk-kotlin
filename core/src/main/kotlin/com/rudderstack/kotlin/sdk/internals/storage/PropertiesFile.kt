@@ -1,6 +1,6 @@
 package com.rudderstack.kotlin.sdk.internals.storage
 
-import com.rudderstack.kotlin.sdk.internals.models.LoggerAnalytics
+import com.rudderstack.kotlin.sdk.internals.logger.LoggerAnalytics
 import com.rudderstack.kotlin.sdk.internals.utils.empty
 import com.rudderstack.kotlin.sdk.internals.utils.toPropertiesFileName
 import java.io.File

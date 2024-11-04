@@ -1,7 +1,7 @@
 package com.rudderstack.android.sdk.utils
 
 import com.rudderstack.kotlin.sdk.Analytics
-import com.rudderstack.kotlin.sdk.internals.models.LoggerAnalytics
+import com.rudderstack.kotlin.sdk.internals.logger.LoggerAnalytics
 import kotlinx.coroutines.launch
 
 /**

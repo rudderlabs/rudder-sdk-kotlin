@@ -1,7 +1,4 @@
-package com.rudderstack.kotlin.sdk.internals.models
-
-import com.rudderstack.kotlin.sdk.internals.logger.Logger
-import com.rudderstack.kotlin.sdk.internals.logger.TAG
+package com.rudderstack.kotlin.sdk.internals.logger
 
 /**
  * `LoggerAnalytics` is a singleton class that manages the logging instance for the SDK, supporting configurable
@@ -42,9 +39,9 @@ object LoggerAnalytics {
      * @param tag A string tag to associate with all log messages. It is optional and defaults to `Rudder-Analytics`.
      */
     fun setup(logger: Logger, logLevel: Logger.LogLevel, tag: String = TAG) {
-        this.logger = logger
-        this.logger.activate(logLevel)
-        this.logger.setTag(tag)
+        LoggerAnalytics.logger = logger
+        LoggerAnalytics.logger.activate(logLevel)
+        LoggerAnalytics.logger.setTag(tag)
     }
 
     /**

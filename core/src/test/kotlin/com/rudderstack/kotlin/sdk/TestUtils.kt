@@ -1,7 +1,7 @@
 package com.rudderstack.kotlin.sdk
 
 import com.rudderstack.kotlin.sdk.internals.logger.Logger
-import com.rudderstack.kotlin.sdk.internals.models.LoggerAnalytics
+import com.rudderstack.kotlin.sdk.internals.logger.LoggerAnalytics
 import java.io.BufferedReader
 
 fun Any.readFileAsString(fileName: String): String {

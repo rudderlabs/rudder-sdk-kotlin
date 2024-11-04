@@ -4,7 +4,7 @@ import com.rudderstack.kotlin.sdk.Analytics
 import com.rudderstack.kotlin.sdk.Configuration
 import com.rudderstack.kotlin.sdk.Configuration.Companion.DEFAULT_GZIP_STATUS
 import com.rudderstack.kotlin.sdk.internals.logger.Logger
-import com.rudderstack.kotlin.sdk.internals.models.LoggerAnalytics
+import com.rudderstack.kotlin.sdk.internals.logger.LoggerAnalytics
 import com.rudderstack.kotlin.sdk.internals.models.Properties
 import com.rudderstack.kotlin.sdk.internals.models.RudderOption
 import com.rudderstack.kotlin.sdk.internals.models.RudderTraits

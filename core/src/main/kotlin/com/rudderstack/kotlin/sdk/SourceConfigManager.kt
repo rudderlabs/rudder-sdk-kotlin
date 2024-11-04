@@ -1,6 +1,6 @@
 package com.rudderstack.kotlin.sdk
 
-import com.rudderstack.kotlin.sdk.internals.models.LoggerAnalytics
+import com.rudderstack.kotlin.sdk.internals.logger.LoggerAnalytics
 import com.rudderstack.kotlin.sdk.internals.models.SourceConfig
 import com.rudderstack.kotlin.sdk.internals.network.HttpClient
 import com.rudderstack.kotlin.sdk.internals.network.HttpClientImpl
