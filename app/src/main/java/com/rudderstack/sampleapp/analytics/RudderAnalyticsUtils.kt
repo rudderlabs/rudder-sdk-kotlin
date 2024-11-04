@@ -4,6 +4,7 @@ import android.app.Application
 import com.rudderstack.android.sdk.Analytics
 import com.rudderstack.android.sdk.Configuration
 import com.rudderstack.kotlin.sdk.internals.logger.Logger
+import com.rudderstack.kotlin.sdk.internals.models.LoggerManager
 
 object RudderAnalyticsUtils {
 
@@ -18,6 +19,12 @@ object RudderAnalyticsUtils {
                 dataPlaneUrl = "<DATA_PLANE_URL>",
                 logLevel = Logger.LogLevel.VERBOSE,
             )
-        )
+        ).apply {
+            setLogger(
+                logger = ChryssaLogger,
+                logLevel = Logger.LogLevel.VERBOSE,
+            )
+        }
+        LoggerManager.debug("Logger MANAGER DEBUG")
     }
 }
