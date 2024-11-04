@@ -2,7 +2,7 @@ package com.rudderstack.android.sdk.plugins
 
 import android.app.Application
 import android.content.pm.PackageManager
-import com.rudderstack.android.sdk.AndroidLogger
+import com.rudderstack.android.sdk.logger.AndroidLogger
 import com.rudderstack.android.sdk.Configuration
 import com.rudderstack.android.sdk.utils.provideEvent
 import com.rudderstack.android.sdk.utils.setupLogger

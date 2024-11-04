@@ -1,4 +1,4 @@
-package com.rudderstack.android.sdk
+package com.rudderstack.android.sdk.logger
 
 import android.util.Log
 import com.rudderstack.kotlin.sdk.internals.logger.Logger
