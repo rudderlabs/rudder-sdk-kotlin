@@ -33,8 +33,10 @@ internal fun addNameAndCategoryToProperties(name: String, category: String, prop
 internal fun Message.addAnonymousIdToTraits() {
     when (this) {
         is GroupEvent -> {
-            val updatedTraits =
-                getUpdatedTraitsWithAnonymousId(anonymousId = this.userIdentityState.anonymousId, traits = this.traits)
+            val updatedTraits = getUpdatedTraitsWithAnonymousId(
+                anonymousId = this.userIdentityState.anonymousId,
+                traits = this.traits
+            )
             this.traits = updatedTraits
         }
 
@@ -54,9 +56,14 @@ private fun getUpdatedTraitsWithAnonymousId(anonymousId: String, traits: RudderT
 }
 
 internal fun Message.addPersistedValues() {
+    this.setAnonymousId()
     this.setUserId()
     this.setTraitsInContext { this.buildTraits() }
     this.setExternalIdInContext()
+}
+
+private fun Message.setAnonymousId() {
+    this.anonymousId = userIdentityState.anonymousId
 }
 
 private fun Message.setUserId() {

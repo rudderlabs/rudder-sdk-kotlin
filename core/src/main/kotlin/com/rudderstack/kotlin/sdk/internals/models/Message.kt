@@ -102,7 +102,6 @@ sealed class Message {
     abstract var options: RudderOption
 
     internal fun updateData(platform: PlatformType) {
-        this.anonymousId = userIdentityState.anonymousId
         this.addAnonymousIdToTraits()
         this.channel = platform
         this.updateOption()
