@@ -6,8 +6,8 @@ package com.rudderstack.kotlin.sdk.internals.logger
  * the console using `println` statements, filtered by the current log level setting.
  *
  * The logger supports five levels of logging:
- * - **VERBOSE**: Logs detailed messages that are useful for debugging.
- * - **DEBUG**: Logs detailed information that is useful for debugging.
+ * - **VERBOSE**: Logs detailed messages for in-depth troubleshooting.
+ * - **DEBUG**: Logs messages useful for debugging purposes.
  * - **INFO**: Logs informational messages that highlight the progress of the application.
  * - **WARN**: Logs potentially harmful situations that warrant attention.
  * - **ERROR**: Logs error events that might still allow the application to continue running.
