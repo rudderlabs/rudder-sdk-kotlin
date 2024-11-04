@@ -9,9 +9,9 @@ package com.rudderstack.kotlin.sdk.internals.logger
  * Use the `setLogger` method to configure the logger instance, specify a log level and optionally set a tag.:
  *
  * ```kotlin
- * LoggerAnalytics.setup(logger = AndroidLogger, level = configuration.logLevel, tag = "MyTag")
+ * LoggerAnalytics.setup(logger = AndroidLogger(), level = configuration.logLevel, tag = "MyTag")
  * // Or for non-Android environments
- * LoggerAnalytics.setup(logger = KotlinLogger, level = configuration.logLevel, tag = "MyTag")
+ * LoggerAnalytics.setup(logger = KotlinLogger(), level = configuration.logLevel, tag = "MyTag")
  * ```
  *
  * ### Usage
