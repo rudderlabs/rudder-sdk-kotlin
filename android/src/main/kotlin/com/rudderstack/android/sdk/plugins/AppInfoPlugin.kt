@@ -42,7 +42,7 @@ internal class AppInfoPlugin : Plugin {
                 val packageInfo = packageManager.getPackageInfo(config.application.packageName, 0)
                 constructAppContext(packageInfo, packageManager)
             } catch (e: PackageManager.NameNotFoundException) {
-                LoggerAnalytics.error("Failed to get package info $e")
+                LoggerAnalytics.error("Failed to get package info", e)
                 emptyJsonObject
             }
         }
