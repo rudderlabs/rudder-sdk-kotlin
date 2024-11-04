@@ -27,12 +27,10 @@ package com.rudderstack.kotlin.sdk.internals.logger
  *
  * These methods ensure that messages are logged according to the configured log level, providing flexibility
  * and clarity for debugging and tracking events across SDK modules.
- *
- * @property logLevel The current log level for the logger e.g., `Logger.LogLevel.DEBUG`.
  */
 object LoggerAnalytics {
     private lateinit var logger: Logger
-    lateinit var logLevel: Logger.LogLevel
+    private lateinit var logLevel: Logger.LogLevel
         @Synchronized private set
 
         @Synchronized get
