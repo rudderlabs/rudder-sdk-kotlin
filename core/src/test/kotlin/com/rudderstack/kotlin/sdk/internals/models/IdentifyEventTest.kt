@@ -70,7 +70,7 @@ class IdentifyEventTest {
         val identifyEvent = IdentifyEvent(
             options = RudderOption(
                 integrations = provideSampleIntegrationsPayload(),
-                customContexts = provideSampleJsonPayload(),
+                customContext = provideSampleJsonPayload(),
                 externalIds = provideSampleExternalIdsPayload(),
             ),
             userIdentityState = userIdentityState,
@@ -113,7 +113,7 @@ class IdentifyEventTest {
         val identifyEvent = IdentifyEvent(
             options = RudderOption(
                 integrations = provideSampleIntegrationsPayload(),
-                customContexts = provideSampleJsonPayload(),
+                customContext = provideSampleJsonPayload(),
                 externalIds = provideSampleExternalIdsPayload(),
             ),
             userIdentityState = userIdentityState,
@@ -137,7 +137,7 @@ class IdentifyEventTest {
         val identifyEvent = IdentifyEvent(
             options = RudderOption(
                 integrations = provideSampleIntegrationsPayload(),
-                customContexts = provideSampleJsonPayload(),
+                customContext = provideSampleJsonPayload(),
                 externalIds = provideSampleExternalIdsPayload(),
             ),
             userIdentityState = userIdentityState,
@@ -162,7 +162,7 @@ class IdentifyEventTest {
         val identifyEvent = IdentifyEvent(
             options = RudderOption(
                 integrations = provideSampleIntegrationsPayload(),
-                customContexts = provideSampleJsonPayload(),
+                customContext = provideSampleJsonPayload(),
                 externalIds = provideSampleExternalIdsPayload(),
             ),
             userIdentityState = userIdentityState,
@@ -187,7 +187,7 @@ class IdentifyEventTest {
         val identifyEvent = IdentifyEvent(
             options = RudderOption(
                 integrations = provideSampleIntegrationsPayload(),
-                customContexts = provideSampleJsonPayload(),
+                customContext = provideSampleJsonPayload(),
                 externalIds = provideSampleExternalIdsPayload(),
             ),
             userIdentityState = userIdentityState,

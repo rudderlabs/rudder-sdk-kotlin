@@ -109,7 +109,7 @@ class ScreenEventTest {
             screenName = SCREEN_NAME,
             properties = provideDefaultScreenProperties(),
             options = RudderOption(
-                customContexts = provideSampleJsonPayload(),
+                customContext = provideSampleJsonPayload(),
             ),
             userIdentityState = provideOnlyAnonymousIdState()
         ).also {
@@ -150,7 +150,7 @@ class ScreenEventTest {
             properties = provideAllScreenProperties(),
             options = RudderOption(
                 integrations = provideSampleIntegrationsPayload(),
-                customContexts = provideSampleJsonPayload(),
+                customContext = provideSampleJsonPayload(),
                 externalIds = provideSampleExternalIdsPayload(),
             ),
             userIdentityState = provideOnlyAnonymousIdState()
@@ -172,7 +172,7 @@ class ScreenEventTest {
             properties = provideAllScreenProperties(),
             options = RudderOption(
                 integrations = provideSampleIntegrationsPayload(),
-                customContexts = provideSampleJsonPayload(),
+                customContext = provideSampleJsonPayload(),
                 externalIds = provideSampleExternalIdsPayload(),
             ),
             userIdentityState = provideOnlyAnonymousIdState()

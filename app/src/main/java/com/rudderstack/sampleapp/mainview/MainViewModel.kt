@@ -58,7 +58,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         put("key-1", "value-1")
                     },
                     options = RudderOption(
-                        customContexts = buildJsonObject {
+                        customContext = buildJsonObject {
                             put("key-1", "value-1")
                         },
                         integrations = mapOf(
