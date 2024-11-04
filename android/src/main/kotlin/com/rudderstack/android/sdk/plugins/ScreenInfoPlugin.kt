@@ -4,7 +4,7 @@ import android.util.DisplayMetrics
 import com.rudderstack.android.sdk.Configuration
 import com.rudderstack.android.sdk.utils.mergeWithHigherPriorityTo
 import com.rudderstack.kotlin.sdk.Analytics
-import com.rudderstack.kotlin.sdk.internals.models.LoggerManager
+import com.rudderstack.kotlin.sdk.internals.models.LoggerAnalytics
 import com.rudderstack.kotlin.sdk.internals.models.Message
 import com.rudderstack.kotlin.sdk.internals.plugins.Plugin
 import kotlinx.serialization.json.JsonObject
@@ -51,7 +51,7 @@ internal class ScreenInfoPlugin : Plugin {
     override fun execute(message: Message): Message = attachScreenInfo(message)
 
     private fun attachScreenInfo(message: Message): Message {
-        LoggerManager.debug("Attaching screen info to the message payload")
+        LoggerAnalytics.debug("Attaching screen info to the message payload")
 
         message.context = message.context mergeWithHigherPriorityTo screenContext
 

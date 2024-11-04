@@ -1,6 +1,6 @@
 package com.rudderstack.kotlin.sdk
 
-import com.rudderstack.kotlin.sdk.internals.models.LoggerManager
+import com.rudderstack.kotlin.sdk.internals.models.LoggerAnalytics
 import com.rudderstack.kotlin.sdk.internals.models.SourceConfig
 import com.rudderstack.kotlin.sdk.internals.network.HttpClient
 import com.rudderstack.kotlin.sdk.internals.network.HttpClientImpl
@@ -39,28 +39,28 @@ internal class SourceConfigManager(
             when (val sourceConfigResult = httpClientFactory.getData()) {
                 is Result.Success -> {
                     val config = LenientJson.decodeFromString<SourceConfig>(sourceConfigResult.response)
-                    LoggerManager.info("SourceConfig is fetched successfully: $config")
+                    LoggerAnalytics.info("SourceConfig is fetched successfully: $config")
                     config
                 }
 
                 is Result.Failure -> {
-                    LoggerManager.error(
+                    LoggerAnalytics.error(
                         "Failed to get sourceConfig due to ${sourceConfigResult.status} ${sourceConfigResult.error}"
                     )
                     null
                 }
             }
         } catch (e: Exception) {
-            LoggerManager.error("Failed to get sourceConfig due to $e")
+            LoggerAnalytics.error("Failed to get sourceConfig due to $e")
             null
         }
     }
 
     @VisibleForTesting
     fun storeSourceConfig(sourceConfig: SourceConfig) {
-        store.subscribe { _, _ -> LoggerManager.debug("SourceConfigState subscribed") }
+        store.subscribe { _, _ -> LoggerAnalytics.debug("SourceConfigState subscribed") }
         store.dispatch(action = SourceConfigState.UpdateAction(sourceConfig))
-        LoggerManager.debug("SourceConfig: $sourceConfig")
+        LoggerAnalytics.debug("SourceConfig: $sourceConfig")
     }
 }
 

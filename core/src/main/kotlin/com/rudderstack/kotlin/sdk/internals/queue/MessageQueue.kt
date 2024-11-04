@@ -2,7 +2,7 @@ package com.rudderstack.kotlin.sdk.internals.queue
 
 import com.rudderstack.kotlin.sdk.Analytics
 import com.rudderstack.kotlin.sdk.internals.models.FlushEvent
-import com.rudderstack.kotlin.sdk.internals.models.LoggerManager
+import com.rudderstack.kotlin.sdk.internals.models.LoggerAnalytics
 import com.rudderstack.kotlin.sdk.internals.models.Message
 import com.rudderstack.kotlin.sdk.internals.models.MessageType
 import com.rudderstack.kotlin.sdk.internals.network.HttpClient
@@ -106,11 +106,11 @@ internal class MessageQueue(
             if (!isFlushSignal) {
                 try {
                     val stringVal = stringifyBaseEvent(message)
-                    LoggerManager.debug("running $stringVal")
+                    LoggerAnalytics.debug("running $stringVal")
                     storage.write(StorageKeys.MESSAGE, stringVal)
                     flushPoliciesFacade.updateState()
                 } catch (e: Exception) {
-                    LoggerManager.error("Error adding payload: $message", e)
+                    LoggerAnalytics.error("Error adding payload: $message", e)
                 }
             }
 
@@ -124,7 +124,7 @@ internal class MessageQueue(
     @Suppress("TooGenericExceptionCaught")
     private fun upload() = analytics.analyticsScope.launch(analytics.networkDispatcher) {
         uploadChannel.consumeEach {
-            LoggerManager.debug("performing flush")
+            LoggerAnalytics.debug("performing flush")
             withContext(analytics.storageDispatcher) {
                 storage.rollover()
             }
@@ -136,27 +136,27 @@ internal class MessageQueue(
                 var shouldCleanup = false
                 try {
                     val batchPayload = jsonSentAtUpdater.updateSentAt(readFileAsString(filePath))
-                    LoggerManager.debug("-------> readFileAsString: $batchPayload")
+                    LoggerAnalytics.debug("-------> readFileAsString: $batchPayload")
                     when (val result: Result<String> = httpClientFactory.sendData(batchPayload)) {
                         is Result.Success -> {
-                            LoggerManager.debug("Event uploaded successfully. Server response: ${result.response}")
+                            LoggerAnalytics.debug("Event uploaded successfully. Server response: ${result.response}")
                             shouldCleanup = true
                         }
 
                         is Result.Failure -> {
-                            LoggerManager.debug("Error when uploading event due to ${result.status} ${result.error}")
+                            LoggerAnalytics.debug("Error when uploading event due to ${result.status} ${result.error}")
                         }
                     }
                 } catch (e: FileNotFoundException) {
-                    LoggerManager.error("Message storage file not found", e)
+                    LoggerAnalytics.error("Message storage file not found", e)
                 } catch (e: Exception) {
-                    LoggerManager.error("Error when uploading event", e)
+                    LoggerAnalytics.error("Error when uploading event", e)
                     //  shouldCleanup = handleUploadException(e, file)
                 }
 
                 if (shouldCleanup) {
                     storage.remove(file.path).let {
-                        LoggerManager.debug("Removed file: $filePath")
+                        LoggerAnalytics.debug("Removed file: $filePath")
                     }
                 }
             }

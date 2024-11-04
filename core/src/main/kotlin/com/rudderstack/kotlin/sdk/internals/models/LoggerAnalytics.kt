@@ -4,7 +4,7 @@ import com.rudderstack.kotlin.sdk.internals.logger.Logger
 import com.rudderstack.kotlin.sdk.internals.logger.TAG
 
 /**
- * `LoggerManager` is a singleton class that manages the logging instance for the SDK, supporting configurable
+ * `LoggerAnalytics` is a singleton class that manages the logging instance for the SDK, supporting configurable
  * logger types and log levels. It allows setting up either an Android or Kotlin logger, providing consistent
  * logging across different environments.
  *
@@ -12,26 +12,26 @@ import com.rudderstack.kotlin.sdk.internals.logger.TAG
  * Use the `setLogger` method to configure the logger instance, specify a log level and optionally set a tag.:
  *
  * ```kotlin
- * LoggerManager.setup(logger = AndroidLogger, level = configuration.logLevel, tag = "MyTag")
+ * LoggerAnalytics.setup(logger = AndroidLogger, level = configuration.logLevel, tag = "MyTag")
  * // Or for non-Android environments
- * LoggerManager.setup(logger = KotlinLogger, level = configuration.logLevel, tag = "MyTag")
+ * LoggerAnalytics.setup(logger = KotlinLogger, level = configuration.logLevel, tag = "MyTag")
  * ```
  *
  * ### Usage
  * Once configured, log messages at various levels as shown below:
  *
  * ```kotlin
- * LoggerManager.verbose("This is a verbose message")
- * LoggerManager.debug("This is a debug message")
- * LoggerManager.info("This is an info message")
- * LoggerManager.warn("This is a warning message")
- * LoggerManager.error("This is an error message", throwable)
+ * LoggerAnalytics.verbose("This is a verbose message")
+ * LoggerAnalytics.debug("This is a debug message")
+ * LoggerAnalytics.info("This is an info message")
+ * LoggerAnalytics.warn("This is a warning message")
+ * LoggerAnalytics.error("This is an error message", throwable)
  * ```
  *
  * These methods ensure that messages are logged according to the configured log level, providing flexibility
  * and clarity for debugging and tracking events across SDK modules.
  */
-object LoggerManager {
+object LoggerAnalytics {
     private lateinit var logger: Logger
 
     /**

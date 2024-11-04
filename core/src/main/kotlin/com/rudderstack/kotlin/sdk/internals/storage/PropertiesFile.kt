@@ -1,6 +1,6 @@
 package com.rudderstack.kotlin.sdk.internals.storage
 
-import com.rudderstack.kotlin.sdk.internals.models.LoggerManager
+import com.rudderstack.kotlin.sdk.internals.models.LoggerAnalytics
 import com.rudderstack.kotlin.sdk.internals.utils.empty
 import com.rudderstack.kotlin.sdk.internals.utils.toPropertiesFileName
 import java.io.File
@@ -31,7 +31,7 @@ internal class PropertiesFile(
                 }
             } catch (e: Throwable) {
                 propsFile.delete()
-                LoggerManager.error(
+                LoggerAnalytics.error(
                     "Failed to load property file with path " +
                         "${propsFile.absolutePath}, error stacktrace: ${e.stackTraceToString()}"
                 )

@@ -2,7 +2,7 @@ package com.rudderstack.android.sdk.plugins
 
 import com.rudderstack.android.sdk.utils.mergeWithHigherPriorityTo
 import com.rudderstack.kotlin.sdk.Analytics
-import com.rudderstack.kotlin.sdk.internals.models.LoggerManager
+import com.rudderstack.kotlin.sdk.internals.models.LoggerAnalytics
 import com.rudderstack.kotlin.sdk.internals.models.Message
 import com.rudderstack.kotlin.sdk.internals.plugins.Plugin
 import kotlinx.serialization.json.JsonObject
@@ -37,7 +37,7 @@ internal class TimezoneInfoPlugin : Plugin {
     override fun execute(message: Message): Message = attachTimezoneInfo(message)
 
     private fun attachTimezoneInfo(message: Message): Message {
-        LoggerManager.debug("Attaching timezone info to the message payload")
+        LoggerAnalytics.debug("Attaching timezone info to the message payload")
 
         message.context = message.context mergeWithHigherPriorityTo timezoneContext
 

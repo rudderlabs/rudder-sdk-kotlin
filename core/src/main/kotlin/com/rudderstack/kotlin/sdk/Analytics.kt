@@ -3,7 +3,7 @@ package com.rudderstack.kotlin.sdk
 import com.rudderstack.kotlin.sdk.internals.logger.KotlinLogger
 import com.rudderstack.kotlin.sdk.internals.logger.Logger
 import com.rudderstack.kotlin.sdk.internals.models.GroupEvent
-import com.rudderstack.kotlin.sdk.internals.models.LoggerManager
+import com.rudderstack.kotlin.sdk.internals.models.LoggerAnalytics
 import com.rudderstack.kotlin.sdk.internals.models.Message
 import com.rudderstack.kotlin.sdk.internals.models.Properties
 import com.rudderstack.kotlin.sdk.internals.models.RudderOption
@@ -79,10 +79,10 @@ open class Analytics protected constructor(
      * @param logger The `Logger` instance to use for logging. Defaults to `KotlinLogger`.
      * @param logLevel The log level to apply, which controls the verbosity of logs. Defaults to `configuration.logLevel`.
      *
-     * This function configures the `LoggerManager` with the provided `logger` and `logLevel`, allowing customization of logging behavior.
+     * This function configures the `LoggerAnalytics` with the provided `logger` and `logLevel`, allowing customization of logging behavior.
      */
     fun setLogger(logger: Logger = KotlinLogger, logLevel: Logger.LogLevel = configuration.logLevel) {
-        LoggerManager.setup(logger = logger, logLevel = logLevel)
+        LoggerAnalytics.setup(logger = logger, logLevel = logLevel)
     }
 
     /**
@@ -95,7 +95,7 @@ open class Analytics protected constructor(
         configuration = configuration,
         coroutineConfig = object : CoroutineConfiguration {
             private val handler = CoroutineExceptionHandler { _, exception ->
-                LoggerManager.error(exception.stackTraceToString())
+                LoggerAnalytics.error(exception.stackTraceToString())
             }
             override val analyticsScope: CoroutineScope = CoroutineScope(SupervisorJob() + handler)
             override val analyticsDispatcher: CoroutineDispatcher = Dispatchers.IO

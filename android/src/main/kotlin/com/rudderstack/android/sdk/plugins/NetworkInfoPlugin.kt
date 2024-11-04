@@ -8,7 +8,7 @@ import com.rudderstack.android.sdk.utils.mergeWithHigherPriorityTo
 import com.rudderstack.android.sdk.utils.network.DefaultNetworkUtils
 import com.rudderstack.android.sdk.utils.network.NetworkUtils
 import com.rudderstack.kotlin.sdk.Analytics
-import com.rudderstack.kotlin.sdk.internals.models.LoggerManager
+import com.rudderstack.kotlin.sdk.internals.models.LoggerAnalytics
 import com.rudderstack.kotlin.sdk.internals.models.Message
 import com.rudderstack.kotlin.sdk.internals.plugins.Plugin
 import kotlinx.serialization.json.JsonObject
@@ -51,7 +51,7 @@ internal class NetworkInfoPlugin(
     override fun execute(message: Message): Message = attachNetworkInfo(message)
 
     private fun attachNetworkInfo(message: Message): Message {
-        LoggerManager.debug("Attaching network info to the message payload")
+        LoggerAnalytics.debug("Attaching network info to the message payload")
 
         message.context = message.context mergeWithHigherPriorityTo getNetworkInfo()
 

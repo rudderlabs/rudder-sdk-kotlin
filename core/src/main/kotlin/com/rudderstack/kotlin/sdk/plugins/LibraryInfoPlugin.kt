@@ -1,7 +1,7 @@
 package com.rudderstack.kotlin.sdk.plugins
 
 import com.rudderstack.kotlin.sdk.Analytics
-import com.rudderstack.kotlin.sdk.internals.models.LoggerManager
+import com.rudderstack.kotlin.sdk.internals.models.LoggerAnalytics
 import com.rudderstack.kotlin.sdk.internals.models.Message
 import com.rudderstack.kotlin.sdk.internals.plugins.Plugin
 import com.rudderstack.kotlin.sdk.internals.utils.mergeWithHigherPriorityTo
@@ -45,7 +45,7 @@ internal class LibraryInfoPlugin : Plugin {
     override fun execute(message: Message): Message = attachLibraryInfo(message)
 
     private fun attachLibraryInfo(message: Message): Message {
-        LoggerManager.debug("Attaching library info to the message payload")
+        LoggerAnalytics.debug("Attaching library info to the message payload")
 
         message.context = message.context mergeWithHigherPriorityTo libraryContext
 
