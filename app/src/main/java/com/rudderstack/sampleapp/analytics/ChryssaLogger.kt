@@ -8,44 +8,23 @@ var CHRYSSA_TAG = "Chryssa-Analytics"
 
 internal class ChryssaLogger : Logger {
 
-    private lateinit var logLevel: Logger.LogLevel
-        @Synchronized set
-        @Synchronized get
-
-    override fun activate(level: Logger.LogLevel) {
-        logLevel = level
-    }
-
     override fun verbose(log: String) {
-        if (Logger.LogLevel.VERBOSE >= logLevel) {
-            Log.v(CHRYSSA_TAG, log)
-        }
+        Log.v(CHRYSSA_TAG, log)
     }
 
     override fun debug(log: String) {
-        if (Logger.LogLevel.DEBUG >= logLevel) {
-            Log.d(CHRYSSA_TAG, log)
-        }
+        Log.d(CHRYSSA_TAG, log)
     }
 
     override fun info(log: String) {
-        if (Logger.LogLevel.INFO >= logLevel) {
-            Log.i(CHRYSSA_TAG, log)
-        }
+        Log.i(CHRYSSA_TAG, log)
     }
 
     override fun warn(log: String) {
-        if (Logger.LogLevel.WARN >= logLevel) {
-            Log.w(CHRYSSA_TAG, log)
-        }
+        Log.w(CHRYSSA_TAG, log)
     }
 
     override fun error(log: String, throwable: Throwable?) {
-        if (Logger.LogLevel.ERROR >= logLevel) {
-            Log.e(CHRYSSA_TAG, log, throwable)
-        }
+        Log.e(CHRYSSA_TAG, log, throwable)
     }
-
-    override val level: Logger.LogLevel
-        get() = logLevel
 }
