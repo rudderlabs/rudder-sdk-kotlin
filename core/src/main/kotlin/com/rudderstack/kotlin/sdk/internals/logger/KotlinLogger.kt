@@ -18,7 +18,10 @@ package com.rudderstack.kotlin.sdk.internals.logger
  */
 internal object KotlinLogger : Logger {
 
-    private var logLevel: Logger.LogLevel = Logger.DEFAULT_LOG_LEVEL
+    private lateinit var logLevel: Logger.LogLevel
+        @Synchronized set
+
+        @Synchronized get
 
     override fun activate(level: Logger.LogLevel) {
         logLevel = level

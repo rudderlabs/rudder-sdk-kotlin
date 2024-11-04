@@ -8,8 +8,9 @@ var CHRYSSA_TAG = "Chryssa-Analytics"
 
 internal object ChryssaLogger : Logger {
 
-    private var logLevel: Logger.LogLevel = Logger.DEFAULT_LOG_LEVEL
+    private lateinit var logLevel: Logger.LogLevel
         @Synchronized set
+
         @Synchronized get
 
     override fun activate(level: Logger.LogLevel) {

@@ -9,7 +9,7 @@ import com.rudderstack.kotlin.sdk.internals.logger.TAG
  */
 internal object AndroidLogger : Logger {
 
-    private var logLevel: Logger.LogLevel = Logger.DEFAULT_LOG_LEVEL
+    private lateinit var logLevel: Logger.LogLevel
         @Synchronized set
 
         @Synchronized get
