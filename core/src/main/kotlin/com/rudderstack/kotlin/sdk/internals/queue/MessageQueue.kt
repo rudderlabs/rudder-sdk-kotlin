@@ -19,12 +19,14 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.annotations.VisibleForTesting
 import java.io.File
 import java.io.FileNotFoundException
-import java.util.UUID
 
 internal const val UPLOAD_SIG = "#!upload"
 private const val BATCH_ENDPOINT = "/v1/batch"
@@ -40,10 +42,11 @@ internal class MessageQueue(
             endPoint = BATCH_ENDPOINT,
             authHeaderString = writeKey.encodeToBase64(),
             isGZIPEnabled = gzipEnabled,
-            anonymousIdHeaderString = storage.readString(StorageKeys.ANONYMOUS_ID, defaultVal = UUID.randomUUID().toString())
+            anonymousIdHeaderString = analytics.getAnonymousId()
         )
     }
 ) {
+
     private var running: Boolean
     private var writeChannel: Channel<Message>
     private var uploadChannel: Channel<String>
@@ -59,9 +62,13 @@ internal class MessageQueue(
     }
 
     private fun updateAnonymousId() {
-        analytics.userIdentityStore.subscribe { userOptionsState, _ ->
-            httpClientFactory.updateAnonymousIdHeaderString(userOptionsState.userIdentity.anonymousID.encodeToBase64())
-        }
+        analytics.userIdentityState
+            .distinctUntilChanged { old, new ->
+                old.anonymousId == new.anonymousId
+            }
+            .onEach { userOptionsState ->
+                httpClientFactory.updateAnonymousIdHeaderString(userOptionsState.anonymousId.encodeToBase64())
+            }.launchIn(analytics.analyticsScope)
     }
 
     fun put(message: Message) {

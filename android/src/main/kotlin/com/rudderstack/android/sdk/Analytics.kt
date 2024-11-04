@@ -15,12 +15,10 @@ import com.rudderstack.android.sdk.plugins.TimezoneInfoPlugin
 import com.rudderstack.android.sdk.plugins.screenrecording.ActivityTrackingPlugin
 import com.rudderstack.android.sdk.plugins.screenrecording.NavControllerTrackingPlugin
 import com.rudderstack.android.sdk.state.NavContext
-import com.rudderstack.android.sdk.state.NavContextState
 import com.rudderstack.kotlin.sdk.Analytics
 import com.rudderstack.kotlin.sdk.internals.platform.Platform
 import com.rudderstack.kotlin.sdk.internals.platform.PlatformType
-import com.rudderstack.kotlin.sdk.internals.statemanagement.SingleThreadStore
-import com.rudderstack.kotlin.sdk.internals.statemanagement.Store
+import com.rudderstack.kotlin.sdk.internals.statemanagement.FlowState
 import org.jetbrains.annotations.ApiStatus.Experimental
 
 /**
@@ -58,11 +56,8 @@ class Analytics(
 
     private var navControllerTrackingPlugin: NavControllerTrackingPlugin? = null
 
-    private val navContextStore: Store<NavContextState, NavContextState.NavContextAction> by lazy {
-        SingleThreadStore(
-            initialState = NavContextState.initialState(),
-            reducer = NavContextState.NavContextReducer()
-        )
+    private val navContextState by lazy {
+        FlowState(NavContext.initialState())
     }
 
     init {
@@ -123,13 +118,13 @@ class Analytics(
     @Experimental
     fun setNavigationDestinationsTracking(navController: NavController, activity: Activity) {
         if (navControllerTrackingPlugin == null) {
-            navControllerTrackingPlugin = NavControllerTrackingPlugin(navContextStore).also {
+            navControllerTrackingPlugin = NavControllerTrackingPlugin(navContextState).also {
                 add(it)
             }
         }
 
-        navContextStore.dispatch(
-            action = NavContextState.AddNavContextAction(
+        navContextState.dispatch(
+            action = NavContext.AddNavContextAction(
                 navContext = NavContext(
                     navController = navController,
                     callingActivity = activity

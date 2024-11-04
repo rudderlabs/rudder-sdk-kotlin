@@ -1,11 +1,9 @@
 package com.rudderstack.android.sdk.plugins.screenrecording
 
 import androidx.activity.ComponentActivity
-import androidx.navigation.NavController
 import androidx.navigation.NavDestination
 import com.rudderstack.android.sdk.state.NavContext
-import com.rudderstack.android.sdk.state.NavContextState
-import com.rudderstack.kotlin.sdk.internals.statemanagement.Store
+import com.rudderstack.kotlin.sdk.internals.statemanagement.FlowState
 import io.mockk.MockKAnnotations
 import io.mockk.Runs
 import io.mockk.every
@@ -30,7 +28,7 @@ class NavControllerActivityObserverTest {
     private lateinit var mockActivity: ComponentActivity
 
     @MockK
-    private lateinit var mockNavContextStore: Store<NavContextState, NavContextState.NavContextAction>
+    private lateinit var mockNavContextState: FlowState<Set<NavContext>>
 
     private lateinit var observer: NavControllerActivityObserver
 
@@ -41,8 +39,8 @@ class NavControllerActivityObserverTest {
         every { mockNavContext.callingActivity } returns mockActivity
         every { mockActivity.lifecycle } returns mockk(relaxed = true)
         every { mockActivity.lifecycle.addObserver(any()) } just Runs
-        every { mockPlugin.navContextStore } returns mockNavContextStore
-        every { mockNavContextStore.dispatch(any()) } just Runs
+        every { mockPlugin.navContextState } returns mockNavContextState
+        every { mockNavContextState.dispatch(any()) } just Runs
 
         observer = NavControllerActivityObserver(mockPlugin, mockNavContext)
     }
@@ -80,15 +78,12 @@ class NavControllerActivityObserverTest {
 
     @Test
     fun `given observer, when onDestroyed called, then observer is removed and RemoveNavContextAction dispatched`() {
-        val mockNavController = mockk<NavController>(relaxed = true)
-        every { mockNavContext.navController } returns mockNavController
-
         observer.onDestroy(mockActivity)
 
         verify {
             observer.activityLifecycle()?.removeObserver(observer)
-            mockNavContextStore.dispatch(
-                match { it is NavContextState.RemoveNavContextAction && it.navController == mockNavController }
+            mockNavContextState.dispatch(
+                match { it is NavContext.RemoveNavContextAction && it.navContext == mockNavContext }
             )
         }
     }

@@ -10,11 +10,13 @@ import com.rudderstack.kotlin.sdk.internals.models.RudderOption
 import com.rudderstack.kotlin.sdk.internals.models.RudderTraits
 import com.rudderstack.kotlin.sdk.internals.models.ScreenEvent
 import com.rudderstack.kotlin.sdk.internals.models.TrackEvent
+import com.rudderstack.kotlin.sdk.internals.models.UserIdentity
 import com.rudderstack.kotlin.sdk.internals.models.emptyJsonObject
 import com.rudderstack.kotlin.sdk.internals.platform.Platform
 import com.rudderstack.kotlin.sdk.internals.platform.PlatformType
 import com.rudderstack.kotlin.sdk.internals.plugins.Plugin
 import com.rudderstack.kotlin.sdk.internals.plugins.PluginChain
+import com.rudderstack.kotlin.sdk.internals.statemanagement.FlowState
 import com.rudderstack.kotlin.sdk.internals.statemanagement.SingleThreadStore
 import com.rudderstack.kotlin.sdk.internals.statemanagement.Store
 import com.rudderstack.kotlin.sdk.internals.utils.addNameAndCategoryToProperties
@@ -23,7 +25,6 @@ import com.rudderstack.kotlin.sdk.plugins.LibraryInfoPlugin
 import com.rudderstack.kotlin.sdk.plugins.PocPlugin
 import com.rudderstack.kotlin.sdk.plugins.RudderStackDataplanePlugin
 import com.rudderstack.kotlin.sdk.state.SourceConfigState
-import com.rudderstack.kotlin.sdk.state.UserIdentityState
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -59,10 +60,8 @@ open class Analytics protected constructor(
         initialState = SourceConfigState.initialState(),
         reducer = SourceConfigState.SaveSourceConfigValuesReducer(configuration.storage, analyticsScope),
     )
-    internal var userIdentityStore: Store<UserIdentityState, UserIdentityState.SetIdentityAction> = SingleThreadStore(
-        initialState = UserIdentityState.currentState(configuration.storage),
-        reducer = UserIdentityState.GenerateUserAnonymousID(analyticsScope),
-    )
+
+    internal val userIdentityState = FlowState(initialState = UserIdentity.initialState(configuration.storage))
 
     // TODO("Add a way to stop this channel")
     private val processMessageChannel: Channel<Message> = Channel(Channel.UNLIMITED)
@@ -70,7 +69,7 @@ open class Analytics protected constructor(
     init {
         processMessages()
         setup()
-        initializeUserIdentity()
+        storeAnonymousId()
     }
 
     /**
@@ -220,12 +219,15 @@ open class Analytics protected constructor(
      * non-null string used to represent the user anonymously.
      */
     fun setAnonymousId(anonymousId: String) {
-        userIdentityStore.dispatch(
-            action = UserIdentityState.SetIdentityAction(
-                storage = configuration.storage,
-                anonymousID = anonymousId
-            )
-        )
+        userIdentityState.dispatch(UserIdentity.SetAnonymousIdAction(anonymousId))
+        storeAnonymousId()
+    }
+
+    /**
+     * The `getAnonymousId` method always retrieves the current anonymous ID.
+     */
+    fun getAnonymousId(): String {
+        return userIdentityState.value.anonymousId
     }
 
     /**
@@ -238,14 +240,16 @@ open class Analytics protected constructor(
     private fun processMessages() {
         analyticsScope.launch(analyticsDispatcher) {
             for (message in processMessageChannel) {
-                message.subscribeToUserIdentityState(userIdentityStore, getPlatformType())
+                message.updateData(anonymousID = getAnonymousId(), platform = getPlatformType())
                 pluginChain.process(message)
             }
         }
     }
 
-    private fun initializeUserIdentity() {
-        userIdentityStore.dispatch(action = UserIdentityState.SetIdentityAction(configuration.storage))
+    private fun storeAnonymousId() {
+        analyticsScope.launch(storageDispatcher) {
+            userIdentityState.value.storeAnonymousId(storage = configuration.storage)
+        }
     }
 
     override fun getPlatformType(): PlatformType = PlatformType.Server
