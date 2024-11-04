@@ -17,7 +17,6 @@ import com.rudderstack.android.sdk.plugins.screenrecording.NavControllerTracking
 import com.rudderstack.android.sdk.state.NavContext
 import com.rudderstack.android.sdk.state.NavContextState
 import com.rudderstack.kotlin.sdk.Analytics
-import com.rudderstack.kotlin.sdk.internals.models.LoggerManager
 import com.rudderstack.kotlin.sdk.internals.platform.Platform
 import com.rudderstack.kotlin.sdk.internals.platform.PlatformType
 import com.rudderstack.kotlin.sdk.internals.statemanagement.SingleThreadStore
@@ -67,14 +66,7 @@ class Analytics(
     }
 
     init {
-        setLogger()
         setup()
-    }
-
-    private fun setLogger() {
-        if (getPlatformType() == PlatformType.Mobile) {
-            LoggerManager.setup(logger = AndroidLogger, logLevel = configuration.logLevel)
-        }
     }
 
     /**
@@ -147,6 +139,10 @@ class Analytics(
     }
 
     private fun setup() {
+        setLogger(
+            logger = AndroidLogger,
+            logLevel = configuration.logLevel
+        )
         add(DeviceInfoPlugin())
         add(AppInfoPlugin())
         add(NetworkInfoPlugin())

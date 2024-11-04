@@ -1,6 +1,7 @@
 package com.rudderstack.kotlin.sdk
 
 import com.rudderstack.kotlin.sdk.internals.logger.KotlinLogger
+import com.rudderstack.kotlin.sdk.internals.logger.Logger
 import com.rudderstack.kotlin.sdk.internals.models.GroupEvent
 import com.rudderstack.kotlin.sdk.internals.models.LoggerManager
 import com.rudderstack.kotlin.sdk.internals.models.Message
@@ -67,16 +68,21 @@ open class Analytics protected constructor(
     private val processMessageChannel: Channel<Message> = Channel(Channel.UNLIMITED)
 
     init {
-        setLogger()
         processMessages()
         setup()
         initializeUserIdentity()
     }
 
-    private fun setLogger() {
-        if (getPlatformType() == PlatformType.Server) {
-            LoggerManager.setup(logger = KotlinLogger, logLevel = configuration.logLevel)
-        }
+    /**
+     * Sets up the logger with a specified logging instance and log level.
+     *
+     * @param logger The `Logger` instance to use for logging. Defaults to `KotlinLogger`.
+     * @param logLevel The log level to apply, which controls the verbosity of logs. Defaults to `configuration.logLevel`.
+     *
+     * This function configures the `LoggerManager` with the provided `logger` and `logLevel`, allowing customization of logging behavior.
+     */
+    fun setLogger(logger: Logger = KotlinLogger, logLevel: Logger.LogLevel = configuration.logLevel) {
+        LoggerManager.setup(logger = logger, logLevel = logLevel)
     }
 
     /**
@@ -180,6 +186,10 @@ open class Analytics protected constructor(
      * and `RudderStackDataplanePlugin`. This function is called during initialization.
      */
     private fun setup() {
+        setLogger(
+            logger = KotlinLogger,
+            logLevel = configuration.logLevel
+        )
         add(LibraryInfoPlugin())
         add(PocPlugin())
         add(RudderStackDataplanePlugin())
