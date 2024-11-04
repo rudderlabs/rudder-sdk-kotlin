@@ -10,7 +10,7 @@ package com.rudderstack.kotlin.sdk.internals.logger
  *
  * ```kotlin
  * LoggerAnalytics.setup(logger = AndroidLogger(), level = configuration.logLevel, tag = "MyTag")
- * // Or for non-Android environments
+ * // Or for Kotlin environments
  * LoggerAnalytics.setup(logger = KotlinLogger(), level = configuration.logLevel, tag = "MyTag")
  * ```
  *
