@@ -80,7 +80,7 @@ open class Analytics protected constructor(
      *
      * @param logger The `Logger` instance to use for logging. Defaults to an instance of `KotlinLogger`.
      */
-    fun setLogger(logger: Logger = KotlinLogger()) {
+    fun setLogger(logger: Logger) {
         LoggerAnalytics.setup(logger = logger, logLevel = configuration.logLevel)
     }
 
