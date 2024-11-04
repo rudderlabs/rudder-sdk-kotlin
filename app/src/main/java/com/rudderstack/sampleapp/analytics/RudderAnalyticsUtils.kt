@@ -21,7 +21,7 @@ object RudderAnalyticsUtils {
             )
         ).apply {
             setLogger(
-                logger = ChryssaLogger,
+                logger = ChryssaLogger(),
                 logLevel = Logger.LogLevel.VERBOSE,
             )
         }

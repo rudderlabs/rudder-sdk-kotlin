@@ -80,7 +80,7 @@ open class Analytics protected constructor(
      *
      * This function configures the `LoggerAnalytics` with the provided `logger` and `logLevel`, allowing customization of logging behavior.
      */
-    fun setLogger(logger: Logger = KotlinLogger, logLevel: Logger.LogLevel = configuration.logLevel) {
+    fun setLogger(logger: Logger = KotlinLogger(), logLevel: Logger.LogLevel = configuration.logLevel) {
         LoggerAnalytics.setup(logger = logger, logLevel = logLevel)
     }
 
@@ -186,7 +186,7 @@ open class Analytics protected constructor(
      */
     private fun setup() {
         setLogger(
-            logger = KotlinLogger,
+            logger = KotlinLogger(),
             logLevel = configuration.logLevel
         )
         add(LibraryInfoPlugin())

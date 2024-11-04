@@ -135,7 +135,7 @@ class Analytics(
 
     private fun setup() {
         setLogger(
-            logger = AndroidLogger,
+            logger = AndroidLogger(),
             logLevel = configuration.logLevel
         )
         add(DeviceInfoPlugin())

@@ -6,11 +6,10 @@ import com.rudderstack.kotlin.sdk.internals.logger.Logger
 var CHRYSSA_TAG = "Chryssa-Analytics"
     private set
 
-internal object ChryssaLogger : Logger {
+internal class ChryssaLogger : Logger {
 
     private lateinit var logLevel: Logger.LogLevel
         @Synchronized set
-
         @Synchronized get
 
     override fun activate(level: Logger.LogLevel) {

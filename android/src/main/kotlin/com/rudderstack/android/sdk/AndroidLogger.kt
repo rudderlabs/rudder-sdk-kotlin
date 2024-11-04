@@ -7,7 +7,7 @@ import com.rudderstack.kotlin.sdk.internals.logger.TAG
 /**
  * Logger implementation specifically for android.
  */
-internal object AndroidLogger : Logger {
+internal class AndroidLogger : Logger {
 
     private lateinit var logLevel: Logger.LogLevel
         @Synchronized set

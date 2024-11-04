@@ -16,7 +16,7 @@ package com.rudderstack.kotlin.sdk.internals.logger
  *
  * @property initialLogLevel The initial log level that the logger starts with. The default is `Logger.DEFAULT_LOG_LEVEL`.
  */
-internal object KotlinLogger : Logger {
+internal class KotlinLogger : Logger {
 
     private lateinit var logLevel: Logger.LogLevel
         @Synchronized set
