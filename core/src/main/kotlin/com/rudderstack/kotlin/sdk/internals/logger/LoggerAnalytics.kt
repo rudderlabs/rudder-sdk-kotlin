@@ -27,9 +27,15 @@ package com.rudderstack.kotlin.sdk.internals.logger
  *
  * These methods ensure that messages are logged according to the configured log level, providing flexibility
  * and clarity for debugging and tracking events across SDK modules.
+ *
+ * @property logLevel The current log level for the logger e.g., `Logger.LogLevel.DEBUG`.
  */
 object LoggerAnalytics {
     private lateinit var logger: Logger
+    lateinit var logLevel: Logger.LogLevel
+        @Synchronized private set
+
+        @Synchronized get
 
     /**
      * Sets the logger instance and log level for the SDK.
@@ -40,7 +46,7 @@ object LoggerAnalytics {
      */
     fun setup(logger: Logger, logLevel: Logger.LogLevel, tag: String = TAG) {
         LoggerAnalytics.logger = logger
-        LoggerAnalytics.logger.activate(logLevel)
+        LoggerAnalytics.logLevel = logLevel
         LoggerAnalytics.logger.setTag(tag)
     }
 
@@ -50,7 +56,9 @@ object LoggerAnalytics {
      * @param log The message to log.
      */
     fun verbose(log: String) {
-        logger.verbose(log)
+        if (Logger.LogLevel.VERBOSE >= logLevel) {
+            logger.verbose(log)
+        }
     }
 
     /**
@@ -59,7 +67,9 @@ object LoggerAnalytics {
      * @param log The message to log.
      */
     fun debug(log: String) {
-        logger.debug(log)
+        if (Logger.LogLevel.DEBUG >= logLevel) {
+            logger.debug(log)
+        }
     }
 
     /**
@@ -68,7 +78,9 @@ object LoggerAnalytics {
      * @param log The message to log.
      */
     fun info(log: String) {
-        logger.info(log)
+        if (Logger.LogLevel.INFO >= logLevel) {
+            logger.info(log)
+        }
     }
 
     /**
@@ -77,7 +89,9 @@ object LoggerAnalytics {
      * @param log The message to log.
      */
     fun warn(log: String) {
-        logger.warn(log)
+        if (Logger.LogLevel.WARN >= logLevel) {
+            logger.warn(log)
+        }
     }
 
     /**
@@ -87,6 +101,8 @@ object LoggerAnalytics {
      * @param throwable An optional exception to log alongside the error message.
      */
     fun error(log: String, throwable: Throwable? = null) {
-        logger.error(log, throwable)
+        if (Logger.LogLevel.ERROR >= logLevel) {
+            logger.error(log, throwable)
+        }
     }
 }

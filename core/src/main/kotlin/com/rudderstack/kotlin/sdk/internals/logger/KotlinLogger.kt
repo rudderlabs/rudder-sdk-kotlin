@@ -11,51 +11,26 @@ package com.rudderstack.kotlin.sdk.internals.logger
  * - **INFO**: Logs informational messages that highlight the progress of the application.
  * - **WARN**: Logs potentially harmful situations that warrant attention.
  * - **ERROR**: Logs error events that might still allow the application to continue running.
- *
- * The logger can be activated at different log levels using the `activate` method, which controls
- * which messages are logged based on their severity.
  */
 internal class KotlinLogger : Logger {
 
-    private lateinit var logLevel: Logger.LogLevel
-        @Synchronized set
-
-        @Synchronized get
-
-    override fun activate(level: Logger.LogLevel) {
-        logLevel = level
-    }
-
     override fun verbose(log: String) {
-        if (Logger.LogLevel.VERBOSE >= logLevel) {
-            println("$TAG-verbose : $log")
-        }
+        println("$TAG-verbose : $log")
     }
 
     override fun info(log: String) {
-        if (Logger.LogLevel.INFO >= logLevel) {
-            println("$TAG-info : $log")
-        }
+        println("$TAG-info : $log")
     }
 
     override fun debug(log: String) {
-        if (Logger.LogLevel.DEBUG >= logLevel) {
-            println("$TAG-debug : $log")
-        }
+        println("$TAG-debug : $log")
     }
 
     override fun warn(log: String) {
-        if (Logger.LogLevel.WARN >= logLevel) {
-            println("$TAG-warn : $log")
-        }
+        println("$TAG-warn : $log")
     }
 
     override fun error(log: String, throwable: Throwable?) {
-        if (Logger.LogLevel.ERROR >= logLevel) {
-            println("$TAG-error : $log")
-        }
+        println("$TAG-error : $log")
     }
-
-    override val level: Logger.LogLevel
-        get() = logLevel
 }

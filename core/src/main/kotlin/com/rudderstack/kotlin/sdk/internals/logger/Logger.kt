@@ -23,14 +23,6 @@ interface Logger {
     }
 
     /**
-     * Activates the logger with a specific log level. Only messages at this level or higher
-     * (in terms of severity) will be logged.
-     *
-     * @param level The log level to activate for logging. It could be `DEBUG`, `INFO`, `WARN`, `ERROR`, or `NONE`.
-     */
-    fun activate(level: LogLevel)
-
-    /**
      * Sets a custom tag for the logger.
      *
      * @param tag The tag to be used for logging.
@@ -92,9 +84,4 @@ interface Logger {
         ERROR,
         NONE,
     }
-
-    /**
-     * A property to get the current log level of the logger.
-     */
-    val level: LogLevel
 }
