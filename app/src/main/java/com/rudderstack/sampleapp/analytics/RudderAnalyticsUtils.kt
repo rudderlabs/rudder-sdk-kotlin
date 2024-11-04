@@ -20,10 +20,7 @@ object RudderAnalyticsUtils {
                 logLevel = Logger.LogLevel.VERBOSE,
             )
         ).apply {
-            setLogger(
-                logger = ChryssaLogger(),
-                logLevel = Logger.LogLevel.VERBOSE,
-            )
+            setLogger(logger = ChryssaLogger())
         }
         LoggerAnalytics.debug("Logger MANAGER DEBUG")
     }

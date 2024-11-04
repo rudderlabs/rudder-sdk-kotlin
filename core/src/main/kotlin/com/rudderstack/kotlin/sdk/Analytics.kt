@@ -73,15 +73,15 @@ open class Analytics protected constructor(
     }
 
     /**
-     * Sets up the logger with a specified logging instance and log level.
+     * Configures the logger for analytics with a specified `Logger` instance.
      *
-     * @param logger The `Logger` instance to use for logging. Defaults to `KotlinLogger`.
-     * @param logLevel The log level to apply, which controls the verbosity of logs. Defaults to `configuration.logLevel`.
+     * This function sets up the `LoggerAnalytics` with the provided `logger` instance,
+     * applying the log level specified in the configuration.
      *
-     * This function configures the `LoggerAnalytics` with the provided `logger` and `logLevel`, allowing customization of logging behavior.
+     * @param logger The `Logger` instance to use for logging. Defaults to an instance of `KotlinLogger`.
      */
-    fun setLogger(logger: Logger = KotlinLogger(), logLevel: Logger.LogLevel = configuration.logLevel) {
-        LoggerAnalytics.setup(logger = logger, logLevel = logLevel)
+    fun setLogger(logger: Logger = KotlinLogger()) {
+        LoggerAnalytics.setup(logger = logger, logLevel = configuration.logLevel)
     }
 
     /**
@@ -185,10 +185,7 @@ open class Analytics protected constructor(
      * and `RudderStackDataplanePlugin`. This function is called during initialization.
      */
     private fun setup() {
-        setLogger(
-            logger = KotlinLogger(),
-            logLevel = configuration.logLevel
-        )
+        setLogger(logger = KotlinLogger())
         add(LibraryInfoPlugin())
         add(PocPlugin())
         add(RudderStackDataplanePlugin())
