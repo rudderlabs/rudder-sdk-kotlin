@@ -30,9 +30,17 @@ internal fun addNameAndCategoryToProperties(name: String, category: String, prop
     return properties mergeWithHigherPriorityTo nameAndCategoryProperties
 }
 
-internal fun Message.setGroupEventTraits() {
-    if (this is GroupEvent) {
-        this.traits = getUpdatedTraitsWithAnonymousId(anonymousId = this.userIdentityState.anonymousId, traits = this.traits)
+internal fun Message.addAnonymousIdToTraits() {
+    when (this) {
+        is GroupEvent -> {
+            val updatedTraits =
+                getUpdatedTraitsWithAnonymousId(anonymousId = this.userIdentityState.anonymousId, traits = this.traits)
+            this.traits = updatedTraits
+        }
+
+        else -> {
+            // NO-OP
+        }
     }
 }
 
