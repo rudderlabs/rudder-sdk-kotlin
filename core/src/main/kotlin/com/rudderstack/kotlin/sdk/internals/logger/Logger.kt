@@ -8,8 +8,7 @@ var TAG = "Rudder-Analytics"
 
 /**
  * `Logger` is an interface that defines a standard logging mechanism for the RudderStack SDK.
- * It provides methods to log messages at different levels (INFO, DEBUG, WARN, ERROR) and to
- * control the logging behavior by setting the log level.
+ * It provides methods to log messages at different levels (VERBOSE, DEBUG, INFO, WARN and ERROR).
  */
 interface Logger {
 
