@@ -70,10 +70,10 @@ internal class SourceConfigManager(
 
         return if (sourceConfigString.isNotEmpty()) {
             val sourceConfig = LenientJson.decodeFromString<SourceConfig>(sourceConfigString)
-            analytics.configuration.logger.info(log = "SourceConfig fetched from storage: $sourceConfig")
+            LoggerAnalytics.info("SourceConfig fetched from storage: $sourceConfig")
             sourceConfig
         } else {
-            analytics.configuration.logger.info(log = "SourceConfig not found in storage")
+            LoggerAnalytics.info("SourceConfig not found in storage")
             null
         }
     }
