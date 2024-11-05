@@ -1,6 +1,7 @@
 package com.rudderstack.kotlin.sdk.internals.network
 
 import com.rudderstack.kotlin.sdk.internals.network.ErrorStatus.Companion.toErrorStatus
+import com.rudderstack.kotlin.sdk.internals.utils.Result
 import com.rudderstack.kotlin.sdk.internals.utils.validatedBaseUrl
 import java.io.IOException
 import java.net.HttpURLConnection
@@ -143,7 +144,7 @@ class HttpClientImpl private constructor(
      *
      * @return `Result<String>` containing the response data or an error.
      */
-    override fun getData(): Result<String> {
+    override fun getData(): Result<String, Exception> {
         val url: URL = createURL(baseUrl, endPoint, getConfig.query)
         return connectionFactory.createConnection(url, headers)
             .useConnection()
@@ -157,7 +158,7 @@ class HttpClientImpl private constructor(
      * @param body The body of the POST request to be sent.
      * @return `Result<String>` containing the response data or an error.
      */
-    override fun sendData(body: String): Result<String> {
+    override fun sendData(body: String): Result<String, Exception> {
         val url = createURL(baseUrl, endPoint)
         return connectionFactory.createConnection(url, headers)
             .useConnection {
@@ -181,7 +182,7 @@ class HttpClientImpl private constructor(
     }
 
     @Suppress("TooGenericExceptionCaught")
-    private fun HttpURLConnection.useConnection(setup: HttpURLConnection.() -> Unit = {}): Result<String> {
+    private fun HttpURLConnection.useConnection(setup: HttpURLConnection.() -> Unit = {}): Result<String, Exception> {
         return try {
             this.apply(setup)
             connect()
@@ -206,7 +207,7 @@ class HttpClientImpl private constructor(
         }
     }
 
-    private fun HttpURLConnection.constructResponse(): Result<String> = when (responseCode) {
+    private fun HttpURLConnection.constructResponse(): Result<String, IOException> = when (responseCode) {
         in OK_RESPONSE_CODE..SUCCESSFUL_TRANSACTION_CODE -> Result.Success(
             response = getSuccessResponse()
         )

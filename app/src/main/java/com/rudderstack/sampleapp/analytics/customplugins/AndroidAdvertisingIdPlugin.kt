@@ -2,16 +2,16 @@ package com.rudderstack.sampleapp.analytics.customplugins
 
 import android.app.Application
 import android.content.Context
+import androidx.annotation.VisibleForTesting
 import com.google.android.gms.ads.identifier.AdvertisingIdClient
 import com.rudderstack.android.sdk.Configuration
 import com.rudderstack.kotlin.sdk.Analytics
 import com.rudderstack.kotlin.sdk.internals.logger.TAG
 import com.rudderstack.kotlin.sdk.internals.models.Message
+import com.rudderstack.kotlin.sdk.internals.utils.Result
 import com.rudderstack.kotlin.sdk.internals.plugins.Plugin
 import com.rudderstack.kotlin.sdk.internals.utils.empty
 import com.rudderstack.kotlin.sdk.internals.utils.putAll
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
@@ -48,22 +48,23 @@ class AndroidAdvertisingIdPlugin : Plugin {
         super.setup(analytics)
         (analytics.configuration as? Configuration)?.let { config ->
             application = config.application
+            updateAdvertisingId()
         }
-        updateAdvertisingId()
     }
 
-    private fun updateAdvertisingId() {
-        CoroutineScope(Dispatchers.IO).launch {
+    @VisibleForTesting
+    internal fun updateAdvertisingId() {
+        analytics.analyticsScope.launch {
             val context = application.applicationContext
 
             when (val result = getAdvertisingId(context)) {
                 is Result.Success -> {
                     adTrackingEnabled = true
-                    advertisingId = result.value
+                    advertisingId = result.response
                     analytics.configuration.logger.debug(log = "Collected advertising ID: $advertisingId")
                 }
 
-                is Result.Error -> {
+                is Result.Failure -> {
                     adTrackingEnabled = false
                     advertisingId = String.empty()
                     analytics.configuration.logger.error(log = "Failed to collect advertising ID: ${result.error.message}")
@@ -72,11 +73,13 @@ class AndroidAdvertisingIdPlugin : Plugin {
         }
     }
 
-    private fun getAdvertisingId(context: Context): Result<String, Exception> {
+    @VisibleForTesting
+    internal fun getAdvertisingId(context: Context): Result<String, Exception> {
         return getGooglePlayServicesAdvertisingID(context).orElse { getAmazonFireAdvertisingID(context) } as Result<String, Exception>
     }
 
-    private fun getGooglePlayServicesAdvertisingID(context: Context): Result<String, Exception> {
+    @VisibleForTesting
+    internal fun getGooglePlayServicesAdvertisingID(context: Context): Result<String, Exception> {
         return try {
             val advertisingInfo = AdvertisingIdClient.getAdvertisingIdInfo(context)
             if (advertisingInfo.isLimitAdTrackingEnabled) {
@@ -84,16 +87,17 @@ class AndroidAdvertisingIdPlugin : Plugin {
                     tag = TAG,
                     log = "Error collecting play services ad id."
                 )
-                Result.Error(Exception("Error collecting play services ad id."))
+                Result.Failure(error = Exception("Error collecting play services ad id."))
             } else {
                 Result.Success(advertisingInfo.id!!)
             }
         } catch (e: Exception) {
-            Result.Error(e)
+            Result.Failure(error = e)
         }
     }
 
-    private fun getAmazonFireAdvertisingID(context: Context): Result<String, Exception> {
+    @VisibleForTesting
+    internal fun getAmazonFireAdvertisingID(context: Context): Result<String, Exception> {
         return try {
             val contentResolver = context.contentResolver
             if (android.provider.Settings.Secure.getInt(contentResolver, FIRE_LIMIT_AD_TRACKING) != 0) {
@@ -101,17 +105,17 @@ class AndroidAdvertisingIdPlugin : Plugin {
                     tag = TAG,
                     log = "Not collecting advertising ID because limit_ad_tracking (Amazon Fire OS) is true."
                 )
-                Result.Error(Exception("Not collecting advertising ID because limit_ad_tracking (Amazon Fire OS) is true."))
+                Result.Failure(error = Exception("Not collecting advertising ID because limit_ad_tracking (Amazon Fire OS) is true."))
             } else {
                 val advertisingId = android.provider.Settings.Secure.getString(contentResolver, FIRE_ADVERTISING_ID)
                 Result.Success(advertisingId)
             }
         } catch (e: Exception) {
-            Result.Error(e)
+            Result.Failure(error = e)
         }
     }
 
-    private fun attachAdvertisingId(messagePayload: Message): Message {
+    internal fun attachAdvertisingId(messagePayload: Message): Message {
         val updatedDevice = buildJsonObject {
             messagePayload.context[DEVICE]?.jsonObject?.let {
                 putAll(it)
@@ -130,17 +134,5 @@ class AndroidAdvertisingIdPlugin : Plugin {
 
     override fun execute(message: Message): Message {
         return attachAdvertisingId(message)
-    }
-
-    sealed class Result<out T, out E> {
-        class Success<out T>(val value: T) : Result<T, Nothing>()
-        class Error<out E>(val error: E) : Result<Nothing, E>()
-
-        fun <R> orElse(fallback: () -> Result<R, @UnsafeVariance E>): Result<Any?, E> {
-            return when (this) {
-                is Success -> this
-                is Error -> fallback()
-            }
-        }
     }
 }

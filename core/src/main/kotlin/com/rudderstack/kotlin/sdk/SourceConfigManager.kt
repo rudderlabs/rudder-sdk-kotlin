@@ -3,10 +3,10 @@ package com.rudderstack.kotlin.sdk
 import com.rudderstack.kotlin.sdk.internals.models.SourceConfig
 import com.rudderstack.kotlin.sdk.internals.network.HttpClient
 import com.rudderstack.kotlin.sdk.internals.network.HttpClientImpl
-import com.rudderstack.kotlin.sdk.internals.network.Result
 import com.rudderstack.kotlin.sdk.internals.platform.PlatformType
 import com.rudderstack.kotlin.sdk.internals.statemanagement.Store
 import com.rudderstack.kotlin.sdk.internals.utils.LenientJson
+import com.rudderstack.kotlin.sdk.internals.utils.Result
 import com.rudderstack.kotlin.sdk.internals.utils.encodeToBase64
 import com.rudderstack.kotlin.sdk.state.SourceConfigState
 import kotlinx.coroutines.withContext

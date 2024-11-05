@@ -6,6 +6,7 @@ import com.rudderstack.android.sdk.Analytics
 import com.rudderstack.android.sdk.Configuration
 import com.rudderstack.kotlin.sdk.internals.models.TrackEvent
 import com.rudderstack.kotlin.sdk.internals.models.emptyJsonObject
+import com.rudderstack.kotlin.sdk.internals.utils.Result
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -14,13 +15,16 @@ import io.mockk.spyk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.junit.After
-import org.junit.Assert
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -40,6 +44,7 @@ class AndroidAdvertisingIdPluginTest {
 
     private val mockApplication: Application = mockk()
     private val testDispatcher = StandardTestDispatcher()
+    private val testScope = TestScope(testDispatcher)
 
     @Before
     fun setup() {
@@ -54,7 +59,7 @@ class AndroidAdvertisingIdPluginTest {
         every { mockAnalytics.configuration } returns mockConfiguration
         every { mockConfiguration.application } returns mockApplication
         every { mockApplication.applicationContext } returns mockContext
-
+        every { mockAnalytics.analyticsScope } returns testScope
     }
 
     @After
@@ -64,36 +69,60 @@ class AndroidAdvertisingIdPluginTest {
 
     @Test
     fun `given setup is called, when executed, then application is set then verify that updateAdvertisingId is triggered`() =
-        runTest {
+        runTest(testDispatcher) {
             plugin.setup(mockAnalytics)
 
-            coVerify { plugin["updateAdvertisingId"]() }
+            advanceUntilIdle()
+
+            coVerify { plugin.updateAdvertisingId() }
         }
 
     @Test
     fun `given setup is called, when updateAdvertisingId is executed, then verify that getAdvertisingId is triggered`() =
-        runTest {
+        runTest(testDispatcher) {
             plugin.setup(mockAnalytics)
 
-            coVerify { plugin["getAdvertisingId"](mockContext) }
+            advanceUntilIdle()
+
+            coVerify { plugin.getAdvertisingId(mockContext) }
         }
 
     @Test
     fun `given setup is called, when updateAdvertisingId is called, then verify that getGooglePlayServicesAdvertisingID is called`() =
-        runTest {
+        runTest(testDispatcher) {
             plugin.setup(mockAnalytics)
 
-            coVerify { plugin["getGooglePlayServicesAdvertisingID"](mockContext) }
+            advanceUntilIdle()
+
+            coVerify { plugin.getGooglePlayServicesAdvertisingID(mockContext) }
         }
 
     @Test
     fun `given Google Play advertising ID is fetched successfully, when verify that getAmazonFireAdvertisingID is not called`() =
-        runTest {
-            val successResult = AndroidAdvertisingIdPlugin.Result.Success(FAKE_ADVERTISING_ID)
+        runTest(testDispatcher) {
+            val successResult = Result.Success(FAKE_ADVERTISING_ID)
 
-            coEvery { plugin["getGooglePlayServicesAdvertisingID"](mockContext) } returns successResult
+            coEvery { plugin.getGooglePlayServicesAdvertisingID(mockContext) } returns successResult
 
-            coVerify(exactly = 0) { plugin["getAmazonFireAdvertisingID"](mockContext) }
+            coVerify(exactly = 0) { plugin.getAmazonFireAdvertisingID(mockContext) }
+        }
+
+    @Test
+    fun `given Google Play advertising ID is not fetched successfully, when Google Play fails and updateAdvertisingId is called, then Fire advertising ID is set`() =
+        runTest(testDispatcher) {
+            val errorResult = Result.Failure(error = Exception("Error collecting play services ad id."))
+            val amazonFireId = FAKE_ADVERTISING_ID
+            val successAmazonResult = Result.Success(amazonFireId)
+
+            coEvery { plugin.getGooglePlayServicesAdvertisingID(mockContext) } returns errorResult
+            coEvery { plugin.getAmazonFireAdvertisingID(mockContext) } returns successAmazonResult
+
+            plugin.setup(mockAnalytics)
+
+            advanceUntilIdle()
+
+            assertTrue(plugin.adTrackingEnabled)
+            assertEquals(amazonFireId, plugin.advertisingId)
         }
 
     @Test
@@ -110,8 +139,8 @@ class AndroidAdvertisingIdPluginTest {
                 })
             }
 
-            coEvery { plugin["attachAdvertisingId"](updatedMessage) } returns updatedMessage
+            coEvery { plugin.attachAdvertisingId(updatedMessage) } returns updatedMessage
 
-            Assert.assertEquals(updatedMessage, plugin.execute(updatedMessage))
+            assertEquals(updatedMessage, plugin.execute(updatedMessage))
         }
 }
