@@ -8,14 +8,14 @@ package com.rudderstack.kotlin.sdk.internals.network
  *
  * @param T The type of the successful result.
  */
-sealed class Result<out T> {
+sealed class Result<out T, out E> {
 
     /**
      * Represents a successful result of an operation.
      *
      * @param response The successful result of the operation. The type is defined by the generic type parameter [T].
      */
-    class Success<out T>(val response: T) : Result<T>()
+    class Success<out T>(val response: T) : Result<T, Nothing>()
 
     /**
      * Represents a failed result of an operation.
@@ -23,5 +23,12 @@ sealed class Result<out T> {
      * @param status The error status associated with the failure. This provides context about the nature of the failure.
      * @param error The exception or throwable that caused the failure. This provides details about what went wrong.
      */
-    class Failure(val status: ErrorStatus, val error: Throwable) : Result<Nothing>()
+    class Failure<out E>(val status: ErrorStatus? = null, val error: E) : Result<Nothing, E>()
+
+    fun <R> orElse(fallback: () -> Result<R, @UnsafeVariance E>): Result<Any?, E> {
+        return when (this) {
+            is Success -> this
+            is Failure -> fallback()
+        }
+    }
 }
