@@ -19,9 +19,6 @@ object RudderAnalyticsUtils {
                 dataPlaneUrl = "<DATA_PLANE_URL>",
                 logLevel = Logger.LogLevel.VERBOSE,
             )
-        ).apply {
-            setLogger(logger = CustomLogger())
-        }
-        LoggerAnalytics.debug("Logger MANAGER DEBUG")
+        )
     }
 }
