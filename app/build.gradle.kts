@@ -2,9 +2,8 @@ import java.io.FileInputStream
 import java.util.Properties
 
 plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
-    id("kotlin-android")
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
 }
 
 val sampleRudderPropertiesFile: File = rootProject.file("${projectDir}/rudderstack.properties")
@@ -13,9 +12,7 @@ val sampleRudderProperties = Properties().apply {
 }
 
 android {
-    val javaVersion = JavaVersion.VERSION_17//RudderstackBuildConfig.Build.JAVA_VERSION
-    val jvm = 17
-    val composeCompilerVersion = "1.4.8"//RudderstackBuildConfig.Kotlin.COMPILER_EXTENSION_VERSION
+    val composeCompilerVersion = "1.5.1"//RudderstackBuildConfig.Kotlin.COMPILER_EXTENSION_VERSION
     val androidCompileSdkVersion = 34//RudderstackBuildConfig.Android.COMPILE_SDK
     val androidMinSdkVersion = 21
     val majorVersion = 0
@@ -24,12 +21,8 @@ android {
     val libraryVersionName = "${majorVersion}.${minVersion}.${patchVersion}"
     val libraryVersionCode = majorVersion * 1000 + minVersion * 100 + patchVersion
 
+    namespace = "com.rudderstack.android.sampleapp"
     compileSdk = androidCompileSdkVersion
-
-    buildFeatures {
-        buildConfig = true
-    }
-
 
     defaultConfig {
         applicationId = "com.rudderstack.android.sampleapp"
@@ -37,12 +30,10 @@ android {
         targetSdk = androidCompileSdkVersion
         versionCode = libraryVersionCode
         versionName = libraryVersionName
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
         }
-
         buildConfigField(
             "String", "WRITE_KEY",
             sampleRudderProperties.getProperty("writeKey")
@@ -67,61 +58,46 @@ android {
             )
         }
     }
-    buildTypes {
-        named("release") {
-            isMinifyEnabled = false
-            setProguardFiles(
-                listOf(
-                    getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
-                )
-            )
-        }
-    }
+
     compileOptions {
-        sourceCompatibility = javaVersion
-        targetCompatibility = javaVersion
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
     }
     kotlinOptions {
-        jvmTarget = "17"//RudderstackBuildConfig.Build.JVM_TARGET
-        javaParameters = true
-    }
-    java {
-        toolchain {
-            languageVersion.set(JavaLanguageVersion.of(jvm))
-        }
+        jvmTarget = "1.8"
     }
     buildFeatures {
-        buildFeatures {
-            compose = true
-        }
-        composeOptions {
-            kotlinCompilerExtensionVersion = composeCompilerVersion
-        }
-        tasks.withType<Test> {
-            useJUnitPlatform()
-        }
-        namespace = "com.rudderstack.android.sampleapp"
+        buildConfig = true
+        compose = true
     }
-
-    dependencies {
-        implementation("com.google.android.material:material:1.12.0")
-        //compose
-        implementation("androidx.compose.ui:ui:1.6.7")
-        implementation("androidx.compose.ui:ui-tooling-preview:1.6.7")
-        implementation("androidx.compose.ui:ui-tooling:1.6.7")
-        implementation("androidx.compose.foundation:foundation:1.6.7")
-        // Material Design
-        implementation("androidx.compose.material:material:1.6.7")
-        // Integration with activities
-        implementation("androidx.activity:activity-compose:1.9.0")
-        // Integration with ViewModels
-        implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.0")
-        // adding play services to generate advertising id
-        implementation("com.google.android.gms:play-services-ads:22.1.0")
-
-        implementation(project(":android"))
-        implementation(project(":core"))
+    composeOptions {
+        kotlinCompilerExtensionVersion = composeCompilerVersion
     }
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
+    }
+}
+
+dependencies {
+    implementation("com.google.android.material:material:1.12.0")
+    //compose
+    implementation("androidx.compose.ui:ui:1.6.7")
+    implementation("androidx.compose.ui:ui-tooling-preview:1.6.7")
+    implementation("androidx.compose.ui:ui-tooling:1.6.7")
+    implementation("androidx.compose.foundation:foundation:1.6.7")
+    // Material Design
+    implementation("androidx.compose.material:material:1.6.7")
+    // Integration with activities
+    implementation("androidx.activity:activity-compose:1.9.0")
+    // Integration with ViewModels
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.0")
+    // adding play services to generate advertising id
+    implementation("com.google.android.gms:play-services-ads:22.1.0")
+
+    implementation(project(":android"))
+    implementation(project(":core"))
 }
 
 tasks.named("preBuild").configure {

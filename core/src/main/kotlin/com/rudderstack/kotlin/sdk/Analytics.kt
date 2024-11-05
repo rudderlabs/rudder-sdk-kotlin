@@ -7,6 +7,7 @@ import com.rudderstack.kotlin.sdk.internals.models.Properties
 import com.rudderstack.kotlin.sdk.internals.models.RudderOption
 import com.rudderstack.kotlin.sdk.internals.models.RudderTraits
 import com.rudderstack.kotlin.sdk.internals.models.ScreenEvent
+import com.rudderstack.kotlin.sdk.internals.models.SourceConfig
 import com.rudderstack.kotlin.sdk.internals.models.TrackEvent
 import com.rudderstack.kotlin.sdk.internals.models.emptyJsonObject
 import com.rudderstack.kotlin.sdk.internals.models.useridentity.SetUserIdTraitsAndExternalIdsAction
@@ -17,14 +18,11 @@ import com.rudderstack.kotlin.sdk.internals.platform.PlatformType
 import com.rudderstack.kotlin.sdk.internals.plugins.Plugin
 import com.rudderstack.kotlin.sdk.internals.plugins.PluginChain
 import com.rudderstack.kotlin.sdk.internals.statemanagement.FlowState
-import com.rudderstack.kotlin.sdk.internals.statemanagement.SingleThreadStore
-import com.rudderstack.kotlin.sdk.internals.statemanagement.Store
 import com.rudderstack.kotlin.sdk.internals.utils.addNameAndCategoryToProperties
 import com.rudderstack.kotlin.sdk.internals.utils.empty
 import com.rudderstack.kotlin.sdk.plugins.LibraryInfoPlugin
 import com.rudderstack.kotlin.sdk.plugins.PocPlugin
 import com.rudderstack.kotlin.sdk.plugins.RudderStackDataplanePlugin
-import com.rudderstack.kotlin.sdk.state.SourceConfigState
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -56,10 +54,7 @@ open class Analytics protected constructor(
 
     private val pluginChain: PluginChain = PluginChain().also { it.analytics = this }
 
-    private var configurationStore: Store<SourceConfigState, SourceConfigState.UpdateAction> = SingleThreadStore(
-        initialState = SourceConfigState.initialState(),
-        reducer = SourceConfigState.SaveSourceConfigValuesReducer(configuration.storage, analyticsScope),
-    )
+    private val sourceConfigState = FlowState(initialState = SourceConfig.initialState())
 
     internal val userIdentityState = FlowState(initialState = UserIdentity.initialState(configuration.storage))
 
@@ -217,7 +212,10 @@ open class Analytics protected constructor(
         add(RudderStackDataplanePlugin())
 
         analyticsScope.launch(analyticsDispatcher) {
-            SourceConfigManager(analytics = this@Analytics, store = configurationStore).fetchSourceConfig()
+            SourceConfigManager(
+                analytics = this@Analytics,
+                sourceConfigState = sourceConfigState
+            ).fetchAndUpdateSourceConfig()
         }
     }
 

@@ -1,8 +1,21 @@
 package com.rudderstack.kotlin.sdk.internals.models
 
+import com.rudderstack.kotlin.sdk.internals.models.SourceConfig.Companion.serializer
+import com.rudderstack.kotlin.sdk.internals.statemanagement.FlowState
+import com.rudderstack.kotlin.sdk.internals.storage.Storage
+import com.rudderstack.kotlin.sdk.internals.storage.StorageKeys
 import com.rudderstack.kotlin.sdk.internals.utils.LenientJson
+import com.rudderstack.kotlin.sdk.internals.utils.empty
 import com.rudderstack.kotlin.sdk.readFileAsString
+import io.mockk.MockKAnnotations
+import io.mockk.coVerify
+import io.mockk.impl.annotations.MockK
+import io.mockk.unmockkAll
+import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.Json
+import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Before
 import org.junit.Test
 
 private const val ID = "<SOURCE_ID>"
@@ -21,6 +34,19 @@ private const val sourceConfigWithMultipleDestination = "config/source_config_wi
 private const val sourceConfigWithoutMetricsConfig = "config/source_config_without_metrics_config.json"
 
 class SourceConfigTest {
+
+    @MockK
+    private lateinit var mockStorage: Storage
+
+    @Before
+    fun setup() {
+        MockKAnnotations.init(this, relaxed = true)
+    }
+
+    @After
+    fun teardown() {
+        unmockkAll()
+    }
 
     @Test
     fun `given source config without destination, when source config is parsed, then source config object should be created`() {
@@ -56,6 +82,61 @@ class SourceConfigTest {
         val sourceConfig = LenientJson.decodeFromString<SourceConfig>(jsonString)
 
         assertEquals(provideServerConfigWithoutMetrics(), sourceConfig)
+    }
+
+    @Test
+    fun `when initialState called, then it should return correct empty initial sourceConfig state`() {
+        val initialState = SourceConfig.initialState()
+        val expectedInitialState = SourceConfig(
+            source = RudderServerConfigSource(
+                sourceId = String.empty(),
+                sourceName = String.empty(),
+                writeKey = String.empty(),
+                isSourceEnabled = true,
+                workspaceId = String.empty(),
+                updatedAt = String.empty()
+            )
+        )
+
+        assertEquals(expectedInitialState, initialState)
+    }
+
+    @Test
+    fun `given an initial SourceConfig state, when UpdateAction called, then sourceConfig state is updated`() {
+        val sourceConfigFlowState = FlowState(SourceConfig.initialState())
+        val newSourceConfig = SourceConfig(
+            source = RudderServerConfigSource(
+                sourceId = "newId",
+                sourceName = "newName",
+                writeKey = "newKey",
+                isSourceEnabled = true,
+                workspaceId = "newWorkspaceId",
+                updatedAt = "2023-09-12"
+            )
+        )
+
+        sourceConfigFlowState.dispatch(SourceConfig.UpdateAction(newSourceConfig))
+
+        assertEquals(newSourceConfig, sourceConfigFlowState.value)
+    }
+
+    @Test
+    fun `given a sourceConfig, when storeSourceConfig called, then it should store sourceConfig and isSourceEnabled correctly`() = runTest {
+        val sourceConfig = SourceConfig(
+            source = RudderServerConfigSource(
+                sourceId = "newId",
+                sourceName = "newName",
+                writeKey = "newKey",
+                isSourceEnabled = true,
+                workspaceId = "newWorkspaceId",
+                updatedAt = "2023-09-12"
+            )
+        )
+
+        sourceConfig.storeSourceConfig(mockStorage)
+
+        coVerify { mockStorage.write(StorageKeys.SOURCE_CONFIG_PAYLOAD, Json.encodeToString(serializer(), sourceConfig)) }
+        coVerify { mockStorage.write(StorageKeys.SOURCE_IS_ENABLED, sourceConfig.source.isSourceEnabled) }
     }
 }
 
