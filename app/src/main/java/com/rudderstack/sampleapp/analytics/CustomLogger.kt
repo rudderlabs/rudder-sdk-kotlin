@@ -6,7 +6,7 @@ import com.rudderstack.kotlin.sdk.internals.logger.Logger
 var CHRYSSA_TAG = "Chryssa-Analytics"
     private set
 
-internal class ChryssaLogger : Logger {
+internal class CustomLogger : Logger {
 
     override fun verbose(log: String) {
         Log.v(CHRYSSA_TAG, log)
