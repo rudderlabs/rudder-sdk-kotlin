@@ -30,7 +30,7 @@ package com.rudderstack.kotlin.sdk.internals.logger
  */
 object LoggerAnalytics {
     private lateinit var logger: Logger
-    private lateinit var logLevel: Logger.LogLevel
+    private var logLevel: Logger.LogLevel = Logger.DEFAULT_LOG_LEVEL
         @Synchronized private set
 
         @Synchronized get
