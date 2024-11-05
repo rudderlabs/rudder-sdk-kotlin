@@ -4,7 +4,6 @@ import android.app.Application
 import com.rudderstack.android.sdk.Analytics
 import com.rudderstack.android.sdk.Configuration
 import com.rudderstack.kotlin.sdk.internals.logger.Logger
-import com.rudderstack.kotlin.sdk.internals.logger.LoggerAnalytics
 
 object RudderAnalyticsUtils {
 
