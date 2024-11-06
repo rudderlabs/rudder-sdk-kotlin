@@ -20,7 +20,8 @@ internal class ProcessLifecycleManagementPlugin : Plugin, DefaultLifecycleObserv
 
     private lateinit var lifecycle: Lifecycle
 
-    private val processObservers = CopyOnWriteArrayList<ProcessLifecycleObserver>()
+    @VisibleForTesting
+    internal val processObservers = CopyOnWriteArrayList<ProcessLifecycleObserver>()
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
