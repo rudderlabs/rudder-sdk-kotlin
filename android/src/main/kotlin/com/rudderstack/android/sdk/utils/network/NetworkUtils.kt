@@ -1,7 +1,7 @@
 package com.rudderstack.android.sdk.utils.network
 
 import android.content.Context
-import com.rudderstack.kotlin.sdk.internals.logger.Logger
+import com.rudderstack.kotlin.sdk.internals.logger.LoggerAnalytics
 
 /**
  * A class that provides information about the network state.
@@ -17,18 +17,15 @@ internal class NetworkUtils(
     private var defaultNetworkUtils: DefaultNetworkUtils = DefaultNetworkUtils(),
 ) {
 
-    private lateinit var logger: Logger
-
     // Catching a generic exception since the exact exception is annotated with @hide and cannot be caught directly.
     @Suppress("TooGenericExceptionCaught")
-    internal fun setup(context: Context, logger: Logger) {
+    internal fun setup(context: Context) {
         this.defaultNetworkUtils.setup(context)
-        this.logger = logger
 
         try {
             this.networkCallbackUtils = NetworkCallbackUtils(context).apply { setup() }
         } catch (e: RuntimeException) {
-            logger.error(log = "Error while setting up NetworkCallbackUtil: ${e.stackTraceToString()}")
+            LoggerAnalytics.error("Error while setting up NetworkCallbackUtil: ${e.stackTraceToString()}")
         }
     }
 

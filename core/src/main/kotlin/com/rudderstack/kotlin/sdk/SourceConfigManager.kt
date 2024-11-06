@@ -1,5 +1,6 @@
 package com.rudderstack.kotlin.sdk
 
+import com.rudderstack.kotlin.sdk.internals.logger.LoggerAnalytics
 import com.rudderstack.kotlin.sdk.internals.models.SourceConfig
 import com.rudderstack.kotlin.sdk.internals.network.HttpClient
 import com.rudderstack.kotlin.sdk.internals.network.HttpClientImpl
@@ -43,20 +44,19 @@ internal class SourceConfigManager(
                 when (val sourceConfigResult = httpClientFactory.getData()) {
                     is Result.Success -> {
                         val config = LenientJson.decodeFromString<SourceConfig>(sourceConfigResult.response)
-                        analytics.configuration.logger.info(log = "SourceConfig is fetched successfully: $config")
+                        LoggerAnalytics.info("SourceConfig is fetched successfully: $config")
                         config
                     }
 
                     is Result.Failure -> {
-                        analytics.configuration.logger.error(
-                            log = "Failed to get sourceConfig due " +
-                                "to ${sourceConfigResult.status} ${sourceConfigResult.error}"
+                        LoggerAnalytics.error(
+                            "Failed to get sourceConfig due to ${sourceConfigResult.status} ${sourceConfigResult.error}"
                         )
                         null
                     }
                 }
             } catch (e: Exception) {
-                analytics.configuration.logger.error(log = "Failed to get sourceConfig due to $e")
+                LoggerAnalytics.error("Failed to get sourceConfig due to $e")
                 null
             }
         }
@@ -70,10 +70,10 @@ internal class SourceConfigManager(
 
         return if (sourceConfigString.isNotEmpty()) {
             val sourceConfig = LenientJson.decodeFromString<SourceConfig>(sourceConfigString)
-            analytics.configuration.logger.info(log = "SourceConfig fetched from storage: $sourceConfig")
+            LoggerAnalytics.info("SourceConfig fetched from storage: $sourceConfig")
             sourceConfig
         } else {
-            analytics.configuration.logger.info(log = "SourceConfig not found in storage")
+            LoggerAnalytics.info("SourceConfig not found in storage")
             null
         }
     }

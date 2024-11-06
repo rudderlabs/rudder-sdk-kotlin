@@ -46,7 +46,7 @@ class NetworkInfoPluginTest {
         MockKAnnotations.init(this, relaxed = true)
 
         every { (mockAnalytics.configuration as Configuration).application } returns mockApplication
-        every { mockNetworkUtils.setup(any(), any()) } returns Unit
+        every { mockNetworkUtils.setup(any()) } returns Unit
 
         networkInfoPlugin = spyk(NetworkInfoPlugin(mockNetworkUtils))
     }

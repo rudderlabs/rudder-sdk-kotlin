@@ -2,6 +2,7 @@ package com.rudderstack.android.sdk.plugins
 
 import com.rudderstack.android.sdk.utils.mergeWithHigherPriorityTo
 import com.rudderstack.kotlin.sdk.Analytics
+import com.rudderstack.kotlin.sdk.internals.logger.LoggerAnalytics
 import com.rudderstack.kotlin.sdk.internals.models.Message
 import com.rudderstack.kotlin.sdk.internals.plugins.Plugin
 import kotlinx.serialization.json.JsonObject
@@ -36,7 +37,7 @@ internal class LocaleInfoPlugin : Plugin {
     override fun execute(message: Message): Message = attachLocaleInfo(message)
 
     private fun attachLocaleInfo(message: Message): Message {
-        analytics.configuration.logger.debug(log = "Attaching locale info to the message payload")
+        LoggerAnalytics.debug("Attaching locale info to the message payload")
 
         message.context = message.context mergeWithHigherPriorityTo localeContext
 

@@ -2,8 +2,10 @@ package com.rudderstack.android.sdk.plugins
 
 import android.app.Application
 import android.content.pm.PackageManager
+import com.rudderstack.android.sdk.logger.AndroidLogger
 import com.rudderstack.android.sdk.Configuration
 import com.rudderstack.android.sdk.utils.provideEvent
+import com.rudderstack.android.sdk.utils.setupLogger
 import com.rudderstack.kotlin.sdk.Analytics
 import com.rudderstack.kotlin.sdk.internals.models.emptyJsonObject
 import com.rudderstack.kotlin.sdk.internals.utils.empty
@@ -33,6 +35,9 @@ private const val APP_BUILD = "3"
 class AppInfoPluginTest {
 
     @MockK
+    private lateinit var mockAndroidLogger: AndroidLogger
+
+    @MockK
     private lateinit var mockAnalytics: Analytics
 
     @MockK
@@ -43,6 +48,8 @@ class AppInfoPluginTest {
     @Before
     fun setup() {
         MockKAnnotations.init(this, relaxed = true)
+
+        setupLogger(mockAndroidLogger)
 
         every { (mockAnalytics.configuration as Configuration).application } returns mockApplication
 

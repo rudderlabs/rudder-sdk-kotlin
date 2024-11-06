@@ -7,6 +7,7 @@ import com.rudderstack.android.sdk.Configuration
 import com.rudderstack.android.sdk.utils.mergeWithHigherPriorityTo
 import com.rudderstack.android.sdk.utils.putUndefinedIfNull
 import com.rudderstack.kotlin.sdk.Analytics
+import com.rudderstack.kotlin.sdk.internals.logger.LoggerAnalytics
 import com.rudderstack.kotlin.sdk.internals.models.Message
 import com.rudderstack.kotlin.sdk.internals.models.emptyJsonObject
 import com.rudderstack.kotlin.sdk.internals.plugins.Plugin
@@ -41,7 +42,7 @@ internal class AppInfoPlugin : Plugin {
                 val packageInfo = packageManager.getPackageInfo(config.application.packageName, 0)
                 constructAppContext(packageInfo, packageManager)
             } catch (e: PackageManager.NameNotFoundException) {
-                config.logger.error("Failed to get package info", e.toString())
+                LoggerAnalytics.error("Failed to get package info", e)
                 emptyJsonObject
             }
         }
@@ -73,7 +74,7 @@ internal class AppInfoPlugin : Plugin {
     override fun execute(message: Message): Message = attachAppInfo(message)
 
     private fun attachAppInfo(message: Message): Message {
-        analytics.configuration.logger.debug(log = "Attaching app info to the message payload")
+        LoggerAnalytics.debug("Attaching app info to the message payload")
 
         message.context = message.context mergeWithHigherPriorityTo appContext
 

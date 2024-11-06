@@ -5,49 +5,32 @@ package com.rudderstack.kotlin.sdk.internals.logger
  * functionality for the RudderStack SDK in a Kotlin environment. This logger outputs log messages to
  * the console using `println` statements, filtered by the current log level setting.
  *
- * The logger supports four levels of logging:
+ * The logger supports five levels of logging:
+ * - **VERBOSE**: Logs detailed messages for in-depth troubleshooting.
+ * - **DEBUG**: Logs messages useful for debugging purposes.
  * - **INFO**: Logs informational messages that highlight the progress of the application.
- * - **DEBUG**: Logs detailed information that is useful for debugging.
  * - **WARN**: Logs potentially harmful situations that warrant attention.
  * - **ERROR**: Logs error events that might still allow the application to continue running.
- *
- * The logger can be activated at different log levels using the `activate` method, which controls
- * which messages are logged based on their severity.
- *
- * @property initialLogLevel The initial log level that the logger starts with. The default is `Logger.DEFAULT_LOG_LEVEL`.
  */
-class KotlinLogger(initialLogLevel: Logger.LogLevel = Logger.DEFAULT_LOG_LEVEL) : Logger {
+internal class KotlinLogger : Logger {
 
-    private var logLevel = initialLogLevel
-
-    override fun activate(level: Logger.LogLevel) {
-        logLevel = level
+    override fun verbose(log: String) {
+        println("$TAG-verbose : $log")
     }
 
-    override fun info(tag: String, log: String) {
-        if (Logger.LogLevel.INFO >= logLevel) {
-            println("$tag-info : $log")
-        }
+    override fun info(log: String) {
+        println("$TAG-info : $log")
     }
 
-    override fun debug(tag: String, log: String) {
-        if (Logger.LogLevel.DEBUG >= logLevel) {
-            println("$tag-debug : $log")
-        }
+    override fun debug(log: String) {
+        println("$TAG-debug : $log")
     }
 
-    override fun warn(tag: String, log: String) {
-        if (Logger.LogLevel.WARN >= logLevel) {
-            println("$tag-warn : $log")
-        }
+    override fun warn(log: String) {
+        println("$TAG-warn : $log")
     }
 
-    override fun error(tag: String, log: String, throwable: Throwable?) {
-        if (Logger.LogLevel.ERROR >= logLevel) {
-            println("$tag-error : $log")
-        }
+    override fun error(log: String, throwable: Throwable?) {
+        println("$TAG-error : $log")
     }
-
-    override val level: Logger.LogLevel
-        get() = logLevel
 }
