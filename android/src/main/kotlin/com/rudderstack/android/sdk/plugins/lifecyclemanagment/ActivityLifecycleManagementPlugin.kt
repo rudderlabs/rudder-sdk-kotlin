@@ -3,25 +3,25 @@ package com.rudderstack.android.sdk.plugins.lifecyclemanagment
 import android.app.Activity
 import android.app.Application
 import android.os.Bundle
-import androidx.lifecycle.DefaultLifecycleObserver
 import com.rudderstack.android.sdk.utils.runOnMainThread
 import com.rudderstack.kotlin.sdk.Analytics
 import com.rudderstack.kotlin.sdk.internals.plugins.Plugin
 import kotlinx.coroutines.DelicateCoroutinesApi
+import org.jetbrains.annotations.VisibleForTesting
 import java.util.concurrent.CopyOnWriteArrayList
 import com.rudderstack.android.sdk.Analytics as AndroidAnalytics
 import com.rudderstack.android.sdk.Configuration as AndroidConfiguration
 
 @OptIn(DelicateCoroutinesApi::class)
-@Suppress("TooManyFunctions")
-internal class ActivityLifecycleManagementPlugin : Plugin, Application.ActivityLifecycleCallbacks, DefaultLifecycleObserver {
+internal class ActivityLifecycleManagementPlugin : Plugin, Application.ActivityLifecycleCallbacks {
 
     override val pluginType: Plugin.PluginType = Plugin.PluginType.Manual
     override lateinit var analytics: Analytics
 
     private lateinit var application: Application
 
-    private val activityObservers = CopyOnWriteArrayList<ActivityLifecycleObserver>()
+    @VisibleForTesting
+    internal val activityObservers = CopyOnWriteArrayList<ActivityLifecycleObserver>()
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)

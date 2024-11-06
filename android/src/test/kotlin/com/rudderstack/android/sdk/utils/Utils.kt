@@ -8,9 +8,10 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.TestScope
+import com.rudderstack.android.sdk.Analytics as AndroidAnalytics
 
 fun mockAnalytics(testScope: TestScope, testDispatcher: TestDispatcher): Analytics {
-    val mockAnalytics = mockk<Analytics>(relaxed = true)
+    val mockAnalytics = mockk<AndroidAnalytics>(relaxed = true)
 
     mockAnalytics.also {
         every { it.analyticsScope } returns testScope
