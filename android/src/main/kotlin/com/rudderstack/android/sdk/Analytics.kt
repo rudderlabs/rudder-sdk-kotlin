@@ -13,9 +13,7 @@ import com.rudderstack.android.sdk.plugins.NetworkInfoPlugin
 import com.rudderstack.android.sdk.plugins.OSInfoPlugin
 import com.rudderstack.android.sdk.plugins.ScreenInfoPlugin
 import com.rudderstack.android.sdk.plugins.TimezoneInfoPlugin
-import com.rudderstack.android.sdk.plugins.lifecyclemanagment.ActivityLifecycleObserver
 import com.rudderstack.android.sdk.plugins.lifecyclemanagment.LifecycleManagementPlugin
-import com.rudderstack.android.sdk.plugins.lifecyclemanagment.ProcessLifecycleObserver
 import com.rudderstack.android.sdk.plugins.screenrecording.ActivityTrackingPlugin
 import com.rudderstack.android.sdk.plugins.screenrecording.NavControllerTrackingPlugin
 import com.rudderstack.android.sdk.state.NavContext
@@ -64,7 +62,7 @@ class Analytics(
         FlowState(NavContext.initialState())
     }
 
-    private val lifeCycleManagementPlugin = LifecycleManagementPlugin()
+    internal val lifeCycleManagementPlugin = LifecycleManagementPlugin()
 
     init {
         setup()
@@ -137,22 +135,6 @@ class Analytics(
                 )
             )
         )
-    }
-
-    internal fun addObserver(observer: ActivityLifecycleObserver) {
-        lifeCycleManagementPlugin.addObserver(observer)
-    }
-
-    internal fun addObserver(observer: ProcessLifecycleObserver) {
-        lifeCycleManagementPlugin.addObserver(observer)
-    }
-
-    internal fun removeObserver(observer: ActivityLifecycleObserver) {
-        lifeCycleManagementPlugin.removeObserver(observer)
-    }
-
-    internal fun removeObserver(observer: ProcessLifecycleObserver) {
-        lifeCycleManagementPlugin.removeObserver(observer)
     }
 
     private fun setup() {
