@@ -5,17 +5,17 @@ import com.rudderstack.android.sdk.plugins.lifecyclemanagment.ActivityLifecycleO
 import com.rudderstack.android.sdk.plugins.lifecyclemanagment.ProcessLifecycleObserver
 
 internal fun Analytics.addLifecycleObserver(observer: ActivityLifecycleObserver) {
-    lifeCycleManagementPlugin.addObserver(observer)
+    activityLifecycleManagementPlugin.addObserver(observer)
 }
 
 internal fun Analytics.addLifecycleObserver(observer: ProcessLifecycleObserver) {
-    lifeCycleManagementPlugin.addObserver(observer)
+    processLifecycleManagementPlugin.addObserver(observer)
 }
 
 internal fun Analytics.removeLifecycleObserver(observer: ActivityLifecycleObserver) {
-    lifeCycleManagementPlugin.removeObserver(observer)
+    activityLifecycleManagementPlugin.removeObserver(observer)
 }
 
 internal fun Analytics.removeLifecycleObserver(observer: ProcessLifecycleObserver) {
-    lifeCycleManagementPlugin.removeObserver(observer)
+    processLifecycleManagementPlugin.removeObserver(observer)
 }

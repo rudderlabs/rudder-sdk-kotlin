@@ -13,7 +13,8 @@ import com.rudderstack.android.sdk.plugins.NetworkInfoPlugin
 import com.rudderstack.android.sdk.plugins.OSInfoPlugin
 import com.rudderstack.android.sdk.plugins.ScreenInfoPlugin
 import com.rudderstack.android.sdk.plugins.TimezoneInfoPlugin
-import com.rudderstack.android.sdk.plugins.lifecyclemanagment.LifecycleManagementPlugin
+import com.rudderstack.android.sdk.plugins.lifecyclemanagment.ActivityLifecycleManagementPlugin
+import com.rudderstack.android.sdk.plugins.lifecyclemanagment.ProcessLifecycleManagementPlugin
 import com.rudderstack.android.sdk.plugins.screenrecording.ActivityTrackingPlugin
 import com.rudderstack.android.sdk.plugins.screenrecording.NavControllerTrackingPlugin
 import com.rudderstack.android.sdk.state.NavContext
@@ -62,7 +63,8 @@ class Analytics(
         FlowState(NavContext.initialState())
     }
 
-    internal val lifeCycleManagementPlugin = LifecycleManagementPlugin()
+    internal val activityLifecycleManagementPlugin = ActivityLifecycleManagementPlugin()
+    internal val processLifecycleManagementPlugin = ProcessLifecycleManagementPlugin()
 
     init {
         setup()
@@ -152,8 +154,9 @@ class Analytics(
         add(DeeplinkPlugin())
         add(ActivityTrackingPlugin())
 
-        // adding lifecycle management plugin last so that lifecycle callbacks are invoked after all the plugins are added
-        add(lifeCycleManagementPlugin)
+        // adding lifecycle management plugins last so that lifecycle callbacks are invoked after all the observers in plugins are added.
+        add(processLifecycleManagementPlugin)
+        add(activityLifecycleManagementPlugin)
     }
 
     override fun getPlatformType(): PlatformType = PlatformType.Mobile
