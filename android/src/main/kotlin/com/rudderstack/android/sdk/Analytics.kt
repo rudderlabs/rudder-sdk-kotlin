@@ -156,9 +156,6 @@ class Analytics(
     }
 
     private fun setup() {
-        // adding lifecycle management plugin first to add the lifecycle observers required by other plugins
-        add(lifeCycleManagementPlugin)
-
         setLogger(logger = AndroidLogger())
         add(DeviceInfoPlugin())
         add(AppInfoPlugin())
@@ -172,6 +169,9 @@ class Analytics(
         add(AndroidLifecyclePlugin())
         add(DeeplinkPlugin())
         add(ActivityTrackingPlugin())
+
+        // adding lifecycle management plugin last so that lifecycle callbacks are invoked after all the plugins are added
+        add(lifeCycleManagementPlugin)
     }
 
     override fun getPlatformType(): PlatformType = PlatformType.Mobile
