@@ -3,12 +3,12 @@ package com.rudderstack.kotlin.sdk.internals.logger
 /**
  * TAG is the default tag used for logging in the RudderStack SDK.
  * */
-const val TAG = "Rudder-Analytics"
+var TAG = "Rudder-Analytics"
+    private set
 
 /**
  * `Logger` is an interface that defines a standard logging mechanism for the RudderStack SDK.
- * It provides methods to log messages at different levels (INFO, DEBUG, WARN, ERROR) and to
- * control the logging behavior by setting the log level.
+ * It provides methods to log messages at different levels (VERBOSE, DEBUG, INFO, WARN and ERROR).
  */
 interface Logger {
 
@@ -22,46 +22,50 @@ interface Logger {
     }
 
     /**
-     * Activates the logger with a specific log level. Only messages at this level or higher
-     * (in terms of severity) will be logged.
+     * Sets a custom tag for the logger.
      *
-     * @param level The log level to activate for logging. It could be `DEBUG`, `INFO`, `WARN`, `ERROR`, or `NONE`.
+     * @param tag The tag to be used for logging.
      */
-    fun activate(level: LogLevel)
+    fun setTag(tag: String) {
+        TAG = tag
+    }
+
+    /**
+     * Logs a verbose message. This level is typically used for detailed information.
+     *
+     * @param log The message to be logged.
+     */
+    fun verbose(log: String)
+
+    /**
+     * Logs a debug message. This level is typically used for debugging purposes.
+     *
+     * @param log The message to be logged.
+     */
+    fun debug(log: String)
 
     /**
      * Logs an informational message. This level is typically used to highlight the progress of the application.
      *
-     * @param tag A tag to identify the source of a log message. Default is "Rudder-Analytics".
      * @param log The message to be logged.
      */
-    fun info(tag: String = TAG, log: String)
-
-    /**
-     * Logs a debug message. This level is typically used for detailed debugging information.
-     *
-     * @param tag A tag to identify the source of a log message. Default is "Rudder-Analytics".
-     * @param log The message to be logged.
-     */
-    fun debug(tag: String = TAG, log: String)
+    fun info(log: String)
 
     /**
      * Logs a warning message. This level is typically used to log potentially harmful situations.
      *
-     * @param tag A tag to identify the source of a log message. Default is "Rudder-Analytics".
      * @param log The message to be logged.
      */
-    fun warn(tag: String = TAG, log: String)
+    fun warn(log: String)
 
     /**
      * Logs an error message. This level is typically used to log error events that might still allow
      * the application to continue running.
      *
-     * @param tag A tag to identify the source of a log message. Default is "Rudder-Analytics".
      * @param log The message to be logged.
      * @param throwable An optional throwable associated with the error being logged.
      */
-    fun error(tag: String = TAG, log: String, throwable: Throwable? = null)
+    fun error(log: String, throwable: Throwable? = null)
 
     /**
      * Enum representing the different log levels that can be set for the logger.
@@ -72,15 +76,11 @@ interface Logger {
      * - `NONE`: Disable logging.
      */
     enum class LogLevel {
+        VERBOSE,
         DEBUG,
         INFO,
         WARN,
         ERROR,
         NONE,
     }
-
-    /**
-     * A property to get the current log level of the logger.
-     */
-    val level: LogLevel
 }

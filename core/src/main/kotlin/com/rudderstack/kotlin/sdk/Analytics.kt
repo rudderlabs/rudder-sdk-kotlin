@@ -1,5 +1,8 @@
 package com.rudderstack.kotlin.sdk
 
+import com.rudderstack.kotlin.sdk.internals.logger.KotlinLogger
+import com.rudderstack.kotlin.sdk.internals.logger.Logger
+import com.rudderstack.kotlin.sdk.internals.logger.LoggerAnalytics
 import com.rudderstack.kotlin.sdk.internals.models.GroupEvent
 import com.rudderstack.kotlin.sdk.internals.models.Message
 import com.rudderstack.kotlin.sdk.internals.models.Properties
@@ -65,6 +68,18 @@ open class Analytics protected constructor(
     }
 
     /**
+     * Configures the logger for analytics with a specified `Logger` instance.
+     *
+     * This function sets up the `LoggerAnalytics` with the provided `logger` instance,
+     * applying the log level specified in the configuration.
+     *
+     * @param logger The `Logger` instance to use for logging. Defaults to an instance of `KotlinLogger`.
+     */
+    fun setLogger(logger: Logger) {
+        LoggerAnalytics.setup(logger = logger, logLevel = configuration.logLevel)
+    }
+
+    /**
      * Secondary constructor for creating an `Analytics` instance with a default coroutine configuration.
      * The default configuration includes a coroutine scope with a SupervisorJob and a coroutine exception handler.
      *
@@ -74,7 +89,7 @@ open class Analytics protected constructor(
         configuration = configuration,
         coroutineConfig = object : CoroutineConfiguration {
             private val handler = CoroutineExceptionHandler { _, exception ->
-                configuration.logger.error(log = exception.stackTraceToString())
+                LoggerAnalytics.error(exception.stackTraceToString())
             }
             override val analyticsScope: CoroutineScope = CoroutineScope(SupervisorJob() + handler)
             override val analyticsDispatcher: CoroutineDispatcher = Dispatchers.IO
@@ -165,6 +180,7 @@ open class Analytics protected constructor(
      * and `RudderStackDataplanePlugin`. This function is called during initialization.
      */
     private fun setup() {
+        setLogger(logger = KotlinLogger())
         add(LibraryInfoPlugin())
         add(PocPlugin())
         add(RudderStackDataplanePlugin())

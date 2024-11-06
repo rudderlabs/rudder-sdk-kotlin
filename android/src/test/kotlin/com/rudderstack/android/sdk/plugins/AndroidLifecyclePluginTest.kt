@@ -301,7 +301,6 @@ class AndroidLifecyclePluginTest {
             every { trackApplicationLifecycleEvents } returns trackingEnabled
             every { writeKey } returns ""
             every { dataPlaneUrl } returns ""
-            every { logger } returns mockk(relaxed = true)
             every { flushPolicies } returns emptyList()
         }
 
