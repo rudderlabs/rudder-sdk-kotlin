@@ -2,13 +2,13 @@ package com.rudderstack.kotlin.sdk.internals.models
 
 import kotlinx.serialization.json.JsonObject
 
-fun provideSourceConfig(
+internal fun provideSourceConfig(
     source: RudderServerConfigSource
 ): SourceConfig = SourceConfig(
     source = source,
 )
 
-fun provideRudderServerConfigSource(
+internal fun provideRudderServerConfigSource(
     sourceId: String,
     sourceName: String,
     writeKey: String,
@@ -28,13 +28,13 @@ fun provideRudderServerConfigSource(
     updatedAt = updatedAt,
 )
 
-fun provideMetricsConfig(
+internal fun provideMetricsConfig(
     statsCollection: StatsCollection = provideStatsCollection(),
 ): MetricsConfig = MetricsConfig(
     statsCollection = statsCollection
 )
 
-fun provideStatsCollection(
+internal fun provideStatsCollection(
     errors: Errors = provideErrors(),
     metrics: Metrics = provideMetrics()
 ) = StatsCollection(
@@ -42,19 +42,19 @@ fun provideStatsCollection(
     metrics = metrics
 )
 
-fun provideErrors(
+internal fun provideErrors(
     enabled: Boolean = false
 ) = Errors(
     enabled = enabled
 )
 
-fun provideMetrics(
+internal fun provideMetrics(
     enabled: Boolean = false
 ) = Metrics(
     enabled = enabled
 )
 
-fun provideDestination(
+internal fun provideDestination(
     destinationId: String = "<DESTINATION_ID>",
     destinationName: String,
     isDestinationEnabled: Boolean = true,
@@ -76,7 +76,7 @@ fun provideDestination(
     propagateEventsUntransformedOnError = propagateEventsUntransformedOnError
 )
 
-fun provideDestinationDefinition(
+internal fun provideDestinationDefinition(
     name: String,
     displayName: String
 ) = DestinationDefinition(

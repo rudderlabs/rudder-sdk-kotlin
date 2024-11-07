@@ -60,12 +60,12 @@ data class Configuration @JvmOverloads constructor(
     override val writeKey: String,
     override val dataPlaneUrl: String,
     override val controlPlaneUrl: String = DEFAULT_CONTROL_PLANE_URL,
-    override val logger: Logger = AndroidLogger(initialLogLevel = Logger.LogLevel.DEBUG),
+    override val logLevel: Logger.LogLevel = Logger.DEFAULT_LOG_LEVEL,
     override var flushPolicies: List<FlushPolicy> = DEFAULT_FLUSH_POLICIES,
 ) : Configuration(
     writeKey = writeKey,
     dataPlaneUrl = dataPlaneUrl,
     storage = AndroidStorageProvider.getStorage(writeKey, application),
-    logger = logger,
+    logLevel = logLevel,
     flushPolicies = flushPolicies,
 )

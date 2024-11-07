@@ -4,17 +4,18 @@ import com.rudderstack.kotlin.sdk.internals.models.SourceConfig
 import com.rudderstack.kotlin.sdk.internals.network.ErrorStatus
 import com.rudderstack.kotlin.sdk.internals.network.HttpClient
 import com.rudderstack.kotlin.sdk.internals.utils.Result
-import com.rudderstack.kotlin.sdk.internals.statemanagement.SingleThreadStore
+import com.rudderstack.kotlin.sdk.internals.statemanagement.FlowState
+import com.rudderstack.kotlin.sdk.internals.storage.StorageKeys
 import com.rudderstack.kotlin.sdk.internals.utils.LenientJson
-import com.rudderstack.kotlin.sdk.state.SourceConfigState
-import io.mockk.coEvery
-import io.mockk.coVerify
+import com.rudderstack.kotlin.sdk.internals.utils.empty
+import com.rudderstack.kotlin.sdk.internals.utils.mockAnalytics
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -22,23 +23,23 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 
-private const val sourceConfigSuccess = "config/source_config_without_destination.json"
+private const val fetchedSourceConfig = "config/source_config_without_destination.json"
+private const val downloadedSourceConfig = "config/source_config_with_single_destination.json"
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SourceConfigManagerTest {
 
-    private val analytics: Analytics = mockk(relaxed = true)
-    private val store: SingleThreadStore<SourceConfigState, SourceConfigState.UpdateAction> = mockk(relaxed = true)
-    private val httpClient: HttpClient = mockk()
+    private val testDispatcher = StandardTestDispatcher()
+    private val testScope = TestScope(testDispatcher)
+    private val analytics: Analytics = mockAnalytics(testScope, testDispatcher)
+    private val sourceConfigState: FlowState<SourceConfig> = mockk(relaxed = true)
+    private val httpClient: HttpClient = mockk(relaxed = true)
     private lateinit var sourceConfigManager: SourceConfigManager
-
-    private val testDispatcher = UnconfinedTestDispatcher()
 
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
-        every { analytics.networkDispatcher } returns testDispatcher
-        sourceConfigManager = SourceConfigManager(analytics, store, httpClient)
+        sourceConfigManager = SourceConfigManager(analytics, sourceConfigState, httpClient)
     }
 
     @After
@@ -47,69 +48,103 @@ class SourceConfigManagerTest {
     }
 
     @Test
-    fun `given a response on fetchSourceConfig, when the response is successful, then source config store should be subscribed`() =
+    fun `given a stored source config and downloadSourceConfig fails, when fetchAndUpdateSourceConfig is called, then it should update the state`() =
         runTest {
-            val jsonString = readFileAsString(sourceConfigSuccess)
-
-            coEvery { httpClient.getData() } returns Result.Success(jsonString)
-
-            sourceConfigManager.fetchSourceConfig()
-
-            coVerify { store.subscribe(any()) }
-        }
-
-    @Test
-    fun `given a response on fetchSourceConfig, when the response is successful, then source config should be logged`() =
-        runTest {
-            val jsonString = readFileAsString(sourceConfigSuccess)
-            val sourceConfig = LenientJson.decodeFromString<SourceConfig>(jsonString)
-
-            coEvery { httpClient.getData() } returns Result.Success(jsonString)
-
-            sourceConfigManager.fetchSourceConfig()
-
-            verify { analytics.configuration.logger.debug(log = "SourceConfig: $sourceConfig") }
-        }
-
-    @Test
-    fun `given a response on fetchSourceConfig, when the response is not successful, then source config store should not be subscribed`() =
-        runTest {
-            coEvery { httpClient.getData() } returns Result.Failure(
+            val sourceConfigString = readFileAsString(fetchedSourceConfig)
+            val sourceConfig = LenientJson.decodeFromString<SourceConfig>(sourceConfigString)
+            every {
+                analytics.configuration.storage.readString(
+                    StorageKeys.SOURCE_CONFIG_PAYLOAD,
+                    defaultVal = String.empty()
+                )
+            } returns sourceConfigString
+            every { httpClient.getData() } returns Result.Failure(
                 error = Exception(),
                 status = ErrorStatus.SERVER_ERROR
             )
 
-            sourceConfigManager.fetchSourceConfig()
+            sourceConfigManager.fetchAndUpdateSourceConfig()
 
-            coVerify(exactly = 0) { store.subscribe(any()) } // Ensure storeSourceConfig is not called
+            verify(exactly = 1) {
+                sourceConfigState.dispatch(match { it is SourceConfig.UpdateAction && it.updatedSourceConfig == sourceConfig })
+            }
         }
 
     @Test
-    fun `given a response on fetchSourceConfig, when the response is not successful, then an error should be logged`() =
+    fun `given a response on downloadSourceConfig, when fetchAndUpdateSourceConfig called, then source config should be updated`() =
         runTest {
-            coEvery { httpClient.getData() } returns Result.Failure(
-                error = Exception(),
-                status = ErrorStatus.SERVER_ERROR
-            )
+            val downloadedSourceConfigString = readFileAsString(downloadedSourceConfig)
+            val downloadedSourceConfig = LenientJson.decodeFromString<SourceConfig>(downloadedSourceConfigString)
 
-            sourceConfigManager.fetchSourceConfig()
+            val fetchedSourceConfigString = readFileAsString(fetchedSourceConfig)
 
-            verify { analytics.configuration.logger.error(any(), any()) }
+            every { httpClient.getData() } returns Result.Success(downloadedSourceConfigString)
+            every {
+                analytics.configuration.storage.readString(
+                    StorageKeys.SOURCE_CONFIG_PAYLOAD,
+                    defaultVal = String.empty()
+                )
+            } returns fetchedSourceConfigString
+
+            sourceConfigManager.fetchAndUpdateSourceConfig()
+
+            verify(exactly = 1) {
+                sourceConfigState.dispatch(match { it is SourceConfig.UpdateAction && it.updatedSourceConfig == downloadedSourceConfig })
+            }
         }
 
     @Test
-    fun `given a response on fetchSourceConfig, when a exception is thrown, then source config store should not be subscribed`() =
+    fun `given a failed response on downloadSourceConfig and no stored sourceConfig, when fetchAndUpdateSourceConfig called, then source config should not be updated`() =
         runTest {
-            coEvery { httpClient.getData() } returns Result.Failure(
+            every { httpClient.getData() } returns Result.Failure(
                 error = Exception(),
                 status = ErrorStatus.SERVER_ERROR
             )
+            every {
+                analytics.configuration.storage.readString(
+                    StorageKeys.SOURCE_CONFIG_PAYLOAD,
+                    defaultVal = String.empty()
+                )
+            } returns String.empty()
 
-            sourceConfigManager.fetchSourceConfig()
+            sourceConfigManager.fetchAndUpdateSourceConfig()
 
-            coVerify(exactly = 0) { store.subscribe(any()) }
-            verify { analytics.configuration.logger.error(any(), any()) }
+            verify(exactly = 0) { sourceConfigState.dispatch(any()) }
+        }
+
+    @Test
+    fun `given an exception on downloadSourceConfig and no stored source config, when fetchAndUpdateSourceConfig called, then source config should not be updated`() =
+        runTest {
+            every { httpClient.getData() } throws Exception()
+            every {
+                analytics.configuration.storage.readString(
+                    StorageKeys.SOURCE_CONFIG_PAYLOAD,
+                    defaultVal = String.empty()
+                )
+            } returns String.empty()
+
+            sourceConfigManager.fetchAndUpdateSourceConfig()
+
+            verify(exactly = 0) { sourceConfigState.dispatch(any()) }
+        }
+
+    @Test
+    fun `given a stored source config and downloadSourceConfig throws exception, when fetchAndUpdateSourceConfig called, then it should update the state`() =
+        runTest {
+            val sourceConfigString = readFileAsString(fetchedSourceConfig)
+            val sourceConfig = LenientJson.decodeFromString<SourceConfig>(sourceConfigString)
+            every {
+                analytics.configuration.storage.readString(
+                    StorageKeys.SOURCE_CONFIG_PAYLOAD,
+                    defaultVal = String.empty()
+                )
+            } returns sourceConfigString
+            every { httpClient.getData() } throws Exception()
+
+            sourceConfigManager.fetchAndUpdateSourceConfig()
+
+            verify(exactly = 1) {
+                sourceConfigState.dispatch(match { it is SourceConfig.UpdateAction && it.updatedSourceConfig == sourceConfig })
+            }
         }
 }
-
-

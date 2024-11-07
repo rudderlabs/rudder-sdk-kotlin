@@ -1,11 +1,15 @@
 package com.rudderstack.kotlin.sdk
 
+import com.rudderstack.kotlin.sdk.internals.logger.KotlinLogger
+import com.rudderstack.kotlin.sdk.internals.logger.Logger
+import com.rudderstack.kotlin.sdk.internals.logger.LoggerAnalytics
 import com.rudderstack.kotlin.sdk.internals.models.GroupEvent
 import com.rudderstack.kotlin.sdk.internals.models.Message
 import com.rudderstack.kotlin.sdk.internals.models.Properties
 import com.rudderstack.kotlin.sdk.internals.models.RudderOption
 import com.rudderstack.kotlin.sdk.internals.models.RudderTraits
 import com.rudderstack.kotlin.sdk.internals.models.ScreenEvent
+import com.rudderstack.kotlin.sdk.internals.models.SourceConfig
 import com.rudderstack.kotlin.sdk.internals.models.TrackEvent
 import com.rudderstack.kotlin.sdk.internals.models.UserIdentity
 import com.rudderstack.kotlin.sdk.internals.models.emptyJsonObject
@@ -14,14 +18,11 @@ import com.rudderstack.kotlin.sdk.internals.platform.PlatformType
 import com.rudderstack.kotlin.sdk.internals.plugins.Plugin
 import com.rudderstack.kotlin.sdk.internals.plugins.PluginChain
 import com.rudderstack.kotlin.sdk.internals.statemanagement.FlowState
-import com.rudderstack.kotlin.sdk.internals.statemanagement.SingleThreadStore
-import com.rudderstack.kotlin.sdk.internals.statemanagement.Store
 import com.rudderstack.kotlin.sdk.internals.utils.addNameAndCategoryToProperties
 import com.rudderstack.kotlin.sdk.internals.utils.empty
 import com.rudderstack.kotlin.sdk.plugins.LibraryInfoPlugin
 import com.rudderstack.kotlin.sdk.plugins.PocPlugin
 import com.rudderstack.kotlin.sdk.plugins.RudderStackDataplanePlugin
-import com.rudderstack.kotlin.sdk.state.SourceConfigState
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -53,10 +54,7 @@ open class Analytics protected constructor(
 
     private val pluginChain: PluginChain = PluginChain().also { it.analytics = this }
 
-    private var configurationStore: Store<SourceConfigState, SourceConfigState.UpdateAction> = SingleThreadStore(
-        initialState = SourceConfigState.initialState(),
-        reducer = SourceConfigState.SaveSourceConfigValuesReducer(configuration.storage, analyticsScope),
-    )
+    private val sourceConfigState = FlowState(initialState = SourceConfig.initialState())
 
     internal val userIdentityState = FlowState(initialState = UserIdentity.initialState(configuration.storage))
 
@@ -70,6 +68,18 @@ open class Analytics protected constructor(
     }
 
     /**
+     * Configures the logger for analytics with a specified `Logger` instance.
+     *
+     * This function sets up the `LoggerAnalytics` with the provided `logger` instance,
+     * applying the log level specified in the configuration.
+     *
+     * @param logger The `Logger` instance to use for logging. Defaults to an instance of `KotlinLogger`.
+     */
+    fun setLogger(logger: Logger) {
+        LoggerAnalytics.setup(logger = logger, logLevel = configuration.logLevel)
+    }
+
+    /**
      * Secondary constructor for creating an `Analytics` instance with a default coroutine configuration.
      * The default configuration includes a coroutine scope with a SupervisorJob and a coroutine exception handler.
      *
@@ -79,7 +89,7 @@ open class Analytics protected constructor(
         configuration = configuration,
         coroutineConfig = object : CoroutineConfiguration {
             private val handler = CoroutineExceptionHandler { _, exception ->
-                configuration.logger.error(log = exception.stackTraceToString())
+                LoggerAnalytics.error(exception.stackTraceToString())
             }
             override val analyticsScope: CoroutineScope = CoroutineScope(SupervisorJob() + handler)
             override val analyticsDispatcher: CoroutineDispatcher = Dispatchers.IO
@@ -170,12 +180,16 @@ open class Analytics protected constructor(
      * and `RudderStackDataplanePlugin`. This function is called during initialization.
      */
     private fun setup() {
+        setLogger(logger = KotlinLogger())
         add(LibraryInfoPlugin())
         add(PocPlugin())
         add(RudderStackDataplanePlugin())
 
         analyticsScope.launch(analyticsDispatcher) {
-            SourceConfigManager(analytics = this@Analytics, store = configurationStore).fetchSourceConfig()
+            SourceConfigManager(
+                analytics = this@Analytics,
+                sourceConfigState = sourceConfigState
+            ).fetchAndUpdateSourceConfig()
         }
     }
 
