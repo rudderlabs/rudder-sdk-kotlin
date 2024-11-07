@@ -1,18 +1,19 @@
 package com.rudderstack.android.sdk.plugins
 
 import android.app.Activity
-import android.app.Application
 import android.content.Intent
 import android.net.ParseException
 import android.net.Uri
 import android.os.Bundle
+import com.rudderstack.android.sdk.plugins.lifecyclemanagment.ActivityLifecycleObserver
 import com.rudderstack.android.sdk.storage.CheckBuildVersionUseCase
+import com.rudderstack.android.sdk.utils.addLifecycleObserver
 import com.rudderstack.kotlin.sdk.Analytics
 import com.rudderstack.kotlin.sdk.internals.plugins.Plugin
 import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import kotlin.properties.Delegates
+import com.rudderstack.android.sdk.Analytics as AndroidAnalytics
 import com.rudderstack.android.sdk.Configuration as AndroidConfiguration
 
 internal const val REFERRING_APPLICATION_KEY = "referring_application"
@@ -21,60 +22,24 @@ internal const val DEEPLINK_OPENED_KEY = "Deep Link Opened"
 
 internal class DeeplinkPlugin(
     private val checkBuildVersionUseCase: CheckBuildVersionUseCase = CheckBuildVersionUseCase()
-) : Plugin, Application.ActivityLifecycleCallbacks {
+) : Plugin, ActivityLifecycleObserver {
 
     override val pluginType: Plugin.PluginType = Plugin.PluginType.Manual
 
     override lateinit var analytics: Analytics
 
-    private lateinit var application: Application
-    private var trackDeepLinks by Delegates.notNull<Boolean>()
-
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
 
         (analytics.configuration as? AndroidConfiguration)?.let { config ->
-            trackDeepLinks = config.trackDeeplinks
-            if (trackDeepLinks) {
-                application = config.application
-                application.registerActivityLifecycleCallbacks(this)
+            if (config.trackDeeplinks) {
+                (analytics as? AndroidAnalytics)?.addLifecycleObserver(this)
             }
-        }
-    }
-
-    override fun teardown() {
-        super.teardown()
-        if (trackDeepLinks) {
-            application.unregisterActivityLifecycleCallbacks(this)
         }
     }
 
     override fun onActivityCreated(activity: Activity, bundle: Bundle?) {
         trackDeepLink(activity)
-    }
-
-    override fun onActivityStarted(activity: Activity) {
-        // NO-OP
-    }
-
-    override fun onActivityResumed(activity: Activity) {
-        // NO-OP
-    }
-
-    override fun onActivityPaused(activity: Activity) {
-        // NO-OP
-    }
-
-    override fun onActivityStopped(activity: Activity) {
-        // NO-OP
-    }
-
-    override fun onActivitySaveInstanceState(activity: Activity, bundle: Bundle) {
-        // NO-OP
-    }
-
-    override fun onActivityDestroyed(activity: Activity) {
-        // NO-OP
     }
 
     private fun trackDeepLink(activity: Activity) {
