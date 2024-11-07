@@ -5,7 +5,7 @@ import com.rudderstack.kotlin.sdk.internals.logger.KotlinLogger
 import com.rudderstack.kotlin.sdk.internals.models.Message
 import com.rudderstack.kotlin.sdk.internals.network.ErrorStatus
 import com.rudderstack.kotlin.sdk.internals.network.HttpClient
-import com.rudderstack.kotlin.sdk.internals.network.Result
+import com.rudderstack.kotlin.sdk.internals.utils.Result
 import com.rudderstack.kotlin.sdk.internals.policies.FlushPoliciesFacade
 import com.rudderstack.kotlin.sdk.internals.storage.Storage
 import com.rudderstack.kotlin.sdk.internals.storage.StorageKeys
