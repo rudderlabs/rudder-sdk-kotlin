@@ -188,6 +188,21 @@ enum class StorageKeys(val key: String) {
      * Key for storing the external ids.
      */
     EXTERNAL_IDS("external_ids"),
+
+    /**
+     * Key for storing the session id of the client.
+     */
+    SESSION_ID("session_id"),
+
+    /**
+     * Key for storing the timestamp of last event fired. Required for session management.
+     */
+    LAST_EVENT_TIME("last_event_time"),
+
+    /**
+     * Key for storing the flag for manual session.
+     */
+    IS_MANUAL_SESSION("is_manual_session"),
 }
 
 /**

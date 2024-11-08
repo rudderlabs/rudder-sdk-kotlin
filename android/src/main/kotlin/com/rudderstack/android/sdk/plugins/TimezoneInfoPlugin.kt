@@ -34,7 +34,7 @@ internal class TimezoneInfoPlugin : Plugin {
         put(TIMEZONE_KEY, TimeZone.getDefault().id)
     }
 
-    override fun execute(message: Message): Message = attachTimezoneInfo(message)
+    override suspend fun execute(message: Message): Message = attachTimezoneInfo(message)
 
     private fun attachTimezoneInfo(message: Message): Message {
         LoggerAnalytics.debug("Attaching timezone info to the message payload")

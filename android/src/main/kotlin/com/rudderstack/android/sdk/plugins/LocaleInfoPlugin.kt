@@ -34,7 +34,7 @@ internal class LocaleInfoPlugin : Plugin {
         put(LOCALE_KEY, Locale.getDefault().language + "-" + Locale.getDefault().country)
     }
 
-    override fun execute(message: Message): Message = attachLocaleInfo(message)
+    override suspend fun execute(message: Message): Message = attachLocaleInfo(message)
 
     private fun attachLocaleInfo(message: Message): Message {
         LoggerAnalytics.debug("Attaching locale info to the message payload")

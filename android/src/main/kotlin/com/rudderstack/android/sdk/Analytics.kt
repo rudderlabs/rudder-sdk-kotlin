@@ -17,12 +17,16 @@ import com.rudderstack.android.sdk.plugins.lifecyclemanagment.ActivityLifecycleM
 import com.rudderstack.android.sdk.plugins.lifecyclemanagment.ProcessLifecycleManagementPlugin
 import com.rudderstack.android.sdk.plugins.screenrecording.ActivityTrackingPlugin
 import com.rudderstack.android.sdk.plugins.screenrecording.NavControllerTrackingPlugin
+import com.rudderstack.android.sdk.plugins.sessiontracking.SessionTrackingPlugin
 import com.rudderstack.android.sdk.state.NavContext
 import com.rudderstack.kotlin.sdk.Analytics
+import com.rudderstack.kotlin.sdk.internals.logger.LoggerAnalytics
 import com.rudderstack.kotlin.sdk.internals.platform.Platform
 import com.rudderstack.kotlin.sdk.internals.platform.PlatformType
 import com.rudderstack.kotlin.sdk.internals.statemanagement.FlowState
 import org.jetbrains.annotations.ApiStatus.Experimental
+
+private const val MIN_SESSION_ID_LENGTH = 10
 
 /**
  * `Analytics` class in the `com.rudderstack.android` package.
@@ -65,9 +69,23 @@ class Analytics(
 
     internal val activityLifecycleManagementPlugin = ActivityLifecycleManagementPlugin()
     internal val processLifecycleManagementPlugin = ProcessLifecycleManagementPlugin()
+    private val sessionTrackingPlugin = SessionTrackingPlugin()
 
     init {
         setup()
+    }
+
+    @JvmOverloads
+    fun startSession(sessionId: Long? = null) {
+        if (sessionId != null && sessionId.toString().length < MIN_SESSION_ID_LENGTH) {
+            LoggerAnalytics.error("Session Id should be at least $MIN_SESSION_ID_LENGTH digits.")
+            return
+        }
+        sessionTrackingPlugin.startSession(sessionId, isSessionManual = true)
+    }
+
+    fun endSession() {
+        sessionTrackingPlugin.endSession()
     }
 
     /**
@@ -148,6 +166,7 @@ class Analytics(
         add(OSInfoPlugin())
         add(ScreenInfoPlugin())
         add(TimezoneInfoPlugin())
+        add(sessionTrackingPlugin)
 
         // Add these plugins at last in chain
         add(AndroidLifecyclePlugin())

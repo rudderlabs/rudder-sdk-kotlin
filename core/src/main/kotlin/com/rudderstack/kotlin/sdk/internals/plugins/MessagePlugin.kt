@@ -33,7 +33,7 @@ internal interface MessagePlugin : Plugin {
         return payload
     }
 
-    override fun execute(message: Message): Message? = when (message) {
+    override suspend fun execute(message: Message): Message? = when (message) {
         is TrackEvent -> track(message)
         is ScreenEvent -> screen(message)
         is GroupEvent -> group(message)

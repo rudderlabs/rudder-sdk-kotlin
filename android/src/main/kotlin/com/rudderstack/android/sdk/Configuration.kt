@@ -57,6 +57,7 @@ data class Configuration @JvmOverloads constructor(
     val trackDeeplinks: Boolean = true,
     val trackActivities: Boolean = false,
     val collectDeviceId: Boolean = true,
+    val sessionConfiguration: SessionConfiguration = SessionConfiguration(),
     override val writeKey: String,
     override val dataPlaneUrl: String,
     override val controlPlaneUrl: String = DEFAULT_CONTROL_PLANE_URL,
@@ -68,4 +69,9 @@ data class Configuration @JvmOverloads constructor(
     storage = AndroidStorageProvider.getStorage(writeKey, application),
     logLevel = logLevel,
     flushPolicies = flushPolicies,
+)
+
+data class SessionConfiguration(
+    val automaticSessionTracking: Boolean = true,
+    val sessionTimeoutInMillis: Long = 300_000,
 )

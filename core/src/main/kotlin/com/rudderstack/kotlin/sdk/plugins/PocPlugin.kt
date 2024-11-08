@@ -11,7 +11,7 @@ internal class PocPlugin : Plugin {
 
     override lateinit var analytics: Analytics
 
-    override fun execute(message: Message): Message {
+    override suspend fun execute(message: Message): Message {
         LoggerAnalytics.debug("PocPlugin running")
         return message
     }
