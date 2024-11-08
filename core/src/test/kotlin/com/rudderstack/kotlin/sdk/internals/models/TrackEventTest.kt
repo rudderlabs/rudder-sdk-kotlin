@@ -85,7 +85,7 @@ class TrackEventTest {
             event = EVENT_NAME,
             properties = emptyJsonObject,
             options = RudderOption(
-                customContexts = provideSampleJsonPayload(),
+                customContext = provideSampleJsonPayload(),
             ),
             userIdentityState = provideOnlyAnonymousIdState()
         ).also {
@@ -126,7 +126,7 @@ class TrackEventTest {
             properties = provideSampleJsonPayload(),
             options = RudderOption(
                 integrations = provideSampleIntegrationsPayload(),
-                customContexts = provideSampleJsonPayload(),
+                customContext = provideSampleJsonPayload(),
                 externalIds = provideSampleExternalIdsPayload(),
             ),
             userIdentityState = provideOnlyAnonymousIdState()
@@ -148,7 +148,7 @@ class TrackEventTest {
             properties = provideSampleJsonPayload(),
             options = RudderOption(
                 integrations = provideSampleIntegrationsPayload(),
-                customContexts = provideSampleJsonPayload(),
+                customContext = provideSampleJsonPayload(),
                 externalIds = provideSampleExternalIdsPayload(),
             ),
             userIdentityState = provideOnlyAnonymousIdState()
