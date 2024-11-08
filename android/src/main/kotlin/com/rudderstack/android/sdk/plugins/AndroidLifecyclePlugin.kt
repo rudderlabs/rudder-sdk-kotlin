@@ -20,7 +20,6 @@ import com.rudderstack.kotlin.sdk.internals.utils.empty
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.properties.Delegates
 import com.rudderstack.android.sdk.Analytics as AndroidAnalytics
 import com.rudderstack.android.sdk.Configuration as AndroidConfiguration
 
@@ -43,24 +42,20 @@ internal class AndroidLifecyclePlugin : Plugin, ProcessLifecycleObserver {
     private lateinit var application: Application
 
     // state variables
-    private var shouldTrackApplicationLifecycleEvents by Delegates.notNull<Boolean>()
     private val firstLaunch = AtomicBoolean(true)
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
         (analytics.configuration as? AndroidConfiguration)?.let { config ->
             application = config.application
-            shouldTrackApplicationLifecycleEvents = config.trackApplicationLifecycleEvents
             storage = config.storage
-        }
-
-        // update the app version code and build regardless of tracking enabled or not.
-        appVersion = getAppVersion()
-        updateAppVersion()
-
-        if (shouldTrackApplicationLifecycleEvents) {
-            trackApplicationLifecycleEvents()
-            (analytics as? AndroidAnalytics)?.addLifecycleObserver(this)
+            // update the app version code and build regardless of tracking enabled or not.
+            appVersion = getAppVersion()
+            updateAppVersion()
+            if (config.trackApplicationLifecycleEvents) {
+                trackApplicationLifecycleEvents()
+                (analytics as? AndroidAnalytics)?.addLifecycleObserver(this)
+            }
         }
     }
 
