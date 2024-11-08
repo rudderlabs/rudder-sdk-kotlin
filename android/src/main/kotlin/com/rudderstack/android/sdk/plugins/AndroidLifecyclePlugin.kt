@@ -5,11 +5,10 @@ import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.annotation.VisibleForTesting
-import androidx.lifecycle.DefaultLifecycleObserver
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.ProcessLifecycleOwner
 import com.rudderstack.android.sdk.models.AppVersion
+import com.rudderstack.android.sdk.plugins.lifecyclemanagment.ProcessLifecycleObserver
+import com.rudderstack.android.sdk.utils.addLifecycleObserver
 import com.rudderstack.android.sdk.utils.logAndThrowError
 import com.rudderstack.android.sdk.utils.runOnAnalyticsThread
 import com.rudderstack.kotlin.sdk.Analytics
@@ -18,17 +17,12 @@ import com.rudderstack.kotlin.sdk.internals.plugins.Plugin
 import com.rudderstack.kotlin.sdk.internals.storage.Storage
 import com.rudderstack.kotlin.sdk.internals.storage.StorageKeys
 import com.rudderstack.kotlin.sdk.internals.utils.empty
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.properties.Delegates
+import com.rudderstack.android.sdk.Analytics as AndroidAnalytics
 import com.rudderstack.android.sdk.Configuration as AndroidConfiguration
 
-@DelicateCoroutinesApi
-private val MAIN_DISPATCHER = Dispatchers.Main
 internal const val APPLICATION_INSTALLED = "Application Installed"
 internal const val APPLICATION_OPENED = "Application Opened"
 internal const val APPLICATION_UPDATED = "Application Updated"
@@ -38,69 +32,45 @@ internal const val BUILD_KEY = "build"
 internal const val FROM_BACKGROUND = "from_background"
 
 // plugin to manage default lifecycle events
-internal class AndroidLifecyclePlugin : Plugin, DefaultLifecycleObserver {
+internal class AndroidLifecyclePlugin : Plugin, ProcessLifecycleObserver {
 
     override val pluginType: Plugin.PluginType = Plugin.PluginType.Manual
     override lateinit var analytics: Analytics
 
-    private lateinit var lifecycle: Lifecycle
     private lateinit var storage: Storage
     private lateinit var appVersion: AppVersion
     private lateinit var application: Application
 
     // state variables
-    private var shouldTrackApplicationLifecycleEvents by Delegates.notNull<Boolean>()
     private val firstLaunch = AtomicBoolean(true)
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
         (analytics.configuration as? AndroidConfiguration)?.let { config ->
             application = config.application
-            shouldTrackApplicationLifecycleEvents = config.trackApplicationLifecycleEvents
             storage = config.storage
-        }
-        lifecycle = getProcessLifecycle()
-
-        // update the app version code and build regardless of tracking enabled or not.
-        appVersion = getAppVersion()
-        updateAppVersion()
-
-        if (shouldTrackApplicationLifecycleEvents) {
-            trackApplicationLifecycleEvents()
-        }
-
-        runOnMainThread {
-            lifecycle.addObserver(this)
-        }
-    }
-
-    override fun teardown() {
-        super.teardown()
-        if (shouldTrackApplicationLifecycleEvents) {
-            runOnMainThread {
-                lifecycle.removeObserver(this)
+            // update the app version code and build regardless of tracking enabled or not.
+            appVersion = getAppVersion()
+            updateAppVersion()
+            if (config.trackApplicationLifecycleEvents) {
+                trackApplicationLifecycleEvents()
+                (analytics as? AndroidAnalytics)?.addLifecycleObserver(this)
             }
         }
     }
 
     override fun onStart(owner: LifecycleOwner) {
-        super.onStart(owner)
-        if (shouldTrackApplicationLifecycleEvents) {
-            val properties = buildJsonObject {
-                if (firstLaunch.get()) {
-                    put(VERSION_KEY, appVersion.currentVersionName)
-                }
-                put(FROM_BACKGROUND, !firstLaunch.getAndSet(false))
+        val properties = buildJsonObject {
+            if (firstLaunch.get()) {
+                put(VERSION_KEY, appVersion.currentVersionName)
             }
-            analytics.track(APPLICATION_OPENED, properties, RudderOption())
+            put(FROM_BACKGROUND, !firstLaunch.getAndSet(false))
         }
+        analytics.track(APPLICATION_OPENED, properties, RudderOption())
     }
 
     override fun onStop(owner: LifecycleOwner) {
-        super.onStop(owner)
-        if (shouldTrackApplicationLifecycleEvents) {
-            analytics.track(APPLICATION_BACKGROUNDED, options = RudderOption())
-        }
+        analytics.track(APPLICATION_BACKGROUNDED, options = RudderOption())
     }
 
     private fun trackApplicationLifecycleEvents() {
@@ -129,18 +99,13 @@ internal class AndroidLifecyclePlugin : Plugin, DefaultLifecycleObserver {
     }
 
     @VisibleForTesting
-    internal fun getProcessLifecycle(): Lifecycle {
-        return ProcessLifecycleOwner.get().lifecycle
-    }
-
-    @VisibleForTesting
     internal fun getAppVersion(): AppVersion {
         val packageManager: PackageManager = application.packageManager
         val packageInfo = try {
             packageManager.getPackageInfo(application.packageName, 0)
         } catch (e: PackageManager.NameNotFoundException) {
             val message = "Package not found: ${application.packageName}"
-            analytics.logAndThrowError(message = message, throwable = e)
+            logAndThrowError(message = message, throwable = e)
         }
 
         return AppVersion(
@@ -155,13 +120,6 @@ internal class AndroidLifecyclePlugin : Plugin, DefaultLifecycleObserver {
         analytics.runOnAnalyticsThread {
             storage.write(StorageKeys.APP_VERSION, appVersion.currentVersionName)
             storage.write(StorageKeys.APP_BUILD, appVersion.currentBuild)
-        }
-    }
-
-    @OptIn(DelicateCoroutinesApi::class)
-    private fun runOnMainThread(block: () -> Unit) = with(analytics) {
-        analyticsScope.launch(MAIN_DISPATCHER) {
-            block()
         }
     }
 }
