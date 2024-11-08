@@ -1,11 +1,11 @@
 package com.rudderstack.android.sdk.plugins
 
 import android.app.Application
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import com.rudderstack.android.sdk.Configuration
 import com.rudderstack.android.sdk.models.AppVersion
 import com.rudderstack.android.sdk.utils.MockMemoryStorage
+import com.rudderstack.android.sdk.utils.addLifecycleObserver
 import com.rudderstack.android.sdk.utils.mockAnalytics
 import com.rudderstack.kotlin.sdk.internals.models.Properties
 import com.rudderstack.kotlin.sdk.internals.models.RudderOption
@@ -14,8 +14,10 @@ import com.rudderstack.kotlin.sdk.internals.storage.StorageKeys
 import com.rudderstack.kotlin.sdk.internals.utils.empty
 import io.mockk.MockKAnnotations
 import io.mockk.Ordering
+import io.mockk.Runs
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
+import io.mockk.just
 import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
@@ -32,6 +34,7 @@ import kotlinx.serialization.json.put
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import com.rudderstack.android.sdk.Analytics as AndroidAnalytics
 
 class AndroidLifecyclePluginTest {
 
@@ -44,9 +47,6 @@ class AndroidLifecyclePluginTest {
 
     @MockK
     private lateinit var mockLifecycleOwner: LifecycleOwner
-
-    @MockK
-    private lateinit var mockLifecycle: Lifecycle
 
     private lateinit var mockStorage: Storage
 
@@ -61,8 +61,7 @@ class AndroidLifecyclePluginTest {
 
         mockStorage = MockMemoryStorage()
 
-        every { plugin.getProcessLifecycle() } returns mockLifecycle
-
+        every { (mockAnalytics as AndroidAnalytics).addLifecycleObserver(plugin) } just Runs
         every { mockAnalytics.track(any<String>(), any<JsonObject>(), any<RudderOption>()) } returns Unit
     }
 
@@ -73,15 +72,17 @@ class AndroidLifecyclePluginTest {
     }
 
     @Test
-    fun `given trackApplicationLifecycleEvents is false, when lifecycle method is called, then do not track lifecycle events`() {
-        // given
+    fun `given trackApplicationLifecycleEvents is false, when plugin is setup, then addObserver is not called`() {
         pluginSetup(trackingEnabled = false)
 
-        // when
-        plugin.onStart(mockLifecycleOwner)
+        verify(exactly = 0) { (mockAnalytics as AndroidAnalytics).addLifecycleObserver(plugin) }
+    }
 
-        // then
-        verify(exactly = 0) { mockAnalytics.track(any<String>(), any<JsonObject>(), any<RudderOption>()) }
+    @Test
+    fun `given trackApplicationLifecycleEvents is true, when plugin is setup, then addObserver is called`() {
+        pluginSetup(trackingEnabled = true)
+
+        verify(exactly = 1) { (mockAnalytics as AndroidAnalytics).addLifecycleObserver(plugin) }
     }
 
     @Test
@@ -262,22 +263,6 @@ class AndroidLifecyclePluginTest {
                     options = eq(RudderOption()),
                     properties = eq(openedProperties)
                 )
-            }
-        }
-
-    @Test
-    fun `given trackApplicationLifecycleEvents is true, when teardown is called, then observer is removed from lifecycle`() =
-        runTest(testDispatcher) {
-            // given
-            pluginSetup()
-
-            // when
-            plugin.teardown()
-            testDispatcher.scheduler.advanceUntilIdle()
-
-            // then
-            verify(exactly = 1) {
-                mockLifecycle.removeObserver(plugin)
             }
         }
 

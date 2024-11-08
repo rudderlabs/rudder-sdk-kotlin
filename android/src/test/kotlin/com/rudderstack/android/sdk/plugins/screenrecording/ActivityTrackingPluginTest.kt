@@ -3,6 +3,8 @@ package com.rudderstack.android.sdk.plugins.screenrecording
 import android.app.Activity
 import android.app.Application
 import com.rudderstack.android.sdk.Configuration
+import com.rudderstack.android.sdk.plugins.lifecyclemanagment.ActivityLifecycleObserver
+import com.rudderstack.android.sdk.utils.addLifecycleObserver
 import com.rudderstack.android.sdk.utils.automaticProperty
 import com.rudderstack.android.sdk.utils.mockAnalytics
 import com.rudderstack.kotlin.sdk.Analytics
@@ -17,6 +19,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import com.rudderstack.android.sdk.Analytics as AndroidAnalytics
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ActivityTrackingPluginTest {
@@ -46,6 +49,7 @@ class ActivityTrackingPluginTest {
 
         every { mockAnalytics.configuration } returns mockConfig
         every { mockConfig.application } returns mockApplication
+        every { (mockAnalytics as AndroidAnalytics).addLifecycleObserver(plugin) } just Runs
         every { mockConfig.trackActivities } returns true
     }
 
@@ -56,19 +60,10 @@ class ActivityTrackingPluginTest {
     }
 
     @Test
-    fun `given trackActivities is true, when setup called, then registerActivityLifecycleCallbacks is called`() {
+    fun `given trackActivities is true, when setup called, then addLifecycleObserver is called`() {
         plugin.setup(mockAnalytics)
 
-        verify(exactly = 1) { mockApplication.registerActivityLifecycleCallbacks(plugin) }
-    }
-
-    @Test
-    fun `given trackActivities is true, when teardown called, then unregisterActivityLifecycleCallbacks is called`() {
-        plugin.setup(mockAnalytics)
-
-        plugin.teardown()
-
-        verify(exactly = 1) { mockApplication.unregisterActivityLifecycleCallbacks(plugin) }
+        verify(exactly = 1) { (mockAnalytics as AndroidAnalytics).addLifecycleObserver(plugin) }
     }
 
     @Test
@@ -84,11 +79,11 @@ class ActivityTrackingPluginTest {
     }
 
     @Test
-    fun `given trackActivities is false, when setup called, then registerActivityLifecycleCallbacks is not called`() {
+    fun `given trackActivities is false, when setup called, then addLifecycleObserver is not called`() {
         every { mockConfig.trackActivities } returns false
 
         plugin.setup(mockAnalytics)
 
-        verify(exactly = 0) { mockApplication.registerActivityLifecycleCallbacks(any()) }
+        verify(exactly = 0) { (mockAnalytics as AndroidAnalytics).addLifecycleObserver(any<ActivityLifecycleObserver>()) }
     }
 }

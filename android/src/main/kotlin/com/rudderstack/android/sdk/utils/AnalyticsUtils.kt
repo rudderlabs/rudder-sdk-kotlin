@@ -1,7 +1,6 @@
 package com.rudderstack.android.sdk.utils
 
 import com.rudderstack.kotlin.sdk.Analytics
-import com.rudderstack.kotlin.sdk.internals.logger.LoggerAnalytics
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -26,15 +25,4 @@ internal fun Analytics.runOnAnalyticsThread(block: suspend () -> Unit) = analyti
 @DelicateCoroutinesApi
 internal fun AndroidAnalytics.runOnMainThread(block: () -> Unit) = analyticsScope.launch(MAIN_DISPATCHER) {
     block()
-}
-
-/**
- * Logs an error `message` and then throws a `throwable` (`IllegalStateException` by default).
- *
- * @param message The error message to be logged.
- * @param throwable The error to be thrown.
- */
-internal fun Analytics.logAndThrowError(message: String, throwable: Throwable? = null): Nothing {
-    LoggerAnalytics.error(message)
-    throw throwable ?: error(message)
 }

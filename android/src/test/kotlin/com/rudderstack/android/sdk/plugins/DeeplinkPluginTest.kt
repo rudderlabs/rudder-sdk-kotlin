@@ -6,12 +6,15 @@ import android.content.Intent
 import android.net.Uri
 import com.rudderstack.android.sdk.Configuration
 import com.rudderstack.android.sdk.storage.CheckBuildVersionUseCase
+import com.rudderstack.android.sdk.utils.addLifecycleObserver
 import com.rudderstack.android.sdk.utils.mockAnalytics
 import com.rudderstack.android.sdk.utils.mockUri
 import com.rudderstack.kotlin.sdk.internals.models.RudderOption
 import io.mockk.MockKAnnotations
+import io.mockk.Runs
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
+import io.mockk.just
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
@@ -27,6 +30,7 @@ import kotlinx.serialization.json.put
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import com.rudderstack.android.sdk.Analytics as AndroidAnalytics
 
 class DeeplinkPluginTest {
 
@@ -54,13 +58,14 @@ class DeeplinkPluginTest {
 
         plugin = DeeplinkPlugin(mockCheckBuildVersionUseCase)
         every { mockAnalytics.track(any<String>(), any<JsonObject>(), any<RudderOption>()) } returns Unit
-        every { mockApplication.registerActivityLifecycleCallbacks(plugin) } returns Unit
-        every { mockApplication.unregisterActivityLifecycleCallbacks(plugin) } returns Unit
 
         every { mockActivity.intent.data } returns mockUri()
         every { mockActivity.referrer } returns mockUri(scheme = "app", host = "testApplication")
-        every { mockActivity.intent.getParcelableExtra<Uri?>(Intent.EXTRA_REFERRER) } returns mockUri(scheme = "app", host = "testApplication")
-
+        every { mockActivity.intent.getParcelableExtra<Uri?>(Intent.EXTRA_REFERRER) } returns mockUri(
+            scheme = "app",
+            host = "testApplication"
+        )
+        every { (mockAnalytics as AndroidAnalytics).addLifecycleObserver(plugin) } just Runs
         every { mockCheckBuildVersionUseCase.isAndroidVersionLollipopAndAbove() } returns true
     }
 
@@ -71,7 +76,7 @@ class DeeplinkPluginTest {
     }
 
     @Test
-    fun `given trackDeepLinks is false, when pluginSetup is called, then registerActivityLifecycleCallbacks should not be called`() =
+    fun `given trackDeepLinks is false, when pluginSetup is called, then addLifecycleObserver should not be called`() =
         runTest {
             val trackingEnabled = false
             val mockConfiguration = mockk<Configuration> {
@@ -82,11 +87,11 @@ class DeeplinkPluginTest {
 
             plugin.setup(analytics = mockAnalytics)
 
-            verify(exactly = 0) { mockApplication.registerActivityLifecycleCallbacks(plugin) }
+            verify(exactly = 0) { (mockAnalytics as AndroidAnalytics).addLifecycleObserver(plugin) }
         }
 
     @Test
-    fun `given trackDeepLinks is true, when pluginSetup called again, then registerActivityLifecycleCallbacks is called once`() =
+    fun `given trackDeepLinks is true, when pluginSetup called again, then addLifecycleObserver is called once`() =
         runTest {
             val trackingEnabled = true
             val mockConfiguration = mockk<Configuration> {
@@ -97,7 +102,7 @@ class DeeplinkPluginTest {
 
             plugin.setup(analytics = mockAnalytics)
 
-            verify(exactly = 1) { mockApplication.registerActivityLifecycleCallbacks(plugin) }
+            verify(exactly = 1) { (mockAnalytics as AndroidAnalytics).addLifecycleObserver(plugin) }
         }
 
     @Test
@@ -151,23 +156,6 @@ class DeeplinkPluginTest {
                     options = eq(RudderOption())
                 )
             }
-        }
-
-    @Test
-    fun `given trackDeepLinks is enabled, when teardown is called, then unregisterActivityLifecycleCallbacks is called`() =
-        runTest(testDispatcher) {
-            val trackingEnabled = true
-            val mockConfiguration = mockk<Configuration> {
-                every { application } returns mockApplication
-                every { trackDeeplinks } returns trackingEnabled
-            }
-            every { mockAnalytics.configuration } returns mockConfiguration
-
-            plugin.setup(analytics = mockAnalytics)
-            plugin.teardown()
-            testDispatcher.scheduler.advanceUntilIdle()
-
-            verify(exactly = 1) { mockApplication.unregisterActivityLifecycleCallbacks(plugin) }
         }
 
     @Test
