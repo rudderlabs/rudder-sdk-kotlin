@@ -8,7 +8,6 @@ import com.rudderstack.kotlin.sdk.internals.statemanagement.FlowState
 import com.rudderstack.kotlin.sdk.internals.storage.StorageKeys
 import com.rudderstack.kotlin.sdk.internals.utils.LenientJson
 import com.rudderstack.kotlin.sdk.internals.utils.empty
-import com.rudderstack.kotlin.sdk.internals.utils.mockAnalytics
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify

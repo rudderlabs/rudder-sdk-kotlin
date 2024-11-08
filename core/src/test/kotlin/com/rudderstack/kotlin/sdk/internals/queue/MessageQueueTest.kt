@@ -10,8 +10,8 @@ import com.rudderstack.kotlin.sdk.internals.policies.FlushPoliciesFacade
 import com.rudderstack.kotlin.sdk.internals.storage.Storage
 import com.rudderstack.kotlin.sdk.internals.storage.StorageKeys
 import com.rudderstack.kotlin.sdk.internals.utils.empty
+import com.rudderstack.kotlin.sdk.mockAnalytics
 import com.rudderstack.kotlin.sdk.setupLogger
-import com.rudderstack.kotlin.sdk.utils.mockAnalytics
 import io.mockk.MockKAnnotations
 import io.mockk.coEvery
 import io.mockk.coVerify

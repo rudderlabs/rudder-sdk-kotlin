@@ -1,12 +1,12 @@
 package com.rudderstack.kotlin.sdk.internals.models
 
+import com.rudderstack.kotlin.sdk.applyMockedValues
 import com.rudderstack.kotlin.sdk.internals.models.provider.provideSampleExternalIdsPayload
 import com.rudderstack.kotlin.sdk.internals.models.provider.provideSampleIntegrationsPayload
 import com.rudderstack.kotlin.sdk.internals.models.provider.provideSampleJsonPayload
 import com.rudderstack.kotlin.sdk.internals.platform.PlatformType
-import com.rudderstack.kotlin.sdk.internals.utils.applyMockedValues
 import com.rudderstack.kotlin.sdk.internals.utils.encodeToString
-import com.rudderstack.kotlin.sdk.internals.utils.provideOnlyAnonymousIdState
+import com.rudderstack.kotlin.sdk.provideOnlyAnonymousIdState
 import com.rudderstack.kotlin.sdk.readFileTrimmed
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put

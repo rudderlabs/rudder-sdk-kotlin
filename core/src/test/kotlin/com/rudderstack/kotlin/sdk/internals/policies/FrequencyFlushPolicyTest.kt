@@ -1,9 +1,9 @@
 package com.rudderstack.kotlin.sdk.internals.policies
 
-import com.rudderstack.kotlin.sdk.internals.utils.mockAnalytics
-import com.rudderstack.kotlin.sdk.utils.advanceTimeBy
+import com.rudderstack.kotlin.sdk.advanceTimeBy
 import io.mockk.coVerify
 import kotlinx.coroutines.test.StandardTestDispatcher
+import com.rudderstack.kotlin.sdk.mockAnalytics
 import kotlinx.coroutines.test.TestScope
 import org.junit.Test
 
