@@ -1,9 +1,6 @@
-package com.rudderstack.kotlin.sdk.utils
+package com.rudderstack.kotlin.sdk.internals.utils
 
 import com.rudderstack.kotlin.sdk.internals.models.ExternalId
-import com.rudderstack.kotlin.sdk.internals.utils.LenientJson
-import com.rudderstack.kotlin.sdk.internals.utils.toJsonObject
-
 import kotlinx.serialization.encodeToString
 import org.junit.Test
 import org.skyscreamer.jsonassert.JSONAssert

@@ -1,4 +1,4 @@
-package com.rudderstack.kotlin.sdk.utils
+package com.rudderstack.kotlin.sdk.internals.utils
 
 import com.rudderstack.kotlin.sdk.internals.utils.Base64.decodeFromBase64
 import com.rudderstack.kotlin.sdk.internals.utils.Base64.encodeToBase64

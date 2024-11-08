@@ -1,8 +1,6 @@
-package com.rudderstack.kotlin.sdk.utils
+package com.rudderstack.kotlin.sdk.internals.utils
 
 import com.rudderstack.kotlin.sdk.internals.models.DEFAULT_SENT_AT_TIMESTAMP
-import com.rudderstack.kotlin.sdk.internals.utils.DateTimeUtils
-import com.rudderstack.kotlin.sdk.internals.utils.JsonSentAtUpdater
 import io.mockk.every
 import io.mockk.mockkObject
 import org.junit.Assert.assertEquals
