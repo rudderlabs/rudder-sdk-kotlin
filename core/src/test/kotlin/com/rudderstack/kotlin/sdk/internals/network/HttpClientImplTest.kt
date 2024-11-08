@@ -3,6 +3,7 @@ package com.rudderstack.kotlin.sdk.internals.network
 import com.rudderstack.kotlin.sdk.internals.network.provider.provideErrorMessage
 import com.rudderstack.kotlin.sdk.internals.network.provider.provideHttpClientImplForGetRequest
 import com.rudderstack.kotlin.sdk.internals.network.provider.provideHttpClientImplForPostRequest
+import com.rudderstack.kotlin.sdk.internals.utils.Result
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
@@ -286,14 +287,14 @@ class HttpClientImplTest {
         assertNotEquals(getHttpClient, postHttpClient)
     }
 
-    private fun assertSuccess(result: Result<String>) {
+    private fun assertSuccess(result: Result<String, Exception>) {
         assertTrue(result is Result.Success)
         verify { mockConnection.connect() }
         verify { mockConnection.disconnect() }
     }
 
     private fun assertFailure(
-        result: Result<String>,
+        result: Result<String, Exception>,
         expectedStatus: ErrorStatus,
         expectedException: Exception
     ) {

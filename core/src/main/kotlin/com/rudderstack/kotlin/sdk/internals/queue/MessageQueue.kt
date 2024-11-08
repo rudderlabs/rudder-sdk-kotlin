@@ -7,10 +7,10 @@ import com.rudderstack.kotlin.sdk.internals.models.Message
 import com.rudderstack.kotlin.sdk.internals.models.MessageType
 import com.rudderstack.kotlin.sdk.internals.network.HttpClient
 import com.rudderstack.kotlin.sdk.internals.network.HttpClientImpl
-import com.rudderstack.kotlin.sdk.internals.network.Result
 import com.rudderstack.kotlin.sdk.internals.policies.FlushPoliciesFacade
 import com.rudderstack.kotlin.sdk.internals.storage.StorageKeys
 import com.rudderstack.kotlin.sdk.internals.utils.JsonSentAtUpdater
+import com.rudderstack.kotlin.sdk.internals.utils.Result
 import com.rudderstack.kotlin.sdk.internals.utils.empty
 import com.rudderstack.kotlin.sdk.internals.utils.encodeToBase64
 import com.rudderstack.kotlin.sdk.internals.utils.encodeToString
@@ -144,7 +144,7 @@ internal class MessageQueue(
                 try {
                     val batchPayload = jsonSentAtUpdater.updateSentAt(readFileAsString(filePath))
                     LoggerAnalytics.debug("-------> readFileAsString: $batchPayload")
-                    when (val result: Result<String> = httpClientFactory.sendData(batchPayload)) {
+                    when (val result: Result<String, Exception> = httpClientFactory.sendData(batchPayload)) {
                         is Result.Success -> {
                             LoggerAnalytics.debug("Event uploaded successfully. Server response: ${result.response}")
                             shouldCleanup = true

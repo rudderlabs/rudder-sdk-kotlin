@@ -1,5 +1,6 @@
 package com.rudderstack.kotlin.sdk.internals.network
 
+import com.rudderstack.kotlin.sdk.internals.utils.Result
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -56,7 +57,7 @@ interface HttpClient {
      *
      * @return A [Result] containing the response data as a [String], or an error message if the request fails.
      */
-    fun getData(): Result<String>
+    fun getData(): Result<String, Exception>
 
     /**
      * Sends data to the server using a POST request.
@@ -64,7 +65,7 @@ interface HttpClient {
      * @param body The body of the POST request as a [String].
      * @return A [Result] containing the response data as a [String], or an error message if the request fails.
      */
-    fun sendData(body: String): Result<String>
+    fun sendData(body: String): Result<String, Exception>
 }
 
 /**
