@@ -4,6 +4,7 @@ import com.rudderstack.kotlin.sdk.internals.logger.KotlinLogger
 import com.rudderstack.kotlin.sdk.internals.logger.Logger
 import com.rudderstack.kotlin.sdk.internals.logger.LoggerAnalytics
 import com.rudderstack.kotlin.sdk.internals.models.GroupEvent
+import com.rudderstack.kotlin.sdk.internals.models.IdentifyEvent
 import com.rudderstack.kotlin.sdk.internals.models.Message
 import com.rudderstack.kotlin.sdk.internals.models.Properties
 import com.rudderstack.kotlin.sdk.internals.models.RudderOption
@@ -11,8 +12,10 @@ import com.rudderstack.kotlin.sdk.internals.models.RudderTraits
 import com.rudderstack.kotlin.sdk.internals.models.ScreenEvent
 import com.rudderstack.kotlin.sdk.internals.models.SourceConfig
 import com.rudderstack.kotlin.sdk.internals.models.TrackEvent
-import com.rudderstack.kotlin.sdk.internals.models.UserIdentity
 import com.rudderstack.kotlin.sdk.internals.models.emptyJsonObject
+import com.rudderstack.kotlin.sdk.internals.models.useridentity.SetUserIdTraitsAndExternalIdsAction
+import com.rudderstack.kotlin.sdk.internals.models.useridentity.UserIdentity
+import com.rudderstack.kotlin.sdk.internals.models.useridentity.storeUserIdTraitsAndExternalIds
 import com.rudderstack.kotlin.sdk.internals.platform.Platform
 import com.rudderstack.kotlin.sdk.internals.platform.PlatformType
 import com.rudderstack.kotlin.sdk.internals.plugins.Plugin
@@ -112,6 +115,7 @@ open class Analytics protected constructor(
             event = name,
             properties = properties,
             options = options,
+            userIdentityState = userIdentityState.value,
         )
 
         processMessageChannel.trySend(message)
@@ -139,6 +143,7 @@ open class Analytics protected constructor(
             screenName = screenName,
             properties = updatedProperties,
             options = options,
+            userIdentityState = userIdentityState.value,
         )
 
         processMessageChannel.trySend(message)
@@ -158,6 +163,43 @@ open class Analytics protected constructor(
             groupId = groupId,
             traits = traits,
             options = options,
+            userIdentityState = userIdentityState.value,
+        )
+
+        processMessageChannel.trySend(message)
+    }
+
+    /**
+     * The `identify` call allows you to identify a visiting user and associate their actions to that `userId`.
+     * It also lets you record traits about the user like their name, email address, etc.
+     *
+     * @param userId The unique identifier for the user. Defaults to an empty string.
+     * @param traits A [RudderTraits] object containing key-value pairs of user traits. Defaults to an empty JSON object.
+     * @param options A [RudderOption] object to specify additional event options. Defaults to an empty RudderOption object.
+     */
+    @JvmOverloads
+    fun identify(
+        userId: String = String.empty(),
+        traits: RudderTraits = emptyJsonObject,
+        options: RudderOption = RudderOption()
+    ) {
+        userIdentityState.dispatch(
+            SetUserIdTraitsAndExternalIdsAction(
+                newUserId = userId,
+                newTraits = traits,
+                newExternalIds = options.externalIds,
+                analytics = this
+            )
+        )
+        analyticsScope.launch {
+            userIdentityState.value.storeUserIdTraitsAndExternalIds(
+                storage = configuration.storage
+            )
+        }
+
+        val message = IdentifyEvent(
+            options = options,
+            userIdentityState = userIdentityState.value,
         )
 
         processMessageChannel.trySend(message)
@@ -235,7 +277,7 @@ open class Analytics protected constructor(
     private fun processMessages() {
         analyticsScope.launch(analyticsDispatcher) {
             for (message in processMessageChannel) {
-                message.updateData(anonymousID = getAnonymousId(), platform = getPlatformType())
+                message.updateData(platform = getPlatformType())
                 pluginChain.process(message)
             }
         }

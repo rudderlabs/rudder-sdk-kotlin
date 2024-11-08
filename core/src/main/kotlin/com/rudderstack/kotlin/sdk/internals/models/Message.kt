@@ -1,10 +1,13 @@
 package com.rudderstack.kotlin.sdk.internals.models
 
 import com.rudderstack.kotlin.sdk.internals.models.exception.UnknownMessageKeyException
+import com.rudderstack.kotlin.sdk.internals.models.useridentity.UserIdentity
 import com.rudderstack.kotlin.sdk.internals.platform.PlatformType
 import com.rudderstack.kotlin.sdk.internals.utils.DateTimeUtils
-import com.rudderstack.kotlin.sdk.internals.utils.addAnonymousIdToTraits
+import com.rudderstack.kotlin.sdk.internals.utils.addPersistedValues
 import com.rudderstack.kotlin.sdk.internals.utils.empty
+import com.rudderstack.kotlin.sdk.internals.utils.provideEmptyUserIdentityState
+import com.rudderstack.kotlin.sdk.internals.utils.setGroupEventTraits
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -54,7 +57,10 @@ enum class MessageType {
     Screen,
 
     @SerialName("group")
-    Group
+    Group,
+
+    @SerialName("identify")
+    Identify
 }
 
 /**
@@ -68,6 +74,7 @@ enum class MessageType {
  * @property messageId A unique identifier for the message.
  * @property originalTimestamp The original timestamp when the message was created.
  * @property context The analytics context associated with the message.
+ * @property userId The user ID associated with the message.
  * @property sentAt The timestamp when the message is sent to the server.
  * @property integrations The integrations options associated with the message.
  * @property anonymousId The anonymous ID is the Pseudo-identifier for the user in cases where userId is absent.
@@ -81,6 +88,8 @@ sealed class Message {
     open var messageId: String = UUID.randomUUID().toString()
     open var originalTimestamp: String = DateTimeUtils.now()
     open var context: AnalyticsContext = emptyJsonObject
+    open var userId: String = String.empty()
+    internal open var userIdentityState: UserIdentity = provideEmptyUserIdentityState()
 
     // this sentAt timestamp value will be updated just before sending the payload to server
     // CAUTION: Do not change the default value for this param.
@@ -92,11 +101,11 @@ sealed class Message {
     @Transient
     abstract var options: RudderOption
 
-    internal fun updateData(anonymousID: String, platform: PlatformType) {
-        this.anonymousId = anonymousID
-        this.addAnonymousIdToTraits()
+    internal fun updateData(platform: PlatformType) {
+        this.setGroupEventTraits()
         this.channel = platform
         this.updateOption()
+        this.addPersistedValues()
     }
 
     /**
@@ -126,6 +135,10 @@ sealed class Message {
                 options = this.options
             )
 
+            is IdentifyEvent -> IdentifyEvent(
+                options = this.options,
+            )
+
             is FlushEvent -> FlushEvent()
         }.apply {
             messageId = original.messageId
@@ -134,6 +147,7 @@ sealed class Message {
             integrations = original.integrations
             anonymousId = original.anonymousId
             channel = original.channel
+            userId = original.userId
         }
         @Suppress("UNCHECKED_CAST")
         return copy as T // This is ok because resultant type will be same as input type
@@ -170,6 +184,7 @@ data class FlushEvent(
  * @property event The name of the track event.
  * @property properties The properties associated with the track event.
  * @property options Additional options for the event, encapsulated in a [RudderOption] instance.
+ * @property userIdentityState The [UserIdentity] information associated with the track event.
  */
 @Serializable
 @SerialName("track")
@@ -177,6 +192,7 @@ data class TrackEvent(
     var event: String,
     var properties: Properties,
     @Transient override var options: RudderOption = RudderOption(),
+    @Transient override var userIdentityState: UserIdentity = provideEmptyUserIdentityState()
 ) : Message() {
 
     override var type: MessageType = MessageType.Track
@@ -184,6 +200,7 @@ data class TrackEvent(
     override var context: AnalyticsContext = super.context
     override var originalTimestamp: String = super.originalTimestamp
     override val sentAt: String = super.sentAt
+    override var userId: String = super.userId
     override lateinit var integrations: Map<String, Boolean>
     override lateinit var anonymousId: String
     override lateinit var channel: PlatformType
@@ -197,6 +214,7 @@ data class TrackEvent(
  * @property screenName The name of the screen event.
  * @property properties The properties associated with the screen event.
  * @property options Additional options for the event, encapsulated in a [RudderOption] instance.
+ * @property userIdentityState The [UserIdentity] information associated with the screen event.
  */
 @Serializable
 @SerialName("screen")
@@ -204,6 +222,7 @@ data class ScreenEvent(
     @SerialName("event") var screenName: String,
     var properties: Properties,
     @Transient override var options: RudderOption = RudderOption(),
+    @Transient override var userIdentityState: UserIdentity = provideEmptyUserIdentityState()
 ) : Message() {
 
     override var type: MessageType = MessageType.Screen
@@ -211,6 +230,7 @@ data class ScreenEvent(
     override var context: AnalyticsContext = super.context
     override var originalTimestamp: String = super.originalTimestamp
     override val sentAt: String = super.sentAt
+    override var userId: String = super.userId
     override lateinit var integrations: Map<String, Boolean>
     override lateinit var anonymousId: String
     override lateinit var channel: PlatformType
@@ -224,6 +244,7 @@ data class ScreenEvent(
  * @property groupId The group id of group event.
  * @property traits The traits associated with the group. event.
  * @property options Additional options for the event, encapsulated in a [RudderOption] instance.
+ * @property userIdentityState The [UserIdentity] information associated with the group event.
  */
 @Serializable
 @SerialName("group")
@@ -231,6 +252,7 @@ data class GroupEvent(
     var groupId: String,
     var traits: RudderTraits = emptyJsonObject,
     @Transient override var options: RudderOption = RudderOption(),
+    @Transient override var userIdentityState: UserIdentity = provideEmptyUserIdentityState()
 ) : Message() {
 
     override var type: MessageType = MessageType.Group
@@ -238,6 +260,7 @@ data class GroupEvent(
     override var context: AnalyticsContext = super.context
     override var originalTimestamp: String = super.originalTimestamp
     override val sentAt: String = super.sentAt
+    override var userId: String = super.userId
     override lateinit var integrations: Map<String, Boolean>
     override lateinit var anonymousId: String
     override lateinit var channel: PlatformType

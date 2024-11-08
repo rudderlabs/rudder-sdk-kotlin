@@ -40,6 +40,12 @@ fun trackMessageKotlinAPI(analytics: Analytics) {
         options = RudderOption(),
     )
 
+    analytics.identify(
+        userId = "User 1",
+        traits = RudderTraits(emptyMap()),
+        options = RudderOption(),
+    )
+
     analytics.group(
         groupId = "Group at ${Date()}",
         traits = RudderTraits(emptyMap()),

@@ -3,6 +3,7 @@ package com.rudderstack.kotlin.sdk.plugins
 import com.rudderstack.kotlin.sdk.Analytics
 import com.rudderstack.kotlin.sdk.internals.models.FlushEvent
 import com.rudderstack.kotlin.sdk.internals.models.GroupEvent
+import com.rudderstack.kotlin.sdk.internals.models.IdentifyEvent
 import com.rudderstack.kotlin.sdk.internals.models.Message
 import com.rudderstack.kotlin.sdk.internals.models.ScreenEvent
 import com.rudderstack.kotlin.sdk.internals.models.TrackEvent
@@ -27,6 +28,11 @@ internal class RudderStackDataplanePlugin : MessagePlugin {
     }
 
     override fun group(payload: GroupEvent): Message? {
+        enqueue(payload)
+        return payload
+    }
+
+    override fun identify(payload: IdentifyEvent): Message {
         enqueue(payload)
         return payload
     }

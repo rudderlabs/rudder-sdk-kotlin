@@ -3,6 +3,7 @@ package com.rudderstack.kotlin.sdk.internals.utils
 import com.rudderstack.kotlin.sdk.Analytics
 import com.rudderstack.kotlin.sdk.internals.models.Message
 import com.rudderstack.kotlin.sdk.internals.models.emptyJsonObject
+import com.rudderstack.kotlin.sdk.internals.models.useridentity.UserIdentity
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.TestDispatcher
@@ -23,4 +24,13 @@ fun Message.applyMockedValues() {
     this.originalTimestamp = "<original-timestamp>"
     this.context = emptyJsonObject
     this.messageId = "<message-id>"
+}
+
+internal fun provideOnlyAnonymousIdState(): UserIdentity {
+    return UserIdentity(
+        anonymousId = ANONYMOUS_ID,
+        userId = String.empty(),
+        traits = emptyJsonObject,
+        externalIds = emptyList()
+    )
 }

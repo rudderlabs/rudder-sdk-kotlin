@@ -1,22 +1,18 @@
 {
-  "event": "Test Screen 1",
-  "properties": {
-    "name": "Test Screen 1"
-  },
-  "type": "screen",
+  "type": "identify",
   "messageId": "<message-id>",
   "context": {
     "traits": {
-      "anonymousId": "<anonymous-id>"
+      "anonymousId": "<anonymous-id>",
+      "userId": "User Id 1",
+      "id": "User Id 1"
     }
   },
   "originalTimestamp": "<original-timestamp>",
   "sentAt": "{{ RSA_DEF_SENT_AT_TS }}",
+  "userId": "User Id 1",
   "integrations": {
-    "All": false,
-    "Amplitude": true,
-    "Firebase": true,
-    "Braze": false
+    "All": true
   },
   "anonymousId": "<anonymous-id>",
   "channel": "mobile"

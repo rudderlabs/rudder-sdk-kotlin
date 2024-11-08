@@ -1,5 +1,6 @@
 package com.rudderstack.kotlin.sdk.internals.models.provider
 
+import com.rudderstack.kotlin.sdk.internals.models.ExternalId
 import com.rudderstack.kotlin.sdk.internals.models.emptyJsonObject
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
@@ -34,6 +35,6 @@ fun provideSampleIntegrationsPayload() = mapOf(
 )
 
 fun provideSampleExternalIdsPayload() = listOf(
-    mapOf("key-1" to "value-1"),
-    mapOf("key-2" to "value-2"),
+    ExternalId("key-1", "value-1"),
+    ExternalId("key-2", "value-2"),
 )

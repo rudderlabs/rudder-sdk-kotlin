@@ -4,9 +4,9 @@ import com.rudderstack.kotlin.sdk.internals.models.provider.provideSampleExterna
 import com.rudderstack.kotlin.sdk.internals.models.provider.provideSampleIntegrationsPayload
 import com.rudderstack.kotlin.sdk.internals.models.provider.provideSampleJsonPayload
 import com.rudderstack.kotlin.sdk.internals.platform.PlatformType
-import com.rudderstack.kotlin.sdk.internals.utils.ANONYMOUS_ID
 import com.rudderstack.kotlin.sdk.internals.utils.applyMockedValues
 import com.rudderstack.kotlin.sdk.internals.utils.encodeToString
+import com.rudderstack.kotlin.sdk.internals.utils.provideOnlyAnonymousIdState
 import com.rudderstack.kotlin.sdk.readFileTrimmed
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -35,9 +35,10 @@ class ScreenEventTest {
             screenName = SCREEN_NAME,
             properties = provideDefaultScreenProperties(),
             options = RudderOption(),
+            userIdentityState = provideOnlyAnonymousIdState()
         ).also {
             it.applyMockedValues()
-            it.updateData(ANONYMOUS_ID, PlatformType.Mobile)
+            it.updateData(PlatformType.Mobile)
         }
 
         val actualPayloadString = screenEvent.encodeToString()
@@ -52,9 +53,10 @@ class ScreenEventTest {
             screenName = SCREEN_NAME,
             properties = provideScreenPropertiesWithOnlyCategory(),
             options = RudderOption(),
+            userIdentityState = provideOnlyAnonymousIdState()
         ).also {
             it.applyMockedValues()
-            it.updateData(ANONYMOUS_ID, PlatformType.Mobile)
+            it.updateData(PlatformType.Mobile)
         }
 
         val actualPayloadString = screenEvent.encodeToString()
@@ -69,9 +71,10 @@ class ScreenEventTest {
             screenName = SCREEN_NAME,
             properties = provideAllScreenProperties(),
             options = RudderOption(),
+            userIdentityState = provideOnlyAnonymousIdState()
         ).also {
             it.applyMockedValues()
-            it.updateData(ANONYMOUS_ID, PlatformType.Mobile)
+            it.updateData(PlatformType.Mobile)
         }
 
         val actualPayloadString = screenEvent.encodeToString()
@@ -88,9 +91,10 @@ class ScreenEventTest {
             options = RudderOption(
                 integrations = provideSampleIntegrationsPayload(),
             ),
+            userIdentityState = provideOnlyAnonymousIdState()
         ).also {
             it.applyMockedValues()
-            it.updateData(ANONYMOUS_ID, PlatformType.Mobile)
+            it.updateData(PlatformType.Mobile)
         }
 
         val actualPayloadString = screenEvent.encodeToString()
@@ -105,11 +109,12 @@ class ScreenEventTest {
             screenName = SCREEN_NAME,
             properties = provideDefaultScreenProperties(),
             options = RudderOption(
-                customContexts = provideSampleJsonPayload(),
+                customContext = provideSampleJsonPayload(),
             ),
+            userIdentityState = provideOnlyAnonymousIdState()
         ).also {
             it.applyMockedValues()
-            it.updateData(ANONYMOUS_ID, PlatformType.Mobile)
+            it.updateData(PlatformType.Mobile)
         }
 
         val actualPayloadString = screenEvent.encodeToString()
@@ -126,9 +131,10 @@ class ScreenEventTest {
             options = RudderOption(
                 externalIds = provideSampleExternalIdsPayload(),
             ),
+            userIdentityState = provideOnlyAnonymousIdState()
         ).also {
             it.applyMockedValues()
-            it.updateData(ANONYMOUS_ID, PlatformType.Mobile)
+            it.updateData(PlatformType.Mobile)
         }
 
         val actualPayloadString = screenEvent.encodeToString()
@@ -144,12 +150,13 @@ class ScreenEventTest {
             properties = provideAllScreenProperties(),
             options = RudderOption(
                 integrations = provideSampleIntegrationsPayload(),
-                customContexts = provideSampleJsonPayload(),
+                customContext = provideSampleJsonPayload(),
                 externalIds = provideSampleExternalIdsPayload(),
             ),
+            userIdentityState = provideOnlyAnonymousIdState()
         ).also {
             it.applyMockedValues()
-            it.updateData(ANONYMOUS_ID, PlatformType.Mobile)
+            it.updateData(PlatformType.Mobile)
         }
 
         val actualPayloadString = screenEvent.encodeToString()
@@ -165,12 +172,13 @@ class ScreenEventTest {
             properties = provideAllScreenProperties(),
             options = RudderOption(
                 integrations = provideSampleIntegrationsPayload(),
-                customContexts = provideSampleJsonPayload(),
+                customContext = provideSampleJsonPayload(),
                 externalIds = provideSampleExternalIdsPayload(),
             ),
+            userIdentityState = provideOnlyAnonymousIdState()
         ).also {
             it.applyMockedValues()
-            it.updateData(ANONYMOUS_ID, PlatformType.Server)
+            it.updateData(PlatformType.Server)
         }
 
         val actualPayloadString = screenEvent.encodeToString()

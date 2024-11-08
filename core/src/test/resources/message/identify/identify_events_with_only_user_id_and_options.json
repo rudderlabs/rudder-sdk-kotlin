@@ -1,27 +1,5 @@
 {
-  "event": "Test Screen 1",
-  "properties": {
-    "key-1": "String value",
-    "key-2": 123,
-    "key-3": true,
-    "key-4": 123.456,
-    "key-5": {
-      "key-6": "String value",
-      "key-7": 123,
-      "key-8": true,
-      "key-9": 123.456
-    },
-    "key-10": [
-      "String value",
-      123,
-      true,
-      123.456
-    ],
-    "key-11": {},
-    "name": "Test Screen 1",
-    "category": "Main"
-  },
-  "type": "screen",
+  "type": "identify",
   "messageId": "<message-id>",
   "context": {
     "key-1": "String value",
@@ -42,11 +20,24 @@
     ],
     "key-11": {},
     "traits": {
-      "anonymousId": "<anonymous-id>"
-    }
+      "anonymousId": "<anonymous-id>",
+      "userId": "User Id 1",
+      "id": "User Id 1"
+    },
+    "externalId": [
+      {
+        "id": "value-1",
+        "type": "key-1"
+      },
+      {
+        "id": "value-2",
+        "type": "key-2"
+      }
+    ]
   },
   "originalTimestamp": "<original-timestamp>",
   "sentAt": "{{ RSA_DEF_SENT_AT_TS }}",
+  "userId": "User Id 1",
   "integrations": {
     "All": false,
     "Amplitude": true,
@@ -54,5 +45,5 @@
     "Braze": false
   },
   "anonymousId": "<anonymous-id>",
-  "channel": "server"
+  "channel": "mobile"
 }

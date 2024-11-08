@@ -114,9 +114,17 @@ class MainActivity : ComponentActivity() {
                     AnalyticsState.TrackMessage,
                     AnalyticsState.ScreenMessage,
                     AnalyticsState.GroupMessage,
-                    AnalyticsState.ForceFlush,
                 ),
                 weight = .3f,
+                viewModel = viewModel
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            CreateRowOfApis(
+                names = arrayOf(
+                    AnalyticsState.IdentifyMessage,
+                    AnalyticsState.ForceFlush,
+                ),
+                weight = .5f,
                 viewModel = viewModel
             )
             Spacer(modifier = Modifier.height(2.dp))

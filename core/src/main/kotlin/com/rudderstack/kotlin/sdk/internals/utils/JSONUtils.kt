@@ -2,12 +2,17 @@
 
 package com.rudderstack.kotlin.sdk.internals.utils
 
+import com.rudderstack.kotlin.sdk.internals.models.ExternalId
 import com.rudderstack.kotlin.sdk.internals.models.Message
 import com.rudderstack.kotlin.sdk.internals.models.emptyJsonObject
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonObject
 
 /**
@@ -44,7 +49,9 @@ internal fun Message.encodeToString(): String {
     val stringMessage = LenientJson.encodeToString(this)
     val filteredMessage = LenientJson.parseToJsonElement(stringMessage)
         .jsonObject.filterNot { (k, v) ->
-            (k == "properties" && v == emptyJsonObject) || (k == "traits" && v == emptyJsonObject)
+            (k == "properties" && v == emptyJsonObject) ||
+                (k == "traits" && v == emptyJsonObject) ||
+                (k == "userId" && v is JsonPrimitive && v.content == String.empty())
         }
     return LenientJson.encodeToString(filteredMessage)
 }
@@ -70,5 +77,32 @@ internal infix fun JsonObject.mergeWithHigherPriorityTo(other: JsonObject): Json
 fun JsonObjectBuilder.putAll(jsonObject: JsonObject) {
     jsonObject.forEach { (key, value) ->
         put(key, value)
+    }
+}
+
+/**
+ * Converts a list of `ExternalIds` to a JsonObject.
+ *
+ * If the list is empty, the method returns an empty JSON object.
+ * Else the method returns a JSON object with the following structure:
+ *
+ * ```
+ * "externalId": [
+ *     {
+ *         "id": "<some-value>",
+ *         "type": "brazeExternalId"
+ *     },
+ *     {
+ *         "id": "<some-value>",
+ *         "type": "ga4"
+ *     }
+ * ],
+ * ```
+ */
+internal fun List<ExternalId>.toJsonObject(): JsonObject {
+    if (this.isEmpty()) return emptyJsonObject
+    val externalIds = LenientJson.encodeToJsonElement(this) as JsonArray
+    return buildJsonObject {
+        put("externalId", externalIds)
     }
 }

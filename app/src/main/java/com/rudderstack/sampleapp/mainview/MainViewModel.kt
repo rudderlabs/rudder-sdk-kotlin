@@ -2,6 +2,7 @@ package com.rudderstack.sampleapp.mainview
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
+import com.rudderstack.kotlin.sdk.internals.models.ExternalId
 import com.rudderstack.kotlin.sdk.internals.models.Properties
 import com.rudderstack.kotlin.sdk.internals.models.RudderOption
 import com.rudderstack.sampleapp.analytics.RudderAnalyticsUtils
@@ -48,6 +49,27 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     options = RudderOption()
                 )
                 "Group message sent"
+            }
+
+            AnalyticsState.IdentifyMessage -> {
+                RudderAnalyticsUtils.analytics.identify(
+                    userId = "User 1",
+                    traits = buildJsonObject {
+                        put("key-1", "value-1")
+                    },
+                    options = RudderOption(
+                        customContext = buildJsonObject {
+                            put("key-1", "value-1")
+                        },
+                        integrations = mapOf(
+                            "Amplitude" to true
+                        ),
+                        externalIds = listOf(
+                            ExternalId(type= "brazeExternalId", id = "value1234"),
+                        )
+                    )
+                )
+                "Identify message sent"
             }
 
             AnalyticsState.ForceFlush -> {

@@ -173,6 +173,21 @@ enum class StorageKeys(val key: String) {
      *Key for storing the id of the client's device.
      */
     DEVICE_ID("device_id"),
+
+    /**
+     *Key for storing the user id of the client.
+     */
+    USER_ID("user_id"),
+
+    /**
+     *Key for storing the traits of the client.
+     */
+    TRAITS("traits"),
+
+    /**
+     * Key for storing the external ids.
+     */
+    EXTERNAL_IDS("external_ids"),
 }
 
 /**
