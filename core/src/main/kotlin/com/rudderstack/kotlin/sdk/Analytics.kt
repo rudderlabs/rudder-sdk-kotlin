@@ -252,6 +252,10 @@ open class Analytics protected constructor(
         }
     }
 
+    open fun reset() {
+
+    }
+
     /**
      * Sets up the initial plugin chain by adding the default plugins such as `PocPlugin`
      * and `RudderStackDataplanePlugin`. This function is called during initialization.

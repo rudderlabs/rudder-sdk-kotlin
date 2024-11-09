@@ -88,6 +88,11 @@ class Analytics(
         sessionTrackingPlugin.endSession()
     }
 
+    override fun reset() {
+        super.reset()
+        sessionTrackingPlugin.refreshSession()
+    }
+
     /**
      * Tracks the destination changes for the given [NavController] and automatically sends screen events for it.
      *

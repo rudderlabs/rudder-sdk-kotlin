@@ -26,10 +26,10 @@ internal class SessionTrackingPlugin : Plugin {
     override lateinit var analytics: Analytics
 
     // this variable always holds the latest session id after the setup of this plugin is completed
-    private var sessionId = AtomicLong(0L)
-    private var lastEventTime = AtomicLong(0L)
+    private val sessionId = AtomicLong(0L)
+    private val lastEventTime = AtomicLong(0L)
     private val isSessionStart = AtomicBoolean(false)
-    private var isSessionManual = AtomicBoolean(false)
+    private val isSessionManual = AtomicBoolean(false)
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
@@ -101,7 +101,13 @@ internal class SessionTrackingPlugin : Plugin {
         }
     }
 
-    internal fun startSession(sessionId: Long? = null, isSessionManual: Boolean) {
+    internal fun refreshSession() {
+        if (sessionId.get() != 0L) {
+            startSession()
+        }
+    }
+
+    internal fun startSession(sessionId: Long? = null, isSessionManual: Boolean? = null) {
         isSessionStart.set(true)
         updateIsSessionManual(isSessionManual)
         updateSessionId(sessionId)
@@ -116,8 +122,8 @@ internal class SessionTrackingPlugin : Plugin {
         }
     }
 
-    private fun updateIsSessionManual(isSessionManual: Boolean) {
-        if (this.isSessionManual.get() != isSessionManual) {
+    private fun updateIsSessionManual(isSessionManual: Boolean?) {
+        if (isSessionManual != null && this.isSessionManual.get() != isSessionManual) {
             this.isSessionManual.set(isSessionManual)
             analytics.analyticsScope.launch(analytics.storageDispatcher) {
                 analytics.configuration.storage.write(StorageKeys.IS_MANUAL_SESSION, isSessionManual)
