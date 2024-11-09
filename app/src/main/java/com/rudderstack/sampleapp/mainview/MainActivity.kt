@@ -124,6 +124,7 @@ class MainActivity : ComponentActivity() {
                     AnalyticsState.IdentifyMessage,
                     AnalyticsState.AliasMessage,
                     AnalyticsState.ForceFlush,
+                    AnalyticsState.Reset
                 ),
                 weight = .5f,
                 viewModel = viewModel
