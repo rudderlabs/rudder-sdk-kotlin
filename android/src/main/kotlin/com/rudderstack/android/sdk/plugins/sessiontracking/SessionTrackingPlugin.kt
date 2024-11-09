@@ -64,8 +64,8 @@ internal class SessionTrackingPlugin : Plugin {
         if (sessionId != 0L) {
             val sessionPayload = buildJsonObject {
                 put(SESSION_ID, sessionId)
-                if (isSessionStart.get()) {
-                    put(SESSION_START, isSessionStart.getAndSet(false))
+                if (isSessionStart.compareAndSet(true, false)) {
+                    put(SESSION_START, true)
                 }
             }
             message.context = message.context mergeWithHigherPriorityTo sessionPayload
