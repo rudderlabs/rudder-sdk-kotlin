@@ -12,7 +12,6 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicLong
 import com.rudderstack.android.sdk.Analytics as AndroidAnalytics
 import com.rudderstack.android.sdk.Configuration as AndroidConfiguration
 
@@ -26,19 +25,25 @@ internal class SessionTrackingPlugin : Plugin {
     override lateinit var analytics: Analytics
 
     // this variable always holds the latest session id after the setup of this plugin is completed
-    private val sessionId = AtomicLong(0L)
-    private val lastEventTime = AtomicLong(0L)
+    @Volatile
+    private var sessionId = 0L
+
+    @Volatile
+    private var lastEventTime = 0L
+
     private val isSessionStart = AtomicBoolean(false)
-    private val isSessionManual = AtomicBoolean(false)
+
+    @Volatile
+    private var isSessionManual = false
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
 
         (analytics.configuration as? AndroidConfiguration)?.let { config ->
             // get the session variables from the storage
-            sessionId.set(config.storage.readLong(StorageKeys.SESSION_ID, 0L))
-            lastEventTime.set(config.storage.readLong(StorageKeys.LAST_EVENT_TIME, 0L))
-            isSessionManual.set(config.storage.readBoolean(StorageKeys.IS_MANUAL_SESSION, false))
+            sessionId = config.storage.readLong(StorageKeys.SESSION_ID, 0L)
+            lastEventTime = config.storage.readLong(StorageKeys.LAST_EVENT_TIME, 0L)
+            isSessionManual = config.storage.readBoolean(StorageKeys.IS_MANUAL_SESSION, false)
 
             if (config.sessionConfiguration.automaticSessionTracking) {
                 checkAndStartSessionOnLaunch()
@@ -56,15 +61,15 @@ internal class SessionTrackingPlugin : Plugin {
 
     override suspend fun execute(message: Message): Message {
         // add the session id to the message payload
-        if (sessionId.get() != 0L) {
+        if (sessionId != 0L) {
             val sessionPayload = buildJsonObject {
-                put(SESSION_ID, sessionId.get())
+                put(SESSION_ID, sessionId)
                 if (isSessionStart.get()) {
                     put(SESSION_START, isSessionStart.getAndSet(false))
                 }
             }
             message.context = message.context mergeWithHigherPriorityTo sessionPayload
-            if (!isSessionManual.get()) {
+            if (!isSessionManual) {
                 updateLastEventTime(System.currentTimeMillis())
             }
         }
@@ -77,7 +82,7 @@ internal class SessionTrackingPlugin : Plugin {
             // 1. session id is not present OR
             // 2. session is manual OR
             // 3. session timeout has occurred
-            if (sessionId.get() == 0L || isSessionManual.get() || System.currentTimeMillis() - lastEventTime.get() >
+            if (sessionId == 0L || isSessionManual || System.currentTimeMillis() - lastEventTime >
                 config.sessionConfiguration.sessionTimeoutInMillis
             ) {
                 startSession(isSessionManual = false)
@@ -93,7 +98,7 @@ internal class SessionTrackingPlugin : Plugin {
             // 2. session is not manual
             // AND
             // 3. session timeout has occurred
-            if (sessionId.get() != 0L && !isSessionManual.get() && System.currentTimeMillis() - lastEventTime.get() >
+            if (sessionId != 0L && !isSessionManual && System.currentTimeMillis() - lastEventTime >
                 config.sessionConfiguration.sessionTimeoutInMillis
             ) {
                 startSession(isSessionManual = false)
@@ -102,7 +107,7 @@ internal class SessionTrackingPlugin : Plugin {
     }
 
     internal fun refreshSession() {
-        if (sessionId.get() != 0L) {
+        if (sessionId != 0L) {
             startSession()
         }
     }
@@ -114,17 +119,17 @@ internal class SessionTrackingPlugin : Plugin {
     }
 
     private fun updateSessionId(sessionId: Long?) {
-        if (this.sessionId.get() != sessionId) {
-            this.sessionId.set(sessionId ?: (System.currentTimeMillis() / MILLIS_IN_SECOND))
+        if (this.sessionId != sessionId) {
+            this.sessionId = sessionId ?: (System.currentTimeMillis() / MILLIS_IN_SECOND)
             analytics.analyticsScope.launch(analytics.storageDispatcher) {
-                analytics.configuration.storage.write(StorageKeys.SESSION_ID, this@SessionTrackingPlugin.sessionId.get())
+                analytics.configuration.storage.write(StorageKeys.SESSION_ID, this@SessionTrackingPlugin.sessionId)
             }
         }
     }
 
     private fun updateIsSessionManual(isSessionManual: Boolean?) {
-        if (isSessionManual != null && this.isSessionManual.get() != isSessionManual) {
-            this.isSessionManual.set(isSessionManual)
+        if (isSessionManual != null && this.isSessionManual != isSessionManual) {
+            this.isSessionManual = isSessionManual
             analytics.analyticsScope.launch(analytics.storageDispatcher) {
                 analytics.configuration.storage.write(StorageKeys.IS_MANUAL_SESSION, isSessionManual)
             }
@@ -132,13 +137,13 @@ internal class SessionTrackingPlugin : Plugin {
     }
 
     private suspend fun updateLastEventTime(lastEventTime: Long) {
-        this.lastEventTime.set(lastEventTime)
+        this.lastEventTime = lastEventTime
         analytics.configuration.storage.write(StorageKeys.LAST_EVENT_TIME, lastEventTime)
     }
 
     internal fun endSession() {
-        sessionId.set(0L)
-        lastEventTime.set(0L)
+        sessionId = 0L
+        lastEventTime = 0L
         analytics.analyticsScope.launch(analytics.storageDispatcher) {
             analytics.configuration.storage.remove(StorageKeys.SESSION_ID)
             analytics.configuration.storage.remove(StorageKeys.LAST_EVENT_TIME)
