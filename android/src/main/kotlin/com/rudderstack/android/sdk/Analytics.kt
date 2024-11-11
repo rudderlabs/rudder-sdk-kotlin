@@ -75,6 +75,9 @@ class Analytics(
         setup()
     }
 
+    /**
+     * Starts a new session with the given optional session ID.
+     */
     @JvmOverloads
     fun startSession(sessionId: Long? = null) {
         if (sessionId != null && sessionId.toString().length < MIN_SESSION_ID_LENGTH) {
@@ -84,10 +87,16 @@ class Analytics(
         sessionTrackingPlugin.startSession(sessionId, isSessionManual = true)
     }
 
+    /**
+     * Ends the current session.
+     */
     fun endSession() {
         sessionTrackingPlugin.endSession()
     }
 
+    /**
+     * Resets the analytics instance.
+     */
     override fun reset() {
         super.reset()
         sessionTrackingPlugin.refreshSession()

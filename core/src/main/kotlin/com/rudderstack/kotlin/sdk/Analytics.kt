@@ -252,8 +252,10 @@ open class Analytics protected constructor(
         }
     }
 
+    /**
+     * Resets the analytics instance.
+     */
     open fun reset() {
-
     }
 
     /**
