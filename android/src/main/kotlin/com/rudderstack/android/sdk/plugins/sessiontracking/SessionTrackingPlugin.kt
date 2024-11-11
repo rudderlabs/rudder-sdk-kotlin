@@ -1,5 +1,6 @@
 package com.rudderstack.android.sdk.plugins.sessiontracking
 
+import androidx.annotation.VisibleForTesting
 import com.rudderstack.android.sdk.plugins.lifecyclemanagment.ActivityLifecycleObserver
 import com.rudderstack.android.sdk.plugins.lifecyclemanagment.ProcessLifecycleObserver
 import com.rudderstack.android.sdk.utils.addLifecycleObserver
@@ -15,8 +16,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 import com.rudderstack.android.sdk.Analytics as AndroidAnalytics
 import com.rudderstack.android.sdk.Configuration as AndroidConfiguration
 
-private const val SESSION_ID = "sessionId"
-private const val SESSION_START = "sessionStart"
+internal const val SESSION_ID = "sessionId"
+internal const val SESSION_START = "sessionStart"
 private const val MILLIS_IN_SECOND = 1000
 
 internal class SessionTrackingPlugin : Plugin {
@@ -75,7 +76,7 @@ internal class SessionTrackingPlugin : Plugin {
             }
             message.context = message.context mergeWithHigherPriorityTo sessionPayload
             if (!isSessionManual) {
-                updateLastEventTime(System.currentTimeMillis())
+                updateLastEventTime(getCurrentTime())
             }
         }
         return message
@@ -87,7 +88,7 @@ internal class SessionTrackingPlugin : Plugin {
             // 1. session id is not present OR
             // 2. session is manual OR
             // 3. session timeout has occurred
-            if (sessionId == 0L || isSessionManual || System.currentTimeMillis() - lastEventTime >
+            if (sessionId == 0L || isSessionManual || getCurrentTime() - lastEventTime >
                 config.sessionConfiguration.sessionTimeoutInMillis
             ) {
                 startSession(isSessionManual = false)
@@ -104,7 +105,7 @@ internal class SessionTrackingPlugin : Plugin {
             // 2. session is not manual
             // AND
             // 3. session timeout has occurred
-            if (sessionId != 0L && !isSessionManual && System.currentTimeMillis() - lastEventTime >
+            if (sessionId != 0L && !isSessionManual && getCurrentTime() - lastEventTime >
                 config.sessionConfiguration.sessionTimeoutInMillis
             ) {
                 startSession(isSessionManual = false)
@@ -126,7 +127,7 @@ internal class SessionTrackingPlugin : Plugin {
 
     private fun updateSessionId(sessionId: Long?) {
         if (this.sessionId != sessionId) {
-            val updatedSessionId = sessionId ?: (System.currentTimeMillis() / MILLIS_IN_SECOND)
+            val updatedSessionId = sessionId ?: (getCurrentTime() / MILLIS_IN_SECOND)
             this.sessionId = updatedSessionId
             analytics.analyticsScope.launch(analytics.storageDispatcher) {
                 analytics.configuration.storage.write(StorageKeys.SESSION_ID, updatedSessionId)
@@ -158,4 +159,7 @@ internal class SessionTrackingPlugin : Plugin {
             analytics.configuration.storage.remove(StorageKeys.IS_MANUAL_SESSION)
         }
     }
+
+    @VisibleForTesting
+    internal fun getCurrentTime() = System.currentTimeMillis()
 }
