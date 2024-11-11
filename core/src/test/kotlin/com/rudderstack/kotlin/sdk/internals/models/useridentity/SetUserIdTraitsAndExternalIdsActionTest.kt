@@ -7,7 +7,7 @@ import com.rudderstack.kotlin.sdk.internals.storage.StorageKeys
 import com.rudderstack.kotlin.sdk.internals.utils.LenientJson
 import com.rudderstack.kotlin.sdk.internals.utils.empty
 import com.rudderstack.kotlin.sdk.internals.utils.mergeWithHigherPriorityTo
-import com.rudderstack.kotlin.sdk.utils.mockAnalytics
+import com.rudderstack.kotlin.sdk.mockAnalytics
 import io.mockk.coVerify
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
