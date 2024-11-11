@@ -45,16 +45,21 @@ internal class SessionTrackingPlugin : Plugin {
             lastEventTime = config.storage.readLong(StorageKeys.LAST_EVENT_TIME, 0L)
             isSessionManual = config.storage.readBoolean(StorageKeys.IS_MANUAL_SESSION, false)
 
-            if (config.sessionConfiguration.automaticSessionTracking) {
-                checkAndStartSessionOnLaunch()
-                // attach the session tracking observer to process lifecycle
-                val sessionTrackingObserver = SessionTrackingObserver(this)
-                (analytics as? AndroidAnalytics)?.addLifecycleObserver(
-                    sessionTrackingObserver as ProcessLifecycleObserver
-                )
-                (analytics as? AndroidAnalytics)?.addLifecycleObserver(
-                    sessionTrackingObserver as ActivityLifecycleObserver
-                )
+            when {
+                config.sessionConfiguration.automaticSessionTracking -> {
+                    checkAndStartSessionOnLaunch()
+                    // attach the session tracking observer to process lifecycle
+                    val sessionTrackingObserver = SessionTrackingObserver(this)
+                    (analytics as? AndroidAnalytics)?.addLifecycleObserver(
+                        sessionTrackingObserver as ProcessLifecycleObserver
+                    )
+                    (analytics as? AndroidAnalytics)?.addLifecycleObserver(
+                        sessionTrackingObserver as ActivityLifecycleObserver
+                    )
+                }
+                // end the session on launch if it is not manual
+                !isSessionManual -> endSession()
+                else -> Unit
             }
         }
     }
@@ -86,6 +91,7 @@ internal class SessionTrackingPlugin : Plugin {
                 config.sessionConfiguration.sessionTimeoutInMillis
             ) {
                 startSession(isSessionManual = false)
+                updateIsSessionManual(false)
             }
         }
     }
@@ -120,9 +126,10 @@ internal class SessionTrackingPlugin : Plugin {
 
     private fun updateSessionId(sessionId: Long?) {
         if (this.sessionId != sessionId) {
-            this.sessionId = sessionId ?: (System.currentTimeMillis() / MILLIS_IN_SECOND)
+            val updatedSessionId = sessionId ?: (System.currentTimeMillis() / MILLIS_IN_SECOND)
+            this.sessionId = updatedSessionId
             analytics.analyticsScope.launch(analytics.storageDispatcher) {
-                analytics.configuration.storage.write(StorageKeys.SESSION_ID, this@SessionTrackingPlugin.sessionId)
+                analytics.configuration.storage.write(StorageKeys.SESSION_ID, updatedSessionId)
             }
         }
     }
@@ -144,9 +151,11 @@ internal class SessionTrackingPlugin : Plugin {
     internal fun endSession() {
         sessionId = 0L
         lastEventTime = 0L
+        isSessionManual = false
         analytics.analyticsScope.launch(analytics.storageDispatcher) {
             analytics.configuration.storage.remove(StorageKeys.SESSION_ID)
             analytics.configuration.storage.remove(StorageKeys.LAST_EVENT_TIME)
+            analytics.configuration.storage.remove(StorageKeys.IS_MANUAL_SESSION)
         }
     }
 }

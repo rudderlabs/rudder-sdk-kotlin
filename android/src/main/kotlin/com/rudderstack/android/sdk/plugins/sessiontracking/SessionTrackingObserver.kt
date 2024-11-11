@@ -24,9 +24,8 @@ internal class SessionTrackingObserver(
     override fun onStop(owner: LifecycleOwner) { isSessionAlreadyUpdated.set(false) }
 
     private fun updateSession() {
-        if (!isSessionAlreadyUpdated.get()) {
+        if (isSessionAlreadyUpdated.compareAndSet(false, true)) {
             plugin.checkAndStartSessionOnForeground()
-            isSessionAlreadyUpdated.set(true)
         }
     }
 }
