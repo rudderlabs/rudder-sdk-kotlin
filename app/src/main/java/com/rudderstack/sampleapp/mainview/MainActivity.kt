@@ -137,6 +137,14 @@ class MainActivity : ComponentActivity() {
                 weight = .5f,
                 viewModel = viewModel
             )
+            CreateRowOfApis(
+                names = arrayOf(
+                    AnalyticsState.StartSession,
+                    AnalyticsState.EndSession
+                ),
+                weight = .5f,
+                viewModel = viewModel
+            )
             CreateLogcat(state.logDataList)
         }
     }

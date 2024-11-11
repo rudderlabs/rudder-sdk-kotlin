@@ -17,4 +17,6 @@ sealed class AnalyticsState(val eventName: String) {
     object AliasMessage : AnalyticsState("Alias")
     object ForceFlush : AnalyticsState("Flush")
     object Reset : AnalyticsState("Reset")
+    object StartSession: AnalyticsState("Start Session")
+    object EndSession: AnalyticsState("End Session")
 }

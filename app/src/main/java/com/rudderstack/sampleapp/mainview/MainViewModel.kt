@@ -90,6 +90,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 RudderAnalyticsUtils.analytics.reset(clearAnonymousId = false)
                 "Resetting the userId, traits, and externalIds"
             }
+
+            AnalyticsState.StartSession -> {
+                RudderAnalyticsUtils.analytics.startSession(1000000001)
+                "Manual Session started"
+            }
+
+            AnalyticsState.EndSession -> {
+                RudderAnalyticsUtils.analytics.endSession()
+                "Session ended"
+            }
         }
         if (log.isNotEmpty()) addLogData(LogData(Date(), log))
     }
