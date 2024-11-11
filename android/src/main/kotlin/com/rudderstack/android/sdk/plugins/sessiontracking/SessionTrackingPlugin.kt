@@ -9,6 +9,9 @@ import com.rudderstack.kotlin.sdk.Analytics
 import com.rudderstack.kotlin.sdk.internals.models.Message
 import com.rudderstack.kotlin.sdk.internals.plugins.Plugin
 import com.rudderstack.kotlin.sdk.internals.storage.StorageKeys
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -20,7 +23,11 @@ internal const val SESSION_ID = "sessionId"
 internal const val SESSION_START = "sessionStart"
 private const val MILLIS_IN_SECOND = 1000
 
-internal class SessionTrackingPlugin : Plugin {
+@OptIn(ExperimentalCoroutinesApi::class)
+internal class SessionTrackingPlugin(
+    // single thread dispatcher is required so that the session variables are updated (on storage) in a sequential manner.
+    private val sessionDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(1)
+) : Plugin {
 
     override val pluginType: Plugin.PluginType = Plugin.PluginType.PreProcess
     override lateinit var analytics: Analytics
@@ -92,7 +99,6 @@ internal class SessionTrackingPlugin : Plugin {
                 config.sessionConfiguration.sessionTimeoutInMillis
             ) {
                 startSession(isSessionManual = false)
-                updateIsSessionManual(false)
             }
         }
     }
@@ -129,7 +135,7 @@ internal class SessionTrackingPlugin : Plugin {
         if (this.sessionId != sessionId) {
             val updatedSessionId = sessionId ?: (getCurrentTime() / MILLIS_IN_SECOND)
             this.sessionId = updatedSessionId
-            analytics.analyticsScope.launch(analytics.storageDispatcher) {
+            analytics.analyticsScope.launch(sessionDispatcher) {
                 analytics.configuration.storage.write(StorageKeys.SESSION_ID, updatedSessionId)
             }
         }
@@ -138,7 +144,7 @@ internal class SessionTrackingPlugin : Plugin {
     private fun updateIsSessionManual(isSessionManual: Boolean?) {
         if (isSessionManual != null && this.isSessionManual != isSessionManual) {
             this.isSessionManual = isSessionManual
-            analytics.analyticsScope.launch(analytics.storageDispatcher) {
+            analytics.analyticsScope.launch(sessionDispatcher) {
                 analytics.configuration.storage.write(StorageKeys.IS_MANUAL_SESSION, isSessionManual)
             }
         }
@@ -153,7 +159,7 @@ internal class SessionTrackingPlugin : Plugin {
         sessionId = 0L
         lastEventTime = 0L
         isSessionManual = false
-        analytics.analyticsScope.launch(analytics.storageDispatcher) {
+        analytics.analyticsScope.launch(sessionDispatcher) {
             analytics.configuration.storage.remove(StorageKeys.SESSION_ID)
             analytics.configuration.storage.remove(StorageKeys.LAST_EVENT_TIME)
             analytics.configuration.storage.remove(StorageKeys.IS_MANUAL_SESSION)

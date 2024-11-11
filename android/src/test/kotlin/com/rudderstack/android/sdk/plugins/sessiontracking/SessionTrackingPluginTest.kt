@@ -46,7 +46,7 @@ class SessionTrackingPluginTest {
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
 
-        plugin = spyk(SessionTrackingPlugin())
+        plugin = spyk(SessionTrackingPlugin(testDispatcher))
         mockAnalytics = mockAnalytics(testScope, testDispatcher)
         mockStorage = MockMemoryStorage()
     }
