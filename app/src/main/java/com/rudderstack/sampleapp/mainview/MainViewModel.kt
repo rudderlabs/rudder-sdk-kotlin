@@ -72,6 +72,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 "Identify message sent"
             }
 
+            AnalyticsState.AliasMessage -> {
+                RudderAnalyticsUtils.analytics.alias(
+                    newId = "Alias ID 1",
+                    previousId = "Explicit Previous User ID 1",
+                    options = RudderOption()
+                )
+                "Alias message sent"
+            }
+
             AnalyticsState.ForceFlush -> {
                 RudderAnalyticsUtils.analytics.flush()
                 "Flushing the message pipeline has"
