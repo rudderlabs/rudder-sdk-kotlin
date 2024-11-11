@@ -1,0 +1,23 @@
+{
+  "previousId": "Previous User Id 1",
+  "type": "alias",
+  "messageId": "<message-id>",
+  "context": {
+    "traits": {
+      "anonymousId": "<anonymous-id>",
+      "userId": "Alias Id 1",
+      "id": "Alias Id 1"
+    }
+  },
+  "originalTimestamp": "<original-timestamp>",
+  "sentAt": "{{ RSA_DEF_SENT_AT_TS }}",
+  "userId": "Alias Id 1",
+  "integrations": {
+    "All": false,
+    "Amplitude": true,
+    "Firebase": true,
+    "Braze": false
+  },
+  "anonymousId": "<anonymous-id>",
+  "channel": "mobile"
+}
