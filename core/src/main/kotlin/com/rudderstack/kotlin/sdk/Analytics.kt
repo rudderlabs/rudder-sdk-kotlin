@@ -13,8 +13,10 @@ import com.rudderstack.kotlin.sdk.internals.models.ScreenEvent
 import com.rudderstack.kotlin.sdk.internals.models.SourceConfig
 import com.rudderstack.kotlin.sdk.internals.models.TrackEvent
 import com.rudderstack.kotlin.sdk.internals.models.emptyJsonObject
+import com.rudderstack.kotlin.sdk.internals.models.useridentity.ResetUserIdentityAction
 import com.rudderstack.kotlin.sdk.internals.models.useridentity.SetUserIdTraitsAndExternalIdsAction
 import com.rudderstack.kotlin.sdk.internals.models.useridentity.UserIdentity
+import com.rudderstack.kotlin.sdk.internals.models.useridentity.resetUserIdentity
 import com.rudderstack.kotlin.sdk.internals.models.useridentity.storeUserIdTraitsAndExternalIds
 import com.rudderstack.kotlin.sdk.internals.platform.Platform
 import com.rudderstack.kotlin.sdk.internals.platform.PlatformType
@@ -265,6 +267,22 @@ open class Analytics protected constructor(
      */
     fun getAnonymousId(): String {
         return userIdentityState.value.anonymousId
+    }
+
+    /**
+     * Resets the user identity, clearing the user ID, traits, and external IDs.
+     * If clearAnonymousId is true, clears the existing anonymous ID and generate a new one.
+     *
+     * @param clearAnonymousId A boolean flag to determine whether to clear the anonymous ID. Defaults to false.
+     */
+    fun reset(clearAnonymousId: Boolean = false) {
+        userIdentityState.dispatch(ResetUserIdentityAction(clearAnonymousId))
+        analyticsScope.launch {
+            userIdentityState.value.resetUserIdentity(
+                clearAnonymousId = clearAnonymousId,
+                storage = configuration.storage,
+            )
+        }
     }
 
     /**
