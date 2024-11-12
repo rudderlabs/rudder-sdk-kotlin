@@ -95,7 +95,7 @@ val String.validatedBaseUrl
     get() = if (this.endsWith('/')) this.removeSuffix("/") else this
 
 /**
- *
+ * Generates a random UUID.
  */
 internal fun generateUUID(): String {
     return UUID.randomUUID().toString()
