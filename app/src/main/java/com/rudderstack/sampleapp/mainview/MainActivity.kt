@@ -122,6 +122,7 @@ class MainActivity : ComponentActivity() {
             CreateRowOfApis(
                 names = arrayOf(
                     AnalyticsState.IdentifyMessage,
+                    AnalyticsState.AliasMessage,
                     AnalyticsState.ForceFlush,
                 ),
                 weight = .5f,

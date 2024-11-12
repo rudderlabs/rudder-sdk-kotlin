@@ -1,5 +1,6 @@
 package com.rudderstack.kotlin.sdk.internals.plugins
 
+import com.rudderstack.kotlin.sdk.internals.models.AliasEvent
 import com.rudderstack.kotlin.sdk.internals.models.FlushEvent
 import com.rudderstack.kotlin.sdk.internals.models.GroupEvent
 import com.rudderstack.kotlin.sdk.internals.models.IdentifyEvent
@@ -24,6 +25,10 @@ internal interface MessagePlugin : Plugin {
         return payload
     }
 
+    fun alias(payload: AliasEvent): Message {
+        return payload
+    }
+
     fun flush(payload: FlushEvent): Message {
         return payload
     }
@@ -33,6 +38,7 @@ internal interface MessagePlugin : Plugin {
         is ScreenEvent -> screen(message)
         is GroupEvent -> group(message)
         is IdentifyEvent -> identify(message)
+        is AliasEvent -> alias(message)
         is FlushEvent -> flush(message)
     }
 }

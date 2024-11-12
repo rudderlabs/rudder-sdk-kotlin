@@ -3,6 +3,7 @@ package com.rudderstack.kotlin.sdk
 import com.rudderstack.kotlin.sdk.internals.logger.KotlinLogger
 import com.rudderstack.kotlin.sdk.internals.logger.Logger
 import com.rudderstack.kotlin.sdk.internals.logger.LoggerAnalytics
+import com.rudderstack.kotlin.sdk.internals.models.AliasEvent
 import com.rudderstack.kotlin.sdk.internals.models.GroupEvent
 import com.rudderstack.kotlin.sdk.internals.models.IdentifyEvent
 import com.rudderstack.kotlin.sdk.internals.models.Message
@@ -14,9 +15,11 @@ import com.rudderstack.kotlin.sdk.internals.models.SourceConfig
 import com.rudderstack.kotlin.sdk.internals.models.TrackEvent
 import com.rudderstack.kotlin.sdk.internals.models.emptyJsonObject
 import com.rudderstack.kotlin.sdk.internals.models.useridentity.ResetUserIdentityAction
+import com.rudderstack.kotlin.sdk.internals.models.useridentity.SetUserIdForAliasEvent
 import com.rudderstack.kotlin.sdk.internals.models.useridentity.SetUserIdTraitsAndExternalIdsAction
 import com.rudderstack.kotlin.sdk.internals.models.useridentity.UserIdentity
 import com.rudderstack.kotlin.sdk.internals.models.useridentity.resetUserIdentity
+import com.rudderstack.kotlin.sdk.internals.models.useridentity.storeUserId
 import com.rudderstack.kotlin.sdk.internals.models.useridentity.storeUserIdTraitsAndExternalIds
 import com.rudderstack.kotlin.sdk.internals.platform.Platform
 import com.rudderstack.kotlin.sdk.internals.platform.PlatformType
@@ -25,6 +28,7 @@ import com.rudderstack.kotlin.sdk.internals.plugins.PluginChain
 import com.rudderstack.kotlin.sdk.internals.statemanagement.FlowState
 import com.rudderstack.kotlin.sdk.internals.utils.addNameAndCategoryToProperties
 import com.rudderstack.kotlin.sdk.internals.utils.empty
+import com.rudderstack.kotlin.sdk.internals.utils.resolvePreferredPreviousId
 import com.rudderstack.kotlin.sdk.plugins.LibraryInfoPlugin
 import com.rudderstack.kotlin.sdk.plugins.PocPlugin
 import com.rudderstack.kotlin.sdk.plugins.RudderStackDataplanePlugin
@@ -172,7 +176,7 @@ open class Analytics protected constructor(
     }
 
     /**
-     * The `identify` call allows you to identify a visiting user and associate their actions to that `userId`.
+     * The `identify` event allows you to identify a visiting user and associate their actions to that `userId`.
      * It also lets you record traits about the user like their name, email address, etc.
      *
      * @param userId The unique identifier for the user. Defaults to an empty string.
@@ -200,6 +204,35 @@ open class Analytics protected constructor(
         }
 
         val message = IdentifyEvent(
+            options = options,
+            userIdentityState = userIdentityState.value,
+        )
+
+        processMessageChannel.trySend(message)
+    }
+
+    /**
+     * The `alias` event allows merging multiple identities of a known user into a single unified profile.
+     *
+     * This event is specifically designed for merging user identities and does not modify the user’s traits
+     * or other common properties. It links the [newId] with the [previousId], enabling consistent tracking
+     * across different identifiers for the same user.
+     *
+     * @param newId The new identifier to be associated with the user, representing the updated or primary user ID.
+     * @param previousId The previous ID tied to the user, which may be a user-provided value or fall back on prior identifiers.
+     * @param options A [RudderOption] object to specify additional event options. Defaults to an empty RudderOption object.
+     */
+    fun alias(newId: String, previousId: String = String.empty(), options: RudderOption = RudderOption()) {
+        val updatedPreviousId = userIdentityState.value.resolvePreferredPreviousId(previousId)
+        userIdentityState.dispatch(
+            SetUserIdForAliasEvent(newId = newId)
+        )
+        analyticsScope.launch {
+            userIdentityState.value.storeUserId(storage = configuration.storage)
+        }
+
+        val message = AliasEvent(
+            previousId = updatedPreviousId,
             options = options,
             userIdentityState = userIdentityState.value,
         )
