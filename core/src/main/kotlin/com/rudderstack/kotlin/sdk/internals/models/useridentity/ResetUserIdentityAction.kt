@@ -29,7 +29,9 @@ internal suspend fun UserIdentity.resetUserIdentity(clearAnonymousId: Boolean, s
     clearAnonymousId.takeIf { it }?.let {
         storage.write(StorageKeys.ANONYMOUS_ID, this.anonymousId)
     }
-    storage.remove(StorageKeys.USER_ID)
-    storage.remove(StorageKeys.TRAITS)
-    storage.remove(StorageKeys.EXTERNAL_IDS)
+    storage.apply {
+        remove(StorageKeys.USER_ID)
+        remove(StorageKeys.TRAITS)
+        remove(StorageKeys.EXTERNAL_IDS)
+    }
 }
