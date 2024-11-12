@@ -1,6 +1,7 @@
 package com.rudderstack.kotlin.sdk.plugins
 
 import com.rudderstack.kotlin.sdk.Analytics
+import com.rudderstack.kotlin.sdk.internals.models.AliasEvent
 import com.rudderstack.kotlin.sdk.internals.models.FlushEvent
 import com.rudderstack.kotlin.sdk.internals.models.GroupEvent
 import com.rudderstack.kotlin.sdk.internals.models.IdentifyEvent
@@ -33,6 +34,11 @@ internal class RudderStackDataplanePlugin : MessagePlugin {
     }
 
     override fun identify(payload: IdentifyEvent): Message {
+        enqueue(payload)
+        return payload
+    }
+
+    override fun alias(payload: AliasEvent): Message {
         enqueue(payload)
         return payload
     }

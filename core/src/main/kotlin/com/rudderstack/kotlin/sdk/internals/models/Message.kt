@@ -60,7 +60,10 @@ enum class MessageType {
     Group,
 
     @SerialName("identify")
-    Identify
+    Identify,
+
+    @SerialName("alias")
+    Alias
 }
 
 /**
@@ -136,6 +139,11 @@ sealed class Message {
             )
 
             is IdentifyEvent -> IdentifyEvent(
+                options = this.options,
+            )
+
+            is AliasEvent -> AliasEvent(
+                previousId = this.previousId,
                 options = this.options,
             )
 

@@ -14,5 +14,6 @@ sealed class AnalyticsState(val eventName: String) {
     object ScreenMessage : AnalyticsState("Screen")
     object GroupMessage : AnalyticsState("Group")
     object IdentifyMessage : AnalyticsState("Identify")
+    object AliasMessage : AnalyticsState("Alias")
     object ForceFlush : AnalyticsState("Flush")
 }
