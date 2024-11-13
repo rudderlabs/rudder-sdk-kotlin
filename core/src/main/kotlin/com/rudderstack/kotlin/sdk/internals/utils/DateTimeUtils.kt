@@ -1,5 +1,6 @@
 package com.rudderstack.kotlin.sdk.internals.utils
 
+import org.jetbrains.annotations.VisibleForTesting
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -25,12 +26,8 @@ object DateTimeUtils {
      * timezone for the formatter is set to UTC, and any occurrence of "UTC" in the
      * formatted string is replaced with "Z" to conform to the ISO 8601 standard.
      */
-    private val formatters = object : ThreadLocal<SimpleDateFormat>() {
-        override fun initialValue(): SimpleDateFormat {
-            return SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'.'SSSzzz", Locale.ROOT).apply {
-                timeZone = TimeZone.getTimeZone("UTC")
-            }
-        }
+    private val formatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'.'SSSzzz", Locale.ROOT).apply {
+        timeZone = TimeZone.getTimeZone("UTC")
     }
 
     /**
@@ -56,7 +53,8 @@ object DateTimeUtils {
      * @param date The `Date` object to format.
      * @return A `String` representing the provided date in ISO 8601 format.
      */
-    private fun from(date: Date): String {
-        return formatters.get().format(date).replace("UTC", "Z")
+    @VisibleForTesting
+    internal fun from(date: Date): String {
+        return formatter.format(date).replace("UTC", "Z")
     }
 }

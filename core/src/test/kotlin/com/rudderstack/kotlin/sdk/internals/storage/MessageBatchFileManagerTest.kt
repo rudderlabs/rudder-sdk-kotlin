@@ -10,7 +10,6 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import java.io.File
-import java.io.FileOutputStream
 
 private const val TEST_WRITE_KEY = "asdf"
 
@@ -154,20 +153,6 @@ class MessageBatchFileManagerTest {
 
         assertFalse(File(directory, fileName + TMP_SUFFIX).exists())
         assertTrue(File(directory, fileName).exists())
-    }
-
-    @Test
-    fun `given a batch file, when shutdown happens, hook closes output stream`() = runBlocking {
-        val file = File(directory, fileName + TMP_SUFFIX)
-        messageBatchFileManager.start(file)
-
-        messageBatchFileManager.registerShutdownHook()
-
-        Runtime.getRuntime().addShutdownHook(Thread {
-            assertTrue(file.exists())
-            val outputStream = FileOutputStream(file, true)
-            assertFalse(outputStream.fd.valid())
-        })
     }
 
     @Test

@@ -2,12 +2,10 @@ package com.rudderstack.kotlin.sdk.internals.storage
 
 import com.rudderstack.kotlin.sdk.internals.models.DEFAULT_SENT_AT_TIMESTAMP
 import com.rudderstack.kotlin.sdk.internals.utils.toFileDirectory
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.sync.Semaphore
 import org.jetbrains.annotations.VisibleForTesting
 import java.io.File
 import java.io.FileOutputStream
-import java.util.concurrent.Semaphore
 
 internal const val FILE_INDEX = "rudderstack.message.file.index."
 private const val BATCH_PREFIX = "{\"batch\":["
@@ -54,7 +52,6 @@ class MessageBatchFileManager(
     init {
         // Create the directory if it does not exist and register a shutdown hook to close the file output stream.
         createDirectory(directory)
-        registerShutdownHook()
     }
 
     /**
@@ -149,18 +146,6 @@ class MessageBatchFileManager(
     }
 
     /**
-     * Registers a shutdown hook to ensure the file output stream is closed when the JVM exits.
-     */
-    @VisibleForTesting
-    fun registerShutdownHook() {
-        Runtime.getRuntime().addShutdownHook(
-            Thread {
-                os?.close()
-            }
-        )
-    }
-
-    /**
      * Returns the current batch file, creating it if necessary.
      *
      * @return The current batch file.
@@ -203,9 +188,7 @@ class MessageBatchFileManager(
      * @param block The block of code to execute within the lock.
      */
     private suspend fun withLock(block: () -> Unit) {
-        withContext(Dispatchers.IO) {
-            semaphore.acquire()
-        }
+        semaphore.acquire()
         try {
             block()
         } finally {
