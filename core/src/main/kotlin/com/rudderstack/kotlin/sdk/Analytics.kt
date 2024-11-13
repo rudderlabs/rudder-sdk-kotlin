@@ -73,6 +73,7 @@ open class Analytics protected constructor(
 
     @Volatile
     internal var isAnalyticsShutdown = false
+        private set
 
     init {
         processMessages()
