@@ -58,4 +58,11 @@ class RudderStackDataplanePluginTest {
 
         verify { messageQueue.flush() }
     }
+
+    @Test
+    fun `given a plugin, when shutdown is executed, then verify that the message queue's stop method is called`() {
+        plugin.shutdown()
+
+        verify { messageQueue.stop() }
+    }
 }
