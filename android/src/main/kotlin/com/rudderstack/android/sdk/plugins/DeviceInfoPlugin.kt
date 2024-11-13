@@ -16,7 +16,6 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.put
-import java.util.UUID
 
 private const val DEVICE = "device"
 private const val ID = "id"
@@ -74,7 +73,7 @@ internal class DeviceInfoPlugin : Plugin {
 
     @VisibleForTesting
     internal fun generateId(): String {
-        return UniqueIdProvider.getDeviceId(application) ?: UniqueIdProvider.getUniqueID() ?: UUID.randomUUID().toString()
+        return UniqueIdProvider.getDeviceId(application) ?: UniqueIdProvider.getUniqueID() ?: generateUUID()
     }
 
     @VisibleForTesting
