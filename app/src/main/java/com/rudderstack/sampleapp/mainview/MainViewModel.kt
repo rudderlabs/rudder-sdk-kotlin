@@ -86,6 +86,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 "Flushing the message pipeline has"
             }
 
+            AnalyticsState.Shutdown -> {
+                RudderAnalyticsUtils.analytics.shutdown()
+                "Shutting down the SDK"
+            }
+
             AnalyticsState.Reset -> {
                 RudderAnalyticsUtils.analytics.reset(clearAnonymousId = false)
                 "Resetting the userId, traits, and externalIds"
