@@ -1,6 +1,6 @@
 package com.rudderstack.kotlin.sdk.internals.models
 
-import com.rudderstack.kotlin.sdk.internals.utils.mergeWithHigherPriorityTo
+import com.rudderstack.kotlin.sdk.internals.utils.DEFAULT_INTEGRATIONS
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 
@@ -12,7 +12,7 @@ import kotlinx.serialization.json.JsonObject
  * @property customContext A JSON object representing custom contexts associated with the message.
  */
 data class RudderOption(
-    val integrations: Map<String, Boolean> = defaultIntegrations,
+    val integrations: Map<String, Boolean> = DEFAULT_INTEGRATIONS,
     val externalIds: List<ExternalId> = emptyList(),
     val customContext: JsonObject = emptyJsonObject,
 )
@@ -28,22 +28,3 @@ data class ExternalId(
     val type: String,
     val id: String,
 )
-
-private val defaultIntegrations by lazy {
-    mapOf(
-        "All" to true,
-    )
-}
-
-internal fun Message.updateOption() {
-    when (this) {
-        is TrackEvent, is ScreenEvent, is GroupEvent, is IdentifyEvent, is AliasEvent -> {
-            this.integrations = defaultIntegrations mergeWithHigherPriorityTo options.integrations
-            this.context = options.customContext mergeWithHigherPriorityTo context
-        }
-
-        else -> {
-            // Do nothing
-        }
-    }
-}
