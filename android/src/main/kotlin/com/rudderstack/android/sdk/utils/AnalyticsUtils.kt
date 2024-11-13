@@ -23,6 +23,6 @@ internal fun Analytics.runOnAnalyticsThread(block: suspend () -> Unit) = analyti
  * @param block The block which needs to be executed.
  */
 @DelicateCoroutinesApi
-internal fun AndroidAnalytics.runOnMainThread(block: () -> Unit) = analyticsScope.launch(MAIN_DISPATCHER) {
+internal fun AndroidAnalytics.runOnMainThread(block: suspend () -> Unit) = analyticsScope.launch(MAIN_DISPATCHER) {
     block()
 }

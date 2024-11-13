@@ -7,6 +7,8 @@ import com.rudderstack.android.sdk.utils.runOnMainThread
 import com.rudderstack.kotlin.sdk.Analytics
 import com.rudderstack.kotlin.sdk.internals.plugins.Plugin
 import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import org.jetbrains.annotations.VisibleForTesting
 import java.util.concurrent.CopyOnWriteArrayList
 import com.rudderstack.android.sdk.Analytics as AndroidAnalytics
@@ -38,7 +40,9 @@ internal class ActivityLifecycleManagementPlugin : Plugin, Application.ActivityL
         super.teardown()
         activityObservers.clear()
         (analytics as? AndroidAnalytics)?.runOnMainThread {
-            application.unregisterActivityLifecycleCallbacks(this)
+            withContext(NonCancellable) {
+                application.unregisterActivityLifecycleCallbacks(this@ActivityLifecycleManagementPlugin)
+            }
         }
     }
 

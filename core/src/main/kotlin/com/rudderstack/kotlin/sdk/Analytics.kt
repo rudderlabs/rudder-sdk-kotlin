@@ -38,6 +38,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 
@@ -249,6 +250,29 @@ open class Analytics protected constructor(
             if (it is RudderStackDataplanePlugin) {
                 it.flush()
             }
+        }
+    }
+
+    /**
+     * Shuts down the analytics instance, stopping all operations, removing all the plugins and frees up the resources.
+     *
+     *  **NOTE**: This operation is irreversible. However, no saved data is lost in shutdown.
+     */
+    fun shutdown() {
+        processMessageChannel.cancel()
+        this.pluginChain.applyClosure {
+            if (it is RudderStackDataplanePlugin) {
+                it.shutdown()
+            }
+        }
+
+        this.pluginChain.removeAll()
+
+        analyticsScope.launch(storageDispatcher) {
+            configuration.storage.rollover()
+        }.invokeOnCompletion {
+            analyticsScope.cancel()
+            LoggerAnalytics.info("Analytics shutdown completed.")
         }
     }
 

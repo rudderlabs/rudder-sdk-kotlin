@@ -57,6 +57,10 @@ internal class RudderStackDataplanePlugin : MessagePlugin {
         messageQueue?.flush()
     }
 
+    internal fun shutdown() {
+        messageQueue?.stop()
+    }
+
     private fun enqueue(message: Message) {
         this.messageQueue?.put(message)
     }
