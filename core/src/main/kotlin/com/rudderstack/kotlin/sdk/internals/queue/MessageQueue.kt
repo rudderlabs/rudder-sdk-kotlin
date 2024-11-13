@@ -57,7 +57,6 @@ internal class MessageQueue(
         running = false
         writeChannel = Channel(UNLIMITED)
         uploadChannel = Channel(UNLIMITED)
-        registerShutdownHook()
         updateAnonymousId()
     }
 
@@ -186,12 +185,4 @@ internal class MessageQueue(
 //        }
 //        return shouldCleanup
 //    }
-
-    private fun registerShutdownHook() {
-        Runtime.getRuntime().addShutdownHook(object : Thread() {
-            override fun run() {
-                this@MessageQueue.stop()
-            }
-        })
-    }
 }
