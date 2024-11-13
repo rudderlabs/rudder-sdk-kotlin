@@ -97,6 +97,6 @@ val String.validatedBaseUrl
 /**
  * Generates a random UUID.
  */
-internal fun generateUUID(): String {
+fun generateUUID(): String {
     return UUID.randomUUID().toString()
 }
