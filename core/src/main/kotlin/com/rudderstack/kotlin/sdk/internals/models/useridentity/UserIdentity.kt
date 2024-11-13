@@ -7,8 +7,8 @@ import com.rudderstack.kotlin.sdk.internals.statemanagement.FlowAction
 import com.rudderstack.kotlin.sdk.internals.storage.Storage
 import com.rudderstack.kotlin.sdk.internals.storage.StorageKeys
 import com.rudderstack.kotlin.sdk.internals.utils.empty
-import com.rudderstack.kotlin.sdk.internals.utils.generateUUID
 import com.rudderstack.kotlin.sdk.internals.utils.readValuesOrDefault
+import java.util.UUID
 
 /**
  * Data class representing a user's identity within the application.
@@ -41,7 +41,7 @@ data class UserIdentity(
     companion object {
 
         internal fun initialState(storage: Storage) = UserIdentity(
-            anonymousId = storage.readString(StorageKeys.ANONYMOUS_ID, defaultVal = generateUUID()),
+            anonymousId = storage.readString(StorageKeys.ANONYMOUS_ID, defaultVal = UUID.randomUUID().toString()),
             userId = storage.readString(StorageKeys.USER_ID, defaultVal = String.empty()),
             traits = storage.readValuesOrDefault(key = StorageKeys.TRAITS, defaultValue = emptyJsonObject),
             externalIds = storage.readValuesOrDefault(key = StorageKeys.EXTERNAL_IDS, defaultValue = emptyList()),
