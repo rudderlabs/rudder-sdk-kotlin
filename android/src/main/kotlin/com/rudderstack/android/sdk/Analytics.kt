@@ -22,6 +22,7 @@ import com.rudderstack.kotlin.sdk.Analytics
 import com.rudderstack.kotlin.sdk.internals.platform.Platform
 import com.rudderstack.kotlin.sdk.internals.platform.PlatformType
 import com.rudderstack.kotlin.sdk.internals.statemanagement.FlowState
+import com.rudderstack.kotlin.sdk.internals.utils.isAnalyticsActive
 import org.jetbrains.annotations.ApiStatus.Experimental
 
 /**
@@ -123,6 +124,8 @@ class Analytics(
     @Synchronized
     @Experimental
     fun setNavigationDestinationsTracking(navController: NavController, activity: Activity) {
+        if (!isAnalyticsActive()) return
+
         if (navControllerTrackingPlugin == null) {
             navControllerTrackingPlugin = NavControllerTrackingPlugin(navContextState).also {
                 add(it)

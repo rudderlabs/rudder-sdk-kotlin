@@ -28,6 +28,7 @@ import com.rudderstack.kotlin.sdk.internals.plugins.PluginChain
 import com.rudderstack.kotlin.sdk.internals.statemanagement.FlowState
 import com.rudderstack.kotlin.sdk.internals.utils.addNameAndCategoryToProperties
 import com.rudderstack.kotlin.sdk.internals.utils.empty
+import com.rudderstack.kotlin.sdk.internals.utils.isAnalyticsActive
 import com.rudderstack.kotlin.sdk.internals.utils.resolvePreferredPreviousId
 import com.rudderstack.kotlin.sdk.plugins.LibraryInfoPlugin
 import com.rudderstack.kotlin.sdk.plugins.PocPlugin
@@ -68,8 +69,10 @@ open class Analytics protected constructor(
 
     internal val userIdentityState = FlowState(initialState = UserIdentity.initialState(configuration.storage))
 
-    // TODO("Add a way to stop this channel")
     private val processMessageChannel: Channel<Message> = Channel(Channel.UNLIMITED)
+
+    @Volatile
+    internal var isAnalyticsShutdown = false
 
     init {
         processMessages()
@@ -86,6 +89,7 @@ open class Analytics protected constructor(
      * @param logger The `Logger` instance to use for logging. Defaults to an instance of `KotlinLogger`.
      */
     fun setLogger(logger: Logger) {
+        if (!isAnalyticsActive()) return
         LoggerAnalytics.setup(logger = logger, logLevel = configuration.logLevel)
     }
 
@@ -118,6 +122,8 @@ open class Analytics protected constructor(
      */
     @JvmOverloads
     fun track(name: String, properties: Properties = emptyJsonObject, options: RudderOption = RudderOption()) {
+        if (!isAnalyticsActive()) return
+
         val message = TrackEvent(
             event = name,
             properties = properties,
@@ -144,6 +150,8 @@ open class Analytics protected constructor(
         properties: Properties = emptyJsonObject,
         options: RudderOption = RudderOption()
     ) {
+        if (!isAnalyticsActive()) return
+
         val updatedProperties = addNameAndCategoryToProperties(screenName, category, properties)
 
         val message = ScreenEvent(
@@ -166,6 +174,8 @@ open class Analytics protected constructor(
      */
     @JvmOverloads
     fun group(groupId: String, traits: RudderTraits = emptyJsonObject, options: RudderOption = RudderOption()) {
+        if (!isAnalyticsActive()) return
+
         val message = GroupEvent(
             groupId = groupId,
             traits = traits,
@@ -190,6 +200,8 @@ open class Analytics protected constructor(
         traits: RudderTraits = emptyJsonObject,
         options: RudderOption = RudderOption()
     ) {
+        if (!isAnalyticsActive()) return
+
         userIdentityState.dispatch(
             SetUserIdTraitsAndExternalIdsAction(
                 newUserId = userId,
@@ -224,6 +236,8 @@ open class Analytics protected constructor(
      * @param options A [RudderOption] object to specify additional event options. Defaults to an empty RudderOption object.
      */
     fun alias(newId: String, previousId: String = String.empty(), options: RudderOption = RudderOption()) {
+        if (!isAnalyticsActive()) return
+
         val updatedPreviousId = userIdentityState.value.resolvePreferredPreviousId(previousId)
         userIdentityState.dispatch(
             SetUserIdForAliasEvent(newId = newId)
@@ -246,6 +260,8 @@ open class Analytics protected constructor(
      * This method specifically targets the `RudderStackDataplanePlugin` to initiate the flush operation.
      */
     fun flush() {
+        if (!isAnalyticsActive()) return
+
         this.pluginChain.applyClosure {
             if (it is RudderStackDataplanePlugin) {
                 it.flush()
@@ -259,6 +275,10 @@ open class Analytics protected constructor(
      *  **NOTE**: This operation is irreversible. However, no saved data is lost in shutdown.
      */
     fun shutdown() {
+        if (!isAnalyticsActive()) return
+
+        isAnalyticsShutdown = true
+
         processMessageChannel.cancel()
         this.pluginChain.applyClosure {
             if (it is RudderStackDataplanePlugin) {
@@ -300,6 +320,8 @@ open class Analytics protected constructor(
      * @param plugin The plugin to be added to the plugin chain.
      */
     fun add(plugin: Plugin) {
+        if (!isAnalyticsActive()) return
+
         this.pluginChain.add(plugin)
     }
 
@@ -315,6 +337,8 @@ open class Analytics protected constructor(
      * non-null string used to represent the user anonymously.
      */
     fun setAnonymousId(anonymousId: String) {
+        if (!isAnalyticsActive()) return
+
         userIdentityState.dispatch(UserIdentity.SetAnonymousIdAction(anonymousId))
         storeAnonymousId()
     }
