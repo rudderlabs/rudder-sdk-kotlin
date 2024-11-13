@@ -1,8 +1,13 @@
 package com.rudderstack.kotlin.sdk.internals.utils
 
+import com.rudderstack.kotlin.sdk.internals.models.AliasEvent
+import com.rudderstack.kotlin.sdk.internals.models.FlushEvent
 import com.rudderstack.kotlin.sdk.internals.models.GroupEvent
+import com.rudderstack.kotlin.sdk.internals.models.IdentifyEvent
 import com.rudderstack.kotlin.sdk.internals.models.Message
 import com.rudderstack.kotlin.sdk.internals.models.RudderTraits
+import com.rudderstack.kotlin.sdk.internals.models.ScreenEvent
+import com.rudderstack.kotlin.sdk.internals.models.TrackEvent
 import com.rudderstack.kotlin.sdk.internals.models.emptyJsonObject
 import com.rudderstack.kotlin.sdk.internals.models.useridentity.UserIdentity
 import kotlinx.serialization.json.JsonObject
@@ -42,6 +47,23 @@ private fun getUpdatedTraitsWithAnonymousId(anonymousId: String, traits: RudderT
         traits mergeWithHigherPriorityTo traitsWithAnonymousId
     } else {
         traits
+    }
+}
+
+internal val DEFAULT_INTEGRATIONS = mapOf(
+    "All" to true,
+)
+
+internal fun Message.updateIntegrationOptionsAndCustomCustomContext() {
+    when (this) {
+        is TrackEvent, is ScreenEvent, is GroupEvent, is IdentifyEvent, is AliasEvent -> {
+            this.integrations = DEFAULT_INTEGRATIONS mergeWithHigherPriorityTo options.integrations
+            this.context = options.customContext mergeWithHigherPriorityTo context
+        }
+
+        is FlushEvent -> {
+            // Do nothing
+        }
     }
 }
 
