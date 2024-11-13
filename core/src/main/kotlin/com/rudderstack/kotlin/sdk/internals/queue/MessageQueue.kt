@@ -2,9 +2,7 @@ package com.rudderstack.kotlin.sdk.internals.queue
 
 import com.rudderstack.kotlin.sdk.Analytics
 import com.rudderstack.kotlin.sdk.internals.logger.LoggerAnalytics
-import com.rudderstack.kotlin.sdk.internals.models.FlushEvent
 import com.rudderstack.kotlin.sdk.internals.models.Message
-import com.rudderstack.kotlin.sdk.internals.models.MessageType
 import com.rudderstack.kotlin.sdk.internals.network.HttpClient
 import com.rudderstack.kotlin.sdk.internals.network.HttpClientImpl
 import com.rudderstack.kotlin.sdk.internals.policies.FlushPoliciesFacade
@@ -48,7 +46,7 @@ internal class MessageQueue(
 ) {
 
     private var running: Boolean
-    private var writeChannel: Channel<Message>
+    private var writeChannel: Channel<QueueMessage>
     private var uploadChannel: Channel<String>
 
     private val storage get() = analytics.configuration.storage
@@ -71,7 +69,7 @@ internal class MessageQueue(
     }
 
     fun put(message: Message) {
-        writeChannel.trySend(message)
+        writeChannel.trySend(QueueMessage(QueueMessage.QueueMessageType.MESSAGE, message))
     }
 
     fun start() {
@@ -88,7 +86,7 @@ internal class MessageQueue(
     }
 
     fun flush() {
-        writeChannel.trySend(FlushEvent(""))
+        writeChannel.trySend(QueueMessage(QueueMessage.QueueMessageType.FLUSH_EVENT))
     }
 
     fun stop() {
@@ -106,17 +104,19 @@ internal class MessageQueue(
 
     @Suppress("TooGenericExceptionCaught")
     private fun write() = analytics.analyticsScope.launch(analytics.storageDispatcher) {
-        for (message in writeChannel) {
-            val isFlushSignal = (message.type == MessageType.Flush)
+        for (queueMessage in writeChannel) {
+            val isFlushSignal = (queueMessage.type == QueueMessage.QueueMessageType.FLUSH_EVENT)
 
             if (!isFlushSignal) {
                 try {
-                    val stringVal = stringifyBaseEvent(message)
-                    LoggerAnalytics.debug("running $stringVal")
-                    storage.write(StorageKeys.MESSAGE, stringVal)
-                    flushPoliciesFacade.updateState()
+                    queueMessage.message?.let {
+                        val stringVal = stringifyBaseEvent(queueMessage.message)
+                        LoggerAnalytics.debug("running $stringVal")
+                        storage.write(StorageKeys.MESSAGE, stringVal)
+                        flushPoliciesFacade.updateState()
+                    }
                 } catch (e: Exception) {
-                    LoggerAnalytics.error("Error adding payload: $message", e)
+                    LoggerAnalytics.error("Error adding payload: $queueMessage", e)
                 }
             }
 
@@ -157,7 +157,6 @@ internal class MessageQueue(
                     LoggerAnalytics.error("Message storage file not found", e)
                 } catch (e: Exception) {
                     LoggerAnalytics.error("Error when uploading event", e)
-                    //  shouldCleanup = handleUploadException(e, file)
                 }
 
                 if (shouldCleanup) {
@@ -177,12 +176,13 @@ internal class MessageQueue(
         return File(filePath).readText()
     }
 
-//   private fun handleUploadException(e: Exception, file: File): Boolean {
-//       var shouldCleanup = false
-//        if (e is HTTPException) {
-//            ... handle the exception
-//            )
-//        }
-//        return shouldCleanup
-//    }
+    private data class QueueMessage(
+        val type: QueueMessageType,
+        val message: Message? = null,
+    ) {
+        enum class QueueMessageType {
+            MESSAGE,
+            FLUSH_EVENT,
+        }
+    }
 }
