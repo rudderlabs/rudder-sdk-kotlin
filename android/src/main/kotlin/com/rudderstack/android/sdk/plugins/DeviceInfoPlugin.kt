@@ -10,6 +10,7 @@ import com.rudderstack.kotlin.sdk.internals.models.Message
 import com.rudderstack.kotlin.sdk.internals.plugins.Plugin
 import com.rudderstack.kotlin.sdk.internals.storage.StorageKeys
 import com.rudderstack.kotlin.sdk.internals.utils.empty
+import com.rudderstack.kotlin.sdk.internals.utils.generateUUID
 import com.rudderstack.kotlin.sdk.internals.utils.putAll
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.buildJsonObject
@@ -67,7 +68,7 @@ internal class DeviceInfoPlugin : Plugin {
         return if (collectDeviceId) {
             retrieveOrGenerateStoredId(::generateId)
         } else {
-            analytics.configuration.storage.readString(StorageKeys.ANONYMOUS_ID, UUID.randomUUID().toString())
+            analytics.configuration.storage.readString(StorageKeys.ANONYMOUS_ID, generateUUID())
         }
     }
 
