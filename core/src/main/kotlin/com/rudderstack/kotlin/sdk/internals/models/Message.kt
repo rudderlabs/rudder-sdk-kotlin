@@ -6,6 +6,7 @@ import com.rudderstack.kotlin.sdk.internals.platform.PlatformType
 import com.rudderstack.kotlin.sdk.internals.utils.DateTimeUtils
 import com.rudderstack.kotlin.sdk.internals.utils.addPersistedValues
 import com.rudderstack.kotlin.sdk.internals.utils.empty
+import com.rudderstack.kotlin.sdk.internals.utils.generateUUID
 import com.rudderstack.kotlin.sdk.internals.utils.provideEmptyUserIdentityState
 import com.rudderstack.kotlin.sdk.internals.utils.setGroupEventTraits
 import com.rudderstack.kotlin.sdk.internals.utils.updateIntegrationOptionsAndCustomCustomContext
@@ -18,7 +19,6 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import java.util.UUID
 
 typealias AnalyticsContext = JsonObject
 typealias Properties = JsonObject
@@ -89,7 +89,7 @@ enum class MessageType {
 sealed class Message {
 
     abstract var type: MessageType
-    open var messageId: String = UUID.randomUUID().toString()
+    open var messageId: String = generateUUID()
     open var originalTimestamp: String = DateTimeUtils.now()
     open var context: AnalyticsContext = emptyJsonObject
     open var userId: String = String.empty()
