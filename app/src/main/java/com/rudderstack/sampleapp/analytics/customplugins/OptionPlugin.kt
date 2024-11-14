@@ -10,9 +10,8 @@ import com.rudderstack.kotlin.sdk.internals.utils.mergeWithHigherPriorityTo
 
 /**
  * A plugin that adds custom context and integrations to each message. Note: External IDs should not be updated here.
- * This plugin is executed before the message processing begins.
  *
- * Call this during SDK initialization to apply custom context and integrations to all messages.
+ * Add this plugin during SDK initialization to apply custom context and integrations to all messages.
  * It overrides any individual context and integrations set within a message with the provided custom values.
  *
  * @param option The custom option to be added to each message.
