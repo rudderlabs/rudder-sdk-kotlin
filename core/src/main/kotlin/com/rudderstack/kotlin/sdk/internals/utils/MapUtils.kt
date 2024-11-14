@@ -5,6 +5,6 @@ package com.rudderstack.kotlin.sdk.internals.utils
  *
  * @param other The map to merge with the current map.
  */
-internal infix fun <K, V> Map<K, V>.mergeWithHigherPriorityTo(other: Map<K, V>): Map<K, V> {
+infix fun <K, V> Map<K, V>.mergeWithHigherPriorityTo(other: Map<K, V>): Map<K, V> {
     return this + other
 }
