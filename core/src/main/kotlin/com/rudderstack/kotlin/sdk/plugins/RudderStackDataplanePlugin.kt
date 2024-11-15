@@ -14,12 +14,15 @@ import com.rudderstack.kotlin.sdk.internals.queue.MessageQueue
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.jetbrains.annotations.VisibleForTesting
 
 internal class RudderStackDataplanePlugin : MessagePlugin {
 
     override val pluginType: Plugin.PluginType = Plugin.PluginType.Destination
     override lateinit var analytics: Analytics
-    private var messageQueue: MessageQueue? = null
+
+    @VisibleForTesting
+    internal var messageQueue: MessageQueue? = null
 
     override fun track(payload: TrackEvent): Message {
         enqueue(payload)

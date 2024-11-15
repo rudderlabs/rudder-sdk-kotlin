@@ -17,13 +17,21 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.runs
 import io.mockk.spyk
+import io.mockk.unmockkAll
 import io.mockk.verify
-import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -32,6 +40,7 @@ import org.junit.Test
 import java.io.FileNotFoundException
 import java.io.IOException
 
+@OptIn(DelicateCoroutinesApi::class, ExperimentalCoroutinesApi::class)
 class MessageQueueTest {
 
     @MockK
@@ -55,10 +64,14 @@ class MessageQueueTest {
     @Before
     fun setUp() {
         MockKAnnotations.init(this, relaxed = true)
+        Dispatchers.setMain(testDispatcher)
 
         setupLogger(mockKotlinLogger)
 
         every { mockAnalytics.configuration.storage } returns mockStorage
+
+        coEvery { mockStorage.close() } just runs
+        coEvery { mockStorage.write(StorageKeys.MESSAGE, any<String>()) } just runs
 
         messageQueue = spyk(
             MessageQueue(
@@ -71,32 +84,30 @@ class MessageQueueTest {
 
     @After
     fun tearDown() {
-        messageQueue.stop()
+        Dispatchers.resetMain()
+        unmockkAll()
     }
 
     @Test
     fun `given a message queue, when queue starts, then verify channel running is true`() {
         messageQueue.start()
-        assertTrue(messageQueue::class.java.getDeclaredField("running").apply {
-            isAccessible = true
-        }.getBoolean(messageQueue))
+
+        assertTrue(messageQueue.running)
     }
 
     @Test
-    fun `given a message queue, when queue stops, then cancels channels and sets running to false`() {
+    fun `given a message queue, when queue stops, then cancels channels and sets running to false`() = runTest {
         messageQueue.start()
-        messageQueue.stop()
 
-        val running =
-            messageQueue::class.java.getDeclaredField("running").apply { isAccessible = true }
-                .getBoolean(messageQueue)
+        messageQueue.stop()
+        advanceUntilIdle()
+
+        val running = messageQueue.running
+
         assertTrue(!running)
-        assertTrue(
-            messageQueue::class.java.getDeclaredField("writeChannel").apply { isAccessible = true }
-                .get(messageQueue) is Channel<*>)
-        assertTrue(
-            messageQueue::class.java.getDeclaredField("uploadChannel").apply { isAccessible = true }
-                .get(messageQueue) is Channel<*>)
+        assertTrue(messageQueue.writeChannel.isClosedForSend)
+        assertTrue(messageQueue.uploadChannel.isClosedForSend)
+        assertTrue(messageQueue.uploadChannel.isClosedForReceive)
     }
 
     @Test
@@ -116,10 +127,7 @@ class MessageQueueTest {
 
         every { messageQueue.readFileAsString(filePath) } returns fileContent
 
-        val result =
-            messageQueue::class.java.getDeclaredMethod("readFileAsString", String::class.java)
-                .apply { isAccessible = true }
-                .invoke(messageQueue, filePath)
+        val result = messageQueue.readFileAsString(filePath)
 
         assertEquals(fileContent, result)
     }
@@ -386,8 +394,9 @@ class MessageQueueTest {
     }
 
     @Test
-    fun `given default flush policies are enabled, when stop is called, then flush policies should be cancelled`() {
+    fun `given default flush policies are enabled, when stop is called, then flush policies should be cancelled`() = runTest {
         messageQueue.start()
+
         messageQueue.stop()
         testDispatcher.scheduler.advanceUntilIdle()
 

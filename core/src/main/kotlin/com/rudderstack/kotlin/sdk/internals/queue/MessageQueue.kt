@@ -49,11 +49,17 @@ internal class MessageQueue(
     }
 ) {
 
-    private var running: Boolean
-    private var writeChannel: Channel<Message>
-    private var uploadChannel: Channel<String>
+    @VisibleForTesting
+    internal var running: Boolean
 
-    private var writeJob: Job? = null
+    @VisibleForTesting
+    internal var writeChannel: Channel<Message>
+
+    @VisibleForTesting
+    internal var uploadChannel: Channel<String>
+
+    @VisibleForTesting
+    internal var writeJob: Job? = null
 
     private val storage get() = analytics.configuration.storage
 
