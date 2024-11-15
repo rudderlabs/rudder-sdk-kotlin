@@ -183,6 +183,7 @@ internal class SessionTrackingPlugin(
         }
     }
 
+    @VisibleForTesting
     internal fun getMonotonicCurrentTime() = SystemClock.elapsedRealtime()
 
     @VisibleForTesting
