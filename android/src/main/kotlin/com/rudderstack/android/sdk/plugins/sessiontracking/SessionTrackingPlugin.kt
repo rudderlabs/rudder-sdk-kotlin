@@ -174,10 +174,12 @@ internal class SessionTrackingPlugin(
         sessionId = 0L
         lastActivityTime = 0L
         isSessionManual = false
+        isSessionStart = false
         analytics.analyticsScope.launch(sessionDispatcher) {
             analytics.configuration.storage.remove(StorageKeys.SESSION_ID)
             analytics.configuration.storage.remove(StorageKeys.LAST_ACTIVITY_TIME)
             analytics.configuration.storage.remove(StorageKeys.IS_SESSION_MANUAL)
+            analytics.configuration.storage.remove(StorageKeys.IS_SESSION_START)
         }
     }
 
