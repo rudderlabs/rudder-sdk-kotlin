@@ -148,7 +148,9 @@ class SessionTrackingPluginTest {
     fun `automatic session enabled, when execute called, then correct payload is attached`() = runTest {
         // given
         val sessionId = 1234567890L
-        every { plugin.getMonotonicCurrentTime() } returns sessionId * 1000
+        val currentTime = 100000000L
+        every { plugin.getSystemCurrentTime() } returns sessionId * 1000
+        every { plugin.getMonotonicCurrentTime() } returns currentTime
         val firstMessage = TrackEvent("test", emptyJsonObject)
         val secondMessage = TrackEvent("test", emptyJsonObject)
 
@@ -193,8 +195,10 @@ class SessionTrackingPluginTest {
     fun `given automatic session and session is not ended previously and timeout, when checkAndStartSessionOnForeground called, then start new session called`() = runTest {
         // given
         val automaticSessionTrackingEnabled = true
+        val currentTime = System.currentTimeMillis()
         mockStorage.write(StorageKeys.IS_SESSION_MANUAL, false)
-        mockStorage.write(StorageKeys.LAST_ACTIVITY_TIME, System.currentTimeMillis() - 600_000L) // Last event was 10 mins ago
+        mockStorage.write(StorageKeys.LAST_ACTIVITY_TIME, currentTime - 600_000L) // Last event was 10 mins ago
+        every { plugin.getMonotonicCurrentTime() } returns currentTime
 
         // when
         pluginSetup(automaticSessionTracking = automaticSessionTrackingEnabled, sessionTimeoutInMillis = 300_000L)
@@ -205,6 +209,48 @@ class SessionTrackingPluginTest {
         // then
         assert(mockStorage.readLong(StorageKeys.SESSION_ID, 0L) != 0L)
         assert(!mockStorage.readBoolean(StorageKeys.IS_SESSION_MANUAL, false))
+    }
+
+    @Test
+    fun `given automatic session, when refresh called, then session is refreshed`() = runTest {
+        // given
+        val automaticSessionTrackingEnabled = true
+        val previousSessionId = 1234567890L
+        val currentTime = System.currentTimeMillis()
+        mockStorage.write(StorageKeys.IS_SESSION_MANUAL, false)
+        mockStorage.write(StorageKeys.SESSION_ID, previousSessionId)
+        mockStorage.write(StorageKeys.LAST_ACTIVITY_TIME, currentTime - 200_000L)
+        every { plugin.getMonotonicCurrentTime() } returns currentTime
+        every { plugin.getSystemCurrentTime() } returns currentTime
+
+        // when
+        pluginSetup(automaticSessionTracking = automaticSessionTrackingEnabled, sessionTimeoutInMillis = 300_000L)
+        advanceUntilIdle()
+        plugin.refreshSession()
+        advanceUntilIdle()
+
+        // then
+        assert(mockStorage.readLong(StorageKeys.SESSION_ID, 0L) == currentTime/1000)
+    }
+
+    @Test
+    fun `given manual session, when refresh called, then session is refreshed`() = runTest {
+        // given
+        val automaticSessionTrackingEnabled = false
+        val previousSessionId = 1234567890L
+        val currentTime = System.currentTimeMillis()
+        mockStorage.write(StorageKeys.IS_SESSION_MANUAL, true)
+        mockStorage.write(StorageKeys.SESSION_ID, previousSessionId)
+        every { plugin.getSystemCurrentTime() } returns currentTime
+
+        // when
+        pluginSetup(automaticSessionTracking = automaticSessionTrackingEnabled)
+        advanceUntilIdle()
+        plugin.refreshSession()
+        advanceUntilIdle()
+
+        // then
+        assert(mockStorage.readLong(StorageKeys.SESSION_ID, 0L) == currentTime/1000)
     }
 
     private fun pluginSetup(
