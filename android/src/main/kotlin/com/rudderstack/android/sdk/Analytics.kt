@@ -95,10 +95,13 @@ class Analytics(
     }
 
     /**
-     * Resets the analytics instance.
+     * Resets the user identity, clearing the user ID, traits, and external IDs.
+     * If clearAnonymousId is true, clears the existing anonymous ID and generate a new one.
+     *
+     * @param clearAnonymousId A boolean flag to determine whether to clear the anonymous ID. Defaults to false.
      */
-    override fun reset() {
-        super.reset()
+    override fun reset(clearAnonymousId: Boolean) {
+        super.reset(clearAnonymousId)
         sessionTrackingPlugin.refreshSession()
     }
 

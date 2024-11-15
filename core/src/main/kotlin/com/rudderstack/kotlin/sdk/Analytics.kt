@@ -253,12 +253,6 @@ open class Analytics protected constructor(
     }
 
     /**
-     * Resets the analytics instance.
-     */
-    open fun reset() {
-    }
-
-    /**
      * Sets up the initial plugin chain by adding the default plugins such as `PocPlugin`
      * and `RudderStackDataplanePlugin`. This function is called during initialization.
      */
@@ -314,7 +308,7 @@ open class Analytics protected constructor(
      *
      * @param clearAnonymousId A boolean flag to determine whether to clear the anonymous ID. Defaults to false.
      */
-    fun reset(clearAnonymousId: Boolean = false) {
+    open fun reset(clearAnonymousId: Boolean = false) {
         userIdentityState.dispatch(ResetUserIdentityAction(clearAnonymousId))
         analyticsScope.launch {
             userIdentityState.value.resetUserIdentity(

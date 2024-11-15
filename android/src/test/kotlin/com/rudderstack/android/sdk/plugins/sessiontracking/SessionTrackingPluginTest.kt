@@ -69,7 +69,7 @@ class SessionTrackingPluginTest {
     fun `given session timeout, when app is launched, then new session starts`() = runTest {
         // given
         val automaticSessionTrackingEnabled = true
-        mockStorage.write(StorageKeys.LAST_EVENT_TIME, System.currentTimeMillis() - 600_000L) // Last event was 10 mins ago
+        mockStorage.write(StorageKeys.LAST_ACTIVITY_TIME, System.currentTimeMillis() - 600_000L) // Last event was 10 mins ago
 
         // when
         pluginSetup(automaticSessionTracking = automaticSessionTrackingEnabled, sessionTimeoutInMillis = 300_000L)
@@ -77,7 +77,7 @@ class SessionTrackingPluginTest {
 
         // then
         assert(mockStorage.readLong(StorageKeys.SESSION_ID, 0L) != 0L)
-        assert(!mockStorage.readBoolean(StorageKeys.IS_MANUAL_SESSION, false))
+        assert(!mockStorage.readBoolean(StorageKeys.IS_SESSION_MANUAL, false))
     }
 
     @Test
@@ -85,7 +85,7 @@ class SessionTrackingPluginTest {
         runTest {
             // given
             val automaticSessionTrackingEnabled = true
-            mockStorage.write(StorageKeys.IS_MANUAL_SESSION, true)
+            mockStorage.write(StorageKeys.IS_SESSION_MANUAL, true)
 
             // when
             pluginSetup(automaticSessionTracking = automaticSessionTrackingEnabled)
@@ -93,7 +93,7 @@ class SessionTrackingPluginTest {
 
             // then
             assert(mockStorage.readLong(StorageKeys.SESSION_ID, 0L) != 0L)
-            assert(!mockStorage.readBoolean(StorageKeys.IS_MANUAL_SESSION, false))
+            assert(!mockStorage.readBoolean(StorageKeys.IS_SESSION_MANUAL, false))
         }
 
     @Test
@@ -107,7 +107,7 @@ class SessionTrackingPluginTest {
 
         // then
         assert(mockStorage.readLong(StorageKeys.SESSION_ID, 0L) != 0L)
-        assert(!mockStorage.readBoolean(StorageKeys.IS_MANUAL_SESSION, false))
+        assert(!mockStorage.readBoolean(StorageKeys.IS_SESSION_MANUAL, false))
     }
 
     @Test
@@ -115,7 +115,7 @@ class SessionTrackingPluginTest {
         // given
         val automaticSessionTrackingEnabled = false
         val previousSessionId = 1234567890L
-        mockStorage.write(StorageKeys.IS_MANUAL_SESSION, true)
+        mockStorage.write(StorageKeys.IS_SESSION_MANUAL, true)
         mockStorage.write(StorageKeys.SESSION_ID, previousSessionId)
 
         // when
@@ -124,7 +124,7 @@ class SessionTrackingPluginTest {
 
         // then
         assertEquals(previousSessionId, mockStorage.readLong(StorageKeys.SESSION_ID, 0L))
-        assertEquals(true, mockStorage.readBoolean(StorageKeys.IS_MANUAL_SESSION, false))
+        assertEquals(true, mockStorage.readBoolean(StorageKeys.IS_SESSION_MANUAL, false))
     }
 
     @Test
@@ -132,7 +132,7 @@ class SessionTrackingPluginTest {
         // given
         val automaticSessionTrackingEnabled = false
         val previousSessionId = 1234567890L
-        mockStorage.write(StorageKeys.IS_MANUAL_SESSION, false)
+        mockStorage.write(StorageKeys.IS_SESSION_MANUAL, false)
         mockStorage.write(StorageKeys.SESSION_ID, previousSessionId)
 
         // when
@@ -141,14 +141,14 @@ class SessionTrackingPluginTest {
 
         // then
         assertEquals(0L, mockStorage.readLong(StorageKeys.SESSION_ID, 0L))
-        assertEquals(false, mockStorage.readBoolean(StorageKeys.IS_MANUAL_SESSION, false))
+        assertEquals(false, mockStorage.readBoolean(StorageKeys.IS_SESSION_MANUAL, false))
     }
 
     @Test
     fun `automatic session enabled, when execute called, then correct payload is attached`() = runTest {
         // given
         val sessionId = 1234567890L
-        every { plugin.getCurrentTime() } returns sessionId * 1000
+        every { plugin.getMonotonicCurrentTime() } returns sessionId * 1000
         val firstMessage = TrackEvent("test", emptyJsonObject)
         val secondMessage = TrackEvent("test", emptyJsonObject)
 
@@ -193,8 +193,8 @@ class SessionTrackingPluginTest {
     fun `given automatic session and session is not ended previously and timeout, when checkAndStartSessionOnForeground called, then start new session called`() = runTest {
         // given
         val automaticSessionTrackingEnabled = true
-        mockStorage.write(StorageKeys.IS_MANUAL_SESSION, false)
-        mockStorage.write(StorageKeys.LAST_EVENT_TIME, System.currentTimeMillis() - 600_000L) // Last event was 10 mins ago
+        mockStorage.write(StorageKeys.IS_SESSION_MANUAL, false)
+        mockStorage.write(StorageKeys.LAST_ACTIVITY_TIME, System.currentTimeMillis() - 600_000L) // Last event was 10 mins ago
 
         // when
         pluginSetup(automaticSessionTracking = automaticSessionTrackingEnabled, sessionTimeoutInMillis = 300_000L)
@@ -204,7 +204,7 @@ class SessionTrackingPluginTest {
 
         // then
         assert(mockStorage.readLong(StorageKeys.SESSION_ID, 0L) != 0L)
-        assert(!mockStorage.readBoolean(StorageKeys.IS_MANUAL_SESSION, false))
+        assert(!mockStorage.readBoolean(StorageKeys.IS_SESSION_MANUAL, false))
     }
 
     private fun pluginSetup(

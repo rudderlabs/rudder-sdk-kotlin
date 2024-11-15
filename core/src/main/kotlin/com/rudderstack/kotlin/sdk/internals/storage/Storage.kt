@@ -197,12 +197,17 @@ enum class StorageKeys(val key: String) {
     /**
      * Key for storing the timestamp of last event fired. Required for session management.
      */
-    LAST_EVENT_TIME("last_event_time"),
+    LAST_ACTIVITY_TIME("last_activity_time"),
 
     /**
      * Key for storing the flag for manual session.
      */
-    IS_MANUAL_SESSION("is_manual_session"),
+    IS_SESSION_MANUAL("is_session_manual"),
+
+    /**
+     * Key for storing the flag for session start.
+     */
+    IS_SESSION_START("is_session_start"),
 }
 
 /**

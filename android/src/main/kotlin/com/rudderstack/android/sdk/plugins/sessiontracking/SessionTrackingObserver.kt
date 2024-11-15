@@ -23,7 +23,10 @@ internal class SessionTrackingObserver(
 
     override fun onActivityStarted(activity: Activity) { updateSession() }
 
-    override fun onStop(owner: LifecycleOwner) { isSessionAlreadyUpdated.set(false) }
+    override fun onStop(owner: LifecycleOwner) {
+        isSessionAlreadyUpdated.set(false)
+        plugin.updateLastActivityTime()
+    }
 
     private fun updateSession() {
         if (isSessionAlreadyUpdated.compareAndSet(false, true)) {
