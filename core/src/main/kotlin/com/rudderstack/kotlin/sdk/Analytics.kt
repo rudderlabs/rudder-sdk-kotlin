@@ -57,6 +57,7 @@ import kotlinx.coroutines.launch
  * @param configuration The configuration object that defines settings such as write key, data plane URL, logger, etc.
  * @param coroutineConfig The coroutine configuration that defines the scopes and dispatchers for analytics operations.
  */
+@Suppress("TooManyFunctions")
 @OptIn(ExperimentalCoroutinesApi::class)
 open class Analytics protected constructor(
     val configuration: Configuration,
@@ -281,11 +282,6 @@ open class Analytics protected constructor(
         isAnalyticsShutdown = true
 
         processMessageChannel.cancel()
-        this.pluginChain.applyClosure {
-            if (it is RudderStackDataplanePlugin) {
-                it.shutdown()
-            }
-        }
 
         this.pluginChain.removeAll()
 

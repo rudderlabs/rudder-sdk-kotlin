@@ -57,7 +57,7 @@ internal class RudderStackDataplanePlugin : MessagePlugin {
         messageQueue?.flush()
     }
 
-    internal fun shutdown() {
+    override fun teardown() {
         messageQueue?.stop()
     }
 

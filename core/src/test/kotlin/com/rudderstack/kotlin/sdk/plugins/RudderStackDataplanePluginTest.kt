@@ -60,8 +60,8 @@ class RudderStackDataplanePluginTest {
     }
 
     @Test
-    fun `given a plugin, when shutdown is executed, then verify that the message queue's stop method is called`() {
-        plugin.shutdown()
+    fun `given a plugin, when teardown is executed, then verify that the message queue's stop method is called`() {
+        plugin.teardown()
 
         verify { messageQueue.stop() }
     }
