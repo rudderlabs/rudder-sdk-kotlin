@@ -3,6 +3,7 @@ package com.rudderstack.sampleapp.analytics
 import android.app.Application
 import com.rudderstack.android.sdk.Analytics
 import com.rudderstack.android.sdk.Configuration
+import com.rudderstack.android.sdk.SessionConfiguration
 import com.rudderstack.kotlin.sdk.internals.logger.Logger
 import com.rudderstack.sampleapp.analytics.customplugins.AndroidAdvertisingIdPlugin
 import com.rudderstack.sampleapp.analytics.customplugins.AndroidAdvertisingIdPlugin.Companion.isAdvertisingLibraryAvailable
@@ -15,9 +16,13 @@ object RudderAnalyticsUtils {
         analytics = Analytics(
             configuration = Configuration(
                 trackApplicationLifecycleEvents = true,
-                writeKey = "<WRITE_KEY>",
+                writeKey = "2lEGUmhhp9rKcvW21NuNsZ6PJwo",
                 application = application,
-                dataPlaneUrl = "<DATA_PLANE_URL>",
+                dataPlaneUrl = "https://rudderstachdvs.dataplane.rudderstack.com",
+                sessionConfiguration = SessionConfiguration(
+                    automaticSessionTracking = true,
+                    sessionTimeoutInMillis = 3000,
+                ),
                 logLevel = Logger.LogLevel.VERBOSE,
             )
         )

@@ -6,6 +6,7 @@ import com.rudderstack.android.sdk.plugins.lifecyclemanagment.ProcessLifecycleOb
 import com.rudderstack.android.sdk.utils.addLifecycleObserver
 import com.rudderstack.android.sdk.utils.mergeWithHigherPriorityTo
 import com.rudderstack.kotlin.sdk.Analytics
+import com.rudderstack.kotlin.sdk.internals.logger.LoggerAnalytics
 import com.rudderstack.kotlin.sdk.internals.models.Message
 import com.rudderstack.kotlin.sdk.internals.plugins.Plugin
 import com.rudderstack.kotlin.sdk.internals.storage.StorageKeys
@@ -17,6 +18,7 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.jetbrains.annotations.VisibleForTesting
 import java.util.concurrent.TimeUnit
+import kotlin.properties.Delegates
 import com.rudderstack.android.sdk.Analytics as AndroidAnalytics
 import com.rudderstack.android.sdk.Configuration as AndroidConfiguration
 
@@ -45,10 +47,18 @@ internal class SessionTrackingPlugin(
     @Volatile
     private var isSessionManual = false
 
+    private var sessionTimeout by Delegates.notNull<Long>()
+
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
 
         (analytics.configuration as? AndroidConfiguration)?.let { config ->
+            sessionTimeout = if (config.sessionConfiguration.sessionTimeoutInMillis >= 0) {
+                config.sessionConfiguration.sessionTimeoutInMillis
+            } else {
+                LoggerAnalytics.error("Session timeout cannot be negative. Setting it to 0.")
+                0L
+            }
             // get the session variables from the storage
             sessionId = config.storage.readLong(StorageKeys.SESSION_ID, 0L)
             lastActivityTime = config.storage.readLong(StorageKeys.LAST_ACTIVITY_TIME, 0L)
@@ -98,9 +108,7 @@ internal class SessionTrackingPlugin(
             // 1. session id is not present OR
             // 2. session is manual OR
             // 3. session timeout has occurred
-            if (sessionId == 0L || isSessionManual || getMonotonicCurrentTime() - lastActivityTime >
-                config.sessionConfiguration.sessionTimeoutInMillis
-            ) {
+            if (sessionId == 0L || isSessionManual || getMonotonicCurrentTime() - lastActivityTime > sessionTimeout) {
                 startSession(isSessionManual = false)
             }
         }
@@ -114,9 +122,7 @@ internal class SessionTrackingPlugin(
             // 2. session is not manual
             // AND
             // 3. session timeout has occurred
-            if (sessionId != 0L && !isSessionManual && getMonotonicCurrentTime() - lastActivityTime >
-                config.sessionConfiguration.sessionTimeoutInMillis
-            ) {
+            if (sessionId != 0L && !isSessionManual && getMonotonicCurrentTime() - lastActivityTime > sessionTimeout) {
                 startSession(isSessionManual = false)
             }
         }
