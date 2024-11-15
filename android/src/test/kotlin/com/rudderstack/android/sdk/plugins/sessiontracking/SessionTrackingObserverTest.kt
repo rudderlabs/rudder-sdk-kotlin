@@ -77,7 +77,7 @@ class SessionTrackingObserverTest {
     }
 
     @Test
-    fun `when onStop is called, then sessionAlreadyUpdated is set to false`() {
+    fun `when onStop is called, then sessionAlreadyUpdated is set to false and updateLastActivityTime invoked`() {
         // given
         observer.isSessionAlreadyUpdated.set(true)
 
@@ -86,6 +86,7 @@ class SessionTrackingObserverTest {
 
         // then
         assert(!observer.isSessionAlreadyUpdated.get())
+        verify { mockPlugin.updateLastActivityTime() }
     }
 
     @Test
