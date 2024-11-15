@@ -183,6 +183,14 @@ class MessageBatchFileManager(
     }
 
     /**
+     * Closes the current file output stream and resets the state of the file output stream and the current file reference.
+     */
+    suspend fun closeAndReset() = withLock {
+        os?.close()
+        reset()
+    }
+
+    /**
      * Acquires a lock, executes the provided block, and releases the lock.
      *
      * @param block The block of code to execute within the lock.

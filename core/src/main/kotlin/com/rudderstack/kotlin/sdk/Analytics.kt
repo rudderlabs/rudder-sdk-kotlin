@@ -38,6 +38,7 @@ import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
@@ -71,6 +72,7 @@ open class Analytics protected constructor(
     internal val userIdentityState = FlowState(initialState = UserIdentity.initialState(configuration.storage))
 
     private val processMessageChannel: Channel<Message> = Channel(Channel.UNLIMITED)
+    private var processMessageJob: Job? = null
 
     @Volatile
     internal var isAnalyticsShutdown = false
@@ -281,12 +283,10 @@ open class Analytics protected constructor(
 
         isAnalyticsShutdown = true
 
-        processMessageChannel.cancel()
-
-        this.pluginChain.removeAll()
-
-        analyticsScope.launch(storageDispatcher) {
-            configuration.storage.rollover()
+        processMessageChannel.close()
+        analyticsScope.launch {
+            processMessageJob?.join()
+            this@Analytics.pluginChain.removeAll()
         }.invokeOnCompletion {
             analyticsScope.cancel()
             LoggerAnalytics.info("Analytics shutdown completed.")
@@ -371,7 +371,7 @@ open class Analytics protected constructor(
      * Events sent before this function is invoked will be queued and processed once this function is called, ensuring no events are lost.
      */
     private fun processMessages() {
-        analyticsScope.launch(analyticsDispatcher) {
+        processMessageJob = analyticsScope.launch(analyticsDispatcher) {
             for (message in processMessageChannel) {
                 message.updateData(platform = getPlatformType())
                 pluginChain.process(message)

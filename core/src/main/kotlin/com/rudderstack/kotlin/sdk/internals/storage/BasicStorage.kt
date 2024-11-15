@@ -89,6 +89,10 @@ internal class BasicStorage(writeKey: String) : Storage {
         messagesFile.rollover()
     }
 
+    override suspend fun close() {
+        messagesFile.closeAndReset()
+    }
+
     override fun readInt(key: StorageKeys, defaultVal: Int): Int {
         return propertiesFile.getInt(key.key, defaultVal)
     }

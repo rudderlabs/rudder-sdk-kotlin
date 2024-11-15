@@ -16,9 +16,11 @@ import com.rudderstack.kotlin.sdk.internals.utils.encodeToBase64
 import com.rudderstack.kotlin.sdk.internals.utils.encodeToString
 import com.rudderstack.kotlin.sdk.internals.utils.parseFilePaths
 import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -50,6 +52,8 @@ internal class MessageQueue(
     private var running: Boolean
     private var writeChannel: Channel<Message>
     private var uploadChannel: Channel<String>
+
+    private var writeJob: Job? = null
 
     private val storage get() = analytics.configuration.storage
 
@@ -91,12 +95,15 @@ internal class MessageQueue(
         writeChannel.trySend(FlushEvent(""))
     }
 
-    fun stop() {
+    suspend fun stop() {
         if (!running) return
         running = false
 
         uploadChannel.cancel()
-        writeChannel.cancel()
+        writeChannel.close()
+        writeJob?.join()
+        storage.close()
+
         flushPoliciesFacade.cancelSchedule()
     }
 
@@ -105,24 +112,26 @@ internal class MessageQueue(
     }
 
     @Suppress("TooGenericExceptionCaught")
-    private fun write() = analytics.analyticsScope.launch(analytics.storageDispatcher) {
-        for (message in writeChannel) {
-            val isFlushSignal = (message.type == MessageType.Flush)
+    private fun write() {
+        writeJob = analytics.analyticsScope.launch(analytics.storageDispatcher) {
+            for (message in writeChannel) {
+                val isFlushSignal = (message.type == MessageType.Flush)
 
-            if (!isFlushSignal) {
-                try {
-                    val stringVal = stringifyBaseEvent(message)
-                    LoggerAnalytics.debug("running $stringVal")
-                    storage.write(StorageKeys.MESSAGE, stringVal)
-                    flushPoliciesFacade.updateState()
-                } catch (e: Exception) {
-                    LoggerAnalytics.error("Error adding payload: $message", e)
+                if (!isFlushSignal) {
+                    try {
+                        val stringVal = stringifyBaseEvent(message)
+                        LoggerAnalytics.debug("running $stringVal")
+                        storage.write(StorageKeys.MESSAGE, stringVal)
+                        flushPoliciesFacade.updateState()
+                    } catch (e: Exception) {
+                        LoggerAnalytics.error("Error adding payload: $message", e)
+                    }
                 }
-            }
 
-            if (isFlushSignal || flushPoliciesFacade.shouldFlush()) {
-                uploadChannel.trySend(UPLOAD_SIG)
-                flushPoliciesFacade.reset()
+                if (isFlushSignal || flushPoliciesFacade.shouldFlush()) {
+                    uploadChannel.trySend(UPLOAD_SIG)
+                    flushPoliciesFacade.reset()
+                }
             }
         }
     }
@@ -138,7 +147,7 @@ internal class MessageQueue(
             for (filePath in fileUrlList) {
                 val file = File(filePath)
                 if (!isFileExists(file)) continue
-
+                ensureActive()
                 var shouldCleanup = false
                 try {
                     val batchPayload = jsonSentAtUpdater.updateSentAt(readFileAsString(filePath))
