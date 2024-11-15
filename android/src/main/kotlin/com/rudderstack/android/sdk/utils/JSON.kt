@@ -18,6 +18,6 @@ internal fun JsonObjectBuilder.putUndefinedIfNull(key: String, value: CharSequen
  *
  * @param other The JSON object to merge with the current JSON object.
  */
-infix fun JsonObject.mergeWithHigherPriorityTo(other: JsonObject): JsonObject {
+internal infix fun JsonObject.mergeWithHigherPriorityTo(other: JsonObject): JsonObject {
     return JsonObject(this.toMap() + other.toMap())
 }

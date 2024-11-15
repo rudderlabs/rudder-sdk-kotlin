@@ -1,12 +1,11 @@
 package com.rudderstack.sampleapp.analytics.customplugins
 
-import com.rudderstack.android.sdk.utils.mergeWithHigherPriorityTo
 import com.rudderstack.kotlin.sdk.Analytics
 import com.rudderstack.kotlin.sdk.internals.logger.LoggerAnalytics
 import com.rudderstack.kotlin.sdk.internals.models.Message
 import com.rudderstack.kotlin.sdk.internals.models.RudderOption
 import com.rudderstack.kotlin.sdk.internals.plugins.Plugin
-import com.rudderstack.kotlin.sdk.internals.utils.mergeWithHigherPriorityTo
+import kotlinx.serialization.json.JsonObject
 
 /**
  * A plugin that adds custom context and integrations to each message. Note: External IDs should not be updated here.
@@ -45,3 +44,21 @@ class OptionPlugin (
         message.integrations = message.integrations mergeWithHigherPriorityTo option.integrations
     }
 }
+
+/**
+ * Merges the current JSON object with another JSON object, giving higher priority to the other JSON object.
+ *
+ * @param other The JSON object to merge with the current JSON object.
+ */
+infix fun JsonObject.mergeWithHigherPriorityTo(other: JsonObject): JsonObject {
+    return JsonObject(this.toMap() + other.toMap())
+}
+/**
+ * Merges the current map with another map, giving higher priority to the other map.
+ *
+ * @param other The map to merge with the current map.
+ */
+infix fun <K, V> Map<K, V>.mergeWithHigherPriorityTo(other: Map<K, V>): Map<K, V> {
+    return this + other
+}
+
