@@ -36,7 +36,6 @@ internal class ProcessLifecycleManagementPlugin : Plugin, DefaultLifecycleObserv
 
     override fun teardown() {
         super.teardown()
-        processObservers.clear()
         (analytics as? AndroidAnalytics)?.runOnMainThread {
             withContext(NonCancellable) {
                 lifecycle.removeObserver(this@ProcessLifecycleManagementPlugin)

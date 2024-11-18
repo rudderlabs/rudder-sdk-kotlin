@@ -38,7 +38,6 @@ internal class ActivityLifecycleManagementPlugin : Plugin, Application.ActivityL
 
     override fun teardown() {
         super.teardown()
-        activityObservers.clear()
         (analytics as? AndroidAnalytics)?.runOnMainThread {
             withContext(NonCancellable) {
                 application.unregisterActivityLifecycleCallbacks(this@ActivityLifecycleManagementPlugin)

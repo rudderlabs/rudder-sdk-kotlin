@@ -8,6 +8,7 @@ import android.os.Bundle
 import com.rudderstack.android.sdk.plugins.lifecyclemanagment.ActivityLifecycleObserver
 import com.rudderstack.android.sdk.storage.CheckBuildVersionUseCase
 import com.rudderstack.android.sdk.utils.addLifecycleObserver
+import com.rudderstack.android.sdk.utils.removeLifecycleObserver
 import com.rudderstack.kotlin.sdk.Analytics
 import com.rudderstack.kotlin.sdk.internals.plugins.Plugin
 import kotlinx.serialization.json.JsonObjectBuilder
@@ -36,6 +37,10 @@ internal class DeeplinkPlugin(
                 (analytics as? AndroidAnalytics)?.addLifecycleObserver(this)
             }
         }
+    }
+
+    override fun teardown() {
+        (analytics as? AndroidAnalytics)?.removeLifecycleObserver(this)
     }
 
     override fun onActivityCreated(activity: Activity, bundle: Bundle?) {
