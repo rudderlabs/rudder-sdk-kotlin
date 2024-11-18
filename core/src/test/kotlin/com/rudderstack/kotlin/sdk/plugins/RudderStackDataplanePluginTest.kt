@@ -43,13 +43,6 @@ class RudderStackDataplanePluginTest {
     }
 
     @Test
-    fun `given a flush event, when flush is called, test flush is enqueued and returned correctly`() {
-        val flushEvent = mockk<Message>(relaxed = true)
-
-        verify(exactly = 0) { messageQueue.put(flushEvent) }
-    }
-
-    @Test
     fun `given a plugin, when flush is executed, then verify that the message queue's flush method is called`() {
         plugin.flush()
 
