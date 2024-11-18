@@ -46,10 +46,11 @@ internal class MessageQueue(
 ) {
 
     private var running: Boolean
-    private var writeChannel: Channel<ChannelQueue>
+    private var writeChannel: Channel<QueueMessage>
     private var uploadChannel: Channel<String>
 
     private val storage get() = analytics.configuration.storage
+    private val flushSignal = QueueMessage(QueueMessage.QueueMessageType.FLUSH_SIGNAL)
 
     init {
         running = false
@@ -69,7 +70,7 @@ internal class MessageQueue(
     }
 
     fun put(message: Message) {
-        writeChannel.trySend(ChannelQueue(ChannelQueue.QueueMessageType.MESSAGE, message))
+        writeChannel.trySend(QueueMessage(QueueMessage.QueueMessageType.MESSAGE, message))
     }
 
     fun start() {
@@ -86,7 +87,7 @@ internal class MessageQueue(
     }
 
     fun flush() {
-        writeChannel.trySend(ChannelQueue(ChannelQueue.QueueMessageType.FLUSH_EVENT))
+        writeChannel.trySend(flushSignal)
     }
 
     fun stop() {
@@ -105,7 +106,7 @@ internal class MessageQueue(
     @Suppress("TooGenericExceptionCaught")
     private fun write() = analytics.analyticsScope.launch(analytics.storageDispatcher) {
         for (queueMessage in writeChannel) {
-            val isFlushSignal = (queueMessage.type == ChannelQueue.QueueMessageType.FLUSH_EVENT)
+            val isFlushSignal = (queueMessage.type == QueueMessage.QueueMessageType.FLUSH_SIGNAL)
 
             if (!isFlushSignal) {
                 try {
@@ -175,14 +176,15 @@ internal class MessageQueue(
     fun readFileAsString(filePath: String): String {
         return File(filePath).readText()
     }
+}
 
-    private data class ChannelQueue(
-        val type: QueueMessageType,
-        val message: Message? = null,
-    ) {
-        enum class QueueMessageType {
-            MESSAGE,
-            FLUSH_EVENT,
-        }
+private data class QueueMessage(
+    val type: QueueMessageType,
+    val message: Message? = null,
+) {
+
+    enum class QueueMessageType {
+        MESSAGE,
+        FLUSH_SIGNAL,
     }
 }
