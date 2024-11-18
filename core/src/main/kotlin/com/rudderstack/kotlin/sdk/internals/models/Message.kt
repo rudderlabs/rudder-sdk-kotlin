@@ -48,12 +48,6 @@ enum class MessageType {
     @SerialName("track")
     Track,
 
-    /**
-     * Indicates a flush message type.
-     */
-    @SerialName("flush")
-    Flush,
-
     @SerialName("screen")
     Screen,
 
@@ -71,7 +65,7 @@ enum class MessageType {
  * Base class for all message types in RudderStack, designed for representing
  * and handling different kinds of events in a unified way.
  *
- * This sealed class is the parent of specific message types like [FlushEvent] and [TrackEvent],
+ * This sealed class is the parent of specific message types like [TrackEvent] [GroupEvent] [ScreenEvent],
  * ensuring type safety and enabling polymorphism for handling different message types.
  *
  * @property type The type of the message, represented as a [MessageType] enum.
