@@ -61,11 +61,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         customContext = buildJsonObject {
                             put("key-1", "value-1")
                         },
-                        integrations = mapOf(
-                            "Amplitude" to true
-                        ),
+                        integrations = buildJsonObject {
+                            put("Amplitude", true)
+                            put("INTERCOM", buildJsonObject {
+                                put("lookup", "phone")
+                            })
+                        },
                         externalIds = listOf(
-                            ExternalId(type= "brazeExternalId", id = "value1234"),
+                            ExternalId(type = "brazeExternalId", id = "value1234"),
                         )
                     )
                 )
