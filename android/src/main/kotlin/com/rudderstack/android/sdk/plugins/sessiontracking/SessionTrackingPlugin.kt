@@ -9,7 +9,8 @@ import com.rudderstack.kotlin.sdk.Analytics
 import com.rudderstack.kotlin.sdk.internals.logger.LoggerAnalytics
 import com.rudderstack.kotlin.sdk.internals.models.Message
 import com.rudderstack.kotlin.sdk.internals.plugins.Plugin
-import com.rudderstack.kotlin.sdk.internals.storage.StorageKeys
+import com.rudderstack.kotlin.sdk.internals.statemanagement.FlowState
+import com.rudderstack.kotlin.sdk.internals.storage.Storage
 import com.rudderstack.kotlin.sdk.internals.utils.DateTimeUtils
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -25,6 +26,7 @@ import com.rudderstack.android.sdk.Configuration as AndroidConfiguration
 internal const val SESSION_ID = "sessionId"
 internal const val SESSION_START = "sessionStart"
 
+@Suppress("TooManyFunctions")
 @OptIn(ExperimentalCoroutinesApi::class)
 internal class SessionTrackingPlugin(
     // single thread dispatcher is required so that the session variables are updated (on storage) in a sequential manner.
@@ -33,19 +35,19 @@ internal class SessionTrackingPlugin(
 
     override val pluginType: Plugin.PluginType = Plugin.PluginType.PreProcess
     override lateinit var analytics: Analytics
+    private val storage: Storage
+        get() = analytics.configuration.storage
 
-    // this variable always holds the latest session id after the setup of this plugin is completed
-    @Volatile
-    private var sessionId = 0L
+    private lateinit var sessionState: FlowState<SessionState>
 
-    @Volatile
-    private var lastActivityTime = 0L
-
-    @Volatile
-    private var isSessionStart = false
-
-    @Volatile
-    private var isSessionManual = false
+    private val sessionId
+        get() = sessionState.value.sessionId
+    private val lastActivityTime
+        get() = sessionState.value.lastActivityTime
+    private val isSessionManual
+        get() = sessionState.value.isSessionManual
+    private val isSessionStart
+        get() = sessionState.value.isSessionStart
 
     private var sessionTimeout by Delegates.notNull<Long>()
 
@@ -60,22 +62,13 @@ internal class SessionTrackingPlugin(
                 0L
             }
             // get the session variables from the storage
-            sessionId = config.storage.readLong(StorageKeys.SESSION_ID, 0L)
-            lastActivityTime = config.storage.readLong(StorageKeys.LAST_ACTIVITY_TIME, 0L)
-            isSessionManual = config.storage.readBoolean(StorageKeys.IS_SESSION_MANUAL, false)
-            isSessionStart = config.storage.readBoolean(StorageKeys.IS_SESSION_START, false)
+            sessionState = FlowState(SessionState.initialState(analytics.configuration.storage))
 
             when {
                 config.sessionConfiguration.automaticSessionTracking -> {
                     checkAndStartSessionOnLaunch()
                     // attach the session tracking observer to process lifecycle
-                    val sessionTrackingObserver = SessionTrackingObserver(this)
-                    (analytics as? AndroidAnalytics)?.addLifecycleObserver(
-                        sessionTrackingObserver as ProcessLifecycleObserver
-                    )
-                    (analytics as? AndroidAnalytics)?.addLifecycleObserver(
-                        sessionTrackingObserver as ActivityLifecycleObserver
-                    )
+                    attachSessionTrackingObservers()
                 }
                 // end the session on launch if it is not manual
                 !isSessionManual -> endSession()
@@ -90,12 +83,12 @@ internal class SessionTrackingPlugin(
             val sessionPayload = buildJsonObject {
                 put(SESSION_ID, sessionId)
                 if (isSessionStart) {
-                    updateIsSessionStart(false)
+                    updateIsSessionStartIfChanged(false)
                     put(SESSION_START, true)
                 }
             }
             message.context = message.context mergeWithHigherPriorityTo sessionPayload
-            if (!isSessionManual) {
+            if (!isSessionStart) {
                 updateLastActivityTime()
             }
         }
@@ -104,75 +97,82 @@ internal class SessionTrackingPlugin(
 
     private fun checkAndStartSessionOnLaunch() {
         if (shouldStartNewSessionOnLaunch()) {
-            startSession(isSessionManual = false)
+            startSession(sessionId = generateSessionId(), isSessionManual = false)
         }
     }
 
-    internal fun checkAndStartSessionOnForeground() {
+    fun checkAndStartSessionOnForeground() {
         if (shouldStartNewSessionOnForeground()) {
-            startSession(isSessionManual = false)
+            startSession(sessionId = generateSessionId(), isSessionManual = false)
         }
     }
 
-    internal fun refreshSession() {
+    fun refreshSession() {
         if (sessionId != 0L) {
-            startSession()
+            startSession(sessionId = generateSessionId(), shouldUpdateIsSessionManual = false)
         }
     }
 
-    internal fun startSession(sessionId: Long? = null, isSessionManual: Boolean? = null) {
-        updateIsSessionStart(true)
-        updateIsSessionManual(isSessionManual)
+    fun startSession(sessionId: Long, isSessionManual: Boolean = false, shouldUpdateIsSessionManual: Boolean = true) {
+        updateIsSessionStartIfChanged(true)
+        if (shouldUpdateIsSessionManual) {
+            updateIsSessionManualIfChanged(isSessionManual)
+        }
         updateSessionId(sessionId)
     }
 
-    private fun updateSessionId(sessionId: Long?) {
-        if (this.sessionId != sessionId) {
-            val updatedSessionId = sessionId ?: (TimeUnit.MILLISECONDS.toSeconds(DateTimeUtils.getSystemCurrentTime()))
-            this.sessionId = updatedSessionId
-            analytics.analyticsScope.launch(sessionDispatcher) {
-                analytics.configuration.storage.write(StorageKeys.SESSION_ID, updatedSessionId)
+    private fun attachSessionTrackingObservers() {
+        val sessionTrackingObserver = SessionTrackingObserver(this)
+        (analytics as? AndroidAnalytics)?.addLifecycleObserver(
+            sessionTrackingObserver as ProcessLifecycleObserver
+        )
+        (analytics as? AndroidAnalytics)?.addLifecycleObserver(
+            sessionTrackingObserver as ActivityLifecycleObserver
+        )
+    }
+
+    private fun updateSessionId(sessionId: Long) {
+        sessionState.dispatch(SessionState.UpdateSessionIdAction(sessionId))
+        withSessionDispatcher {
+            sessionState.value.storeSessionId(sessionId, storage)
+        }
+    }
+
+    private fun updateIsSessionManualIfChanged(isSessionManual: Boolean) {
+        if (this.isSessionManual != isSessionManual) {
+            sessionState.dispatch(SessionState.UpdateIsSessionManualAction(isSessionManual))
+            withSessionDispatcher {
+                sessionState.value.storeIsSessionManual(isSessionManual, storage)
             }
         }
     }
 
-    private fun updateIsSessionManual(isSessionManual: Boolean?) {
-        if (isSessionManual != null && this.isSessionManual != isSessionManual) {
-            this.isSessionManual = isSessionManual
-            analytics.analyticsScope.launch(sessionDispatcher) {
-                analytics.configuration.storage.write(StorageKeys.IS_SESSION_MANUAL, isSessionManual)
-            }
-        }
-    }
-
-    internal fun updateLastActivityTime() {
+    fun updateLastActivityTime() {
         val lastActivityTime = getMonotonicCurrentTime()
-        this.lastActivityTime = lastActivityTime
-        analytics.analyticsScope.launch(sessionDispatcher) {
-            analytics.configuration.storage.write(StorageKeys.LAST_ACTIVITY_TIME, lastActivityTime)
+        sessionState.dispatch(SessionState.UpdateLastActivityTimeAction(lastActivityTime))
+        withSessionDispatcher {
+            sessionState.value.storeLastActivityTime(lastActivityTime, storage)
         }
     }
 
-    private fun updateIsSessionStart(isSessionStart: Boolean) {
+    private fun updateIsSessionStartIfChanged(isSessionStart: Boolean) {
         if (this.isSessionStart != isSessionStart) {
-            this.isSessionStart = isSessionStart
-            analytics.analyticsScope.launch(sessionDispatcher) {
-                analytics.configuration.storage.write(StorageKeys.IS_SESSION_START, isSessionStart)
+            sessionState.dispatch(SessionState.UpdateIsSessionStartAction(isSessionStart))
+            withSessionDispatcher {
+                sessionState.value.storeIsSessionStart(isSessionStart, storage)
             }
         }
     }
 
-    internal fun endSession() {
-        sessionId = 0L
-        lastActivityTime = 0L
-        isSessionManual = false
-        isSessionStart = false
-        analytics.analyticsScope.launch(sessionDispatcher) {
-            analytics.configuration.storage.remove(StorageKeys.SESSION_ID)
-            analytics.configuration.storage.remove(StorageKeys.LAST_ACTIVITY_TIME)
-            analytics.configuration.storage.remove(StorageKeys.IS_SESSION_MANUAL)
-            analytics.configuration.storage.remove(StorageKeys.IS_SESSION_START)
+    fun endSession() {
+        sessionState.dispatch(SessionState.EndSessionAction)
+        withSessionDispatcher {
+            sessionState.value.removeSessionData(storage)
         }
+    }
+
+    fun generateSessionId(): Long {
+        return TimeUnit.MILLISECONDS.toSeconds(DateTimeUtils.getSystemCurrentTime())
     }
 
     private fun shouldStartNewSessionOnForeground(): Boolean {
@@ -185,5 +185,9 @@ internal class SessionTrackingPlugin(
 
     private fun hasSessionTimedOut(): Boolean {
         return getMonotonicCurrentTime() - lastActivityTime > sessionTimeout
+    }
+
+    private fun withSessionDispatcher(block: suspend () -> Unit) {
+        analytics.analyticsScope.launch(sessionDispatcher) { block() }
     }
 }

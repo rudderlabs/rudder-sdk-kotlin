@@ -84,7 +84,8 @@ class Analytics(
             LoggerAnalytics.error("Session Id should be at least $MIN_SESSION_ID_LENGTH digits.")
             return
         }
-        sessionTrackingPlugin.startSession(sessionId, isSessionManual = true)
+        val newSessionId = sessionId ?: sessionTrackingPlugin.generateSessionId()
+        sessionTrackingPlugin.startSession(sessionId = newSessionId, isSessionManual = true)
     }
 
     /**
