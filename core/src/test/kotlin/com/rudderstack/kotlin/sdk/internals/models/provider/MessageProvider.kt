@@ -27,12 +27,12 @@ fun provideSampleJsonPayload() = buildJsonObject {
     put("key-11", emptyJsonObject)
 }
 
-fun provideSampleIntegrationsPayload() = mapOf(
-    "Amplitude" to true,
-    "All" to false,
-    "Firebase" to true,
-    "Braze" to false,
-)
+fun provideSampleIntegrationsPayload() = buildJsonObject {
+    put("Amplitude", true)
+    put("All", false)
+    put("Firebase", true)
+    put("Braze", false)
+}
 
 fun provideSampleExternalIdsPayload() = listOf(
     ExternalId("key-1", "value-1"),
