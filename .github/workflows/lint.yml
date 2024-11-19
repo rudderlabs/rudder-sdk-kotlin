@@ -1,4 +1,4 @@
-name: Linting tools
+name: Linting Check
 
 on:
   push:
@@ -16,7 +16,7 @@ jobs:
         with:
           workflow_id: ${{ github.event.workflow.id }}
 
-  unit-test:
+  lint-check:
     needs: cancel_previous
     runs-on: ubuntu-latest
 
@@ -25,9 +25,12 @@ jobs:
         with:
           distribution: "temurin" # See 'Supported distributions' for available options
           java-version: "17"
+
       - uses: actions/checkout@v3
+
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
+
       - name: cache gradle dependencies
         uses: actions/cache@v3
         with:
@@ -37,5 +40,6 @@ jobs:
           key: ${{ runner.os }}-gradle-core-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: |
             ${{ runner.os }}-gradle-core-
-      - name: Run Tests
+
+      - name: Run Linting Check
         run: ./gradlew detekt
