@@ -111,9 +111,10 @@ internal class MessageQueue(
             if (!isFlushSignal) {
                 try {
                     queueMessage.message?.let {
-                        val stringVal = stringifyBaseEvent(queueMessage.message)
-                        LoggerAnalytics.debug("running $stringVal")
-                        storage.write(StorageKeys.MESSAGE, stringVal)
+                        stringifyBaseEvent(it).also { stringValue ->
+                            LoggerAnalytics.debug("running $stringValue")
+                            storage.write(StorageKeys.MESSAGE, stringValue)
+                        }
                         flushPoliciesFacade.updateState()
                     }
                 } catch (e: Exception) {
