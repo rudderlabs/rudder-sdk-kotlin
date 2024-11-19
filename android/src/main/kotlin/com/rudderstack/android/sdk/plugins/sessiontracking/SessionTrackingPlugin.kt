@@ -1,22 +1,22 @@
 package com.rudderstack.android.sdk.plugins.sessiontracking
 
-import android.os.SystemClock
 import com.rudderstack.android.sdk.plugins.lifecyclemanagment.ActivityLifecycleObserver
 import com.rudderstack.android.sdk.plugins.lifecyclemanagment.ProcessLifecycleObserver
 import com.rudderstack.android.sdk.utils.addLifecycleObserver
+import com.rudderstack.android.sdk.utils.getMonotonicCurrentTime
 import com.rudderstack.android.sdk.utils.mergeWithHigherPriorityTo
 import com.rudderstack.kotlin.sdk.Analytics
 import com.rudderstack.kotlin.sdk.internals.logger.LoggerAnalytics
 import com.rudderstack.kotlin.sdk.internals.models.Message
 import com.rudderstack.kotlin.sdk.internals.plugins.Plugin
 import com.rudderstack.kotlin.sdk.internals.storage.StorageKeys
+import com.rudderstack.kotlin.sdk.internals.utils.DateTimeUtils
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import org.jetbrains.annotations.VisibleForTesting
 import java.util.concurrent.TimeUnit
 import kotlin.properties.Delegates
 import com.rudderstack.android.sdk.Analytics as AndroidAnalytics
@@ -128,7 +128,7 @@ internal class SessionTrackingPlugin(
 
     private fun updateSessionId(sessionId: Long?) {
         if (this.sessionId != sessionId) {
-            val updatedSessionId = sessionId ?: (TimeUnit.MILLISECONDS.toSeconds(getSystemCurrentTime()))
+            val updatedSessionId = sessionId ?: (TimeUnit.MILLISECONDS.toSeconds(DateTimeUtils.getSystemCurrentTime()))
             this.sessionId = updatedSessionId
             analytics.analyticsScope.launch(sessionDispatcher) {
                 analytics.configuration.storage.write(StorageKeys.SESSION_ID, updatedSessionId)
@@ -186,10 +186,4 @@ internal class SessionTrackingPlugin(
     private fun hasSessionTimedOut(): Boolean {
         return getMonotonicCurrentTime() - lastActivityTime > sessionTimeout
     }
-
-    @VisibleForTesting
-    internal fun getMonotonicCurrentTime() = SystemClock.elapsedRealtime()
-
-    @VisibleForTesting
-    internal fun getSystemCurrentTime() = System.currentTimeMillis()
 }

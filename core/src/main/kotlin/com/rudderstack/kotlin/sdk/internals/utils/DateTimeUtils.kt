@@ -57,4 +57,14 @@ object DateTimeUtils {
     internal fun from(date: Date): String {
         return formatter.format(date).replace("UTC", "Z")
     }
+
+    /**
+     * Returns the current system time in milliseconds.
+     *
+     * This function retrieves the current system time using `System.currentTimeMillis()`.
+     * The time is represented as the number of milliseconds since the Unix epoch.
+     *
+     * @return A `Long` representing the current system time in milliseconds.
+     */
+    fun getSystemCurrentTime() = System.currentTimeMillis()
 }
