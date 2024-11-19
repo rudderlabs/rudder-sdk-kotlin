@@ -76,7 +76,7 @@ internal class SessionTrackingPlugin(
     }
 
     override suspend fun execute(message: Message): Message {
-        if (sessionId != 0L) {
+        if (sessionId != DEFAULT_SESSION_ID) {
             addSessionIdToMessage(message)
             if (!isSessionStart) {
                 updateLastActivityTime()
@@ -109,7 +109,7 @@ internal class SessionTrackingPlugin(
     }
 
     fun refreshSession() {
-        if (sessionId != 0L) {
+        if (sessionId != DEFAULT_SESSION_ID) {
             startSession(sessionId = generateSessionId(), shouldUpdateIsSessionManual = false)
         }
     }
@@ -184,11 +184,11 @@ internal class SessionTrackingPlugin(
     }
 
     private fun shouldStartNewSessionOnForeground(): Boolean {
-        return sessionId != 0L && !isSessionManual && hasSessionTimedOut()
+        return sessionId != DEFAULT_SESSION_ID && !isSessionManual && hasSessionTimedOut()
     }
 
     private fun shouldStartNewSessionOnLaunch(): Boolean {
-        return sessionId == 0L || isSessionManual || hasSessionTimedOut()
+        return sessionId == DEFAULT_SESSION_ID || isSessionManual || hasSessionTimedOut()
     }
 
     private fun hasSessionTimedOut(): Boolean {
