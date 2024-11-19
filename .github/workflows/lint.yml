@@ -5,7 +5,7 @@ on:
     branches: ["main", "develop.poc"]
   pull_request:
     branches: ["main", "develop.poc"]
-    types: ["opened", "reopened", "edited", "synchronize"]
+    types: ["opened", "reopened", "synchronize"]
   workflow_dispatch:
 
 jobs:
