@@ -121,6 +121,10 @@ internal class SessionTrackingPlugin(
         updateSessionId(sessionId)
     }
 
+    fun getSessionId(): Long {
+        return sessionId
+    }
+
     private fun attachSessionTrackingObservers() {
         val sessionTrackingObserver = SessionTrackingObserver(this)
         (analytics as? AndroidAnalytics)?.addLifecycleObserver(
