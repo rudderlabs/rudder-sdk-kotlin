@@ -7,6 +7,7 @@ import com.rudderstack.android.sdk.models.AppVersion
 import com.rudderstack.android.sdk.utils.MockMemoryStorage
 import com.rudderstack.android.sdk.utils.addLifecycleObserver
 import com.rudderstack.android.sdk.utils.mockAnalytics
+import com.rudderstack.android.sdk.utils.removeLifecycleObserver
 import com.rudderstack.kotlin.sdk.internals.models.Properties
 import com.rudderstack.kotlin.sdk.internals.models.RudderOption
 import com.rudderstack.kotlin.sdk.internals.storage.Storage
@@ -25,6 +26,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -277,6 +279,15 @@ class AndroidLifecyclePluginTest {
             assert(mockStorage.readLong(StorageKeys.APP_BUILD, -1L) == 100L)
             assert(mockStorage.readString(StorageKeys.APP_VERSION, "") == "1.0.0")
         }
+
+    @Test
+    fun `when teardown called, then removeLifecycleObserver is called`() = runTest {
+        plugin.setup(mockAnalytics)
+
+        plugin.teardown()
+
+        verify { (mockAnalytics as AndroidAnalytics).removeLifecycleObserver(plugin) }
+    }
 
     private fun pluginSetup(trackingEnabled: Boolean = true) {
 

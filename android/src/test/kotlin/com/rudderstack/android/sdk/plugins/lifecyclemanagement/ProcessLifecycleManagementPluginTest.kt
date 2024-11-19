@@ -70,14 +70,13 @@ class ProcessLifecycleManagementPluginTest {
     }
 
     @Test
-    fun `when teardown called, then it should unregister process lifecycle observer and clear observers`() = runTest {
+    fun `when teardown called, then it should unregister process lifecycle observer`() = runTest {
         plugin.addObserver(mockObserver)
 
         plugin.teardown()
 
         advanceUntilIdle()
         verify { mockLifecycle.removeObserver(plugin) }
-        assert(plugin.processObservers.isEmpty())
     }
 
     @Test
