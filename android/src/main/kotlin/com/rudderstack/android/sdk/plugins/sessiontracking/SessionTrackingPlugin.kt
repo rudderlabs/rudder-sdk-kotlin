@@ -50,7 +50,7 @@ internal class SessionTrackingPlugin(
     private val isSessionStart
         get() = sessionState.value.isSessionStart
 
-    private var sessionTimeout by Delegates.notNull<Long>()
+    internal var sessionTimeout by Delegates.notNull<Long>()
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
