@@ -103,28 +103,14 @@ internal class SessionTrackingPlugin(
     }
 
     private fun checkAndStartSessionOnLaunch() {
-        (analytics.configuration as? AndroidConfiguration)?.let { config ->
-            // start a new automatic session on launch if
-            // 1. session id is not present OR
-            // 2. session is manual OR
-            // 3. session timeout has occurred
-            if (sessionId == 0L || isSessionManual || getMonotonicCurrentTime() - lastActivityTime > sessionTimeout) {
-                startSession(isSessionManual = false)
-            }
+        if (shouldStartNewSessionOnLaunch()) {
+            startSession(isSessionManual = false)
         }
     }
 
     internal fun checkAndStartSessionOnForeground() {
-        (analytics.configuration as? AndroidConfiguration)?.let { config ->
-            // start a new automatic session on foreground if
-            // 1. session is not ended previously
-            // AND
-            // 2. session is not manual
-            // AND
-            // 3. session timeout has occurred
-            if (sessionId != 0L && !isSessionManual && getMonotonicCurrentTime() - lastActivityTime > sessionTimeout) {
-                startSession(isSessionManual = false)
-            }
+        if (shouldStartNewSessionOnForeground()) {
+            startSession(isSessionManual = false)
         }
     }
 
@@ -187,6 +173,18 @@ internal class SessionTrackingPlugin(
             analytics.configuration.storage.remove(StorageKeys.IS_SESSION_MANUAL)
             analytics.configuration.storage.remove(StorageKeys.IS_SESSION_START)
         }
+    }
+
+    private fun shouldStartNewSessionOnForeground(): Boolean {
+        return sessionId != 0L && !isSessionManual && hasSessionTimedOut()
+    }
+
+    private fun shouldStartNewSessionOnLaunch(): Boolean {
+        return sessionId == 0L || isSessionManual || hasSessionTimedOut()
+    }
+
+    private fun hasSessionTimedOut(): Boolean {
+        return getMonotonicCurrentTime() - lastActivityTime > sessionTimeout
     }
 
     @VisibleForTesting
