@@ -32,6 +32,9 @@ fun provideSampleIntegrationsPayload() = buildJsonObject {
     put("All", false)
     put("Firebase", true)
     put("Braze", false)
+    put("INTERCOM", buildJsonObject {
+        put("lookup", "phone")
+    })
 }
 
 fun provideSampleExternalIdsPayload() = listOf(
