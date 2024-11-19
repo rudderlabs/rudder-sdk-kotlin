@@ -29,75 +29,57 @@ class SessionTrackingObserverTest {
 
     @Test
     fun `given session is not already updated, when onCreate is called, then checkAndStartSessionOnForeground is invoked`() {
-        // given
         observer = spyk(observer, recordPrivateCalls = true)
         observer.isSessionAlreadyUpdated.set(false)
 
-        // when
         observer.onCreate(mockk<LifecycleOwner>())
 
-        // then
         verify { mockPlugin.checkAndStartSessionOnForeground() }
     }
 
     @Test
     fun `given session is not already updated, when onStart is called, then checkAndStartSessionOnForeground is invoked`() {
-        // given
         observer.isSessionAlreadyUpdated.set(false)
 
-        // when
         observer.onStart(mockk<LifecycleOwner>())
 
-        // then
         verify { mockPlugin.checkAndStartSessionOnForeground() }
     }
 
     @Test
     fun `given session is not already updated, when onActivityCreated is called, then checkAndStartSessionOnForeground is invoked`() {
-        // given
         observer.isSessionAlreadyUpdated.set(false)
 
-        // when
         observer.onActivityCreated(mockk<Activity>(), mockk<Bundle>())
 
-        // then
         verify { mockPlugin.checkAndStartSessionOnForeground() }
     }
 
     @Test
     fun `given session is not already updated, when onActivityStarted is called, then checkAndStartSessionOnForeground is invoked`() {
-        // given
         observer.isSessionAlreadyUpdated.set(false)
 
-        // when
         observer.onActivityStarted(mockk<Activity>())
 
-        // then
         verify { mockPlugin.checkAndStartSessionOnForeground() }
     }
 
     @Test
-    fun `when onStop is called, then sessionAlreadyUpdated is set to false and updateLastActivityTime invoked`() {
-        // given
+    fun `given session is already updated, when onStop is called, then sessionAlreadyUpdated is set to false and updateLastActivityTime invoked`() {
         observer.isSessionAlreadyUpdated.set(true)
 
-        // when
         observer.onStop(mockk<LifecycleOwner>())
 
-        // then
         assert(!observer.isSessionAlreadyUpdated.get())
         verify { mockPlugin.updateLastActivityTime() }
     }
 
     @Test
     fun `given session is already updated, when updateSession is called, then checkAndStartSessionOnForeground is not invoked`() {
-        // given
         observer.isSessionAlreadyUpdated.set(true)
 
-        // when
         observer.onCreate(mockk<LifecycleOwner>()) // Triggers updateSession()
 
-        // then
         verify(exactly = 0) { mockPlugin.checkAndStartSessionOnForeground() }
     }
 }
