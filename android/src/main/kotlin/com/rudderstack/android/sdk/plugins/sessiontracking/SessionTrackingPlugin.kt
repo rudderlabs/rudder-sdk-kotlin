@@ -1,5 +1,6 @@
 package com.rudderstack.android.sdk.plugins.sessiontracking
 
+import com.rudderstack.android.sdk.DEFAULT_SESSION_TIMEOUT_IN_MILLIS
 import com.rudderstack.android.sdk.plugins.lifecyclemanagment.ActivityLifecycleObserver
 import com.rudderstack.android.sdk.plugins.lifecyclemanagment.ProcessLifecycleObserver
 import com.rudderstack.android.sdk.utils.addLifecycleObserver
@@ -40,7 +41,7 @@ internal class SessionTrackingPlugin(
 
     private lateinit var sessionState: FlowState<SessionState>
 
-    private val sessionId
+    internal val sessionId
         get() = sessionState.value.sessionId
     private val lastActivityTime
         get() = sessionState.value.lastActivityTime
@@ -58,19 +59,16 @@ internal class SessionTrackingPlugin(
             sessionTimeout = if (config.sessionConfiguration.sessionTimeoutInMillis >= 0) {
                 config.sessionConfiguration.sessionTimeoutInMillis
             } else {
-                LoggerAnalytics.error("Session timeout cannot be negative. Setting it to 0.")
-                0L
+                LoggerAnalytics.error("Session timeout cannot be negative. Setting it to default value.")
+                DEFAULT_SESSION_TIMEOUT_IN_MILLIS
             }
-            // get the session variables from the storage
             sessionState = FlowState(SessionState.initialState(analytics.configuration.storage))
 
             when {
                 config.sessionConfiguration.automaticSessionTracking -> {
                     checkAndStartSessionOnLaunch()
-                    // attach the session tracking observer to process lifecycle
                     attachSessionTrackingObservers()
                 }
-                // end the session on launch if it is not manual
                 !isSessionManual -> endSession()
                 else -> Unit
             }
@@ -78,21 +76,24 @@ internal class SessionTrackingPlugin(
     }
 
     override suspend fun execute(message: Message): Message {
-        // add the session id to the message payload
         if (sessionId != 0L) {
-            val sessionPayload = buildJsonObject {
-                put(SESSION_ID, sessionId)
-                if (isSessionStart) {
-                    updateIsSessionStartIfChanged(false)
-                    put(SESSION_START, true)
-                }
-            }
-            message.context = message.context mergeWithHigherPriorityTo sessionPayload
+            addSessionIdToMessage(message)
             if (!isSessionStart) {
                 updateLastActivityTime()
             }
         }
         return message
+    }
+
+    private fun addSessionIdToMessage(message: Message) {
+        val sessionPayload = buildJsonObject {
+            put(SESSION_ID, sessionId)
+            if (isSessionStart) {
+                updateIsSessionStartIfChanged(false)
+                put(SESSION_START, true)
+            }
+        }
+        message.context = message.context mergeWithHigherPriorityTo sessionPayload
     }
 
     private fun checkAndStartSessionOnLaunch() {
@@ -113,16 +114,19 @@ internal class SessionTrackingPlugin(
         }
     }
 
+    /**
+     * Starts a new session with the given session ID.
+     *
+     * @param sessionId The session ID to start the session with.
+     * @param isSessionManual Flag to indicate if the session is manual or automatic. Defaults to `false`.
+     * @param shouldUpdateIsSessionManual Flag to indicate if the `isSessionManual` should be updated. Defaults to `true`.
+     */
     fun startSession(sessionId: Long, isSessionManual: Boolean = false, shouldUpdateIsSessionManual: Boolean = true) {
         updateIsSessionStartIfChanged(true)
         if (shouldUpdateIsSessionManual) {
             updateIsSessionManualIfChanged(isSessionManual)
         }
         updateSessionId(sessionId)
-    }
-
-    fun getSessionId(): Long {
-        return sessionId
     }
 
     private fun attachSessionTrackingObservers() {

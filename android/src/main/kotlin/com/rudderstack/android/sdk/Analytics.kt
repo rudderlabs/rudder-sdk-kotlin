@@ -101,7 +101,7 @@ class Analytics(
      * @return The current session ID.
      */
     fun getSessionId(): Long {
-        return sessionTrackingPlugin.getSessionId()
+        return sessionTrackingPlugin.sessionId
     }
 
     /**

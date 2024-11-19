@@ -6,6 +6,8 @@ import com.rudderstack.kotlin.sdk.Configuration
 import com.rudderstack.kotlin.sdk.internals.logger.Logger
 import com.rudderstack.kotlin.sdk.internals.policies.FlushPolicy
 
+internal const val DEFAULT_SESSION_TIMEOUT_IN_MILLIS = 300_000L
+
 /**
  * `Configuration` data class used for initializing RudderStack analytics in an Android application.
  *
@@ -87,5 +89,5 @@ data class Configuration @JvmOverloads constructor(
  */
 data class SessionConfiguration(
     val automaticSessionTracking: Boolean = true,
-    val sessionTimeoutInMillis: Long = 300_000,
+    val sessionTimeoutInMillis: Long = DEFAULT_SESSION_TIMEOUT_IN_MILLIS,
 )
