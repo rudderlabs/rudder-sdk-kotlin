@@ -1,7 +1,7 @@
 package com.rudderstack.kotlin.sdk.plugins
 
 import com.rudderstack.kotlin.sdk.Analytics
-import com.rudderstack.kotlin.sdk.internals.models.FlushEvent
+import com.rudderstack.kotlin.sdk.internals.models.Message
 import com.rudderstack.kotlin.sdk.internals.models.TrackEvent
 import com.rudderstack.kotlin.sdk.internals.queue.MessageQueue
 import io.mockk.mockk
@@ -40,16 +40,6 @@ class RudderStackDataplanePluginTest {
 
         assertEquals(trackMessage, result)
         verify { messageQueue.put(trackMessage) }
-    }
-
-    @Test
-    fun `given a flush event, when flush is called, test flush is enqueued and returned correctly`() {
-        val flushEvent = mockk<FlushEvent>(relaxed = true)
-
-        val result = plugin.flush(flushEvent)
-
-        assertEquals(flushEvent, result)
-        verify { messageQueue.put(flushEvent) }
     }
 
     @Test
