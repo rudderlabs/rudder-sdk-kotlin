@@ -129,6 +129,13 @@ class MainActivity : ComponentActivity() {
                 viewModel = viewModel
             )
             Spacer(modifier = Modifier.height(2.dp))
+            CreateRowOfApis(
+                names = arrayOf(
+                    AnalyticsState.Reset,
+                ),
+                weight = .5f,
+                viewModel = viewModel
+            )
             CreateLogcat(state.logDataList)
         }
     }

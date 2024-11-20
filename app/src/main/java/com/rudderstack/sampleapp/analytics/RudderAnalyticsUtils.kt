@@ -4,8 +4,12 @@ import android.app.Application
 import com.rudderstack.android.sdk.Analytics
 import com.rudderstack.android.sdk.Configuration
 import com.rudderstack.kotlin.sdk.internals.logger.Logger
+import com.rudderstack.kotlin.sdk.internals.models.RudderOption
 import com.rudderstack.sampleapp.analytics.customplugins.AndroidAdvertisingIdPlugin
 import com.rudderstack.sampleapp.analytics.customplugins.AndroidAdvertisingIdPlugin.Companion.isAdvertisingLibraryAvailable
+import com.rudderstack.sampleapp.analytics.customplugins.OptionPlugin
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 
 object RudderAnalyticsUtils {
 
@@ -24,5 +28,15 @@ object RudderAnalyticsUtils {
         if (isAdvertisingLibraryAvailable()) {
             analytics.add(AndroidAdvertisingIdPlugin())
         }
+        analytics.add(OptionPlugin(
+            option = RudderOption(
+                customContext = buildJsonObject {
+                    put("key", "value")
+                },
+                integrations = buildJsonObject {
+                    put("CleverTap", true)
+                }
+            )
+        ))
     }
 }

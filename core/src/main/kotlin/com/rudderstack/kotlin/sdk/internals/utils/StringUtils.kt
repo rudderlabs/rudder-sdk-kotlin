@@ -2,6 +2,7 @@ package com.rudderstack.kotlin.sdk.internals.utils
 
 import com.rudderstack.kotlin.sdk.internals.utils.Base64.encodeToBase64
 import java.util.Locale
+import java.util.UUID
 
 private const val EMPTY_STRING = ""
 
@@ -92,3 +93,10 @@ fun String.Companion.empty(): String = EMPTY_STRING
  */
 val String.validatedBaseUrl
     get() = if (this.endsWith('/')) this.removeSuffix("/") else this
+
+/**
+ * Generates a random UUID.
+ */
+fun generateUUID(): String {
+    return UUID.randomUUID().toString()
+}
