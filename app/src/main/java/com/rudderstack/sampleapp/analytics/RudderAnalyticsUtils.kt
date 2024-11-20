@@ -33,9 +33,9 @@ object RudderAnalyticsUtils {
                 customContext = buildJsonObject {
                     put("key", "value")
                 },
-                integrations = mapOf(
-                    "CleverTap" to true
-                ),
+                integrations = buildJsonObject {
+                    put("Amplitude", true)
+                }
             )
         ))
     }
