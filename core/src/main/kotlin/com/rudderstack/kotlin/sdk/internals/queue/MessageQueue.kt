@@ -147,6 +147,7 @@ internal class MessageQueue(
             for (filePath in fileUrlList) {
                 val file = File(filePath)
                 if (!isFileExists(file)) continue
+                // ensureActive is at this position so that this coroutine can be cancelled - but any uploaded event MUST be cleared from storage.
                 ensureActive()
                 var shouldCleanup = false
                 try {
