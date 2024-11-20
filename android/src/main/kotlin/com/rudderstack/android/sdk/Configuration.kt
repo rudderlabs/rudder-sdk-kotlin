@@ -6,6 +6,8 @@ import com.rudderstack.kotlin.sdk.Configuration
 import com.rudderstack.kotlin.sdk.internals.logger.Logger
 import com.rudderstack.kotlin.sdk.internals.policies.FlushPolicy
 
+internal const val DEFAULT_SESSION_TIMEOUT_IN_MILLIS = 300_000L
+
 /**
  * `Configuration` data class used for initializing RudderStack analytics in an Android application.
  *
@@ -30,11 +32,12 @@ import com.rudderstack.kotlin.sdk.internals.policies.FlushPolicy
  * Defaults to `true`, enabling the SDK to track app start, background, and foreground events.
  * @param trackDeeplinks Flag to enable or disable automatic tracking of deeplink events. Defaults to `true`.
  * @param collectDeviceId Flag to enable or disable automatic collection of the device's ID. Defaults to `true`.
+ * @param sessionConfiguration Configuration settings for session tracking. Defaults to `SessionConfiguration()`.
  * @param trackActivities automatically tracks activities, calling screen events for them, defaults to `false`.
  * @param writeKey The write key used to authenticate and send data to the backend. This field is required.
  * @param dataPlaneUrl The URL of the data plane to which events are sent. This field is required.
  * @param controlPlaneUrl The URL of the control plane, used for remote configuration management. Defaults to `DEFAULT_CONTROL_PLANE_URL`.
- * @param logger The logger instance used for SDK logging. By default, it uses an Android logger with the `DEBUG` log level.
+ * @param logLevel The log level used for SDK logging. By default, it uses the `DEBUG` log level.
  * @param flushPolicies A list of flush policies defining when and how events should be sent to the backend. Defaults to `DEFAULT_FLUSH_POLICIES`.
  *
  * ## Example
@@ -57,6 +60,7 @@ data class Configuration @JvmOverloads constructor(
     val trackDeeplinks: Boolean = true,
     val trackActivities: Boolean = false,
     val collectDeviceId: Boolean = true,
+    val sessionConfiguration: SessionConfiguration = SessionConfiguration(),
     override val writeKey: String,
     override val dataPlaneUrl: String,
     override val controlPlaneUrl: String = DEFAULT_CONTROL_PLANE_URL,
@@ -68,4 +72,22 @@ data class Configuration @JvmOverloads constructor(
     storage = AndroidStorageProvider.getStorage(writeKey, application),
     logLevel = logLevel,
     flushPolicies = flushPolicies,
+)
+
+/**
+ * Data class for configuring session tracking in analytics.
+ *
+ * This class defines the necessary configuration settings required to set up session tracking.
+ * It provides properties for enabling automatic session tracking, setting the session
+ * timeout duration, and specifying the session ID.
+ *
+ * @param automaticSessionTracking Flag to enable or disable automatic session tracking. Defaults to `true`.
+ * @param sessionTimeoutInMillis The duration in milliseconds after which a session is considered timed out. Defaults to `300_000` milliseconds (5 minutes).
+ *
+ * This `SessionConfiguration` instance can then be used to configure session tracking in the [Configuration].
+ *
+ */
+data class SessionConfiguration(
+    val automaticSessionTracking: Boolean = true,
+    val sessionTimeoutInMillis: Long = DEFAULT_SESSION_TIMEOUT_IN_MILLIS,
 )

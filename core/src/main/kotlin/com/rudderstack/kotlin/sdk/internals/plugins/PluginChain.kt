@@ -15,7 +15,7 @@ internal class PluginChain(
 
     lateinit var analytics: Analytics
 
-    fun process(message: Message) {
+    suspend fun process(message: Message) {
         if (analytics.configuration.optOut) {
             return
         }
@@ -45,14 +45,14 @@ internal class PluginChain(
         }
     }
 
-    internal fun applyPlugins(pluginType: Plugin.PluginType, message: Message?): Message? {
+    internal suspend fun applyPlugins(pluginType: Plugin.PluginType, message: Message?): Message? {
         var result: Message? = message
         val mediator = pluginList[pluginType]
         result = applyPlugins(mediator, result)
         return result
     }
 
-    private fun applyPlugins(mediator: PluginInteractor?, message: Message?): Message? {
+    private suspend fun applyPlugins(mediator: PluginInteractor?, message: Message?): Message? {
         var result: Message? = message
         result?.let { e ->
             result = mediator?.execute(e)

@@ -28,7 +28,7 @@ class OptionPlugin (
         this.analytics = analytics
     }
 
-    override fun execute(message: Message): Message {
+    override suspend fun execute(message: Message): Message {
         addCustomContext(message)
         addIntegrations(message)
         // NOTE: Don't update the externalIds, as it should be updated only through the Identify event.

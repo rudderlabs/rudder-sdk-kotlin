@@ -10,6 +10,7 @@ import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.spyk
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -52,7 +53,7 @@ class NetworkInfoPluginTest {
     }
 
     @Test
-    fun `given network context is present, when network info plugin is executed, then network info is attached to the context`() {
+    fun `given network context is present, when network info plugin is executed, then network info is attached to the context`() = runTest {
         val message = provideEvent()
         every { networkInfoPlugin.getNetworkInfo() } returns provideNetworkInfoPayload()
 
@@ -68,7 +69,7 @@ class NetworkInfoPluginTest {
     }
 
     @Test
-    fun `given network context is present, when network info is merged with other context, then network info is given higher priority`() {
+    fun `given network context is present, when network info is merged with other context, then network info is given higher priority`() = runTest {
         val message = provideEvent()
         every { networkInfoPlugin.getNetworkInfo() } returns provideNetworkInfoPayload()
 
