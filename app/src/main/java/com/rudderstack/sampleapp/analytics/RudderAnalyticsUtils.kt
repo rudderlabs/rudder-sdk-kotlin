@@ -34,7 +34,7 @@ object RudderAnalyticsUtils {
                     put("key", "value")
                 },
                 integrations = buildJsonObject {
-                    put("Amplitude", true)
+                    put("CleverTap", true)
                 }
             )
         ))
