@@ -47,7 +47,7 @@ internal class MockMemoryStorage : Storage {
         messageBatchMap.clear()
     }
 
-    override suspend fun close() {
+    override fun close() {
         messageBatchMap.clear()
     }
 

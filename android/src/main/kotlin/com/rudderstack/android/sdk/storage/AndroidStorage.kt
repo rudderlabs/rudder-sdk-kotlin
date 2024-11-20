@@ -67,7 +67,7 @@ internal class AndroidStorage(
         messageBatchFile.rollover()
     }
 
-    override suspend fun close() {
+    override fun close() {
         messageBatchFile.closeAndReset()
     }
 

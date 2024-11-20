@@ -44,6 +44,8 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 
+private val job = SupervisorJob()
+
 /**
  * The `Analytics` class is the core of the RudderStack SDK, responsible for tracking events,
  * managing plugins, and handling the analytics lifecycle. It is designed to be highly customizable
@@ -109,7 +111,7 @@ open class Analytics protected constructor(
             private val handler = CoroutineExceptionHandler { _, exception ->
                 LoggerAnalytics.error(exception.stackTraceToString())
             }
-            override val analyticsScope: CoroutineScope = CoroutineScope(SupervisorJob() + handler)
+            override val analyticsScope: CoroutineScope = CoroutineScope(job + handler)
             override val analyticsDispatcher: CoroutineDispatcher = Dispatchers.IO
             override val storageDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(2)
             override val networkDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(1)
@@ -274,7 +276,8 @@ open class Analytics protected constructor(
     }
 
     /**
-     * Shuts down the analytics instance, stopping all operations, removing all the plugins and frees up the resources.
+     * Shuts down the analytics instance, stopping all the operations, removing all the plugins and freeing up the resources.
+     * All the events made up to to the point of shutdown are written down on disk, but they are flushed only after next initialisation.
      *
      *  **NOTE**: This operation is irreversible. However, no saved data is lost in shutdown.
      */
@@ -282,14 +285,23 @@ open class Analytics protected constructor(
         if (!isAnalyticsActive()) return
 
         isAnalyticsShutdown = true
+        LoggerAnalytics.info("Initiating Analytics shutdown.")
 
         processMessageChannel.close()
+        processMessageJob?.invokeOnCompletion {
+            shutdownHook()
+        }
+    }
+
+    private fun shutdownHook() {
+        job.invokeOnCompletion {
+            this@Analytics.configuration.storage.close()
+            LoggerAnalytics.info("Analytics shutdown completed.")
+        }
         analyticsScope.launch {
-            processMessageJob?.join()
             this@Analytics.pluginChain.removeAll()
         }.invokeOnCompletion {
             analyticsScope.cancel()
-            LoggerAnalytics.info("Analytics shutdown completed.")
         }
     }
 

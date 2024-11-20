@@ -89,7 +89,7 @@ internal class BasicStorage(writeKey: String) : Storage {
         messagesFile.rollover()
     }
 
-    override suspend fun close() {
+    override fun close() {
         messagesFile.closeAndReset()
     }
 

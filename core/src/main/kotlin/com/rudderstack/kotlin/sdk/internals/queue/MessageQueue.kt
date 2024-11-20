@@ -16,7 +16,6 @@ import com.rudderstack.kotlin.sdk.internals.utils.encodeToBase64
 import com.rudderstack.kotlin.sdk.internals.utils.encodeToString
 import com.rudderstack.kotlin.sdk.internals.utils.parseFilePaths
 import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.channels.consumeEach
@@ -58,9 +57,6 @@ internal class MessageQueue(
     @VisibleForTesting
     internal var uploadChannel: Channel<String>
 
-    @VisibleForTesting
-    internal var writeJob: Job? = null
-
     private val storage get() = analytics.configuration.storage
 
     init {
@@ -101,14 +97,12 @@ internal class MessageQueue(
         writeChannel.trySend(FlushEvent(""))
     }
 
-    suspend fun stop() {
+    fun stop() {
         if (!running) return
         running = false
 
         uploadChannel.cancel()
         writeChannel.close()
-        writeJob?.join()
-        storage.close()
 
         flushPoliciesFacade.cancelSchedule()
     }
@@ -119,7 +113,7 @@ internal class MessageQueue(
 
     @Suppress("TooGenericExceptionCaught")
     private fun write() {
-        writeJob = analytics.analyticsScope.launch(analytics.storageDispatcher) {
+        analytics.analyticsScope.launch(analytics.storageDispatcher) {
             for (message in writeChannel) {
                 val isFlushSignal = (message.type == MessageType.Flush)
 

@@ -73,7 +73,7 @@ interface Storage {
      * Closes the storage instance and performs any necessary cleanup operations.
      * This method gets called during shutdown.
      */
-    suspend fun close()
+    fun close()
 
     /**
      * Reads an Int value from the storage associated with the given key.
