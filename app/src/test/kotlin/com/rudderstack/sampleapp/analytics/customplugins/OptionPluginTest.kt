@@ -4,6 +4,7 @@ import com.rudderstack.kotlin.sdk.internals.models.Message
 import com.rudderstack.kotlin.sdk.internals.models.RudderOption
 import com.rudderstack.kotlin.sdk.internals.models.TrackEvent
 import com.rudderstack.kotlin.sdk.internals.models.emptyJsonObject
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.junit.Test
@@ -21,82 +22,85 @@ private val AMPLITUDE_INTEGRATION_ENABLED = "Amplitude" to true
 class OptionPluginTest {
 
     @Test
-    fun `given an empty option object is passed, when the option plugin is executed, then message contains empty context and default integrations`() {
-        val optionPlugin = OptionPlugin()
-        val message = provideDefaultEvent().apply {
-            configureDefaultIntegration(this)
+    fun `given an empty option object is passed, when the option plugin is executed, then message contains empty context and default integrations`() =
+        runTest {
+            val optionPlugin = OptionPlugin()
+            val message = provideDefaultEvent().apply {
+                configureDefaultIntegration(this)
+            }
+
+            optionPlugin.execute(message)
+
+            verifyResult(
+                expected = emptyJsonObject.toString(),
+                actual = message.context.toString()
+            )
+            verifyResult(
+                expected = mapOf(DEFAULT_INTEGRATION_ENABLED).toString(),
+                actual = message.integrations.toString()
+            )
         }
 
-        optionPlugin.execute(message)
+    @Test
+    fun `given an option with distinct key is passed, when the option plugin is executed, then message contains both key-value pair`() =
+        runTest {
+            val optionPlugin = OptionPlugin(
+                option = RudderOption(
+                    customContext = buildJsonObject {
+                        put(KEY_1, VALUE_1)
+                    },
+                    integrations = mapOf(AMPLITUDE_INTEGRATION_ENABLED)
+                )
+            )
+            val message = provideDefaultEvent().apply {
+                configureDefaultIntegration(this)
+                context = buildJsonObject { put(KEY_2, VALUE_2) }
+            }
 
-        verifyResult(
-            expected = emptyJsonObject.toString(),
-            actual = message.context.toString()
-        )
-        verifyResult(
-            expected = mapOf(DEFAULT_INTEGRATION_ENABLED).toString(),
-            actual = message.integrations.toString()
-        )
-    }
+            optionPlugin.execute(message)
+
+            verifyResult(
+                expected = buildJsonObject {
+                    put(KEY_1, VALUE_1)
+                    put(KEY_2, VALUE_2)
+                }.toString(),
+                actual = message.context.toString()
+            )
+            verifyResult(
+                expected = mapOf(
+                    DEFAULT_INTEGRATION_ENABLED,
+                    AMPLITUDE_INTEGRATION_ENABLED
+                ).toString(),
+                actual = message.integrations.toString()
+            )
+        }
 
     @Test
-    fun `given an option with distinct key is passed, when the option plugin is executed, then message contains both key-value pair`() {
-        val optionPlugin = OptionPlugin(
-            option = RudderOption(
+    fun `given an option with same key but different value is passed, when the option plugin is executed, then message contains the updated key-value pair`() =
+        runTest {
+            val higherPreferenceOption = RudderOption(
                 customContext = buildJsonObject {
                     put(KEY_1, VALUE_1)
                 },
-                integrations = mapOf(AMPLITUDE_INTEGRATION_ENABLED)
+                integrations = mapOf(DEFAULT_INTEGRATION_DISABLED, AMPLITUDE_INTEGRATION_ENABLED)
             )
-        )
-        val message = provideDefaultEvent().apply {
-            configureDefaultIntegration(this)
-            context = buildJsonObject { put(KEY_2, VALUE_2) }
+            val optionPlugin = OptionPlugin(option = higherPreferenceOption)
+            val message = provideDefaultEvent().apply {
+                configureDefaultIntegration(this)
+                context = buildJsonObject { put(KEY_1, VALUE_2) }
+            }
+
+            optionPlugin.execute(message)
+
+            verifyResult(
+                expected = higherPreferenceOption.customContext.toString(),
+                actual = message.context.toString()
+            )
+            verifyResult(
+                expected = higherPreferenceOption.integrations.toString(),
+                actual = message.integrations.toString()
+            )
         }
-
-        optionPlugin.execute(message)
-
-        verifyResult(
-            expected = buildJsonObject {
-                put(KEY_1, VALUE_1)
-                put(KEY_2, VALUE_2)
-            }.toString(),
-            actual = message.context.toString()
-        )
-        verifyResult(
-            expected = mapOf(
-                DEFAULT_INTEGRATION_ENABLED,
-                AMPLITUDE_INTEGRATION_ENABLED
-            ).toString(),
-            actual = message.integrations.toString()
-        )
-    }
-
-    @Test
-    fun `given an option with same key but different value is passed, when the option plugin is executed, then message contains the updated key-value pair`() {
-        val higherPreferenceOption = RudderOption(
-            customContext = buildJsonObject {
-                put(KEY_1, VALUE_1)
-            },
-            integrations = mapOf(DEFAULT_INTEGRATION_DISABLED, AMPLITUDE_INTEGRATION_ENABLED)
-        )
-        val optionPlugin = OptionPlugin(option = higherPreferenceOption)
-        val message = provideDefaultEvent().apply {
-            configureDefaultIntegration(this)
-            context = buildJsonObject { put(KEY_1, VALUE_2) }
-        }
-
-        optionPlugin.execute(message)
-
-        verifyResult(
-            expected = higherPreferenceOption.customContext.toString(),
-            actual = message.context.toString()
-        )
-        verifyResult(
-            expected = higherPreferenceOption.integrations.toString(),
-            actual = message.integrations.toString()
-        )
-    }
 
     private fun verifyResult(expected: String, actual: String) {
         JSONAssert.assertEquals(expected, actual, true)
