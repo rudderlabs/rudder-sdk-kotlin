@@ -7,6 +7,7 @@ import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.spyk
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -32,7 +33,7 @@ class LocaleInfoPluginTest {
     }
 
     @Test
-    fun `given locale context is present, when locale info plugin is executed, then locale info is attached to the context`() {
+    fun `given locale context is present, when locale info plugin is executed, then locale info is attached to the context`() = runTest {
         val message = provideEvent()
         every { localeInfoPlugin.constructLocaleContext() } returns provideLocaleContextPayload()
 
@@ -48,7 +49,7 @@ class LocaleInfoPluginTest {
     }
 
     @Test
-    fun `given some context is present, when app info is merged with other context, then it is given higher priority`() {
+    fun `given some context is present, when app info is merged with other context, then it is given higher priority`() = runTest {
         val message = provideEvent()
         every { localeInfoPlugin.constructLocaleContext() } returns provideLocaleContextPayload()
 

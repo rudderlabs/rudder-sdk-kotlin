@@ -124,14 +124,16 @@ class MainActivity : ComponentActivity() {
                     AnalyticsState.IdentifyMessage,
                     AnalyticsState.AliasMessage,
                     AnalyticsState.ForceFlush,
+                    AnalyticsState.Reset
                 ),
                 weight = .5f,
                 viewModel = viewModel
             )
-            Spacer(modifier = Modifier.height(2.dp))
             CreateRowOfApis(
                 names = arrayOf(
-                    AnalyticsState.Reset,
+                    AnalyticsState.StartSession,
+                    AnalyticsState.StartSessionWithCustomId,
+                    AnalyticsState.EndSession
                 ),
                 weight = .5f,
                 viewModel = viewModel
