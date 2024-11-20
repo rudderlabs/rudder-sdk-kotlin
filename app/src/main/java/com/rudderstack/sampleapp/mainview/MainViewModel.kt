@@ -88,6 +88,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 RudderAnalyticsUtils.analytics.flush()
                 "Flushing the message pipeline has"
             }
+
+            AnalyticsState.Reset -> {
+                RudderAnalyticsUtils.analytics.reset(clearAnonymousId = false)
+                "Resetting the userId, traits, and externalIds"
+            }
         }
         if (log.isNotEmpty()) addLogData(LogData(Date(), log))
     }

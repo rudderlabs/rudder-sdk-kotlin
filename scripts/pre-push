@@ -3,6 +3,7 @@
 echo "Running unit tests..."
 
 ./gradlew testDebugUnitTest --daemon
+./gradlew :core:test --daemon
 
 status=$?
 
