@@ -48,12 +48,6 @@ enum class MessageType {
     @SerialName("track")
     Track,
 
-    /**
-     * Indicates a flush message type.
-     */
-    @SerialName("flush")
-    Flush,
-
     @SerialName("screen")
     Screen,
 
@@ -71,7 +65,7 @@ enum class MessageType {
  * Base class for all message types in RudderStack, designed for representing
  * and handling different kinds of events in a unified way.
  *
- * This sealed class is the parent of specific message types like [FlushEvent] and [TrackEvent],
+ * This sealed class is the parent of specific message types like [TrackEvent] [GroupEvent] [ScreenEvent],
  * ensuring type safety and enabling polymorphism for handling different message types.
  *
  * @property type The type of the message, represented as a [MessageType] enum.
@@ -147,8 +141,6 @@ sealed class Message {
                 previousId = this.previousId,
                 options = this.options,
             )
-
-            is FlushEvent -> FlushEvent()
         }.apply {
             messageId = original.messageId
             originalTimestamp = original.originalTimestamp
@@ -161,28 +153,6 @@ sealed class Message {
         @Suppress("UNCHECKED_CAST")
         return copy as T // This is ok because resultant type will be same as input type
     }
-}
-
-/**
- * Represents a flush event message in RudderStack.
- *
- * This data class encapsulates the properties required for a flush message.
- *
- * @property messageName The name of the message associated with the flush event.
- */
-@Serializable
-@SerialName("flush")
-data class FlushEvent(
-    var messageName: String = String.empty(),
-) : Message() {
-
-    override var type: MessageType = MessageType.Flush
-    override lateinit var integrations: Map<String, Boolean>
-    override lateinit var anonymousId: String
-    override lateinit var channel: PlatformType
-
-    @Transient
-    override var options: RudderOption = RudderOption()
 }
 
 /**
@@ -293,6 +263,10 @@ object BaseMessageSerializer : JsonContentPolymorphicSerializer<Message>(Message
     override fun selectDeserializer(element: JsonElement): DeserializationStrategy<out Message> {
         return when (element.jsonObject["type"]?.jsonPrimitive?.content) {
             "track" -> TrackEvent.serializer()
+            "screen" -> ScreenEvent.serializer()
+            "group" -> GroupEvent.serializer()
+            "identify" -> IdentifyEvent.serializer()
+            "alias" -> AliasEvent.serializer()
             else -> throw UnknownMessageKeyException()
         }
     }
