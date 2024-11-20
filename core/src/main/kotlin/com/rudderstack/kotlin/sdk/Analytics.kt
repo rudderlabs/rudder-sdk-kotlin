@@ -368,6 +368,8 @@ open class Analytics protected constructor(
      * @param clearAnonymousId A boolean flag to determine whether to clear the anonymous ID. Defaults to false.
      */
     open fun reset(clearAnonymousId: Boolean = false) {
+        if (!isAnalyticsActive()) return
+
         userIdentityState.dispatch(ResetUserIdentityAction(clearAnonymousId))
         analyticsScope.launch {
             userIdentityState.value.resetUserIdentity(
