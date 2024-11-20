@@ -45,6 +45,7 @@ internal class MessageQueue(
         )
     }
 ) {
+    // todo: figure out a better way for testing this rather then making variables VisibleForTesting.
 
     @VisibleForTesting
     internal var running: Boolean
