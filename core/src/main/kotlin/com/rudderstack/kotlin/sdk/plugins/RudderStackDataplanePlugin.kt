@@ -11,9 +11,6 @@ import com.rudderstack.kotlin.sdk.internals.models.TrackEvent
 import com.rudderstack.kotlin.sdk.internals.plugins.MessagePlugin
 import com.rudderstack.kotlin.sdk.internals.plugins.Plugin
 import com.rudderstack.kotlin.sdk.internals.queue.MessageQueue
-import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.jetbrains.annotations.VisibleForTesting
 
 internal class RudderStackDataplanePlugin : MessagePlugin {
@@ -64,11 +61,7 @@ internal class RudderStackDataplanePlugin : MessagePlugin {
     }
 
     override fun teardown() {
-        analytics.analyticsScope.launch(analytics.storageDispatcher) {
-            withContext(NonCancellable) {
-                messageQueue?.stop()
-            }
-        }
+        messageQueue?.stop()
     }
 
     private fun enqueue(message: Message) {
