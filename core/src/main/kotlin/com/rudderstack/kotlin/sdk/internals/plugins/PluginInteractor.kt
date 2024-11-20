@@ -14,7 +14,7 @@ internal class PluginInteractor(private var pluginList: CopyOnWriteArrayList<Plu
         pluginList.removeAll { it === plugin }
     }
 
-    fun execute(message: Message): Message? {
+    suspend fun execute(message: Message): Message? {
         var result: Message? = message
 
         pluginList.forEach { plugin ->

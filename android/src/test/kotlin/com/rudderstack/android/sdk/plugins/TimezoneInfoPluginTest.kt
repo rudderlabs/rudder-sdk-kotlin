@@ -7,6 +7,7 @@ import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.spyk
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -29,41 +30,43 @@ class TimezoneInfoPluginTest {
     }
 
     @Test
-    fun `given timezone context is present, when timezone info plugin is executed, then timezone info is attached to the context`() {
-        val message = provideEvent()
-        val timezoneInfoPlugin = spyk(TimezoneInfoPlugin())
-        every { timezoneInfoPlugin.constructTimezoneContext() } returns provideTimezoneContextPayload()
+    fun `given timezone context is present, when timezone info plugin is executed, then timezone info is attached to the context`() =
+        runTest {
+            val message = provideEvent()
+            val timezoneInfoPlugin = spyk(TimezoneInfoPlugin())
+            every { timezoneInfoPlugin.constructTimezoneContext() } returns provideTimezoneContextPayload()
 
-        timezoneInfoPlugin.setup(mockAnalytics)
-        timezoneInfoPlugin.execute(message)
+            timezoneInfoPlugin.setup(mockAnalytics)
+            timezoneInfoPlugin.execute(message)
 
-        val actual = message.context
-        JSONAssert.assertEquals(
-            provideTimezoneContextPayload().toString(),
-            actual.toString(),
-            true
-        )
-    }
+            val actual = message.context
+            JSONAssert.assertEquals(
+                provideTimezoneContextPayload().toString(),
+                actual.toString(),
+                true
+            )
+        }
 
     @Test
-    fun `given timezone context is present, when timezone info is merged with other context, then timezone info is given higher priority`() {
-        val message = provideEvent()
-        val timezoneInfoPlugin = spyk(TimezoneInfoPlugin())
-        every { timezoneInfoPlugin.constructTimezoneContext() } returns provideTimezoneContextPayload()
+    fun `given timezone context is present, when timezone info is merged with other context, then timezone info is given higher priority`() =
+        runTest {
+            val message = provideEvent()
+            val timezoneInfoPlugin = spyk(TimezoneInfoPlugin())
+            every { timezoneInfoPlugin.constructTimezoneContext() } returns provideTimezoneContextPayload()
 
-        timezoneInfoPlugin.setup(mockAnalytics)
-        message.context = buildJsonObject {
-            put(TIMEZONE_KEY, String.empty())
+            timezoneInfoPlugin.setup(mockAnalytics)
+            message.context = buildJsonObject {
+                put(TIMEZONE_KEY, String.empty())
+            }
+            timezoneInfoPlugin.execute(message)
+
+            val actual = message.context
+            JSONAssert.assertEquals(
+                provideTimezoneContextPayload().toString(),
+                actual.toString(),
+                true
+            )
         }
-        timezoneInfoPlugin.execute(message)
-
-        val actual = message.context
-        JSONAssert.assertEquals(
-            provideTimezoneContextPayload().toString(),
-            actual.toString(),
-            true
-        )
-    }
 }
 
 private fun provideTimezoneContextPayload(): JsonObject = buildJsonObject {

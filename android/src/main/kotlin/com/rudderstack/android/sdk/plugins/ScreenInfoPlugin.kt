@@ -48,7 +48,7 @@ internal class ScreenInfoPlugin : Plugin {
         )
     }
 
-    override fun execute(message: Message): Message = attachScreenInfo(message)
+    override suspend fun execute(message: Message): Message = attachScreenInfo(message)
 
     private fun attachScreenInfo(message: Message): Message {
         LoggerAnalytics.debug("Attaching screen info to the message payload")

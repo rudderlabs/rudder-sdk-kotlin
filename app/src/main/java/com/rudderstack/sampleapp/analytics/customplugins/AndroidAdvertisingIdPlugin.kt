@@ -127,7 +127,7 @@ class AndroidAdvertisingIdPlugin : Plugin {
         return messagePayload
     }
 
-    override fun execute(message: Message): Message {
+    override suspend fun execute(message: Message): Message {
         return attachAdvertisingId(message)
     }
 }

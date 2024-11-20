@@ -9,6 +9,7 @@ import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.spyk
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -45,39 +46,41 @@ class ScreenInfoPluginTest {
     }
 
     @Test
-    fun `given screen context is present, when screen info plugin is executed, then screen info is attached to the context`() {
-        val message = provideEvent()
-        every { screenInfoPlugin.constructScreenContext(any()) } returns provideScreenContextPayload()
+    fun `given screen context is present, when screen info plugin is executed, then screen info is attached to the context`() =
+        runTest {
+            val message = provideEvent()
+            every { screenInfoPlugin.constructScreenContext(any()) } returns provideScreenContextPayload()
 
-        screenInfoPlugin.setup(mockAnalytics)
-        screenInfoPlugin.execute(message)
+            screenInfoPlugin.setup(mockAnalytics)
+            screenInfoPlugin.execute(message)
 
-        val actual = message.context
-        JSONAssert.assertEquals(
-            provideScreenContextPayload().toString(),
-            actual.toString(),
-            true
-        )
-    }
+            val actual = message.context
+            JSONAssert.assertEquals(
+                provideScreenContextPayload().toString(),
+                actual.toString(),
+                true
+            )
+        }
 
     @Test
-    fun `given screen context is present, when screen info is merged with other context, then screen info is given higher priority`() {
-        val message = provideEvent()
-        every { screenInfoPlugin.constructScreenContext(any()) } returns provideScreenContextPayload()
+    fun `given screen context is present, when screen info is merged with other context, then screen info is given higher priority`() =
+        runTest {
+            val message = provideEvent()
+            every { screenInfoPlugin.constructScreenContext(any()) } returns provideScreenContextPayload()
 
-        screenInfoPlugin.setup(mockAnalytics)
-        message.context = buildJsonObject {
-            put(SCREEN_KEY, String.empty())
+            screenInfoPlugin.setup(mockAnalytics)
+            message.context = buildJsonObject {
+                put(SCREEN_KEY, String.empty())
+            }
+            screenInfoPlugin.execute(message)
+
+            val actual = message.context
+            JSONAssert.assertEquals(
+                provideScreenContextPayload().toString(),
+                actual.toString(),
+                true
+            )
         }
-        screenInfoPlugin.execute(message)
-
-        val actual = message.context
-        JSONAssert.assertEquals(
-            provideScreenContextPayload().toString(),
-            actual.toString(),
-            true
-        )
-    }
 }
 
 private fun provideScreenContextPayload(): JsonObject = buildJsonObject {

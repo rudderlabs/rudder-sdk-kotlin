@@ -14,6 +14,7 @@ import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.spyk
 import io.mockk.unmockkObject
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -102,7 +103,7 @@ class DeviceInfoPluginTest {
     }
 
     @Test
-    fun `when attachDeviceInfo is called, then device information is attached to message payload`() {
+    fun `when attachDeviceInfo is called, then device information is attached to message payload`() = runTest {
         val mockMessage = mockk<Message>(relaxed = true)
         val mockUpdatedMessage = mockk<Message>(relaxed = true)
 

@@ -17,12 +17,16 @@ import com.rudderstack.android.sdk.plugins.lifecyclemanagment.ActivityLifecycleM
 import com.rudderstack.android.sdk.plugins.lifecyclemanagment.ProcessLifecycleManagementPlugin
 import com.rudderstack.android.sdk.plugins.screenrecording.ActivityTrackingPlugin
 import com.rudderstack.android.sdk.plugins.screenrecording.NavControllerTrackingPlugin
+import com.rudderstack.android.sdk.plugins.sessiontracking.SessionTrackingPlugin
 import com.rudderstack.android.sdk.state.NavContext
 import com.rudderstack.kotlin.sdk.Analytics
+import com.rudderstack.kotlin.sdk.internals.logger.LoggerAnalytics
 import com.rudderstack.kotlin.sdk.internals.platform.Platform
 import com.rudderstack.kotlin.sdk.internals.platform.PlatformType
 import com.rudderstack.kotlin.sdk.internals.statemanagement.FlowState
 import org.jetbrains.annotations.ApiStatus.Experimental
+
+private const val MIN_SESSION_ID_LENGTH = 10
 
 /**
  * `Analytics` class in the `com.rudderstack.android` package.
@@ -65,9 +69,50 @@ class Analytics(
 
     internal val activityLifecycleManagementPlugin = ActivityLifecycleManagementPlugin()
     internal val processLifecycleManagementPlugin = ProcessLifecycleManagementPlugin()
+    private val sessionTrackingPlugin = SessionTrackingPlugin()
 
     init {
         setup()
+    }
+
+    /**
+     * Starts a new session with the given optional session ID.
+     */
+    @JvmOverloads
+    fun startSession(sessionId: Long? = null) {
+        if (sessionId != null && sessionId.toString().length < MIN_SESSION_ID_LENGTH) {
+            LoggerAnalytics.error("Session Id should be at least $MIN_SESSION_ID_LENGTH digits.")
+            return
+        }
+        val newSessionId = sessionId ?: sessionTrackingPlugin.generateSessionId()
+        sessionTrackingPlugin.startSession(sessionId = newSessionId, isSessionManual = true)
+    }
+
+    /**
+     * Ends the current session.
+     */
+    fun endSession() {
+        sessionTrackingPlugin.endSession()
+    }
+
+    /**
+     * Returns the current session ID.
+     *
+     * @return The current session ID.
+     */
+    fun getSessionId(): Long {
+        return sessionTrackingPlugin.sessionId
+    }
+
+    /**
+     * Resets the user identity, clearing the user ID, traits, and external IDs.
+     * If clearAnonymousId is true, clears the existing anonymous ID and generate a new one.
+     *
+     * @param clearAnonymousId A boolean flag to determine whether to clear the anonymous ID. Defaults to false.
+     */
+    override fun reset(clearAnonymousId: Boolean) {
+        super.reset(clearAnonymousId)
+        sessionTrackingPlugin.refreshSession()
     }
 
     /**
@@ -148,6 +193,7 @@ class Analytics(
         add(OSInfoPlugin())
         add(ScreenInfoPlugin())
         add(TimezoneInfoPlugin())
+        add(sessionTrackingPlugin)
 
         // Add these plugins at last in chain
         add(AndroidLifecyclePlugin())
