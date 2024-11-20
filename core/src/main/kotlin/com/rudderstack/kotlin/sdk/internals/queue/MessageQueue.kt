@@ -2,9 +2,7 @@ package com.rudderstack.kotlin.sdk.internals.queue
 
 import com.rudderstack.kotlin.sdk.Analytics
 import com.rudderstack.kotlin.sdk.internals.logger.LoggerAnalytics
-import com.rudderstack.kotlin.sdk.internals.models.FlushEvent
 import com.rudderstack.kotlin.sdk.internals.models.Message
-import com.rudderstack.kotlin.sdk.internals.models.MessageType
 import com.rudderstack.kotlin.sdk.internals.network.HttpClient
 import com.rudderstack.kotlin.sdk.internals.network.HttpClientImpl
 import com.rudderstack.kotlin.sdk.internals.policies.FlushPoliciesFacade
@@ -52,12 +50,13 @@ internal class MessageQueue(
     internal var running: Boolean
 
     @VisibleForTesting
-    internal var writeChannel: Channel<Message>
+    internal var writeChannel: Channel<QueueMessage>
 
     @VisibleForTesting
     internal var uploadChannel: Channel<String>
 
     private val storage get() = analytics.configuration.storage
+    private val flushSignal = QueueMessage(QueueMessage.QueueMessageType.FLUSH_SIGNAL)
 
     init {
         running = false
@@ -77,7 +76,7 @@ internal class MessageQueue(
     }
 
     fun put(message: Message) {
-        writeChannel.trySend(message)
+        writeChannel.trySend(QueueMessage(QueueMessage.QueueMessageType.MESSAGE, message))
     }
 
     fun start() {
@@ -94,7 +93,7 @@ internal class MessageQueue(
     }
 
     fun flush() {
-        writeChannel.trySend(FlushEvent(""))
+        writeChannel.trySend(flushSignal)
     }
 
     fun stop() {
@@ -112,26 +111,27 @@ internal class MessageQueue(
     }
 
     @Suppress("TooGenericExceptionCaught")
-    private fun write() {
-        analytics.analyticsScope.launch(analytics.storageDispatcher) {
-            for (message in writeChannel) {
-                val isFlushSignal = (message.type == MessageType.Flush)
+    private fun write() = analytics.analyticsScope.launch(analytics.storageDispatcher) {
+        for (queueMessage in writeChannel) {
+            val isFlushSignal = (queueMessage.type == QueueMessage.QueueMessageType.FLUSH_SIGNAL)
 
-                if (!isFlushSignal) {
-                    try {
-                        val stringVal = stringifyBaseEvent(message)
-                        LoggerAnalytics.debug("running $stringVal")
-                        storage.write(StorageKeys.MESSAGE, stringVal)
+            if (!isFlushSignal) {
+                try {
+                    queueMessage.message?.let {
+                        stringifyBaseEvent(it).also { stringValue ->
+                            LoggerAnalytics.debug("running $stringValue")
+                            storage.write(StorageKeys.MESSAGE, stringValue)
+                        }
                         flushPoliciesFacade.updateState()
-                    } catch (e: Exception) {
-                        LoggerAnalytics.error("Error adding payload: $message", e)
                     }
+                } catch (e: Exception) {
+                    LoggerAnalytics.error("Error adding payload: $queueMessage", e)
                 }
+            }
 
-                if (isFlushSignal || flushPoliciesFacade.shouldFlush()) {
-                    uploadChannel.trySend(UPLOAD_SIG)
-                    flushPoliciesFacade.reset()
-                }
+            if (isFlushSignal || flushPoliciesFacade.shouldFlush()) {
+                uploadChannel.trySend(UPLOAD_SIG)
+                flushPoliciesFacade.reset()
             }
         }
     }
@@ -167,7 +167,6 @@ internal class MessageQueue(
                     LoggerAnalytics.error("Message storage file not found", e)
                 } catch (e: Exception) {
                     LoggerAnalytics.error("Error when uploading event", e)
-                    //  shouldCleanup = handleUploadException(e, file)
                 }
 
                 if (shouldCleanup) {
@@ -186,13 +185,15 @@ internal class MessageQueue(
     fun readFileAsString(filePath: String): String {
         return File(filePath).readText()
     }
+}
 
-//   private fun handleUploadException(e: Exception, file: File): Boolean {
-//       var shouldCleanup = false
-//        if (e is HTTPException) {
-//            ... handle the exception
-//            )
-//        }
-//        return shouldCleanup
-//    }
+internal data class QueueMessage(
+    val type: QueueMessageType,
+    val message: Message? = null,
+) {
+
+    enum class QueueMessageType {
+        MESSAGE,
+        FLUSH_SIGNAL,
+    }
 }

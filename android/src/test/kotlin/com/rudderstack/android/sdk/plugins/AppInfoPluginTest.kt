@@ -14,6 +14,7 @@ import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.mockk
 import io.mockk.spyk
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -57,7 +58,7 @@ class AppInfoPluginTest {
     }
 
     @Test
-    fun `given app context is present, when app info plugin is executed, then app info is attached to the context`() {
+    fun `given app context is present, when app info plugin is executed, then app info is attached to the context`() = runTest {
         val message = provideEvent()
         every { appInfoPlugin.constructAppContext(any(), any()) } returns provideAppContextPayload()
 
@@ -73,7 +74,7 @@ class AppInfoPluginTest {
     }
 
     @Test
-    fun `given app context is present, when app info is merged with other context, then app info is given higher priority`() {
+    fun `given app context is present, when app info is merged with other context, then app info is given higher priority`() = runTest {
         val message = provideEvent()
         every { appInfoPlugin.constructAppContext(any(), any()) } returns provideAppContextPayload()
 
@@ -92,7 +93,7 @@ class AppInfoPluginTest {
     }
 
     @Test
-    fun `given package info is not found, when exception occurs, then empty context is attached to the message`() {
+    fun `given package info is not found, when exception occurs, then empty context is attached to the message`() = runTest {
         val message = provideEvent()
         val packageManager = mockk<PackageManager>()
         every { mockApplication.packageManager } returns packageManager

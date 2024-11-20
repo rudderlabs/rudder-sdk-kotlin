@@ -1,7 +1,6 @@
 package com.rudderstack.kotlin.sdk.internals.utils
 
 import com.rudderstack.kotlin.sdk.internals.models.AliasEvent
-import com.rudderstack.kotlin.sdk.internals.models.FlushEvent
 import com.rudderstack.kotlin.sdk.internals.models.GroupEvent
 import com.rudderstack.kotlin.sdk.internals.models.IdentifyEvent
 import com.rudderstack.kotlin.sdk.internals.models.Message
@@ -59,10 +58,6 @@ internal fun Message.updateIntegrationOptionsAndCustomCustomContext() {
         is TrackEvent, is ScreenEvent, is GroupEvent, is IdentifyEvent, is AliasEvent -> {
             this.integrations = DEFAULT_INTEGRATIONS mergeWithHigherPriorityTo options.integrations
             this.context = options.customContext mergeWithHigherPriorityTo context
-        }
-
-        is FlushEvent -> {
-            // Do nothing
         }
     }
 }

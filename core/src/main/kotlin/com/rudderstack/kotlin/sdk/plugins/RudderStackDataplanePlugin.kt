@@ -2,7 +2,6 @@ package com.rudderstack.kotlin.sdk.plugins
 
 import com.rudderstack.kotlin.sdk.Analytics
 import com.rudderstack.kotlin.sdk.internals.models.AliasEvent
-import com.rudderstack.kotlin.sdk.internals.models.FlushEvent
 import com.rudderstack.kotlin.sdk.internals.models.GroupEvent
 import com.rudderstack.kotlin.sdk.internals.models.IdentifyEvent
 import com.rudderstack.kotlin.sdk.internals.models.Message
@@ -42,11 +41,6 @@ internal class RudderStackDataplanePlugin : MessagePlugin {
     }
 
     override fun alias(payload: AliasEvent): Message {
-        enqueue(payload)
-        return payload
-    }
-
-    override fun flush(payload: FlushEvent): Message {
         enqueue(payload)
         return payload
     }

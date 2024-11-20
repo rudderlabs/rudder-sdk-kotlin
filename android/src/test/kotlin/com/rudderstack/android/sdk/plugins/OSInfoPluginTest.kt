@@ -7,6 +7,7 @@ import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.spyk
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -32,7 +33,7 @@ class OSInfoPluginTest {
     }
 
     @Test
-    fun `given os context is present, when os info plugin is executed, then os info is attached to the context`() {
+    fun `given os context is present, when os info plugin is executed, then os info is attached to the context`() = runTest {
         val message = provideEvent()
         val osInfoPlugin = spyk(OSInfoPlugin())
         every { osInfoPlugin.constructAppContext() } returns provideOSContextPayload()
@@ -49,7 +50,7 @@ class OSInfoPluginTest {
     }
 
     @Test
-    fun `given os context is present, when os info is merged with other context, then os info is given higher priority`() {
+    fun `given os context is present, when os info is merged with other context, then os info is given higher priority`() = runTest {
         val message = provideEvent()
         val osInfoPlugin = spyk(OSInfoPlugin())
         every { osInfoPlugin.constructAppContext() } returns provideOSContextPayload()

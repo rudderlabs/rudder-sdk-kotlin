@@ -136,6 +136,16 @@ class MainActivity : ComponentActivity() {
                 weight = .5f,
                 viewModel = viewModel
             )
+            Spacer(modifier = Modifier.height(2.dp))
+            CreateRowOfApis(
+                names = arrayOf(
+                    AnalyticsState.StartSession,
+                    AnalyticsState.StartSessionWithCustomId,
+                    AnalyticsState.EndSession
+                ),
+                weight = .5f,
+                viewModel = viewModel
+            )
             CreateLogcat(state.logDataList)
         }
     }
