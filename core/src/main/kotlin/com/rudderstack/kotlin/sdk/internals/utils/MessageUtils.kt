@@ -34,21 +34,6 @@ internal fun addNameAndCategoryToProperties(name: String, category: String, prop
     return properties mergeWithHigherPriorityTo nameAndCategoryProperties
 }
 
-internal fun Message.setGroupEventTraits() {
-    if (this is GroupEvent) {
-        this.traits = getUpdatedTraitsWithAnonymousId(anonymousId = this.userIdentityState.anonymousId, traits = this.traits)
-    }
-}
-
-private fun getUpdatedTraitsWithAnonymousId(anonymousId: String, traits: RudderTraits): RudderTraits {
-    return if (traits.isNotEmpty()) {
-        val traitsWithAnonymousId = getDefaultTraits(anonymousId)
-        traits mergeWithHigherPriorityTo traitsWithAnonymousId
-    } else {
-        traits
-    }
-}
-
 internal val DEFAULT_INTEGRATIONS = mapOf(
     "All" to true,
 )
