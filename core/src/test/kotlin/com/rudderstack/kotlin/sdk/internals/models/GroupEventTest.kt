@@ -1,6 +1,5 @@
 package com.rudderstack.kotlin.sdk.internals.models
 
-import com.rudderstack.kotlin.sdk.ANONYMOUS_ID
 import com.rudderstack.kotlin.sdk.applyMockedValues
 import com.rudderstack.kotlin.sdk.internals.models.provider.provideSampleExternalIdsPayload
 import com.rudderstack.kotlin.sdk.internals.models.provider.provideSampleIntegrationsPayload
@@ -9,8 +8,6 @@ import com.rudderstack.kotlin.sdk.internals.platform.PlatformType
 import com.rudderstack.kotlin.sdk.internals.utils.encodeToString
 import com.rudderstack.kotlin.sdk.provideOnlyAnonymousIdState
 import com.rudderstack.kotlin.sdk.readFileTrimmed
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -22,7 +19,6 @@ private const val groupWithAllArguments = "message/group/group_with_all_argument
 private const val groupWithAllArgumentsFromServer = "message/group/group_with_all_arguments_from_server.json"
 
 private const val GROUP_ID = "Group Id 1"
-private const val ANONYMOUS_ID_KEY = "anonymousId"
 
 class GroupEventTest {
 
@@ -49,7 +45,7 @@ class GroupEventTest {
         val expectedJsonString = readFileTrimmed(groupWithTraits)
         val groupEvent = GroupEvent(
             groupId = GROUP_ID,
-            traits = provideAllTraits(),
+            traits = provideSampleJsonPayload(),
             options = RudderOption(),
             userIdentityState = provideOnlyAnonymousIdState()
         ).also {
@@ -124,7 +120,7 @@ class GroupEventTest {
         val expectedJsonString = readFileTrimmed(groupWithAllArguments)
         val groupEvent = GroupEvent(
             groupId = GROUP_ID,
-            traits = provideAllTraits(),
+            traits = provideSampleJsonPayload(),
             options = RudderOption(
                 integrations = provideSampleIntegrationsPayload(),
                 customContext = provideSampleJsonPayload(),
@@ -146,7 +142,7 @@ class GroupEventTest {
         val expectedJsonString = readFileTrimmed(groupWithAllArgumentsFromServer)
         val groupEvent = GroupEvent(
             groupId = GROUP_ID,
-            traits = provideAllTraits(),
+            traits = provideSampleJsonPayload(),
             options = RudderOption(
                 integrations = provideSampleIntegrationsPayload(),
                 customContext = provideSampleJsonPayload(),
@@ -161,14 +157,5 @@ class GroupEventTest {
         val actualPayloadString = groupEvent.encodeToString()
 
         assertEquals(expectedJsonString, actualPayloadString)
-    }
-}
-
-private fun provideAllTraits(): RudderTraits {
-    return buildJsonObject {
-        provideSampleJsonPayload().forEach { (key, value) ->
-            put(key, value)
-        }
-        put(ANONYMOUS_ID_KEY, ANONYMOUS_ID)
     }
 }
