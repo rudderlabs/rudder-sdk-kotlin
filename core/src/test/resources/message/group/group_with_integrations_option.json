@@ -13,7 +13,10 @@
     "All": false,
     "Amplitude": true,
     "Firebase": true,
-    "Braze": false
+    "Braze": false,
+    "INTERCOM": {
+      "lookup": "phone"
+    }
   },
   "anonymousId": "<anonymous-id>",
   "channel": "mobile"

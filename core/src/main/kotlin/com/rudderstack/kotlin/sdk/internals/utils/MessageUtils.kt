@@ -34,9 +34,9 @@ internal fun addNameAndCategoryToProperties(name: String, category: String, prop
     return properties mergeWithHigherPriorityTo nameAndCategoryProperties
 }
 
-internal val DEFAULT_INTEGRATIONS = mapOf(
-    "All" to true,
-)
+private val DEFAULT_INTEGRATIONS = buildJsonObject {
+    put("All", true)
+}
 
 internal fun Message.updateIntegrationOptionsAndCustomCustomContext() {
     when (this) {
