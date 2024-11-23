@@ -112,6 +112,8 @@ class Analytics(
      * @param clearAnonymousId A boolean flag to determine whether to clear the anonymous ID. Defaults to false.
      */
     override fun reset(clearAnonymousId: Boolean) {
+        if (!isAnalyticsActive()) return
+
         super.reset(clearAnonymousId)
         sessionTrackingPlugin.refreshSession()
     }
