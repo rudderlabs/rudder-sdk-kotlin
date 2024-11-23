@@ -28,6 +28,7 @@ import com.rudderstack.kotlin.sdk.internals.utils.isAnalyticsActive
 import org.jetbrains.annotations.ApiStatus.Experimental
 
 private const val MIN_SESSION_ID_LENGTH = 10
+private const val DEFAULT_SESSION_ID = -1L
 
 /**
  * `Analytics` class in the `com.rudderstack.android` package.
@@ -81,6 +82,8 @@ class Analytics(
      */
     @JvmOverloads
     fun startSession(sessionId: Long? = null) {
+        if (!isAnalyticsActive()) return
+
         if (sessionId != null && sessionId.toString().length < MIN_SESSION_ID_LENGTH) {
             LoggerAnalytics.error("Session Id should be at least $MIN_SESSION_ID_LENGTH digits.")
             return
@@ -93,6 +96,8 @@ class Analytics(
      * Ends the current session.
      */
     fun endSession() {
+        if (!isAnalyticsActive()) return
+
         sessionTrackingPlugin.endSession()
     }
 
@@ -102,6 +107,8 @@ class Analytics(
      * @return The current session ID.
      */
     fun getSessionId(): Long {
+        if (!isAnalyticsActive()) return DEFAULT_SESSION_ID
+
         return sessionTrackingPlugin.sessionId
     }
 
