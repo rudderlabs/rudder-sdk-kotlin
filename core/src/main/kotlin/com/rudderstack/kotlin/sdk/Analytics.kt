@@ -44,6 +44,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 
+// todo: figure out a way to make this a class level property. It will cause issues when multiple instances of sdk will be created.
 private lateinit var analyticsJob: Job
 
 /**
