@@ -111,6 +111,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 "Session ended"
             }
 
+            AnalyticsState.Initialize -> {
+                RudderAnalyticsUtils.initialize(getApplication())
+                "SDK initialized"
+            }
         }
         if (log.isNotEmpty()) addLogData(LogData(Date(), log))
     }

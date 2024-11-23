@@ -131,7 +131,7 @@ class MainActivity : ComponentActivity() {
             Spacer(modifier = Modifier.height(2.dp))
             CreateRowOfApis(
                 names = arrayOf(
-                    AnalyticsState.Shutdown, AnalyticsState.Reset,
+                    AnalyticsState.Shutdown, AnalyticsState.Initialize, AnalyticsState.Reset,
                 ),
                 weight = .5f,
                 viewModel = viewModel

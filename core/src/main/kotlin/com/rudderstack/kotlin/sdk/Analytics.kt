@@ -44,7 +44,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 
-private val job = SupervisorJob()
+private lateinit var analyticsJob: Job
 
 /**
  * The `Analytics` class is the core of the RudderStack SDK, responsible for tracking events,
@@ -111,7 +111,10 @@ open class Analytics protected constructor(
             private val handler = CoroutineExceptionHandler { _, exception ->
                 LoggerAnalytics.error(exception.stackTraceToString())
             }
-            override val analyticsScope: CoroutineScope = CoroutineScope(job + handler)
+            override val analyticsScope: CoroutineScope = run {
+                analyticsJob = SupervisorJob()
+                CoroutineScope(analyticsJob + handler)
+            }
             override val analyticsDispatcher: CoroutineDispatcher = Dispatchers.IO
             override val storageDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(2)
             override val networkDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(1)
@@ -294,7 +297,7 @@ open class Analytics protected constructor(
     }
 
     private fun shutdownHook() {
-        job.invokeOnCompletion {
+        analyticsJob.invokeOnCompletion {
             this@Analytics.configuration.storage.close()
             LoggerAnalytics.info("Analytics shutdown completed.")
         }
