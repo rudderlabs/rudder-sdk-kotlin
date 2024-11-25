@@ -20,9 +20,9 @@ object RudderAnalyticsUtils {
         analytics = Analytics(
             configuration = Configuration(
                 trackApplicationLifecycleEvents = true,
-                writeKey = "2lEGUmhhp9rKcvW21NuNsZ6PJwo",
+                writeKey = "<WRITE_KEY>",
                 application = application,
-                dataPlaneUrl = "https://rudderstachdvs.dataplane.rudderstack.com",
+                dataPlaneUrl = "<DATA_PLANE_URL>",
                 sessionConfiguration = SessionConfiguration(
                     automaticSessionTracking = true,
                     sessionTimeoutInMillis = 3000,
