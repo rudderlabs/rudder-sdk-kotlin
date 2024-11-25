@@ -45,17 +45,10 @@ internal class MessageQueue(
         )
     }
 ) {
-    // todo: figure out a better way for testing this rather then making variables VisibleForTesting.
 
-    @VisibleForTesting
-    internal var running: Boolean
-
-    @VisibleForTesting
-    internal var writeChannel: Channel<QueueMessage>
-
-    @VisibleForTesting
-    internal var uploadChannel: Channel<String>
-
+    private var running: Boolean
+    private var writeChannel: Channel<QueueMessage>
+    private var uploadChannel: Channel<String>
     private val storage get() = analytics.configuration.storage
     private val flushSignal = QueueMessage(QueueMessage.QueueMessageType.FLUSH_SIGNAL)
 
@@ -188,7 +181,7 @@ internal class MessageQueue(
     }
 }
 
-internal data class QueueMessage(
+private data class QueueMessage(
     val type: QueueMessageType,
     val message: Message? = null,
 ) {

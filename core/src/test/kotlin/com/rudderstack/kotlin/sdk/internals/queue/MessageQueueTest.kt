@@ -3,6 +3,7 @@ package com.rudderstack.kotlin.sdk.internals.queue
 import com.rudderstack.kotlin.sdk.Analytics
 import com.rudderstack.kotlin.sdk.internals.logger.KotlinLogger
 import com.rudderstack.kotlin.sdk.internals.models.Message
+import com.rudderstack.kotlin.sdk.internals.models.provider.provideEvent
 import com.rudderstack.kotlin.sdk.internals.network.ErrorStatus
 import com.rudderstack.kotlin.sdk.internals.network.HttpClient
 import com.rudderstack.kotlin.sdk.internals.utils.Result
@@ -10,6 +11,7 @@ import com.rudderstack.kotlin.sdk.internals.policies.FlushPoliciesFacade
 import com.rudderstack.kotlin.sdk.internals.storage.Storage
 import com.rudderstack.kotlin.sdk.internals.storage.StorageKeys
 import com.rudderstack.kotlin.sdk.internals.utils.empty
+import com.rudderstack.kotlin.sdk.internals.utils.encodeToString
 import com.rudderstack.kotlin.sdk.mockAnalytics
 import com.rudderstack.kotlin.sdk.setupLogger
 import io.mockk.MockKAnnotations
@@ -23,7 +25,6 @@ import io.mockk.runs
 import io.mockk.spyk
 import io.mockk.unmockkAll
 import io.mockk.verify
-import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -34,13 +35,12 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import java.io.FileNotFoundException
 import java.io.IOException
 
-@OptIn(DelicateCoroutinesApi::class, ExperimentalCoroutinesApi::class)
+@OptIn(ExperimentalCoroutinesApi::class)
 class MessageQueueTest {
 
     @MockK
@@ -89,25 +89,31 @@ class MessageQueueTest {
     }
 
     @Test
-    fun `given a message queue, when queue starts, then verify channel running is true`() {
+    fun `given a message queue is accepting events, when message is sent, then it should be stored`() = runTest {
+        val message = provideEvent()
         messageQueue.start()
 
-        assertTrue(messageQueue.running)
+        messageQueue.put(message)
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) {
+            mockStorage.write(StorageKeys.MESSAGE, message.encodeToString())
+        }
     }
 
     @Test
-    fun `given a message queue, when queue stops, then cancels channels and sets running to false`() = runTest {
+    fun `given a message queue is accepting events, when queue stops, then it should stop storing new events`() = runTest {
+        val message = provideEvent()
         messageQueue.start()
 
         messageQueue.stop()
         advanceUntilIdle()
+        messageQueue.put(message)
+        advanceUntilIdle()
 
-        val running = messageQueue.running
-
-        assertTrue(!running)
-        assertTrue(messageQueue.writeChannel.isClosedForSend)
-        assertTrue(messageQueue.uploadChannel.isClosedForSend)
-        assertTrue(messageQueue.uploadChannel.isClosedForReceive)
+        coVerify(exactly = 0) {
+            mockStorage.write(StorageKeys.MESSAGE, message.encodeToString())
+        }
     }
 
     @Test
@@ -394,16 +400,17 @@ class MessageQueueTest {
     }
 
     @Test
-    fun `given default flush policies are enabled, when stop is called, then flush policies should be cancelled`() = runTest {
-        messageQueue.start()
+    fun `given default flush policies are enabled, when stop is called, then flush policies should be cancelled`() =
+        runTest {
+            messageQueue.start()
 
-        messageQueue.stop()
-        testDispatcher.scheduler.advanceUntilIdle()
+            messageQueue.stop()
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        verify(exactly = 1) {
-            mockFlushPoliciesFacade.cancelSchedule()
+            verify(exactly = 1) {
+                mockFlushPoliciesFacade.cancelSchedule()
+            }
         }
-    }
 
     @Test
     fun `given no policies are enabled, when explicit flush call is made, then rollover should happen`() {
