@@ -1,7 +1,6 @@
 package com.rudderstack.android.sdk.plugins.screenrecording
 
 import android.os.Bundle
-import androidx.lifecycle.LifecycleOwner
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination
 import com.rudderstack.android.sdk.state.NavContext
@@ -12,11 +11,10 @@ import com.rudderstack.kotlin.sdk.internals.statemanagement.FlowState
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
 import io.mockk.spyk
 import io.mockk.unmockkAll
 import io.mockk.verify
-import junit.framework.TestCase.assertEquals
-import junit.framework.TestCase.assertTrue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -76,30 +74,34 @@ class NavControllerTrackingPluginTest {
     }
 
     @Test
-    fun `when navContexts are added, then addOnDestinationChangedListener called and currentNavContexts updated`() =
+    fun `when navContexts are added, then addOnDestinationChangedListener and addObserver called for navContexts`() =
         runTest {
-            val navContext1: NavContext = mockNavContext()
-            val navContext2: NavContext = mockNavContext()
+            val navContext1 = mockNavContext()
+            val navContext2 = mockNavContext()
+            mockkStatic(::provideNavControllerActivityObserver)
+            val observer1 = mockActivityObserverProvider(navContext1)
+            val observer2 = mockActivityObserverProvider(navContext2)
 
             plugin.setup(mockAnalytics)
             mockNavContextState.dispatch(NavContext.AddNavContextAction(navContext1))
             mockNavContextState.dispatch(NavContext.AddNavContextAction(navContext2))
             advanceUntilIdle()
-            assertEquals(2, plugin.currentNavContexts.size)
-            assertTrue(plugin.currentNavContexts.contains(navContext1))
-            assertTrue(plugin.currentNavContexts.contains(navContext2))
+
             verify(exactly = 1) { navContext1.navController.addOnDestinationChangedListener(plugin) }
             verify(exactly = 1) { navContext2.navController.addOnDestinationChangedListener(plugin) }
+
+            verify(exactly = 1) { observer1.addObserver() }
+            verify(exactly = 1) { observer2.addObserver() }
         }
 
     @Test
-    fun `when navControllers are removed, then removeOnDestinationChangedListener called and currentNavContexts updated`() =
+    fun `when navControllers are added and one of them is removed, then removeOnDestinationChangedListener and removeObserver called for that navContext`() =
         runTest {
             val navContext1 = mockNavContext()
             val navContext2 = mockNavContext()
-
-            every { (navContext2.callingActivity as LifecycleOwner).lifecycle } returns mockk(relaxed = true)
-            every { (navContext2.callingActivity as LifecycleOwner).lifecycle.removeObserver(any()) } returns Unit
+            mockkStatic(::provideNavControllerActivityObserver)
+            val observer1 = mockActivityObserverProvider(navContext1)
+            val observer2 = mockActivityObserverProvider(navContext2)
 
             plugin.setup(mockAnalytics)
             mockNavContextState.dispatch(NavContext.AddNavContextAction(navContext1))
@@ -108,11 +110,11 @@ class NavControllerTrackingPluginTest {
             mockNavContextState.dispatch(NavContext.RemoveNavContextAction(navContext2))
             advanceUntilIdle()
 
-            // Verify that removeOnDestinationChangedListener was called for the removed navContext2 navController
-            assertEquals(1, plugin.currentNavContexts.size)
-            assertTrue(plugin.currentNavContexts.contains(navContext1))
             verify(exactly = 1) { navContext2.navController.removeOnDestinationChangedListener(plugin) }
             verify(exactly = 0) { navContext1.navController.removeOnDestinationChangedListener(plugin) }
+
+            verify(exactly = 1) { observer2.removeObserver() }
+            verify(exactly = 0) { observer1.removeObserver() }
         }
 
     @Test
@@ -163,5 +165,17 @@ class NavControllerTrackingPluginTest {
         plugin.onDestinationChanged(navController, destination, bundle)
 
         verify { mockAnalytics.screen(testRouteWithoutArgs, properties = automaticProperty()) }
+    }
+
+    private fun mockActivityObserverProvider(navContext: NavContext): NavControllerActivityObserver {
+        val mockObserver: NavControllerActivityObserver = mockk(relaxed = true)
+        every {
+            provideNavControllerActivityObserver(
+                plugin,
+                navContext
+            )
+        } returns mockObserver
+        every { mockObserver.find(navContext) } returns true
+        return mockObserver
     }
 }
