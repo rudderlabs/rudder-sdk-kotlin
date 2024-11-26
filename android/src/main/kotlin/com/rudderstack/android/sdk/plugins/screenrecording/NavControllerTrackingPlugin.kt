@@ -27,6 +27,7 @@ internal class NavControllerTrackingPlugin(
 
     @VisibleForTesting
     internal val currentNavContexts: MutableSet<NavContext> = mutableSetOf()
+    private val activityObservers: MutableList<NavControllerActivityObserver> = mutableListOf()
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
@@ -38,6 +39,7 @@ internal class NavControllerTrackingPlugin(
     }
 
     override fun teardown() {
+        updateNavContexts(emptySet())
         navContextState.dispatch(NavContext.RemoveAllNavContextsAction)
     }
 
@@ -72,6 +74,10 @@ internal class NavControllerTrackingPlugin(
     private fun removeContext(navContext: NavContext) {
         navContext.navController.removeOnDestinationChangedListener(this)
         currentNavContexts.remove(navContext)
+
+        val observerToBeRemoved = activityObservers.firstOrNull { it.find(navContext) }
+        observerToBeRemoved?.removeObserver()
+        observerToBeRemoved?.let { activityObservers.remove(it) }
     }
 
     private fun addContextAndObserver(navContext: NavContext) {
@@ -80,10 +86,12 @@ internal class NavControllerTrackingPlugin(
         currentNavContexts.add(navContext)
 
         // adding activity observer
-        NavControllerActivityObserver(
+        val observerToBeAdded = NavControllerActivityObserver(
             plugin = this,
             navContext = navContext
         )
+        observerToBeAdded.addObserver()
+        activityObservers.add(observerToBeAdded)
     }
 
     private fun trackFragmentScreen(destination: NavDestination) {

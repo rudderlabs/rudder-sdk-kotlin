@@ -5,12 +5,16 @@ import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import com.rudderstack.android.sdk.state.NavContext
+import com.rudderstack.android.sdk.utils.runOnMainThread
+import kotlinx.coroutines.DelicateCoroutinesApi
 import java.util.concurrent.atomic.AtomicBoolean
+import com.rudderstack.android.sdk.Analytics as AndroidAnalytics
 
 /*
 * This class is used to attach an observer to a navController's activity, so that destination changes can be tracked
 * when navigating back from a previous activity or when the app is foregrounded.
 * */
+@OptIn(DelicateCoroutinesApi::class)
 internal class NavControllerActivityObserver(
     private val plugin: NavControllerTrackingPlugin,
     private val navContext: NavContext,
@@ -18,9 +22,7 @@ internal class NavControllerActivityObserver(
 
     private val isActivityGettingCreated = AtomicBoolean(true)
 
-    init {
-        activityLifecycle()?.addObserver(this)
-    }
+    fun find(navContext: NavContext) = navContext == this.navContext
 
     override fun onStart(owner: LifecycleOwner) {
         if (!isActivityGettingCreated.getAndSet(false)) {
@@ -37,8 +39,19 @@ internal class NavControllerActivityObserver(
     }
 
     override fun onDestroy(owner: LifecycleOwner) {
-        activityLifecycle()?.removeObserver(this)
         plugin.navContextState.dispatch(NavContext.RemoveNavContextAction(navContext))
+    }
+
+    internal fun removeObserver() {
+        (plugin.analytics as? AndroidAnalytics)?.runOnMainThread {
+            activityLifecycle()?.removeObserver(this)
+        }
+    }
+
+    internal fun addObserver() {
+        (plugin.analytics as? AndroidAnalytics)?.runOnMainThread {
+            activityLifecycle()?.addObserver(this)
+        }
     }
 
     @VisibleForTesting
