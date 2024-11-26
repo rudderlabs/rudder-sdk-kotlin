@@ -10,6 +10,7 @@ import com.rudderstack.android.sdk.models.AppVersion
 import com.rudderstack.android.sdk.plugins.lifecyclemanagment.ProcessLifecycleObserver
 import com.rudderstack.android.sdk.utils.addLifecycleObserver
 import com.rudderstack.android.sdk.utils.logAndThrowError
+import com.rudderstack.android.sdk.utils.removeLifecycleObserver
 import com.rudderstack.android.sdk.utils.runOnAnalyticsThread
 import com.rudderstack.kotlin.sdk.Analytics
 import com.rudderstack.kotlin.sdk.internals.models.RudderOption
@@ -57,6 +58,10 @@ internal class AndroidLifecyclePlugin : Plugin, ProcessLifecycleObserver {
                 (analytics as? AndroidAnalytics)?.addLifecycleObserver(this)
             }
         }
+    }
+
+    override fun teardown() {
+        (analytics as? AndroidAnalytics)?.removeLifecycleObserver(this)
     }
 
     override fun onStart(owner: LifecycleOwner) {

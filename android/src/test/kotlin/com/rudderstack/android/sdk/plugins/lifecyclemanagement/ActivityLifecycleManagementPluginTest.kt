@@ -75,14 +75,13 @@ class ActivityLifecycleManagementPluginTest {
     }
 
     @Test
-    fun `when teardown called, it should unregister activity lifecycle callbacks and clear observers`() = runTest {
+    fun `when teardown called, it should unregister activity lifecycle callbacks`() = runTest {
         plugin.activityObservers.add(mockObserver)
 
         plugin.teardown()
 
         advanceUntilIdle()
         verify { mockApplication.unregisterActivityLifecycleCallbacks(plugin) }
-        assert(plugin.activityObservers.isEmpty())
     }
 
     @Test

@@ -17,6 +17,7 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -48,7 +49,6 @@ internal class MessageQueue(
     private var running: Boolean
     private var writeChannel: Channel<QueueMessage>
     private var uploadChannel: Channel<String>
-
     private val storage get() = analytics.configuration.storage
     private val flushSignal = QueueMessage(QueueMessage.QueueMessageType.FLUSH_SIGNAL)
 
@@ -95,7 +95,8 @@ internal class MessageQueue(
         running = false
 
         uploadChannel.cancel()
-        writeChannel.cancel()
+        writeChannel.close()
+
         flushPoliciesFacade.cancelSchedule()
     }
 
@@ -140,7 +141,8 @@ internal class MessageQueue(
             for (filePath in fileUrlList) {
                 val file = File(filePath)
                 if (!isFileExists(file)) continue
-
+                // ensureActive is at this position so that this coroutine can be cancelled - but any uploaded event MUST be cleared from storage.
+                ensureActive()
                 var shouldCleanup = false
                 try {
                     val batchPayload = jsonSentAtUpdater.updateSentAt(readFileAsString(filePath))

@@ -67,6 +67,10 @@ internal class AndroidStorage(
         messageBatchFile.rollover()
     }
 
+    override fun close() {
+        messageBatchFile.closeAndReset()
+    }
+
     override fun readInt(key: StorageKeys, defaultVal: Int): Int {
         return rudderPrefsRepo.getInt(key.key, defaultVal)
     }

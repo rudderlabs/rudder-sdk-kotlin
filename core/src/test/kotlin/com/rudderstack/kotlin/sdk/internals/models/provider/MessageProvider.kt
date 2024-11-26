@@ -1,7 +1,11 @@
 package com.rudderstack.kotlin.sdk.internals.models.provider
 
+import com.rudderstack.kotlin.sdk.applyMockedValues
 import com.rudderstack.kotlin.sdk.internals.models.ExternalId
+import com.rudderstack.kotlin.sdk.internals.models.Message
+import com.rudderstack.kotlin.sdk.internals.models.TrackEvent
 import com.rudderstack.kotlin.sdk.internals.models.emptyJsonObject
+import com.rudderstack.kotlin.sdk.internals.platform.PlatformType
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
@@ -41,3 +45,11 @@ fun provideSampleExternalIdsPayload() = listOf(
     ExternalId("key-1", "value-1"),
     ExternalId("key-2", "value-2"),
 )
+
+fun provideEvent(platformType: PlatformType = PlatformType.Mobile): Message = TrackEvent(
+    event = "Sample Event",
+    properties = emptyJsonObject,
+).also {
+    it.applyMockedValues()
+    it.updateData(platformType)
+}

@@ -38,7 +38,6 @@ internal class NavControllerTrackingPlugin(
     }
 
     override fun teardown() {
-        super.teardown()
         navContextState.dispatch(NavContext.RemoveAllNavContextsAction)
     }
 

@@ -5,6 +5,7 @@ import com.rudderstack.android.sdk.Configuration
 import com.rudderstack.android.sdk.plugins.lifecyclemanagment.ActivityLifecycleObserver
 import com.rudderstack.android.sdk.utils.addLifecycleObserver
 import com.rudderstack.android.sdk.utils.automaticProperty
+import com.rudderstack.android.sdk.utils.removeLifecycleObserver
 import com.rudderstack.kotlin.sdk.Analytics
 import com.rudderstack.kotlin.sdk.internals.plugins.Plugin
 import com.rudderstack.android.sdk.Analytics as AndroidAnalytics
@@ -24,6 +25,10 @@ internal class ActivityTrackingPlugin : Plugin, ActivityLifecycleObserver {
                 (analytics as? AndroidAnalytics)?.addLifecycleObserver(this)
             }
         }
+    }
+
+    override fun teardown() {
+        (analytics as? AndroidAnalytics)?.removeLifecycleObserver(this)
     }
 
     override fun onActivityStarted(activity: Activity) {

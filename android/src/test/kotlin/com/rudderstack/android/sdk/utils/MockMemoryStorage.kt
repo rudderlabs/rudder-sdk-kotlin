@@ -47,6 +47,10 @@ internal class MockMemoryStorage : Storage {
         messageBatchMap.clear()
     }
 
+    override fun close() {
+        messageBatchMap.clear()
+    }
+
     override fun readInt(key: StorageKeys, defaultVal: Int): Int {
         return (propertiesMap[key.key] as? Int) ?: defaultVal
     }

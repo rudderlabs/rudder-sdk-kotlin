@@ -70,6 +70,12 @@ interface Storage {
     suspend fun rollover()
 
     /**
+     * Closes the storage instance and performs any necessary cleanup operations.
+     * This method gets called during shutdown.
+     */
+    fun close()
+
+    /**
      * Reads an Int value from the storage associated with the given key.
      *
      * @param key The [StorageKeys] used to identify the storage location.

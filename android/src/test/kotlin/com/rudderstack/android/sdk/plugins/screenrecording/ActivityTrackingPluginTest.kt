@@ -7,6 +7,7 @@ import com.rudderstack.android.sdk.plugins.lifecyclemanagment.ActivityLifecycleO
 import com.rudderstack.android.sdk.utils.addLifecycleObserver
 import com.rudderstack.android.sdk.utils.automaticProperty
 import com.rudderstack.android.sdk.utils.mockAnalytics
+import com.rudderstack.android.sdk.utils.removeLifecycleObserver
 import com.rudderstack.kotlin.sdk.Analytics
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
@@ -14,7 +15,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Before
@@ -85,5 +88,14 @@ class ActivityTrackingPluginTest {
         plugin.setup(mockAnalytics)
 
         verify(exactly = 0) { (mockAnalytics as AndroidAnalytics).addLifecycleObserver(any<ActivityLifecycleObserver>()) }
+    }
+
+    @Test
+    fun `when teardown called, then removeLifecycleObserver is called`() = runTest {
+        plugin.setup(mockAnalytics)
+
+        plugin.teardown()
+
+        verify { (mockAnalytics as AndroidAnalytics).removeLifecycleObserver(plugin) }
     }
 }

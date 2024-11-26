@@ -9,6 +9,7 @@ import com.rudderstack.android.sdk.storage.CheckBuildVersionUseCase
 import com.rudderstack.android.sdk.utils.addLifecycleObserver
 import com.rudderstack.android.sdk.utils.mockAnalytics
 import com.rudderstack.android.sdk.utils.mockUri
+import com.rudderstack.android.sdk.utils.removeLifecycleObserver
 import com.rudderstack.kotlin.sdk.internals.models.RudderOption
 import io.mockk.MockKAnnotations
 import io.mockk.Runs
@@ -21,6 +22,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -189,4 +191,13 @@ class DeeplinkPluginTest {
                 )
             }
         }
+
+    @Test
+    fun `when teardown called, then removeLifecycleObserver is called`() = runTest {
+        plugin.setup(mockAnalytics)
+
+        plugin.teardown()
+
+        verify { (mockAnalytics as AndroidAnalytics).removeLifecycleObserver(plugin) }
+    }
 }

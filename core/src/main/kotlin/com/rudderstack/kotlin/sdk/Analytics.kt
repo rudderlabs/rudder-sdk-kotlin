@@ -28,6 +28,7 @@ import com.rudderstack.kotlin.sdk.internals.plugins.PluginChain
 import com.rudderstack.kotlin.sdk.internals.statemanagement.FlowState
 import com.rudderstack.kotlin.sdk.internals.utils.addNameAndCategoryToProperties
 import com.rudderstack.kotlin.sdk.internals.utils.empty
+import com.rudderstack.kotlin.sdk.internals.utils.isAnalyticsActive
 import com.rudderstack.kotlin.sdk.internals.utils.resolvePreferredPreviousId
 import com.rudderstack.kotlin.sdk.plugins.LibraryInfoPlugin
 import com.rudderstack.kotlin.sdk.plugins.PocPlugin
@@ -37,9 +38,14 @@ import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
+
+// todo: figure out a way to make this a class level property. It will cause issues when multiple instances of sdk will be created.
+private lateinit var analyticsJob: Job
 
 /**
  * The `Analytics` class is the core of the RudderStack SDK, responsible for tracking events,
@@ -55,6 +61,7 @@ import kotlinx.coroutines.launch
  * @param configuration The configuration object that defines settings such as write key, data plane URL, logger, etc.
  * @param coroutineConfig The coroutine configuration that defines the scopes and dispatchers for analytics operations.
  */
+@Suppress("TooManyFunctions")
 @OptIn(ExperimentalCoroutinesApi::class)
 open class Analytics protected constructor(
     val configuration: Configuration,
@@ -67,8 +74,12 @@ open class Analytics protected constructor(
 
     internal val userIdentityState = FlowState(initialState = UserIdentity.initialState(configuration.storage))
 
-    // TODO("Add a way to stop this channel")
     private val processMessageChannel: Channel<Message> = Channel(Channel.UNLIMITED)
+    private var processMessageJob: Job? = null
+
+    @Volatile
+    internal var isAnalyticsShutdown = false
+        private set
 
     init {
         processMessages()
@@ -85,6 +96,7 @@ open class Analytics protected constructor(
      * @param logger The `Logger` instance to use for logging. Defaults to an instance of `KotlinLogger`.
      */
     fun setLogger(logger: Logger) {
+        if (!isAnalyticsActive()) return
         LoggerAnalytics.setup(logger = logger, logLevel = configuration.logLevel)
     }
 
@@ -100,7 +112,10 @@ open class Analytics protected constructor(
             private val handler = CoroutineExceptionHandler { _, exception ->
                 LoggerAnalytics.error(exception.stackTraceToString())
             }
-            override val analyticsScope: CoroutineScope = CoroutineScope(SupervisorJob() + handler)
+            override val analyticsScope: CoroutineScope = run {
+                analyticsJob = SupervisorJob()
+                CoroutineScope(analyticsJob + handler)
+            }
             override val analyticsDispatcher: CoroutineDispatcher = Dispatchers.IO
             override val storageDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(2)
             override val networkDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(1)
@@ -117,6 +132,8 @@ open class Analytics protected constructor(
      */
     @JvmOverloads
     fun track(name: String, properties: Properties = emptyJsonObject, options: RudderOption = RudderOption()) {
+        if (!isAnalyticsActive()) return
+
         val message = TrackEvent(
             event = name,
             properties = properties,
@@ -143,6 +160,8 @@ open class Analytics protected constructor(
         properties: Properties = emptyJsonObject,
         options: RudderOption = RudderOption()
     ) {
+        if (!isAnalyticsActive()) return
+
         val updatedProperties = addNameAndCategoryToProperties(screenName, category, properties)
 
         val message = ScreenEvent(
@@ -165,6 +184,8 @@ open class Analytics protected constructor(
      */
     @JvmOverloads
     fun group(groupId: String, traits: RudderTraits = emptyJsonObject, options: RudderOption = RudderOption()) {
+        if (!isAnalyticsActive()) return
+
         val message = GroupEvent(
             groupId = groupId,
             traits = traits,
@@ -189,6 +210,8 @@ open class Analytics protected constructor(
         traits: RudderTraits = emptyJsonObject,
         options: RudderOption = RudderOption()
     ) {
+        if (!isAnalyticsActive()) return
+
         userIdentityState.dispatch(
             SetUserIdTraitsAndExternalIdsAction(
                 newUserId = userId,
@@ -223,6 +246,8 @@ open class Analytics protected constructor(
      * @param options A [RudderOption] object to specify additional event options. Defaults to an empty RudderOption object.
      */
     fun alias(newId: String, previousId: String = String.empty(), options: RudderOption = RudderOption()) {
+        if (!isAnalyticsActive()) return
+
         val updatedPreviousId = userIdentityState.value.resolvePreferredPreviousId(previousId)
         userIdentityState.dispatch(
             SetUserIdForAliasEvent(newId = newId)
@@ -245,10 +270,42 @@ open class Analytics protected constructor(
      * This method specifically targets the `RudderStackDataplanePlugin` to initiate the flush operation.
      */
     fun flush() {
+        if (!isAnalyticsActive()) return
+
         this.pluginChain.applyClosure {
             if (it is RudderStackDataplanePlugin) {
                 it.flush()
             }
+        }
+    }
+
+    /**
+     * Shuts down the analytics instance, stopping all the operations, removing all the plugins and freeing up the resources.
+     * All the events made up to to the point of shutdown are written down on disk, but they are flushed only after next initialisation.
+     *
+     *  **NOTE**: This operation is irreversible. However, no saved data is lost in shutdown.
+     */
+    fun shutdown() {
+        if (!isAnalyticsActive()) return
+
+        isAnalyticsShutdown = true
+        LoggerAnalytics.info("Initiating Analytics shutdown.")
+
+        processMessageChannel.close()
+        processMessageJob?.invokeOnCompletion {
+            shutdownHook()
+        }
+    }
+
+    private fun shutdownHook() {
+        analyticsJob.invokeOnCompletion {
+            this@Analytics.configuration.storage.close()
+            LoggerAnalytics.info("Analytics shutdown completed.")
+        }
+        analyticsScope.launch {
+            this@Analytics.pluginChain.removeAll()
+        }.invokeOnCompletion {
+            analyticsScope.cancel()
         }
     }
 
@@ -276,6 +333,8 @@ open class Analytics protected constructor(
      * @param plugin The plugin to be added to the plugin chain.
      */
     fun add(plugin: Plugin) {
+        if (!isAnalyticsActive()) return
+
         this.pluginChain.add(plugin)
     }
 
@@ -291,6 +350,8 @@ open class Analytics protected constructor(
      * non-null string used to represent the user anonymously.
      */
     fun setAnonymousId(anonymousId: String) {
+        if (!isAnalyticsActive()) return
+
         userIdentityState.dispatch(UserIdentity.SetAnonymousIdAction(anonymousId))
         storeAnonymousId()
     }
@@ -299,6 +360,8 @@ open class Analytics protected constructor(
      * The `getAnonymousId` method always retrieves the current anonymous ID.
      */
     fun getAnonymousId(): String {
+        if (!isAnalyticsActive()) return String.empty()
+
         return userIdentityState.value.anonymousId
     }
 
@@ -309,6 +372,8 @@ open class Analytics protected constructor(
      * @param clearAnonymousId A boolean flag to determine whether to clear the anonymous ID. Defaults to false.
      */
     open fun reset(clearAnonymousId: Boolean = false) {
+        if (!isAnalyticsActive()) return
+
         userIdentityState.dispatch(ResetUserIdentityAction(clearAnonymousId))
         analyticsScope.launch {
             userIdentityState.value.resetUserIdentity(
@@ -326,7 +391,7 @@ open class Analytics protected constructor(
      * Events sent before this function is invoked will be queued and processed once this function is called, ensuring no events are lost.
      */
     private fun processMessages() {
-        analyticsScope.launch(analyticsDispatcher) {
+        processMessageJob = analyticsScope.launch(analyticsDispatcher) {
             for (message in processMessageChannel) {
                 message.updateData(platform = getPlatformType())
                 pluginChain.process(message)

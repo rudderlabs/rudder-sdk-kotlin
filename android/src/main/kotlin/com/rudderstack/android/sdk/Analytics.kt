@@ -24,9 +24,11 @@ import com.rudderstack.kotlin.sdk.internals.logger.LoggerAnalytics
 import com.rudderstack.kotlin.sdk.internals.platform.Platform
 import com.rudderstack.kotlin.sdk.internals.platform.PlatformType
 import com.rudderstack.kotlin.sdk.internals.statemanagement.FlowState
+import com.rudderstack.kotlin.sdk.internals.utils.isAnalyticsActive
 import org.jetbrains.annotations.ApiStatus.Experimental
 
 private const val MIN_SESSION_ID_LENGTH = 10
+private const val DEFAULT_SESSION_ID = -1L
 
 /**
  * `Analytics` class in the `com.rudderstack.android` package.
@@ -80,6 +82,8 @@ class Analytics(
      */
     @JvmOverloads
     fun startSession(sessionId: Long? = null) {
+        if (!isAnalyticsActive()) return
+
         if (sessionId != null && sessionId.toString().length < MIN_SESSION_ID_LENGTH) {
             LoggerAnalytics.error("Session Id should be at least $MIN_SESSION_ID_LENGTH digits.")
             return
@@ -92,6 +96,8 @@ class Analytics(
      * Ends the current session.
      */
     fun endSession() {
+        if (!isAnalyticsActive()) return
+
         sessionTrackingPlugin.endSession()
     }
 
@@ -101,6 +107,8 @@ class Analytics(
      * @return The current session ID.
      */
     fun getSessionId(): Long {
+        if (!isAnalyticsActive()) return DEFAULT_SESSION_ID
+
         return sessionTrackingPlugin.sessionId
     }
 
@@ -111,6 +119,8 @@ class Analytics(
      * @param clearAnonymousId A boolean flag to determine whether to clear the anonymous ID. Defaults to false.
      */
     override fun reset(clearAnonymousId: Boolean) {
+        if (!isAnalyticsActive()) return
+
         super.reset(clearAnonymousId)
         sessionTrackingPlugin.refreshSession()
     }
@@ -168,6 +178,8 @@ class Analytics(
     @Synchronized
     @Experimental
     fun setNavigationDestinationsTracking(navController: NavController, activity: Activity) {
+        if (!isAnalyticsActive()) return
+
         if (navControllerTrackingPlugin == null) {
             navControllerTrackingPlugin = NavControllerTrackingPlugin(navContextState).also {
                 add(it)

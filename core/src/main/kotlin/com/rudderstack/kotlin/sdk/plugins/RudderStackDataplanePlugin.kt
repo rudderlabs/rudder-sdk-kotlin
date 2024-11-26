@@ -10,12 +10,15 @@ import com.rudderstack.kotlin.sdk.internals.models.TrackEvent
 import com.rudderstack.kotlin.sdk.internals.plugins.MessagePlugin
 import com.rudderstack.kotlin.sdk.internals.plugins.Plugin
 import com.rudderstack.kotlin.sdk.internals.queue.MessageQueue
+import org.jetbrains.annotations.VisibleForTesting
 
 internal class RudderStackDataplanePlugin : MessagePlugin {
 
     override val pluginType: Plugin.PluginType = Plugin.PluginType.Destination
     override lateinit var analytics: Analytics
-    private var messageQueue: MessageQueue? = null
+
+    @VisibleForTesting
+    internal var messageQueue: MessageQueue? = null
 
     override fun track(payload: TrackEvent): Message {
         enqueue(payload)
@@ -49,6 +52,10 @@ internal class RudderStackDataplanePlugin : MessagePlugin {
 
     internal fun flush() {
         messageQueue?.flush()
+    }
+
+    override fun teardown() {
+        messageQueue?.stop()
     }
 
     private fun enqueue(message: Message) {

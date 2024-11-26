@@ -45,6 +45,13 @@ internal class PluginChain(
         }
     }
 
+    fun removeAll() {
+        applyClosure { it.teardown() }
+        pluginList.forEach { (_, mediator) ->
+            mediator.removeAll()
+        }
+    }
+
     internal suspend fun applyPlugins(pluginType: Plugin.PluginType, message: Message?): Message? {
         var result: Message? = message
         val mediator = pluginList[pluginType]
