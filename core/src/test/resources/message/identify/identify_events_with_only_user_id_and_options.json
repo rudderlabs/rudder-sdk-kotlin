@@ -48,5 +48,6 @@
     }
   },
   "anonymousId": "<anonymous-id>",
-  "channel": "mobile"
+  "channel": "mobile",
+  "event": "identify"
 }
