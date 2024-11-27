@@ -53,12 +53,4 @@ class OptionPlugin (
 infix fun JsonObject.mergeWithHigherPriorityTo(other: JsonObject): JsonObject {
     return JsonObject(this.toMap() + other.toMap())
 }
-/**
- * Merges the current map with another map, giving higher priority to the other map.
- *
- * @param other The map to merge with the current map.
- */
-infix fun <K, V> Map<K, V>.mergeWithHigherPriorityTo(other: Map<K, V>): Map<K, V> {
-    return this + other
-}
 

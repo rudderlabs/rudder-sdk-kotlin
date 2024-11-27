@@ -1,0 +1,45 @@
+name: Linting Check
+
+on:
+  push:
+    branches: ["main", "develop.poc"]
+  pull_request:
+    branches: ["main", "develop.poc"]
+    types: ["opened", "reopened", "synchronize"]
+  workflow_dispatch:
+
+jobs:
+  cancel_previous:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: styfle/cancel-workflow-action@0.11.0
+        with:
+          workflow_id: ${{ github.event.workflow.id }}
+
+  lint-check:
+    needs: cancel_previous
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/setup-java@v3
+        with:
+          distribution: "temurin" # See 'Supported distributions' for available options
+          java-version: "17"
+
+      - uses: actions/checkout@v3
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: cache gradle dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-core-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-core-
+
+      - name: Run Linting Check
+        run: ./gradlew detekt

@@ -6,6 +6,7 @@ import com.rudderstack.kotlin.sdk.internals.utils.provideEmptyUserIdentityState
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import kotlinx.serialization.json.JsonObject
 
 /**
  * Represents an identify event message in RudderStack.
@@ -31,7 +32,7 @@ data class IdentifyEvent(
     override var originalTimestamp: String = super.originalTimestamp
     override val sentAt: String = super.sentAt
     override var userId: String = super.userId
-    override lateinit var integrations: Map<String, Boolean>
+    override lateinit var integrations: JsonObject
     override lateinit var anonymousId: String
     override lateinit var channel: PlatformType
     val event = MessageType.Identify

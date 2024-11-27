@@ -44,7 +44,7 @@ class IdentifyEventTest {
 
         val actualPayloadString = identifyEvent.encodeToString()
 
-        JSONAssert.assertEquals(expectedJsonString, actualPayloadString, false)
+        JSONAssert.assertEquals(expectedJsonString, actualPayloadString, true)
     }
 
     @Test
@@ -60,7 +60,7 @@ class IdentifyEventTest {
 
         val actualPayloadString = identifyEvent.encodeToString()
 
-        JSONAssert.assertEquals(expectedJsonString, actualPayloadString, false)
+        JSONAssert.assertEquals(expectedJsonString, actualPayloadString, true)
     }
 
     @Test
@@ -81,7 +81,7 @@ class IdentifyEventTest {
 
         val actualPayloadString = identifyEvent.encodeToString()
 
-        JSONAssert.assertEquals(expectedJsonString, actualPayloadString, false)
+        JSONAssert.assertEquals(expectedJsonString, actualPayloadString, true)
     }
 
     @Test
@@ -100,7 +100,7 @@ class IdentifyEventTest {
 
         val actualPayloadString = identifyEvent.encodeToString()
 
-        JSONAssert.assertEquals(expectedJsonString, actualPayloadString, false)
+        JSONAssert.assertEquals(expectedJsonString, actualPayloadString, true)
     }
 
     @Test
@@ -124,7 +124,7 @@ class IdentifyEventTest {
 
         val actualPayloadString = identifyEvent.encodeToString()
 
-        JSONAssert.assertEquals(expectedJsonString, actualPayloadString, false)
+        JSONAssert.assertEquals(expectedJsonString, actualPayloadString, true)
     }
 
     @Test
@@ -148,7 +148,7 @@ class IdentifyEventTest {
 
         val actualPayloadString = identifyEvent.encodeToString()
 
-        JSONAssert.assertEquals(expectedJsonString, actualPayloadString, false)
+        JSONAssert.assertEquals(expectedJsonString, actualPayloadString, true)
     }
 
     @Test
@@ -173,7 +173,7 @@ class IdentifyEventTest {
 
         val actualPayloadString = identifyEvent.encodeToString()
 
-        JSONAssert.assertEquals(expectedJsonString, actualPayloadString, false)
+        JSONAssert.assertEquals(expectedJsonString, actualPayloadString, true)
     }
 
     @Test
@@ -198,7 +198,7 @@ class IdentifyEventTest {
 
         val actualPayloadString = identifyEvent.encodeToString()
 
-        JSONAssert.assertEquals(expectedJsonString, actualPayloadString, false)
+        JSONAssert.assertEquals(expectedJsonString, actualPayloadString, true)
     }
 
     @Test
@@ -221,7 +221,7 @@ class IdentifyEventTest {
 
         val actualPayloadString = identifyEvent.encodeToString()
 
-        JSONAssert.assertEquals(expectedJsonString, actualPayloadString, false)
+        JSONAssert.assertEquals(expectedJsonString, actualPayloadString, true)
     }
 }
 

@@ -40,7 +40,7 @@ class AliasEventTest {
 
         val actualPayloadString = aliasEvent.encodeToString()
 
-        JSONAssert.assertEquals(expectedJsonString, actualPayloadString, false)
+        JSONAssert.assertEquals(expectedJsonString, actualPayloadString, true)
     }
 
     @Test
@@ -58,7 +58,7 @@ class AliasEventTest {
 
         val actualPayloadString = aliasEvent.encodeToString()
 
-        JSONAssert.assertEquals(expectedJsonString, actualPayloadString, false)
+        JSONAssert.assertEquals(expectedJsonString, actualPayloadString, true)
     }
 
     @Test
@@ -79,7 +79,7 @@ class AliasEventTest {
 
         val actualPayloadString = aliasEvent.encodeToString()
 
-        JSONAssert.assertEquals(expectedJsonString, actualPayloadString, false)
+        JSONAssert.assertEquals(expectedJsonString, actualPayloadString, true)
     }
 
     @Test
@@ -100,7 +100,7 @@ class AliasEventTest {
 
         val actualPayloadString = aliasEvent.encodeToString()
 
-        JSONAssert.assertEquals(expectedJsonString, actualPayloadString, false)
+        JSONAssert.assertEquals(expectedJsonString, actualPayloadString, true)
     }
 
     @Test
@@ -123,7 +123,7 @@ class AliasEventTest {
 
         val actualPayloadString = aliasEvent.encodeToString()
 
-        JSONAssert.assertEquals(expectedJsonString, actualPayloadString, false)
+        JSONAssert.assertEquals(expectedJsonString, actualPayloadString, true)
     }
 
     @Test
@@ -146,6 +146,6 @@ class AliasEventTest {
 
         val actualPayloadString = aliasEvent.encodeToString()
 
-        JSONAssert.assertEquals(expectedJsonString, actualPayloadString, false)
+        JSONAssert.assertEquals(expectedJsonString, actualPayloadString, true)
     }
 }

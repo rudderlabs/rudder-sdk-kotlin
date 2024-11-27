@@ -15,9 +15,8 @@ private const val KEY_2 = "key2"
 private const val VALUE_1 = "value1"
 private const val VALUE_2 = "value2"
 private const val EVENT_NAME = "Sample Event"
-private val DEFAULT_INTEGRATION_ENABLED = "All" to true
-private val DEFAULT_INTEGRATION_DISABLED = "All" to false
-private val AMPLITUDE_INTEGRATION_ENABLED = "Amplitude" to true
+private val DEFAULT_INTEGRATION_ENABLED = buildJsonObject { put("All", true) }
+private val AMPLITUDE_INTEGRATION_ENABLED = buildJsonObject { put("Amplitude", true) }
 
 class OptionPluginTest {
 
@@ -36,7 +35,7 @@ class OptionPluginTest {
                 actual = message.context.toString()
             )
             verifyResult(
-                expected = mapOf(DEFAULT_INTEGRATION_ENABLED).toString(),
+                expected = DEFAULT_INTEGRATION_ENABLED.toString(),
                 actual = message.integrations.toString()
             )
         }
@@ -49,7 +48,7 @@ class OptionPluginTest {
                     customContext = buildJsonObject {
                         put(KEY_1, VALUE_1)
                     },
-                    integrations = mapOf(AMPLITUDE_INTEGRATION_ENABLED)
+                    integrations = AMPLITUDE_INTEGRATION_ENABLED
                 )
             )
             val message = provideDefaultEvent().apply {
@@ -67,10 +66,10 @@ class OptionPluginTest {
                 actual = message.context.toString()
             )
             verifyResult(
-                expected = mapOf(
-                    DEFAULT_INTEGRATION_ENABLED,
-                    AMPLITUDE_INTEGRATION_ENABLED
-                ).toString(),
+                expected = buildJsonObject {
+                    put("All", true)
+                    put("Amplitude", true)
+                }.toString(),
                 actual = message.integrations.toString()
             )
         }
@@ -82,7 +81,10 @@ class OptionPluginTest {
                 customContext = buildJsonObject {
                     put(KEY_1, VALUE_1)
                 },
-                integrations = mapOf(DEFAULT_INTEGRATION_DISABLED, AMPLITUDE_INTEGRATION_ENABLED)
+                integrations = buildJsonObject {
+                    put("All", false)
+                    put("Amplitude", true)
+                }
             )
             val optionPlugin = OptionPlugin(option = higherPreferenceOption)
             val message = provideDefaultEvent().apply {
@@ -113,5 +115,5 @@ private fun provideDefaultEvent(): Message = TrackEvent(
 )
 
 private fun configureDefaultIntegration(message: Message) {
-    message.integrations = mapOf(DEFAULT_INTEGRATION_ENABLED)
+    message.integrations = DEFAULT_INTEGRATION_ENABLED
 }
