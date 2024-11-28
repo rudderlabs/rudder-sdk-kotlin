@@ -78,7 +78,7 @@ internal class SessionTrackingPlugin(
     override suspend fun execute(message: Message): Message {
         if (sessionId != DEFAULT_SESSION_ID) {
             addSessionIdToMessage(message)
-            if (!isSessionStart) {
+            if (!isSessionManual) {
                 updateLastActivityTime()
             }
         }

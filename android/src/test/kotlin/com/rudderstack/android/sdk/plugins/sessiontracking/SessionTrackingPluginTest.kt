@@ -294,23 +294,67 @@ class SessionTrackingPluginTest {
     }
 
     @Test
-    fun `given a value of session timeout in config, when plugin setup called, then session timeout is set correctly`() = runTest {
-        val sessionTimeout = 600000L
-        pluginSetup(automaticSessionTracking = true, sessionTimeoutInMillis = sessionTimeout)
+    fun `given a value of session timeout in config, when plugin setup called, then session timeout is set correctly`() =
+        runTest {
+            val sessionTimeout = 600000L
+            pluginSetup(automaticSessionTracking = true, sessionTimeoutInMillis = sessionTimeout)
+
+            plugin.setup(mockAnalytics)
+
+            assertEquals(sessionTimeout, plugin.sessionTimeout)
+        }
+
+    @Test
+    fun `given manual session is ongoing, when an event is made, then last activity time is not updated`() = runTest {
+        val sessionId = 1234567890L
+        val currentTime = 100000000L
+        mockSystemCurrentTime(sessionId * 1000)
+        mockCurrentMonotonicTime(currentTime)
+        val message = TrackEvent("test", emptyJsonObject)
+        pluginSetup(automaticSessionTracking = false)
+        mockStorage.write(StorageKeys.SESSION_ID, sessionId)
+        mockStorage.write(StorageKeys.IS_SESSION_MANUAL, true)
+        mockStorage.write(StorageKeys.LAST_ACTIVITY_TIME, currentTime - 600_000L)
 
         plugin.setup(mockAnalytics)
+        advanceUntilIdle()
 
-        assertEquals(sessionTimeout, plugin.sessionTimeout)
+        plugin.execute(message)
+        advanceUntilIdle()
+
+        assertEquals(currentTime - 600_000L, mockStorage.readLong(StorageKeys.LAST_ACTIVITY_TIME, 0L))
     }
 
     @Test
-    fun `given a negative value of session timeout in config, when plugin setup called, then session timeout set as default`() = runTest {
-        pluginSetup(automaticSessionTracking = true, sessionTimeoutInMillis = -1)
+    fun `given an automatic session, when an event is made, then last activity time is updated`() = runTest {
+        val sessionId = 1234567890L
+        val currentTime = 100000000L
+        mockSystemCurrentTime(sessionId * 1000)
+        mockCurrentMonotonicTime(currentTime)
+        val message = TrackEvent("test", emptyJsonObject)
+        pluginSetup(automaticSessionTracking = true)
+        mockStorage.write(StorageKeys.SESSION_ID, sessionId)
+        mockStorage.write(StorageKeys.IS_SESSION_MANUAL, false)
+        mockStorage.write(StorageKeys.LAST_ACTIVITY_TIME, currentTime - 600_000L)
 
         plugin.setup(mockAnalytics)
+        advanceUntilIdle()
 
-        assertEquals(DEFAULT_SESSION_TIMEOUT_IN_MILLIS, plugin.sessionTimeout)
+        plugin.execute(message)
+        advanceUntilIdle()
+
+        assertEquals(currentTime, mockStorage.readLong(StorageKeys.LAST_ACTIVITY_TIME, 0L))
     }
+
+    @Test
+    fun `given a negative value of session timeout in config, when plugin setup called, then session timeout set as default`() =
+        runTest {
+            pluginSetup(automaticSessionTracking = true, sessionTimeoutInMillis = -1)
+
+            plugin.setup(mockAnalytics)
+
+            assertEquals(DEFAULT_SESSION_TIMEOUT_IN_MILLIS, plugin.sessionTimeout)
+        }
 
     private fun pluginSetup(
         automaticSessionTracking: Boolean = true,
