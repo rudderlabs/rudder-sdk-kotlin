@@ -5,7 +5,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import com.rudderstack.android.sdk.Configuration
 import com.rudderstack.android.sdk.utils.mergeWithHigherPriorityTo
-import com.rudderstack.android.sdk.utils.putUndefinedIfNull
+import com.rudderstack.android.sdk.utils.putIfNotNull
 import com.rudderstack.kotlin.sdk.Analytics
 import com.rudderstack.kotlin.sdk.internals.logger.LoggerAnalytics
 import com.rudderstack.kotlin.sdk.internals.models.Message
@@ -62,10 +62,10 @@ internal class AppInfoPlugin : Plugin {
                 put(
                     APP_KEY,
                     buildJsonObject {
-                        putUndefinedIfNull(APP_NAME_KEY, it.applicationInfo.loadLabel(packageManager))
-                        putUndefinedIfNull(APP_NAMESPACE_KEY, it.packageName)
-                        putUndefinedIfNull(APP_VERSION_KEY, it.versionName)
-                        putUndefinedIfNull(APP_BUILD_KEY, appBuild)
+                        putIfNotNull(APP_NAME_KEY, it.applicationInfo?.loadLabel(packageManager))
+                        putIfNotNull(APP_NAMESPACE_KEY, it.packageName)
+                        putIfNotNull(APP_VERSION_KEY, it.versionName)
+                        putIfNotNull(APP_BUILD_KEY, appBuild)
                     }
                 )
             }
