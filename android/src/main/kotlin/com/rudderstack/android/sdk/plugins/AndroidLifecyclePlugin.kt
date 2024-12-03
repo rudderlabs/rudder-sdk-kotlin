@@ -10,6 +10,7 @@ import com.rudderstack.android.sdk.models.AppVersion
 import com.rudderstack.android.sdk.plugins.lifecyclemanagment.ProcessLifecycleObserver
 import com.rudderstack.android.sdk.utils.addLifecycleObserver
 import com.rudderstack.android.sdk.utils.logAndThrowError
+import com.rudderstack.android.sdk.utils.putIfNotNull
 import com.rudderstack.android.sdk.utils.removeLifecycleObserver
 import com.rudderstack.android.sdk.utils.runOnAnalyticsThread
 import com.rudderstack.kotlin.sdk.Analytics
@@ -67,7 +68,7 @@ internal class AndroidLifecyclePlugin : Plugin, ProcessLifecycleObserver {
     override fun onStart(owner: LifecycleOwner) {
         val properties = buildJsonObject {
             if (firstLaunch.get()) {
-                put(VERSION_KEY, appVersion.currentVersionName)
+                putIfNotNull(VERSION_KEY, appVersion.currentVersionName)
             }
             put(FROM_BACKGROUND, !firstLaunch.getAndSet(false))
         }
@@ -84,7 +85,7 @@ internal class AndroidLifecyclePlugin : Plugin, ProcessLifecycleObserver {
             analytics.track(
                 APPLICATION_INSTALLED,
                 buildJsonObject {
-                    put(VERSION_KEY, appVersion.currentVersionName)
+                    putIfNotNull(VERSION_KEY, appVersion.currentVersionName)
                     put(BUILD_KEY, appVersion.currentBuild)
                 },
                 RudderOption()
@@ -93,9 +94,9 @@ internal class AndroidLifecyclePlugin : Plugin, ProcessLifecycleObserver {
             analytics.track(
                 APPLICATION_UPDATED,
                 buildJsonObject {
-                    put(VERSION_KEY, appVersion.currentVersionName)
+                    putIfNotNull(VERSION_KEY, appVersion.currentVersionName)
                     put(BUILD_KEY, appVersion.currentBuild)
-                    put("previous_$VERSION_KEY", appVersion.previousVersionName)
+                    putIfNotNull("previous_$VERSION_KEY", appVersion.previousVersionName)
                     put("previous_$BUILD_KEY", appVersion.previousBuild)
                 },
                 RudderOption()
@@ -116,14 +117,14 @@ internal class AndroidLifecyclePlugin : Plugin, ProcessLifecycleObserver {
         return AppVersion(
             currentVersionName = packageInfo.versionName,
             currentBuild = packageInfo.getVersionCode().toLong(),
-            previousVersionName = storage.readString(StorageKeys.APP_VERSION, String.empty()),
+            previousVersionName = storage.readString(StorageKeys.APP_VERSION, String.empty()).ifEmpty { null },
             previousBuild = storage.readLong(StorageKeys.APP_BUILD, -1L)
         )
     }
 
     private fun updateAppVersion() {
         analytics.runOnAnalyticsThread {
-            storage.write(StorageKeys.APP_VERSION, appVersion.currentVersionName)
+            appVersion.currentVersionName?.let { storage.write(StorageKeys.APP_VERSION, it) }
             storage.write(StorageKeys.APP_BUILD, appVersion.currentBuild)
         }
     }

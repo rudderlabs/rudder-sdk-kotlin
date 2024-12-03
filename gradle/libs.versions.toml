@@ -1,21 +1,21 @@
 [versions]
 
 activity-compose = "1.9.3"
-agp = "8.3.2"
-android-core-ktx = "1.13.1"
+agp = "8.7.2"
+android-core-ktx = "1.15.0"
 foundation = "1.7.5"
 json-assert = "1.5.0"
 junit = "4.13.2"
 kotlin = "1.9.0"
 kotlinx-coroutines-core = "1.8.0"
 kotlinx-serialization-json = "1.5.1"
-lifecycle-process = "2.6.1"
+lifecycle-process = "2.8.7"
 lifecycle-viewmodel-compose = "2.8.7"
 material = "1.12.0"
 material-version = "1.7.5"
 mockk = "1.13.7"
 detekt = "1.23.6"
-navigation = "2.8.2"
+navigation = "2.8.4"
 play-services-ads = "23.5.0"
 ui = "1.7.5"
 
@@ -35,7 +35,6 @@ lifecycle-process = { module = "androidx.lifecycle:lifecycle-process", version.r
 material = { module = "com.google.android.material:material", version.ref = "material" }
 mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
 mockk-agent = { group = "io.mockk", name = "mockk-agent-jvm", version.ref = "mockk" }
-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigation" }
 navigation-runtime = { module = "androidx.navigation:navigation-runtime", version.ref = "navigation" }
 play-services-ads = { module = "com.google.android.gms:play-services-ads", version.ref = "play-services-ads" }
 ui = { module = "androidx.compose.ui:ui", version.ref = "ui" }
