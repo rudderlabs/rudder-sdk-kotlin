@@ -13,6 +13,8 @@ import com.rudderstack.kotlin.sdk.internals.utils.Result
 import com.rudderstack.kotlin.sdk.internals.plugins.Plugin
 import com.rudderstack.kotlin.sdk.internals.utils.empty
 import com.rudderstack.kotlin.sdk.internals.utils.putAll
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
@@ -53,9 +55,10 @@ class AndroidAdvertisingIdPlugin : Plugin {
         }
     }
 
+    @OptIn(DelicateCoroutinesApi::class)
     @VisibleForTesting
     internal fun updateAdvertisingId() {
-        analytics.analyticsScope.launch {
+        GlobalScope.launch {
             val context = application.applicationContext
 
             when (val result = getAdvertisingId(context)) {
