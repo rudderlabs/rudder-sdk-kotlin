@@ -1,6 +1,5 @@
 package com.rudderstack.kotlin.sdk
 
-import androidx.annotation.RestrictTo
 import com.rudderstack.kotlin.sdk.internals.logger.KotlinLogger
 import com.rudderstack.kotlin.sdk.internals.logger.Logger
 import com.rudderstack.kotlin.sdk.internals.logger.LoggerAnalytics
@@ -34,19 +33,10 @@ import com.rudderstack.kotlin.sdk.internals.utils.resolvePreferredPreviousId
 import com.rudderstack.kotlin.sdk.plugins.LibraryInfoPlugin
 import com.rudderstack.kotlin.sdk.plugins.PocPlugin
 import com.rudderstack.kotlin.sdk.plugins.RudderStackDataplanePlugin
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
-
-// todo: figure out a way to make this a class level property. It will cause issues when multiple instances of sdk will be created.
-private lateinit var analyticsJob: Job
 
 /**
  * The `Analytics` class is the core of the RudderStack SDK, responsible for tracking events,
@@ -63,51 +53,9 @@ private lateinit var analyticsJob: Job
  * @param coroutineConfig The coroutine configuration that defines the scopes and dispatchers for analytics operations.
  */
 @Suppress("TooManyFunctions")
-@OptIn(ExperimentalCoroutinesApi::class)
 open class Analytics(
     val configuration: Configuration,
 ) : Platform {
-
-    private val coroutineConfig: CoroutineConfiguration = object : CoroutineConfiguration {
-        private val handler = CoroutineExceptionHandler { _, exception ->
-            LoggerAnalytics.error(exception.stackTraceToString())
-        }
-        override val analyticsScope: CoroutineScope = run {
-            analyticsJob = SupervisorJob()
-            CoroutineScope(analyticsJob + handler)
-        }
-        override val analyticsDispatcher: CoroutineDispatcher = Dispatchers.IO
-        override val storageDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(2)
-        override val networkDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(1)
-    }
-
-    /**
-     * The [CoroutineScope] used for running analytics tasks. This scope controls the lifecycle of coroutines within the SDK.
-     */
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    val analyticsScope: CoroutineScope
-        get() = coroutineConfig.analyticsScope
-
-    /**
-     * The [CoroutineDispatcher] used for executing general analytics tasks in the SDK.
-     */
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    val analyticsDispatcher: CoroutineDispatcher
-        get() = coroutineConfig.analyticsDispatcher
-
-    /**
-     * The [CoroutineDispatcher] dedicated to executing storage-related tasks, such as reading and writing to disk.
-     */
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    val storageDispatcher: CoroutineDispatcher
-        get() = coroutineConfig.storageDispatcher
-
-    /**
-     * The [CoroutineDispatcher] dedicated to executing network-related tasks, such as sending events to the data plane.
-     */
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    val networkDispatcher: CoroutineDispatcher
-        get() = coroutineConfig.networkDispatcher
 
     private val pluginChain: PluginChain = PluginChain().also { it.analytics = this }
 

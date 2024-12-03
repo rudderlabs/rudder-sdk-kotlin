@@ -6,6 +6,7 @@ import androidx.navigation.NavDestination
 import com.rudderstack.android.sdk.state.NavContext
 import com.rudderstack.android.sdk.utils.automaticProperty
 import com.rudderstack.kotlin.sdk.Analytics
+import com.rudderstack.kotlin.sdk.analyticsScope
 import com.rudderstack.kotlin.sdk.internals.plugins.Plugin
 import com.rudderstack.kotlin.sdk.internals.statemanagement.FlowState
 import kotlinx.coroutines.NonCancellable
@@ -35,7 +36,7 @@ internal class NavControllerTrackingPlugin(
         (analytics.configuration as? AndroidConfiguration)?.let {
             navContextState.onEach { currentState ->
                 withContext(NonCancellable) { updateNavContexts(currentState) }
-            }.launchIn(analytics.analyticsScope)
+            }.launchIn(analyticsScope)
         }
     }
 

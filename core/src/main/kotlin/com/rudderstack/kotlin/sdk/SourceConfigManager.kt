@@ -39,7 +39,7 @@ internal class SourceConfigManager(
 
     @Suppress("TooGenericExceptionCaught")
     private suspend fun downloadSourceConfig(): SourceConfig? {
-        return withContext(analytics.networkDispatcher) {
+        return withContext(networkDispatcher) {
             try {
                 when (val sourceConfigResult = httpClientFactory.getData()) {
                     is Result.Success -> {
@@ -79,7 +79,7 @@ internal class SourceConfigManager(
     }
 
     private suspend fun storeSourceConfig(sourceConfig: SourceConfig) {
-        withContext(analytics.storageDispatcher) {
+        withContext(storageDispatcher) {
             sourceConfig.storeSourceConfig(analytics.configuration.storage)
         }
     }

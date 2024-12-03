@@ -7,6 +7,7 @@ import com.rudderstack.android.sdk.utils.addLifecycleObserver
 import com.rudderstack.android.sdk.utils.getMonotonicCurrentTime
 import com.rudderstack.android.sdk.utils.mergeWithHigherPriorityTo
 import com.rudderstack.kotlin.sdk.Analytics
+import com.rudderstack.kotlin.sdk.analyticsScope
 import com.rudderstack.kotlin.sdk.internals.logger.LoggerAnalytics
 import com.rudderstack.kotlin.sdk.internals.models.Message
 import com.rudderstack.kotlin.sdk.internals.plugins.Plugin
@@ -196,6 +197,6 @@ internal class SessionTrackingPlugin(
     }
 
     private fun withSessionDispatcher(block: suspend () -> Unit) {
-        analytics.analyticsScope.launch(sessionDispatcher) { block() }
+        analyticsScope.launch(sessionDispatcher) { block() }
     }
 }

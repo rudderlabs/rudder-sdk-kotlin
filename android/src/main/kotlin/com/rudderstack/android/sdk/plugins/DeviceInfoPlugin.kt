@@ -6,12 +6,14 @@ import androidx.annotation.VisibleForTesting
 import com.rudderstack.android.sdk.Configuration
 import com.rudderstack.android.utils.UniqueIdProvider
 import com.rudderstack.kotlin.sdk.Analytics
+import com.rudderstack.kotlin.sdk.analyticsScope
 import com.rudderstack.kotlin.sdk.internals.models.Message
 import com.rudderstack.kotlin.sdk.internals.plugins.Plugin
 import com.rudderstack.kotlin.sdk.internals.storage.StorageKeys
 import com.rudderstack.kotlin.sdk.internals.utils.empty
 import com.rudderstack.kotlin.sdk.internals.utils.generateUUID
 import com.rudderstack.kotlin.sdk.internals.utils.putAll
+import com.rudderstack.kotlin.sdk.storageDispatcher
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
@@ -83,7 +85,7 @@ internal class DeviceInfoPlugin : Plugin {
     }
 
     private fun generateAndStoreId(newId: String): String {
-        analytics.analyticsScope.launch(analytics.storageDispatcher) {
+        analyticsScope.launch(storageDispatcher) {
             analytics.configuration.storage.write(StorageKeys.DEVICE_ID, newId)
         }
         return newId

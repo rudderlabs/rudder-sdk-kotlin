@@ -1,6 +1,7 @@
 package com.rudderstack.kotlin.sdk.internals.queue
 
 import com.rudderstack.kotlin.sdk.Analytics
+import com.rudderstack.kotlin.sdk.analyticsScope
 import com.rudderstack.kotlin.sdk.internals.logger.LoggerAnalytics
 import com.rudderstack.kotlin.sdk.internals.models.Message
 import com.rudderstack.kotlin.sdk.internals.network.HttpClient
@@ -13,6 +14,8 @@ import com.rudderstack.kotlin.sdk.internals.utils.empty
 import com.rudderstack.kotlin.sdk.internals.utils.encodeToBase64
 import com.rudderstack.kotlin.sdk.internals.utils.encodeToString
 import com.rudderstack.kotlin.sdk.internals.utils.parseFilePaths
+import com.rudderstack.kotlin.sdk.networkDispatcher
+import com.rudderstack.kotlin.sdk.storageDispatcher
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
@@ -66,7 +69,7 @@ internal class MessageQueue(
             }
             .onEach { userOptionsState ->
                 httpClientFactory.updateAnonymousIdHeaderString(userOptionsState.anonymousId.encodeToBase64())
-            }.launchIn(analytics.analyticsScope)
+            }.launchIn(analyticsScope)
     }
 
     fun put(message: Message) {
@@ -105,7 +108,7 @@ internal class MessageQueue(
     }
 
     @Suppress("TooGenericExceptionCaught")
-    private fun write() = analytics.analyticsScope.launch(analytics.storageDispatcher) {
+    private fun write() = analyticsScope.launch(storageDispatcher) {
         for (queueMessage in writeChannel) {
             val isFlushSignal = (queueMessage.type == QueueMessage.QueueMessageType.FLUSH_SIGNAL)
 
@@ -131,10 +134,10 @@ internal class MessageQueue(
     }
 
     @Suppress("TooGenericExceptionCaught")
-    private fun upload() = analytics.analyticsScope.launch(analytics.networkDispatcher) {
+    private fun upload() = analyticsScope.launch(networkDispatcher) {
         uploadChannel.consumeEach {
             LoggerAnalytics.debug("performing flush")
-            withContext(analytics.storageDispatcher) {
+            withContext(storageDispatcher) {
                 storage.rollover()
             }
             val fileUrlList = storage.readString(StorageKeys.MESSAGE, String.empty()).parseFilePaths()

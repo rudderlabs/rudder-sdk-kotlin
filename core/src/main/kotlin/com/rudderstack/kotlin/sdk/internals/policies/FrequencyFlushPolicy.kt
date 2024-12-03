@@ -1,6 +1,8 @@
 package com.rudderstack.kotlin.sdk.internals.policies
 
 import com.rudderstack.kotlin.sdk.Analytics
+import com.rudderstack.kotlin.sdk.analyticsScope
+import com.rudderstack.kotlin.sdk.storageDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -33,7 +35,7 @@ class FrequencyFlushPolicy(private var flushIntervalInMillis: Long = DEFAULT_FLU
         if (!jobStarted) {
             jobStarted = true
 
-            flushJob = analytics.analyticsScope.launch(analytics.storageDispatcher) {
+            flushJob = analyticsScope.launch(storageDispatcher) {
                 if (flushIntervalInMillis > 0) {
                     do {
                         delay(flushIntervalInMillis)

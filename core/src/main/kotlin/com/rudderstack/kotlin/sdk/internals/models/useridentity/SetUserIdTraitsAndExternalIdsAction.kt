@@ -1,12 +1,14 @@
 package com.rudderstack.kotlin.sdk.internals.models.useridentity
 
 import com.rudderstack.kotlin.sdk.Analytics
+import com.rudderstack.kotlin.sdk.analyticsScope
 import com.rudderstack.kotlin.sdk.internals.models.ExternalId
 import com.rudderstack.kotlin.sdk.internals.models.RudderTraits
 import com.rudderstack.kotlin.sdk.internals.storage.Storage
 import com.rudderstack.kotlin.sdk.internals.storage.StorageKeys
 import com.rudderstack.kotlin.sdk.internals.utils.LenientJson
 import com.rudderstack.kotlin.sdk.internals.utils.mergeWithHigherPriorityTo
+import com.rudderstack.kotlin.sdk.storageDispatcher
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 
@@ -47,7 +49,7 @@ internal class SetUserIdTraitsAndExternalIdsAction(
 
     private fun resetValuesIfUserIdChanged(isUserIdChanged: Boolean) {
         if (isUserIdChanged) {
-            analytics.analyticsScope.launch(analytics.storageDispatcher) {
+            analyticsScope.launch(storageDispatcher) {
                 resetUserIdTraitsAndExternalIds()
             }
         }

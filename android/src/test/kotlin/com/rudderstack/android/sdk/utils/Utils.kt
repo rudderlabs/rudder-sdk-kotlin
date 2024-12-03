@@ -2,10 +2,15 @@ package com.rudderstack.android.sdk.utils
 
 import android.net.Uri
 import com.rudderstack.kotlin.sdk.Analytics
+import com.rudderstack.kotlin.sdk.analyticsDispatcher
+import com.rudderstack.kotlin.sdk.analyticsScope
 import com.rudderstack.kotlin.sdk.internals.logger.Logger
 import com.rudderstack.kotlin.sdk.internals.logger.LoggerAnalytics
+import com.rudderstack.kotlin.sdk.networkDispatcher
+import com.rudderstack.kotlin.sdk.storageDispatcher
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.TestScope
 import com.rudderstack.android.sdk.Analytics as AndroidAnalytics
@@ -13,12 +18,11 @@ import com.rudderstack.android.sdk.Analytics as AndroidAnalytics
 fun mockAnalytics(testScope: TestScope, testDispatcher: TestDispatcher): Analytics {
     val mockAnalytics = mockk<AndroidAnalytics>(relaxed = true)
 
-    mockAnalytics.also {
-        every { it.analyticsScope } returns testScope
-        every { it.analyticsDispatcher } returns testDispatcher
-        every { it.storageDispatcher } returns testDispatcher
-        every { it.networkDispatcher } returns testDispatcher
-    }
+    mockkStatic("com.rudderstack.kotlin.sdk.CoroutineExtensionsKt")
+    every { analyticsScope } returns testScope
+    every { analyticsDispatcher } returns testDispatcher
+    every { storageDispatcher } returns testDispatcher
+    every { networkDispatcher } returns testDispatcher
 
     return mockAnalytics
 }

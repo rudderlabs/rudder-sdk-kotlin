@@ -1,6 +1,8 @@
 package com.rudderstack.android.sdk.utils
 
 import com.rudderstack.kotlin.sdk.Analytics
+import com.rudderstack.kotlin.sdk.analyticsDispatcher
+import com.rudderstack.kotlin.sdk.analyticsScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
