@@ -7,12 +7,12 @@ import com.google.android.gms.ads.identifier.AdvertisingIdClient
 import com.rudderstack.android.sdk.Configuration
 import com.rudderstack.kotlin.sdk.Analytics
 import com.rudderstack.kotlin.sdk.internals.logger.LoggerAnalytics
-import com.rudderstack.kotlin.sdk.internals.logger.TAG
 import com.rudderstack.kotlin.sdk.internals.models.Message
 import com.rudderstack.kotlin.sdk.internals.utils.Result
 import com.rudderstack.kotlin.sdk.internals.plugins.Plugin
 import com.rudderstack.kotlin.sdk.internals.utils.empty
 import com.rudderstack.kotlin.sdk.internals.utils.putAll
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -27,7 +27,7 @@ private const val CLASS_FOR_NAME = "com.google.android.gms.ads.identifier.Advert
 private const val FIRE_LIMIT_AD_TRACKING = "limit_ad_tracking"
 private const val FIRE_ADVERTISING_ID = "advertising_id"
 
-class AndroidAdvertisingIdPlugin : Plugin {
+class AndroidAdvertisingIdPlugin @OptIn(DelicateCoroutinesApi::class) constructor(private val scope: CoroutineScope = GlobalScope) : Plugin {
 
     override val pluginType = Plugin.PluginType.OnProcess
 
@@ -55,10 +55,9 @@ class AndroidAdvertisingIdPlugin : Plugin {
         }
     }
 
-    @OptIn(DelicateCoroutinesApi::class)
     @VisibleForTesting
     internal fun updateAdvertisingId() {
-        GlobalScope.launch {
+        scope.launch {
             val context = application.applicationContext
 
             when (val result = getAdvertisingId(context)) {
