@@ -359,8 +359,8 @@ open class Analytics protected constructor(
     /**
      * The `getAnonymousId` method always retrieves the current anonymous ID.
      */
-    fun getAnonymousId(): String {
-        if (!isAnalyticsActive()) return String.empty()
+    fun getAnonymousId(): String? {
+        if (!isAnalyticsActive()) return null
 
         return userIdentityState.value.anonymousId
     }
