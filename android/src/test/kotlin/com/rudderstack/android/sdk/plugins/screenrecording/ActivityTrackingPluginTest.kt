@@ -15,13 +15,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import kotlin.reflect.KProperty
 import com.rudderstack.android.sdk.Analytics as AndroidAnalytics
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -74,7 +74,8 @@ class ActivityTrackingPluginTest {
         val testActivityName = "TestActivity"
         plugin.setup(mockAnalytics)
 
-        every { mockActivity.localClassName } returns testActivityName
+        mockkStatic(::getActivityClassName)
+        every { getActivityClassName(mockActivity)} returns testActivityName
 
         plugin.onActivityStarted(mockActivity)
 

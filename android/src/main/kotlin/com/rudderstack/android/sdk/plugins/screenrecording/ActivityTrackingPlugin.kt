@@ -32,6 +32,10 @@ internal class ActivityTrackingPlugin : Plugin, ActivityLifecycleObserver {
     }
 
     override fun onActivityStarted(activity: Activity) {
-        analytics.screen(screenName = activity.localClassName, properties = automaticProperty())
+        analytics.screen(screenName = getActivityClassName(activity), properties = automaticProperty())
     }
+}
+
+internal fun getActivityClassName(activity: Activity): String {
+    return activity.javaClass.name
 }
