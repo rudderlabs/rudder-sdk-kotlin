@@ -1,5 +1,6 @@
 package com.rudderstack.kotlin.sdk
 
+import androidx.annotation.RestrictTo
 import com.rudderstack.kotlin.sdk.internals.logger.KotlinLogger
 import com.rudderstack.kotlin.sdk.internals.logger.Logger
 import com.rudderstack.kotlin.sdk.internals.logger.LoggerAnalytics
@@ -63,10 +64,50 @@ private lateinit var analyticsJob: Job
  */
 @Suppress("TooManyFunctions")
 @OptIn(ExperimentalCoroutinesApi::class)
-open class Analytics protected constructor(
+open class Analytics(
     val configuration: Configuration,
-    coroutineConfig: CoroutineConfiguration,
-) : CoroutineConfiguration by coroutineConfig, Platform {
+) : Platform {
+
+    private val coroutineConfig: CoroutineConfiguration = object : CoroutineConfiguration {
+        private val handler = CoroutineExceptionHandler { _, exception ->
+            LoggerAnalytics.error(exception.stackTraceToString())
+        }
+        override val analyticsScope: CoroutineScope = run {
+            analyticsJob = SupervisorJob()
+            CoroutineScope(analyticsJob + handler)
+        }
+        override val analyticsDispatcher: CoroutineDispatcher = Dispatchers.IO
+        override val storageDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(2)
+        override val networkDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(1)
+    }
+
+    /**
+     * The [CoroutineScope] used for running analytics tasks. This scope controls the lifecycle of coroutines within the SDK.
+     */
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    val analyticsScope: CoroutineScope
+        get() = coroutineConfig.analyticsScope
+
+    /**
+     * The [CoroutineDispatcher] used for executing general analytics tasks in the SDK.
+     */
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    val analyticsDispatcher: CoroutineDispatcher
+        get() = coroutineConfig.analyticsDispatcher
+
+    /**
+     * The [CoroutineDispatcher] dedicated to executing storage-related tasks, such as reading and writing to disk.
+     */
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    val storageDispatcher: CoroutineDispatcher
+        get() = coroutineConfig.storageDispatcher
+
+    /**
+     * The [CoroutineDispatcher] dedicated to executing network-related tasks, such as sending events to the data plane.
+     */
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    val networkDispatcher: CoroutineDispatcher
+        get() = coroutineConfig.networkDispatcher
 
     private val pluginChain: PluginChain = PluginChain().also { it.analytics = this }
 
@@ -99,28 +140,6 @@ open class Analytics protected constructor(
         if (!isAnalyticsActive()) return
         LoggerAnalytics.setup(logger = logger, logLevel = configuration.logLevel)
     }
-
-    /**
-     * Secondary constructor for creating an `Analytics` instance with a default coroutine configuration.
-     * The default configuration includes a coroutine scope with a SupervisorJob and a coroutine exception handler.
-     *
-     * @param configuration The configuration object defining settings such as write key, data plane URL, logger, etc.
-     */
-    constructor(configuration: Configuration) : this(
-        configuration = configuration,
-        coroutineConfig = object : CoroutineConfiguration {
-            private val handler = CoroutineExceptionHandler { _, exception ->
-                LoggerAnalytics.error(exception.stackTraceToString())
-            }
-            override val analyticsScope: CoroutineScope = run {
-                analyticsJob = SupervisorJob()
-                CoroutineScope(analyticsJob + handler)
-            }
-            override val analyticsDispatcher: CoroutineDispatcher = Dispatchers.IO
-            override val storageDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(2)
-            override val networkDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(1)
-        }
-    )
 
     /**
      * Tracks a custom event with the specified name, properties, and options.
