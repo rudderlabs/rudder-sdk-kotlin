@@ -17,6 +17,7 @@ import com.rudderstack.android.sdk.plugins.lifecyclemanagment.ActivityLifecycleM
 import com.rudderstack.android.sdk.plugins.lifecyclemanagment.ProcessLifecycleManagementPlugin
 import com.rudderstack.android.sdk.plugins.screenrecording.ActivityTrackingPlugin
 import com.rudderstack.android.sdk.plugins.screenrecording.NavControllerTrackingPlugin
+import com.rudderstack.android.sdk.plugins.sessiontracking.DEFAULT_SESSION_ID
 import com.rudderstack.android.sdk.plugins.sessiontracking.SessionTrackingPlugin
 import com.rudderstack.android.sdk.state.NavContext
 import com.rudderstack.kotlin.sdk.Analytics
@@ -28,7 +29,6 @@ import com.rudderstack.kotlin.sdk.internals.utils.isAnalyticsActive
 import org.jetbrains.annotations.ApiStatus.Experimental
 
 private const val MIN_SESSION_ID_LENGTH = 10
-private const val DEFAULT_SESSION_ID = -1L
 
 /**
  * `Analytics` class in the `com.rudderstack.android` package.
@@ -106,8 +106,8 @@ class Analytics(
      *
      * @return The current session ID.
      */
-    fun getSessionId(): Long {
-        if (!isAnalyticsActive()) return DEFAULT_SESSION_ID
+    fun getSessionId(): Long? {
+        if (!isAnalyticsActive() || sessionTrackingPlugin.sessionId == DEFAULT_SESSION_ID) return null
 
         return sessionTrackingPlugin.sessionId
     }
