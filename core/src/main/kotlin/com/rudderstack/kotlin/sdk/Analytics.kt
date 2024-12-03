@@ -245,6 +245,7 @@ open class Analytics protected constructor(
      * @param previousId The previous ID tied to the user, which may be a user-provided value or fall back on prior identifiers.
      * @param options A [RudderOption] object to specify additional event options. Defaults to an empty RudderOption object.
      */
+    @JvmOverloads
     fun alias(newId: String, previousId: String = String.empty(), options: RudderOption = RudderOption()) {
         if (!isAnalyticsActive()) return
 
@@ -371,6 +372,7 @@ open class Analytics protected constructor(
      *
      * @param clearAnonymousId A boolean flag to determine whether to clear the anonymous ID. Defaults to false.
      */
+    @JvmOverloads
     open fun reset(clearAnonymousId: Boolean = false) {
         if (!isAnalyticsActive()) return
 
