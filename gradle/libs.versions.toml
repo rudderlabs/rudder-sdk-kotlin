@@ -18,6 +18,7 @@ detekt = "1.23.6"
 navigation = "2.8.2"
 play-services-ads = "23.5.0"
 ui = "1.7.5"
+annotation-jvm = "1.9.1"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activity-compose" }
@@ -41,6 +42,7 @@ play-services-ads = { module = "com.google.android.gms:play-services-ads", versi
 ui = { module = "androidx.compose.ui:ui", version.ref = "ui" }
 ui-tooling = { module = "androidx.compose.ui:ui-tooling", version.ref = "ui" }
 ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview", version.ref = "ui" }
+androidx-annotation-jvm = { group = "androidx.annotation", name = "annotation-jvm", version.ref = "annotation-jvm" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
