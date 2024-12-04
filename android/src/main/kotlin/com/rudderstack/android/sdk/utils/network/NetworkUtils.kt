@@ -29,7 +29,7 @@ internal class NetworkUtils(
         }
     }
 
-    internal fun getCarrier(): String = defaultNetworkUtils.getCarrier()
+    internal fun getCarrier(): String? = defaultNetworkUtils.getCarrier()
 
     internal fun isCellularConnected(): Boolean {
         val isCellularViaCallback = networkCallbackUtils?.isCellularConnected ?: false

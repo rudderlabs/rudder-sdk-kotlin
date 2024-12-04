@@ -7,6 +7,7 @@ import com.rudderstack.android.sdk.utils.hasPermission
 import com.rudderstack.android.sdk.utils.mergeWithHigherPriorityTo
 import com.rudderstack.android.sdk.utils.network.DefaultNetworkUtils
 import com.rudderstack.android.sdk.utils.network.NetworkUtils
+import com.rudderstack.android.sdk.utils.putIfNotNull
 import com.rudderstack.kotlin.sdk.Analytics
 import com.rudderstack.kotlin.sdk.internals.logger.LoggerAnalytics
 import com.rudderstack.kotlin.sdk.internals.models.Message
@@ -64,7 +65,7 @@ internal class NetworkInfoPlugin(
             NETWORK_KEY,
             buildJsonObject {
                 if (hasPermission(context, permission.ACCESS_NETWORK_STATE)) {
-                    put(NETWORK_CARRIER_KEY, networkUtils.getCarrier())
+                    putIfNotNull(NETWORK_CARRIER_KEY, networkUtils.getCarrier())
                     put(NETWORK_CELLULAR_KEY, networkUtils.isCellularConnected())
                     put(NETWORK_WIFI_KEY, networkUtils.isWifiEnabled())
                     // As per our spec, set this value only if the permission is granted

@@ -9,8 +9,6 @@ import android.provider.Settings
 import android.telephony.TelephonyManager
 import com.rudderstack.android.sdk.utils.hasPermission
 
-private const val DEFAULT_CARRIER = "NA"
-
 /**
  * A class that provides information about the carrier, cellular, wifi and bluetooth connection state.
  *
@@ -31,7 +29,7 @@ internal class DefaultNetworkUtils(
         this.wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager
     }
 
-    internal fun getCarrier(): String = telephonyManager?.networkOperatorName?.takeIf { it.isNotEmpty() } ?: DEFAULT_CARRIER
+    internal fun getCarrier(): String? = telephonyManager?.networkOperatorName
 
     internal fun isCellularConnected(): Boolean = if (telephonyManager?.simState == TelephonyManager.SIM_STATE_READY) {
         Settings.Global.getInt(context.contentResolver, "mobile_data", 1) == 1
