@@ -22,7 +22,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -83,7 +82,7 @@ class DeeplinkPluginTest {
             val trackingEnabled = false
             val mockConfiguration = mockk<Configuration> {
                 every { application } returns mockApplication
-                every { trackDeeplinks } returns trackingEnabled
+                every { trackDeepLinks } returns trackingEnabled
             }
             every { mockAnalytics.configuration } returns mockConfiguration
 
@@ -98,7 +97,7 @@ class DeeplinkPluginTest {
             val trackingEnabled = true
             val mockConfiguration = mockk<Configuration> {
                 every { application } returns mockApplication
-                every { trackDeeplinks } returns trackingEnabled
+                every { trackDeepLinks } returns trackingEnabled
             }
             every { mockAnalytics.configuration } returns mockConfiguration
 
@@ -113,7 +112,7 @@ class DeeplinkPluginTest {
             val trackingEnabled = true
             val mockConfiguration = mockk<Configuration> {
                 every { application } returns mockApplication
-                every { trackDeeplinks } returns trackingEnabled
+                every { trackDeepLinks } returns trackingEnabled
             }
             every { mockAnalytics.configuration } returns mockConfiguration
 
@@ -140,7 +139,7 @@ class DeeplinkPluginTest {
             every { mockCheckBuildVersionUseCase.isAndroidVersionLollipopAndAbove() } returns false
             val mockConfiguration = mockk<Configuration> {
                 every { application } returns mockApplication
-                every { trackDeeplinks } returns trackingEnabled
+                every { trackDeepLinks } returns trackingEnabled
             }
             every { mockAnalytics.configuration } returns mockConfiguration
 
@@ -166,7 +165,7 @@ class DeeplinkPluginTest {
             val trackingEnabled = true
             val mockConfiguration = mockk<Configuration> {
                 every { application } returns mockApplication
-                every { trackDeeplinks } returns trackingEnabled
+                every { trackDeepLinks } returns trackingEnabled
             }
             every { mockAnalytics.configuration } returns mockConfiguration
             every { mockActivity.intent.data } returns mockUri(

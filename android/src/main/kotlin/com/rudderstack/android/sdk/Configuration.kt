@@ -30,7 +30,7 @@ internal const val DEFAULT_SESSION_TIMEOUT_IN_MILLIS = 300_000L
  * @param application The application context. Required for accessing Android-specific functionality and tracking lifecycle events.
  * @param trackApplicationLifecycleEvents Flag to enable or disable automatic tracking of application lifecycle events.
  * Defaults to `true`, enabling the SDK to track app start, background, and foreground events.
- * @param trackDeeplinks Flag to enable or disable automatic tracking of deeplink events. Defaults to `true`.
+ * @param trackDeepLinks Flag to enable or disable automatic tracking of deeplink events. Defaults to `true`.
  * @param collectDeviceId Flag to enable or disable automatic collection of the device's ID. Defaults to `true`.
  * @param sessionConfiguration Configuration settings for session tracking. Defaults to `SessionConfiguration()`.
  * @param trackActivities automatically tracks activities, calling screen events for them, defaults to `false`.
@@ -57,7 +57,7 @@ internal const val DEFAULT_SESSION_TIMEOUT_IN_MILLIS = 300_000L
 data class Configuration @JvmOverloads constructor(
     val application: Application,
     val trackApplicationLifecycleEvents: Boolean = true,
-    val trackDeeplinks: Boolean = true,
+    val trackDeepLinks: Boolean = true,
     val trackActivities: Boolean = false,
     val collectDeviceId: Boolean = true,
     val sessionConfiguration: SessionConfiguration = SessionConfiguration(),
