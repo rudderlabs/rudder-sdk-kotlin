@@ -41,7 +41,7 @@ open class Configuration @JvmOverloads constructor(
          * The default status of GZIP compression for network requests.
          * If true, GZIP is enabled; if false, it is disabled.
          */
-        const val DEFAULT_GZIP_STATUS: Boolean = true
+        const val DEFAULT_GZIP_STATUS: Boolean = false
 
         /**
          * The default URL for the control plane, used for fetching configuration settings.

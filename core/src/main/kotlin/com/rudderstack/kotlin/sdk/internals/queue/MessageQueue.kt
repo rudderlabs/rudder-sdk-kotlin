@@ -41,7 +41,7 @@ internal class MessageQueue(
             endPoint = BATCH_ENDPOINT,
             authHeaderString = writeKey.encodeToBase64(),
             isGZIPEnabled = gzipEnabled,
-            anonymousIdHeaderString = analytics.getAnonymousId()
+            anonymousIdHeaderString = analytics.getAnonymousId() ?: String.empty()
         )
     }
 ) {
