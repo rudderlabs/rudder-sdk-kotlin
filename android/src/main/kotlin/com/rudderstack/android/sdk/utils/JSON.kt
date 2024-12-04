@@ -5,13 +5,12 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.put
 
-// Utility function to put "undefined" value in-stead of `null` when building JsonObject
-internal fun JsonObjectBuilder.putUndefinedIfNull(key: String, value: CharSequence?): JsonElement? =
-    if (value.isNullOrEmpty()) {
-        put(key, "undefined")
-    } else {
-        put(key, value.toString())
-    }
+// Utility function to put value only if it is not null
+internal fun JsonObjectBuilder.putIfNotNull(key: String, value: CharSequence?): JsonElement? = if (!value.isNullOrEmpty()) {
+    put(key, value.toString())
+} else {
+    null
+}
 
 /**
  * Merges the current JSON object with another JSON object, giving higher priority to the other JSON object.

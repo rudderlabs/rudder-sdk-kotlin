@@ -22,7 +22,7 @@ tasks.withType<Detekt>().configureEach {
 
 android {
     namespace = RudderStackBuildConfig.PacakageName.ANDROID
-    compileSdk = 34
+    compileSdk = 35
 
     buildFeatures {
         buildFeatures {

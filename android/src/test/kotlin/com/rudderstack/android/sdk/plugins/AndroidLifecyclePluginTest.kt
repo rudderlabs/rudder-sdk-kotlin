@@ -26,7 +26,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -269,6 +268,52 @@ class AndroidLifecyclePluginTest {
         }
 
     @Test
+    fun `given trackApplicationsLifecycleEvents is true and stored version is null, when setup and onStart called, then events called with correct properties`() =
+        runTest {
+            val oldBuildNumber = 99L
+            val installedProperties = buildJsonObject {
+                put(BUILD_KEY, 100L)
+            }
+            val updatedProperties = buildJsonObject {
+                put(VERSION_KEY, "1.0.0")
+                put("previous_$BUILD_KEY", oldBuildNumber)
+                put(BUILD_KEY, 100L)
+            }
+            val openedProperties = buildJsonObject {
+                put(VERSION_KEY, "1.0.0")
+                put(FROM_BACKGROUND, false)
+            }
+            mockStorage.write(StorageKeys.APP_BUILD, oldBuildNumber)
+
+            // when
+            pluginSetup()
+            plugin.onStart(mockLifecycleOwner)
+
+            // then
+            verify(exactly = 0) {
+                mockAnalytics.track(
+                    name = eq(APPLICATION_INSTALLED),
+                    options = eq(RudderOption()),
+                    properties = eq(installedProperties)
+                )
+            }
+            verify(exactly = 1) {
+                mockAnalytics.track(
+                    name = eq(APPLICATION_UPDATED),
+                    options = eq(RudderOption()),
+                    properties = eq(updatedProperties)
+                )
+            }
+            verify(exactly = 1) {
+                mockAnalytics.track(
+                    name = eq(APPLICATION_OPENED),
+                    options = eq(RudderOption()),
+                    properties = eq(openedProperties)
+                )
+            }
+        }
+
+    @Test
     fun `given trackApplicationLifecycleEvents is false, when setup is called, then build and version are still stored in memory`() =
         runTest(testDispatcher) {
             // when
@@ -306,7 +351,7 @@ class AndroidLifecyclePluginTest {
             currentBuild = 100L,
             currentVersionName = "1.0.0",
             previousBuild = mockStorage.readLong(StorageKeys.APP_BUILD, -1L),
-            previousVersionName = mockStorage.readString(StorageKeys.APP_VERSION, String.empty())
+            previousVersionName = mockStorage.readString(StorageKeys.APP_VERSION, String.empty()).ifEmpty { null }
         )
 
         plugin.setup(analytics = mockAnalytics)
