@@ -1,5 +1,6 @@
 package com.rudderstack.kotlin.sdk
 
+import androidx.annotation.RestrictTo
 import com.rudderstack.kotlin.sdk.Configuration.Companion.DEFAULT_CONTROL_PLANE_URL
 import com.rudderstack.kotlin.sdk.Configuration.Companion.DEFAULT_FLUSH_POLICIES
 import com.rudderstack.kotlin.sdk.Configuration.Companion.DEFAULT_GZIP_STATUS
@@ -64,20 +65,24 @@ interface CoroutineConfiguration {
     /**
      * The [CoroutineScope] used for running analytics tasks. This scope controls the lifecycle of coroutines within the SDK.
      */
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY)
     val analyticsScope: CoroutineScope
 
     /**
      * The [CoroutineDispatcher] used for executing general analytics tasks in the SDK.
      */
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY)
     val analyticsDispatcher: CoroutineDispatcher
 
     /**
      * The [CoroutineDispatcher] dedicated to executing storage-related tasks, such as reading and writing to disk.
      */
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY)
     val storageDispatcher: CoroutineDispatcher
 
     /**
      * The [CoroutineDispatcher] dedicated to executing network-related tasks, such as sending events to the data plane.
      */
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY)
     val networkDispatcher: CoroutineDispatcher
 }
