@@ -18,7 +18,6 @@ fun main() {
             writeKey = "<WRITE KEY>",
             dataPlaneUrl = "<DATA PLANE URL>",
             logLevel = Logger.LogLevel.VERBOSE,
-            optOut = false,
             gzipEnabled = DEFAULT_GZIP_STATUS,
         )
     )
