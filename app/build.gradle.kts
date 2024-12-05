@@ -12,9 +12,9 @@ val sampleRudderProperties = Properties().apply {
 }
 
 android {
-    val composeCompilerVersion = "1.5.1"//RudderstackBuildConfig.Kotlin.COMPILER_EXTENSION_VERSION
-    val androidCompileSdkVersion = 35//RudderstackBuildConfig.Android.COMPILE_SDK
-    val androidMinSdkVersion = 21
+    val composeCompilerVersion = RudderStackBuildConfig.Kotlin.COMPILER_EXTENSION_VERSION
+    val androidCompileSdkVersion = RudderStackBuildConfig.Android.COMPILE_SDK
+    val androidMinSdkVersion = RudderStackBuildConfig.Android.MIN_SDK
     val majorVersion = 0
     val minVersion = 1
     val patchVersion = 0
@@ -60,11 +60,11 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = RudderStackBuildConfig.Build.JAVA_VERSION
+        targetCompatibility = RudderStackBuildConfig.Build.JAVA_VERSION
     }
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = RudderStackBuildConfig.Build.JVM_TARGET
     }
     buildFeatures {
         buildConfig = true
@@ -82,7 +82,6 @@ android {
 
 dependencies {
     implementation(project(":android"))
-    implementation(project(":core"))
 
     implementation(libs.material)
     //compose
