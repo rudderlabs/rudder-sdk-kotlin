@@ -22,7 +22,7 @@ tasks.withType<Detekt>().configureEach {
 
 android {
     namespace = RudderStackBuildConfig.PacakageName.ANDROID
-    compileSdk = 35
+    compileSdk = RudderStackBuildConfig.Android.COMPILE_SDK
 
     buildFeatures {
         buildFeatures {
@@ -31,7 +31,7 @@ android {
     }
 
     defaultConfig {
-        minSdk = 21
+        minSdk = RudderStackBuildConfig.Android.MIN_SDK
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
@@ -47,14 +47,14 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = RudderStackBuildConfig.Build.JAVA_VERSION
+        targetCompatibility = RudderStackBuildConfig.Build.JAVA_VERSION
     }
     kotlinOptions {
-        jvmTarget = "17"
+        jvmTarget = RudderStackBuildConfig.Build.JVM_TARGET
     }
     kotlin {
-        jvmToolchain(17)
+        jvmToolchain(RudderStackBuildConfig.Build.JVM_TOOLCHAIN)
     }
 }
 

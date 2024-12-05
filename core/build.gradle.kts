@@ -8,11 +8,11 @@ plugins {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+    sourceCompatibility = RudderStackBuildConfig.Build.JAVA_VERSION
+    targetCompatibility = RudderStackBuildConfig.Build.JAVA_VERSION
 }
 kotlin {
-    jvmToolchain(17)
+    jvmToolchain(RudderStackBuildConfig.Build.JVM_TOOLCHAIN)
 }
 
 // Task to generate a Kotlin file with version constants
