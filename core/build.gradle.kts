@@ -61,6 +61,7 @@ dependencies {
 
     //implementation
     implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.androidx.annotation.jvm)
 
     // detekt plugins
     detektPlugins(libs.detekt.formatting)

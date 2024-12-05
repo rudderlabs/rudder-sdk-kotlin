@@ -50,7 +50,7 @@ class AndroidAdvertisingIdPluginTest {
     fun setup() {
         Dispatchers.setMain(testDispatcher)
 
-        plugin = spyk(AndroidAdvertisingIdPlugin(), recordPrivateCalls = true)
+        plugin = spyk(AndroidAdvertisingIdPlugin(testScope), recordPrivateCalls = true)
 
         mockAnalytics = mockk(relaxed = true)
         mockConfiguration = mockk(relaxed = true)
@@ -59,7 +59,6 @@ class AndroidAdvertisingIdPluginTest {
         every { mockAnalytics.configuration } returns mockConfiguration
         every { mockConfiguration.application } returns mockApplication
         every { mockApplication.applicationContext } returns mockContext
-        every { mockAnalytics.analyticsScope } returns testScope
     }
 
     @After
