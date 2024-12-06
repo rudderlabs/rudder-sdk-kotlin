@@ -200,28 +200,5 @@ class IdentifyEventTest {
 
         JSONAssert.assertEquals(expectedJsonString, actualPayloadString, true)
     }
-
-    @Test
-    fun `given some overlapped keys are passed in traits, when identify event with user id is made, then traits should contain user id values and not the overlapped values`() {
-        val expectedJsonString = readFileTrimmed(identifyEventsWithOnlyUserId)
-        val overlappedTraits = buildJsonObject {
-            put("userId", "User Id 2") // If userId is passed then that should overwrite this value
-            put("id", "User Id 2") // If userId is passed then that should overwrite this value
-        }
-        val userIdentityState: UserIdentity = provideUserIdentityState(
-            userId = USER_ID,
-            traits = overlappedTraits
-        )
-        val identifyEvent = IdentifyEvent(
-            userIdentityState = userIdentityState,
-        ).also {
-            it.applyMockedValues()
-            it.updateData(PlatformType.Mobile)
-        }
-
-        val actualPayloadString = identifyEvent.encodeToString()
-
-        JSONAssert.assertEquals(expectedJsonString, actualPayloadString, true)
-    }
 }
 

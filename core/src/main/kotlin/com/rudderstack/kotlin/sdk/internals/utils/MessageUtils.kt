@@ -16,8 +16,6 @@ import kotlinx.serialization.json.put
 private const val NAME = "name"
 private const val CATEGORY = "category"
 private const val ANONYMOUS_ID = "anonymousId"
-private const val USER_ID = "userId"
-private const val ID = "id"
 private const val TRAITS = "traits"
 
 internal fun addNameAndCategoryToProperties(name: String, category: String, properties: JsonObject): JsonObject {
@@ -70,13 +68,10 @@ private fun Message.setTraitsInContext(getLatestTraits: () -> RudderTraits) {
 
 private fun Message.buildTraits(): RudderTraits {
     val latestAnonymousId = userIdentityState.anonymousId
-    val latestUserId = userIdentityState.userId
     val latestTraits = userIdentityState.traits
 
-    return (getDefaultTraits(latestAnonymousId) mergeWithHigherPriorityTo getUserIdAddedTraits(latestUserId))
-        .let { defaultTraits ->
-            latestTraits mergeWithHigherPriorityTo defaultTraits
-        }.let { updatedTraits ->
+    return (latestTraits mergeWithHigherPriorityTo getDefaultTraits(latestAnonymousId))
+        .let { updatedTraits ->
             buildJsonObject {
                 put(TRAITS, updatedTraits)
             }
@@ -85,13 +80,6 @@ private fun Message.buildTraits(): RudderTraits {
 
 private fun getDefaultTraits(anonymousId: String): RudderTraits = buildJsonObject {
     put(ANONYMOUS_ID, anonymousId)
-}
-
-private fun getUserIdAddedTraits(userId: String): RudderTraits = buildJsonObject {
-    if (userId.isNotEmpty()) {
-        put(USER_ID, userId)
-        put(ID, userId)
-    }
 }
 
 private fun Message.setExternalIdInContext() {
