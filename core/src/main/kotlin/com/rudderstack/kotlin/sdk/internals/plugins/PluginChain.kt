@@ -16,9 +16,6 @@ internal class PluginChain(
     lateinit var analytics: Analytics
 
     suspend fun process(message: Message) {
-        if (analytics.configuration.optOut) {
-            return
-        }
         val preProcessResult = applyPlugins(Plugin.PluginType.PreProcess, message)
         val onProcessResult = applyPlugins(Plugin.PluginType.OnProcess, preProcessResult)
         applyPlugins(Plugin.PluginType.Destination, onProcessResult)

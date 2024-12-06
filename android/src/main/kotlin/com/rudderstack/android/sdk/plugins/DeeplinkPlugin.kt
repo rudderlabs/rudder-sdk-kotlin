@@ -33,7 +33,7 @@ internal class DeeplinkPlugin(
         super.setup(analytics)
 
         (analytics.configuration as? AndroidConfiguration)?.let { config ->
-            if (config.trackDeeplinks) {
+            if (config.trackDeepLinks) {
                 (analytics as? AndroidAnalytics)?.addLifecycleObserver(this)
             }
         }
