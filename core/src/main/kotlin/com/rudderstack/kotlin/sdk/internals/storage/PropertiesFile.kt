@@ -68,15 +68,15 @@ internal class PropertiesFile(
      * @return The boolean value associated with the key.
      */
     override fun getBoolean(key: String, defaultVal: Boolean): Boolean {
-        return properties.getProperty(key, String.empty()).toBoolean()
+        return properties.getProperty(key, String.empty()).toBooleanStrictOrNull() ?: defaultVal
     }
 
     override fun getString(key: String, defaultVal: String): String {
-        return properties.getProperty(key, String.empty()).toString()
+        return properties.getProperty(key, defaultVal).toString()
     }
 
     override fun getLong(key: String, defaultVal: Long): Long {
-        return properties.getProperty(key, String.empty()).toLong()
+        return properties.getProperty(key, String.empty()).toLongOrNull() ?: defaultVal
     }
 
     override fun save(key: String, value: Int) {
