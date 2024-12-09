@@ -1,7 +1,6 @@
 package com.rudderstack.kotlin.sdk.internals.storage
 
 import com.rudderstack.kotlin.sdk.internals.logger.LoggerAnalytics
-import com.rudderstack.kotlin.sdk.internals.utils.empty
 import com.rudderstack.kotlin.sdk.internals.utils.toPropertiesFileName
 import java.io.File
 import java.io.FileInputStream
@@ -58,7 +57,7 @@ internal class PropertiesFile(
      * @return The integer value associated with the key.
      */
     override fun getInt(key: String, defaultVal: Int): Int {
-        return properties.getProperty(key, String.empty()).toIntOrNull() ?: defaultVal
+        return properties.getProperty(key, defaultVal.toString()).toInt()
     }
 
     /**
@@ -68,15 +67,15 @@ internal class PropertiesFile(
      * @return The boolean value associated with the key.
      */
     override fun getBoolean(key: String, defaultVal: Boolean): Boolean {
-        return properties.getProperty(key, String.empty()).toBoolean()
+        return properties.getProperty(key, defaultVal.toString()).toBoolean()
     }
 
     override fun getString(key: String, defaultVal: String): String {
-        return properties.getProperty(key, String.empty()).toString()
+        return properties.getProperty(key, defaultVal).toString()
     }
 
     override fun getLong(key: String, defaultVal: Long): Long {
-        return properties.getProperty(key, String.empty()).toLong()
+        return properties.getProperty(key, defaultVal.toString()).toLong()
     }
 
     override fun save(key: String, value: Int) {
