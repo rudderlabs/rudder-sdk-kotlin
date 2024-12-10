@@ -2,8 +2,8 @@ package com.rudderstack.sampleapp.analytics.customplugins
 
 import android.app.Application
 import android.content.Context
-import com.rudderstack.android.sdk.Analytics
-import com.rudderstack.android.sdk.Configuration
+import com.rudderstack.android.android.Analytics
+import com.rudderstack.android.android.Configuration
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result

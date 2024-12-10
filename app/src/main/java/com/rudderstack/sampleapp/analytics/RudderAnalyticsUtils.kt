@@ -1,9 +1,9 @@
 package com.rudderstack.sampleapp.analytics
 
 import android.app.Application
-import com.rudderstack.android.sdk.Analytics
-import com.rudderstack.android.sdk.Configuration
-import com.rudderstack.android.sdk.SessionConfiguration
+import com.rudderstack.android.android.Analytics
+import com.rudderstack.android.android.Configuration
+import com.rudderstack.android.android.SessionConfiguration
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
 import com.rudderstack.sampleapp.analytics.customplugins.AndroidAdvertisingIdPlugin
