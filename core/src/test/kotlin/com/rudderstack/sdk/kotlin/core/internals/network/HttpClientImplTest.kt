@@ -44,7 +44,7 @@ class HttpClientImplTest {
         every { mockConnectionFactory.createConnection(any(), any()) } returns mockConnection
 
         // Mock extension functions:
-        mockkStatic("com.rudderstack.kotlin.sdk.internals.network.WebUtilsKt")
+        mockkStatic("com.rudderstack.sdk.kotlin.core.internals.network.WebUtilsKt")
         every { mockConnection.getSuccessResponse() } returns SUCCESS_RESPONSE
         every { mockConnection.getErrorResponse() } returns ERROR_RESPONSE
 
