@@ -4,7 +4,7 @@ import android.app.Application
 import com.rudderstack.android.sdk.Analytics
 import com.rudderstack.android.sdk.Configuration
 import com.rudderstack.android.sdk.utils.provideEvent
-import com.rudderstack.android.utils.UniqueIdProvider
+import com.rudderstack.android.sdk.utils.UniqueIdProvider
 import com.rudderstack.sdk.kotlin.core.internals.models.Message
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
