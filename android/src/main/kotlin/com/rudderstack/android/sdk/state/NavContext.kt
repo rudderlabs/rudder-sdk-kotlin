@@ -2,7 +2,7 @@ package com.rudderstack.android.sdk.state
 
 import android.app.Activity
 import androidx.navigation.NavController
-import com.rudderstack.kotlin.sdk.internals.statemanagement.FlowAction
+import com.rudderstack.kotlin.core.internals.statemanagement.FlowAction
 import org.jetbrains.annotations.VisibleForTesting
 
 internal data class NavContext(

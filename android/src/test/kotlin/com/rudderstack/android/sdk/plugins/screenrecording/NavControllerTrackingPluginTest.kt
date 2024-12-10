@@ -7,7 +7,7 @@ import com.rudderstack.android.sdk.state.NavContext
 import com.rudderstack.android.sdk.utils.automaticProperty
 import com.rudderstack.android.sdk.utils.mockAnalytics
 import com.rudderstack.android.sdk.utils.mockNavContext
-import com.rudderstack.kotlin.sdk.internals.statemanagement.FlowState
+import com.rudderstack.kotlin.core.internals.statemanagement.FlowState
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk

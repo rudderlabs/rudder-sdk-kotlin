@@ -6,11 +6,11 @@ import android.os.Build
 import com.rudderstack.android.sdk.Configuration
 import com.rudderstack.android.sdk.utils.mergeWithHigherPriorityTo
 import com.rudderstack.android.sdk.utils.putIfNotNull
-import com.rudderstack.kotlin.sdk.Analytics
-import com.rudderstack.kotlin.sdk.internals.logger.LoggerAnalytics
-import com.rudderstack.kotlin.sdk.internals.models.Message
-import com.rudderstack.kotlin.sdk.internals.models.emptyJsonObject
-import com.rudderstack.kotlin.sdk.internals.plugins.Plugin
+import com.rudderstack.kotlin.core.Analytics
+import com.rudderstack.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.kotlin.core.internals.models.Message
+import com.rudderstack.kotlin.core.internals.models.emptyJsonObject
+import com.rudderstack.kotlin.core.internals.plugins.Plugin
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import org.jetbrains.annotations.VisibleForTesting

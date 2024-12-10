@@ -2,9 +2,9 @@ package com.rudderstack.android.sdk
 
 import android.app.Application
 import com.rudderstack.android.sdk.storage.AndroidStorageProvider
-import com.rudderstack.kotlin.sdk.Configuration
-import com.rudderstack.kotlin.sdk.internals.logger.Logger
-import com.rudderstack.kotlin.sdk.internals.policies.FlushPolicy
+import com.rudderstack.kotlin.core.Configuration
+import com.rudderstack.kotlin.core.internals.logger.Logger
+import com.rudderstack.kotlin.core.internals.policies.FlushPolicy
 
 internal const val DEFAULT_SESSION_TIMEOUT_IN_MILLIS = 300_000L
 

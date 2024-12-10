@@ -5,9 +5,9 @@ import androidx.navigation.NavController
 import androidx.navigation.NavDestination
 import com.rudderstack.android.sdk.state.NavContext
 import com.rudderstack.android.sdk.utils.automaticProperty
-import com.rudderstack.kotlin.sdk.Analytics
-import com.rudderstack.kotlin.sdk.internals.plugins.Plugin
-import com.rudderstack.kotlin.sdk.internals.statemanagement.FlowState
+import com.rudderstack.kotlin.core.Analytics
+import com.rudderstack.kotlin.core.internals.plugins.Plugin
+import com.rudderstack.kotlin.core.internals.statemanagement.FlowState
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach

@@ -4,9 +4,9 @@ import android.app.Application
 import android.content.Context
 import com.rudderstack.android.sdk.Analytics
 import com.rudderstack.android.sdk.Configuration
-import com.rudderstack.kotlin.sdk.internals.models.TrackEvent
-import com.rudderstack.kotlin.sdk.internals.models.emptyJsonObject
-import com.rudderstack.kotlin.sdk.internals.utils.Result
+import com.rudderstack.kotlin.core.internals.models.TrackEvent
+import com.rudderstack.kotlin.core.internals.models.emptyJsonObject
+import com.rudderstack.kotlin.core.internals.utils.Result
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every

@@ -1,7 +1,7 @@
 package com.rudderstack.android.sdk.plugins.sessiontracking
 
 import com.rudderstack.android.sdk.utils.MockMemoryStorage
-import com.rudderstack.kotlin.sdk.internals.storage.StorageKeys
+import com.rudderstack.kotlin.core.internals.storage.StorageKeys
 import io.mockk.coVerify
 import io.mockk.spyk
 import kotlinx.coroutines.test.runTest

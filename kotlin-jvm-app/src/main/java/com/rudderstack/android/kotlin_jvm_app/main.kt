@@ -1,13 +1,13 @@
 package com.rudderstack.android.kotlin_jvm_app
 
-import com.rudderstack.kotlin.sdk.Analytics
-import com.rudderstack.kotlin.sdk.Configuration
-import com.rudderstack.kotlin.sdk.Configuration.Companion.DEFAULT_GZIP_STATUS
-import com.rudderstack.kotlin.sdk.internals.logger.Logger
-import com.rudderstack.kotlin.sdk.internals.logger.LoggerAnalytics
-import com.rudderstack.kotlin.sdk.internals.models.Properties
-import com.rudderstack.kotlin.sdk.internals.models.RudderOption
-import com.rudderstack.kotlin.sdk.internals.models.RudderTraits
+import com.rudderstack.kotlin.core.Analytics
+import com.rudderstack.kotlin.core.Configuration
+import com.rudderstack.kotlin.core.Configuration.Companion.DEFAULT_GZIP_STATUS
+import com.rudderstack.kotlin.core.internals.logger.Logger
+import com.rudderstack.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.kotlin.core.internals.models.Properties
+import com.rudderstack.kotlin.core.internals.models.RudderOption
+import com.rudderstack.kotlin.core.internals.models.RudderTraits
 import java.util.Date
 
 private lateinit var analytics: Analytics

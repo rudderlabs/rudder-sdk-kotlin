@@ -7,7 +7,7 @@ import com.rudderstack.android.sdk.Configuration
 import com.rudderstack.android.sdk.plugins.lifecyclemanagment.ActivityLifecycleManagementPlugin
 import com.rudderstack.android.sdk.plugins.lifecyclemanagment.ActivityLifecycleObserver
 import com.rudderstack.android.sdk.utils.mockAnalytics
-import com.rudderstack.kotlin.sdk.Analytics
+import com.rudderstack.kotlin.core.Analytics
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK

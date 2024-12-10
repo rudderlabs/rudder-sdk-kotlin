@@ -3,8 +3,8 @@ package com.rudderstack.android.sdk.plugins
 import android.app.Application
 import com.rudderstack.android.sdk.Configuration
 import com.rudderstack.android.sdk.utils.provideEvent
-import com.rudderstack.kotlin.sdk.Analytics
-import com.rudderstack.kotlin.sdk.internals.utils.empty
+import com.rudderstack.kotlin.core.Analytics
+import com.rudderstack.kotlin.core.internals.utils.empty
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
