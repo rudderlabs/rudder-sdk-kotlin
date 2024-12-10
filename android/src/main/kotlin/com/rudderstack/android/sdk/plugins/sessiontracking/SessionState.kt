@@ -1,8 +1,8 @@
 package com.rudderstack.android.sdk.plugins.sessiontracking
 
-import com.rudderstack.kotlin.core.internals.statemanagement.FlowAction
-import com.rudderstack.kotlin.core.internals.storage.Storage
-import com.rudderstack.kotlin.core.internals.storage.StorageKeys
+import com.rudderstack.sdk.kotlin.core.internals.statemanagement.FlowAction
+import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
+import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 
 internal const val DEFAULT_SESSION_ID = 0L
 internal const val DEFAULT_LAST_ACTIVITY_TIME = 0L

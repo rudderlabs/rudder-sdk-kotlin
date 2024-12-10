@@ -20,12 +20,12 @@ import com.rudderstack.android.sdk.plugins.screenrecording.NavControllerTracking
 import com.rudderstack.android.sdk.plugins.sessiontracking.DEFAULT_SESSION_ID
 import com.rudderstack.android.sdk.plugins.sessiontracking.SessionTrackingPlugin
 import com.rudderstack.android.sdk.state.NavContext
-import com.rudderstack.kotlin.core.Analytics
-import com.rudderstack.kotlin.core.internals.logger.LoggerAnalytics
-import com.rudderstack.kotlin.core.internals.platform.Platform
-import com.rudderstack.kotlin.core.internals.platform.PlatformType
-import com.rudderstack.kotlin.core.internals.statemanagement.FlowState
-import com.rudderstack.kotlin.core.internals.utils.isAnalyticsActive
+import com.rudderstack.sdk.kotlin.core.Analytics
+import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.platform.Platform
+import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
+import com.rudderstack.sdk.kotlin.core.internals.statemanagement.FlowState
+import com.rudderstack.sdk.kotlin.core.internals.utils.isAnalyticsActive
 import org.jetbrains.annotations.ApiStatus.Experimental
 
 private const val MIN_SESSION_ID_LENGTH = 10

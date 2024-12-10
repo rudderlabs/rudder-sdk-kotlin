@@ -8,7 +8,7 @@ import com.rudderstack.android.sdk.utils.addLifecycleObserver
 import com.rudderstack.android.sdk.utils.automaticProperty
 import com.rudderstack.android.sdk.utils.mockAnalytics
 import com.rudderstack.android.sdk.utils.removeLifecycleObserver
-import com.rudderstack.kotlin.core.Analytics
+import com.rudderstack.sdk.kotlin.core.Analytics
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import kotlinx.coroutines.Dispatchers

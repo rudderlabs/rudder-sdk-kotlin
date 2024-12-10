@@ -4,8 +4,8 @@ import android.app.Activity
 import android.app.Application
 import android.os.Bundle
 import com.rudderstack.android.sdk.utils.runOnMainThread
-import com.rudderstack.kotlin.core.Analytics
-import com.rudderstack.kotlin.core.internals.plugins.Plugin
+import com.rudderstack.sdk.kotlin.core.Analytics
+import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext

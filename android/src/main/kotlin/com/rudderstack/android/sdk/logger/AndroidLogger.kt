@@ -1,8 +1,8 @@
 package com.rudderstack.android.sdk.logger
 
 import android.util.Log
-import com.rudderstack.kotlin.core.internals.logger.Logger
-import com.rudderstack.kotlin.core.internals.logger.TAG
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
+import com.rudderstack.sdk.kotlin.core.internals.logger.TAG
 
 /**
  * `AndroidLogger` is a concrete implementation of the `Logger` interface designed to handle logging

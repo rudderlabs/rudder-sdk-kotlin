@@ -6,9 +6,9 @@ import com.rudderstack.android.sdk.logger.AndroidLogger
 import com.rudderstack.android.sdk.Configuration
 import com.rudderstack.android.sdk.utils.provideEvent
 import com.rudderstack.android.sdk.utils.setupLogger
-import com.rudderstack.kotlin.core.Analytics
-import com.rudderstack.kotlin.core.internals.models.emptyJsonObject
-import com.rudderstack.kotlin.core.internals.utils.empty
+import com.rudderstack.sdk.kotlin.core.Analytics
+import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
+import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK

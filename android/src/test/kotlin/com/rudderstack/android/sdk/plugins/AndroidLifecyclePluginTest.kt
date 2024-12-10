@@ -8,11 +8,11 @@ import com.rudderstack.android.sdk.utils.MockMemoryStorage
 import com.rudderstack.android.sdk.utils.addLifecycleObserver
 import com.rudderstack.android.sdk.utils.mockAnalytics
 import com.rudderstack.android.sdk.utils.removeLifecycleObserver
-import com.rudderstack.kotlin.core.internals.models.Properties
-import com.rudderstack.kotlin.core.internals.models.RudderOption
-import com.rudderstack.kotlin.core.internals.storage.Storage
-import com.rudderstack.kotlin.core.internals.storage.StorageKeys
-import com.rudderstack.kotlin.core.internals.utils.empty
+import com.rudderstack.sdk.kotlin.core.internals.models.Properties
+import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
+import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
+import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
+import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import io.mockk.MockKAnnotations
 import io.mockk.Ordering
 import io.mockk.Runs

@@ -2,10 +2,10 @@ package com.rudderstack.android.sdk.plugins.screenrecording
 
 import androidx.activity.ComponentActivity
 import androidx.navigation.NavDestination
-import com.rudderstack.kotlin.core.Analytics
+import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.android.sdk.state.NavContext
 import com.rudderstack.android.sdk.utils.mockAnalytics
-import com.rudderstack.kotlin.core.internals.statemanagement.FlowState
+import com.rudderstack.sdk.kotlin.core.internals.statemanagement.FlowState
 import io.mockk.MockKAnnotations
 import io.mockk.Runs
 import io.mockk.every

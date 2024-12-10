@@ -5,10 +5,10 @@ import com.rudderstack.android.sdk.Analytics
 import com.rudderstack.android.sdk.Configuration
 import com.rudderstack.android.sdk.utils.provideEvent
 import com.rudderstack.android.utils.UniqueIdProvider
-import com.rudderstack.kotlin.core.internals.models.Message
-import com.rudderstack.kotlin.core.internals.storage.Storage
-import com.rudderstack.kotlin.core.internals.storage.StorageKeys
-import com.rudderstack.kotlin.core.internals.utils.putAll
+import com.rudderstack.sdk.kotlin.core.internals.models.Message
+import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
+import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
+import com.rudderstack.sdk.kotlin.core.internals.utils.putAll
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject

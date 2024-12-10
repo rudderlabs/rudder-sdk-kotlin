@@ -4,8 +4,8 @@ import android.app.Application
 import com.rudderstack.android.sdk.Analytics
 import com.rudderstack.android.sdk.Configuration
 import com.rudderstack.android.sdk.SessionConfiguration
-import com.rudderstack.kotlin.core.internals.logger.Logger
-import com.rudderstack.kotlin.core.internals.models.RudderOption
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
+import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
 import com.rudderstack.sampleapp.analytics.customplugins.AndroidAdvertisingIdPlugin
 import com.rudderstack.sampleapp.analytics.customplugins.AndroidAdvertisingIdPlugin.Companion.isAdvertisingLibraryAvailable
 import com.rudderstack.sampleapp.analytics.customplugins.OptionPlugin
