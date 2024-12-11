@@ -10,7 +10,7 @@ import com.rudderstack.android.sdk.utils.addLifecycleObserver
 import com.rudderstack.android.sdk.utils.mockAnalytics
 import com.rudderstack.android.sdk.utils.mockUri
 import com.rudderstack.android.sdk.utils.removeLifecycleObserver
-import com.rudderstack.kotlin.sdk.internals.models.RudderOption
+import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
 import io.mockk.MockKAnnotations
 import io.mockk.Runs
 import io.mockk.every

@@ -5,7 +5,7 @@ import androidx.lifecycle.LifecycleOwner
 import com.rudderstack.android.sdk.plugins.lifecyclemanagment.ProcessLifecycleManagementPlugin
 import com.rudderstack.android.sdk.plugins.lifecyclemanagment.ProcessLifecycleObserver
 import com.rudderstack.android.sdk.utils.mockAnalytics
-import com.rudderstack.kotlin.sdk.Analytics
+import com.rudderstack.sdk.kotlin.core.Analytics
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK

@@ -1,8 +1,8 @@
 package com.rudderstack.android.sdk.logger
 
 import android.util.Log
-import com.rudderstack.kotlin.sdk.internals.logger.Logger
-import com.rudderstack.kotlin.sdk.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
+import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import io.mockk.every
 import io.mockk.mockkStatic
 

@@ -8,7 +8,7 @@ import com.rudderstack.android.sdk.utils.addLifecycleObserver
 import com.rudderstack.android.sdk.utils.automaticProperty
 import com.rudderstack.android.sdk.utils.mockAnalytics
 import com.rudderstack.android.sdk.utils.removeLifecycleObserver
-import com.rudderstack.kotlin.sdk.Analytics
+import com.rudderstack.sdk.kotlin.core.Analytics
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import kotlinx.coroutines.Dispatchers
@@ -21,7 +21,6 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
-import kotlin.reflect.KProperty
 import com.rudderstack.android.sdk.Analytics as AndroidAnalytics
 
 @OptIn(ExperimentalCoroutinesApi::class)

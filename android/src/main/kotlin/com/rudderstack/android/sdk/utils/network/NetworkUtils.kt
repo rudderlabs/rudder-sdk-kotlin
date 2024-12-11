@@ -1,7 +1,7 @@
 package com.rudderstack.android.sdk.utils.network
 
 import android.content.Context
-import com.rudderstack.kotlin.sdk.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 
 /**
  * A class that provides information about the network state.

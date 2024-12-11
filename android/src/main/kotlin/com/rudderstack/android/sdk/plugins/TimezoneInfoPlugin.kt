@@ -1,10 +1,10 @@
 package com.rudderstack.android.sdk.plugins
 
 import com.rudderstack.android.sdk.utils.mergeWithHigherPriorityTo
-import com.rudderstack.kotlin.sdk.Analytics
-import com.rudderstack.kotlin.sdk.internals.logger.LoggerAnalytics
-import com.rudderstack.kotlin.sdk.internals.models.Message
-import com.rudderstack.kotlin.sdk.internals.plugins.Plugin
+import com.rudderstack.sdk.kotlin.core.Analytics
+import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.models.Message
+import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
