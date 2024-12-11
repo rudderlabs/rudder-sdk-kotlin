@@ -9,6 +9,7 @@ import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPolicy
 import com.rudderstack.sdk.kotlin.core.internals.policies.FrequencyFlushPolicy
 import com.rudderstack.sdk.kotlin.core.internals.storage.BasicStorageProvider
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
+import com.rudderstack.sdk.kotlin.core.internals.utils.RudderInternalUsageWarning
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 
@@ -65,20 +66,24 @@ interface CoroutineConfiguration {
     /**
      * The [CoroutineScope] used for running analytics tasks. This scope controls the lifecycle of coroutines within the SDK.
      */
+    @RudderInternalUsageWarning
     val analyticsScope: CoroutineScope
 
     /**
      * The [CoroutineDispatcher] used for executing general analytics tasks in the SDK.
      */
+    @RudderInternalUsageWarning
     val analyticsDispatcher: CoroutineDispatcher
 
     /**
      * The [CoroutineDispatcher] dedicated to executing storage-related tasks, such as reading and writing to disk.
      */
+    @RudderInternalUsageWarning
     val storageDispatcher: CoroutineDispatcher
 
     /**
      * The [CoroutineDispatcher] dedicated to executing network-related tasks, such as sending events to the data plane.
      */
+    @RudderInternalUsageWarning
     val networkDispatcher: CoroutineDispatcher
 }
