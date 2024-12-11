@@ -21,9 +21,9 @@ object RudderStackBuildConfig {
         const val VERSION_CODE = "1"
     }
 
-    object PacakageName {
-        const val ANDROID = "com.rudderstack.android.sdk"
-        const val KOTLIN = "\"com.rudderstack.kotlin.sdk\""
+    object PackageName {
+
+        const val PACKAGE_NAME = "com.rudderstack.sdk.kotlin"
     }
 
     object Kotlin {
