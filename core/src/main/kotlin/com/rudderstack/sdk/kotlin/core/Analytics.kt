@@ -26,6 +26,7 @@ import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.PluginChain
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.FlowState
+import com.rudderstack.sdk.kotlin.core.internals.storage.BasicStorageProvider
 import com.rudderstack.sdk.kotlin.core.internals.utils.addNameAndCategoryToProperties
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import com.rudderstack.sdk.kotlin.core.internals.utils.isAnalyticsActive
@@ -33,19 +34,10 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.resolvePreferredPreviousI
 import com.rudderstack.sdk.kotlin.core.plugins.LibraryInfoPlugin
 import com.rudderstack.sdk.kotlin.core.plugins.PocPlugin
 import com.rudderstack.sdk.kotlin.core.plugins.RudderStackDataplanePlugin
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
-
-// todo: figure out a way to make this a class level property. It will cause issues when multiple instances of sdk will be created.
-private lateinit var analyticsJob: Job
 
 /**
  * The `Analytics` class is the core of the RudderStack SDK, responsible for tracking events,
@@ -59,20 +51,23 @@ private lateinit var analyticsJob: Job
  *
  * @constructor Primary constructor for creating an `Analytics` instance with a custom coroutine configuration.
  * @param configuration The configuration object that defines settings such as write key, data plane URL, logger, etc.
- * @param coroutineConfig The coroutine configuration that defines the scopes and dispatchers for analytics operations.
+ * @param analyticsConfiguration The analytics configuration object that defines coroutine settings and some other variables.
+ * @param userIdentityState The state flow for user identity management. Defaults to a new `FlowState` with the initial state.
  */
 @Suppress("TooManyFunctions")
-@OptIn(ExperimentalCoroutinesApi::class)
 open class Analytics protected constructor(
     val configuration: Configuration,
-    coroutineConfig: CoroutineConfiguration,
-) : CoroutineConfiguration by coroutineConfig, Platform {
+    analyticsConfiguration: AnalyticsConfiguration,
+    internal val userIdentityState: FlowState<UserIdentity> = FlowState(
+        initialState = UserIdentity.initialState(
+            analyticsConfiguration.storage
+        )
+    ),
+) : AnalyticsConfiguration by analyticsConfiguration, Platform {
 
     private val pluginChain: PluginChain = PluginChain().also { it.analytics = this }
 
     private val sourceConfigState = FlowState(initialState = SourceConfig.initialState())
-
-    internal val userIdentityState = FlowState(initialState = UserIdentity.initialState(configuration.storage))
 
     private val processMessageChannel: Channel<Message> = Channel(Channel.UNLIMITED)
     private var processMessageJob: Job? = null
@@ -108,18 +103,12 @@ open class Analytics protected constructor(
      */
     constructor(configuration: Configuration) : this(
         configuration = configuration,
-        coroutineConfig = object : CoroutineConfiguration {
-            private val handler = CoroutineExceptionHandler { _, exception ->
-                LoggerAnalytics.error(exception.stackTraceToString())
-            }
-            override val analyticsScope: CoroutineScope = run {
-                analyticsJob = SupervisorJob()
-                CoroutineScope(analyticsJob + handler)
-            }
-            override val analyticsDispatcher: CoroutineDispatcher = Dispatchers.IO
-            override val storageDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(2)
-            override val networkDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(1)
-        }
+        analyticsConfiguration = AnalyticsConfigurationProvider.getAnalyticsConfiguration(
+            storage = BasicStorageProvider.getStorage(
+                configuration.writeKey,
+                "dummy application"
+            )
+        )
     )
 
     /**

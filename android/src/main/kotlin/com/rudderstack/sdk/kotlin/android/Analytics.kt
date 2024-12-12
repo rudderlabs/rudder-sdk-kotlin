@@ -20,7 +20,9 @@ import com.rudderstack.sdk.kotlin.android.plugins.screenrecording.NavControllerT
 import com.rudderstack.sdk.kotlin.android.plugins.sessiontracking.DEFAULT_SESSION_ID
 import com.rudderstack.sdk.kotlin.android.plugins.sessiontracking.SessionTrackingPlugin
 import com.rudderstack.sdk.kotlin.android.state.NavContext
+import com.rudderstack.sdk.kotlin.android.storage.AndroidStorageProvider
 import com.rudderstack.sdk.kotlin.core.Analytics
+import com.rudderstack.sdk.kotlin.core.AnalyticsConfigurationProvider
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.platform.Platform
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
@@ -60,7 +62,13 @@ private const val MIN_SESSION_ID_LENGTH = 10
 class Analytics(
     configuration: Configuration,
 ) : Platform, Analytics(
-    configuration
+    configuration,
+    analyticsConfiguration = AnalyticsConfigurationProvider.getAnalyticsConfiguration(
+        AndroidStorageProvider.getStorage(
+            configuration.writeKey,
+            configuration.application
+        )
+    )
 ) {
 
     private var navControllerTrackingPlugin: NavControllerTrackingPlugin? = null
