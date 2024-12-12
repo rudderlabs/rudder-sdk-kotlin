@@ -1,7 +1,7 @@
 package com.rudderstack.sdk.kotlin.android.storage
 
 import android.content.Context
-import com.rudderstack.android.sdk.BuildConfig
+import com.rudderstack.sdk.kotlin.BuildConfig
 import com.rudderstack.sdk.kotlin.android.storage.exceptions.QueuedPayloadTooLargeException
 import com.rudderstack.sdk.kotlin.core.internals.storage.KeyValueStorage
 import com.rudderstack.sdk.kotlin.core.internals.storage.LibraryVersion
