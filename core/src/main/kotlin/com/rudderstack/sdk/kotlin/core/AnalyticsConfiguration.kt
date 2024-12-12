@@ -2,6 +2,7 @@ package com.rudderstack.sdk.kotlin.core
 
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
+import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -13,6 +14,7 @@ import kotlinx.coroutines.SupervisorJob
 /**
  * Internal configuration for the analytics module.
  */
+@InternalRudderApi
 interface AnalyticsConfiguration {
     /**
      * Storage implementation for the analytics module.
