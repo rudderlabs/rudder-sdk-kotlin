@@ -1,5 +1,6 @@
 package com.rudderstack.sdk.kotlin.core.internals.storage
 
+import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 
 /**
@@ -21,6 +22,7 @@ const val MAX_BATCH_SIZE = 500 * 1024 // 500 KB
  * It also provides methods for removing stored data, performing rollover operations,
  * and retrieving file lists.
  */
+@InternalRudderApi
 interface Storage {
 
     /**
