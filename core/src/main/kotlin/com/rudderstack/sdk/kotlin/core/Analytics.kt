@@ -211,7 +211,7 @@ open class Analytics protected constructor(
         )
         analyticsScope.launch {
             userIdentityState.value.storeUserIdTraitsAndExternalIds(
-                storage = configuration.storage
+                storage = storage
             )
         }
 
@@ -243,7 +243,7 @@ open class Analytics protected constructor(
             SetUserIdForAliasEvent(newId = newId)
         )
         analyticsScope.launch {
-            userIdentityState.value.storeUserId(storage = configuration.storage)
+            userIdentityState.value.storeUserId(storage = storage)
         }
 
         val message = AliasEvent(
@@ -289,7 +289,7 @@ open class Analytics protected constructor(
 
     private fun shutdownHook() {
         analyticsJob.invokeOnCompletion {
-            this@Analytics.configuration.storage.close()
+            this@Analytics.storage.close()
             LoggerAnalytics.info("Analytics shutdown completed.")
         }
         analyticsScope.launch {
@@ -369,7 +369,7 @@ open class Analytics protected constructor(
         analyticsScope.launch {
             userIdentityState.value.resetUserIdentity(
                 clearAnonymousId = clearAnonymousId,
-                storage = configuration.storage,
+                storage = storage,
             )
         }
     }
@@ -392,7 +392,7 @@ open class Analytics protected constructor(
 
     private fun storeAnonymousId() {
         analyticsScope.launch(storageDispatcher) {
-            userIdentityState.value.storeAnonymousId(storage = configuration.storage)
+            userIdentityState.value.storeAnonymousId(storage = storage)
         }
     }
 

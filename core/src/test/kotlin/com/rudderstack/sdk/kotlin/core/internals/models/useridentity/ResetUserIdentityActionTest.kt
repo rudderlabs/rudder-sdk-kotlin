@@ -73,11 +73,11 @@ class ResetUserIdentityActionTest {
         runTest {
             val userIdentityState = provideUserIdentityState(anonymousId = NEW_ANONYMOUS_ID)
 
-            userIdentityState.resetUserIdentity(clearAnonymousId = true, storage = mockAnalytics.configuration.storage)
+            userIdentityState.resetUserIdentity(clearAnonymousId = true, storage = mockAnalytics.storage)
             testDispatcher.scheduler.advanceUntilIdle()
 
             coVerify(exactly = 1) {
-                mockAnalytics.configuration.storage.apply {
+                mockAnalytics.storage.apply {
                     write(StorageKeys.ANONYMOUS_ID, NEW_ANONYMOUS_ID)
                     remove(StorageKeys.USER_ID)
                     remove(StorageKeys.TRAITS)
@@ -90,7 +90,7 @@ class ResetUserIdentityActionTest {
     fun `given clearAnonymousId is false, when reset user identity action is performed, then it should reset all values except anonymous ID`() =
         runTest {
             val userIdentityState = provideUserIdentityState(anonymousId = ANONYMOUS_ID)
-            val storage = mockAnalytics.configuration.storage
+            val storage = mockAnalytics.storage
 
             userIdentityState.resetUserIdentity(clearAnonymousId = false, storage = storage)
             testDispatcher.scheduler.advanceUntilIdle()

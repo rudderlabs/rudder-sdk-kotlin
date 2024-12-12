@@ -67,7 +67,7 @@ internal class DeviceInfoPlugin : Plugin {
         return if (collectDeviceId) {
             retrieveOrGenerateStoredId(::generateId)
         } else {
-            analytics.configuration.storage.readString(StorageKeys.ANONYMOUS_ID, generateUUID())
+            analytics.storage.readString(StorageKeys.ANONYMOUS_ID, generateUUID())
         }
     }
 
@@ -78,13 +78,13 @@ internal class DeviceInfoPlugin : Plugin {
 
     @VisibleForTesting
     internal fun retrieveOrGenerateStoredId(generateId: () -> String): String {
-        val storedId = analytics.configuration.storage.readString(StorageKeys.DEVICE_ID, String.empty())
+        val storedId = analytics.storage.readString(StorageKeys.DEVICE_ID, String.empty())
         return storedId.ifBlank { generateAndStoreId(generateId()) }
     }
 
     private fun generateAndStoreId(newId: String): String {
         analytics.analyticsScope.launch(analytics.storageDispatcher) {
-            analytics.configuration.storage.write(StorageKeys.DEVICE_ID, newId)
+            analytics.storage.write(StorageKeys.DEVICE_ID, newId)
         }
         return newId
     }

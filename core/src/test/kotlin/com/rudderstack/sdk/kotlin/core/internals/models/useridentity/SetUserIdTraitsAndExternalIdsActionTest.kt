@@ -91,19 +91,19 @@ class SetUserIdTraitsAndExternalIdsActionTest {
     fun `when values are stored, then those values should be persisted in storage`() = runTest {
         val userIdentityState = provideUserIdentityStateAfterFirstIdentifyEventIsMade()
 
-        userIdentityState.storeUserIdTraitsAndExternalIds(mockAnalytics.configuration.storage)
+        userIdentityState.storeUserIdTraitsAndExternalIds(mockAnalytics.storage)
 
         coVerify {
-            mockAnalytics.configuration.storage.write(StorageKeys.USER_ID, USER_1)
-            mockAnalytics.configuration.storage.write(StorageKeys.TRAITS, LenientJson.encodeToString(TRAITS_1))
-            mockAnalytics.configuration.storage.write(StorageKeys.EXTERNAL_IDS, LenientJson.encodeToString(EXTERNAL_IDS_1))
+            mockAnalytics.storage.write(StorageKeys.USER_ID, USER_1)
+            mockAnalytics.storage.write(StorageKeys.TRAITS, LenientJson.encodeToString(TRAITS_1))
+            mockAnalytics.storage.write(StorageKeys.EXTERNAL_IDS, LenientJson.encodeToString(EXTERNAL_IDS_1))
         }
     }
 
     private fun verifyUserIdChangedBehaviour() {
-        coVerify { mockAnalytics.configuration.storage.remove(StorageKeys.USER_ID) }
-        coVerify { mockAnalytics.configuration.storage.remove(StorageKeys.TRAITS) }
-        coVerify { mockAnalytics.configuration.storage.remove(StorageKeys.EXTERNAL_IDS) }
+        coVerify { mockAnalytics.storage.remove(StorageKeys.USER_ID) }
+        coVerify { mockAnalytics.storage.remove(StorageKeys.TRAITS) }
+        coVerify { mockAnalytics.storage.remove(StorageKeys.EXTERNAL_IDS) }
     }
 }
 

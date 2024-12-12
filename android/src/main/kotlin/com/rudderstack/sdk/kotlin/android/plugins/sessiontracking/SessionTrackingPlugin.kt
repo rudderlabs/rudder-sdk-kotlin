@@ -37,7 +37,7 @@ internal class SessionTrackingPlugin(
     override val pluginType: Plugin.PluginType = Plugin.PluginType.PreProcess
     override lateinit var analytics: Analytics
     private val storage: Storage
-        get() = analytics.configuration.storage
+        get() = analytics.storage
 
     private lateinit var sessionState: FlowState<SessionState>
 
@@ -62,7 +62,7 @@ internal class SessionTrackingPlugin(
                 LoggerAnalytics.error("Session timeout cannot be negative. Setting it to default value.")
                 DEFAULT_SESSION_TIMEOUT_IN_MILLIS
             }
-            sessionState = FlowState(SessionState.initialState(analytics.configuration.storage))
+            sessionState = FlowState(SessionState.initialState(analytics.storage))
 
             when {
                 config.sessionConfiguration.automaticSessionTracking -> {

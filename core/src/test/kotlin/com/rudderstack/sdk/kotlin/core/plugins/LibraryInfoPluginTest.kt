@@ -43,7 +43,7 @@ class LibraryInfoPluginTest {
     @Test
     fun `given mobile platform, when library info plugin is executed, then library info is attached to the context`() =
         runTest {
-            every { mockAnalytics.configuration.storage.getLibraryVersion() } returns provideLibraryVersion(PlatformType.Mobile)
+            every { mockAnalytics.storage.getLibraryVersion() } returns provideLibraryVersion(PlatformType.Mobile)
             val message = provideEvent()
             val libraryInfoPlugin = LibraryInfoPlugin()
 
@@ -61,7 +61,7 @@ class LibraryInfoPluginTest {
     @Test
     fun `given server platform, when library info plugin is executed, then library info is attached to the context`() =
         runTest {
-            every { mockAnalytics.configuration.storage.getLibraryVersion() } returns provideLibraryVersion(PlatformType.Server)
+            every { mockAnalytics.storage.getLibraryVersion() } returns provideLibraryVersion(PlatformType.Server)
             val message = provideEvent()
             val libraryInfoPlugin = LibraryInfoPlugin()
 
@@ -79,7 +79,7 @@ class LibraryInfoPluginTest {
     @Test
     fun `given mobile platform, when library info is merged with other context, then library info is given higher priority`() =
         runTest {
-            every { mockAnalytics.configuration.storage.getLibraryVersion() } returns provideLibraryVersion(PlatformType.Mobile)
+            every { mockAnalytics.storage.getLibraryVersion() } returns provideLibraryVersion(PlatformType.Mobile)
             val message = provideEvent()
             val libraryInfoPlugin = LibraryInfoPlugin()
 

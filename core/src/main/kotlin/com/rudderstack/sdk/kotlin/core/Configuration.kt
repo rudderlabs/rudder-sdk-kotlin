@@ -7,8 +7,6 @@ import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.policies.CountFlushPolicy
 import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPolicy
 import com.rudderstack.sdk.kotlin.core.internals.policies.FrequencyFlushPolicy
-import com.rudderstack.sdk.kotlin.core.internals.storage.BasicStorageProvider
-import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 
 /**
  * The `Configuration` class is used to configure the SDK's settings for network communication, logging, data storage, and more.
@@ -19,7 +17,6 @@ import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
  * @property controlPlaneUrl The URL of the control plane for fetching configuration settings. Defaults to [DEFAULT_CONTROL_PLANE_URL].
  * @property logLevel The log level used for logging events, errors, and debug information. Defaults to [Logger.DEFAULT_LOG_LEVEL].
  * @property gzipEnabled A flag indicating whether GZIP compression is enabled for network requests. Defaults to [DEFAULT_GZIP_STATUS].
- * @property storage An instance of [Storage] responsible for managing data storage. Defaults to [BasicStorage].
  * @property flushPolicies A list of flush policies that determine when to flush events to the data plane. Defaults to [DEFAULT_FLUSH_POLICIES].
  */
 open class Configuration @JvmOverloads constructor(
@@ -28,10 +25,6 @@ open class Configuration @JvmOverloads constructor(
     open val controlPlaneUrl: String = DEFAULT_CONTROL_PLANE_URL,
     open val logLevel: Logger.LogLevel = Logger.DEFAULT_LOG_LEVEL,
     open val gzipEnabled: Boolean = DEFAULT_GZIP_STATUS,
-    open val storage: Storage = BasicStorageProvider.getStorage(
-        writeKey,
-        "test application"
-    ),
     open var flushPolicies: List<FlushPolicy> = DEFAULT_FLUSH_POLICIES,
 ) {
 
