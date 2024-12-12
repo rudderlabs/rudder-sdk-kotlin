@@ -151,11 +151,6 @@ enum class StorageKeys(val key: String) {
     SOURCE_CONFIG_PAYLOAD("source_config_payload"),
 
     /**
-     * Key for storing if source if enabled to send events
-     */
-    SOURCE_IS_ENABLED("source_is_enabled"),
-
-    /**
      *Key for storing client app version.
      */
     APP_VERSION("rudder.app_version"),
