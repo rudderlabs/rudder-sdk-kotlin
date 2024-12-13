@@ -88,8 +88,6 @@ configure<PublishingExtension> {
                     configurations.findByName("implementation")?.dependencies?.forEach { dep ->
                         addDependency(dep, "runtime")
                     }
-
-                    val pomFile = File(buildDir, "pom.xml")
                 }
             }
         }
