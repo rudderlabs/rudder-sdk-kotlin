@@ -23,9 +23,9 @@ package com.rudderstack.sdk.kotlin.core.internals.utils
  *
  * Example usage:
  * ```
- * import com.rudderstack.sdk.kotlin.core.internals.utils.RudderInternalUsageError
+ * import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
  *
- * @RudderInternalUsageError
+ * @InternalRudderApi
  * fun internalFunction() {
  *     // Implementation of an internal function
  *     ...
