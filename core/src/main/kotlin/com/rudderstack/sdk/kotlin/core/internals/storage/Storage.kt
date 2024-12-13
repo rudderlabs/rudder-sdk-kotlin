@@ -237,21 +237,3 @@ interface LibraryVersion {
      */
     fun getBuildVersion(): String = String.empty()
 }
-
-/**
- * Interface for providing access to different storage implementations.
- *
- * Implementations of this interface are responsible for creating and providing
- * instances of the [Storage] interface based on provided parameters.
- */
-interface StorageProvider {
-
-    /**
-     * Retrieves a [Storage] instance based on the provided write key and application context.
-     *
-     * @param writeKey A key used to identify the specific storage instance.
-     * @param application The application context to be used in storage operations.
-     * @return An instance of [Storage] configured based on the provided parameters.
-     */
-    fun getStorage(writeKey: String, application: Any): Storage
-}

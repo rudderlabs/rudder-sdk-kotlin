@@ -131,18 +131,11 @@ internal class BasicStorage(writeKey: String) : Storage {
 }
 
 /**
- * Implementation of [StorageProvider] that provides instances of [BasicStorage].
+ * Provides an instance of [BasicStorage] with the given [writeKey].
+ *
+ * @param writeKey The key used to create a unique storage directory.
+ * @return An instance of [BasicStorage] with the provided [writeKey].
  */
-object BasicStorageProvider : StorageProvider {
-
-    /**
-     * Provides an instance of [BasicStorage] for the given write key and application.
-     *
-     * @param writeKey The key used to create a unique storage instance.
-     * @param application The application object, which may be used for additional context or configuration.
-     * @return A new instance of [BasicStorage] configured with the provided write key.
-     */
-    override fun getStorage(writeKey: String, application: Any): Storage {
-        return BasicStorage(writeKey = writeKey)
-    }
+fun provideBasicStorage(writeKey: String): Storage {
+    return BasicStorage(writeKey = writeKey)
 }

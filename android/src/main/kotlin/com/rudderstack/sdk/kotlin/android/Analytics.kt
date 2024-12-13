@@ -20,7 +20,7 @@ import com.rudderstack.sdk.kotlin.android.plugins.screenrecording.NavControllerT
 import com.rudderstack.sdk.kotlin.android.plugins.sessiontracking.DEFAULT_SESSION_ID
 import com.rudderstack.sdk.kotlin.android.plugins.sessiontracking.SessionTrackingPlugin
 import com.rudderstack.sdk.kotlin.android.state.NavContext
-import com.rudderstack.sdk.kotlin.android.storage.AndroidStorageProvider
+import com.rudderstack.sdk.kotlin.android.storage.provideAndroidStorage
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.platform.Platform
@@ -64,10 +64,7 @@ class Analytics(
 ) : Platform, Analytics(
     configuration,
     analyticsConfiguration = provideAnalyticsConfiguration(
-        AndroidStorageProvider.getStorage(
-            configuration.writeKey,
-            configuration.application
-        )
+        storage = provideAndroidStorage(configuration.writeKey, configuration.application)
     )
 ) {
 

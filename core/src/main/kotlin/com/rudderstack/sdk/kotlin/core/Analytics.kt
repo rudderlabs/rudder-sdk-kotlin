@@ -26,7 +26,7 @@ import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.PluginChain
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.FlowState
-import com.rudderstack.sdk.kotlin.core.internals.storage.BasicStorageProvider
+import com.rudderstack.sdk.kotlin.core.internals.storage.provideBasicStorage
 import com.rudderstack.sdk.kotlin.core.internals.utils.addNameAndCategoryToProperties
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import com.rudderstack.sdk.kotlin.core.internals.utils.isAnalyticsActive
@@ -104,10 +104,7 @@ open class Analytics protected constructor(
     constructor(configuration: Configuration) : this(
         configuration = configuration,
         analyticsConfiguration = provideAnalyticsConfiguration(
-            storage = BasicStorageProvider.getStorage(
-                configuration.writeKey,
-                "dummy application"
-            )
+            storage = provideBasicStorage(configuration.writeKey)
         )
     )
 
