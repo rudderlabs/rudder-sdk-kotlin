@@ -23,8 +23,6 @@ configure<PublishingExtension> {
 
             println("RudderStack: Publishing following library to Maven Central: $groupId:$artifactId:$version")
 
-//            return@register
-
             // Add the `aar` or `jar` file to the artifacts
             if (project.name == "android") {
                 artifact("$buildDir/outputs/aar/${project.name}-release.aar") {
