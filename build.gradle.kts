@@ -12,9 +12,9 @@ plugins {
 
 fun getVersionName(): String {
     return if (project.hasProperty("release")) {
-        RudderStackBuildConfig.Version.KOTLIN_SDK_VERSION
+        RudderStackBuildConfig.Version.VERSION_NAME
     } else {
-        "${RudderStackBuildConfig.Version.KOTLIN_SDK_VERSION}-SNAPSHOT"
+        "${RudderStackBuildConfig.Version.VERSION_NAME}-SNAPSHOT"
     }
 }
 
