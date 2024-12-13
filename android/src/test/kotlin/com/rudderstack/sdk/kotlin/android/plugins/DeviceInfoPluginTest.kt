@@ -4,10 +4,9 @@ import android.app.Application
 import com.rudderstack.sdk.kotlin.android.Analytics
 import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.android.utils.provideEvent
-import com.rudderstack.sdk.kotlin.android.utils.UniqueIdProvider
+import com.rudderstack.sdk.kotlin.android.utils.putIfNotNull
 import com.rudderstack.sdk.kotlin.core.internals.models.Message
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
-import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.putAll
 import io.mockk.every
 import io.mockk.mockk
@@ -115,68 +114,42 @@ class DeviceInfoPluginTest {
     }
 
     @Test
-    fun `given collectDeviceId is true, when retrieveDeviceId is called, then device id is retrieved or generated`() {
+    fun `when execute is called, it attaches device information`() = runTest {
+        val mockMessage = mockk<Message>(relaxed = true)
+        val updatedMessage = mockk<Message>(relaxed = true)
+
+        every { plugin.attachDeviceInfo(mockMessage) } returns updatedMessage
+
+        val result = plugin.execute(mockMessage)
+
+        assertEquals(updatedMessage, result)
+    }
+
+    @Test
+    fun `when collectDeviceId is true, retrieveDeviceId returns the device ID`() {
         val testDeviceId = UNIQUE_DEVICE_ID
         every { mockConfiguration.collectDeviceId } returns true
-        every { plugin.retrieveOrGenerateStoredId(any()) } returns testDeviceId
+        every { plugin.retrieveDeviceId() } returns testDeviceId
 
         plugin.setup(mockAnalytics)
 
-        assertEquals(testDeviceId, plugin.retrieveDeviceId())
+        val result = plugin.retrieveDeviceId()
+        assertEquals(testDeviceId, result)
     }
 
     @Test
-    fun `given collectDeviceId is false, when retrieveDeviceId is called, then device id equals the anonymous id that is stored`() {
-        val testDeviceId = UNIQUE_DEVICE_ID
+    fun `when collectDeviceId is false, retrieveDeviceId returns null`() {
         every { mockConfiguration.collectDeviceId } returns false
-        every { mockStorage.readString(StorageKeys.ANONYMOUS_ID, any()) } returns testDeviceId
 
         plugin.setup(mockAnalytics)
 
-        assertEquals(testDeviceId, plugin.retrieveDeviceId())
-    }
-
-    @Test
-    fun `given device id already present in the storage, when retrieveOrGenerateStoredId is called, then returns stored device id`() {
-        val testDeviceId = UNIQUE_DEVICE_ID
-        plugin.setup(mockAnalytics)
-        every { mockStorage.readString(StorageKeys.DEVICE_ID, any()) } returns testDeviceId
-
-        val id = plugin.retrieveOrGenerateStoredId { testDeviceId }
-
-        assertEquals(testDeviceId, id)
-    }
-
-    @Test
-    fun `given getDeviceId can be retrieved, when generateId is executed, then it returns UniqueIdProvider getDeviceId`() {
-        plugin.setup(mockAnalytics)
-        val testDeviceId = UNIQUE_DEVICE_ID
-
-        mockkObject(UniqueIdProvider)
-        every { UniqueIdProvider.getDeviceId(any()) } returns testDeviceId
-
-        assertEquals(testDeviceId, plugin.generateId())
-
-        unmockkObject(UniqueIdProvider)
-    }
-
-    @Test
-    fun `given getDeviceId can not be retrieved, when generateId is executed, then it returns UniqueIdProvider getUniqueID`() {
-        plugin.setup(mockAnalytics)
-        val testDeviceId = UNIQUE_DEVICE_ID
-
-        mockkObject(UniqueIdProvider)
-        every { UniqueIdProvider.getDeviceId(any()) } returns null
-        every { UniqueIdProvider.getUniqueID() } returns testDeviceId
-
-        assertEquals(testDeviceId, plugin.generateId())
-
-        unmockkObject(UniqueIdProvider)
+        val result = plugin.retrieveDeviceId()
+        assertEquals(null, result)
     }
 }
 
 private fun provideLocaleContextPayload(): JsonObject = buildJsonObject {
-    put(ID, UNIQUE_DEVICE_ID)
+    putIfNotNull(ID, UNIQUE_DEVICE_ID)
     put(MANUFACTURER, MANUFACTURER_VALUE)
     put(MODEL, MODEL_VALUE)
     put(NAME, NAME_VALUE)

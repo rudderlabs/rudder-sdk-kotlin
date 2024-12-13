@@ -5,14 +5,11 @@ import android.os.Build
 import androidx.annotation.VisibleForTesting
 import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.android.utils.UniqueIdProvider
+import com.rudderstack.sdk.kotlin.android.utils.putIfNotNull
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Message
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
-import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
-import com.rudderstack.sdk.kotlin.core.internals.utils.empty
-import com.rudderstack.sdk.kotlin.core.internals.utils.generateUUID
 import com.rudderstack.sdk.kotlin.core.internals.utils.putAll
-import kotlinx.coroutines.launch
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.put
@@ -47,7 +44,7 @@ internal class DeviceInfoPlugin : Plugin {
             messagePayload.context[DEVICE]?.jsonObject?.let {
                 putAll(it)
             }
-            put(ID, retrieveDeviceId())
+            putIfNotNull(ID, retrieveDeviceId())
             put(MANUFACTURER, BuildInfo.getManufacturer())
             put(MODEL, BuildInfo.getModel())
             put(NAME, BuildInfo.getDevice())
@@ -63,34 +60,17 @@ internal class DeviceInfoPlugin : Plugin {
     override suspend fun execute(message: Message): Message = attachDeviceInfo(message)
 
     @VisibleForTesting
-    internal fun retrieveDeviceId(): String {
+    internal fun retrieveDeviceId(): String? {
         return if (collectDeviceId) {
-            retrieveOrGenerateStoredId(::generateId)
+            UniqueIdProvider.getDeviceId(application)
         } else {
-            analytics.configuration.storage.readString(StorageKeys.ANONYMOUS_ID, generateUUID())
+            null
         }
-    }
-
-    @VisibleForTesting
-    internal fun generateId(): String {
-        return UniqueIdProvider.getDeviceId(application) ?: UniqueIdProvider.getUniqueID() ?: generateUUID()
-    }
-
-    @VisibleForTesting
-    internal fun retrieveOrGenerateStoredId(generateId: () -> String): String {
-        val storedId = analytics.configuration.storage.readString(StorageKeys.DEVICE_ID, String.empty())
-        return storedId.ifBlank { generateAndStoreId(generateId()) }
-    }
-
-    private fun generateAndStoreId(newId: String): String {
-        analytics.analyticsScope.launch(analytics.storageDispatcher) {
-            analytics.configuration.storage.write(StorageKeys.DEVICE_ID, newId)
-        }
-        return newId
     }
 }
 
 internal object BuildInfo {
+
     internal fun getManufacturer(): String {
         return Build.MANUFACTURER
     }
