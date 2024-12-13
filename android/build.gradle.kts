@@ -42,7 +42,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
 
-        buildConfigField("String", "VERSION_NAME", RudderStackBuildConfig.Version.VERSION_NAME)
+        buildConfigField("String", "VERSION_NAME", "\"${RudderStackBuildConfig.Version.VERSION_NAME}\"")
         buildConfigField("int", "VERSION_CODE", RudderStackBuildConfig.Version.VERSION_CODE)
     }
 
