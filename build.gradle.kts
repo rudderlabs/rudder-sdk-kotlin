@@ -7,5 +7,43 @@ plugins {
     alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.detekt) apply false
+    alias(libs.plugins.nexus)
 }
+
+fun getVersionName(): String {
+    return if (project.hasProperty("release")) {
+        RudderStackBuildConfig.Version.KOTLIN_SDK_VERSION
+    } else {
+        "${RudderStackBuildConfig.Version.KOTLIN_SDK_VERSION}-SNAPSHOT"
+    }
+}
+
+allprojects {
+    group = RudderStackBuildConfig.PackageName.PACKAGE_NAME
+    version = getVersionName()
+}
+
+tasks.register<Delete>("clean") {
+    delete(rootProject.layout.buildDirectory)
+}
+
+nexusPublishing {
+    repositories {
+        sonatype {
+            if (System.getenv("NEXUS_USERNAME") == null || System.getenv("NEXUS_PASSWORD") == null || System.getenv("SONATYPE_STAGING_PROFILE_ID") == null) {
+                println("RudderStack: Error in fetching the Nexus environment variables.")
+            } else{
+                println("RudderStack: Nexus environment variables fetched successfully.")
+            }
+
+            username = System.getenv("NEXUS_USERNAME")
+            password = System.getenv("NEXUS_PASSWORD")
+            stagingProfileId = System.getenv("SONATYPE_STAGING_PROFILE_ID")
+
+            nexusUrl.set(uri("https://s01.oss.sonatype.org/service/local/"))
+            snapshotRepositoryUrl.set(uri("https://s01.oss.sonatype.org/content/repositories/snapshots/"))
+        }
+    }
+}
+
 true // Needed to make the Suppress annotation work for the plugins block
