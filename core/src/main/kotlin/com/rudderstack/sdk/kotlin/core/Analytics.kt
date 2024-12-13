@@ -103,7 +103,7 @@ open class Analytics protected constructor(
      */
     constructor(configuration: Configuration) : this(
         configuration = configuration,
-        analyticsConfiguration = AnalyticsConfigurationProvider.getAnalyticsConfiguration(
+        analyticsConfiguration = provideAnalyticsConfiguration(
             storage = BasicStorageProvider.getStorage(
                 configuration.writeKey,
                 "dummy application"

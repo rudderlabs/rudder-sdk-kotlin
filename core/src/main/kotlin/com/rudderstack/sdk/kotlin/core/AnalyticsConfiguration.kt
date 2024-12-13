@@ -16,6 +16,7 @@ import kotlinx.coroutines.SupervisorJob
  */
 @InternalRudderApi
 interface AnalyticsConfiguration {
+
     /**
      * Storage implementation for the analytics module.
      */
@@ -65,14 +66,8 @@ private class AnalyticsConfigurationImpl(
 }
 
 /**
- * Provider for analytics configuration.
+ * Get the analytics configuration.
  */
-object AnalyticsConfigurationProvider {
-
-    /**
-     * Get the analytics configuration.
-     */
-    fun getAnalyticsConfiguration(storage: Storage): AnalyticsConfiguration {
-        return AnalyticsConfigurationImpl(storage)
-    }
+fun provideAnalyticsConfiguration(storage: Storage): AnalyticsConfiguration {
+    return AnalyticsConfigurationImpl(storage)
 }
