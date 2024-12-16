@@ -4,12 +4,12 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 
 /**
- * MAX_PAYLOAD_SIZE represents the maximum size in bytes for a single message payload.
+ * MAX_PAYLOAD_SIZE represents the maximum size in bytes for a single event payload.
  */
 const val MAX_PAYLOAD_SIZE = 32 * 1024 // 32 KB
 
 /**
- * MAX_BATCH_SIZE represents the maximum size in bytes for a batch of messages.
+ * MAX_BATCH_SIZE represents the maximum size in bytes for a batch of events.
  */
 const val MAX_BATCH_SIZE = 500 * 1024 // 500 KB
 
@@ -143,9 +143,9 @@ interface Storage {
 enum class StorageKeys(val key: String) {
 
     /**
-     * Key for storing or retrieving Rudder messages.
+     * Key for storing or retrieving Rudder events.
      */
-    MESSAGE("message"),
+    EVENT("event"),
 
     /**
      * Key for storing or retrieving the whole source config payload.

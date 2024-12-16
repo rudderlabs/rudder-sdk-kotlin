@@ -25,13 +25,13 @@ internal class AndroidStorage(
     private val eventBatchFile = EventBatchFileManager(storageDirectory, writeKey, rudderPrefsRepo)
 
     override suspend fun write(key: StorageKeys, value: Boolean) {
-        if (key != StorageKeys.MESSAGE) {
+        if (key != StorageKeys.EVENT) {
             rudderPrefsRepo.save(key.key, value)
         }
     }
 
     override suspend fun write(key: StorageKeys, value: String) {
-        if (key == StorageKeys.MESSAGE) {
+        if (key == StorageKeys.EVENT) {
             if (value.length < MAX_PAYLOAD_SIZE) {
                 eventBatchFile.storeEvent(value)
             } else {
@@ -43,13 +43,13 @@ internal class AndroidStorage(
     }
 
     override suspend fun write(key: StorageKeys, value: Int) {
-        if (key != StorageKeys.MESSAGE) {
+        if (key != StorageKeys.EVENT) {
             rudderPrefsRepo.save(key.key, value)
         }
     }
 
     override suspend fun write(key: StorageKeys, value: Long) {
-        if (key != StorageKeys.MESSAGE) {
+        if (key != StorageKeys.EVENT) {
             rudderPrefsRepo.save(key.key, value)
         }
     }
@@ -83,7 +83,7 @@ internal class AndroidStorage(
     }
 
     override fun readString(key: StorageKeys, defaultVal: String): String {
-        return if (key == StorageKeys.MESSAGE) {
+        return if (key == StorageKeys.EVENT) {
             eventBatchFile.read().joinToString()
         } else {
             rudderPrefsRepo.getString(key.key, defaultVal)

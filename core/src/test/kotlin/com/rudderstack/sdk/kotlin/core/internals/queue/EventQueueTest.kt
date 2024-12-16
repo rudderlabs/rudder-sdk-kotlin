@@ -71,7 +71,7 @@ class EventQueueTest {
         every { mockAnalytics.storage } returns mockStorage
 
         coEvery { mockStorage.close() } just runs
-        coEvery { mockStorage.write(StorageKeys.MESSAGE, any<String>()) } just runs
+        coEvery { mockStorage.write(StorageKeys.EVENT, any<String>()) } just runs
 
         eventQueue = spyk(
             EventQueue(
@@ -97,7 +97,7 @@ class EventQueueTest {
         advanceUntilIdle()
 
         coVerify(exactly = 1) {
-            mockStorage.write(StorageKeys.MESSAGE, message.encodeToString())
+            mockStorage.write(StorageKeys.EVENT, message.encodeToString())
         }
     }
 
@@ -112,7 +112,7 @@ class EventQueueTest {
         advanceUntilIdle()
 
         coVerify(exactly = 0) {
-            mockStorage.write(StorageKeys.MESSAGE, message.encodeToString())
+            mockStorage.write(StorageKeys.EVENT, message.encodeToString())
         }
     }
 
@@ -151,7 +151,7 @@ class EventQueueTest {
 
             // Mock storage read
             coEvery {
-                storage.readString(StorageKeys.MESSAGE, String.empty())
+                storage.readString(StorageKeys.EVENT, String.empty())
             } returns fileUrlList
 
             // Mock file existence check
@@ -190,7 +190,7 @@ class EventQueueTest {
 
         // Mock storage read
         coEvery {
-            storage.readString(StorageKeys.MESSAGE, String.empty())
+            storage.readString(StorageKeys.EVENT, String.empty())
         } returns fileUrlList
 
         // Mock file existence check
@@ -232,7 +232,7 @@ class EventQueueTest {
 
         // Mock storage read
         coEvery {
-            storage.readString(StorageKeys.MESSAGE, String.empty())
+            storage.readString(StorageKeys.EVENT, String.empty())
         } returns fileUrlList
 
         // Mock file existence check
@@ -266,7 +266,7 @@ class EventQueueTest {
 
         // Mock storage read
         coEvery {
-            storage.readString(StorageKeys.MESSAGE, String.empty())
+            storage.readString(StorageKeys.EVENT, String.empty())
         } returns fileUrlList
 
         // Mock file existence check
@@ -383,7 +383,7 @@ class EventQueueTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         coVerify(exactly = times) {
-            storage.write(StorageKeys.MESSAGE, jsonString)
+            storage.write(StorageKeys.EVENT, jsonString)
             mockFlushPoliciesFacade.updateState()
         }
     }

@@ -52,13 +52,13 @@ internal class BasicStorage(writeKey: String) : Storage {
     }
 
     override suspend fun write(key: StorageKeys, value: Boolean) {
-        if (key != StorageKeys.MESSAGE) {
+        if (key != StorageKeys.EVENT) {
             propertiesFile.save(key.key, value)
         }
     }
 
     override suspend fun write(key: StorageKeys, value: String) {
-        if (key == StorageKeys.MESSAGE) {
+        if (key == StorageKeys.EVENT) {
             if (value.length < MAX_PAYLOAD_SIZE) {
                 eventsFile.storeEvent(value)
             } else {
@@ -70,13 +70,13 @@ internal class BasicStorage(writeKey: String) : Storage {
     }
 
     override suspend fun write(key: StorageKeys, value: Int) {
-        if (key != StorageKeys.MESSAGE) {
+        if (key != StorageKeys.EVENT) {
             propertiesFile.save(key.key, value)
         }
     }
 
     override suspend fun write(key: StorageKeys, value: Long) {
-        if (key != StorageKeys.MESSAGE) {
+        if (key != StorageKeys.EVENT) {
             propertiesFile.save(key.key, value)
         }
     }
@@ -110,7 +110,7 @@ internal class BasicStorage(writeKey: String) : Storage {
     }
 
     override fun readString(key: StorageKeys, defaultVal: String): String {
-        return if (key == StorageKeys.MESSAGE) {
+        return if (key == StorageKeys.EVENT) {
             eventsFile.read().joinToString()
         } else {
             propertiesFile.getString(key.key, defaultVal)

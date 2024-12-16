@@ -114,7 +114,7 @@ internal class EventQueue(
                     queueMessage.event?.let {
                         stringifyBaseEvent(it).also { stringValue ->
                             LoggerAnalytics.debug("running $stringValue")
-                            storage.write(StorageKeys.MESSAGE, stringValue)
+                            storage.write(StorageKeys.EVENT, stringValue)
                         }
                         flushPoliciesFacade.updateState()
                     }
@@ -137,7 +137,7 @@ internal class EventQueue(
             withContext(analytics.storageDispatcher) {
                 storage.rollover()
             }
-            val fileUrlList = storage.readString(StorageKeys.MESSAGE, String.empty()).parseFilePaths()
+            val fileUrlList = storage.readString(StorageKeys.EVENT, String.empty()).parseFilePaths()
             for (filePath in fileUrlList) {
                 val file = File(filePath)
                 if (!isFileExists(file)) continue
