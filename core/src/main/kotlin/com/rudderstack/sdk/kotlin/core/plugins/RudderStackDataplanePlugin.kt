@@ -9,7 +9,7 @@ import com.rudderstack.sdk.kotlin.core.internals.models.ScreenEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.plugins.EventPlugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
-import com.rudderstack.sdk.kotlin.core.internals.queue.MessageQueue
+import com.rudderstack.sdk.kotlin.core.internals.queue.EventQueue
 import org.jetbrains.annotations.VisibleForTesting
 
 internal class RudderStackDataplanePlugin : EventPlugin {
@@ -18,7 +18,7 @@ internal class RudderStackDataplanePlugin : EventPlugin {
     override lateinit var analytics: Analytics
 
     @VisibleForTesting
-    internal var messageQueue: MessageQueue? = null
+    internal var eventQueue: EventQueue? = null
 
     override fun track(payload: TrackEvent): Event {
         enqueue(payload)
@@ -47,18 +47,18 @@ internal class RudderStackDataplanePlugin : EventPlugin {
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
-        messageQueue = MessageQueue(analytics).apply { start() }
+        eventQueue = EventQueue(analytics).apply { start() }
     }
 
     internal fun flush() {
-        messageQueue?.flush()
+        eventQueue?.flush()
     }
 
     override fun teardown() {
-        messageQueue?.stop()
+        eventQueue?.stop()
     }
 
     private fun enqueue(event: Event) {
-        this.messageQueue?.put(event)
+        this.eventQueue?.put(event)
     }
 }

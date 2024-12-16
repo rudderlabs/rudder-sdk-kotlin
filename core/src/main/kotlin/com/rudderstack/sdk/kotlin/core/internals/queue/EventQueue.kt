@@ -31,7 +31,7 @@ internal const val UPLOAD_SIG = "#!upload"
 private const val BATCH_ENDPOINT = "/v1/batch"
 
 @OptIn(DelicateCoroutinesApi::class)
-internal class MessageQueue(
+internal class EventQueue(
     private val analytics: Analytics,
     private var flushPoliciesFacade: FlushPoliciesFacade = FlushPoliciesFacade(analytics.configuration.flushPolicies),
     private val jsonSentAtUpdater: JsonSentAtUpdater = JsonSentAtUpdater(),

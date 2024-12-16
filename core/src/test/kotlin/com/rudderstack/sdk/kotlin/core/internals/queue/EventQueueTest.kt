@@ -41,7 +41,7 @@ import java.io.FileNotFoundException
 import java.io.IOException
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class MessageQueueTest {
+class EventQueueTest {
 
     @MockK
     private lateinit var mockStorage: Storage
@@ -59,7 +59,7 @@ class MessageQueueTest {
     private val testScope = TestScope(testDispatcher)
     private val mockAnalytics: Analytics = mockAnalytics(testScope, testDispatcher)
 
-    private lateinit var messageQueue: MessageQueue
+    private lateinit var eventQueue: EventQueue
 
     @Before
     fun setUp() {
@@ -73,8 +73,8 @@ class MessageQueueTest {
         coEvery { mockStorage.close() } just runs
         coEvery { mockStorage.write(StorageKeys.MESSAGE, any<String>()) } just runs
 
-        messageQueue = spyk(
-            MessageQueue(
+        eventQueue = spyk(
+            EventQueue(
                 analytics = mockAnalytics,
                 httpClientFactory = mockHttpClient,
                 flushPoliciesFacade = mockFlushPoliciesFacade,
@@ -91,9 +91,9 @@ class MessageQueueTest {
     @Test
     fun `given a message queue is accepting events, when message is sent, then it should be stored`() = runTest {
         val message = provideEvent()
-        messageQueue.start()
+        eventQueue.start()
 
-        messageQueue.put(message)
+        eventQueue.put(message)
         advanceUntilIdle()
 
         coVerify(exactly = 1) {
@@ -104,11 +104,11 @@ class MessageQueueTest {
     @Test
     fun `given a message queue is accepting events, when queue stops, then it should stop storing new events`() = runTest {
         val message = provideEvent()
-        messageQueue.start()
+        eventQueue.start()
 
-        messageQueue.stop()
+        eventQueue.stop()
         advanceUntilIdle()
-        messageQueue.put(message)
+        eventQueue.put(message)
         advanceUntilIdle()
 
         coVerify(exactly = 0) {
@@ -120,9 +120,9 @@ class MessageQueueTest {
     fun `given a message, when stringifyBaseEvent is called, then the expected JSON string is returned`() {
         val event = mockk<Event>(relaxed = true)
         val jsonString = """{"type":"track","event":"Test Event"}"""
-        every { messageQueue.stringifyBaseEvent(event) } returns jsonString
+        every { eventQueue.stringifyBaseEvent(event) } returns jsonString
 
-        val result = messageQueue.stringifyBaseEvent(event)
+        val result = eventQueue.stringifyBaseEvent(event)
         assertEquals(jsonString, result)
     }
 
@@ -131,9 +131,9 @@ class MessageQueueTest {
         val filePath = "test_file_path"
         val fileContent = "test content"
 
-        every { messageQueue.readFileAsString(filePath) } returns fileContent
+        every { eventQueue.readFileAsString(filePath) } returns fileContent
 
-        val result = messageQueue.readFileAsString(filePath)
+        val result = eventQueue.readFileAsString(filePath)
 
         assertEquals(fileContent, result)
     }
@@ -155,21 +155,21 @@ class MessageQueueTest {
             } returns fileUrlList
 
             // Mock file existence check
-            every { messageQueue.isFileExists(any()) } returns true
+            every { eventQueue.isFileExists(any()) } returns true
 
             val batchPayload = "test content"
 
             // Mock messageQueue file reading
             filePaths.forEach { path ->
-                every { messageQueue.readFileAsString(path) } returns batchPayload
+                every { eventQueue.readFileAsString(path) } returns batchPayload
             }
 
             // Mock the behavior for HttpClient
             every { mockHttpClient.sendData(batchPayload) } returns Result.Success("Ok")
 
             // Execute messageQueue actions
-            messageQueue.start()
-            messageQueue.flush()
+            eventQueue.start()
+            eventQueue.flush()
             testDispatcher.scheduler.advanceUntilIdle()
 
             // Verify the expected behavior
@@ -194,13 +194,13 @@ class MessageQueueTest {
         } returns fileUrlList
 
         // Mock file existence check
-        every { messageQueue.isFileExists(any()) } returns true
+        every { eventQueue.isFileExists(any()) } returns true
 
         val batchPayload = "test content"
 
         // Mock messageQueue file reading
         filePaths.forEach { path ->
-            every { messageQueue.readFileAsString(path) } returns batchPayload
+            every { eventQueue.readFileAsString(path) } returns batchPayload
         }
 
         // Mock the behavior for HttpClient
@@ -210,8 +210,8 @@ class MessageQueueTest {
         )
 
         // Execute messageQueue actions
-        messageQueue.start()
-        messageQueue.flush()
+        eventQueue.start()
+        eventQueue.flush()
         testDispatcher.scheduler.advanceUntilIdle()
 
         // Verify the expected behavior
@@ -236,17 +236,17 @@ class MessageQueueTest {
         } returns fileUrlList
 
         // Mock file existence check
-        every { messageQueue.isFileExists(any()) } returns true
+        every { eventQueue.isFileExists(any()) } returns true
 
         // Throw file not found exception while reading the file
         val exception = FileNotFoundException("File not found")
         filePaths.forEach { path ->
-            every { messageQueue.readFileAsString(path) } throws exception
+            every { eventQueue.readFileAsString(path) } throws exception
         }
 
         // Execute messageQueue actions
-        messageQueue.start()
-        messageQueue.flush()
+        eventQueue.start()
+        eventQueue.flush()
         testDispatcher.scheduler.advanceUntilIdle()
 
         verify(exactly = filePaths.size) {
@@ -270,17 +270,17 @@ class MessageQueueTest {
         } returns fileUrlList
 
         // Mock file existence check
-        every { messageQueue.isFileExists(any()) } returns true
+        every { eventQueue.isFileExists(any()) } returns true
 
         // Throw generic exception while reading the file
         val exception = Exception("File not found")
         filePaths.forEach { path ->
-            every { messageQueue.readFileAsString(path) } throws exception
+            every { eventQueue.readFileAsString(path) } throws exception
         }
 
         // Execute messageQueue actions
-        messageQueue.start()
-        messageQueue.flush()
+        eventQueue.start()
+        eventQueue.flush()
         testDispatcher.scheduler.advanceUntilIdle()
 
         verify(exactly = filePaths.size) {
@@ -290,7 +290,7 @@ class MessageQueueTest {
 
     @Test
     fun `given default flush policies are enabled, when message queue is started, then flush policies should be scheduled`() {
-        messageQueue.start()
+        eventQueue.start()
         testDispatcher.scheduler.advanceUntilIdle()
 
         verify(exactly = 1) {
@@ -303,13 +303,13 @@ class MessageQueueTest {
         val storage = mockAnalytics.storage
         val mockEvent: Event = mockk(relaxed = true)
         val jsonString = """{"type":"track","event":"Test Event"}"""
-        every { messageQueue.stringifyBaseEvent(mockEvent) } returns jsonString
+        every { eventQueue.stringifyBaseEvent(mockEvent) } returns jsonString
         // Mock the behavior for StartupFlushPolicy
         every { mockFlushPoliciesFacade.shouldFlush() } returns true
 
         // Execute messageQueue actions
-        messageQueue.start()
-        messageQueue.put(mockEvent)
+        eventQueue.start()
+        eventQueue.put(mockEvent)
         testDispatcher.scheduler.advanceUntilIdle()
 
         coVerify(exactly = 1) {
@@ -323,15 +323,15 @@ class MessageQueueTest {
         val storage = mockAnalytics.storage
         val mockEvent: Event = mockk(relaxed = true)
         val jsonString = """{"type":"track","event":"Test Event"}"""
-        every { messageQueue.stringifyBaseEvent(mockEvent) } returns jsonString
+        every { eventQueue.stringifyBaseEvent(mockEvent) } returns jsonString
         // Mock the behavior for StartupFlushPolicy
         every { mockFlushPoliciesFacade.shouldFlush() } returns true
 
         // Execute messageQueue actions
-        messageQueue.start()
+        eventQueue.start()
 
         // Make the first event
-        messageQueue.put(mockEvent)
+        eventQueue.put(mockEvent)
         testDispatcher.scheduler.advanceUntilIdle()
 
         coVerify(exactly = 1) {
@@ -343,7 +343,7 @@ class MessageQueueTest {
         every { mockFlushPoliciesFacade.shouldFlush() } returns false
 
         repeat(29) {
-            messageQueue.put(mockEvent)
+            eventQueue.put(mockEvent)
         }
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -357,7 +357,7 @@ class MessageQueueTest {
         every { mockFlushPoliciesFacade.shouldFlush() } returns true
 
         // Make the 30th event
-        messageQueue.put(mockEvent)
+        eventQueue.put(mockEvent)
         testDispatcher.scheduler.advanceUntilIdle()
 
         coVerify(exactly = 2) {
@@ -372,13 +372,13 @@ class MessageQueueTest {
         val times = 20
         val mockEvent: Event = mockk(relaxed = true)
         val jsonString = """{"type":"track","event":"Test Event"}"""
-        every { messageQueue.stringifyBaseEvent(mockEvent) } returns jsonString
+        every { eventQueue.stringifyBaseEvent(mockEvent) } returns jsonString
 
         // Execute messageQueue actions
-        messageQueue.start()
+        eventQueue.start()
 
         repeat(times) {
-            messageQueue.put(mockEvent)
+            eventQueue.put(mockEvent)
         }
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -390,8 +390,8 @@ class MessageQueueTest {
 
     @Test
     fun `given default flush policies are enabled, when flush is called, then flush policies should be reset`() {
-        messageQueue.start()
-        messageQueue.flush()
+        eventQueue.start()
+        eventQueue.flush()
         testDispatcher.scheduler.advanceUntilIdle()
 
         verify(exactly = 1) {
@@ -402,9 +402,9 @@ class MessageQueueTest {
     @Test
     fun `given default flush policies are enabled, when stop is called, then flush policies should be cancelled`() =
         runTest {
-            messageQueue.start()
+            eventQueue.start()
 
-            messageQueue.stop()
+            eventQueue.stop()
             testDispatcher.scheduler.advanceUntilIdle()
 
             verify(exactly = 1) {
@@ -418,14 +418,14 @@ class MessageQueueTest {
         val times = 100
         val mockEvent: Event = mockk(relaxed = true)
         val jsonString = """{"type":"track","event":"Test Event"}"""
-        every { messageQueue.stringifyBaseEvent(mockEvent) } returns jsonString
+        every { eventQueue.stringifyBaseEvent(mockEvent) } returns jsonString
         // Mock the behavior when no flush policies are enabled
         every { mockFlushPoliciesFacade.shouldFlush() } returns false
 
         // Execute messageQueue actions
-        messageQueue.start()
+        eventQueue.start()
         repeat(times) {
-            messageQueue.put(mockEvent)
+            eventQueue.put(mockEvent)
         }
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -433,7 +433,7 @@ class MessageQueueTest {
             storage.rollover()
         }
 
-        messageQueue.flush()
+        eventQueue.flush()
         testDispatcher.scheduler.advanceUntilIdle()
 
         coVerify(exactly = 1) {
