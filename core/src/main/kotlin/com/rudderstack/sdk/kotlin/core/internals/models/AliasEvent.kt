@@ -28,7 +28,7 @@ data class AliasEvent(
     @Transient override var userIdentityState: UserIdentity = provideEmptyUserIdentityState()
 ) : Event() {
 
-    override var type: MessageType = MessageType.Alias
+    override var type: EventType = EventType.Alias
     override var messageId: String = super.messageId
     override var context: AnalyticsContext = super.context
     override var originalTimestamp: String = super.originalTimestamp

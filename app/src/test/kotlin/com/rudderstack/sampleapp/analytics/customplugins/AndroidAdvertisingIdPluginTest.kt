@@ -127,19 +127,19 @@ class AndroidAdvertisingIdPluginTest {
     @Test
     fun `given advertising ID returns updated event, verify that intercept method returns the updated event`() =
         runTest(testDispatcher) {
-            val updatedMessage = TrackEvent(
+            val updatedEvent = TrackEvent(
                 event = "Sample Event",
                 properties = emptyJsonObject,
             )
-            updatedMessage.context = buildJsonObject {
+            updatedEvent.context = buildJsonObject {
                 put(DEVICE, buildJsonObject {
                     put(DEVICE_ADVERTISING_ID_KEY, FAKE_ADVERTISING_ID)
                     put(DEVICE_AD_TRACKING_ENABLED_KEY, true)
                 })
             }
 
-            coEvery { plugin.attachAdvertisingId(updatedMessage) } returns updatedMessage
+            coEvery { plugin.attachAdvertisingId(updatedEvent) } returns updatedEvent
 
-            assertEquals(updatedMessage, plugin.intercept(updatedMessage))
+            assertEquals(updatedEvent, plugin.intercept(updatedEvent))
         }
 }

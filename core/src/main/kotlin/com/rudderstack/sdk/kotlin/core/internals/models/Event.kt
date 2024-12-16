@@ -24,7 +24,7 @@ typealias Properties = JsonObject
 typealias RudderTraits = JsonObject
 
 /*
- * Default timestamp value of sentAt field in Message class.
+ * Default timestamp value of sentAt field in Event class.
  * CAUTION: Do not modify this variable's value as it is used by JsonSentAtUpdater to replace sentAt with updated value of timestamp.
  * Do not use it anywhere else.
  */
@@ -36,13 +36,13 @@ internal const val DEFAULT_SENT_AT_TIMESTAMP = "{{ RSA_DEF_SENT_AT_TS }}"
 val emptyJsonObject = JsonObject(emptyMap())
 
 /**
- * Enum class representing the type of message being handled by RudderStack.
+ * Enum class representing the type of event being handled by RudderStack.
  */
 @Serializable
-enum class MessageType {
+enum class EventType {
 
     /**
-     * Indicates a track message type.
+     * Indicates a track event type.
      */
     @SerialName("track")
     Track,
@@ -61,27 +61,27 @@ enum class MessageType {
 }
 
 /**
- * Base class for all message types in RudderStack, designed for representing
+ * Base class for all event types in RudderStack, designed for representing
  * and handling different kinds of events in a unified way.
  *
- * This sealed class is the parent of specific message types like [TrackEvent] [GroupEvent] [ScreenEvent],
- * ensuring type safety and enabling polymorphism for handling different message types.
+ * This sealed class is the parent of specific event types like [TrackEvent] [GroupEvent] [ScreenEvent],
+ * ensuring type safety and enabling polymorphism for handling different event types.
  *
- * @property type The type of the message, represented as a [MessageType] enum.
- * @property messageId A unique identifier for the message.
- * @property originalTimestamp The original timestamp when the message was created.
- * @property context The analytics context associated with the message.
- * @property userId The user ID associated with the message.
- * @property sentAt The timestamp when the message is sent to the server.
- * @property integrations The integrations options associated with the message.
+ * @property type The type of the event, represented as a [EventType] enum.
+ * @property messageId A unique identifier for the event.
+ * @property originalTimestamp The original timestamp when the event was created.
+ * @property context The analytics context associated with the event.
+ * @property userId The user ID associated with the event.
+ * @property sentAt The timestamp when the event is sent to the server.
+ * @property integrations The integrations options associated with the event.
  * @property anonymousId The anonymous ID is the Pseudo-identifier for the user in cases where userId is absent.
- * @property channel The platform type associated with the message.
- * @property options RudderOption associated with the message, represented as a [RudderOption] instance. This is transient.
+ * @property channel The platform type associated with the event.
+ * @property options RudderOption associated with the event, represented as a [RudderOption] instance. This is transient.
  */
 @Serializable(with = BaseMessageSerializer::class)
 sealed class Event {
 
-    abstract var type: MessageType
+    abstract var type: EventType
     open var messageId: String = generateUUID()
     open var originalTimestamp: String = DateTimeUtils.now()
     open var context: AnalyticsContext = emptyJsonObject
@@ -105,7 +105,7 @@ sealed class Event {
     }
 
     /**
-     * Copy function to create a deep copy of the message.
+     * Copy function to create a deep copy of the event.
      *
      * @param T
      * @return
@@ -154,9 +154,9 @@ sealed class Event {
 }
 
 /**
- * Represents a track event message in RudderStack.
+ * Represents a track event in RudderStack.
  *
- * This data class encapsulates the properties required for a track message.
+ * This data class encapsulates the properties required for a track event.
  *
  * @property event The name of the track event.
  * @property properties The properties associated with the track event.
@@ -172,7 +172,7 @@ data class TrackEvent(
     @Transient override var userIdentityState: UserIdentity = provideEmptyUserIdentityState()
 ) : Event() {
 
-    override var type: MessageType = MessageType.Track
+    override var type: EventType = EventType.Track
     override var messageId: String = super.messageId
     override var context: AnalyticsContext = super.context
     override var originalTimestamp: String = super.originalTimestamp
@@ -184,9 +184,9 @@ data class TrackEvent(
 }
 
 /**
- * Represents a screen event message in RudderStack.
+ * Represents a screen event in RudderStack.
  *
- * This data class encapsulates the properties required for a screen message.
+ * This data class encapsulates the properties required for a screen event.
  *
  * @property screenName The name of the screen event.
  * @property properties The properties associated with the screen event.
@@ -202,7 +202,7 @@ data class ScreenEvent(
     @Transient override var userIdentityState: UserIdentity = provideEmptyUserIdentityState()
 ) : Event() {
 
-    override var type: MessageType = MessageType.Screen
+    override var type: EventType = EventType.Screen
     override var messageId: String = super.messageId
     override var context: AnalyticsContext = super.context
     override var originalTimestamp: String = super.originalTimestamp
@@ -214,9 +214,9 @@ data class ScreenEvent(
 }
 
 /**
- * Represents a group event message in RudderStack.
+ * Represents a group event in RudderStack.
  *
- * This data class encapsulates the properties required for a group message.
+ * This data class encapsulates the properties required for a group event.
  *
  * @property groupId The group id of group event.
  * @property traits The traits associated with the group. event.
@@ -232,7 +232,7 @@ data class GroupEvent(
     @Transient override var userIdentityState: UserIdentity = provideEmptyUserIdentityState()
 ) : Event() {
 
-    override var type: MessageType = MessageType.Group
+    override var type: EventType = EventType.Group
     override var messageId: String = super.messageId
     override var context: AnalyticsContext = super.context
     override var originalTimestamp: String = super.originalTimestamp
@@ -247,8 +247,8 @@ data class GroupEvent(
  * Custom serializer for the [Event] class, determining which specific type to deserialize into
  * based on the "type" field in the JSON object.
  *
- * This serializer enables polymorphic deserialization for messages, making it possible to
- * serialize and deserialize different types of messages seamlessly.
+ * This serializer enables polymorphic deserialization for events, making it possible to
+ * serialize and deserialize different types of events seamlessly.
  */
 object BaseMessageSerializer : JsonContentPolymorphicSerializer<Event>(Event::class) {
 
@@ -256,7 +256,7 @@ object BaseMessageSerializer : JsonContentPolymorphicSerializer<Event>(Event::cl
      * Selects the appropriate deserializer based on the "type" field in the JSON object.
      *
      * @param element The JSON element to inspect.
-     * @return The appropriate deserialization strategy for the given message type.
+     * @return The appropriate deserialization strategy for the given event type.
      */
     override fun selectDeserializer(element: JsonElement): DeserializationStrategy<out Event> {
         return when (element.jsonObject["type"]?.jsonPrimitive?.content) {

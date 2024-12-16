@@ -17,7 +17,7 @@ import kotlinx.serialization.json.JsonObject
  *
  * @param options Additional configurations for the event, contained within a [RudderOption] instance.
  * @param userIdentityState The [UserIdentity] information associated with the identify event.
- * @param event The type of event, which is always [MessageType.Identify].
+ * @param event The type of event, which is always [EventType.Identify].
  */
 @Serializable
 @SerialName("identify")
@@ -26,7 +26,7 @@ data class IdentifyEvent(
     @Transient override var userIdentityState: UserIdentity = provideEmptyUserIdentityState()
 ) : Event() {
 
-    override var type: MessageType = MessageType.Identify
+    override var type: EventType = EventType.Identify
     override var messageId: String = super.messageId
     override var context: AnalyticsContext = super.context
     override var originalTimestamp: String = super.originalTimestamp
@@ -35,5 +35,5 @@ data class IdentifyEvent(
     override lateinit var integrations: JsonObject
     override lateinit var anonymousId: String
     override lateinit var channel: PlatformType
-    val event = MessageType.Identify
+    val event = EventType.Identify
 }
