@@ -7,12 +7,12 @@ import com.rudderstack.sdk.kotlin.core.internals.models.GroupEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.ScreenEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
-import com.rudderstack.sdk.kotlin.core.internals.plugins.MessagePlugin
+import com.rudderstack.sdk.kotlin.core.internals.plugins.EventPlugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.queue.MessageQueue
 import org.jetbrains.annotations.VisibleForTesting
 
-internal class RudderStackDataplanePlugin : MessagePlugin {
+internal class RudderStackDataplanePlugin : EventPlugin {
 
     override val pluginType: Plugin.PluginType = Plugin.PluginType.Destination
     override lateinit var analytics: Analytics

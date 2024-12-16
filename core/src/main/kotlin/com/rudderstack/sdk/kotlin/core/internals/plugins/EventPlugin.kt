@@ -7,7 +7,7 @@ import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.ScreenEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 
-internal interface MessagePlugin : Plugin {
+internal interface EventPlugin : Plugin {
     fun track(payload: TrackEvent): Event? {
         return payload
     }
