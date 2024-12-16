@@ -41,14 +41,14 @@ class LibraryInfoPluginTest {
     }
 
     @Test
-    fun `given mobile platform, when library info plugin is executed, then library info is attached to the context`() =
+    fun `given mobile platform, when library info plugin is intercepted, then library info is attached to the context`() =
         runTest {
             every { mockAnalytics.storage.getLibraryVersion() } returns provideLibraryVersion(PlatformType.Mobile)
             val message = provideEvent()
             val libraryInfoPlugin = LibraryInfoPlugin()
 
             libraryInfoPlugin.setup(mockAnalytics)
-            libraryInfoPlugin.execute(message)
+            libraryInfoPlugin.intercept(message)
 
             val actual = message.context
             JSONAssert.assertEquals(
@@ -59,14 +59,14 @@ class LibraryInfoPluginTest {
         }
 
     @Test
-    fun `given server platform, when library info plugin is executed, then library info is attached to the context`() =
+    fun `given server platform, when library info plugin is intercepted, then library info is attached to the context`() =
         runTest {
             every { mockAnalytics.storage.getLibraryVersion() } returns provideLibraryVersion(PlatformType.Server)
             val message = provideEvent()
             val libraryInfoPlugin = LibraryInfoPlugin()
 
             libraryInfoPlugin.setup(mockAnalytics)
-            libraryInfoPlugin.execute(message)
+            libraryInfoPlugin.intercept(message)
 
             val actual = message.context
             JSONAssert.assertEquals(
@@ -87,7 +87,7 @@ class LibraryInfoPluginTest {
             message.context = buildJsonObject {
                 put(LIBRARY_KEY, String.empty())
             }
-            libraryInfoPlugin.execute(message)
+            libraryInfoPlugin.intercept(message)
 
             val actual = message.context
             JSONAssert.assertEquals(

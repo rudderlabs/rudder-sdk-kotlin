@@ -58,12 +58,12 @@ class AppInfoPluginTest {
     }
 
     @Test
-    fun `given app context is present, when app info plugin is executed, then app info is attached to the context`() = runTest {
+    fun `given app context is present, when app info plugin is intercepted, then app info is attached to the context`() = runTest {
         val message = provideEvent()
         every { appInfoPlugin.constructAppContext(any(), any()) } returns provideAppContextPayload()
 
         appInfoPlugin.setup(mockAnalytics)
-        appInfoPlugin.execute(message)
+        appInfoPlugin.intercept(message)
 
         val actual = message.context
         JSONAssert.assertEquals(
@@ -82,7 +82,7 @@ class AppInfoPluginTest {
         message.context = buildJsonObject {
             put(APP_KEY, String.empty())
         }
-        appInfoPlugin.execute(message)
+        appInfoPlugin.intercept(message)
 
         val actual = message.context
         JSONAssert.assertEquals(
@@ -100,7 +100,7 @@ class AppInfoPluginTest {
         every { packageManager.getPackageInfo(any<String>(), any<Int>()) } throws PackageManager.NameNotFoundException()
 
         appInfoPlugin.setup(mockAnalytics)
-        appInfoPlugin.execute(message)
+        appInfoPlugin.intercept(message)
 
         val actual = message.context
         JSONAssert.assertEquals(

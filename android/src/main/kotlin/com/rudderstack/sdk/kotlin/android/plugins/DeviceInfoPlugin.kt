@@ -60,7 +60,7 @@ internal class DeviceInfoPlugin : Plugin {
         return messagePayload
     }
 
-    override suspend fun execute(message: Message): Message = attachDeviceInfo(message)
+    override suspend fun intercept(message: Message): Message = attachDeviceInfo(message)
 
     @VisibleForTesting
     internal fun retrieveDeviceId(): String {

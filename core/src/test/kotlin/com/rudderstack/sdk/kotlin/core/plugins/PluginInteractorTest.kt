@@ -64,8 +64,8 @@ class PluginInteractorTest {
         every { message.copy<Message>() } returns message
         every { modifiedMessage.copy<Message>() } returns modifiedMessage
 
-        coEvery { plugin1.execute(message) } returns modifiedMessage
-        coEvery { plugin2.execute(modifiedMessage) } returns modifiedMessage
+        coEvery { plugin1.intercept(message) } returns modifiedMessage
+        coEvery { plugin2.intercept(modifiedMessage) } returns modifiedMessage
 
         pluginList.add(plugin1)
         pluginList.add(plugin2)
@@ -73,8 +73,8 @@ class PluginInteractorTest {
         val result = pluginInteractor.execute(message)
 
         coVerifyOrder {
-            plugin1.execute(message)
-            plugin2.execute(modifiedMessage)
+            plugin1.intercept(message)
+            plugin2.intercept(modifiedMessage)
         }
         assertEquals(modifiedMessage, result)
     }

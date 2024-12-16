@@ -46,13 +46,13 @@ class ScreenInfoPluginTest {
     }
 
     @Test
-    fun `given screen context is present, when screen info plugin is executed, then screen info is attached to the context`() =
+    fun `given screen context is present, when screen info plugin is intercepted, then screen info is attached to the context`() =
         runTest {
             val message = provideEvent()
             every { screenInfoPlugin.constructScreenContext(any()) } returns provideScreenContextPayload()
 
             screenInfoPlugin.setup(mockAnalytics)
-            screenInfoPlugin.execute(message)
+            screenInfoPlugin.intercept(message)
 
             val actual = message.context
             JSONAssert.assertEquals(
@@ -72,7 +72,7 @@ class ScreenInfoPluginTest {
             message.context = buildJsonObject {
                 put(SCREEN_KEY, String.empty())
             }
-            screenInfoPlugin.execute(message)
+            screenInfoPlugin.intercept(message)
 
             val actual = message.context
             JSONAssert.assertEquals(

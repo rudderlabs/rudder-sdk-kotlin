@@ -44,7 +44,7 @@ internal class OSInfoPlugin : Plugin {
         )
     }
 
-    override suspend fun execute(message: Message): Message = attachOSInfo(message)
+    override suspend fun intercept(message: Message): Message = attachOSInfo(message)
 
     private fun attachOSInfo(message: Message): Message {
         LoggerAnalytics.debug("Attaching OS info to the message payload")

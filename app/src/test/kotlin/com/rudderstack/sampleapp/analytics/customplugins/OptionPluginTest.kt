@@ -21,14 +21,14 @@ private val AMPLITUDE_INTEGRATION_ENABLED = buildJsonObject { put("Amplitude", t
 class OptionPluginTest {
 
     @Test
-    fun `given an empty option object is passed, when the option plugin is executed, then message contains empty context and default integrations`() =
+    fun `given an empty option object is passed, when the option plugin is intercepted, then message contains empty context and default integrations`() =
         runTest {
             val optionPlugin = OptionPlugin()
             val message = provideDefaultEvent().apply {
                 configureDefaultIntegration(this)
             }
 
-            optionPlugin.execute(message)
+            optionPlugin.intercept(message)
 
             verifyResult(
                 expected = emptyJsonObject.toString(),
@@ -41,7 +41,7 @@ class OptionPluginTest {
         }
 
     @Test
-    fun `given an option with distinct key is passed, when the option plugin is executed, then message contains both key-value pair`() =
+    fun `given an option with distinct key is passed, when the option plugin is intercepted, then message contains both key-value pair`() =
         runTest {
             val optionPlugin = OptionPlugin(
                 option = RudderOption(
@@ -56,7 +56,7 @@ class OptionPluginTest {
                 context = buildJsonObject { put(KEY_2, VALUE_2) }
             }
 
-            optionPlugin.execute(message)
+            optionPlugin.intercept(message)
 
             verifyResult(
                 expected = buildJsonObject {
@@ -75,7 +75,7 @@ class OptionPluginTest {
         }
 
     @Test
-    fun `given an option with same key but different value is passed, when the option plugin is executed, then message contains the updated key-value pair`() =
+    fun `given an option with same key but different value is passed, when the option plugin is intercepted, then message contains the updated key-value pair`() =
         runTest {
             val higherPreferenceOption = RudderOption(
                 customContext = buildJsonObject {
@@ -92,7 +92,7 @@ class OptionPluginTest {
                 context = buildJsonObject { put(KEY_1, VALUE_2) }
             }
 
-            optionPlugin.execute(message)
+            optionPlugin.intercept(message)
 
             verifyResult(
                 expected = higherPreferenceOption.customContext.toString(),

@@ -51,7 +51,7 @@ interface Plugin {
      * @param message The `Message` object representing the event to be processed.
      * @return The potentially modified `Message` object, or `null` if the message should be discarded.
      */
-    suspend fun execute(message: Message): Message? {
+    suspend fun intercept(message: Message): Message? {
         return message
     }
 

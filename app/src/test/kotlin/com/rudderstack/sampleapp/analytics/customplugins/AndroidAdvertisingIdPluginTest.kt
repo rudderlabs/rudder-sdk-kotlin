@@ -125,7 +125,7 @@ class AndroidAdvertisingIdPluginTest {
         }
 
     @Test
-    fun `given advertising ID returns updated message, verify that execute method returns the updated message`() =
+    fun `given advertising ID returns updated message, verify that intercept method returns the updated message`() =
         runTest(testDispatcher) {
             val updatedMessage = TrackEvent(
                 event = "Sample Event",
@@ -140,6 +140,6 @@ class AndroidAdvertisingIdPluginTest {
 
             coEvery { plugin.attachAdvertisingId(updatedMessage) } returns updatedMessage
 
-            assertEquals(updatedMessage, plugin.execute(updatedMessage))
+            assertEquals(updatedMessage, plugin.intercept(updatedMessage))
         }
 }

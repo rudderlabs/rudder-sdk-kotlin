@@ -75,7 +75,7 @@ internal class SessionTrackingPlugin(
         }
     }
 
-    override suspend fun execute(message: Message): Message {
+    override suspend fun intercept(message: Message): Message {
         if (sessionId != DEFAULT_SESSION_ID) {
             addSessionIdToMessage(message)
             if (!isSessionManual) {

@@ -42,7 +42,7 @@ internal class LibraryInfoPlugin : Plugin {
         }
     }
 
-    override suspend fun execute(message: Message): Message = attachLibraryInfo(message)
+    override suspend fun intercept(message: Message): Message = attachLibraryInfo(message)
 
     private fun attachLibraryInfo(message: Message): Message {
         LoggerAnalytics.debug("Attaching library info to the message payload")

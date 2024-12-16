@@ -109,7 +109,7 @@ class DeviceInfoPluginTest {
 
         every { plugin.attachDeviceInfo(mockMessage) } returns mockUpdatedMessage
 
-        val result = plugin.execute(mockMessage)
+        val result = plugin.intercept(mockMessage)
 
         assertEquals(mockUpdatedMessage, result)
     }

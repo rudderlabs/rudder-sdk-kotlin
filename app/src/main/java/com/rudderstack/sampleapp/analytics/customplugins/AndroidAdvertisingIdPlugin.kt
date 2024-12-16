@@ -129,7 +129,7 @@ class AndroidAdvertisingIdPlugin @OptIn(DelicateCoroutinesApi::class) constructo
         return messagePayload
     }
 
-    override suspend fun execute(message: Message): Message {
+    override suspend fun intercept(message: Message): Message {
         return attachAdvertisingId(message)
     }
 }

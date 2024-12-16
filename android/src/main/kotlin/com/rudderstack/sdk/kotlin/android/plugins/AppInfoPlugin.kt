@@ -71,7 +71,7 @@ internal class AppInfoPlugin : Plugin {
             }
         }
 
-    override suspend fun execute(message: Message): Message = attachAppInfo(message)
+    override suspend fun intercept(message: Message): Message = attachAppInfo(message)
 
     private fun attachAppInfo(message: Message): Message {
         LoggerAnalytics.debug("Attaching app info to the message payload")

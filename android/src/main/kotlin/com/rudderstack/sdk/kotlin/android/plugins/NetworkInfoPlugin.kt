@@ -49,7 +49,7 @@ internal class NetworkInfoPlugin(
         }
     }
 
-    override suspend fun execute(message: Message): Message = attachNetworkInfo(message)
+    override suspend fun intercept(message: Message): Message = attachNetworkInfo(message)
 
     private fun attachNetworkInfo(message: Message): Message {
         LoggerAnalytics.debug("Attaching network info to the message payload")
