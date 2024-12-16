@@ -1,7 +1,6 @@
 package com.rudderstack.sdk.kotlin.android
 
 import android.app.Application
-import com.rudderstack.sdk.kotlin.android.storage.AndroidStorageProvider
 import com.rudderstack.sdk.kotlin.core.Configuration
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPolicy
@@ -69,7 +68,6 @@ data class Configuration @JvmOverloads constructor(
 ) : Configuration(
     writeKey = writeKey,
     dataPlaneUrl = dataPlaneUrl,
-    storage = AndroidStorageProvider.getStorage(writeKey, application),
     logLevel = logLevel,
     flushPolicies = flushPolicies,
 )

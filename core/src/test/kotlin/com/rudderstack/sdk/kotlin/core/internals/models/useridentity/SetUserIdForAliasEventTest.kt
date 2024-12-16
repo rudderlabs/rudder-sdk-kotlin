@@ -35,10 +35,10 @@ class SetUserIdForAliasEventTest {
     fun `when user id is stored, then those values should be persisted in storage`() = runTest {
         val userIdentityState = provideUserIdentityStateAfterUserIdIsSetForAliasEvent()
 
-        userIdentityState.storeUserIdTraitsAndExternalIds(mockAnalytics.configuration.storage)
+        userIdentityState.storeUserIdTraitsAndExternalIds(mockAnalytics.storage)
 
         coVerify {
-            mockAnalytics.configuration.storage.write(StorageKeys.USER_ID, ALIAS_ID)
+            mockAnalytics.storage.write(StorageKeys.USER_ID, ALIAS_ID)
         }
     }
 }

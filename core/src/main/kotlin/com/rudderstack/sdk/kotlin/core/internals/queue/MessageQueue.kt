@@ -49,7 +49,7 @@ internal class MessageQueue(
     private var running: Boolean
     private var writeChannel: Channel<QueueMessage>
     private var uploadChannel: Channel<String>
-    private val storage get() = analytics.configuration.storage
+    private val storage get() = analytics.storage
     private val flushSignal = QueueMessage(QueueMessage.QueueMessageType.FLUSH_SIGNAL)
 
     init {

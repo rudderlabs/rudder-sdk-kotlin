@@ -50,7 +50,7 @@ internal class AndroidLifecyclePlugin : Plugin, ProcessLifecycleObserver {
         super.setup(analytics)
         (analytics.configuration as? AndroidConfiguration)?.let { config ->
             application = config.application
-            storage = config.storage
+            storage = analytics.storage
             // update the app version code and build regardless of tracking enabled or not.
             appVersion = getAppVersion()
             updateAppVersion()

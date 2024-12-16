@@ -9,7 +9,6 @@ import com.rudderstack.sdk.kotlin.core.internals.storage.MAX_PAYLOAD_SIZE
 import com.rudderstack.sdk.kotlin.core.internals.storage.MessageBatchFileManager
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
-import com.rudderstack.sdk.kotlin.core.internals.storage.StorageProvider
 import com.rudderstack.sdk.kotlin.core.internals.utils.toAndroidPrefsKey
 import java.io.File
 
@@ -107,46 +106,15 @@ internal class AndroidStorage(
 }
 
 /**
- * `AndroidStorageProvider` is an object that implements the `StorageProvider` interface for providing
- * storage solutions on Android devices.
+ * Provides an instance of [AndroidStorage] for use in the SDK.
  *
- * This object is responsible for creating instances of `Storage` specifically tailored for the Android platform.
- * It provides a method to obtain a storage instance using a provided write key and Android application context.
- *
- * ## Description
- * `AndroidStorageProvider` acts as a factory for creating `Storage` instances that manage data storage on Android devices.
- * It utilizes the Android-specific `Context` to initialize the storage solution, allowing the RudderStack SDK to store and
- * retrieve data on the device efficiently.
- *
- * The object implements the `StorageProvider` interface, ensuring compatibility with the RudderStack core library, which relies on
- * standardized storage operations across different platforms.
- *
- * ## Method
- * - `getStorage(writeKey: String, application: Any): Storage`:
- *   - Creates and returns an instance of `AndroidStorage` by casting the provided `application` parameter to an Android `Context`.
- *   - The `writeKey` is used to uniquely identify the storage instance for a particular RudderStack setup.
- *   - **Parameters**:
- *     - `writeKey`: A `String` representing the write key used to identify the RudderStack workspace.
- *     - `application`: An `Any` type that is expected to be an Android `Context`. This is the context of the Android application.
- *   - **Returns**: An instance of `Storage` tailored for the Android platform.
- *
- * ## Example Usage
- * ```kotlin
- * val storageProvider: StorageProvider = AndroidStorageProvider
- * val storage: Storage = storageProvider.getStorage("your_write_key", applicationContext)
- * ```
- *
- * This `storage` instance can then be used by the RudderStack SDK to persist data on an Android device.
- *
- * @see StorageProvider
- * @see AndroidStorage
+ *  @param writeKey The write key used to identify the storage location.
+ *  @param application The application context.
+ *  @return An instance of [AndroidStorage].
  */
-object AndroidStorageProvider : StorageProvider {
-
-    override fun getStorage(writeKey: String, application: Any): Storage {
-        return AndroidStorage(
-            context = application as Context,
-            writeKey = writeKey,
-        )
-    }
+fun provideAndroidStorage(writeKey: String, application: Context): Storage {
+    return AndroidStorage(
+        context = application,
+        writeKey = writeKey,
+    )
 }
