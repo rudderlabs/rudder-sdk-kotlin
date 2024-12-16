@@ -27,6 +27,7 @@ object RudderAnalyticsUtils {
                     automaticSessionTracking = true,
                     sessionTimeoutInMillis = 3000,
                 ),
+                gzipEnabled = true,
                 logLevel = Logger.LogLevel.VERBOSE,
             )
         )
