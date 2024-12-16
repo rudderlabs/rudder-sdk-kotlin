@@ -338,7 +338,7 @@ class AndroidLifecyclePluginTest {
 
         val mockConfiguration = mockk<Configuration> {
             every { application } returns mockApplication
-            every { storage } returns mockStorage
+            every { mockAnalytics.storage } returns mockStorage
             every { trackApplicationLifecycleEvents } returns trackingEnabled
             every { writeKey } returns ""
             every { dataPlaneUrl } returns ""

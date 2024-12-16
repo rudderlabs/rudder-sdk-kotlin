@@ -68,7 +68,7 @@ class MessageQueueTest {
 
         setupLogger(mockKotlinLogger)
 
-        every { mockAnalytics.configuration.storage } returns mockStorage
+        every { mockAnalytics.storage } returns mockStorage
 
         coEvery { mockStorage.close() } just runs
         coEvery { mockStorage.write(StorageKeys.MESSAGE, any<String>()) } just runs
@@ -141,7 +141,7 @@ class MessageQueueTest {
     @Test
     fun `given multiple batch is ready to be sent to the server and server returns success, when flush is called, then all the batches are sent to the server and removed from the storage`() =
         runTest {
-            val storage = mockAnalytics.configuration.storage
+            val storage = mockAnalytics.storage
             // Two batch files are ready to be sent
             val filePaths = listOf(
                 "/data/user/0/com.rudderstack.android.sampleapp/app_rudder-android-store/<WRITE_KEY>-0",
@@ -180,7 +180,7 @@ class MessageQueueTest {
 
     @Test
     fun `given batch is ready to be sent to the server and server returns error, when flush is called, then the batch is not removed from storage`() {
-        val storage = mockAnalytics.configuration.storage
+        val storage = mockAnalytics.storage
         // Two batch files are ready to be sent
         val filePaths = listOf(
             "/data/user/0/com.rudderstack.android.sampleapp/app_rudder-android-store/<WRITE_KEY>-0",
@@ -222,7 +222,7 @@ class MessageQueueTest {
 
     @Test
     fun `given batch is ready to be sent to the server and file is not found, when flush is called, then the exception is thrown and handled`() {
-        val storage = mockAnalytics.configuration.storage
+        val storage = mockAnalytics.storage
         // Two batch files are ready to be sent
         val filePaths = listOf(
             "/data/user/0/com.rudderstack.android.sampleapp/app_rudder-android-store/<WRITE_KEY>-0",
@@ -256,7 +256,7 @@ class MessageQueueTest {
 
     @Test
     fun `given batch is ready to be sent to the server and some exception occurs while reading the file, when flush is called, then the exception is thrown and handled`() {
-        val storage = mockAnalytics.configuration.storage
+        val storage = mockAnalytics.storage
         // Two batch files are ready to be sent
         val filePaths = listOf(
             "/data/user/0/com.rudderstack.android.sampleapp/app_rudder-android-store/<WRITE_KEY>-0",
@@ -300,7 +300,7 @@ class MessageQueueTest {
 
     @Test
     fun `given default flush policies are enabled, when first event is made, then flush call should be triggered`() {
-        val storage = mockAnalytics.configuration.storage
+        val storage = mockAnalytics.storage
         val mockMessage: Message = mockk(relaxed = true)
         val jsonString = """{"type":"track","event":"Test Event"}"""
         every { messageQueue.stringifyBaseEvent(mockMessage) } returns jsonString
@@ -320,7 +320,7 @@ class MessageQueueTest {
 
     @Test
     fun `given default flush policies are enabled, when 30 events are made, then flush call should be triggered`() {
-        val storage = mockAnalytics.configuration.storage
+        val storage = mockAnalytics.storage
         val mockMessage: Message = mockk(relaxed = true)
         val jsonString = """{"type":"track","event":"Test Event"}"""
         every { messageQueue.stringifyBaseEvent(mockMessage) } returns jsonString
@@ -368,7 +368,7 @@ class MessageQueueTest {
 
     @Test
     fun `given default flush policies are enabled, when events are made, then the flush policies state should be updated`() {
-        val storage = mockAnalytics.configuration.storage
+        val storage = mockAnalytics.storage
         val times = 20
         val mockMessage: Message = mockk(relaxed = true)
         val jsonString = """{"type":"track","event":"Test Event"}"""
@@ -414,7 +414,7 @@ class MessageQueueTest {
 
     @Test
     fun `given no policies are enabled, when explicit flush call is made, then rollover should happen`() {
-        val storage = mockAnalytics.configuration.storage
+        val storage = mockAnalytics.storage
         val times = 100
         val mockMessage: Message = mockk(relaxed = true)
         val jsonString = """{"type":"track","event":"Test Event"}"""

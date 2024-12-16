@@ -55,22 +55,11 @@ class UserIdentityTest {
     }
 
     @Test
-    fun `given anonymousId is non-empty, when storeAnonymousId called, then it should store anonymousId and set isAnonymousByClient to true`() = runTest {
+    fun `given anonymousId is non-empty, when storeAnonymousId called, then it should store anonymousId`() = runTest {
         val userIdentity = provideUserIdentityState(anonymousId = "nonEmptyId", userId = "userId")
 
         userIdentity.storeAnonymousId(mockStorage)
 
         coVerify { mockStorage.write(StorageKeys.ANONYMOUS_ID, "nonEmptyId") }
-        coVerify { mockStorage.write(StorageKeys.IS_ANONYMOUS_ID_BY_CLIENT, true) }
-    }
-
-    @Test
-    fun `given anonymousId is empty, when storeAnonymousId called, then it should set isAnonymousByClient to false`() = runTest {
-        val userIdentity = provideUserIdentityState(anonymousId = "", userId = "userId")
-
-        userIdentity.storeAnonymousId(mockStorage)
-
-        coVerify { mockStorage.write(StorageKeys.ANONYMOUS_ID, "") }
-        coVerify { mockStorage.write(StorageKeys.IS_ANONYMOUS_ID_BY_CLIENT, false) }
     }
 }

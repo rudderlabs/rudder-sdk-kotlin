@@ -63,7 +63,7 @@ internal class SourceConfigManager(
     }
 
     private fun fetchStoredSourceConfig(): SourceConfig? {
-        val sourceConfigString = analytics.configuration.storage.readString(
+        val sourceConfigString = analytics.storage.readString(
             StorageKeys.SOURCE_CONFIG_PAYLOAD,
             defaultVal = String.empty()
         )
@@ -80,7 +80,7 @@ internal class SourceConfigManager(
 
     private suspend fun storeSourceConfig(sourceConfig: SourceConfig) {
         withContext(analytics.storageDispatcher) {
-            sourceConfig.storeSourceConfig(analytics.configuration.storage)
+            sourceConfig.storeSourceConfig(analytics.storage)
         }
     }
 
@@ -105,15 +105,15 @@ private fun Analytics.getQuery() = when (getPlatformType()) {
     PlatformType.Mobile -> {
         mapOf(
             PLATFORM to ANDROID,
-            VERSION to this.configuration.storage.getLibraryVersion().getVersionName(),
-            BUILD_VERSION to this.configuration.storage.getLibraryVersion().getBuildVersion()
+            VERSION to this.storage.getLibraryVersion().getVersionName(),
+            BUILD_VERSION to this.storage.getLibraryVersion().getBuildVersion()
         )
     }
 
     PlatformType.Server -> {
         mapOf(
             PLATFORM to KOTLIN,
-            VERSION to this.configuration.storage.getLibraryVersion().getVersionName(),
+            VERSION to this.storage.getLibraryVersion().getVersionName(),
         )
     }
 }

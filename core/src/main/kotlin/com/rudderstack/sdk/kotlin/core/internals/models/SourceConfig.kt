@@ -43,7 +43,6 @@ internal data class SourceConfig(
 
     suspend fun storeSourceConfig(storage: Storage) {
         storage.write(StorageKeys.SOURCE_CONFIG_PAYLOAD, Json.encodeToString(serializer(), this))
-        storage.write(StorageKeys.SOURCE_IS_ENABLED, source.isSourceEnabled)
     }
 }
 

@@ -22,8 +22,7 @@ tasks.withType<Detekt>().configureEach {
 }
 
 tasks.withType<KotlinJvmCompile>().configureEach {
-    compilerOptions.freeCompilerArgs.add("-opt-in=com.rudderstack.sdk.kotlin.core.internals.utils.RudderInternalUsageError")
-    compilerOptions.freeCompilerArgs.add("-opt-in=com.rudderstack.sdk.kotlin.core.internals.utils.RudderInternalUsageWarning")
+    compilerOptions.freeCompilerArgs.add("-opt-in=com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi")
 }
 
 android {

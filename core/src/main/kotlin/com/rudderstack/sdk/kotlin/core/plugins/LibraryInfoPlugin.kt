@@ -26,7 +26,7 @@ internal class LibraryInfoPlugin : Plugin {
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
-        analytics.configuration.storage.getLibraryVersion().let {
+        analytics.storage.getLibraryVersion().let {
             val name = it.getPackageName()
             val version = it.getVersionName()
 

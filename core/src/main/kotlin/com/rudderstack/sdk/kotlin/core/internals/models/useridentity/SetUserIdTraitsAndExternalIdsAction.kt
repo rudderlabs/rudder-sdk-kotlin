@@ -54,7 +54,7 @@ internal class SetUserIdTraitsAndExternalIdsAction(
     }
 
     private suspend fun resetUserIdTraitsAndExternalIds() {
-        analytics.configuration.storage.let {
+        analytics.storage.let {
             it.remove(StorageKeys.USER_ID)
             it.remove(StorageKeys.TRAITS)
             it.remove(StorageKeys.EXTERNAL_IDS)

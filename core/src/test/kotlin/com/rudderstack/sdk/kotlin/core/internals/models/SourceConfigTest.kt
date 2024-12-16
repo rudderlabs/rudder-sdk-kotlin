@@ -121,7 +121,7 @@ class SourceConfigTest {
     }
 
     @Test
-    fun `given a sourceConfig, when storeSourceConfig called, then it should store sourceConfig and isSourceEnabled correctly`() = runTest {
+    fun `given a sourceConfig, when storeSourceConfig called, then it should store sourceConfig correctly`() = runTest {
         val sourceConfig = SourceConfig(
             source = RudderServerConfigSource(
                 sourceId = "newId",
@@ -136,7 +136,6 @@ class SourceConfigTest {
         sourceConfig.storeSourceConfig(mockStorage)
 
         coVerify { mockStorage.write(StorageKeys.SOURCE_CONFIG_PAYLOAD, Json.encodeToString(serializer(), sourceConfig)) }
-        coVerify { mockStorage.write(StorageKeys.SOURCE_IS_ENABLED, sourceConfig.source.isSourceEnabled) }
     }
 }
 

@@ -362,7 +362,7 @@ class SessionTrackingPluginTest {
     ) {
         val mockConfiguration = mockk<Configuration>(relaxed = true) {
             every { sessionConfiguration } returns SessionConfiguration(automaticSessionTracking, sessionTimeoutInMillis)
-            every { storage } returns mockStorage
+            every { mockAnalytics.storage } returns mockStorage
         }
 
         every { mockAnalytics.configuration } returns mockConfiguration

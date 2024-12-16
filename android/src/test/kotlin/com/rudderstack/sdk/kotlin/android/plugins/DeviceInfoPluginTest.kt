@@ -52,7 +52,7 @@ class DeviceInfoPluginTest {
 
         every { mockAnalytics.configuration } returns mockConfiguration
         every { mockConfiguration.application } returns mockApplication
-        every { mockConfiguration.storage } returns mockStorage
+        every { mockAnalytics.storage } returns mockStorage
     }
 
     @Test
