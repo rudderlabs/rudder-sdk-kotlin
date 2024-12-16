@@ -3,10 +3,10 @@ package com.rudderstack.sdk.kotlin.android.storage
 import android.content.Context
 import com.rudderstack.sdk.kotlin.BuildConfig
 import com.rudderstack.sdk.kotlin.android.storage.exceptions.QueuedPayloadTooLargeException
+import com.rudderstack.sdk.kotlin.core.internals.storage.EventBatchFileManager
 import com.rudderstack.sdk.kotlin.core.internals.storage.KeyValueStorage
 import com.rudderstack.sdk.kotlin.core.internals.storage.LibraryVersion
 import com.rudderstack.sdk.kotlin.core.internals.storage.MAX_PAYLOAD_SIZE
-import com.rudderstack.sdk.kotlin.core.internals.storage.MessageBatchFileManager
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.toAndroidPrefsKey
@@ -22,7 +22,7 @@ internal class AndroidStorage(
 ) : Storage {
 
     private val storageDirectory: File = context.getDir(DIRECTORY_NAME, Context.MODE_PRIVATE)
-    private val messageBatchFile = MessageBatchFileManager(storageDirectory, writeKey, rudderPrefsRepo)
+    private val eventBatchFile = EventBatchFileManager(storageDirectory, writeKey, rudderPrefsRepo)
 
     override suspend fun write(key: StorageKeys, value: Boolean) {
         if (key != StorageKeys.MESSAGE) {
@@ -33,7 +33,7 @@ internal class AndroidStorage(
     override suspend fun write(key: StorageKeys, value: String) {
         if (key == StorageKeys.MESSAGE) {
             if (value.length < MAX_PAYLOAD_SIZE) {
-                messageBatchFile.storeMessage(value)
+                eventBatchFile.storeEvent(value)
             } else {
                 throw QueuedPayloadTooLargeException("queued payload is too large")
             }
@@ -59,15 +59,15 @@ internal class AndroidStorage(
     }
 
     override fun remove(filePath: String) {
-        messageBatchFile.remove(filePath)
+        eventBatchFile.remove(filePath)
     }
 
     override suspend fun rollover() {
-        messageBatchFile.rollover()
+        eventBatchFile.rollover()
     }
 
     override fun close() {
-        messageBatchFile.closeAndReset()
+        eventBatchFile.closeAndReset()
     }
 
     override fun readInt(key: StorageKeys, defaultVal: Int): Int {
@@ -84,14 +84,14 @@ internal class AndroidStorage(
 
     override fun readString(key: StorageKeys, defaultVal: String): String {
         return if (key == StorageKeys.MESSAGE) {
-            messageBatchFile.read().joinToString()
+            eventBatchFile.read().joinToString()
         } else {
             rudderPrefsRepo.getString(key.key, defaultVal)
         }
     }
 
     override fun readFileList(): List<String> {
-        return messageBatchFile.read()
+        return eventBatchFile.read()
     }
 
     override fun getLibraryVersion(): LibraryVersion {

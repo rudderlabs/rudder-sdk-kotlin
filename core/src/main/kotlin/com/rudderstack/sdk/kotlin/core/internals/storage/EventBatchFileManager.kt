@@ -7,23 +7,23 @@ import org.jetbrains.annotations.VisibleForTesting
 import java.io.File
 import java.io.FileOutputStream
 
-internal const val FILE_INDEX = "rudderstack.message.file.index."
+internal const val FILE_INDEX = "rudderstack.event.file.index."
 private const val BATCH_PREFIX = "{\"batch\":["
 internal const val BATCH_SENT_AT_SUFFIX = "],\"sentAt\":\""
 internal const val TMP_SUFFIX = ".tmp"
 
 /**
- * Manages the creation, storage, and management of message batch files within a specified directory.
+ * Manages the creation, storage, and management of event batch files within a specified directory.
  *
- * The [MessageBatchFileManager] handles batching messages into files, ensuring that individual files do not exceed
- * a predefined size. It supports operations such as storing messages, reading batch files, and rolling over to new files.
+ * The [EventBatchFileManager] handles batching events into files, ensuring that individual files do not exceed
+ * a predefined size. It supports operations such as storing events, reading batch files, and rolling over to new files.
  *
  * @property directory The directory where batch files are stored.
  * @property writeKey A unique key used to name and identify batch files.
  * @property keyValueStorage A [KeyValueStorage] instance for storing and retrieving file index information.
  */
 @Suppress("Detekt.TooManyFunctions")
-class MessageBatchFileManager(
+class EventBatchFileManager(
     private val directory: File,
     private val writeKey: String,
     private val keyValueStorage: KeyValueStorage
@@ -55,13 +55,13 @@ class MessageBatchFileManager(
     }
 
     /**
-     * Stores a message payload in the current batch file. If the current file exceeds the maximum batch size,
+     * Stores an event payload in the current batch file. If the current file exceeds the maximum batch size,
      * a new file is created.
      *
-     * @param messagePayload The message payload to be stored.
+     * @param eventPayload The event payload to be stored.
      * @throws Exception If there is an issue with file operations.
      */
-    suspend fun storeMessage(messagePayload: String) = withLock {
+    suspend fun storeEvent(eventPayload: String) = withLock {
         var newFile = false
         var file = currentFile()
 
@@ -79,7 +79,7 @@ class MessageBatchFileManager(
             newFile = true
         }
 
-        val contents = if (newFile) messagePayload else ",$messagePayload"
+        val contents = if (newFile) eventPayload else ",$eventPayload"
         writeToFile(contents.toByteArray(), file)
     }
 
