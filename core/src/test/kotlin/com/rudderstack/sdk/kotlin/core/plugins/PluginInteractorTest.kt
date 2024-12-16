@@ -1,6 +1,6 @@
 package com.rudderstack.sdk.kotlin.core.plugins
 
-import com.rudderstack.sdk.kotlin.core.internals.models.Message
+import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.PluginInteractor
 import io.mockk.coEvery
@@ -56,27 +56,27 @@ class PluginInteractorTest {
 
     @Test
     fun `when execute called, it should execute all plugins in order`() = runTest {
-        val message: Message = mockk(relaxed = true)
+        val event: Event = mockk(relaxed = true)
         val plugin1: Plugin = mockk(relaxed = true)
         val plugin2: Plugin = mockk(relaxed = true)
-        val modifiedMessage: Message = mockk(relaxed = true)
+        val modifiedEvent: Event = mockk(relaxed = true)
 
-        every { message.copy<Message>() } returns message
-        every { modifiedMessage.copy<Message>() } returns modifiedMessage
+        every { event.copy<Event>() } returns event
+        every { modifiedEvent.copy<Event>() } returns modifiedEvent
 
-        coEvery { plugin1.intercept(message) } returns modifiedMessage
-        coEvery { plugin2.intercept(modifiedMessage) } returns modifiedMessage
+        coEvery { plugin1.intercept(event) } returns modifiedEvent
+        coEvery { plugin2.intercept(modifiedEvent) } returns modifiedEvent
 
         pluginList.add(plugin1)
         pluginList.add(plugin2)
 
-        val result = pluginInteractor.execute(message)
+        val result = pluginInteractor.execute(event)
 
         coVerifyOrder {
-            plugin1.intercept(message)
-            plugin2.intercept(modifiedMessage)
+            plugin1.intercept(event)
+            plugin2.intercept(modifiedEvent)
         }
-        assertEquals(modifiedMessage, result)
+        assertEquals(modifiedEvent, result)
     }
 
     @Test

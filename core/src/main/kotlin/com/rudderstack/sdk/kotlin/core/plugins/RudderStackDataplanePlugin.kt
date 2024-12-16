@@ -2,9 +2,9 @@ package com.rudderstack.sdk.kotlin.core.plugins
 
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.AliasEvent
+import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.GroupEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
-import com.rudderstack.sdk.kotlin.core.internals.models.Message
 import com.rudderstack.sdk.kotlin.core.internals.models.ScreenEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.plugins.MessagePlugin
@@ -20,27 +20,27 @@ internal class RudderStackDataplanePlugin : MessagePlugin {
     @VisibleForTesting
     internal var messageQueue: MessageQueue? = null
 
-    override fun track(payload: TrackEvent): Message {
+    override fun track(payload: TrackEvent): Event {
         enqueue(payload)
         return payload
     }
 
-    override fun screen(payload: ScreenEvent): Message {
+    override fun screen(payload: ScreenEvent): Event {
         enqueue(payload)
         return payload
     }
 
-    override fun group(payload: GroupEvent): Message? {
+    override fun group(payload: GroupEvent): Event? {
         enqueue(payload)
         return payload
     }
 
-    override fun identify(payload: IdentifyEvent): Message {
+    override fun identify(payload: IdentifyEvent): Event {
         enqueue(payload)
         return payload
     }
 
-    override fun alias(payload: AliasEvent): Message {
+    override fun alias(payload: AliasEvent): Event {
         enqueue(payload)
         return payload
     }
@@ -58,7 +58,7 @@ internal class RudderStackDataplanePlugin : MessagePlugin {
         messageQueue?.stop()
     }
 
-    private fun enqueue(message: Message) {
-        this.messageQueue?.put(message)
+    private fun enqueue(event: Event) {
+        this.messageQueue?.put(event)
     }
 }

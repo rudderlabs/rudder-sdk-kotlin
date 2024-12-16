@@ -2,7 +2,7 @@ package com.rudderstack.sdk.kotlin.core.plugins
 
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
-import com.rudderstack.sdk.kotlin.core.internals.models.Message
+import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.utils.mergeWithHigherPriorityTo
 import kotlinx.serialization.json.JsonObject
@@ -14,7 +14,7 @@ private const val LIBRARY_NAME_KEY = "name"
 private const val LIBRARY_VERSION_KEY = "version"
 
 /**
- * Plugin to attach library info to the message context payload
+ * Plugin to attach library info to the event context payload
  */
 internal class LibraryInfoPlugin : Plugin {
 
@@ -42,13 +42,13 @@ internal class LibraryInfoPlugin : Plugin {
         }
     }
 
-    override suspend fun intercept(message: Message): Message = attachLibraryInfo(message)
+    override suspend fun intercept(event: Event): Event = attachLibraryInfo(event)
 
-    private fun attachLibraryInfo(message: Message): Message {
-        LoggerAnalytics.debug("Attaching library info to the message payload")
+    private fun attachLibraryInfo(event: Event): Event {
+        LoggerAnalytics.debug("Attaching library info to the event payload")
 
-        message.context = message.context mergeWithHigherPriorityTo libraryContext
+        event.context = event.context mergeWithHigherPriorityTo libraryContext
 
-        return message
+        return event
     }
 }

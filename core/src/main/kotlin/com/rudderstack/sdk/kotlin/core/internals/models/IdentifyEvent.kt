@@ -9,7 +9,7 @@ import kotlinx.serialization.Transient
 import kotlinx.serialization.json.JsonObject
 
 /**
- * Represents an identify event message in RudderStack.
+ * Represents an identify event in RudderStack.
  *
  * This data class encapsulates the optional [options] and [userIdentityState] related to the identify event.
  * An identify event enables setting `userId`, `traits`, and `externalIds`, which are persisted in storage
@@ -24,7 +24,7 @@ import kotlinx.serialization.json.JsonObject
 data class IdentifyEvent(
     @Transient override var options: RudderOption = RudderOption(),
     @Transient override var userIdentityState: UserIdentity = provideEmptyUserIdentityState()
-) : Message() {
+) : Event() {
 
     override var type: MessageType = MessageType.Identify
     override var messageId: String = super.messageId

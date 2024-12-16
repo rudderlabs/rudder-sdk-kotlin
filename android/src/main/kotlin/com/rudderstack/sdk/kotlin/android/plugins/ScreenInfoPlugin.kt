@@ -5,7 +5,7 @@ import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.android.utils.mergeWithHigherPriorityTo
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
-import com.rudderstack.sdk.kotlin.core.internals.models.Message
+import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
@@ -18,7 +18,7 @@ private const val SCREEN_HEIGHT_KEY = "height"
 private const val SCREEN_WIDTH_KEY = "width"
 
 /**
- * Plugin to attach screen info to the message context payload
+ * Plugin to attach screen info to the event context payload
  */
 internal class ScreenInfoPlugin : Plugin {
 
@@ -48,13 +48,13 @@ internal class ScreenInfoPlugin : Plugin {
         )
     }
 
-    override suspend fun intercept(message: Message): Message = attachScreenInfo(message)
+    override suspend fun intercept(event: Event): Event = attachScreenInfo(event)
 
-    private fun attachScreenInfo(message: Message): Message {
-        LoggerAnalytics.debug("Attaching screen info to the message payload")
+    private fun attachScreenInfo(event: Event): Event {
+        LoggerAnalytics.debug("Attaching screen info to the event payload")
 
-        message.context = message.context mergeWithHigherPriorityTo screenContext
+        event.context = event.context mergeWithHigherPriorityTo screenContext
 
-        return message
+        return event
     }
 }

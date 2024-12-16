@@ -9,7 +9,7 @@ import kotlinx.serialization.Transient
 import kotlinx.serialization.json.JsonObject
 
 /**
- * Represents an alias event message in RudderStack.
+ * Represents an alias event  in RudderStack.
  *
  * This data class encapsulates the [previousId], optional [options], and [userIdentityState] relevant to the alias event.
  * The alias call links different identities associated with a known user, allowing for a seamless identity transition.
@@ -26,7 +26,7 @@ data class AliasEvent(
     val previousId: String,
     @Transient override var options: RudderOption = RudderOption(),
     @Transient override var userIdentityState: UserIdentity = provideEmptyUserIdentityState()
-) : Message() {
+) : Event() {
 
     override var type: MessageType = MessageType.Alias
     override var messageId: String = super.messageId

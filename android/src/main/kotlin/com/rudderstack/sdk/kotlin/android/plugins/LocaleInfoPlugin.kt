@@ -3,7 +3,7 @@ package com.rudderstack.sdk.kotlin.android.plugins
 import com.rudderstack.sdk.kotlin.android.utils.mergeWithHigherPriorityTo
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
-import com.rudderstack.sdk.kotlin.core.internals.models.Message
+import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
@@ -14,7 +14,7 @@ import java.util.Locale
 private const val LOCALE_KEY = "locale"
 
 /**
- * Plugin to attach locale info to the message context payload
+ * Plugin to attach locale info to the event context payload
  */
 internal class LocaleInfoPlugin : Plugin {
 
@@ -34,13 +34,13 @@ internal class LocaleInfoPlugin : Plugin {
         put(LOCALE_KEY, Locale.getDefault().language + "-" + Locale.getDefault().country)
     }
 
-    override suspend fun intercept(message: Message): Message = attachLocaleInfo(message)
+    override suspend fun intercept(event: Event): Event = attachLocaleInfo(event)
 
-    private fun attachLocaleInfo(message: Message): Message {
-        LoggerAnalytics.debug("Attaching locale info to the message payload")
+    private fun attachLocaleInfo(event: Event): Event {
+        LoggerAnalytics.debug("Attaching locale info to the event payload")
 
-        message.context = message.context mergeWithHigherPriorityTo localeContext
+        event.context = event.context mergeWithHigherPriorityTo localeContext
 
-        return message
+        return event
     }
 }

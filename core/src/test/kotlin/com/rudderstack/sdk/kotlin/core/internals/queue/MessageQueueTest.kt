@@ -2,7 +2,7 @@ package com.rudderstack.sdk.kotlin.core.internals.queue
 
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.KotlinLogger
-import com.rudderstack.sdk.kotlin.core.internals.models.Message
+import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.provider.provideEvent
 import com.rudderstack.sdk.kotlin.core.internals.network.ErrorStatus
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClient
@@ -118,11 +118,11 @@ class MessageQueueTest {
 
     @Test
     fun `given a message, when stringifyBaseEvent is called, then the expected JSON string is returned`() {
-        val message = mockk<Message>(relaxed = true)
+        val event = mockk<Event>(relaxed = true)
         val jsonString = """{"type":"track","event":"Test Event"}"""
-        every { messageQueue.stringifyBaseEvent(message) } returns jsonString
+        every { messageQueue.stringifyBaseEvent(event) } returns jsonString
 
-        val result = messageQueue.stringifyBaseEvent(message)
+        val result = messageQueue.stringifyBaseEvent(event)
         assertEquals(jsonString, result)
     }
 
@@ -301,15 +301,15 @@ class MessageQueueTest {
     @Test
     fun `given default flush policies are enabled, when first event is made, then flush call should be triggered`() {
         val storage = mockAnalytics.storage
-        val mockMessage: Message = mockk(relaxed = true)
+        val mockEvent: Event = mockk(relaxed = true)
         val jsonString = """{"type":"track","event":"Test Event"}"""
-        every { messageQueue.stringifyBaseEvent(mockMessage) } returns jsonString
+        every { messageQueue.stringifyBaseEvent(mockEvent) } returns jsonString
         // Mock the behavior for StartupFlushPolicy
         every { mockFlushPoliciesFacade.shouldFlush() } returns true
 
         // Execute messageQueue actions
         messageQueue.start()
-        messageQueue.put(mockMessage)
+        messageQueue.put(mockEvent)
         testDispatcher.scheduler.advanceUntilIdle()
 
         coVerify(exactly = 1) {
@@ -321,9 +321,9 @@ class MessageQueueTest {
     @Test
     fun `given default flush policies are enabled, when 30 events are made, then flush call should be triggered`() {
         val storage = mockAnalytics.storage
-        val mockMessage: Message = mockk(relaxed = true)
+        val mockEvent: Event = mockk(relaxed = true)
         val jsonString = """{"type":"track","event":"Test Event"}"""
-        every { messageQueue.stringifyBaseEvent(mockMessage) } returns jsonString
+        every { messageQueue.stringifyBaseEvent(mockEvent) } returns jsonString
         // Mock the behavior for StartupFlushPolicy
         every { mockFlushPoliciesFacade.shouldFlush() } returns true
 
@@ -331,7 +331,7 @@ class MessageQueueTest {
         messageQueue.start()
 
         // Make the first event
-        messageQueue.put(mockMessage)
+        messageQueue.put(mockEvent)
         testDispatcher.scheduler.advanceUntilIdle()
 
         coVerify(exactly = 1) {
@@ -343,7 +343,7 @@ class MessageQueueTest {
         every { mockFlushPoliciesFacade.shouldFlush() } returns false
 
         repeat(29) {
-            messageQueue.put(mockMessage)
+            messageQueue.put(mockEvent)
         }
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -357,7 +357,7 @@ class MessageQueueTest {
         every { mockFlushPoliciesFacade.shouldFlush() } returns true
 
         // Make the 30th event
-        messageQueue.put(mockMessage)
+        messageQueue.put(mockEvent)
         testDispatcher.scheduler.advanceUntilIdle()
 
         coVerify(exactly = 2) {
@@ -370,15 +370,15 @@ class MessageQueueTest {
     fun `given default flush policies are enabled, when events are made, then the flush policies state should be updated`() {
         val storage = mockAnalytics.storage
         val times = 20
-        val mockMessage: Message = mockk(relaxed = true)
+        val mockEvent: Event = mockk(relaxed = true)
         val jsonString = """{"type":"track","event":"Test Event"}"""
-        every { messageQueue.stringifyBaseEvent(mockMessage) } returns jsonString
+        every { messageQueue.stringifyBaseEvent(mockEvent) } returns jsonString
 
         // Execute messageQueue actions
         messageQueue.start()
 
         repeat(times) {
-            messageQueue.put(mockMessage)
+            messageQueue.put(mockEvent)
         }
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -416,16 +416,16 @@ class MessageQueueTest {
     fun `given no policies are enabled, when explicit flush call is made, then rollover should happen`() {
         val storage = mockAnalytics.storage
         val times = 100
-        val mockMessage: Message = mockk(relaxed = true)
+        val mockEvent: Event = mockk(relaxed = true)
         val jsonString = """{"type":"track","event":"Test Event"}"""
-        every { messageQueue.stringifyBaseEvent(mockMessage) } returns jsonString
+        every { messageQueue.stringifyBaseEvent(mockEvent) } returns jsonString
         // Mock the behavior when no flush policies are enabled
         every { mockFlushPoliciesFacade.shouldFlush() } returns false
 
         // Execute messageQueue actions
         messageQueue.start()
         repeat(times) {
-            messageQueue.put(mockMessage)
+            messageQueue.put(mockEvent)
         }
         testDispatcher.scheduler.advanceUntilIdle()
 

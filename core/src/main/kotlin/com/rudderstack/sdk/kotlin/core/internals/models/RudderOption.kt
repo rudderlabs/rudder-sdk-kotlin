@@ -4,11 +4,11 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 
 /**
- * Represents options that can be passed with a message in the RudderStack analytics context.
+ * Represents options that can be passed with a event in the RudderStack analytics context.
  *
- * @property integrations A JSON object representing integrations associated with the message.
- * @property externalIds A list of maps representing external IDs associated with the message.
- * @property customContext A JSON object representing custom contexts associated with the message.
+ * @property integrations A JSON object representing integrations associated with the event.
+ * @property externalIds A list of maps representing external IDs associated with the event.
+ * @property customContext A JSON object representing custom contexts associated with the event.
  */
 data class RudderOption(
     val integrations: JsonObject = emptyJsonObject,
@@ -17,7 +17,7 @@ data class RudderOption(
 )
 
 /**
- * Represents an external ID associated with a message.
+ * Represents an external ID associated with a event.
  *
  * @property type The type of the external ID.
  * @property id The ID value.

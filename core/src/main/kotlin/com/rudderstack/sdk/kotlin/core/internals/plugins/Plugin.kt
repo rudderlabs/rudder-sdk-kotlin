@@ -1,7 +1,7 @@
 package com.rudderstack.sdk.kotlin.core.internals.plugins
 
 import com.rudderstack.sdk.kotlin.core.Analytics
-import com.rudderstack.sdk.kotlin.core.internals.models.Message
+import com.rudderstack.sdk.kotlin.core.internals.models.Event
 
 /**
  * The `Plugin` interface defines the contract for creating plugins that can be integrated into the RudderStack SDK.
@@ -48,11 +48,11 @@ interface Plugin {
      * modify, enrich, or filter the message before it is processed further or sent to a destination.
      * By default, this method returns the unmodified message.
      *
-     * @param message The `Message` object representing the event to be processed.
+     * @param event The `Message` object representing the event to be processed.
      * @return The potentially modified `Message` object, or `null` if the message should be discarded.
      */
-    suspend fun intercept(message: Message): Message? {
-        return message
+    suspend fun intercept(event: Event): Event? {
+        return event
     }
 
     /**

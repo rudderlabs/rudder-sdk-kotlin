@@ -79,7 +79,7 @@ enum class MessageType {
  * @property options RudderOption associated with the message, represented as a [RudderOption] instance. This is transient.
  */
 @Serializable(with = BaseMessageSerializer::class)
-sealed class Message {
+sealed class Event {
 
     abstract var type: MessageType
     open var messageId: String = generateUUID()
@@ -110,7 +110,7 @@ sealed class Message {
      * @param T
      * @return
      */
-    fun <T : Message> copy(): T {
+    fun <T : Event> copy(): T {
         val original = this
         val copy = when (this) {
             is TrackEvent -> TrackEvent(
@@ -170,7 +170,7 @@ data class TrackEvent(
     var properties: Properties,
     @Transient override var options: RudderOption = RudderOption(),
     @Transient override var userIdentityState: UserIdentity = provideEmptyUserIdentityState()
-) : Message() {
+) : Event() {
 
     override var type: MessageType = MessageType.Track
     override var messageId: String = super.messageId
@@ -200,7 +200,7 @@ data class ScreenEvent(
     var properties: Properties,
     @Transient override var options: RudderOption = RudderOption(),
     @Transient override var userIdentityState: UserIdentity = provideEmptyUserIdentityState()
-) : Message() {
+) : Event() {
 
     override var type: MessageType = MessageType.Screen
     override var messageId: String = super.messageId
@@ -230,7 +230,7 @@ data class GroupEvent(
     var traits: RudderTraits = emptyJsonObject,
     @Transient override var options: RudderOption = RudderOption(),
     @Transient override var userIdentityState: UserIdentity = provideEmptyUserIdentityState()
-) : Message() {
+) : Event() {
 
     override var type: MessageType = MessageType.Group
     override var messageId: String = super.messageId
@@ -244,13 +244,13 @@ data class GroupEvent(
 }
 
 /**
- * Custom serializer for the [Message] class, determining which specific type to deserialize into
+ * Custom serializer for the [Event] class, determining which specific type to deserialize into
  * based on the "type" field in the JSON object.
  *
  * This serializer enables polymorphic deserialization for messages, making it possible to
  * serialize and deserialize different types of messages seamlessly.
  */
-object BaseMessageSerializer : JsonContentPolymorphicSerializer<Message>(Message::class) {
+object BaseMessageSerializer : JsonContentPolymorphicSerializer<Event>(Event::class) {
 
     /**
      * Selects the appropriate deserializer based on the "type" field in the JSON object.
@@ -258,7 +258,7 @@ object BaseMessageSerializer : JsonContentPolymorphicSerializer<Message>(Message
      * @param element The JSON element to inspect.
      * @return The appropriate deserialization strategy for the given message type.
      */
-    override fun selectDeserializer(element: JsonElement): DeserializationStrategy<out Message> {
+    override fun selectDeserializer(element: JsonElement): DeserializationStrategy<out Event> {
         return when (element.jsonObject["type"]?.jsonPrimitive?.content) {
             "track" -> TrackEvent.serializer()
             "screen" -> ScreenEvent.serializer()

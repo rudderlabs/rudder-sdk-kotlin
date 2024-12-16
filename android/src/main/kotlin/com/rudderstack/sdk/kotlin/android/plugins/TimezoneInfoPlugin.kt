@@ -3,7 +3,7 @@ package com.rudderstack.sdk.kotlin.android.plugins
 import com.rudderstack.sdk.kotlin.android.utils.mergeWithHigherPriorityTo
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
-import com.rudderstack.sdk.kotlin.core.internals.models.Message
+import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
@@ -14,7 +14,7 @@ import java.util.TimeZone
 private const val TIMEZONE_KEY = "timezone"
 
 /**
- * Plugin to attach timezone info to the message context payload
+ * Plugin to attach timezone info to the event context payload
  */
 internal class TimezoneInfoPlugin : Plugin {
 
@@ -34,13 +34,13 @@ internal class TimezoneInfoPlugin : Plugin {
         put(TIMEZONE_KEY, TimeZone.getDefault().id)
     }
 
-    override suspend fun intercept(message: Message): Message = attachTimezoneInfo(message)
+    override suspend fun intercept(event: Event): Event = attachTimezoneInfo(event)
 
-    private fun attachTimezoneInfo(message: Message): Message {
-        LoggerAnalytics.debug("Attaching timezone info to the message payload")
+    private fun attachTimezoneInfo(event: Event): Event {
+        LoggerAnalytics.debug("Attaching timezone info to the event payload")
 
-        message.context = message.context mergeWithHigherPriorityTo timezoneContext
+        event.context = event.context mergeWithHigherPriorityTo timezoneContext
 
-        return message
+        return event
     }
 }

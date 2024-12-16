@@ -2,7 +2,7 @@ package com.rudderstack.sdk.kotlin.core.internals.queue
 
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
-import com.rudderstack.sdk.kotlin.core.internals.models.Message
+import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClient
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClientImpl
 import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPoliciesFacade
@@ -69,8 +69,8 @@ internal class MessageQueue(
             }.launchIn(analytics.analyticsScope)
     }
 
-    fun put(message: Message) {
-        writeChannel.trySend(QueueMessage(QueueMessage.QueueMessageType.MESSAGE, message))
+    fun put(event: Event) {
+        writeChannel.trySend(QueueMessage(QueueMessage.QueueMessageType.MESSAGE, event))
     }
 
     fun start() {
@@ -100,7 +100,7 @@ internal class MessageQueue(
         flushPoliciesFacade.cancelSchedule()
     }
 
-    internal fun stringifyBaseEvent(payload: Message): String {
+    internal fun stringifyBaseEvent(payload: Event): String {
         return payload.encodeToString()
     }
 
@@ -111,7 +111,7 @@ internal class MessageQueue(
 
             if (!isFlushSignal) {
                 try {
-                    queueMessage.message?.let {
+                    queueMessage.event?.let {
                         stringifyBaseEvent(it).also { stringValue ->
                             LoggerAnalytics.debug("running $stringValue")
                             storage.write(StorageKeys.MESSAGE, stringValue)
@@ -183,7 +183,7 @@ internal class MessageQueue(
 
 private data class QueueMessage(
     val type: QueueMessageType,
-    val message: Message? = null,
+    val event: Event? = null,
 ) {
 
     enum class QueueMessageType {

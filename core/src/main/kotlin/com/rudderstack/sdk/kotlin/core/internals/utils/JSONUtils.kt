@@ -2,8 +2,8 @@
 
 package com.rudderstack.sdk.kotlin.core.internals.utils
 
+import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.ExternalId
-import com.rudderstack.sdk.kotlin.core.internals.models.Message
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -43,17 +43,17 @@ internal val LenientJson = Json {
 }
 
 /**
- * Encodes the message to a JSON string, filtering out empty JSON objects.
+ * Encodes the event to a JSON string, filtering out empty JSON objects.
  */
-internal fun Message.encodeToString(): String {
-    val stringMessage = LenientJson.encodeToString(this)
-    val filteredMessage = LenientJson.parseToJsonElement(stringMessage)
+internal fun Event.encodeToString(): String {
+    val stringEvent = LenientJson.encodeToString(this)
+    val filteredEvent = LenientJson.parseToJsonElement(stringEvent)
         .jsonObject.filterNot { (k, v) ->
             (k == "properties" && v == emptyJsonObject) ||
                 (k == "traits" && v == emptyJsonObject) ||
                 (k == "userId" && v is JsonPrimitive && v.content == String.empty())
         }
-    return LenientJson.encodeToString(filteredMessage)
+    return LenientJson.encodeToString(filteredEvent)
 }
 
 /**

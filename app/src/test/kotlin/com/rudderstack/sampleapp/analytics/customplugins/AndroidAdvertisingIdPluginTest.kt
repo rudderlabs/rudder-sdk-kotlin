@@ -125,7 +125,7 @@ class AndroidAdvertisingIdPluginTest {
         }
 
     @Test
-    fun `given advertising ID returns updated message, verify that intercept method returns the updated message`() =
+    fun `given advertising ID returns updated event, verify that intercept method returns the updated event`() =
         runTest(testDispatcher) {
             val updatedMessage = TrackEvent(
                 event = "Sample Event",

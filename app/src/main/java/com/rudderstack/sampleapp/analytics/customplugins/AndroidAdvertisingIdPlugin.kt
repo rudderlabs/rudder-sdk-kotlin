@@ -7,7 +7,7 @@ import com.google.android.gms.ads.identifier.AdvertisingIdClient
 import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
-import com.rudderstack.sdk.kotlin.core.internals.models.Message
+import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
@@ -112,9 +112,9 @@ class AndroidAdvertisingIdPlugin @OptIn(DelicateCoroutinesApi::class) constructo
         }
     }
 
-    internal fun attachAdvertisingId(messagePayload: Message): Message {
+    internal fun attachAdvertisingId(eventPayload: Event): Event {
         val updatedDevice = buildJsonObject {
-            messagePayload.context[DEVICE]?.jsonObject?.let {
+            eventPayload.context[DEVICE]?.jsonObject?.let {
                 putAll(it)
             }
             if (adTrackingEnabled && advertisingId.isNotBlank()) {
@@ -122,14 +122,14 @@ class AndroidAdvertisingIdPlugin @OptIn(DelicateCoroutinesApi::class) constructo
             }
             put(DEVICE_AD_TRACKING_ENABLED_KEY, adTrackingEnabled)
         }
-        messagePayload.context = buildJsonObject {
-            putAll(messagePayload.context)
+        eventPayload.context = buildJsonObject {
+            putAll(eventPayload.context)
             put(DEVICE, updatedDevice)
         }
-        return messagePayload
+        return eventPayload
     }
 
-    override suspend fun intercept(message: Message): Message {
-        return attachAdvertisingId(message)
+    override suspend fun intercept(event: Event): Event {
+        return attachAdvertisingId(event)
     }
 }

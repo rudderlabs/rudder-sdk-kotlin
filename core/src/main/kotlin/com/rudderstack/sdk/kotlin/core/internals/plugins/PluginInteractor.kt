@@ -1,6 +1,6 @@
 package com.rudderstack.sdk.kotlin.core.internals.plugins
 
-import com.rudderstack.sdk.kotlin.core.internals.models.Message
+import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.reflect.KClass
 
@@ -18,12 +18,12 @@ internal class PluginInteractor(private var pluginList: CopyOnWriteArrayList<Plu
         pluginList.clear()
     }
 
-    suspend fun execute(message: Message): Message? {
-        var result: Message? = message
+    suspend fun execute(event: Event): Event? {
+        var result: Event? = event
 
         pluginList.forEach { plugin ->
             result?.let { message ->
-                val copy = message.copy<Message>()
+                val copy = message.copy<Event>()
                 result = plugin.intercept(copy)
             }
         }
