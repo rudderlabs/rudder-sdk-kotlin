@@ -5,13 +5,14 @@ import android.os.Build
 import androidx.annotation.VisibleForTesting
 import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.android.utils.UniqueIdProvider
+import com.rudderstack.sdk.kotlin.android.utils.mergeWithHigherPriorityTo
 import com.rudderstack.sdk.kotlin.android.utils.putIfNotNull
 import com.rudderstack.sdk.kotlin.core.Analytics
+import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Message
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
-import com.rudderstack.sdk.kotlin.core.internals.utils.putAll
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.put
 
 private const val DEVICE = "device"
@@ -29,35 +30,39 @@ internal class DeviceInfoPlugin : Plugin {
     override lateinit var analytics: Analytics
     private lateinit var application: Application
     private var collectDeviceId = false
+    private var androidId: String? = null
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
         (analytics.configuration as? Configuration)?.let { config ->
             application = config.application
             collectDeviceId = config.collectDeviceId
+            androidId = retrieveDeviceId()
         }
-    }
-
-    @VisibleForTesting
-    internal fun attachDeviceInfo(messagePayload: Message): Message {
-        val updatedDeviceID = buildJsonObject {
-            messagePayload.context[DEVICE]?.jsonObject?.let {
-                putAll(it)
-            }
-            putIfNotNull(ID, retrieveDeviceId())
-            put(MANUFACTURER, BuildInfo.getManufacturer())
-            put(MODEL, BuildInfo.getModel())
-            put(NAME, BuildInfo.getDevice())
-            put(TYPE, ANDROID)
-        }
-        messagePayload.context = buildJsonObject {
-            putAll(messagePayload.context)
-            put(DEVICE, updatedDeviceID)
-        }
-        return messagePayload
     }
 
     override suspend fun execute(message: Message): Message = attachDeviceInfo(message)
+
+    @org.jetbrains.annotations.VisibleForTesting
+    internal fun attachDeviceInfo(message: Message): Message {
+        LoggerAnalytics.debug("Attaching device info to the message payload")
+        message.context = message.context mergeWithHigherPriorityTo getDeviceInfo()
+        return message
+    }
+
+    @org.jetbrains.annotations.VisibleForTesting
+    internal fun getDeviceInfo(): JsonObject = buildJsonObject {
+        put(
+            DEVICE,
+            buildJsonObject {
+                putIfNotNull(ID, androidId)
+                put(MANUFACTURER, BuildInfo.getManufacturer())
+                put(MODEL, BuildInfo.getModel())
+                put(NAME, BuildInfo.getDevice())
+                put(TYPE, ANDROID)
+            }
+        )
+    }
 
     @VisibleForTesting
     internal fun retrieveDeviceId(): String? {

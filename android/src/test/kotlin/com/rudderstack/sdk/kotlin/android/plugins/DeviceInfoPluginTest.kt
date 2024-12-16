@@ -72,45 +72,36 @@ class DeviceInfoPluginTest {
 
     @Test
     fun `when attachDeviceInfo is called, then device information is attached to message payload `() {
-        val testDeviceId = UNIQUE_DEVICE_ID
-        every { plugin.retrieveDeviceId() } returns testDeviceId
-
         mockkObject(BuildInfo)
         every { BuildInfo.getManufacturer() } returns MANUFACTURER_VALUE
         every { BuildInfo.getModel() } returns MODEL_VALUE
         every { BuildInfo.getDevice() } returns NAME_VALUE
+        every { mockConfiguration.collectDeviceId } returns true
+        every { plugin.retrieveDeviceId() } returns UNIQUE_DEVICE_ID
 
-        val message = provideEvent().apply {
+        plugin.setup(mockAnalytics)
+        val actualMessage = plugin.attachDeviceInfo(provideEvent())
+        unmockkObject(BuildInfo)
+
+        val expectedMessage = provideEvent().apply {
             context = buildJsonObject {
                 putAll(context)
                 put(DEVICE, provideLocaleContextPayload())
             }
         }
 
-        val actual = plugin.attachDeviceInfo(provideEvent())
-        assertEquals(message.context, actual.context)
-        unmockkObject(BuildInfo)
+        assertEquals(expectedMessage.context, actualMessage.context)
     }
 
     @Test
     fun `given collectDeviceId is true, when setup is called, then configuration collectDeviceId is true`() {
+        val testDeviceId = UNIQUE_DEVICE_ID
+        every { plugin.retrieveDeviceId() } returns testDeviceId
         every { mockConfiguration.collectDeviceId } returns true
 
         plugin.setup(mockAnalytics)
 
         assertEquals(true, (mockAnalytics.configuration as? Configuration)?.collectDeviceId)
-    }
-
-    @Test
-    fun `when attachDeviceInfo is called, then device information is attached to message payload`() = runTest {
-        val mockMessage = mockk<Message>(relaxed = true)
-        val mockUpdatedMessage = mockk<Message>(relaxed = true)
-
-        every { plugin.attachDeviceInfo(mockMessage) } returns mockUpdatedMessage
-
-        val result = plugin.execute(mockMessage)
-
-        assertEquals(mockUpdatedMessage, result)
     }
 
     @Test
