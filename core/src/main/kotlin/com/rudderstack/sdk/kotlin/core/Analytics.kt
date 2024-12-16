@@ -32,7 +32,6 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import com.rudderstack.sdk.kotlin.core.internals.utils.isAnalyticsActive
 import com.rudderstack.sdk.kotlin.core.internals.utils.resolvePreferredPreviousId
 import com.rudderstack.sdk.kotlin.core.plugins.LibraryInfoPlugin
-import com.rudderstack.sdk.kotlin.core.plugins.PocPlugin
 import com.rudderstack.sdk.kotlin.core.plugins.RudderStackDataplanePlugin
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
@@ -303,7 +302,6 @@ open class Analytics protected constructor(
     private fun setup() {
         setLogger(logger = KotlinLogger())
         add(LibraryInfoPlugin())
-        add(PocPlugin())
         add(RudderStackDataplanePlugin())
 
         analyticsScope.launch(analyticsDispatcher) {
