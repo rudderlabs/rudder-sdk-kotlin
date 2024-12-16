@@ -24,11 +24,7 @@ internal class PluginInteractor(private var pluginList: CopyOnWriteArrayList<Plu
         pluginList.forEach { plugin ->
             result?.let { message ->
                 val copy = message.copy<Message>()
-                when (plugin) {
-                    else -> {
-                        result = plugin.intercept(copy)
-                    }
-                }
+                result = plugin.intercept(copy)
             }
         }
 
