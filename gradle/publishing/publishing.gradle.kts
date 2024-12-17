@@ -10,14 +10,14 @@ fun getExtraString(name: String) = extra[name]?.toString()
 // If not release build add SNAPSHOT suffix
 fun getVersionName() =
     if (hasProperty("release"))
-        getExtraString("VERSION_NAME")
+        RudderStackBuildConfig.Version.VERSION_NAME
     else
-        getExtraString("VERSION_NAME") + "-SNAPSHOT"
+        RudderStackBuildConfig.Version.VERSION_NAME + "-SNAPSHOT"
 
 configure<PublishingExtension> {
     publications {
         register<MavenPublication>("release") {
-            groupId = getExtraString("GROUP")
+            groupId = RudderStackBuildConfig.PackageName.PACKAGE_NAME
             artifactId = getExtraString("POM_ARTIFACT_ID")
             version = getVersionName()
 
