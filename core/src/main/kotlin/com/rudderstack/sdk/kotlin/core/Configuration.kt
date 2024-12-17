@@ -26,7 +26,7 @@ open class Configuration @JvmOverloads constructor(
     open val controlPlaneUrl: String = DEFAULT_CONTROL_PLANE_URL,
     open val logLevel: Logger.LogLevel = Logger.DEFAULT_LOG_LEVEL,
     open val gzipEnabled: Boolean = DEFAULT_GZIP_STATUS,
-    open var flushPolicies: List<FlushPolicy> = DEFAULT_FLUSH_POLICIES,
+    open val flushPolicies: List<FlushPolicy> = DEFAULT_FLUSH_POLICIES,
 ) {
 
     companion object {

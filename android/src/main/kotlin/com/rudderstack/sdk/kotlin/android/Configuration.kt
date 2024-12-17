@@ -65,7 +65,7 @@ data class Configuration @JvmOverloads constructor(
     override val dataPlaneUrl: String,
     override val controlPlaneUrl: String = DEFAULT_CONTROL_PLANE_URL,
     override val logLevel: Logger.LogLevel = Logger.DEFAULT_LOG_LEVEL,
-    override var flushPolicies: List<FlushPolicy> = DEFAULT_FLUSH_POLICIES,
+    override val flushPolicies: List<FlushPolicy> = DEFAULT_FLUSH_POLICIES,
     override val gzipEnabled: Boolean = DEFAULT_GZIP_STATUS
 ) : Configuration(
     writeKey = writeKey,
