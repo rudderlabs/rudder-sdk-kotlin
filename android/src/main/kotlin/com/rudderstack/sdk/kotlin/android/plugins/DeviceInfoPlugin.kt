@@ -29,33 +29,33 @@ internal class DeviceInfoPlugin : Plugin {
 
     override lateinit var analytics: Analytics
     private lateinit var application: Application
+    private lateinit var deviceContext: JsonObject
     private var collectDeviceId = false
-    private var androidId: String? = null
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
         (analytics.configuration as? Configuration)?.let { config ->
             application = config.application
             collectDeviceId = config.collectDeviceId
-            androidId = retrieveDeviceId()
+            deviceContext = getDeviceInfo()
         }
     }
 
     override suspend fun execute(message: Message): Message = attachDeviceInfo(message)
 
-    @org.jetbrains.annotations.VisibleForTesting
+    @VisibleForTesting
     internal fun attachDeviceInfo(message: Message): Message {
         LoggerAnalytics.debug("Attaching device info to the message payload")
-        message.context = message.context mergeWithHigherPriorityTo getDeviceInfo()
+        message.context = message.context mergeWithHigherPriorityTo deviceContext
         return message
     }
 
-    @org.jetbrains.annotations.VisibleForTesting
+    @VisibleForTesting
     internal fun getDeviceInfo(): JsonObject = buildJsonObject {
         put(
             DEVICE,
             buildJsonObject {
-                putIfNotNull(ID, androidId)
+                putIfNotNull(ID, retrieveDeviceId())
                 put(MANUFACTURER, BuildInfo.getManufacturer())
                 put(MODEL, BuildInfo.getModel())
                 put(NAME, BuildInfo.getDevice())
