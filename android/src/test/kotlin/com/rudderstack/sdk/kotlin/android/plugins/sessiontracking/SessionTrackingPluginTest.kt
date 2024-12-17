@@ -154,7 +154,7 @@ class SessionTrackingPluginTest {
         }
 
     @Test
-    fun `given automatic session enabled, when execute called, then correct payload is attached`() = runTest {
+    fun `given automatic session enabled, when intercept called, then correct payload is attached`() = runTest {
         val sessionId = 1234567890L
         val currentTime = 100000000L
         mockSystemCurrentTime(sessionId * 1000)
@@ -166,8 +166,8 @@ class SessionTrackingPluginTest {
         plugin.setup(mockAnalytics)
         advanceUntilIdle()
 
-        plugin.execute(firstMessage)
-        plugin.execute(secondMessage)
+        plugin.intercept(firstMessage)
+        plugin.intercept(secondMessage)
 
         assertEquals(sessionId.toString(), firstMessage.context[SESSION_ID].toString())
         assertEquals("true", firstMessage.context[SESSION_START].toString())
@@ -176,7 +176,7 @@ class SessionTrackingPluginTest {
     }
 
     @Test
-    fun `given manual session is started from analytics, when execute called, then correct payload is attached`() = runTest {
+    fun `given manual session is started from analytics, when intercept called, then correct payload is attached`() = runTest {
         val sessionId = 1234567890L
         pluginSetup(automaticSessionTracking = false)
 
@@ -187,8 +187,8 @@ class SessionTrackingPluginTest {
         val firstMessage = TrackEvent("test", emptyJsonObject)
         val secondMessage = TrackEvent("test", emptyJsonObject)
 
-        plugin.execute(firstMessage)
-        plugin.execute(secondMessage)
+        plugin.intercept(firstMessage)
+        plugin.intercept(secondMessage)
 
         assertEquals(sessionId.toString(), firstMessage.context[SESSION_ID].toString())
         assertEquals("true", firstMessage.context[SESSION_START].toString())
@@ -319,7 +319,7 @@ class SessionTrackingPluginTest {
         plugin.setup(mockAnalytics)
         advanceUntilIdle()
 
-        plugin.execute(message)
+        plugin.intercept(message)
         advanceUntilIdle()
 
         assertEquals(currentTime - 600_000L, mockStorage.readLong(StorageKeys.LAST_ACTIVITY_TIME, 0L))
@@ -340,7 +340,7 @@ class SessionTrackingPluginTest {
         plugin.setup(mockAnalytics)
         advanceUntilIdle()
 
-        plugin.execute(message)
+        plugin.intercept(message)
         advanceUntilIdle()
 
         assertEquals(currentTime, mockStorage.readLong(StorageKeys.LAST_ACTIVITY_TIME, 0L))

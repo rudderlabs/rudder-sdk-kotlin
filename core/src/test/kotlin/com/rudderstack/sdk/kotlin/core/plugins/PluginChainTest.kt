@@ -1,7 +1,7 @@
 package com.rudderstack.sdk.kotlin.core.plugins
 
 import com.rudderstack.sdk.kotlin.core.Analytics
-import com.rudderstack.sdk.kotlin.core.internals.models.Message
+import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.PluginChain
 import com.rudderstack.sdk.kotlin.core.internals.plugins.PluginInteractor
@@ -35,19 +35,19 @@ class PluginChainTest {
 
     @Test
     fun `when process called, then it should execute plugins in correct order`() = runTest {
-        val initialMessage: Message = mockk(relaxed = true)
-        val preProcessedMessage: Message = mockk(relaxed = true)
-        val onProcessedMessage: Message = mockk(relaxed = true)
+        val initialEvent: Event = mockk(relaxed = true)
+        val preProcessedEvent: Event = mockk(relaxed = true)
+        val onProcessedEvent: Event = mockk(relaxed = true)
 
-        coEvery { preProcessInteractor.execute(initialMessage) } returns preProcessedMessage
-        coEvery { onProcessInteractor.execute(preProcessedMessage) } returns onProcessedMessage
+        coEvery { preProcessInteractor.execute(initialEvent) } returns preProcessedEvent
+        coEvery { onProcessInteractor.execute(preProcessedEvent) } returns onProcessedEvent
 
-        pluginChain.process(initialMessage)
+        pluginChain.process(initialEvent)
 
         coVerifyOrder {
-            preProcessInteractor.execute(initialMessage)
-            onProcessInteractor.execute(preProcessedMessage)
-            destinationInteractor.execute(onProcessedMessage)
+            preProcessInteractor.execute(initialEvent)
+            onProcessInteractor.execute(preProcessedEvent)
+            destinationInteractor.execute(onProcessedEvent)
         }
     }
 

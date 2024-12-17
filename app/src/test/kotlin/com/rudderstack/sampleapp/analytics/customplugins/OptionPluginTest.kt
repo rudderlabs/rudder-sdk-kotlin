@@ -1,6 +1,6 @@
 package com.rudderstack.sampleapp.analytics.customplugins
 
-import com.rudderstack.sdk.kotlin.core.internals.models.Message
+import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
@@ -21,27 +21,27 @@ private val AMPLITUDE_INTEGRATION_ENABLED = buildJsonObject { put("Amplitude", t
 class OptionPluginTest {
 
     @Test
-    fun `given an empty option object is passed, when the option plugin is executed, then message contains empty context and default integrations`() =
+    fun `given an empty option object is passed, when the option plugin is intercepted, then event contains empty context and default integrations`() =
         runTest {
             val optionPlugin = OptionPlugin()
-            val message = provideDefaultEvent().apply {
+            val event = provideDefaultEvent().apply {
                 configureDefaultIntegration(this)
             }
 
-            optionPlugin.execute(message)
+            optionPlugin.intercept(event)
 
             verifyResult(
                 expected = emptyJsonObject.toString(),
-                actual = message.context.toString()
+                actual = event.context.toString()
             )
             verifyResult(
                 expected = DEFAULT_INTEGRATION_ENABLED.toString(),
-                actual = message.integrations.toString()
+                actual = event.integrations.toString()
             )
         }
 
     @Test
-    fun `given an option with distinct key is passed, when the option plugin is executed, then message contains both key-value pair`() =
+    fun `given an option with distinct key is passed, when the option plugin is intercepted, then event contains both key-value pair`() =
         runTest {
             val optionPlugin = OptionPlugin(
                 option = RudderOption(
@@ -51,31 +51,31 @@ class OptionPluginTest {
                     integrations = AMPLITUDE_INTEGRATION_ENABLED
                 )
             )
-            val message = provideDefaultEvent().apply {
+            val event = provideDefaultEvent().apply {
                 configureDefaultIntegration(this)
                 context = buildJsonObject { put(KEY_2, VALUE_2) }
             }
 
-            optionPlugin.execute(message)
+            optionPlugin.intercept(event)
 
             verifyResult(
                 expected = buildJsonObject {
                     put(KEY_1, VALUE_1)
                     put(KEY_2, VALUE_2)
                 }.toString(),
-                actual = message.context.toString()
+                actual = event.context.toString()
             )
             verifyResult(
                 expected = buildJsonObject {
                     put("All", true)
                     put("Amplitude", true)
                 }.toString(),
-                actual = message.integrations.toString()
+                actual = event.integrations.toString()
             )
         }
 
     @Test
-    fun `given an option with same key but different value is passed, when the option plugin is executed, then message contains the updated key-value pair`() =
+    fun `given an option with same key but different value is passed, when the option plugin is intercepted, then event contains the updated key-value pair`() =
         runTest {
             val higherPreferenceOption = RudderOption(
                 customContext = buildJsonObject {
@@ -87,20 +87,20 @@ class OptionPluginTest {
                 }
             )
             val optionPlugin = OptionPlugin(option = higherPreferenceOption)
-            val message = provideDefaultEvent().apply {
+            val event = provideDefaultEvent().apply {
                 configureDefaultIntegration(this)
                 context = buildJsonObject { put(KEY_1, VALUE_2) }
             }
 
-            optionPlugin.execute(message)
+            optionPlugin.intercept(event)
 
             verifyResult(
                 expected = higherPreferenceOption.customContext.toString(),
-                actual = message.context.toString()
+                actual = event.context.toString()
             )
             verifyResult(
                 expected = higherPreferenceOption.integrations.toString(),
-                actual = message.integrations.toString()
+                actual = event.integrations.toString()
             )
         }
 
@@ -109,11 +109,11 @@ class OptionPluginTest {
     }
 }
 
-private fun provideDefaultEvent(): Message = TrackEvent(
+private fun provideDefaultEvent(): Event = TrackEvent(
     event = EVENT_NAME,
     properties = emptyJsonObject,
 )
 
-private fun configureDefaultIntegration(message: Message) {
-    message.integrations = DEFAULT_INTEGRATION_ENABLED
+private fun configureDefaultIntegration(event: Event) {
+    event.integrations = DEFAULT_INTEGRATION_ENABLED
 }

@@ -6,7 +6,7 @@ import androidx.annotation.VisibleForTesting
 import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.android.utils.UniqueIdProvider
 import com.rudderstack.sdk.kotlin.core.Analytics
-import com.rudderstack.sdk.kotlin.core.internals.models.Message
+import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
@@ -42,9 +42,9 @@ internal class DeviceInfoPlugin : Plugin {
     }
 
     @VisibleForTesting
-    internal fun attachDeviceInfo(messagePayload: Message): Message {
+    internal fun attachDeviceInfo(eventPayload: Event): Event {
         val updatedDeviceID = buildJsonObject {
-            messagePayload.context[DEVICE]?.jsonObject?.let {
+            eventPayload.context[DEVICE]?.jsonObject?.let {
                 putAll(it)
             }
             put(ID, retrieveDeviceId())
@@ -53,14 +53,14 @@ internal class DeviceInfoPlugin : Plugin {
             put(NAME, BuildInfo.getDevice())
             put(TYPE, ANDROID)
         }
-        messagePayload.context = buildJsonObject {
-            putAll(messagePayload.context)
+        eventPayload.context = buildJsonObject {
+            putAll(eventPayload.context)
             put(DEVICE, updatedDeviceID)
         }
-        return messagePayload
+        return eventPayload
     }
 
-    override suspend fun execute(message: Message): Message = attachDeviceInfo(message)
+    override suspend fun intercept(event: Event): Event = attachDeviceInfo(event)
 
     @VisibleForTesting
     internal fun retrieveDeviceId(): String {

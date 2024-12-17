@@ -1,9 +1,9 @@
 package com.rudderstack.sdk.kotlin.core.internals.utils
 
 import com.rudderstack.sdk.kotlin.core.internals.models.AliasEvent
+import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.GroupEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
-import com.rudderstack.sdk.kotlin.core.internals.models.Message
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderTraits
 import com.rudderstack.sdk.kotlin.core.internals.models.ScreenEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
@@ -36,7 +36,7 @@ private val DEFAULT_INTEGRATIONS = buildJsonObject {
     put("All", true)
 }
 
-internal fun Message.updateIntegrationOptionsAndCustomCustomContext() {
+internal fun Event.updateIntegrationOptionsAndCustomCustomContext() {
     when (this) {
         is TrackEvent, is ScreenEvent, is GroupEvent, is IdentifyEvent, is AliasEvent -> {
             this.integrations = DEFAULT_INTEGRATIONS mergeWithHigherPriorityTo options.integrations
@@ -45,28 +45,28 @@ internal fun Message.updateIntegrationOptionsAndCustomCustomContext() {
     }
 }
 
-internal fun Message.addPersistedValues() {
+internal fun Event.addPersistedValues() {
     this.setAnonymousId()
     this.setUserId()
     this.setTraitsInContext { this.buildTraits() }
     this.setExternalIdInContext()
 }
 
-private fun Message.setAnonymousId() {
+private fun Event.setAnonymousId() {
     this.anonymousId = userIdentityState.anonymousId
 }
 
-private fun Message.setUserId() {
+private fun Event.setUserId() {
     this.userId = userIdentityState.userId
 }
 
-private fun Message.setTraitsInContext(getLatestTraits: () -> RudderTraits) {
+private fun Event.setTraitsInContext(getLatestTraits: () -> RudderTraits) {
     getLatestTraits().let { latestTraits ->
         this.context = this.context mergeWithHigherPriorityTo latestTraits
     }
 }
 
-private fun Message.buildTraits(): RudderTraits {
+private fun Event.buildTraits(): RudderTraits {
     val latestAnonymousId = userIdentityState.anonymousId
     val latestTraits = userIdentityState.traits
 
@@ -82,7 +82,7 @@ private fun getDefaultTraits(anonymousId: String): RudderTraits = buildJsonObjec
     put(ANONYMOUS_ID, anonymousId)
 }
 
-private fun Message.setExternalIdInContext() {
+private fun Event.setExternalIdInContext() {
     val externalIds = userIdentityState.externalIds.toJsonObject()
     if (externalIds.isNotEmpty()) {
         this.context = this.context mergeWithHigherPriorityTo externalIds

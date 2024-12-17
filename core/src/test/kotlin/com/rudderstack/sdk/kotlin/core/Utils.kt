@@ -2,7 +2,7 @@ package com.rudderstack.sdk.kotlin.core
 
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
-import com.rudderstack.sdk.kotlin.core.internals.models.Message
+import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.UserIdentity
 import com.rudderstack.sdk.kotlin.core.internals.policies.DEFAULT_FLUSH_INTERVAL_IN_MILLIS
@@ -25,7 +25,7 @@ fun mockAnalytics(testScope: TestScope, testDispatcher: TestDispatcher): Analyti
     return mock
 }
 
-fun Message.applyMockedValues() {
+fun Event.applyMockedValues() {
     this.originalTimestamp = "<original-timestamp>"
     this.context = emptyJsonObject
     this.messageId = "<message-id>"

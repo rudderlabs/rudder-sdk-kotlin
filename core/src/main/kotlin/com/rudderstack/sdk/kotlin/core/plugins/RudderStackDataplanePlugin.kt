@@ -2,63 +2,63 @@ package com.rudderstack.sdk.kotlin.core.plugins
 
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.AliasEvent
+import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.GroupEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
-import com.rudderstack.sdk.kotlin.core.internals.models.Message
 import com.rudderstack.sdk.kotlin.core.internals.models.ScreenEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
-import com.rudderstack.sdk.kotlin.core.internals.plugins.MessagePlugin
+import com.rudderstack.sdk.kotlin.core.internals.plugins.EventPlugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
-import com.rudderstack.sdk.kotlin.core.internals.queue.MessageQueue
+import com.rudderstack.sdk.kotlin.core.internals.queue.EventQueue
 import org.jetbrains.annotations.VisibleForTesting
 
-internal class RudderStackDataplanePlugin : MessagePlugin {
+internal class RudderStackDataplanePlugin : EventPlugin {
 
     override val pluginType: Plugin.PluginType = Plugin.PluginType.Destination
     override lateinit var analytics: Analytics
 
     @VisibleForTesting
-    internal var messageQueue: MessageQueue? = null
+    internal var eventQueue: EventQueue? = null
 
-    override fun track(payload: TrackEvent): Message {
+    override fun track(payload: TrackEvent): Event {
         enqueue(payload)
         return payload
     }
 
-    override fun screen(payload: ScreenEvent): Message {
+    override fun screen(payload: ScreenEvent): Event {
         enqueue(payload)
         return payload
     }
 
-    override fun group(payload: GroupEvent): Message? {
+    override fun group(payload: GroupEvent): Event? {
         enqueue(payload)
         return payload
     }
 
-    override fun identify(payload: IdentifyEvent): Message {
+    override fun identify(payload: IdentifyEvent): Event {
         enqueue(payload)
         return payload
     }
 
-    override fun alias(payload: AliasEvent): Message {
+    override fun alias(payload: AliasEvent): Event {
         enqueue(payload)
         return payload
     }
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
-        messageQueue = MessageQueue(analytics).apply { start() }
+        eventQueue = EventQueue(analytics).apply { start() }
     }
 
     internal fun flush() {
-        messageQueue?.flush()
+        eventQueue?.flush()
     }
 
     override fun teardown() {
-        messageQueue?.stop()
+        eventQueue?.stop()
     }
 
-    private fun enqueue(message: Message) {
-        this.messageQueue?.put(message)
+    private fun enqueue(event: Event) {
+        this.eventQueue?.put(event)
     }
 }

@@ -8,7 +8,7 @@ import com.rudderstack.sdk.kotlin.android.utils.getMonotonicCurrentTime
 import com.rudderstack.sdk.kotlin.android.utils.mergeWithHigherPriorityTo
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
-import com.rudderstack.sdk.kotlin.core.internals.models.Message
+import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.FlowState
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
@@ -75,17 +75,17 @@ internal class SessionTrackingPlugin(
         }
     }
 
-    override suspend fun execute(message: Message): Message {
+    override suspend fun intercept(event: Event): Event {
         if (sessionId != DEFAULT_SESSION_ID) {
-            addSessionIdToMessage(message)
+            addSessionIdToEvent(event)
             if (!isSessionManual) {
                 updateLastActivityTime()
             }
         }
-        return message
+        return event
     }
 
-    private fun addSessionIdToMessage(message: Message) {
+    private fun addSessionIdToEvent(event: Event) {
         val sessionPayload = buildJsonObject {
             put(SESSION_ID, sessionId)
             if (isSessionStart) {
@@ -93,7 +93,7 @@ internal class SessionTrackingPlugin(
                 put(SESSION_START, true)
             }
         }
-        message.context = message.context mergeWithHigherPriorityTo sessionPayload
+        event.context = event.context mergeWithHigherPriorityTo sessionPayload
     }
 
     private fun checkAndStartSessionOnLaunch() {

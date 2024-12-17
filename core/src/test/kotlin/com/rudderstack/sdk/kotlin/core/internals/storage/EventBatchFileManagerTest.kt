@@ -13,7 +13,7 @@ import java.io.File
 
 private const val TEST_WRITE_KEY = "asdf"
 
-class MessageBatchFileManagerTest {
+class EventBatchFileManagerTest {
 
     private val writeKey = TEST_WRITE_KEY
     private val fileName = "$writeKey-0"
@@ -21,11 +21,11 @@ class MessageBatchFileManagerTest {
     private val directory = File(FILE_DIRECTORY)
     private val keyValueStorage = PropertiesFile(directory.parentFile, writeKey)
 
-    private lateinit var messageBatchFileManager: MessageBatchFileManager
+    private lateinit var eventBatchFileManager: EventBatchFileManager
 
     @Before
     fun setup() {
-        messageBatchFileManager = MessageBatchFileManager(directory, writeKey, keyValueStorage)
+        eventBatchFileManager = EventBatchFileManager(directory, writeKey, keyValueStorage)
     }
 
     @After
@@ -34,8 +34,8 @@ class MessageBatchFileManagerTest {
     }
 
     @Test
-    fun `when storeMessage is called, then a file is created`() = runBlocking {
-        messageBatchFileManager.storeMessage(provideMessagePayload())
+    fun `when storeEvent is called, then a file is created`() = runBlocking {
+        eventBatchFileManager.storeEvent(provideMessagePayload())
 
         val files = directory.listFiles()
 
@@ -43,9 +43,9 @@ class MessageBatchFileManagerTest {
     }
 
     @Test
-    fun `given no batch file exists, when storeMessage is called, then a file is created`() = runBlocking {
-        messageBatchFileManager.rollover()
-        messageBatchFileManager.storeMessage(provideMessagePayload())
+    fun `given no batch file exists, when storeEvent is called, then a file is created`() = runBlocking {
+        eventBatchFileManager.rollover()
+        eventBatchFileManager.storeEvent(provideMessagePayload())
 
         val files = directory.listFiles()
 
@@ -57,7 +57,7 @@ class MessageBatchFileManagerTest {
         val file = provideFile(directory, fileName)
         file.writeText("content")
 
-        val result = messageBatchFileManager.remove(file.absolutePath)
+        val result = eventBatchFileManager.remove(file.absolutePath)
         assertTrue(result)
         assertFalse(file.exists())
     }
@@ -67,14 +67,14 @@ class MessageBatchFileManagerTest {
         runBlocking {
             val expectedPayload = provideMessagePayload()
 
-            messageBatchFileManager.storeMessage(expectedPayload)
+            eventBatchFileManager.storeEvent(expectedPayload)
 
             val files = directory.listFiles()
             assertNotNull(files)
             assertEquals(1, files?.size)
 
-            messageBatchFileManager.storeMessage(expectedPayload)
-            messageBatchFileManager.storeMessage(expectedPayload)
+            eventBatchFileManager.storeEvent(expectedPayload)
+            eventBatchFileManager.storeEvent(expectedPayload)
 
             val file = files?.first()
             val contents = file?.readText()
@@ -83,8 +83,8 @@ class MessageBatchFileManagerTest {
 
     @Test
     fun `given the file exists, when the file size is more than MAX_BATCH_SIZE, then a new file is created`() = runBlocking {
-        messageBatchFileManager.storeMessage(createLargeString(800))
-        messageBatchFileManager.storeMessage(provideMessagePayload())
+        eventBatchFileManager.storeEvent(createLargeString(800))
+        eventBatchFileManager.storeEvent(provideMessagePayload())
 
         assertFalse(File(directory, "$writeKey-0.tmp").exists())
         assertTrue(File(directory, "$writeKey-0").exists())
@@ -102,7 +102,7 @@ class MessageBatchFileManagerTest {
         val file = provideFile(directory, fileName)
         file.writeText("content")
 
-        val files = messageBatchFileManager.read()
+        val files = eventBatchFileManager.read()
 
         assertEquals(1, files.size)
         assertTrue(files.first().contains(fileName))
@@ -113,13 +113,13 @@ class MessageBatchFileManagerTest {
     fun `given a batch file, when rollover is called, then current file is finalized and a new one is created`() =
         runBlocking {
             val expectedPayload = provideMessagePayload()
-            messageBatchFileManager.storeMessage(expectedPayload)
+            eventBatchFileManager.storeEvent(expectedPayload)
 
             val filesBeforeRollover = directory.listFiles()
             assertNotNull(filesBeforeRollover)
             assertEquals(1, filesBeforeRollover?.size)
 
-            messageBatchFileManager.rollover()
+            eventBatchFileManager.rollover()
 
             val filesAfterRollover = directory.listFiles()
             assertNotNull(filesAfterRollover)
@@ -129,10 +129,10 @@ class MessageBatchFileManagerTest {
     @Test
     fun `given a batch file exists, when  read finishes open file and lists it`() = runBlocking {
         val expectedPayload = provideMessagePayload()
-        messageBatchFileManager.storeMessage(expectedPayload)
-        messageBatchFileManager.rollover()
+        eventBatchFileManager.storeEvent(expectedPayload)
+        eventBatchFileManager.rollover()
 
-        val fileUrls = messageBatchFileManager.read()
+        val fileUrls = eventBatchFileManager.read()
         assertEquals(1, fileUrls.size)
 
         val expectedContents = """ {"batch":[${expectedPayload}],"sentAt":"$epochTimestamp"}""".trim()
@@ -147,9 +147,9 @@ class MessageBatchFileManagerTest {
     fun `given a batch file exists, when finish is called, then current file is finalised`() = runBlocking {
         val file = File(directory, fileName + TMP_SUFFIX)
         file.writeText("content")
-        messageBatchFileManager.storeMessage(provideMessagePayload())
+        eventBatchFileManager.storeEvent(provideMessagePayload())
 
-        messageBatchFileManager.finish()
+        eventBatchFileManager.finish()
 
         assertFalse(File(directory, fileName + TMP_SUFFIX).exists())
         assertTrue(File(directory, fileName).exists())
@@ -157,9 +157,9 @@ class MessageBatchFileManagerTest {
 
     @Test
     fun `given a batch file exists, when rollover is called, then filename includes subject`() = runBlocking {
-        messageBatchFileManager.storeMessage(provideMessagePayload())
+        eventBatchFileManager.storeEvent(provideMessagePayload())
 
-        messageBatchFileManager.rollover()
+        eventBatchFileManager.rollover()
 
         assertEquals(1, keyValueStorage.getInt(FILE_INDEX + writeKey, -1))
     }
@@ -167,16 +167,16 @@ class MessageBatchFileManagerTest {
 
     @Test
     fun `given an empty list, when read is executed then no messages are stored`() {
-        val file = MessageBatchFileManager(directory, writeKey, keyValueStorage)
+        val file = EventBatchFileManager(directory, writeKey, keyValueStorage)
         assertTrue(file.read().isEmpty())
     }
 
     @Test
     fun `given a batch file exists, when multiple reads happen, multiple reads do not create extra files`() = runBlocking {
-        messageBatchFileManager.storeMessage(provideMessagePayload())
-        messageBatchFileManager.rollover()
+        eventBatchFileManager.storeEvent(provideMessagePayload())
+        eventBatchFileManager.rollover()
 
-        messageBatchFileManager.read().let {
+        eventBatchFileManager.read().let {
             assertEquals(1, it.size)
             val expectedContents =
                 """ {"batch":[${provideMessagePayload()}],"sentAt":"$epochTimestamp"}""".trim()
@@ -186,7 +186,7 @@ class MessageBatchFileManagerTest {
             assertEquals(expectedContents, actualContents)
         }
 
-        messageBatchFileManager.read().let {
+        eventBatchFileManager.read().let {
             assertEquals(1, it.size)
             assertEquals(1, directory.list()!!.size)
         }
@@ -197,11 +197,11 @@ class MessageBatchFileManagerTest {
         val writeKey1 = "123"
         val writeKey2 = "qwerty"
 
-        val file1 = MessageBatchFileManager(directory, writeKey1, keyValueStorage)
-        val file2 = MessageBatchFileManager(directory, writeKey2, keyValueStorage)
+        val file1 = EventBatchFileManager(directory, writeKey1, keyValueStorage)
+        val file2 = EventBatchFileManager(directory, writeKey2, keyValueStorage)
 
-        file1.storeMessage(provideMessagePayload())
-        file2.storeMessage(provideMessagePayload())
+        file1.storeEvent(provideMessagePayload())
+        file2.storeEvent(provideMessagePayload())
 
         file1.rollover()
         file2.rollover()
@@ -212,11 +212,11 @@ class MessageBatchFileManagerTest {
 
     @Test
     fun `given a batch file exists, when rollover, then file is deleted`() = runBlocking {
-        messageBatchFileManager.storeMessage(provideMessagePayload())
-        messageBatchFileManager.rollover()
+        eventBatchFileManager.storeEvent(provideMessagePayload())
+        eventBatchFileManager.rollover()
 
-        val list = messageBatchFileManager.read()
-        messageBatchFileManager.remove(list[0])
+        val list = eventBatchFileManager.read()
+        eventBatchFileManager.remove(list[0])
 
         assertFalse(File(list[0]).exists())
     }

@@ -10,7 +10,7 @@ import com.rudderstack.sdk.kotlin.android.utils.network.NetworkUtils
 import com.rudderstack.sdk.kotlin.android.utils.putIfNotNull
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
-import com.rudderstack.sdk.kotlin.core.internals.models.Message
+import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
@@ -24,7 +24,7 @@ private const val NETWORK_CELLULAR_KEY = "cellular"
 private const val NETWORK_WIFI_KEY = "wifi"
 
 /**
- * A plugin that attaches network information to the message payload.
+ * A plugin that attaches network information to the event payload.
  *
  * It requires the following permissions:
  *   1. The `ACCESS_NETWORK_STATE` permission to access network information.
@@ -49,14 +49,14 @@ internal class NetworkInfoPlugin(
         }
     }
 
-    override suspend fun execute(message: Message): Message = attachNetworkInfo(message)
+    override suspend fun intercept(event: Event): Event = attachNetworkInfo(event)
 
-    private fun attachNetworkInfo(message: Message): Message {
-        LoggerAnalytics.debug("Attaching network info to the message payload")
+    private fun attachNetworkInfo(event: Event): Event {
+        LoggerAnalytics.debug("Attaching network info to the event payload")
 
-        message.context = message.context mergeWithHigherPriorityTo getNetworkInfo()
+        event.context = event.context mergeWithHigherPriorityTo getNetworkInfo()
 
-        return message
+        return event
     }
 
     @VisibleForTesting

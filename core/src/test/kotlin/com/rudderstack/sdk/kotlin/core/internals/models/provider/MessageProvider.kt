@@ -2,7 +2,7 @@ package com.rudderstack.sdk.kotlin.core.internals.models.provider
 
 import com.rudderstack.sdk.kotlin.core.applyMockedValues
 import com.rudderstack.sdk.kotlin.core.internals.models.ExternalId
-import com.rudderstack.sdk.kotlin.core.internals.models.Message
+import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
@@ -46,7 +46,7 @@ fun provideSampleExternalIdsPayload() = listOf(
     ExternalId("key-2", "value-2"),
 )
 
-fun provideEvent(platformType: PlatformType = PlatformType.Mobile): Message = TrackEvent(
+fun provideEvent(platformType: PlatformType = PlatformType.Mobile): Event = TrackEvent(
     event = "Sample Event",
     properties = emptyJsonObject,
 ).also {

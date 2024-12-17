@@ -10,25 +10,25 @@ internal class MockMemoryStorage : Storage {
     private val messageBatchMap: MutableList<String> = mutableListOf()
 
     override suspend fun write(key: StorageKeys, value: Boolean) {
-        if (key != StorageKeys.MESSAGE) {
+        if (key != StorageKeys.EVENT) {
             propertiesMap[key.key] = value
         }
     }
 
     override suspend fun write(key: StorageKeys, value: Int) {
-        if (key != StorageKeys.MESSAGE) {
+        if (key != StorageKeys.EVENT) {
             propertiesMap[key.key] = value
         }
     }
 
     override suspend fun write(key: StorageKeys, value: Long) {
-        if (key != StorageKeys.MESSAGE) {
+        if (key != StorageKeys.EVENT) {
             propertiesMap[key.key] = value
         }
     }
 
     override suspend fun write(key: StorageKeys, value: String) {
-        if (key == StorageKeys.MESSAGE) {
+        if (key == StorageKeys.EVENT) {
             messageBatchMap.add(value)
         } else {
             propertiesMap[key.key] = value
@@ -64,7 +64,7 @@ internal class MockMemoryStorage : Storage {
     }
 
     override fun readString(key: StorageKeys, defaultVal: String): String {
-        return if (key == StorageKeys.MESSAGE) {
+        return if (key == StorageKeys.EVENT) {
             messageBatchMap.joinToString()
         } else {
             (propertiesMap[key.key] as? String) ?: defaultVal

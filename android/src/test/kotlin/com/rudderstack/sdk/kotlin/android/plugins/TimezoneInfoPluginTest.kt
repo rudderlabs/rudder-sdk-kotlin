@@ -30,14 +30,14 @@ class TimezoneInfoPluginTest {
     }
 
     @Test
-    fun `given timezone context is present, when timezone info plugin is executed, then timezone info is attached to the context`() =
+    fun `given timezone context is present, when timezone info plugin is intercepted, then timezone info is attached to the context`() =
         runTest {
             val message = provideEvent()
             val timezoneInfoPlugin = spyk(TimezoneInfoPlugin())
             every { timezoneInfoPlugin.constructTimezoneContext() } returns provideTimezoneContextPayload()
 
             timezoneInfoPlugin.setup(mockAnalytics)
-            timezoneInfoPlugin.execute(message)
+            timezoneInfoPlugin.intercept(message)
 
             val actual = message.context
             JSONAssert.assertEquals(
@@ -58,7 +58,7 @@ class TimezoneInfoPluginTest {
             message.context = buildJsonObject {
                 put(TIMEZONE_KEY, String.empty())
             }
-            timezoneInfoPlugin.execute(message)
+            timezoneInfoPlugin.intercept(message)
 
             val actual = message.context
             JSONAssert.assertEquals(
