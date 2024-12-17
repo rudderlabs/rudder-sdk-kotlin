@@ -13,7 +13,7 @@ fun getVersionName() =
         RudderStackBuildConfig.Version.VERSION_NAME + "-SNAPSHOT"
 
 fun getModuleDetails(): ModuleConfig =
-    if (project.name == "android") {
+    if (project.name == PLATFORM_ANDROID) {
         RudderStackBuildConfig.Modules.Android
     } else {
         RudderStackBuildConfig.Modules.Core
@@ -29,7 +29,7 @@ configure<PublishingExtension> {
             println("RudderStack: Publishing following library to Maven Central: $groupId:$artifactId:$version")
 
             // Add the `aar` or `jar` file to the artifacts
-            if (project.name == "android") {
+            if (project.name == PLATFORM_ANDROID) {
                 artifact("$buildDir/outputs/aar/${project.name}-release.aar") {
                     builtBy(tasks.getByName("assemble"))
                 }
