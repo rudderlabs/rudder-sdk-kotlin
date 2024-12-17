@@ -2,13 +2,14 @@ package com.rudderstack.sdk.kotlin.android.plugins
 
 import android.app.Application
 import android.os.Build
-import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import androidx.annotation.VisibleForTesting
 import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.android.utils.UniqueIdProvider
 import com.rudderstack.sdk.kotlin.android.utils.mergeWithHigherPriorityTo
 import com.rudderstack.sdk.kotlin.android.utils.putIfNotNull
 import com.rudderstack.sdk.kotlin.core.Analytics
+import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
@@ -40,7 +41,7 @@ internal class DeviceInfoPlugin : Plugin {
         }
     }
 
-    override suspend fun execute(message: Event): Event = attachDeviceInfo(message)
+    override suspend fun intercept(event: Event): Event = attachDeviceInfo(event)
 
     @VisibleForTesting
     internal fun attachDeviceInfo(message: Event): Event {

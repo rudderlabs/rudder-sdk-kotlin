@@ -4,7 +4,7 @@ import android.app.Application
 import com.rudderstack.sdk.kotlin.android.Analytics
 import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.android.utils.provideEvent
-import com.rudderstack.sdk.kotlin.android.utils.UniqueIdProvider
+import com.rudderstack.sdk.kotlin.android.utils.putIfNotNull
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.utils.putAll
@@ -60,7 +60,7 @@ class DeviceInfoPluginTest {
     }
 
     @After
-    fun tearDown(){
+    fun tearDown() {
         unmockkAll()
     }
 
