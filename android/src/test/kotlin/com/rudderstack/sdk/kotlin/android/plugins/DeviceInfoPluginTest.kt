@@ -12,11 +12,12 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.spyk
-import io.mockk.unmockkObject
+import io.mockk.unmockkAll
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
@@ -49,9 +50,18 @@ class DeviceInfoPluginTest {
         mockConfiguration = mockk(relaxed = true)
         mockStorage = mockk(relaxed = true)
 
+        mockkObject(BuildInfo)
+        every { BuildInfo.getManufacturer() } returns MANUFACTURER_VALUE
+        every { BuildInfo.getModel() } returns MODEL_VALUE
+        every { BuildInfo.getDevice() } returns NAME_VALUE
         every { mockAnalytics.configuration } returns mockConfiguration
         every { mockConfiguration.application } returns mockApplication
         every { mockConfiguration.storage } returns mockStorage
+    }
+
+    @After
+    fun tearDown(){
+        unmockkAll()
     }
 
     @Test
@@ -72,16 +82,11 @@ class DeviceInfoPluginTest {
 
     @Test
     fun `when attachDeviceInfo is called, then device information is attached to message payload `() {
-        mockkObject(BuildInfo)
-        every { BuildInfo.getManufacturer() } returns MANUFACTURER_VALUE
-        every { BuildInfo.getModel() } returns MODEL_VALUE
-        every { BuildInfo.getDevice() } returns NAME_VALUE
         every { mockConfiguration.collectDeviceId } returns true
         every { plugin.retrieveDeviceId() } returns UNIQUE_DEVICE_ID
 
         plugin.setup(mockAnalytics)
         val actualMessage = plugin.attachDeviceInfo(provideEvent())
-        unmockkObject(BuildInfo)
 
         val expectedMessage = provideEvent().apply {
             context = buildJsonObject {
