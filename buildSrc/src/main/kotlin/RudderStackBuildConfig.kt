@@ -57,11 +57,13 @@ object RudderStackBuildConfig {
 
     object Modules {
         object Android : ModuleConfig {
+
             override val artifactId = "android"
             override val pomPackaging = "aar"
         }
 
         object Core : ModuleConfig {
+
             override val artifactId = "core"
             override val pomPackaging = "jar"
         }
@@ -69,6 +71,7 @@ object RudderStackBuildConfig {
 }
 
 interface ModuleConfig {
+
     val artifactId: String
     val pomPackaging: String
 }
