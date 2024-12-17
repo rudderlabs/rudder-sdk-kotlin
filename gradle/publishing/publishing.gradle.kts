@@ -1,9 +1,7 @@
-import org.gradle.kotlin.dsl.signing
-import java.util.Base64
-import java.util.Properties
-
 apply(plugin = "maven-publish")
 apply(plugin = "signing")
+
+private val PLATFORM_ANDROID = "android"
 
 fun getExtraString(name: String) = extra[name]?.toString()
 
@@ -14,11 +12,18 @@ fun getVersionName() =
     else
         RudderStackBuildConfig.Version.VERSION_NAME + "-SNAPSHOT"
 
+fun getModuleDetails(): ModuleConfig =
+    if (project.name == "android") {
+        RudderStackBuildConfig.Modules.Android
+    } else {
+        RudderStackBuildConfig.Modules.Core
+    }
+
 configure<PublishingExtension> {
     publications {
         register<MavenPublication>("release") {
             groupId = RudderStackBuildConfig.PackageName.PACKAGE_NAME
-            artifactId = getExtraString("POM_ARTIFACT_ID")
+            artifactId = getModuleDetails().artifactId
             version = getVersionName()
 
             println("RudderStack: Publishing following library to Maven Central: $groupId:$artifactId:$version")
@@ -41,7 +46,7 @@ configure<PublishingExtension> {
             // Add pom configuration
             pom {
                 name.set(RudderStackBuildConfig.POM.NAME)
-                packaging = getExtraString("POM_PACKAGING")
+                packaging = getModuleDetails().pomPackaging
                 description.set(RudderStackBuildConfig.POM.DESCRIPTION)
                 url.set(RudderStackBuildConfig.POM.URL)
 
