@@ -8,7 +8,11 @@ plugins {
 
 val sampleRudderPropertiesFile: File = rootProject.file("${projectDir}/rudderstack.properties")
 val sampleRudderProperties = Properties().apply {
-    sampleRudderPropertiesFile.canRead().apply { load(FileInputStream(sampleRudderPropertiesFile)) }
+    if (sampleRudderPropertiesFile.canRead() && sampleRudderPropertiesFile.length() > 0) {
+        load(FileInputStream(sampleRudderPropertiesFile))
+    } else {
+        println("Properties file is empty or cannot be read.")
+    }
 }
 
 android {
@@ -34,11 +38,16 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
-        buildConfigField("String", "WRITE_KEY", sampleRudderProperties.getProperty("writeKey"))
-        buildConfigField("String", "DATA_PLANE_URL", sampleRudderProperties.getProperty("dataPlaneUrl"))
+
+        buildConfigField("String", "WRITE_KEY", sampleRudderProperties.getProperty("writeKey", "\"<WRITE_KEY>\""))
+        buildConfigField(
+            "String",
+            "DATA_PLANE_URL",
+            sampleRudderProperties.getProperty("dataPlaneUrl", "\"<DATA_PLANE_URL>\"")
+        )
         // For self hosted control plane url, please uncomment and use value below
         // and add it in SDK's initialization Configuration.
-        // buildConfigField("String", "CONTROL_PLANE_URL", sampleRudderProperties.getProperty("controlPlaneUrl"))
+        // buildConfigField("String", "CONTROL_PLANE_URL", sampleRudderProperties.getProperty("controlPlaneUrl", "\"<CONTROL_PLANE_URL>\""))
     }
 
     buildTypes {
