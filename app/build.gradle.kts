@@ -6,10 +6,10 @@ plugins {
     alias(libs.plugins.kotlin.android)
 }
 
-val sampleRudderPropertiesFile: File = rootProject.file("${projectDir}/rudderstack.properties")
+val rudderStackPropertiesFile: File = rootProject.file("${projectDir}/rudderstack.properties")
 val sampleRudderProperties = Properties().apply {
-    if (sampleRudderPropertiesFile.canRead() && sampleRudderPropertiesFile.length() > 0) {
-        load(FileInputStream(sampleRudderPropertiesFile))
+    if (rudderStackPropertiesFile.canRead() && rudderStackPropertiesFile.length() > 0) {
+        load(FileInputStream(rudderStackPropertiesFile))
     } else {
         println("Properties file is empty or cannot be read.")
     }
