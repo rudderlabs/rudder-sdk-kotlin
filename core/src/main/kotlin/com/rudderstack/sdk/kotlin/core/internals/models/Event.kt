@@ -78,7 +78,7 @@ enum class EventType {
  * @property channel The platform type associated with the event.
  * @property options RudderOption associated with the event, represented as a [RudderOption] instance. This is transient.
  */
-@Serializable(with = BaseMessageSerializer::class)
+@Serializable(with = BaseEventSerializer::class)
 sealed class Event {
 
     abstract var type: EventType
@@ -250,7 +250,7 @@ data class GroupEvent(
  * This serializer enables polymorphic deserialization for events, making it possible to
  * serialize and deserialize different types of events seamlessly.
  */
-object BaseMessageSerializer : JsonContentPolymorphicSerializer<Event>(Event::class) {
+object BaseEventSerializer : JsonContentPolymorphicSerializer<Event>(Event::class) {
 
     /**
      * Selects the appropriate deserializer based on the "type" field in the JSON object.
