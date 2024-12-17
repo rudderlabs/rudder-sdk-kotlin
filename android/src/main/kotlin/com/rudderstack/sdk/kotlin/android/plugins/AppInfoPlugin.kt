@@ -8,7 +8,7 @@ import com.rudderstack.sdk.kotlin.android.utils.mergeWithHigherPriorityTo
 import com.rudderstack.sdk.kotlin.android.utils.putIfNotNull
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
-import com.rudderstack.sdk.kotlin.core.internals.models.Message
+import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import kotlinx.serialization.json.JsonObject
@@ -22,9 +22,9 @@ private const val APP_NAMESPACE_KEY = "namespace"
 private const val APP_VERSION_KEY = "version"
 
 /**
- * Plugin to attach app info to the message context payload
+ * Plugin to attach app info to the event context payload
  *
- * **NOTE**: This plugin needs to be added early in the plugin chain to ensure that the app info is attached to all messages
+ * **NOTE**: This plugin needs to be added early in the plugin chain to ensure that the app info is attached to all events
  */
 internal class AppInfoPlugin : Plugin {
 
@@ -71,13 +71,13 @@ internal class AppInfoPlugin : Plugin {
             }
         }
 
-    override suspend fun execute(message: Message): Message = attachAppInfo(message)
+    override suspend fun intercept(event: Event): Event = attachAppInfo(event)
 
-    private fun attachAppInfo(message: Message): Message {
-        LoggerAnalytics.debug("Attaching app info to the message payload")
+    private fun attachAppInfo(event: Event): Event {
+        LoggerAnalytics.debug("Attaching app info to the event payload")
 
-        message.context = message.context mergeWithHigherPriorityTo appContext
+        event.context = event.context mergeWithHigherPriorityTo appContext
 
-        return message
+        return event
     }
 }

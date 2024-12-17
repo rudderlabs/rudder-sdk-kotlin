@@ -53,12 +53,12 @@ class NetworkInfoPluginTest {
     }
 
     @Test
-    fun `given network context is present, when network info plugin is executed, then network info is attached to the context`() = runTest {
+    fun `given network context is present, when network info plugin is intercepted, then network info is attached to the context`() = runTest {
         val message = provideEvent()
         every { networkInfoPlugin.getNetworkInfo() } returns provideNetworkInfoPayload()
 
         networkInfoPlugin.setup(mockAnalytics)
-        networkInfoPlugin.execute(message)
+        networkInfoPlugin.intercept(message)
 
         val actual = message.context
         JSONAssert.assertEquals(
@@ -77,7 +77,7 @@ class NetworkInfoPluginTest {
         buildJsonObject {
             put(NETWORK_KEY, String.empty())
         }
-        networkInfoPlugin.execute(message)
+        networkInfoPlugin.intercept(message)
 
         val actual = message.context
         JSONAssert.assertEquals(

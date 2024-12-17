@@ -80,10 +80,12 @@ internal class PropertiesFile(
 
     override fun save(key: String, value: Int) {
         properties.setProperty(key, value.toString())
+        save()
     }
 
     override fun save(key: String, value: Boolean) {
         properties.setProperty(key, value.toString())
+        save()
     }
 
     override fun save(key: String, value: String) {

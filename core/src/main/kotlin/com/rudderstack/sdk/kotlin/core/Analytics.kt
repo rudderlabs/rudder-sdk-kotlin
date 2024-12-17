@@ -4,9 +4,9 @@ import com.rudderstack.sdk.kotlin.core.internals.logger.KotlinLogger
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.AliasEvent
+import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.GroupEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
-import com.rudderstack.sdk.kotlin.core.internals.models.Message
 import com.rudderstack.sdk.kotlin.core.internals.models.Properties
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderTraits
@@ -26,26 +26,17 @@ import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.PluginChain
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.FlowState
+import com.rudderstack.sdk.kotlin.core.internals.storage.provideBasicStorage
 import com.rudderstack.sdk.kotlin.core.internals.utils.addNameAndCategoryToProperties
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import com.rudderstack.sdk.kotlin.core.internals.utils.isAnalyticsActive
 import com.rudderstack.sdk.kotlin.core.internals.utils.resolvePreferredPreviousId
 import com.rudderstack.sdk.kotlin.core.plugins.LibraryInfoPlugin
-import com.rudderstack.sdk.kotlin.core.plugins.PocPlugin
 import com.rudderstack.sdk.kotlin.core.plugins.RudderStackDataplanePlugin
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
-
-// todo: figure out a way to make this a class level property. It will cause issues when multiple instances of sdk will be created.
-private lateinit var analyticsJob: Job
 
 /**
  * The `Analytics` class is the core of the RudderStack SDK, responsible for tracking events,
@@ -59,30 +50,33 @@ private lateinit var analyticsJob: Job
  *
  * @constructor Primary constructor for creating an `Analytics` instance with a custom coroutine configuration.
  * @param configuration The configuration object that defines settings such as write key, data plane URL, logger, etc.
- * @param coroutineConfig The coroutine configuration that defines the scopes and dispatchers for analytics operations.
+ * @param analyticsConfiguration The analytics configuration object that defines coroutine settings and some other variables.
+ * @param userIdentityState The state flow for user identity management. Defaults to a new `FlowState` with the initial state.
  */
 @Suppress("TooManyFunctions")
-@OptIn(ExperimentalCoroutinesApi::class)
 open class Analytics protected constructor(
     val configuration: Configuration,
-    coroutineConfig: CoroutineConfiguration,
-) : CoroutineConfiguration by coroutineConfig, Platform {
+    analyticsConfiguration: AnalyticsConfiguration,
+    internal val userIdentityState: FlowState<UserIdentity> = FlowState(
+        initialState = UserIdentity.initialState(
+            analyticsConfiguration.storage
+        )
+    ),
+) : AnalyticsConfiguration by analyticsConfiguration, Platform {
 
     private val pluginChain: PluginChain = PluginChain().also { it.analytics = this }
 
     private val sourceConfigState = FlowState(initialState = SourceConfig.initialState())
 
-    internal val userIdentityState = FlowState(initialState = UserIdentity.initialState(configuration.storage))
-
-    private val processMessageChannel: Channel<Message> = Channel(Channel.UNLIMITED)
-    private var processMessageJob: Job? = null
+    private val processEventChannel: Channel<Event> = Channel(Channel.UNLIMITED)
+    private var processEventJob: Job? = null
 
     @Volatile
     internal var isAnalyticsShutdown = false
         private set
 
     init {
-        processMessages()
+        processEvents()
         setup()
         storeAnonymousId()
     }
@@ -108,23 +102,14 @@ open class Analytics protected constructor(
      */
     constructor(configuration: Configuration) : this(
         configuration = configuration,
-        coroutineConfig = object : CoroutineConfiguration {
-            private val handler = CoroutineExceptionHandler { _, exception ->
-                LoggerAnalytics.error(exception.stackTraceToString())
-            }
-            override val analyticsScope: CoroutineScope = run {
-                analyticsJob = SupervisorJob()
-                CoroutineScope(analyticsJob + handler)
-            }
-            override val analyticsDispatcher: CoroutineDispatcher = Dispatchers.IO
-            override val storageDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(2)
-            override val networkDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(1)
-        }
+        analyticsConfiguration = provideAnalyticsConfiguration(
+            storage = provideBasicStorage(configuration.writeKey)
+        )
     )
 
     /**
      * Tracks a custom event with the specified name, properties, and options.
-     * This function constructs a `TrackEvent` message and processes it through the plugin chain.
+     * This function constructs a `TrackEvent` event and processes it through the plugin chain.
      *
      * @param name The name of the event to be tracked.
      * @param properties A [Properties] object containing key-value pairs of event properties. Defaults to an empty JSON object.
@@ -134,19 +119,19 @@ open class Analytics protected constructor(
     fun track(name: String, properties: Properties = emptyJsonObject, options: RudderOption = RudderOption()) {
         if (!isAnalyticsActive()) return
 
-        val message = TrackEvent(
+        val event = TrackEvent(
             event = name,
             properties = properties,
             options = options,
             userIdentityState = userIdentityState.value,
         )
 
-        processMessageChannel.trySend(message)
+        processEventChannel.trySend(event)
     }
 
     /**
      * Record a custom screen view event with the specified screen name, category, properties, and options.
-     * This function constructs a `ScreenEvent` message and processes it through the plugin chain.
+     * This function constructs a `ScreenEvent` event and processes it through the plugin chain.
      *
      * @param screenName The name of the screen to be tracked.
      * @param category The category of the screen to be tracked. Defaults to an empty string.
@@ -164,19 +149,19 @@ open class Analytics protected constructor(
 
         val updatedProperties = addNameAndCategoryToProperties(screenName, category, properties)
 
-        val message = ScreenEvent(
+        val event = ScreenEvent(
             screenName = screenName,
             properties = updatedProperties,
             options = options,
             userIdentityState = userIdentityState.value,
         )
 
-        processMessageChannel.trySend(message)
+        processEventChannel.trySend(event)
     }
 
     /**
      * Add the user to a group.
-     * This function constructs a `GroupEvent` message and processes it through the plugin chain.
+     * This function constructs a `GroupEvent` event and processes it through the plugin chain.
      *
      * @param groupId Group ID you want your user to attach to
      * @param traits A [RudderTraits] object containing key-value pairs of event traits. Defaults to an empty JSON object.
@@ -186,14 +171,14 @@ open class Analytics protected constructor(
     fun group(groupId: String, traits: RudderTraits = emptyJsonObject, options: RudderOption = RudderOption()) {
         if (!isAnalyticsActive()) return
 
-        val message = GroupEvent(
+        val event = GroupEvent(
             groupId = groupId,
             traits = traits,
             options = options,
             userIdentityState = userIdentityState.value,
         )
 
-        processMessageChannel.trySend(message)
+        processEventChannel.trySend(event)
     }
 
     /**
@@ -222,16 +207,16 @@ open class Analytics protected constructor(
         )
         analyticsScope.launch {
             userIdentityState.value.storeUserIdTraitsAndExternalIds(
-                storage = configuration.storage
+                storage = storage
             )
         }
 
-        val message = IdentifyEvent(
+        val event = IdentifyEvent(
             options = options,
             userIdentityState = userIdentityState.value,
         )
 
-        processMessageChannel.trySend(message)
+        processEventChannel.trySend(event)
     }
 
     /**
@@ -254,16 +239,16 @@ open class Analytics protected constructor(
             SetUserIdForAliasEvent(newId = newId)
         )
         analyticsScope.launch {
-            userIdentityState.value.storeUserId(storage = configuration.storage)
+            userIdentityState.value.storeUserId(storage = storage)
         }
 
-        val message = AliasEvent(
+        val event = AliasEvent(
             previousId = updatedPreviousId,
             options = options,
             userIdentityState = userIdentityState.value,
         )
 
-        processMessageChannel.trySend(message)
+        processEventChannel.trySend(event)
     }
 
     /**
@@ -292,15 +277,15 @@ open class Analytics protected constructor(
         isAnalyticsShutdown = true
         LoggerAnalytics.info("Initiating Analytics shutdown.")
 
-        processMessageChannel.close()
-        processMessageJob?.invokeOnCompletion {
+        processEventChannel.close()
+        processEventJob?.invokeOnCompletion {
             shutdownHook()
         }
     }
 
     private fun shutdownHook() {
         analyticsJob.invokeOnCompletion {
-            this@Analytics.configuration.storage.close()
+            this@Analytics.storage.close()
             LoggerAnalytics.info("Analytics shutdown completed.")
         }
         analyticsScope.launch {
@@ -317,7 +302,6 @@ open class Analytics protected constructor(
     private fun setup() {
         setLogger(logger = KotlinLogger())
         add(LibraryInfoPlugin())
-        add(PocPlugin())
         add(RudderStackDataplanePlugin())
 
         analyticsScope.launch(analyticsDispatcher) {
@@ -380,30 +364,30 @@ open class Analytics protected constructor(
         analyticsScope.launch {
             userIdentityState.value.resetUserIdentity(
                 clearAnonymousId = clearAnonymousId,
-                storage = configuration.storage,
+                storage = storage,
             )
         }
     }
 
     /**
-     * Processes each message sequentially through the plugin chain and applies base data to the message.
+     * Processes each event sequentially through the plugin chain and applies base data to the event.
      * All operations are executed within the `analyticsDispatcher` coroutine context.
      *
      * **NOTE**: This method can be called either before or after the initialization of all plugins (plugin setup occurs in the `init` method).
      * Events sent before this function is invoked will be queued and processed once this function is called, ensuring no events are lost.
      */
-    private fun processMessages() {
-        processMessageJob = analyticsScope.launch(analyticsDispatcher) {
-            for (message in processMessageChannel) {
-                message.updateData(platform = getPlatformType())
-                pluginChain.process(message)
+    private fun processEvents() {
+        processEventJob = analyticsScope.launch(analyticsDispatcher) {
+            for (event in processEventChannel) {
+                event.updateData(platform = getPlatformType())
+                pluginChain.process(event)
             }
         }
     }
 
     private fun storeAnonymousId() {
         analyticsScope.launch(storageDispatcher) {
-            userIdentityState.value.storeAnonymousId(storage = configuration.storage)
+            userIdentityState.value.storeAnonymousId(storage = storage)
         }
     }
 

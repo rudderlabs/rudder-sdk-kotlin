@@ -60,8 +60,6 @@ data class UserIdentity(
     }
 
     internal suspend fun storeAnonymousId(storage: Storage) {
-        val isAnonymousByClient = anonymousId.isNotEmpty()
         storage.write(StorageKeys.ANONYMOUS_ID, anonymousId)
-        storage.write(StorageKeys.IS_ANONYMOUS_ID_BY_CLIENT, isAnonymousByClient)
     }
 }

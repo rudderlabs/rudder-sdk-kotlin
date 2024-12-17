@@ -29,7 +29,7 @@ class AndroidStorageTest {
     @Test(expected = Exception::class)
     fun `given Android storage with large message, when write is called, then test write string value exceeding max size`() =
         runTest {
-            val key = StorageKeys.MESSAGE
+            val key = StorageKeys.EVENT
             val largeMessagePayload = "x".repeat(MAX_PAYLOAD_SIZE + 1)
 
             storage.write(key, largeMessagePayload)

@@ -2,7 +2,7 @@ package com.rudderstack.sdk.kotlin.core.plugins
 
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
-import com.rudderstack.sdk.kotlin.core.internals.queue.MessageQueue
+import com.rudderstack.sdk.kotlin.core.internals.queue.EventQueue
 import com.rudderstack.sdk.kotlin.core.mockAnalytics
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -28,19 +28,19 @@ class RudderStackDataplanePluginTest {
     private val testScope = TestScope(testDispatcher)
 
     private lateinit var mockAnalytics: Analytics
-    private lateinit var mockMessageQueue: MessageQueue
+    private lateinit var mockEventQueue: EventQueue
     private lateinit var plugin: RudderStackDataplanePlugin
 
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         mockAnalytics = mockAnalytics(testScope, testDispatcher)
-        mockMessageQueue = mockk(relaxed = true)
+        mockEventQueue = mockk(relaxed = true)
 
         plugin = spyk(RudderStackDataplanePlugin())
 
         plugin.setup(mockAnalytics)
-        plugin.messageQueue = mockMessageQueue
+        plugin.eventQueue = mockEventQueue
     }
 
     @After
@@ -56,14 +56,14 @@ class RudderStackDataplanePluginTest {
         val result = plugin.track(trackMessage)
 
         assertEquals(trackMessage, result)
-        verify { mockMessageQueue.put(trackMessage) }
+        verify { mockEventQueue.put(trackMessage) }
     }
 
     @Test
     fun `given a plugin, when flush is executed, then verify that the message queue's flush method is called`() {
         plugin.flush()
 
-        verify { mockMessageQueue.flush() }
+        verify { mockEventQueue.flush() }
     }
 
     @Test
@@ -72,6 +72,6 @@ class RudderStackDataplanePluginTest {
 
         advanceUntilIdle()
 
-        coVerify { mockMessageQueue.stop() }
+        coVerify { mockEventQueue.stop() }
     }
 }

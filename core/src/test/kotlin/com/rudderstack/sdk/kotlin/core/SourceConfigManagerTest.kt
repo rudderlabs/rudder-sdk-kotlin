@@ -52,7 +52,7 @@ class SourceConfigManagerTest {
             val sourceConfigString = readFileAsString(fetchedSourceConfig)
             val sourceConfig = LenientJson.decodeFromString<SourceConfig>(sourceConfigString)
             every {
-                analytics.configuration.storage.readString(
+                analytics.storage.readString(
                     StorageKeys.SOURCE_CONFIG_PAYLOAD,
                     defaultVal = String.empty()
                 )
@@ -79,7 +79,7 @@ class SourceConfigManagerTest {
 
             every { httpClient.getData() } returns Result.Success(downloadedSourceConfigString)
             every {
-                analytics.configuration.storage.readString(
+                analytics.storage.readString(
                     StorageKeys.SOURCE_CONFIG_PAYLOAD,
                     defaultVal = String.empty()
                 )
@@ -100,7 +100,7 @@ class SourceConfigManagerTest {
                 status = ErrorStatus.SERVER_ERROR
             )
             every {
-                analytics.configuration.storage.readString(
+                analytics.storage.readString(
                     StorageKeys.SOURCE_CONFIG_PAYLOAD,
                     defaultVal = String.empty()
                 )
@@ -116,7 +116,7 @@ class SourceConfigManagerTest {
         runTest {
             every { httpClient.getData() } throws Exception()
             every {
-                analytics.configuration.storage.readString(
+                analytics.storage.readString(
                     StorageKeys.SOURCE_CONFIG_PAYLOAD,
                     defaultVal = String.empty()
                 )
@@ -133,7 +133,7 @@ class SourceConfigManagerTest {
             val sourceConfigString = readFileAsString(fetchedSourceConfig)
             val sourceConfig = LenientJson.decodeFromString<SourceConfig>(sourceConfigString)
             every {
-                analytics.configuration.storage.readString(
+                analytics.storage.readString(
                     StorageKeys.SOURCE_CONFIG_PAYLOAD,
                     defaultVal = String.empty()
                 )

@@ -26,7 +26,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     properties = Properties(emptyMap()),
                     options = RudderOption()
                 )
-                "Track message sent"
+                "Track event sent"
             }
 
             AnalyticsState.ScreenMessage -> {
@@ -37,7 +37,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         put("key-1", "value-1")
                     }
                 )
-                "Screen message sent"
+                "Screen event sent"
             }
 
             AnalyticsState.GroupMessage -> {
@@ -48,7 +48,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     },
                     options = RudderOption()
                 )
-                "Group message sent"
+                "Group event sent"
             }
 
             AnalyticsState.IdentifyMessage -> {
@@ -72,7 +72,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         )
                     )
                 )
-                "Identify message sent"
+                "Identify event sent"
             }
 
             AnalyticsState.AliasMessage -> {
@@ -81,12 +81,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     previousId = "Explicit Previous User ID 1",
                     options = RudderOption()
                 )
-                "Alias message sent"
+                "Alias event sent"
             }
 
             AnalyticsState.ForceFlush -> {
                 RudderAnalyticsUtils.analytics.flush()
-                "Flushing the message pipeline has"
+                "Flushing the event pipeline has"
             }
 
             AnalyticsState.Shutdown -> {

@@ -33,12 +33,12 @@ class LocaleInfoPluginTest {
     }
 
     @Test
-    fun `given locale context is present, when locale info plugin is executed, then locale info is attached to the context`() = runTest {
+    fun `given locale context is present, when locale info plugin is intercepted, then locale info is attached to the context`() = runTest {
         val message = provideEvent()
         every { localeInfoPlugin.constructLocaleContext() } returns provideLocaleContextPayload()
 
         localeInfoPlugin.setup(mockAnalytics)
-        localeInfoPlugin.execute(message)
+        localeInfoPlugin.intercept(message)
 
         val actual = message.context
         JSONAssert.assertEquals(
@@ -57,7 +57,7 @@ class LocaleInfoPluginTest {
         message.context = buildJsonObject {
             put(LOCALE_KEY, String.empty())
         }
-        localeInfoPlugin.execute(message)
+        localeInfoPlugin.intercept(message)
 
         val actual = message.context
         JSONAssert.assertEquals(

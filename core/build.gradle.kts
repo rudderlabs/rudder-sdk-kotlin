@@ -1,4 +1,5 @@
 import io.gitlab.arturbosch.detekt.Detekt
+import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 plugins {
     id("java-library")
@@ -13,6 +14,10 @@ java {
 }
 kotlin {
     jvmToolchain(RudderStackBuildConfig.Build.JVM_TOOLCHAIN)
+}
+
+tasks.withType<KotlinJvmCompile>().configureEach {
+    compilerOptions.freeCompilerArgs.add("-opt-in=com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi")
 }
 
 // Task to generate a Kotlin file with version constants

@@ -4,8 +4,8 @@ import android.app.Application
 import com.rudderstack.sdk.kotlin.android.Analytics
 import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.android.utils.provideEvent
-import com.rudderstack.sdk.kotlin.android.utils.putIfNotNull
-import com.rudderstack.sdk.kotlin.core.internals.models.Message
+import com.rudderstack.sdk.kotlin.android.utils.UniqueIdProvider
+import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.utils.putAll
 import io.mockk.every
@@ -56,7 +56,7 @@ class DeviceInfoPluginTest {
         every { BuildInfo.getDevice() } returns NAME_VALUE
         every { mockAnalytics.configuration } returns mockConfiguration
         every { mockConfiguration.application } returns mockApplication
-        every { mockConfiguration.storage } returns mockStorage
+        every { mockAnalytics.storage } returns mockStorage
     }
 
     @After
@@ -110,15 +110,15 @@ class DeviceInfoPluginTest {
     }
 
     @Test
-    fun `when execute is called, it attaches device information`() = runTest {
-        val mockMessage = mockk<Message>(relaxed = true)
-        val updatedMessage = mockk<Message>(relaxed = true)
+    fun `when attachDeviceInfo is called, then device information is attached to message payload`() = runTest {
+        val mockEvent = mockk<Event>(relaxed = true)
+        val mockUpdatedEvent = mockk<Event>(relaxed = true)
 
-        every { plugin.attachDeviceInfo(mockMessage) } returns updatedMessage
+        every { plugin.attachDeviceInfo(mockEvent) } returns mockUpdatedEvent
 
-        val result = plugin.execute(mockMessage)
+        val result = plugin.intercept(mockEvent)
 
-        assertEquals(updatedMessage, result)
+        assertEquals(mockUpdatedEvent, result)
     }
 
     @Test

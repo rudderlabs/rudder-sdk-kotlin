@@ -4,7 +4,7 @@ import android.os.Build
 import com.rudderstack.sdk.kotlin.android.utils.mergeWithHigherPriorityTo
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
-import com.rudderstack.sdk.kotlin.core.internals.models.Message
+import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
@@ -18,7 +18,7 @@ private const val OS_VERSION_KEY = "version"
 private const val OS_VALUE = "Android"
 
 /**
- * Plugin to attach OS info to the message context payload
+ * Plugin to attach OS info to the event context payload
  */
 internal class OSInfoPlugin : Plugin {
 
@@ -44,13 +44,13 @@ internal class OSInfoPlugin : Plugin {
         )
     }
 
-    override suspend fun execute(message: Message): Message = attachOSInfo(message)
+    override suspend fun intercept(event: Event): Event = attachOSInfo(event)
 
-    private fun attachOSInfo(message: Message): Message {
-        LoggerAnalytics.debug("Attaching OS info to the message payload")
+    private fun attachOSInfo(event: Event): Event {
+        LoggerAnalytics.debug("Attaching OS info to the event payload")
 
-        message.context = message.context mergeWithHigherPriorityTo osContext
+        event.context = event.context mergeWithHigherPriorityTo osContext
 
-        return message
+        return event
     }
 }

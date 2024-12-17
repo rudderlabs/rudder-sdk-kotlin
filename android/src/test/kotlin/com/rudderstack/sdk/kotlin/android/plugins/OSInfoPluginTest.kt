@@ -33,13 +33,13 @@ class OSInfoPluginTest {
     }
 
     @Test
-    fun `given os context is present, when os info plugin is executed, then os info is attached to the context`() = runTest {
+    fun `given os context is present, when os info plugin is intercepted, then os info is attached to the context`() = runTest {
         val message = provideEvent()
         val osInfoPlugin = spyk(OSInfoPlugin())
         every { osInfoPlugin.constructAppContext() } returns provideOSContextPayload()
 
         osInfoPlugin.setup(mockAnalytics)
-        osInfoPlugin.execute(message)
+        osInfoPlugin.intercept(message)
 
         val actual = message.context
         JSONAssert.assertEquals(
@@ -59,7 +59,7 @@ class OSInfoPluginTest {
         message.context = buildJsonObject {
             put(OS_KEY, String.empty())
         }
-        osInfoPlugin.execute(message)
+        osInfoPlugin.intercept(message)
 
         val actual = message.context
         JSONAssert.assertEquals(

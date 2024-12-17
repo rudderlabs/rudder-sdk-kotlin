@@ -1,14 +1,15 @@
 package com.rudderstack.sdk.kotlin.core.internals.storage
 
+import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 
 /**
- * MAX_PAYLOAD_SIZE represents the maximum size in bytes for a single message payload.
+ * MAX_PAYLOAD_SIZE represents the maximum size in bytes for a single event payload.
  */
 const val MAX_PAYLOAD_SIZE = 32 * 1024 // 32 KB
 
 /**
- * MAX_BATCH_SIZE represents the maximum size in bytes for a batch of messages.
+ * MAX_BATCH_SIZE represents the maximum size in bytes for a batch of events.
  */
 const val MAX_BATCH_SIZE = 500 * 1024 // 500 KB
 
@@ -21,6 +22,7 @@ const val MAX_BATCH_SIZE = 500 * 1024 // 500 KB
  * It also provides methods for removing stored data, performing rollover operations,
  * and retrieving file lists.
  */
+@InternalRudderApi
 interface Storage {
 
     /**
@@ -141,19 +143,14 @@ interface Storage {
 enum class StorageKeys(val key: String) {
 
     /**
-     * Key for storing or retrieving Rudder messages.
+     * Key for storing or retrieving Rudder events.
      */
-    MESSAGE("message"),
+    EVENT("event"),
 
     /**
      * Key for storing or retrieving the whole source config payload.
      */
     SOURCE_CONFIG_PAYLOAD("source_config_payload"),
-
-    /**
-     * Key for storing if source if enabled to send events
-     */
-    SOURCE_IS_ENABLED("source_is_enabled"),
 
     /**
      *Key for storing client app version.
@@ -169,11 +166,6 @@ enum class StorageKeys(val key: String) {
      *Key for storing the anonymous id of the client.
      */
     ANONYMOUS_ID("anonymous_id"),
-
-    /**
-     *Key for storing if the anonymous id has been set by the client.
-     */
-    IS_ANONYMOUS_ID_BY_CLIENT("is_anonymous_id_by_client"),
 
     /**
      *Key for storing the user id of the client.
@@ -239,22 +231,4 @@ interface LibraryVersion {
      * @return The build version as a [String].
      */
     fun getBuildVersion(): String = String.empty()
-}
-
-/**
- * Interface for providing access to different storage implementations.
- *
- * Implementations of this interface are responsible for creating and providing
- * instances of the [Storage] interface based on provided parameters.
- */
-interface StorageProvider {
-
-    /**
-     * Retrieves a [Storage] instance based on the provided write key and application context.
-     *
-     * @param writeKey A key used to identify the specific storage instance.
-     * @param application The application context to be used in storage operations.
-     * @return An instance of [Storage] configured based on the provided parameters.
-     */
-    fun getStorage(writeKey: String, application: Any): Storage
 }

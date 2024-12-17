@@ -2,7 +2,7 @@ package com.rudderstack.sampleapp.analytics.customplugins
 
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
-import com.rudderstack.sdk.kotlin.core.internals.models.Message
+import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import kotlinx.serialization.json.JsonObject
@@ -28,20 +28,20 @@ class OptionPlugin (
         this.analytics = analytics
     }
 
-    override suspend fun execute(message: Message): Message {
-        addCustomContext(message)
-        addIntegrations(message)
+    override suspend fun intercept(event: Event): Event {
+        addCustomContext(event)
+        addIntegrations(event)
         // NOTE: Don't update the externalIds, as it should be updated only through the Identify event.
         LoggerAnalytics.verbose("OptionPlugin: Added custom context and integrations to the message.")
-        return message
+        return event
     }
 
-    private fun addCustomContext(message: Message) {
-        message.context = message.context mergeWithHigherPriorityTo option.customContext
+    private fun addCustomContext(event: Event) {
+        event.context = event.context mergeWithHigherPriorityTo option.customContext
     }
 
-    private fun addIntegrations(message: Message) {
-        message.integrations = message.integrations mergeWithHigherPriorityTo option.integrations
+    private fun addIntegrations(event: Event) {
+        event.integrations = event.integrations mergeWithHigherPriorityTo option.integrations
     }
 }
 

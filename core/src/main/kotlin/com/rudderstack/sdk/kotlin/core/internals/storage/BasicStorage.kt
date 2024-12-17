@@ -6,16 +6,16 @@ import source.version.VersionConstants
 import java.io.File
 
 /**
- * The directory where the message files are stored.
+ * The directory where the event files are stored.
  * */
 const val FILE_DIRECTORY = "/tmp/rudderstack-analytics-kotlin/"
-private const val FILE_NAME = "messages"
+private const val FILE_NAME = "events"
 
 /**
  * Implementation of the [Storage] interface that provides a basic file-based storage mechanism.
  *
  * This class handles storing, retrieving, and managing key-value pairs in files. It supports various data types for storage
- * and manages message files separately from properties files.
+ * and manages event files separately from properties files.
  *
  * @property writeKey The key used to create a unique storage directory.
  */
@@ -28,9 +28,9 @@ internal class BasicStorage(writeKey: String) : Storage {
     private val storageDirectory = File(writeKey.toFileDirectory(FILE_DIRECTORY))
 
     /**
-     * The subdirectory within [storageDirectory] where message files are stored.
+     * The subdirectory within [storageDirectory] where event files are stored.
      */
-    private val messageStorageDirectory = File(storageDirectory, FILE_NAME)
+    private val eventStorageDirectory = File(storageDirectory, FILE_NAME)
 
     /**
      * Manages properties files, including loading and saving properties.
@@ -38,10 +38,10 @@ internal class BasicStorage(writeKey: String) : Storage {
     private val propertiesFile = PropertiesFile(storageDirectory, writeKey)
 
     /**
-     * Manages message batch files, including storing and reading messages.
+     * Manages event batch files, including storing and reading events.
      */
-    private val messagesFile = MessageBatchFileManager(
-        messageStorageDirectory,
+    private val eventsFile = EventBatchFileManager(
+        eventStorageDirectory,
         writeKey,
         propertiesFile
     )
@@ -52,15 +52,15 @@ internal class BasicStorage(writeKey: String) : Storage {
     }
 
     override suspend fun write(key: StorageKeys, value: Boolean) {
-        if (key != StorageKeys.MESSAGE) {
+        if (key != StorageKeys.EVENT) {
             propertiesFile.save(key.key, value)
         }
     }
 
     override suspend fun write(key: StorageKeys, value: String) {
-        if (key == StorageKeys.MESSAGE) {
+        if (key == StorageKeys.EVENT) {
             if (value.length < MAX_PAYLOAD_SIZE) {
-                messagesFile.storeMessage(value)
+                eventsFile.storeEvent(value)
             } else {
                 throw PayloadTooLargeException()
             }
@@ -70,13 +70,13 @@ internal class BasicStorage(writeKey: String) : Storage {
     }
 
     override suspend fun write(key: StorageKeys, value: Int) {
-        if (key != StorageKeys.MESSAGE) {
+        if (key != StorageKeys.EVENT) {
             propertiesFile.save(key.key, value)
         }
     }
 
     override suspend fun write(key: StorageKeys, value: Long) {
-        if (key != StorageKeys.MESSAGE) {
+        if (key != StorageKeys.EVENT) {
             propertiesFile.save(key.key, value)
         }
     }
@@ -86,15 +86,15 @@ internal class BasicStorage(writeKey: String) : Storage {
     }
 
     override fun remove(filePath: String) {
-        messagesFile.remove(filePath)
+        eventsFile.remove(filePath)
     }
 
     override suspend fun rollover() {
-        messagesFile.rollover()
+        eventsFile.rollover()
     }
 
     override fun close() {
-        messagesFile.closeAndReset()
+        eventsFile.closeAndReset()
     }
 
     override fun readInt(key: StorageKeys, defaultVal: Int): Int {
@@ -110,15 +110,15 @@ internal class BasicStorage(writeKey: String) : Storage {
     }
 
     override fun readString(key: StorageKeys, defaultVal: String): String {
-        return if (key == StorageKeys.MESSAGE) {
-            messagesFile.read().joinToString()
+        return if (key == StorageKeys.EVENT) {
+            eventsFile.read().joinToString()
         } else {
             propertiesFile.getString(key.key, defaultVal)
         }
     }
 
     override fun readFileList(): List<String> {
-        return messagesFile.read()
+        return eventsFile.read()
     }
 
     override fun getLibraryVersion(): LibraryVersion {
@@ -131,18 +131,11 @@ internal class BasicStorage(writeKey: String) : Storage {
 }
 
 /**
- * Implementation of [StorageProvider] that provides instances of [BasicStorage].
+ * Provides an instance of [BasicStorage] with the given [writeKey].
+ *
+ * @param writeKey The key used to create a unique storage directory.
+ * @return An instance of [BasicStorage] with the provided [writeKey].
  */
-object BasicStorageProvider : StorageProvider {
-
-    /**
-     * Provides an instance of [BasicStorage] for the given write key and application.
-     *
-     * @param writeKey The key used to create a unique storage instance.
-     * @param application The application object, which may be used for additional context or configuration.
-     * @return A new instance of [BasicStorage] configured with the provided write key.
-     */
-    override fun getStorage(writeKey: String, application: Any): Storage {
-        return BasicStorage(writeKey = writeKey)
-    }
+fun provideBasicStorage(writeKey: String): Storage {
+    return BasicStorage(writeKey = writeKey)
 }
