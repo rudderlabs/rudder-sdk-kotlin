@@ -17,10 +17,10 @@ interface Plugin {
      * The type of the plugin. Defines when the plugin will be executed in the event processing lifecycle.
      *
      * Example types include:
-     * - `PreProcess`: Executed before any message processing begins.
-     * - `OnProcess`: Executed during the initial stage of message processing.
-     * - `Destination`: Executed when messages are being passed to destinations.
-     * - `After`: Executed after all message processing is complete (useful for cleanup operations).
+     * - `PreProcess`: Executed before any event processing begins.
+     * - `OnProcess`: Executed during the initial stage of event processing.
+     * - `Destination`: Executed when events are being passed to destinations.
+     * - `After`: Executed after all event processing is complete (useful for cleanup operations).
      * - `Manual`: Executed only when called manually (e.g., for handling sessions).
      */
     val pluginType: PluginType
@@ -44,12 +44,12 @@ interface Plugin {
     }
 
     /**
-     * Executes the plugin's logic on the provided `Message`. This method allows the plugin to
-     * modify, enrich, or filter the message before it is processed further or sent to a destination.
-     * By default, this method returns the unmodified message.
+     * Executes the plugin's logic on the provided `Event`. This method allows the plugin to
+     * modify, enrich, or filter the event before it is processed further or sent to a destination.
+     * By default, this method returns the unmodified event.
      *
-     * @param event The `Message` object representing the event to be processed.
-     * @return The potentially modified `Message` object, or `null` if the message should be discarded.
+     * @param event The `Event` object representing the event to be processed.
+     * @return The potentially modified `Event` object, or `null` if the event should be discarded.
      */
     suspend fun intercept(event: Event): Event? {
         return event
@@ -66,25 +66,25 @@ interface Plugin {
      */
     enum class PluginType {
         /**
-         * Plugins of this type are executed before any message processing begins.
-         * Useful for pre-processing messages or adding context data.
+         * Plugins of this type are executed before any event processing begins.
+         * Useful for pre-processing events or adding context data.
          */
         PreProcess,
 
         /**
-         * Plugins of this type are executed as the first level of message processing.
+         * Plugins of this type are executed as the first level of event processing.
          * Useful for applying transformations or validations early in the pipeline.
          */
         OnProcess,
 
         /**
-         * Plugins of this type are executed when messages are about to be passed off to their destinations.
-         * Typically used for modifying messages specifically for certain destinations.
+         * Plugins of this type are executed when events are about to be passed off to their destinations.
+         * Typically used for modifying events specifically for certain destinations.
          */
         Destination,
 
         /**
-         * Plugins of this type are executed after all message processing is completed.
+         * Plugins of this type are executed after all event processing is completed.
          * Useful for cleanup operations or finalizing tasks.
          */
         After,
