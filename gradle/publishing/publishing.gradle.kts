@@ -40,30 +40,30 @@ configure<PublishingExtension> {
 
             // Add pom configuration
             pom {
-                name.set(getExtraString("POM_NAME"))
+                name.set(RudderStackBuildConfig.POM.NAME)
                 packaging = getExtraString("POM_PACKAGING")
-                description.set(getExtraString("POM_DESCRIPTION"))
-                url.set(getExtraString("POM_URL"))
+                description.set(RudderStackBuildConfig.POM.DESCRIPTION)
+                url.set(RudderStackBuildConfig.POM.URL)
 
                 licenses {
                     license {
-                        name.set(getExtraString("POM_LICENCE_NAME"))
-                        url.set(getExtraString("POM_LICENCE_URL"))
-                        distribution.set(getExtraString("POM_LICENCE_DIST"))
+                        name.set(RudderStackBuildConfig.POM.LICENCE_NAME)
+                        url.set(RudderStackBuildConfig.POM.LICENCE_URL)
+                        distribution.set(RudderStackBuildConfig.POM.LICENCE_DIST)
                     }
                 }
 
                 developers {
                     developer {
-                        id.set(getExtraString("POM_DEVELOPER_ID"))
-                        name.set(getExtraString("POM_DEVELOPER_NAME"))
+                        id.set(RudderStackBuildConfig.POM.DEVELOPER_ID)
+                        name.set(RudderStackBuildConfig.POM.DEVELOPER_NAME)
                     }
                 }
 
                 scm {
-                    url.set(getExtraString("POM_SCM_URL"))
-                    connection.set(getExtraString("POM_SCM_CONNECTION"))
-                    developerConnection.set(getExtraString("POM_SCM_DEV_CONNECTION"))
+                    url.set(RudderStackBuildConfig.POM.SCM_URL)
+                    connection.set(RudderStackBuildConfig.POM.SCM_CONNECTION)
+                    developerConnection.set(RudderStackBuildConfig.POM.SCM_DEV_CONNECTION)
                 }
 
                 // To include the transitive dependencies upon which the library depends
