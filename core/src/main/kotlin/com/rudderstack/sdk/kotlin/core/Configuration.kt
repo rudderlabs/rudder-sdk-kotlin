@@ -7,6 +7,7 @@ import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.policies.CountFlushPolicy
 import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPolicy
 import com.rudderstack.sdk.kotlin.core.internals.policies.FrequencyFlushPolicy
+import com.rudderstack.sdk.kotlin.core.internals.policies.StartupFlushPolicy
 
 /**
  * The `Configuration` class is used to configure the SDK's settings for network communication, logging, data storage, and more.
@@ -25,7 +26,7 @@ open class Configuration @JvmOverloads constructor(
     open val controlPlaneUrl: String = DEFAULT_CONTROL_PLANE_URL,
     open val logLevel: Logger.LogLevel = Logger.DEFAULT_LOG_LEVEL,
     open val gzipEnabled: Boolean = DEFAULT_GZIP_STATUS,
-    open var flushPolicies: List<FlushPolicy> = DEFAULT_FLUSH_POLICIES,
+    open val flushPolicies: List<FlushPolicy> = DEFAULT_FLUSH_POLICIES,
 ) {
 
     companion object {
@@ -44,6 +45,10 @@ open class Configuration @JvmOverloads constructor(
          * The default flush policies for `CountFlushPolicy` and `FrequencyFlushPolicy`,
          * which define the conditions under which events are flushed to the server.
          */
-        val DEFAULT_FLUSH_POLICIES: List<FlushPolicy> = listOf(CountFlushPolicy(), FrequencyFlushPolicy())
+        val DEFAULT_FLUSH_POLICIES: List<FlushPolicy> = listOf(
+            CountFlushPolicy(),
+            FrequencyFlushPolicy(),
+            StartupFlushPolicy(),
+        )
     }
 }

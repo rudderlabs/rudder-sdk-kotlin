@@ -38,6 +38,7 @@ internal const val DEFAULT_SESSION_TIMEOUT_IN_MILLIS = 300_000L
  * @param controlPlaneUrl The URL of the control plane, used for remote configuration management. Defaults to `DEFAULT_CONTROL_PLANE_URL`.
  * @param logLevel The log level used for SDK logging. By default, it uses the `DEBUG` log level.
  * @param flushPolicies A list of flush policies defining when and how events should be sent to the backend. Defaults to `DEFAULT_FLUSH_POLICIES`.
+ * @param gzipEnabled Flag to enable or disable GZIP compression for network requests. Defaults to `DEFAULT_GZIP_STATUS`.
  *
  * ## Example
  * ```kotlin
@@ -64,7 +65,8 @@ data class Configuration @JvmOverloads constructor(
     override val dataPlaneUrl: String,
     override val controlPlaneUrl: String = DEFAULT_CONTROL_PLANE_URL,
     override val logLevel: Logger.LogLevel = Logger.DEFAULT_LOG_LEVEL,
-    override var flushPolicies: List<FlushPolicy> = DEFAULT_FLUSH_POLICIES,
+    override val flushPolicies: List<FlushPolicy> = DEFAULT_FLUSH_POLICIES,
+    override val gzipEnabled: Boolean = DEFAULT_GZIP_STATUS
 ) : Configuration(
     writeKey = writeKey,
     dataPlaneUrl = dataPlaneUrl,
