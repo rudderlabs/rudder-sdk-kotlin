@@ -4,20 +4,20 @@ import android.app.Application
 import com.rudderstack.sdk.kotlin.android.Analytics
 import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.android.utils.provideEvent
-import com.rudderstack.sdk.kotlin.android.utils.UniqueIdProvider
+import com.rudderstack.sdk.kotlin.android.utils.putIfNotNull
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
-import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.putAll
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.spyk
-import io.mockk.unmockkObject
+import io.mockk.unmockkAll
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
@@ -50,9 +50,18 @@ class DeviceInfoPluginTest {
         mockConfiguration = mockk(relaxed = true)
         mockStorage = mockk(relaxed = true)
 
+        mockkObject(BuildInfo)
+        every { BuildInfo.getManufacturer() } returns MANUFACTURER_VALUE
+        every { BuildInfo.getModel() } returns MODEL_VALUE
+        every { BuildInfo.getDevice() } returns NAME_VALUE
         every { mockAnalytics.configuration } returns mockConfiguration
         every { mockConfiguration.application } returns mockApplication
         every { mockAnalytics.storage } returns mockStorage
+    }
+
+    @After
+    fun tearDown() {
+        unmockkAll()
     }
 
     @Test
@@ -73,28 +82,26 @@ class DeviceInfoPluginTest {
 
     @Test
     fun `when attachDeviceInfo is called, then device information is attached to message payload `() {
-        val testDeviceId = UNIQUE_DEVICE_ID
-        every { plugin.retrieveDeviceId() } returns testDeviceId
+        every { mockConfiguration.collectDeviceId } returns true
+        every { plugin.retrieveDeviceId() } returns UNIQUE_DEVICE_ID
 
-        mockkObject(BuildInfo)
-        every { BuildInfo.getManufacturer() } returns MANUFACTURER_VALUE
-        every { BuildInfo.getModel() } returns MODEL_VALUE
-        every { BuildInfo.getDevice() } returns NAME_VALUE
+        plugin.setup(mockAnalytics)
+        val actualMessage = plugin.attachDeviceInfo(provideEvent())
 
-        val message = provideEvent().apply {
+        val expectedMessage = provideEvent().apply {
             context = buildJsonObject {
                 putAll(context)
                 put(DEVICE, provideLocaleContextPayload())
             }
         }
 
-        val actual = plugin.attachDeviceInfo(provideEvent())
-        assertEquals(message.context, actual.context)
-        unmockkObject(BuildInfo)
+        assertEquals(expectedMessage.context, actualMessage.context)
     }
 
     @Test
     fun `given collectDeviceId is true, when setup is called, then configuration collectDeviceId is true`() {
+        val testDeviceId = UNIQUE_DEVICE_ID
+        every { plugin.retrieveDeviceId() } returns testDeviceId
         every { mockConfiguration.collectDeviceId } returns true
 
         plugin.setup(mockAnalytics)
@@ -115,68 +122,30 @@ class DeviceInfoPluginTest {
     }
 
     @Test
-    fun `given collectDeviceId is true, when retrieveDeviceId is called, then device id is retrieved or generated`() {
+    fun `when collectDeviceId is true, retrieveDeviceId returns the device ID`() {
         val testDeviceId = UNIQUE_DEVICE_ID
         every { mockConfiguration.collectDeviceId } returns true
-        every { plugin.retrieveOrGenerateStoredId(any()) } returns testDeviceId
+        every { plugin.retrieveDeviceId() } returns testDeviceId
 
         plugin.setup(mockAnalytics)
 
-        assertEquals(testDeviceId, plugin.retrieveDeviceId())
+        val result = plugin.retrieveDeviceId()
+        assertEquals(testDeviceId, result)
     }
 
     @Test
-    fun `given collectDeviceId is false, when retrieveDeviceId is called, then device id equals the anonymous id that is stored`() {
-        val testDeviceId = UNIQUE_DEVICE_ID
+    fun `when collectDeviceId is false, retrieveDeviceId returns null`() {
         every { mockConfiguration.collectDeviceId } returns false
-        every { mockStorage.readString(StorageKeys.ANONYMOUS_ID, any()) } returns testDeviceId
 
         plugin.setup(mockAnalytics)
 
-        assertEquals(testDeviceId, plugin.retrieveDeviceId())
-    }
-
-    @Test
-    fun `given device id already present in the storage, when retrieveOrGenerateStoredId is called, then returns stored device id`() {
-        val testDeviceId = UNIQUE_DEVICE_ID
-        plugin.setup(mockAnalytics)
-        every { mockStorage.readString(StorageKeys.DEVICE_ID, any()) } returns testDeviceId
-
-        val id = plugin.retrieveOrGenerateStoredId { testDeviceId }
-
-        assertEquals(testDeviceId, id)
-    }
-
-    @Test
-    fun `given getDeviceId can be retrieved, when generateId is executed, then it returns UniqueIdProvider getDeviceId`() {
-        plugin.setup(mockAnalytics)
-        val testDeviceId = UNIQUE_DEVICE_ID
-
-        mockkObject(UniqueIdProvider)
-        every { UniqueIdProvider.getDeviceId(any()) } returns testDeviceId
-
-        assertEquals(testDeviceId, plugin.generateId())
-
-        unmockkObject(UniqueIdProvider)
-    }
-
-    @Test
-    fun `given getDeviceId can not be retrieved, when generateId is executed, then it returns UniqueIdProvider getUniqueID`() {
-        plugin.setup(mockAnalytics)
-        val testDeviceId = UNIQUE_DEVICE_ID
-
-        mockkObject(UniqueIdProvider)
-        every { UniqueIdProvider.getDeviceId(any()) } returns null
-        every { UniqueIdProvider.getUniqueID() } returns testDeviceId
-
-        assertEquals(testDeviceId, plugin.generateId())
-
-        unmockkObject(UniqueIdProvider)
+        val result = plugin.retrieveDeviceId()
+        assertEquals(null, result)
     }
 }
 
 private fun provideLocaleContextPayload(): JsonObject = buildJsonObject {
-    put(ID, UNIQUE_DEVICE_ID)
+    putIfNotNull(ID, UNIQUE_DEVICE_ID)
     put(MANUFACTURER, MANUFACTURER_VALUE)
     put(MODEL, MODEL_VALUE)
     put(NAME, NAME_VALUE)

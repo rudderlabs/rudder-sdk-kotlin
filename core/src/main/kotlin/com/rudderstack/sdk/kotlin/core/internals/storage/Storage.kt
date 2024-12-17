@@ -168,11 +168,6 @@ enum class StorageKeys(val key: String) {
     ANONYMOUS_ID("anonymous_id"),
 
     /**
-     *Key for storing the id of the client's device.
-     */
-    DEVICE_ID("device_id"),
-
-    /**
      *Key for storing the user id of the client.
      */
     USER_ID("user_id"),

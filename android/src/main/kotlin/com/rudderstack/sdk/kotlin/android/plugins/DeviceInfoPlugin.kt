@@ -5,16 +5,14 @@ import android.os.Build
 import androidx.annotation.VisibleForTesting
 import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.android.utils.UniqueIdProvider
+import com.rudderstack.sdk.kotlin.android.utils.mergeWithHigherPriorityTo
+import com.rudderstack.sdk.kotlin.android.utils.putIfNotNull
 import com.rudderstack.sdk.kotlin.core.Analytics
+import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
-import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
-import com.rudderstack.sdk.kotlin.core.internals.utils.empty
-import com.rudderstack.sdk.kotlin.core.internals.utils.generateUUID
-import com.rudderstack.sdk.kotlin.core.internals.utils.putAll
-import kotlinx.coroutines.launch
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.put
 
 private const val DEVICE = "device"
@@ -31,6 +29,7 @@ internal class DeviceInfoPlugin : Plugin {
 
     override lateinit var analytics: Analytics
     private lateinit var application: Application
+    private lateinit var deviceContext: JsonObject
     private var collectDeviceId = false
 
     override fun setup(analytics: Analytics) {
@@ -38,59 +37,45 @@ internal class DeviceInfoPlugin : Plugin {
         (analytics.configuration as? Configuration)?.let { config ->
             application = config.application
             collectDeviceId = config.collectDeviceId
+            deviceContext = getDeviceInfo()
         }
-    }
-
-    @VisibleForTesting
-    internal fun attachDeviceInfo(eventPayload: Event): Event {
-        val updatedDeviceID = buildJsonObject {
-            eventPayload.context[DEVICE]?.jsonObject?.let {
-                putAll(it)
-            }
-            put(ID, retrieveDeviceId())
-            put(MANUFACTURER, BuildInfo.getManufacturer())
-            put(MODEL, BuildInfo.getModel())
-            put(NAME, BuildInfo.getDevice())
-            put(TYPE, ANDROID)
-        }
-        eventPayload.context = buildJsonObject {
-            putAll(eventPayload.context)
-            put(DEVICE, updatedDeviceID)
-        }
-        return eventPayload
     }
 
     override suspend fun intercept(event: Event): Event = attachDeviceInfo(event)
 
     @VisibleForTesting
-    internal fun retrieveDeviceId(): String {
+    internal fun attachDeviceInfo(message: Event): Event {
+        LoggerAnalytics.debug("Attaching device info to the message payload")
+        message.context = message.context mergeWithHigherPriorityTo deviceContext
+        return message
+    }
+
+    @VisibleForTesting
+    internal fun getDeviceInfo(): JsonObject = buildJsonObject {
+        put(
+            DEVICE,
+            buildJsonObject {
+                putIfNotNull(ID, retrieveDeviceId())
+                put(MANUFACTURER, BuildInfo.getManufacturer())
+                put(MODEL, BuildInfo.getModel())
+                put(NAME, BuildInfo.getDevice())
+                put(TYPE, ANDROID)
+            }
+        )
+    }
+
+    @VisibleForTesting
+    internal fun retrieveDeviceId(): String? {
         return if (collectDeviceId) {
-            retrieveOrGenerateStoredId(::generateId)
+            UniqueIdProvider.getDeviceId(application)
         } else {
-            analytics.storage.readString(StorageKeys.ANONYMOUS_ID, generateUUID())
+            null
         }
-    }
-
-    @VisibleForTesting
-    internal fun generateId(): String {
-        return UniqueIdProvider.getDeviceId(application) ?: UniqueIdProvider.getUniqueID() ?: generateUUID()
-    }
-
-    @VisibleForTesting
-    internal fun retrieveOrGenerateStoredId(generateId: () -> String): String {
-        val storedId = analytics.storage.readString(StorageKeys.DEVICE_ID, String.empty())
-        return storedId.ifBlank { generateAndStoreId(generateId()) }
-    }
-
-    private fun generateAndStoreId(newId: String): String {
-        analytics.analyticsScope.launch(analytics.storageDispatcher) {
-            analytics.storage.write(StorageKeys.DEVICE_ID, newId)
-        }
-        return newId
     }
 }
 
 internal object BuildInfo {
+
     internal fun getManufacturer(): String {
         return Build.MANUFACTURER
     }
