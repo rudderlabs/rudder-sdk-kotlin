@@ -1,6 +1,7 @@
 package com.rudderstack.sampleapp.analytics
 
 import android.app.Application
+import com.rudderstack.android.sampleapp.BuildConfig
 import com.rudderstack.sdk.kotlin.android.Analytics
 import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.android.SessionConfiguration
@@ -20,9 +21,9 @@ object RudderAnalyticsUtils {
         analytics = Analytics(
             configuration = Configuration(
                 trackApplicationLifecycleEvents = true,
-                writeKey = "<WRITE_KEY>",
+                writeKey = BuildConfig.WRITE_KEY,
                 application = application,
-                dataPlaneUrl = "<DATA_PLANE_URL>",
+                dataPlaneUrl = BuildConfig.DATA_PLANE_URL,
                 sessionConfiguration = SessionConfiguration(
                     automaticSessionTracking = true,
                     sessionTimeoutInMillis = 3000,
