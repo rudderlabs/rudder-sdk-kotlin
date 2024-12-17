@@ -1,6 +1,6 @@
 package com.rudderstack.sdk.kotlin.core.internals.models
 
-import com.rudderstack.sdk.kotlin.core.internals.models.exception.UnknownMessageKeyException
+import com.rudderstack.sdk.kotlin.core.internals.models.exception.UnknownEventKeyException
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.UserIdentity
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.utils.DateTimeUtils
@@ -265,7 +265,7 @@ object BaseEventSerializer : JsonContentPolymorphicSerializer<Event>(Event::clas
             "group" -> GroupEvent.serializer()
             "identify" -> IdentifyEvent.serializer()
             "alias" -> AliasEvent.serializer()
-            else -> throw UnknownMessageKeyException()
+            else -> throw UnknownEventKeyException()
         }
     }
 }
