@@ -113,7 +113,7 @@ internal class EventQueue(
                 try {
                     queueMessage.event?.let {
                         stringifyBaseEvent(it).also { stringValue ->
-                            LoggerAnalytics.debug("running $stringValue")
+                            LoggerAnalytics.debug("Storing event: $stringValue")
                             storage.write(StorageKeys.EVENT, stringValue)
                         }
                         flushPoliciesFacade.updateState()
@@ -146,7 +146,7 @@ internal class EventQueue(
                 var shouldCleanup = false
                 try {
                     val batchPayload = jsonSentAtUpdater.updateSentAt(readFileAsString(filePath))
-                    LoggerAnalytics.debug("-------> readFileAsString: $batchPayload")
+                    LoggerAnalytics.debug("Batch Payload: $batchPayload")
                     when (val result: Result<String, Exception> = httpClientFactory.sendData(batchPayload)) {
                         is Result.Success -> {
                             LoggerAnalytics.debug("Event uploaded successfully. Server response: ${result.response}")
