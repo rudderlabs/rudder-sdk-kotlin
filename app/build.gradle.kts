@@ -45,8 +45,7 @@ android {
             "DATA_PLANE_URL",
             sampleRudderProperties.getProperty("dataPlaneUrl", "\"<DATA_PLANE_URL>\"")
         )
-        // For self hosted control plane url, please uncomment and use value below
-        // and add it in SDK's initialization Configuration.
+        // For self hosted or proxied control plane, please uncomment and provide your URL:
         // buildConfigField("String", "CONTROL_PLANE_URL", sampleRudderProperties.getProperty("controlPlaneUrl", "\"<CONTROL_PLANE_URL>\""))
     }
 
