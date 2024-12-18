@@ -1,24 +1,34 @@
-# Readme.MD
-
-![https://img.shields.io/github/release/rudderlabs/rudder-sdk-kotlin.svg](https://img.shields.io/github/release/rudderlabs/rudder-sdk-kotlin.svg)
-
-![https://img.shields.io/badge/%3C%2F%3E-Kotlin-%230095D5.svg](https://img.shields.io/badge/%3C%2F%3E-Kotlin-%230095D5.svg)
-
-[https://sonarcloud.io/api/project_badges/measure?project=rudderlabs_rudder-sdk-kotlin&metric=alert_status](https://sonarcloud.io/api/project_badges/measure?project=rudderlabs_rudder-sdk-kotlin&metric=alert_status)
-
-[https://sonarcloud.io/api/project_badges/measure?project=rudderlabs_rudder-sdk-kotlin&metric=sqale_rating](https://sonarcloud.io/api/project_badges/measure?project=rudderlabs_rudder-sdk-kotlin&metric=sqale_rating)
+<p align="center">
+  <a href="https://rudderstack.com/">
+    <img alt="RudderStack" width="512" src="https://raw.githubusercontent.com/rudderlabs/rudder-sdk-js/develop/assets/rs-logo-full-light.jpg">
+  </a>
+  <br />
+  <caption>The Customer Data Platform for Developers</caption>
+</p>
+<p align="center">
+  <b>
+    <a href="https://rudderstack.com">Website</a>
+    ·
+    <a href="https://rudderstack.com/docs/stream-sources/rudderstack-sdk-integration-guides/rudderstack-javascript-sdk/">Documentation</a>
+    ·
+    <a href="https://rudderstack.com/join-rudderstack-slack-community">Community Slack</a>
+  </b>
+</p>
 
 ---
 
-# RudderStack Kotlin SDK
+# RudderStack Kotlin SDK - alpha version
 
-The Kotlin SDK enables you to track customer event data from your Android or Kotlin Multiplatform applications and send it to your configured destinations via RudderStack.
+The Kotlin SDK enables you to track customer event data from your Android or Kotlin JVM applications and send it to your configured destinations via RudderStack.
+
+**Be aware that this SDK supports only a limited set of Rudderstack's features.**
 
 ---
 
 ## Table of Contents
 
-- [**Installing the Kotlin SDK**](#installing-the-kotlin-sdk)
+- [**Installing the Kotlin Android SDK**](#installing-the-kotlin-android-sdk)
+- [**Installing the Kotlin JVM SDK**](#installing-the-kotlin-jvm-sdk)
 - [**Initializing the SDK**](#initializing-the-sdk)
 - [**Identifying your users**](#identifying-users)
 - [**Tracking user actions**](#tracking-user-actions)
@@ -40,7 +50,7 @@ dependencies {
 
 Replace `<latest_version>` with the version number you want to use. You can find the latest release [**here**](https://github.com/rudderlabs/rudder-sdk-kotlin/releases).
 
-## Installing the Kotlin Core SDK
+## Installing the Kotlin JVM SDK
 
 Add the SDK to your Kotlin JVM project using Gradle:
 
@@ -156,4 +166,14 @@ For more information:
 
 ---
 
-This document is now focused on the **Kotlin SDK** while retaining the structure and general style of the original. Let me know if you need further refinements!
+<!----variables---->
+
+[rudderstack-blog]: https://rudderstack.com/blog/
+[slack]: https://resources.rudderstack.com/join-rudderstack-slack
+[twitter]: https://twitter.com/rudderstack
+[linkedin]: https://www.linkedin.com/company/rudderlabs/
+[devto]: https://dev.to/rudderstack
+[medium]: https://rudderstack.medium.com/
+[youtube]: https://www.youtube.com/channel/UCgV-B77bV_-LOmKYHw8jvBw
+[hackernews]: https://news.ycombinator.com/item?id=21081756
+[producthunt]: https://www.producthunt.com/posts/rudderstack
