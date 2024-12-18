@@ -42,13 +42,13 @@ object RudderStackBuildConfig {
         const val NAME = "Kotlin-SDK-POC"
         const val DESCRIPTION = "RudderStack\'s SDK for android"
 
-        const val URL = "https://github.com/rudderlabs/kotlin-sdk-poc"
-        const val SCM_URL = "https://github.com/rudderlabs/kotlin-sdk-poc/tree/main"
-        const val SCM_CONNECTION = "scm:git:git://github.com/rudderlabs/kotlin-sdk-poc.git"
-        const val SCM_DEV_CONNECTION = "scm:git:git://github.com:rudderlabs/kotlin-sdk-poc.git"
+        const val URL = "https://github.com/rudderlabs/rudder-sdk-kotlin"
+        const val SCM_URL = "https://github.com/rudderlabs/rudder-sdk-kotlin/tree/main"
+        const val SCM_CONNECTION = "scm:git:git://github.com/rudderlabs/rudder-sdk-kotlin.git"
+        const val SCM_DEV_CONNECTION = "scm:git:git://github.com:rudderlabs/rudder-sdk-kotlin.git"
 
         const val LICENCE_NAME = "Elastic License 2.0 (ELv2)"
-        const val LICENCE_URL = "http://opensource.org/licenses/MIT"
+        const val LICENCE_URL = "https://github.com/rudderlabs/rudder-sdk-kotlin/blob/main/LICENSE.md"
         const val LICENCE_DIST = "repo"
 
         const val DEVELOPER_ID = "Rudderstack"
