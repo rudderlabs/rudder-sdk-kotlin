@@ -1,0 +1,7 @@
+# This is the RudderStack properties file, rename it to `rudderstack.properties` and add here the values from your RudderStack dashboard.
+
+writeKey="<WRITE_KEY>"
+dataPlaneUrl="<DATA_PLANE_URL>"
+
+# For self hosted or proxied control plane, please uncomment and provide your URL:
+# controlPlaneUrl="<CONTROL_PLANE_URL>"

@@ -6,9 +6,13 @@ plugins {
     alias(libs.plugins.kotlin.android)
 }
 
-val sampleRudderPropertiesFile: File = rootProject.file("${projectDir}/rudderstack.properties")
+val rudderStackPropertiesFile: File = rootProject.file("${projectDir}/rudderstack.properties")
 val sampleRudderProperties = Properties().apply {
-    sampleRudderPropertiesFile.canRead().apply { load(FileInputStream(sampleRudderPropertiesFile)) }
+    if (rudderStackPropertiesFile.canRead() && rudderStackPropertiesFile.length() > 0) {
+        load(FileInputStream(rudderStackPropertiesFile))
+    } else {
+        println("Properties file is empty or cannot be read.")
+    }
 }
 
 android {
@@ -34,18 +38,15 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+
+        buildConfigField("String", "WRITE_KEY", sampleRudderProperties.getProperty("writeKey", "\"<WRITE_KEY>\""))
         buildConfigField(
-            "String", "WRITE_KEY",
-            sampleRudderProperties.getProperty("writeKey")
+            "String",
+            "DATA_PLANE_URL",
+            sampleRudderProperties.getProperty("dataPlaneUrl", "\"<DATA_PLANE_URL>\"")
         )
-        buildConfigField(
-            "String", "CONTROL_PLANE_URL",
-            sampleRudderProperties.getProperty("controlplaneUrl")
-        )
-        buildConfigField(
-            "String", "DATA_PLANE_URL",
-            sampleRudderProperties.getProperty("dataplaneUrl")
-        )
+        // For self hosted or proxied control plane, please uncomment and provide your URL:
+        // buildConfigField("String", "CONTROL_PLANE_URL", sampleRudderProperties.getProperty("controlPlaneUrl", "\"<CONTROL_PLANE_URL>\""))
     }
 
     buildTypes {
