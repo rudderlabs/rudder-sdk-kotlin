@@ -98,9 +98,18 @@ configure<PublishingExtension> {
 }
 
 // Signing configuration
-plugins.withType<SigningPlugin>().configureEach {
-    extensions.configure<SigningExtension> {
+configure<SigningExtension> {
+    if (System.getenv("SIGNING_KEY_ID") == null || System.getenv("SIGNING_PRIVATE_KEY_BASE64") == null || System.getenv("SIGNING_PASSWORD") == null) {
+        println("RudderStack: Error in fetching the signing environment variables.")
+    } else {
+        println("RudderStack: Signing environment variables fetched successfully.")
     }
+
+    val signingKeyId = System.getenv("SIGNING_KEY_ID")
+    val signingKey = System.getenv("SIGNING_PRIVATE_KEY_BASE64")
+    val signingPassword = System.getenv("SIGNING_PASSWORD")
+    useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
+    sign(extensions.getByType<PublishingExtension>().publications)
 }
 
 tasks.getByName("publish") {
