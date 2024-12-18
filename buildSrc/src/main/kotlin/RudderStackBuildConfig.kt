@@ -39,7 +39,7 @@ object RudderStackBuildConfig {
 
     object POM {
 
-        const val NAME = "Kotlin-SDK-POC"
+        const val NAME = "Analytics Kotlin SDK"
         const val DESCRIPTION = "RudderStack\'s SDK for android"
 
         const val URL = "https://github.com/rudderlabs/rudder-sdk-kotlin"
