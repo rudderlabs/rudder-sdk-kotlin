@@ -41,7 +41,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
 
-        buildConfigField("String", "VERSION_NAME", RudderStackBuildConfig.Version.VERSION_NAME)
+        buildConfigField("String", "VERSION_NAME", "\"${RudderStackBuildConfig.Version.VERSION_NAME}\"")
         buildConfigField("int", "VERSION_CODE", RudderStackBuildConfig.Version.VERSION_CODE)
     }
 
@@ -60,6 +60,39 @@ android {
     }
     kotlin {
         jvmToolchain(RudderStackBuildConfig.Build.JVM_TOOLCHAIN)
+    }
+}
+
+// For generating SourcesJar and JavadocJar
+tasks {
+    val sourceFiles = (android.sourceSets["main"].kotlin as com.android.build.gradle.internal.api.DefaultAndroidSourceDirectorySet).srcDirs
+
+    register<Javadoc>("withJavadoc") {
+        isFailOnError = false
+
+        setSource(sourceFiles)
+
+        // add Android runtime classpath
+        android.bootClasspath.forEach { classpath += project.fileTree(it) }
+
+        // add classpath for all dependencies
+        android.libraryVariants.forEach { variant ->
+            variant.javaCompileProvider.get().classpath.files.forEach { file ->
+                classpath += project.fileTree(file)
+            }
+        }
+    }
+
+    register<Jar>("javadocJar") {
+        archiveClassifier.set("javadoc")
+        dependsOn(named("withJavadoc"))
+        val destination = named<Javadoc>("withJavadoc").get().destinationDir
+        from(destination)
+    }
+
+    register<Jar>("sourcesJar") {
+        archiveClassifier.set("sources")
+        from(sourceFiles)
     }
 }
 
@@ -85,3 +118,5 @@ dependencies {
     testImplementation(libs.json.assert)
     testImplementation(libs.navigation.runtime)
 }
+
+apply(from = rootProject.file("gradle/publishing/publishing.gradle.kts"))

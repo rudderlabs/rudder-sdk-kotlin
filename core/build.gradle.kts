@@ -20,6 +20,24 @@ tasks.withType<KotlinJvmCompile>().configureEach {
     compilerOptions.freeCompilerArgs.add("-opt-in=com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi")
 }
 
+// For generating SourcesJar and JavadocJar
+tasks {
+    val sourcesJar by creating(Jar::class) {
+        dependsOn(JavaPlugin.CLASSES_TASK_NAME)
+        archiveClassifier.set("sources")
+        from(sourceSets["main"].allSource)
+    }
+
+    val javadocJar by creating(Jar::class) {
+        archiveClassifier.set("javadoc")
+    }
+
+    artifacts {
+        add("archives", sourcesJar)
+        add("archives", javadocJar)
+    }
+}
+
 // Task to generate a Kotlin file with version constants
 tasks.register("generateVersionConstants") {
     val outputDir = layout.buildDirectory.dir("generated/source/version")
@@ -34,7 +52,7 @@ tasks.register("generateVersionConstants") {
             package source.version
 
             object VersionConstants {
-                const val VERSION_NAME = ${RudderStackBuildConfig.Version.VERSION_NAME}
+                const val VERSION_NAME = "${RudderStackBuildConfig.Version.VERSION_NAME}"
                 const val LIBRARY_PACKAGE_NAME = "${RudderStackBuildConfig.PackageName.PACKAGE_NAME}"
             }
             """.trimIndent()
@@ -79,3 +97,5 @@ dependencies {
     testImplementation(libs.json.assert)
     testImplementation(libs.kotlinx.coroutines.test)
 }
+
+apply(from = rootProject.file("gradle/publishing/publishing.gradle.kts"))

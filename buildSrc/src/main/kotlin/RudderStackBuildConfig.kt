@@ -17,7 +17,7 @@ object RudderStackBuildConfig {
 
     object Version {
 
-        const val VERSION_NAME = "\"1.0.0\""
+        const val VERSION_NAME = "1.0.0"
         const val VERSION_CODE = "1"
     }
 
@@ -36,4 +36,42 @@ object RudderStackBuildConfig {
         val VERSION_NAME = ""
         val GROUP_NAME = ""
     }
+
+    object POM {
+
+        const val NAME = "Kotlin-SDK-POC"
+        const val DESCRIPTION = "RudderStack\'s SDK for android"
+
+        const val URL = "https://github.com/rudderlabs/kotlin-sdk-poc"
+        const val SCM_URL = "https://github.com/rudderlabs/kotlin-sdk-poc/tree/main"
+        const val SCM_CONNECTION = "scm:git:git://github.com/rudderlabs/kotlin-sdk-poc.git"
+        const val SCM_DEV_CONNECTION = "scm:git:git://github.com:rudderlabs/kotlin-sdk-poc.git"
+
+        const val LICENCE_NAME = "Elastic License 2.0 (ELv2)"
+        const val LICENCE_URL = "http://opensource.org/licenses/MIT"
+        const val LICENCE_DIST = "repo"
+
+        const val DEVELOPER_ID = "Rudderstack"
+        const val DEVELOPER_NAME = "Rudderstack, Inc."
+    }
+
+    object Modules {
+        object Android : ModuleConfig {
+
+            override val artifactId = "android"
+            override val pomPackaging = "aar"
+        }
+
+        object Core : ModuleConfig {
+
+            override val artifactId = "core"
+            override val pomPackaging = "jar"
+        }
+    }
+}
+
+interface ModuleConfig {
+
+    val artifactId: String
+    val pomPackaging: String
 }
