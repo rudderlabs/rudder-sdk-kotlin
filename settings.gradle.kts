@@ -19,7 +19,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Kotlin SDK POC"
+rootProject.name = "Analytics Kotlin SDK"
 include(":app")
 include(":core")
 include(":android")
