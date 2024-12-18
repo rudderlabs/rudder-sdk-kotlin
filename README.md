@@ -110,9 +110,9 @@ The `identify` API lets you recognize a user and associate them with their trait
 analytics.identify(
 	userId = "1hKOmRA4el9Zt1WSfVJIVo4GRlm",
 	traits = buildJsonObject {
-			put("name", "Alex Keener")
-			put("email", "alex@example.com")
-		}
+		put("name", "Alex Keener")
+		put("email", "alex@example.com")
+	}
 )
 ```
 
@@ -126,17 +126,11 @@ The `track` API lets you capture user events:
 analytics.track(
     event = "Order Completed",
     properties = buildJsonObject {
-		    put("revenue", 30)
+	put("revenue", 30)
         put("currency", "USD")
     }
 )
 ```
-
----
-
-## Contribute
-
-We welcome contributions! To get started, check out our [**Contribution Guidelines**](https://github.com/rudderlabs/rudder-sdk-kotlin/blob/main/CONTRIBUTING.md).
 
 ---
 
@@ -155,14 +149,6 @@ For more information:
 - [Slack](https://rudderstack.com/join-rudderstack-slack-community)
 - [Twitter](https://twitter.com/rudderstack)
 - [YouTube](https://www.youtube.com/channel/UCgV-B77bV_-LOmKYHw8jvBw)
-
----
-
-## :clap: Our Supporters
-
-[https://reporoster.com/stars/rudderlabs/rudder-sdk-kotlin](https://reporoster.com/stars/rudderlabs/rudder-sdk-kotlin)
-
-[https://reporoster.com/forks/rudderlabs/rudder-sdk-kotlin](https://reporoster.com/forks/rudderlabs/rudder-sdk-kotlin)
 
 ---
 
