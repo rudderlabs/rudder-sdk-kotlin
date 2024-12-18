@@ -2,9 +2,9 @@ name: Linting Check
 
 on:
   push:
-    branches: ["main", "develop.poc"]
+    branches: ["main", "develop"]
   pull_request:
-    branches: ["main", "develop.poc"]
+    branches: ["main", "develop"]
     types: ["opened", "reopened", "synchronize"]
   workflow_dispatch:
 
