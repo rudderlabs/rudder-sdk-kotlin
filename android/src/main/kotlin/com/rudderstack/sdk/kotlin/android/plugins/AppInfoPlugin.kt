@@ -13,6 +13,7 @@ import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import org.jetbrains.annotations.VisibleForTesting
 
 private const val APP_KEY = "app"
@@ -63,9 +64,9 @@ internal class AppInfoPlugin : Plugin {
                     APP_KEY,
                     buildJsonObject {
                         putIfNotNull(APP_NAME_KEY, it.applicationInfo?.loadLabel(packageManager))
-                        putIfNotNull(APP_NAMESPACE_KEY, it.packageName)
-                        putIfNotNull(APP_VERSION_KEY, it.versionName)
-                        putIfNotNull(APP_BUILD_KEY, appBuild)
+                        put(APP_NAMESPACE_KEY, it.packageName)
+                        put(APP_VERSION_KEY, it.versionName)
+                        put(APP_BUILD_KEY, appBuild)
                     }
                 )
             }
