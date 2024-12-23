@@ -15,10 +15,12 @@ import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.ResetUserIdentityAction
+import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.SetAnonymousIdAction
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.SetUserIdForAliasEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.SetUserIdTraitsAndExternalIdsAction
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.UserIdentity
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.resetUserIdentity
+import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.storeAnonymousId
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.storeUserId
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.storeUserIdTraitsAndExternalIds
 import com.rudderstack.sdk.kotlin.core.internals.platform.Platform
@@ -337,7 +339,7 @@ open class Analytics protected constructor(
     fun setAnonymousId(anonymousId: String) {
         if (!isAnalyticsActive()) return
 
-        userIdentityState.dispatch(UserIdentity.SetAnonymousIdAction(anonymousId))
+        userIdentityState.dispatch(SetAnonymousIdAction(anonymousId))
         storeAnonymousId()
     }
 

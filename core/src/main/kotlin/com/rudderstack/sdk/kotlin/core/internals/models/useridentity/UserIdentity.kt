@@ -49,17 +49,4 @@ data class UserIdentity(
     }
 
     internal sealed interface UserIdentityAction : FlowAction<UserIdentity>
-
-    internal class SetAnonymousIdAction(
-        private val anonymousId: String
-    ) : UserIdentityAction {
-
-        override fun reduce(currentState: UserIdentity): UserIdentity {
-            return currentState.copy(anonymousId = anonymousId)
-        }
-    }
-
-    internal suspend fun storeAnonymousId(storage: Storage) {
-        storage.write(StorageKeys.ANONYMOUS_ID, anonymousId)
-    }
 }
