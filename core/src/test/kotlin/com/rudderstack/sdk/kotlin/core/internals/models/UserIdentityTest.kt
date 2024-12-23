@@ -1,7 +1,9 @@
 package com.rudderstack.sdk.kotlin.core.internals.models
 
 import com.rudderstack.sdk.kotlin.core.internals.models.provider.provideUserIdentityState
+import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.SetAnonymousIdAction
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.UserIdentity
+import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.storeAnonymousId
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import io.mockk.MockKAnnotations
@@ -46,7 +48,7 @@ class UserIdentityTest {
     fun `when SetAnonymousIdAction called, then it should update anonymousId in UserIdentity`() {
         val initialUserIdentity = provideUserIdentityState(anonymousId = "initialId", userId = "userId")
         val newAnonymousId = "newAnonymousId"
-        val action = UserIdentity.SetAnonymousIdAction(newAnonymousId)
+        val action = SetAnonymousIdAction(newAnonymousId)
 
         val updatedUserIdentity = action.reduce(initialUserIdentity)
 
