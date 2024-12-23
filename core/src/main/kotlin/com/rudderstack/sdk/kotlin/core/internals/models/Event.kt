@@ -47,15 +47,27 @@ enum class EventType {
     @SerialName("track")
     Track,
 
+    /**
+     * Indicates a screen event type.
+     */
     @SerialName("screen")
     Screen,
 
+    /**
+     * Indicates a group event type.
+     */
     @SerialName("group")
     Group,
 
+    /**
+     * Indicates an identify event type.
+     */
     @SerialName("identify")
     Identify,
 
+    /**
+     * Indicates an alias event type.
+     */
     @SerialName("alias")
     Alias
 }
