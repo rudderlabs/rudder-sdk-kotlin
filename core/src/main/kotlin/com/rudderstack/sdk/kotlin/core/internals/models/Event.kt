@@ -47,15 +47,27 @@ enum class EventType {
     @SerialName("track")
     Track,
 
+    /**
+     * Indicates a screen event type.
+     */
     @SerialName("screen")
     Screen,
 
+    /**
+     * Indicates a group event type.
+     */
     @SerialName("group")
     Group,
 
+    /**
+     * Indicates an identify event type.
+     */
     @SerialName("identify")
     Identify,
 
+    /**
+     * Indicates an alias event type.
+     */
     @SerialName("alias")
     Alias
 }
@@ -151,96 +163,6 @@ sealed class Event {
         @Suppress("UNCHECKED_CAST")
         return copy as T // This is ok because resultant type will be same as input type
     }
-}
-
-/**
- * Represents a track event in RudderStack.
- *
- * This data class encapsulates the properties required for a track event.
- *
- * @property event The name of the track event.
- * @property properties The properties associated with the track event.
- * @property options Additional options for the event, encapsulated in a [RudderOption] instance.
- * @property userIdentityState The [UserIdentity] information associated with the track event.
- */
-@Serializable
-@SerialName("track")
-data class TrackEvent(
-    var event: String,
-    var properties: Properties,
-    @Transient override var options: RudderOption = RudderOption(),
-    @Transient override var userIdentityState: UserIdentity = provideEmptyUserIdentityState()
-) : Event() {
-
-    override var type: EventType = EventType.Track
-    override var messageId: String = super.messageId
-    override var context: AnalyticsContext = super.context
-    override var originalTimestamp: String = super.originalTimestamp
-    override val sentAt: String = super.sentAt
-    override var userId: String = super.userId
-    override lateinit var integrations: JsonObject
-    override lateinit var anonymousId: String
-    override lateinit var channel: PlatformType
-}
-
-/**
- * Represents a screen event in RudderStack.
- *
- * This data class encapsulates the properties required for a screen event.
- *
- * @property screenName The name of the screen event.
- * @property properties The properties associated with the screen event.
- * @property options Additional options for the event, encapsulated in a [RudderOption] instance.
- * @property userIdentityState The [UserIdentity] information associated with the screen event.
- */
-@Serializable
-@SerialName("screen")
-data class ScreenEvent(
-    @SerialName("event") var screenName: String,
-    var properties: Properties,
-    @Transient override var options: RudderOption = RudderOption(),
-    @Transient override var userIdentityState: UserIdentity = provideEmptyUserIdentityState()
-) : Event() {
-
-    override var type: EventType = EventType.Screen
-    override var messageId: String = super.messageId
-    override var context: AnalyticsContext = super.context
-    override var originalTimestamp: String = super.originalTimestamp
-    override val sentAt: String = super.sentAt
-    override var userId: String = super.userId
-    override lateinit var integrations: JsonObject
-    override lateinit var anonymousId: String
-    override lateinit var channel: PlatformType
-}
-
-/**
- * Represents a group event in RudderStack.
- *
- * This data class encapsulates the properties required for a group event.
- *
- * @property groupId The group id of group event.
- * @property traits The traits associated with the group. event.
- * @property options Additional options for the event, encapsulated in a [RudderOption] instance.
- * @property userIdentityState The [UserIdentity] information associated with the group event.
- */
-@Serializable
-@SerialName("group")
-data class GroupEvent(
-    var groupId: String,
-    var traits: RudderTraits = emptyJsonObject,
-    @Transient override var options: RudderOption = RudderOption(),
-    @Transient override var userIdentityState: UserIdentity = provideEmptyUserIdentityState()
-) : Event() {
-
-    override var type: EventType = EventType.Group
-    override var messageId: String = super.messageId
-    override var context: AnalyticsContext = super.context
-    override var originalTimestamp: String = super.originalTimestamp
-    override val sentAt: String = super.sentAt
-    override var userId: String = super.userId
-    override lateinit var integrations: JsonObject
-    override lateinit var anonymousId: String
-    override lateinit var channel: PlatformType
 }
 
 /**
