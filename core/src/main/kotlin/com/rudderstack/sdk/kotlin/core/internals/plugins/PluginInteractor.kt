@@ -1,10 +1,12 @@
 package com.rudderstack.sdk.kotlin.core.internals.plugins
 
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
+import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.reflect.KClass
 
-internal class PluginInteractor(private var pluginList: CopyOnWriteArrayList<Plugin> = CopyOnWriteArrayList()) {
+@InternalRudderApi
+class PluginInteractor(private var pluginList: CopyOnWriteArrayList<Plugin> = CopyOnWriteArrayList()) {
 
     fun add(plugin: Plugin) = synchronized(pluginList) {
         pluginList.add(plugin)

@@ -3,6 +3,7 @@ package com.rudderstack.sdk.kotlin.core.internals.models
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.FlowAction
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
+import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -15,8 +16,9 @@ import org.jetbrains.annotations.VisibleForTesting
  *
  * @property source The configuration details of a RudderStack source.
  */
+@InternalRudderApi
 @Serializable
-internal data class SourceConfig(
+data class SourceConfig(
     val source: RudderServerConfigSource
 ) {
 
@@ -59,7 +61,7 @@ internal data class SourceConfig(
  * @property updatedAt The timestamp of the last update to the source configuration.
  */
 @Serializable
-internal data class RudderServerConfigSource(
+data class RudderServerConfigSource(
     @SerialName("id") val sourceId: String,
     @SerialName("name") val sourceName: String,
     val writeKey: String,
@@ -76,7 +78,7 @@ internal data class RudderServerConfigSource(
  * @property statsCollection The configuration for collecting statistics, defaulting to a new instance of [StatsCollection].
  */
 @Serializable
-internal data class MetricsConfig(
+data class MetricsConfig(
     val statsCollection: StatsCollection = StatsCollection()
 )
 
@@ -87,7 +89,7 @@ internal data class MetricsConfig(
  * @property metrics The configuration for general metrics collection, defaulting to a new instance of [Metrics].
  */
 @Serializable
-internal data class StatsCollection(
+data class StatsCollection(
     val errors: Errors = Errors(),
     val metrics: Metrics = Metrics(),
 )
@@ -98,7 +100,7 @@ internal data class StatsCollection(
  * @property enabled A flag indicating whether error statistics collection is enabled, defaulting to false.
  */
 @Serializable
-internal data class Errors(
+data class Errors(
     val enabled: Boolean = false
 )
 
@@ -108,7 +110,7 @@ internal data class Errors(
  * @property enabled A flag indicating whether metrics collection is enabled, defaulting to false.
  */
 @Serializable
-internal data class Metrics(
+data class Metrics(
     val enabled: Boolean = false
 )
 
@@ -126,7 +128,7 @@ internal data class Metrics(
  * @property propagateEventsUntransformedOnError A flag indicating whether to propagate events untransformed in case of an error.
  */
 @Serializable
-internal data class Destination(
+data class Destination(
     @SerialName("id") val destinationId: String,
     @SerialName("name") val destinationName: String,
     @SerialName("enabled") val isDestinationEnabled: Boolean,
@@ -145,7 +147,7 @@ internal data class Destination(
  * @property displayName The display name of the destination.
  */
 @Serializable
-internal data class DestinationDefinition(
+data class DestinationDefinition(
     val name: String,
     val displayName: String
 )

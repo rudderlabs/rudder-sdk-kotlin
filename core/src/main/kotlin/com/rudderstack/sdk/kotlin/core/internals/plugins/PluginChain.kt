@@ -2,9 +2,11 @@ package com.rudderstack.sdk.kotlin.core.internals.plugins
 
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
+import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 
-internal class PluginChain(
-    private val pluginList: Map<Plugin.PluginType, PluginInteractor> = mapOf(
+@InternalRudderApi
+class PluginChain(
+    val pluginList: Map<Plugin.PluginType, PluginInteractor> = mapOf(
         Plugin.PluginType.PreProcess to PluginInteractor(),
         Plugin.PluginType.OnProcess to PluginInteractor(),
         Plugin.PluginType.Destination to PluginInteractor(),
