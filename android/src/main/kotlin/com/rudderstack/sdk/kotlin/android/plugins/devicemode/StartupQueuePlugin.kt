@@ -5,13 +5,16 @@ import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.PluginChain
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlin.collections.HashSet
 
 private const val MAX_QUEUE_SIZE = 1000
 
+@OptIn(ExperimentalCoroutinesApi::class)
 internal class StartupQueuePlugin(
     private val pluginChain: PluginChain
 ) : Plugin {
@@ -21,47 +24,57 @@ internal class StartupQueuePlugin(
     override lateinit var analytics: Analytics
 
     private val queuedEventsChannel: Channel<Event> = Channel(MAX_QUEUE_SIZE)
-    private lateinit var pluginChainWithoutStartup: PluginChain
+    private val queuedEventsIdsSet = HashSet<String>()
 
     init {
         analytics.sourceConfigState.onEach { sourceConfig ->
-            val isEnabled = sourceConfig.source.isSourceEnabled
-            if (isEnabled) {
-                LoggerAnalytics.debug("StartupQueuePlugin sourceConfig fetched")
-                processBufferedEvents()
+            LoggerAnalytics.debug("StartupQueuePlugin: sourceConfig fetched")
+            if (sourceConfig.source.isSourceEnabled) {
+                processQueuedEvents()
             }
         }.launchIn(analytics.analyticsScope)
     }
 
     override suspend fun intercept(event: Event): Event? {
-        // sourceConfig yet to be fetched, so queueing the event.
-        LoggerAnalytics.debug("StartupQueuePlugin queueing event")
-        if (queuedEventsChannel.trySend(event).isFailure) {
-            // we have reached the max capacity of channel, so dropping the last event.
-            queuedEventsChannel.tryReceive()
-            queuedEventsChannel.trySend(event)
+        if (event.messageId in queuedEventsIdsSet) {
+            return event
         }
+        LoggerAnalytics.debug("StartupQueuePlugin: queueing event")
+        val queuedEventResult = queuedEventsChannel.trySend(event)
+
+        when {
+            queuedEventResult.isClosed -> {
+                LoggerAnalytics.error("StartupQueuePlugin: queuedEventsChannel is closed, this should not happen.")
+                return event
+            }
+
+            queuedEventResult.isFailure -> {
+                val removedEvent = queuedEventsChannel.tryReceive().getOrNull()
+                removedEvent?.let {
+                    queuedEventsIdsSet.remove(it.messageId)
+                }
+                queuedEventsChannel.trySend(event)
+            }
+        }
+        queuedEventsIdsSet.add(event.messageId)
+
         return null
     }
 
-    private fun processBufferedEvents() {
+    private fun processQueuedEvents() {
         analytics.analyticsScope.launch(analytics.analyticsDispatcher) {
-            initPluginChainWithoutStartup()
-
             for (event in queuedEventsChannel) {
-                pluginChainWithoutStartup.process(event)
+                pluginChain.process(event)
+                if (queuedEventsChannel.isEmpty) {
+                    break
+                }
             }
+            pluginChain.remove(this@StartupQueuePlugin)
         }
     }
 
-    private fun initPluginChainWithoutStartup() {
-        pluginChainWithoutStartup = PluginChain(
-            pluginList = pluginChain.pluginList
-        ).also { it.analytics = analytics }
-        pluginChainWithoutStartup.remove(this@StartupQueuePlugin)
-    }
-
     override fun teardown() {
-        queuedEventsChannel.close()
+        queuedEventsChannel.cancel()
+        queuedEventsIdsSet.clear()
     }
 }

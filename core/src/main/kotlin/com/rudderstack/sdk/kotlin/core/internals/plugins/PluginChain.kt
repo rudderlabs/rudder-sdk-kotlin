@@ -6,7 +6,7 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 
 @InternalRudderApi
 class PluginChain(
-    val pluginList: Map<Plugin.PluginType, PluginInteractor> = mapOf(
+    private val pluginList: Map<Plugin.PluginType, PluginInteractor> = mapOf(
         Plugin.PluginType.PreProcess to PluginInteractor(),
         Plugin.PluginType.OnProcess to PluginInteractor(),
         Plugin.PluginType.Destination to PluginInteractor(),
