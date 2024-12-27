@@ -13,6 +13,7 @@ import com.rudderstack.sdk.kotlin.core.internals.models.ScreenEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonObject
@@ -27,6 +28,7 @@ abstract class DestinationPlugin : Plugin {
 
     var isDestinationDisabled: Boolean = false
         private set
+    private var createDestinationJob: Job? = null
 
     open fun create(destinationConfig: JsonObject, analytics: Analytics, config: Configuration): Any? {
         return null
@@ -35,7 +37,7 @@ abstract class DestinationPlugin : Plugin {
     final override fun setup(analytics: Analytics) {
         super.setup(analytics)
 
-        analytics.analyticsScope.launch(analytics.analyticsDispatcher) {
+        createDestinationJob = analytics.analyticsScope.launch(analytics.analyticsDispatcher) {
             val sourceConfig = analytics.sourceConfigState.first()
             val configDestination = findDestination(sourceConfig)
             isDestinationDisabled = findDestination(sourceConfig)?.isDestinationEnabled.isFalseOrNull()
@@ -55,7 +57,9 @@ abstract class DestinationPlugin : Plugin {
         return process(event)
     }
 
-    private fun process(event: Event): Event? {
+    private suspend fun process(event: Event): Event? {
+        createDestinationJob?.join()
+
         if (isDestinationDisabledInOption(event) || isDestinationDisabled) {
             return event
         }

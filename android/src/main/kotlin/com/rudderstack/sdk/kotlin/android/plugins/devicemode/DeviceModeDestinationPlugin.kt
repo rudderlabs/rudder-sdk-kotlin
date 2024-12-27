@@ -6,8 +6,7 @@ import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.PluginChain
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 private const val MAX_QUEUE_SIZE = 1000
@@ -21,18 +20,20 @@ internal class DeviceModeDestinationPlugin : Plugin {
 
     override lateinit var analytics: Analytics
 
-    private val pluginChain = PluginChain().also { it.analytics = analytics }
+    private lateinit var pluginChain: PluginChain
     private val queuedEventsChannel: Channel<Event> = Channel(MAX_QUEUE_SIZE)
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
 
-        analytics.sourceConfigState.onEach { sourceConfig ->
-            LoggerAnalytics.debug("StartupQueuePlugin: sourceConfig fetched")
-            if (sourceConfig.source.isSourceEnabled) {
-                processQueuedEvents()
+        pluginChain = PluginChain().also { it.analytics = analytics }
+        analytics.analyticsScope.launch(analytics.analyticsDispatcher) {
+            analytics.sourceConfigState.first().let { sourceConfig ->
+                if (sourceConfig.source.isSourceEnabled) {
+                    processQueuedEvents()
+                }
             }
-        }.launchIn(analytics.analyticsScope)
+        }
     }
 
     override suspend fun intercept(event: Event): Event? {
