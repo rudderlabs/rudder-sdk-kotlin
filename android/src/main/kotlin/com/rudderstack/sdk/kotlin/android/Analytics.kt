@@ -14,6 +14,7 @@ import com.rudderstack.sdk.kotlin.android.plugins.OSInfoPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.ScreenInfoPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.TimezoneInfoPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.DestinationPlugin
+import com.rudderstack.sdk.kotlin.android.plugins.devicemode.DeviceModeDestinationPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleManagementPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ProcessLifecycleManagementPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.screenrecording.ActivityTrackingPlugin
@@ -237,6 +238,8 @@ class Analytics(
         // adding lifecycle management plugins last so that lifecycle callbacks are invoked after all the observers in plugins are added.
         add(processLifecycleManagementPlugin)
         add(activityLifecycleManagementPlugin)
+
+        add(DeviceModeDestinationPlugin())
     }
 
     override fun getPlatformType(): PlatformType = PlatformType.Mobile
