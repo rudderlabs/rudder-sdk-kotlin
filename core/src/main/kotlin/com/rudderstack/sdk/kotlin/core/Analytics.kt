@@ -67,7 +67,7 @@ open class Analytics protected constructor(
     ),
 ) : AnalyticsConfiguration by analyticsConfiguration, Platform {
 
-    private val pluginChain: PluginChain = PluginChain().also { it.analytics = this }
+    protected val pluginChain: PluginChain = PluginChain().also { it.analytics = this }
 
     @InternalRudderApi
     val sourceConfigState = FlowState(initialState = SourceConfig.initialState())
@@ -259,7 +259,7 @@ open class Analytics protected constructor(
      * Flushes all pending events that are currently queued in the plugin chain.
      * This method specifically targets the `RudderStackDataplanePlugin` to initiate the flush operation.
      */
-    fun flush() {
+    open fun flush() {
         if (!isAnalyticsActive()) return
 
         this.pluginChain.applyClosure {

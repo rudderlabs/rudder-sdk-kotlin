@@ -13,6 +13,7 @@ import com.rudderstack.sdk.kotlin.android.plugins.NetworkInfoPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.OSInfoPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.ScreenInfoPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.TimezoneInfoPlugin
+import com.rudderstack.sdk.kotlin.android.plugins.devicemode.DestinationPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleManagementPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ProcessLifecycleManagementPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.screenrecording.ActivityTrackingPlugin
@@ -128,6 +129,22 @@ class Analytics(
 
         super.reset(clearAnonymousId)
         sessionTrackingPlugin.refreshSession()
+        this.pluginChain.applyClosure {
+            if (it is DestinationPlugin && !it.isDestinationDisabled) {
+                it.reset()
+            }
+        }
+    }
+
+    override fun flush() {
+        if (!isAnalyticsActive()) return
+
+        super.flush()
+        this.pluginChain.applyClosure {
+            if (it is DestinationPlugin && !it.isDestinationDisabled) {
+                it.flush()
+            }
+        }
     }
 
     /**

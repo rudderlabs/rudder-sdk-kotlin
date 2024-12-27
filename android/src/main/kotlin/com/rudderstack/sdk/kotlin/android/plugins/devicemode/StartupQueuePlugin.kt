@@ -26,7 +26,9 @@ internal class StartupQueuePlugin(
     private val queuedEventsChannel: Channel<Event> = Channel(MAX_QUEUE_SIZE)
     private val queuedEventsIdsSet = HashSet<String>()
 
-    init {
+    override fun setup(analytics: Analytics) {
+        super.setup(analytics)
+
         analytics.sourceConfigState.onEach { sourceConfig ->
             LoggerAnalytics.debug("StartupQueuePlugin: sourceConfig fetched")
             if (sourceConfig.source.isSourceEnabled) {
