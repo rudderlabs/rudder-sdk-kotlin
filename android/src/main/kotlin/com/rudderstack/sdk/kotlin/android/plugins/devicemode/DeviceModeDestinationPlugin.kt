@@ -6,6 +6,7 @@ import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.PluginChain
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -30,8 +31,10 @@ internal class DeviceModeDestinationPlugin : Plugin {
 
         pluginChain = PluginChain().also { it.analytics = analytics }
         analytics.analyticsScope.launch(analytics.analyticsDispatcher) {
-            analytics.sourceConfigState.first().let { sourceConfig ->
-                if (sourceConfig.source.isSourceEnabled) {
+            analytics.sourceConfigState
+                .filter { it.source.isSourceEnabled }
+                .first()
+                .let { sourceConfig ->
                     pluginList.forEach { plugin ->
                         // only destination plugins are added here
                         pluginChain.add(plugin)
@@ -40,7 +43,6 @@ internal class DeviceModeDestinationPlugin : Plugin {
                     }
                     processQueuedEvents()
                 }
-            }
         }
     }
 
