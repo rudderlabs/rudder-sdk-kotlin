@@ -10,6 +10,7 @@ import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
 import com.rudderstack.sampleapp.analytics.customplugins.AndroidAdvertisingIdPlugin
 import com.rudderstack.sampleapp.analytics.customplugins.AndroidAdvertisingIdPlugin.Companion.isAdvertisingLibraryAvailable
 import com.rudderstack.sampleapp.analytics.customplugins.OptionPlugin
+import com.rudderstack.sampleapp.analytics.customplugins.SampleAmplitudePlugin
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
@@ -45,5 +46,6 @@ object RudderAnalyticsUtils {
                 }
             )
         ))
+        analytics.addDestination(SampleAmplitudePlugin())
     }
 }
