@@ -78,6 +78,7 @@ class Analytics(
 
     internal val activityLifecycleManagementPlugin = ActivityLifecycleManagementPlugin()
     internal val processLifecycleManagementPlugin = ProcessLifecycleManagementPlugin()
+    private val deviceModeDestinationPlugin = DeviceModeDestinationPlugin()
     private val sessionTrackingPlugin = SessionTrackingPlugin()
 
     init {
@@ -131,7 +132,7 @@ class Analytics(
         super.reset(clearAnonymousId)
         sessionTrackingPlugin.refreshSession()
         this.pluginChain.applyClosure {
-            if (it is DestinationPlugin && !it.isDestinationDisabled) {
+            if (it is DestinationPlugin && !it.isDestinationDisabledInSource) {
                 it.reset()
             }
         }
@@ -142,7 +143,7 @@ class Analytics(
 
         super.flush()
         this.pluginChain.applyClosure {
-            if (it is DestinationPlugin && !it.isDestinationDisabled) {
+            if (it is DestinationPlugin && !it.isDestinationDisabledInSource) {
                 it.flush()
             }
         }
@@ -219,6 +220,18 @@ class Analytics(
         )
     }
 
+    fun addDestination(plugin: DestinationPlugin) {
+        if (!isAnalyticsActive()) return
+
+        deviceModeDestinationPlugin.add(plugin)
+    }
+
+    fun removeDestination(plugin: DestinationPlugin) {
+        if (!isAnalyticsActive()) return
+
+        deviceModeDestinationPlugin.remove(plugin)
+    }
+
     private fun setup() {
         setLogger(logger = AndroidLogger())
         add(DeviceInfoPlugin())
@@ -239,7 +252,7 @@ class Analytics(
         add(processLifecycleManagementPlugin)
         add(activityLifecycleManagementPlugin)
 
-        add(DeviceModeDestinationPlugin())
+        add(deviceModeDestinationPlugin)
     }
 
     override fun getPlatformType(): PlatformType = PlatformType.Mobile

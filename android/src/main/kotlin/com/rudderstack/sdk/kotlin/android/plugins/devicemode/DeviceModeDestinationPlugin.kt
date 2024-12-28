@@ -12,7 +12,8 @@ import kotlinx.coroutines.launch
 private const val MAX_QUEUE_SIZE = 1000
 
 /*
- * This plugin will host all the device mode destination plugins in its PluginChain instance.
+ * This plugin will queue the events till the sourceConfig is fetched and
+ * will host all the device mode destination plugins in its PluginChain instance.
  */
 internal class DeviceModeDestinationPlugin : Plugin {
 
@@ -21,6 +22,7 @@ internal class DeviceModeDestinationPlugin : Plugin {
     override lateinit var analytics: Analytics
 
     private lateinit var pluginChain: PluginChain
+    private val pluginList: MutableList<DestinationPlugin> = mutableListOf()
     private val queuedEventsChannel: Channel<Event> = Channel(MAX_QUEUE_SIZE)
 
     override fun setup(analytics: Analytics) {
@@ -30,6 +32,12 @@ internal class DeviceModeDestinationPlugin : Plugin {
         analytics.analyticsScope.launch(analytics.analyticsDispatcher) {
             analytics.sourceConfigState.first().let { sourceConfig ->
                 if (sourceConfig.source.isSourceEnabled) {
+                    pluginList.forEach { plugin ->
+                        // only destination plugins are added here
+                        pluginChain.add(plugin)
+                        // device mode destination SDKs are initialized here
+                        plugin.initialize(sourceConfig)
+                    }
                     processQueuedEvents()
                 }
             }
@@ -48,11 +56,18 @@ internal class DeviceModeDestinationPlugin : Plugin {
         return event
     }
 
-    fun add(plugin: Plugin) {
-        pluginChain.add(plugin)
+    override fun teardown() {
+        pluginChain.removeAll()
+        queuedEventsChannel.cancel()
+        pluginList.clear()
+    }
+
+    fun add(plugin: DestinationPlugin) {
+        pluginList.add(plugin)
     }
 
     fun remove(plugin: Plugin) {
+        pluginList.remove(plugin)
         pluginChain.remove(plugin)
     }
 
