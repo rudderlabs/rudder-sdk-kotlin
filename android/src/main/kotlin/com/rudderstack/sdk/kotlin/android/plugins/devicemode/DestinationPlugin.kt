@@ -17,6 +17,8 @@ import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import kotlinx.serialization.json.JsonObject
 
+private val DEFAULT_EVENT_PROCESSORS = listOf(IntegrationOptionsProcessor())
+
 abstract class DestinationPlugin : Plugin {
 
     final override val pluginType: Plugin.PluginType = Plugin.PluginType.Destination
@@ -29,7 +31,7 @@ abstract class DestinationPlugin : Plugin {
 
     private var isDestinationDisabledInSource: Boolean = false
 
-    private val eventProcessorFacade = EventProcessorFacade(listOf(IntegrationOptionsProcessor()))
+    private val eventProcessorFacade = EventProcessorFacade(DEFAULT_EVENT_PROCESSORS)
 
     open fun create(destinationConfig: JsonObject, analytics: Analytics, config: Configuration): Any? {
         return null
