@@ -73,6 +73,22 @@ internal class DeviceModeDestinationPlugin : Plugin {
         pluginChain.remove(plugin)
     }
 
+    fun reset() {
+        pluginChain.applyClosure {
+            if (it is DestinationPlugin && it.isDestinationReady) {
+                it.reset()
+            }
+        }
+    }
+
+    fun flush() {
+        pluginChain.applyClosure {
+            if (it is DestinationPlugin && it.isDestinationReady) {
+                it.flush()
+            }
+        }
+    }
+
     private fun processQueuedEvents() {
         analytics.analyticsScope.launch(analytics.analyticsDispatcher) {
             for (event in queuedEventsChannel) {

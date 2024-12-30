@@ -130,23 +130,17 @@ class Analytics(
         if (!isAnalyticsActive()) return
 
         super.reset(clearAnonymousId)
+
         sessionTrackingPlugin.refreshSession()
-        this.pluginChain.applyClosure {
-            if (it is DestinationPlugin && !it.isDestinationDisabledInSource) {
-                it.reset()
-            }
-        }
+        this.deviceModeDestinationPlugin?.reset()
     }
 
     override fun flush() {
         if (!isAnalyticsActive()) return
 
         super.flush()
-        this.pluginChain.applyClosure {
-            if (it is DestinationPlugin && !it.isDestinationDisabledInSource) {
-                it.flush()
-            }
-        }
+
+        this.deviceModeDestinationPlugin?.flush()
     }
 
     /**

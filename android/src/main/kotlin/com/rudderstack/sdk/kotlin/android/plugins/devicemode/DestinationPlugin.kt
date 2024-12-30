@@ -24,9 +24,10 @@ abstract class DestinationPlugin : Plugin {
     final override lateinit var analytics: Analytics
 
     abstract val key: String
-
-    var isDestinationDisabledInSource: Boolean = false
+    var isDestinationReady: Boolean = false
         private set
+
+    private var isDestinationDisabledInSource: Boolean = false
 
     private val eventProcessorFacade = EventProcessorFacade(listOf(IntegrationOptionsProcessor()))
 
@@ -49,6 +50,7 @@ abstract class DestinationPlugin : Plugin {
         configDestination?.let {
             val destination = create(it.destinationConfig, analytics, analytics.configuration as Configuration)
             onDestinationReady(destination)
+            isDestinationReady = true
         }
     }
 
