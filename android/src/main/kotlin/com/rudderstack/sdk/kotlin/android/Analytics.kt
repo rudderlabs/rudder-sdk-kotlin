@@ -78,7 +78,7 @@ class Analytics(
 
     internal val activityLifecycleManagementPlugin = ActivityLifecycleManagementPlugin()
     internal val processLifecycleManagementPlugin = ProcessLifecycleManagementPlugin()
-    private val deviceModeDestinationPlugin = DeviceModeDestinationPlugin()
+    private var deviceModeDestinationPlugin: DeviceModeDestinationPlugin? = null
     private val sessionTrackingPlugin = SessionTrackingPlugin()
 
     init {
@@ -223,13 +223,17 @@ class Analytics(
     fun addDestination(plugin: DestinationPlugin) {
         if (!isAnalyticsActive()) return
 
-        deviceModeDestinationPlugin.add(plugin)
+        if (deviceModeDestinationPlugin == null) {
+            deviceModeDestinationPlugin = DeviceModeDestinationPlugin().also { add(it) }
+        }
+
+        deviceModeDestinationPlugin?.add(plugin)
     }
 
     fun removeDestination(plugin: DestinationPlugin) {
         if (!isAnalyticsActive()) return
 
-        deviceModeDestinationPlugin.remove(plugin)
+        deviceModeDestinationPlugin?.remove(plugin)
     }
 
     private fun setup() {
@@ -251,8 +255,6 @@ class Analytics(
         // adding lifecycle management plugins last so that lifecycle callbacks are invoked after all the observers in plugins are added.
         add(processLifecycleManagementPlugin)
         add(activityLifecycleManagementPlugin)
-
-        add(deviceModeDestinationPlugin)
     }
 
     override fun getPlatformType(): PlatformType = PlatformType.Mobile
