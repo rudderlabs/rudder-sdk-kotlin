@@ -57,7 +57,7 @@ private const val MIN_SESSION_ID_LENGTH = 10
  * val analytics = Analytics(configuration)
  * ```
  *
- * @see com.rudderstack.kotlin.Analytics
+ * @see com.rudderstack.sdk.kotlin.core.Analytics
  */
 class Analytics(
     configuration: Configuration,
