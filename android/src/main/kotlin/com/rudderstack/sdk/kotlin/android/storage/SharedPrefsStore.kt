@@ -62,9 +62,10 @@ internal class SharedPrefsStore(
                 is Boolean -> putBoolean(key, value)
                 is Int -> putInt(key, value)
                 is Long -> putLong(key, value)
-                is Float -> putFloat(key, value)
                 is String -> putString(key, value)
+
                 else -> {
+                    LoggerAnalytics.error("SharedPrefsStore: ($key and $value) type is not supported.")
                 }
             }
         }
