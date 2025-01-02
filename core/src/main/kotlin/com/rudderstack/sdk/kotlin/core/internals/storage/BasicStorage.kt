@@ -17,7 +17,7 @@ private const val FILE_NAME = "events"
  * This class handles storing, retrieving, and managing key-value pairs in files. It supports various data types for storage
  * and manages event files separately from properties files.
  *
- * @property writeKey The key used to create a unique storage directory.
+ * @param writeKey The key used to create a unique storage directory.
  */
 @Suppress("Detekt.TooManyFunctions")
 internal class BasicStorage(writeKey: String) : Storage {
