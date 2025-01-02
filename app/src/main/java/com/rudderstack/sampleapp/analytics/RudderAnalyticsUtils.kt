@@ -11,6 +11,10 @@ import com.rudderstack.sampleapp.analytics.customplugins.AndroidAdvertisingIdPlu
 import com.rudderstack.sampleapp.analytics.customplugins.AndroidAdvertisingIdPlugin.Companion.isAdvertisingLibraryAvailable
 import com.rudderstack.sampleapp.analytics.customplugins.OptionPlugin
 import com.rudderstack.sampleapp.analytics.customplugins.SampleAmplitudePlugin
+import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.models.Event
+import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
+import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
@@ -46,6 +50,19 @@ object RudderAnalyticsUtils {
                 }
             )
         ))
-        analytics.addDestination(SampleAmplitudePlugin())
+        val amplitudePlugin = SampleAmplitudePlugin()
+        amplitudePlugin.add(object : Plugin {
+            override val pluginType: Plugin.PluginType = Plugin.PluginType.PreProcess
+            override lateinit var analytics: com.rudderstack.sdk.kotlin.core.Analytics
+
+            override suspend fun intercept(event: Event): Event? {
+                if (event is TrackEvent && event.event == "Track Event 1") {
+                    LoggerAnalytics.debug("SampleAmplitudePlugin: dropping event")
+                    return null
+                }
+                return event
+            }
+        })
+        analytics.addDestination(amplitudePlugin)
     }
 }

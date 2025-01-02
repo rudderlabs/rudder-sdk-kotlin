@@ -1,6 +1,7 @@
 package com.rudderstack.sdk.kotlin.android.plugins.devicemode
 
 import com.rudderstack.sdk.kotlin.android.Configuration
+import com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing.EventFilteringPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing.IntegrationOptionsPlugin
 import com.rudderstack.sdk.kotlin.android.utils.isFalseOrNull
 import com.rudderstack.sdk.kotlin.core.Analytics
@@ -31,6 +32,7 @@ abstract class DestinationPlugin : Plugin {
     private var isDestinationDisabledInSource: Boolean = false
 
     private lateinit var pluginChain: PluginChain
+    private val pluginList: MutableList<Plugin> = mutableListOf()
 
     protected open fun create(destinationConfig: JsonObject, analytics: Analytics, config: Configuration): Any? {
         return null
@@ -51,10 +53,11 @@ abstract class DestinationPlugin : Plugin {
             return
         }
         configDestination?.let {
-            addDefaultPlugins()
             val destination = create(it.destinationConfig, analytics, analytics.configuration as Configuration)
             onDestinationReady(destination)
             isDestinationReady = true
+            addDefaultPlugins(key, configDestination)
+            applyCustomPlugins()
         }
     }
 
@@ -80,6 +83,11 @@ abstract class DestinationPlugin : Plugin {
         return event
     }
 
+    override fun teardown() {
+        pluginChain.removeAll()
+        pluginList.clear()
+    }
+
     protected open fun onDestinationReady(destination: Any?) {}
 
     protected open fun track(event: TrackEvent) {}
@@ -97,15 +105,26 @@ abstract class DestinationPlugin : Plugin {
     open fun reset() {}
 
     fun add(plugin: Plugin) {
-        pluginChain.add(plugin)
+        if (isDestinationReady) {
+            pluginChain.add(plugin)
+        } else {
+            pluginList.add(plugin)
+        }
     }
 
     fun remove(plugin: Plugin) {
         pluginChain.remove(plugin)
+        pluginList.remove(plugin)
     }
 
-    private fun addDefaultPlugins() {
+    private fun addDefaultPlugins(key: String, destination: Destination) {
         add(IntegrationOptionsPlugin(key))
+        add(EventFilteringPlugin(destination.destinationConfig))
+    }
+
+    private fun applyCustomPlugins() {
+        pluginList.forEach { plugin -> pluginChain.add(plugin) }
+        pluginList.clear()
     }
 
     private fun findDestination(sourceConfig: SourceConfig): Destination? {
