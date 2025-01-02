@@ -52,7 +52,7 @@ internal const val DEFAULT_SESSION_TIMEOUT_IN_MILLIS = 300_000L
  *
  * This `Configuration` instance can then be used to initialize the `Analytics` object for RudderStack.
  *
- * @see com.rudderstack.kotlin.Configuration
+ * @see com.rudderstack.sdk.kotlin.core.Configuration
  */
 data class Configuration @JvmOverloads constructor(
     val application: Application,
