@@ -51,7 +51,7 @@ class PluginChain(
         }
     }
 
-    internal suspend fun applyPlugins(pluginType: Plugin.PluginType, event: Event?): Event? {
+    suspend fun applyPlugins(pluginType: Plugin.PluginType, event: Event?): Event? {
         var result: Event? = event
         val mediator = pluginList[pluginType]
         result = applyPlugins(mediator, result)

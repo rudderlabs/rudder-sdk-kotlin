@@ -1,8 +1,7 @@
 package com.rudderstack.sdk.kotlin.android.plugins.devicemode
 
 import com.rudderstack.sdk.kotlin.android.Configuration
-import com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing.EventProcessorFacade
-import com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing.IntegrationOptionsProcessor
+import com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing.IntegrationOptionsPlugin
 import com.rudderstack.sdk.kotlin.android.utils.isFalseOrNull
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
@@ -15,10 +14,10 @@ import com.rudderstack.sdk.kotlin.core.internals.models.ScreenEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
+import com.rudderstack.sdk.kotlin.core.internals.plugins.PluginChain
 import kotlinx.serialization.json.JsonObject
 
-private val DEFAULT_EVENT_PROCESSORS = listOf(IntegrationOptionsProcessor())
-
+@Suppress("TooManyFunctions")
 abstract class DestinationPlugin : Plugin {
 
     final override val pluginType: Plugin.PluginType = Plugin.PluginType.Destination
@@ -31,7 +30,7 @@ abstract class DestinationPlugin : Plugin {
 
     private var isDestinationDisabledInSource: Boolean = false
 
-    private val eventProcessorFacade = EventProcessorFacade(DEFAULT_EVENT_PROCESSORS)
+    private lateinit var pluginChain: PluginChain
 
     protected open fun create(destinationConfig: JsonObject, analytics: Analytics, config: Configuration): Any? {
         return null
@@ -39,6 +38,8 @@ abstract class DestinationPlugin : Plugin {
 
     final override fun setup(analytics: Analytics) {
         super.setup(analytics)
+
+        pluginChain = PluginChain().also { it.analytics = analytics }
     }
 
     internal fun initialize(sourceConfig: SourceConfig) {
@@ -50,6 +51,7 @@ abstract class DestinationPlugin : Plugin {
             return
         }
         configDestination?.let {
+            addDefaultPlugins()
             val destination = create(it.destinationConfig, analytics, analytics.configuration as Configuration)
             onDestinationReady(destination)
             isDestinationReady = true
@@ -57,12 +59,14 @@ abstract class DestinationPlugin : Plugin {
     }
 
     final override suspend fun intercept(event: Event): Event? {
-        // eventProcessorFacade applies all the destination specific modifications and filtering to an event
-        val processedEvent = findDestination(analytics.sourceConfigState.value)?.let {
-            eventProcessorFacade.process(event, key, it)
+        if (isDestinationDisabledInSource) {
+            return event
         }
 
-        if (processedEvent == null || isDestinationDisabledInSource) {
+        var processedEvent: Event? = event.copy()
+        processedEvent = pluginChain.applyPlugins(Plugin.PluginType.PreProcess, processedEvent)
+        processedEvent = pluginChain.applyPlugins(Plugin.PluginType.OnProcess, processedEvent)
+        if (processedEvent == null) {
             return event
         }
 
@@ -91,6 +95,18 @@ abstract class DestinationPlugin : Plugin {
     open fun flush() {}
 
     open fun reset() {}
+
+    fun add(plugin: Plugin) {
+        pluginChain.add(plugin)
+    }
+
+    fun remove(plugin: Plugin) {
+        pluginChain.remove(plugin)
+    }
+
+    private fun addDefaultPlugins() {
+        add(IntegrationOptionsPlugin(key))
+    }
 
     private fun findDestination(sourceConfig: SourceConfig): Destination? {
         return sourceConfig.source.destinations.firstOrNull { it.destinationDefinition.displayName == key }
