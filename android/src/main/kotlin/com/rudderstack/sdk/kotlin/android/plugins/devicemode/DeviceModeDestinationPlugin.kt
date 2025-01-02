@@ -68,23 +68,37 @@ internal class DeviceModeDestinationPlugin : Plugin {
         pluginList.add(plugin)
     }
 
-    fun remove(plugin: Plugin) {
+    fun remove(plugin: DestinationPlugin) {
         pluginList.remove(plugin)
         pluginChain.remove(plugin)
     }
 
     fun reset() {
-        pluginChain.applyClosure {
-            if (it is DestinationPlugin && it.isDestinationReady) {
-                it.reset()
+        pluginChain.applyClosure { plugin ->
+            if (plugin is DestinationPlugin) {
+                if (plugin.isDestinationReady) {
+                    plugin.reset()
+                } else {
+                    LoggerAnalytics.debug(
+                        "DeviceModeDestinationPlugin: Destination ${plugin.key} is " +
+                            "not ready yet. Reset discarded."
+                    )
+                }
             }
         }
     }
 
     fun flush() {
-        pluginChain.applyClosure {
-            if (it is DestinationPlugin && it.isDestinationReady) {
-                it.flush()
+        pluginChain.applyClosure { plugin ->
+            if (plugin is DestinationPlugin) {
+                if (plugin.isDestinationReady) {
+                    plugin.flush()
+                } else {
+                    LoggerAnalytics.debug(
+                        "DeviceModeDestinationPlugin: Destination ${plugin.key} is " +
+                            "not ready yet. Flush discarded."
+                    )
+                }
             }
         }
     }

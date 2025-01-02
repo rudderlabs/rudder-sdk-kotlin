@@ -33,7 +33,7 @@ abstract class DestinationPlugin : Plugin {
 
     private val eventProcessorFacade = EventProcessorFacade(DEFAULT_EVENT_PROCESSORS)
 
-    open fun create(destinationConfig: JsonObject, analytics: Analytics, config: Configuration): Any? {
+    protected open fun create(destinationConfig: JsonObject, analytics: Analytics, config: Configuration): Any? {
         return null
     }
 
@@ -46,7 +46,7 @@ abstract class DestinationPlugin : Plugin {
         isDestinationDisabledInSource = configDestination?.isDestinationEnabled.isFalseOrNull()
 
         if (isDestinationDisabledInSource) {
-            LoggerAnalytics.warn("DestinationPlugin: Destination $key is disabled")
+            LoggerAnalytics.warn("DestinationPlugin: Destination $key is disabled.")
             return
         }
         configDestination?.let {
@@ -57,10 +57,6 @@ abstract class DestinationPlugin : Plugin {
     }
 
     final override suspend fun intercept(event: Event): Event? {
-        return process(event)
-    }
-
-    private fun process(event: Event): Event? {
         // eventProcessorFacade applies all the destination specific modifications and filtering to an event
         val processedEvent = findDestination(analytics.sourceConfigState.value)?.let {
             eventProcessorFacade.process(event, key, it)
@@ -80,17 +76,17 @@ abstract class DestinationPlugin : Plugin {
         return event
     }
 
-    open fun onDestinationReady(destination: Any?) {}
+    protected open fun onDestinationReady(destination: Any?) {}
 
-    open fun track(event: TrackEvent) {}
+    protected open fun track(event: TrackEvent) {}
 
-    open fun screen(event: ScreenEvent) {}
+    protected open fun screen(event: ScreenEvent) {}
 
-    open fun group(event: GroupEvent) {}
+    protected open fun group(event: GroupEvent) {}
 
-    open fun identify(event: IdentifyEvent) {}
+    protected open fun identify(event: IdentifyEvent) {}
 
-    open fun alias(event: AliasEvent) {}
+    protected open fun alias(event: AliasEvent) {}
 
     open fun flush() {}
 
