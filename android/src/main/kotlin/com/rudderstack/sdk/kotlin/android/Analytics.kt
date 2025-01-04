@@ -217,8 +217,10 @@ class Analytics(
     fun addDestination(plugin: DestinationPlugin) {
         if (!isAnalyticsActive()) return
 
-        if (deviceModeDestinationPlugin == null) {
-            deviceModeDestinationPlugin = DeviceModeDestinationPlugin().also { add(it) }
+        synchronized(this) {
+            if (deviceModeDestinationPlugin == null) {
+                deviceModeDestinationPlugin = DeviceModeDestinationPlugin().also { add(it) }
+            }
         }
 
         deviceModeDestinationPlugin?.add(plugin)
