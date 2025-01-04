@@ -22,59 +22,58 @@ internal class DeviceModeDestinationPlugin : Plugin {
 
     override lateinit var analytics: Analytics
 
-    private lateinit var pluginChain: PluginChain
-    private val pluginList: MutableList<DestinationPlugin> = mutableListOf()
+    private lateinit var destinationPluginChain: PluginChain
+    private val destinationPluginList: MutableList<DestinationPlugin> = mutableListOf()
     private val queuedEventsChannel: Channel<Event> = Channel(MAX_QUEUE_SIZE)
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
 
-        pluginChain = PluginChain().also { it.analytics = analytics }
+        destinationPluginChain = PluginChain().also { it.analytics = analytics }
         analytics.analyticsScope.launch(analytics.analyticsDispatcher) {
             analytics.sourceConfigState
                 .filter { it.source.isSourceEnabled }
                 .first()
                 .let { sourceConfig ->
-                    pluginList.forEach { plugin ->
+                    destinationPluginList.forEach { plugin ->
                         // only destination plugins are added here
-                        pluginChain.add(plugin)
+                        destinationPluginChain.add(plugin)
                         // device mode destination SDKs are initialized here
                         plugin.initialize(sourceConfig)
                     }
-                    processQueuedEvents()
+                    processEvents()
                 }
         }
     }
 
-    override suspend fun intercept(event: Event): Event? {
+    override suspend fun intercept(event: Event): Event {
         LoggerAnalytics.debug("DeviceModeDestinationPlugin: queueing event")
         val queuedEventResult = queuedEventsChannel.trySend(event)
 
         if (queuedEventResult.isFailure) {
-            queuedEventsChannel.tryReceive()
-            queuedEventsChannel.trySend(event)
+            popAndSendEvent(event)
         }
 
         return event
     }
 
     override fun teardown() {
-        pluginChain.removeAll()
+        destinationPluginChain.removeAll()
         queuedEventsChannel.cancel()
-        pluginList.clear()
+        destinationPluginList.clear()
     }
 
-    fun add(plugin: DestinationPlugin) {
-        pluginList.add(plugin)
+    fun addDestination(plugin: DestinationPlugin) {
+        destinationPluginList.add(plugin)
     }
 
-    fun remove(plugin: DestinationPlugin) {
-        pluginList.remove(plugin)
-        pluginChain.remove(plugin)
+    fun removeDestination(plugin: DestinationPlugin) {
+        destinationPluginList.remove(plugin)
+        destinationPluginChain.remove(plugin)
     }
 
     fun reset() {
-        pluginChain.applyClosure { plugin ->
+        destinationPluginChain.applyClosure { plugin ->
             if (plugin is DestinationPlugin) {
                 if (plugin.isDestinationReady) {
                     plugin.reset()
@@ -89,7 +88,7 @@ internal class DeviceModeDestinationPlugin : Plugin {
     }
 
     fun flush() {
-        pluginChain.applyClosure { plugin ->
+        destinationPluginChain.applyClosure { plugin ->
             if (plugin is DestinationPlugin) {
                 if (plugin.isDestinationReady) {
                     plugin.flush()
@@ -103,10 +102,15 @@ internal class DeviceModeDestinationPlugin : Plugin {
         }
     }
 
-    private fun processQueuedEvents() {
+    private fun popAndSendEvent(event: Event) {
+        queuedEventsChannel.tryReceive()
+        queuedEventsChannel.trySend(event)
+    }
+
+    private fun processEvents() {
         analytics.analyticsScope.launch(analytics.analyticsDispatcher) {
             for (event in queuedEventsChannel) {
-                pluginChain.process(event)
+                destinationPluginChain.process(event)
             }
         }
     }

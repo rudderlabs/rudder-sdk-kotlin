@@ -223,13 +223,13 @@ class Analytics(
             }
         }
 
-        deviceModeDestinationPlugin?.add(plugin)
+        deviceModeDestinationPlugin?.addDestination(plugin)
     }
 
     fun removeDestination(plugin: DestinationPlugin) {
         if (!isAnalyticsActive()) return
 
-        deviceModeDestinationPlugin?.remove(plugin)
+        deviceModeDestinationPlugin?.removeDestination(plugin)
     }
 
     private fun setup() {
