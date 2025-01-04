@@ -1,8 +1,6 @@
 package com.rudderstack.sdk.kotlin.android.plugins.devicemode
 
 import com.rudderstack.sdk.kotlin.android.Configuration
-import com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing.EventFilteringPlugin
-import com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing.IntegrationOptionsPlugin
 import com.rudderstack.sdk.kotlin.android.utils.isFalseOrNull
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
@@ -56,7 +54,7 @@ abstract class DestinationPlugin : Plugin {
             val destination = create(it.destinationConfig, analytics, analytics.configuration as Configuration)
             onDestinationReady(destination)
             isDestinationReady = true
-            addDefaultPlugins(key, configDestination)
+            addDefaultPlugins()
             applyCustomPlugins()
         }
     }
@@ -117,9 +115,8 @@ abstract class DestinationPlugin : Plugin {
         pluginList.remove(plugin)
     }
 
-    private fun addDefaultPlugins(key: String, destination: Destination) {
-        add(IntegrationOptionsPlugin(key))
-        add(EventFilteringPlugin(destination.destinationConfig))
+    private fun addDefaultPlugins() {
+        // todo: add integrations options filtering and event filtering plugins here
     }
 
     private fun applyCustomPlugins() {
