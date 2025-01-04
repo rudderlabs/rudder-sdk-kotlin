@@ -29,10 +29,6 @@ abstract class DestinationPlugin : Plugin {
     private lateinit var pluginChain: PluginChain
     private val pluginList: MutableList<Plugin> = mutableListOf()
 
-    protected open fun create(destinationConfig: JsonObject, analytics: Analytics, config: Configuration): Any? {
-        return null
-    }
-
     final override fun setup(analytics: Analytics) {
         super.setup(analytics)
 
@@ -60,7 +56,7 @@ abstract class DestinationPlugin : Plugin {
         }
     }
 
-    final override suspend fun intercept(event: Event): Event? {
+    final override suspend fun intercept(event: Event): Event {
         if (!isDestinationReady) {
             return event
         }
@@ -83,8 +79,15 @@ abstract class DestinationPlugin : Plugin {
     }
 
     override fun teardown() {
-        pluginChain.removeAll()
-        pluginList.clear()
+        if (isDestinationReady) {
+            pluginChain.removeAll()
+        } else {
+            pluginList.clear()
+        }
+    }
+
+    protected open fun create(destinationConfig: JsonObject, analytics: Analytics, config: Configuration): Any? {
+        return null
     }
 
     protected open fun onDestinationReady(destination: Any?) {}
@@ -112,8 +115,11 @@ abstract class DestinationPlugin : Plugin {
     }
 
     fun remove(plugin: Plugin) {
-        pluginChain.remove(plugin)
-        pluginList.remove(plugin)
+        if (isDestinationReady) {
+            pluginChain.remove(plugin)
+        } else {
+            pluginList.remove(plugin)
+        }
     }
 
     private fun addDefaultPlugins() {
@@ -121,7 +127,7 @@ abstract class DestinationPlugin : Plugin {
     }
 
     private fun applyCustomPlugins() {
-        pluginList.forEach { plugin -> pluginChain.add(plugin) }
+        pluginList.forEach { plugin -> add(plugin) }
         pluginList.clear()
     }
 
