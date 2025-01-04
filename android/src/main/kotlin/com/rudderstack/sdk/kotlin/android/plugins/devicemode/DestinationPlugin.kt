@@ -1,7 +1,6 @@
 package com.rudderstack.sdk.kotlin.android.plugins.devicemode
 
 import com.rudderstack.sdk.kotlin.android.Configuration
-import com.rudderstack.sdk.kotlin.android.utils.isFalseOrNull
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.AliasEvent
@@ -27,8 +26,6 @@ abstract class DestinationPlugin : Plugin {
     var isDestinationReady: Boolean = false
         private set
 
-    private var isDestinationDisabledInSource: Boolean = false
-
     private lateinit var pluginChain: PluginChain
     private val pluginList: MutableList<Plugin> = mutableListOf()
 
@@ -43,15 +40,19 @@ abstract class DestinationPlugin : Plugin {
     }
 
     internal fun initialize(sourceConfig: SourceConfig) {
-        val configDestination = findDestination(sourceConfig)
-        isDestinationDisabledInSource = configDestination?.isDestinationEnabled.isFalseOrNull()
-
-        if (isDestinationDisabledInSource) {
-            LoggerAnalytics.warn("DestinationPlugin: Destination $key is disabled.")
-            return
-        }
-        configDestination?.let {
-            val destination = create(it.destinationConfig, analytics, analytics.configuration as Configuration)
+        findDestination(sourceConfig)?.let { configDestination ->
+            if (!configDestination.isDestinationEnabled) {
+                LoggerAnalytics.warn(
+                    "DestinationPlugin: Destination $key is disabled in dashboard. " +
+                        "No events will be sent to this destination."
+                )
+                return
+            }
+            val destination = create(
+                configDestination.destinationConfig,
+                analytics,
+                analytics.configuration as Configuration
+            )
             onDestinationReady(destination)
             isDestinationReady = true
             addDefaultPlugins()
@@ -60,7 +61,7 @@ abstract class DestinationPlugin : Plugin {
     }
 
     final override suspend fun intercept(event: Event): Event? {
-        if (isDestinationDisabledInSource) {
+        if (!isDestinationReady) {
             return event
         }
 
