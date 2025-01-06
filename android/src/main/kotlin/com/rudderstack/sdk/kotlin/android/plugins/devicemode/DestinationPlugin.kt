@@ -11,23 +11,33 @@ import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.ScreenEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
+import com.rudderstack.sdk.kotlin.core.internals.plugins.EventPlugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.PluginChain
 import kotlinx.serialization.json.JsonObject
 
-@Suppress("TooManyFunctions")
-abstract class DestinationPlugin : Plugin {
+abstract class DestinationPlugin : EventPlugin {
 
     final override val pluginType: Plugin.PluginType = Plugin.PluginType.Destination
 
     final override lateinit var analytics: Analytics
 
     abstract val key: String
-    var isDestinationReady: Boolean = false
+    internal var isDestinationReady: Boolean = false
         private set
 
     private lateinit var pluginChain: PluginChain
     private val pluginList: MutableList<Plugin> = mutableListOf()
+
+    protected open fun create(destinationConfig: JsonObject, analytics: Analytics, config: Configuration): Any? {
+        return null
+    }
+
+    protected open fun onDestinationReady(destination: Any?) {}
+
+    open fun flush() {}
+
+    open fun reset() {}
 
     final override fun setup(analytics: Analytics) {
         super.setup(analytics)
@@ -51,31 +61,38 @@ abstract class DestinationPlugin : Plugin {
             )
             onDestinationReady(destination)
             isDestinationReady = true
-            addDefaultPlugins()
+            applyDefaultPlugins()
             applyCustomPlugins()
         }
     }
 
     final override suspend fun intercept(event: Event): Event {
-        if (!isDestinationReady) {
-            return event
+        if (isDestinationReady) {
+            event.copy<Event>()
+                .let { pluginChain.applyPlugins(Plugin.PluginType.PreProcess, it) }
+                ?.let { pluginChain.applyPlugins(Plugin.PluginType.OnProcess, it) }
+                ?.let { processEvent(it) }
         }
 
-        var processedEvent: Event? = event.copy()
-        processedEvent = pluginChain.applyPlugins(Plugin.PluginType.PreProcess, processedEvent)
-        processedEvent = pluginChain.applyPlugins(Plugin.PluginType.OnProcess, processedEvent)
-        if (processedEvent == null) {
-            return event
-        }
-
-        when (processedEvent) {
-            is TrackEvent -> track(processedEvent)
-            is ScreenEvent -> screen(processedEvent)
-            is GroupEvent -> group(processedEvent)
-            is IdentifyEvent -> identify(processedEvent)
-            is AliasEvent -> alias(processedEvent)
-        }
         return event
+    }
+
+    @Suppress("TooGenericExceptionCaught")
+    private fun processEvent(event: Event) {
+        try {
+            when (event) {
+                is TrackEvent -> track(event)
+                is ScreenEvent -> screen(event)
+                is GroupEvent -> group(event)
+                is IdentifyEvent -> identify(event)
+                is AliasEvent -> alias(event)
+            }
+        } catch (e: Exception) {
+            LoggerAnalytics.error(
+                "DestinationPlugin: Error processing event " +
+                    "for destination $key: ${e.message}"
+            )
+        }
     }
 
     override fun teardown() {
@@ -85,26 +102,6 @@ abstract class DestinationPlugin : Plugin {
             pluginList.clear()
         }
     }
-
-    protected open fun create(destinationConfig: JsonObject, analytics: Analytics, config: Configuration): Any? {
-        return null
-    }
-
-    protected open fun onDestinationReady(destination: Any?) {}
-
-    protected open fun track(event: TrackEvent) {}
-
-    protected open fun screen(event: ScreenEvent) {}
-
-    protected open fun group(event: GroupEvent) {}
-
-    protected open fun identify(event: IdentifyEvent) {}
-
-    protected open fun alias(event: AliasEvent) {}
-
-    open fun flush() {}
-
-    open fun reset() {}
 
     fun add(plugin: Plugin) {
         if (isDestinationReady) {
@@ -122,7 +119,7 @@ abstract class DestinationPlugin : Plugin {
         }
     }
 
-    private fun addDefaultPlugins() {
+    private fun applyDefaultPlugins() {
         // todo: add integrations options filtering and event filtering plugins here
     }
 

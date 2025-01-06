@@ -6,8 +6,10 @@ import com.rudderstack.sdk.kotlin.core.internals.models.GroupEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.ScreenEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
+import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 
-internal interface EventPlugin : Plugin {
+@InternalRudderApi
+interface EventPlugin : Plugin {
     fun track(payload: TrackEvent): Event? {
         return payload
     }

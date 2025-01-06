@@ -4,6 +4,7 @@ import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.DestinationPlugin
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -29,9 +30,10 @@ class SampleAmplitudePlugin: DestinationPlugin() {
         LoggerAnalytics.debug("SampleAmplitudePlugin: Destination $key is ready")
     }
 
-    override fun track(event: TrackEvent) {
+    override fun track(payload: TrackEvent): Event {
         val destination = amplitudeSdk
-        destination?.track(event.event, event.properties)
+        destination?.track(payload.event, payload.properties)
+        return payload
     }
 }
 

@@ -35,11 +35,10 @@ internal class DeviceModeDestinationPlugin : Plugin {
                 .filter { it.source.isSourceEnabled }
                 .first()
                 .let { sourceConfig ->
-                    destinationPluginList.forEach { plugin ->
-                        // only destination plugins are added here
-                        destinationPluginChain.add(plugin)
+                    destinationPluginList.forEach { destinationPlugin ->
+                        destinationPluginChain.add(destinationPlugin)
                         // device mode destination SDKs are initialized here
-                        plugin.initialize(sourceConfig)
+                        destinationPlugin.initialize(sourceConfig)
                     }
                     processEvents()
                 }
