@@ -10,12 +10,12 @@ import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
-import com.rudderstack.sdk.kotlin.core.internals.utils.empty
-import com.rudderstack.sdk.kotlin.core.internals.utils.putAll
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.put
@@ -131,5 +131,11 @@ class AndroidAdvertisingIdPlugin @OptIn(DelicateCoroutinesApi::class) constructo
 
     override suspend fun intercept(event: Event): Event {
         return attachAdvertisingId(event)
+    }
+}
+
+private fun JsonObjectBuilder.putAll(jsonObject: JsonObject) {
+    jsonObject.forEach { (key, value) ->
+        put(key, value)
     }
 }
