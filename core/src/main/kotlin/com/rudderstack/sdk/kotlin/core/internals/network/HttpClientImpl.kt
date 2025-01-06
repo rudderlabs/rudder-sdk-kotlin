@@ -38,7 +38,7 @@ private const val DEFAULT_READ_TIMEOUT: Int = 20_000
  * @property customHeaders Additional HTTP headers to include in the request.
  * @property connectionFactory A factory responsible for creating instances of `HttpURLConnection`.
  */
-class HttpClientImpl private constructor(
+internal class HttpClientImpl private constructor(
     override val baseUrl: String,
     override val endPoint: String,
     override val authHeaderString: String,
@@ -63,7 +63,7 @@ class HttpClientImpl private constructor(
          * @param connectionFactory A factory for creating `HttpURLConnection` instances. Defaults to `DefaultHttpURLConnectionFactory()`.
          * @return A configured `HttpClientImpl` instance for GET requests.
          */
-        fun createGetHttpClient(
+        internal fun createGetHttpClient(
             baseUrl: String,
             endPoint: String,
             authHeaderString: String,
@@ -95,7 +95,7 @@ class HttpClientImpl private constructor(
          * @param connectionFactory A factory for creating `HttpURLConnection` instances. Defaults to `DefaultHttpURLConnectionFactory()`.
          * @return A configured `HttpClientImpl` instance for POST requests.
          */
-        fun createPostHttpClient(
+        internal fun createPostHttpClient(
             baseUrl: String,
             endPoint: String,
             authHeaderString: String,
@@ -225,7 +225,7 @@ class HttpClientImpl private constructor(
  * Default implementation of the `HttpURLConnectionFactory` that creates `HttpURLConnection` objects.
  * Provides default settings such as connection timeout and read timeout.
  */
-class DefaultHttpURLConnectionFactory : HttpURLConnectionFactory {
+internal class DefaultHttpURLConnectionFactory : HttpURLConnectionFactory {
     override fun createConnection(url: URL, headers: Map<String, String>): HttpURLConnection {
         val connection = url.openConnection() as HttpURLConnection
         return connection.apply {
