@@ -12,11 +12,11 @@ import kotlin.math.min
 )
 internal object Base64 {
 
-    fun ByteArray.encodeToBase64(): String {
+    internal fun ByteArray.encodeToBase64(): String {
         return encoder.encode(this).decodeToString()
     }
 
-    fun String.decodeFromBase64(): ByteArray {
+    internal fun String.decodeFromBase64(): ByteArray {
         return decoder.decode(this.encodeToByteArray())
     }
 
