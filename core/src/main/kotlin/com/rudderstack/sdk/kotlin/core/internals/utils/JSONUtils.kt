@@ -74,6 +74,7 @@ internal infix fun JsonObject.mergeWithHigherPriorityTo(other: JsonObject): Json
  *
  * @param jsonObject The `JsonObject` whose key-value pairs are to be added to the current builder.
  */
+@InternalRudderApi
 fun JsonObjectBuilder.putAll(jsonObject: JsonObject) {
     jsonObject.forEach { (key, value) ->
         put(key, value)
