@@ -112,7 +112,7 @@ internal class AndroidStorage(
  *  @param application The application context.
  *  @return An instance of [AndroidStorage].
  */
-fun provideAndroidStorage(writeKey: String, application: Context): Storage {
+internal fun provideAndroidStorage(writeKey: String, application: Context): Storage {
     return AndroidStorage(
         context = application,
         writeKey = writeKey,
