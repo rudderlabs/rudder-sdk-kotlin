@@ -1,5 +1,6 @@
 package com.rudderstack.sdk.kotlin.core.internals.platform
 
+import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -18,6 +19,7 @@ fun interface Platform {
  * Enum class representing the type of platform.
  */
 @Serializable
+@InternalRudderApi
 enum class PlatformType {
     @SerialName("mobile")
     Mobile,
