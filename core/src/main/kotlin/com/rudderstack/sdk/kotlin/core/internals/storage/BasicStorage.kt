@@ -136,6 +136,6 @@ internal class BasicStorage(writeKey: String) : Storage {
  * @param writeKey The key used to create a unique storage directory.
  * @return An instance of [BasicStorage] with the provided [writeKey].
  */
-fun provideBasicStorage(writeKey: String): Storage {
+internal fun provideBasicStorage(writeKey: String): Storage {
     return BasicStorage(writeKey = writeKey)
 }
