@@ -16,6 +16,7 @@ import java.util.TimeZone
  *
  * The format used by this utility is: `yyyy-MM-dd'T'HH:mm:ss.SSS'Z'`
  */
+@InternalRudderApi
 object DateTimeUtils {
 
     /**
@@ -39,6 +40,7 @@ object DateTimeUtils {
      *
      * @return A `String` representing the current date and time in ISO 8601 format.
      */
+    @InternalRudderApi
     fun now(): String {
         return from(Date())
     }
@@ -66,5 +68,6 @@ object DateTimeUtils {
      *
      * @return A `Long` representing the current system time in milliseconds.
      */
+    @InternalRudderApi
     fun getSystemCurrentTime() = System.currentTimeMillis()
 }
