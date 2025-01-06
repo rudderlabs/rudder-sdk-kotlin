@@ -14,7 +14,7 @@ private const val EMPTY_STRING = ""
  *
  * @return The Base64 encoded representation of the string.
  */
-fun String.encodeToBase64(): String {
+internal fun String.encodeToBase64(): String {
     val formattedString = String.format(Locale.US, "%s:", this)
     val bytes = formattedString.toByteArray(Charsets.UTF_8)
     return bytes.encodeToBase64()
@@ -29,6 +29,7 @@ fun String.encodeToBase64(): String {
  * @param writeKey The write key to be appended to the string.
  * @return The formatted string suitable for use as an Android SharedPreferences key.
  */
+@InternalRudderApi
 fun String.toAndroidPrefsKey(writeKey: String): String {
     return "$this-$writeKey"
 }
@@ -43,7 +44,7 @@ fun String.toAndroidPrefsKey(writeKey: String): String {
  * @param suffix The suffix to append to the string.
  * @return The formatted properties file name.
  */
-fun String.toPropertiesFileName(prefix: String, suffix: String): String {
+internal fun String.toPropertiesFileName(prefix: String, suffix: String): String {
     return "$prefix-$this$suffix"
 }
 
@@ -55,7 +56,7 @@ fun String.toPropertiesFileName(prefix: String, suffix: String): String {
  * @param directory The directory path to prepend to the string.
  * @return The resulting file directory path.
  */
-fun String.toFileDirectory(directory: String): String {
+internal fun String.toFileDirectory(directory: String): String {
     return "$directory$this"
 }
 
@@ -67,7 +68,7 @@ fun String.toFileDirectory(directory: String): String {
  *
  * @return A list of parsed file paths.
  */
-fun String?.parseFilePaths(): List<String> {
+internal fun String?.parseFilePaths(): List<String> {
     return if (this.isNullOrEmpty()) {
         emptyList()
     } else {
@@ -82,6 +83,7 @@ fun String?.parseFilePaths(): List<String> {
  *
  * @return An empty string.
  */
+@InternalRudderApi
 fun String.Companion.empty(): String = EMPTY_STRING
 
 /**
@@ -91,12 +93,12 @@ fun String.Companion.empty(): String = EMPTY_STRING
  *
  * @return The validated base URL with a trailing slash.
  */
-val String.validatedBaseUrl
+internal val String.validatedBaseUrl
     get() = if (this.endsWith('/')) this.removeSuffix("/") else this
 
 /**
  * Generates a random UUID.
  */
-fun generateUUID(): String {
+internal fun generateUUID(): String {
     return UUID.randomUUID().toString()
 }

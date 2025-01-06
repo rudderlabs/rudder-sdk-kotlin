@@ -33,7 +33,7 @@ class AndroidAdvertisingIdPlugin @OptIn(DelicateCoroutinesApi::class) constructo
 
     override lateinit var analytics: Analytics
     private lateinit var application: Application
-    internal var advertisingId = String.empty()
+    internal var advertisingId = ""
     internal var adTrackingEnabled = true
 
     companion object {
@@ -69,7 +69,7 @@ class AndroidAdvertisingIdPlugin @OptIn(DelicateCoroutinesApi::class) constructo
 
                 is Result.Failure -> {
                     adTrackingEnabled = false
-                    advertisingId = String.empty()
+                    advertisingId = ""
                     LoggerAnalytics.error(log = "Failed to collect advertising ID: ${result.error.message}")
                 }
             }
