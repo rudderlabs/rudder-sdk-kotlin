@@ -8,28 +8,29 @@ import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonPrimitive
 
 class SampleAmplitudePlugin: DestinationPlugin() {
 
-    private lateinit var amplitudeSdk: SampleAmplitudeSdk
+    private var amplitudeSdk: SampleAmplitudeSdk? = null
 
     override val key: String
         get() = "Amplitude"
 
     override fun create(destinationConfig: JsonObject, analytics: Analytics, config: Configuration): Any? {
-        val apiKey = destinationConfig["apiKey"]?.toString()
+        val apiKey = destinationConfig["apiKey"]?.jsonPrimitive?.content
         return apiKey?.let {
             SampleAmplitudeSdk.create(it)
         }
     }
 
     override fun onDestinationReady(destination: Any?) {
-        amplitudeSdk = destination as SampleAmplitudeSdk
+        amplitudeSdk = destination as? SampleAmplitudeSdk
         LoggerAnalytics.debug("SampleAmplitudePlugin: Destination $key is ready")
     }
 
     override fun track(event: TrackEvent) {
-        val destination = amplitudeSdk as? SampleAmplitudeSdk
+        val destination = amplitudeSdk
         destination?.track(event.event, event.properties)
     }
 }
