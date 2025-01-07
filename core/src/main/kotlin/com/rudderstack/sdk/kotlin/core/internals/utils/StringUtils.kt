@@ -99,6 +99,7 @@ internal val String.validatedBaseUrl
 /**
  * Generates a random UUID.
  */
-internal fun generateUUID(): String {
+@InternalRudderApi
+fun generateUUID(): String {
     return UUID.randomUUID().toString()
 }
