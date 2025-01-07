@@ -29,11 +29,17 @@ abstract class DestinationPlugin : EventPlugin {
     private lateinit var pluginChain: PluginChain
     private val pluginList: MutableList<Plugin> = mutableListOf()
 
-    protected open fun create(destinationConfig: JsonObject, analytics: Analytics, config: Configuration): Any? {
-        return null
-    }
+    protected abstract fun create(
+        destinationConfig: JsonObject,
+        analytics: Analytics,
+        config: Configuration
+    ): DestinationResult
 
     protected open fun onDestinationReady(destination: Any?) {}
+
+    open fun getUnderlyingInstance(): Any? {
+        return null
+    }
 
     open fun flush() {}
 
@@ -54,15 +60,28 @@ abstract class DestinationPlugin : EventPlugin {
                 )
                 return
             }
-            val destination = create(
-                configDestination.destinationConfig,
-                analytics,
-                analytics.configuration as Configuration
-            )
-            onDestinationReady(destination)
-            isDestinationReady = true
-            applyDefaultPlugins()
-            applyCustomPlugins()
+            when (
+                val destinationResult = create(
+                    configDestination.destinationConfig,
+                    analytics,
+                    analytics.configuration as Configuration
+                )
+            ) {
+                DestinationResult.Success -> {
+                    val destination = getUnderlyingInstance()
+                    onDestinationReady(destination)
+                    isDestinationReady = true
+                    applyDefaultPlugins()
+                    applyCustomPlugins()
+                }
+
+                is DestinationResult.Failure -> {
+                    LoggerAnalytics.error(
+                        "DestinationPlugin: Error initializing " +
+                            "destination $key: ${destinationResult.message}"
+                    )
+                }
+            }
         }
     }
 
@@ -131,4 +150,9 @@ abstract class DestinationPlugin : EventPlugin {
     private fun findDestination(sourceConfig: SourceConfig): Destination? {
         return sourceConfig.source.destinations.firstOrNull { it.destinationDefinition.displayName == key }
     }
+}
+
+sealed interface DestinationResult {
+    data object Success : DestinationResult
+    data class Failure(val message: String) : DestinationResult
 }
