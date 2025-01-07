@@ -40,7 +40,6 @@ object DateTimeUtils {
      *
      * @return A `String` representing the current date and time in ISO 8601 format.
      */
-    @InternalRudderApi
     fun now(): String {
         return from(Date())
     }
@@ -68,6 +67,5 @@ object DateTimeUtils {
      *
      * @return A `Long` representing the current system time in milliseconds.
      */
-    @InternalRudderApi
     fun getSystemCurrentTime() = System.currentTimeMillis()
 }
