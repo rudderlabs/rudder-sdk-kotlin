@@ -83,9 +83,49 @@ open class Analytics protected constructor(
     override val connectivityObserver: ConnectivityObserver by lazy { DefaultConnectivityObserver() }
 
     init {
+        runForBaseTypeOnly()
+    }
+
+    /**
+     * Initializes core components when the class is of the base type (`Analytics`).
+     *
+     * This function performs the following tasks:
+     * - **Logger Setup**: Initializes the logger by calling `setLogger()`, ensuring that the logger is ready to log events.
+     * - **Core Analytics Setup**: Configures the core analytics components by calling `setupCoreAnalytics()`.
+     * - **Source Configuration**: Sets up the source configuration by calling `setupSourceConfig()`.
+     */
+    private fun runForBaseTypeOnly() {
+        if (this::class == Analytics::class) {
+            setLogger(logger = KotlinLogger())
+            setupCoreAnalytics()
+            setupSourceConfig()
+        }
+    }
+
+    /**
+     * Initializes the core analytics components during the class setup.
+     *
+     * This function performs the following tasks:
+     * - **Event Processing Channel**: Initializes the event processing channel by calling `processEvents()`. This ensures the channel is ready to process events.
+     * - **Plugin Setup**: Configures core plugins by calling `setup()`. This sets up all the necessary plugins for analytics functionality.
+     * - **Anonymous ID Storage**: Stores the anonymous ID by calling `storeAnonymousId()`.
+     */
+    protected fun setupCoreAnalytics() {
         processEvents()
         setup()
         storeAnonymousId()
+    }
+
+    /**
+     * This function is called during initialization to set up the source config.
+     */
+    protected fun setupSourceConfig() {
+        analyticsScope.launch(analyticsDispatcher) {
+            SourceConfigManager(
+                analytics = this@Analytics,
+                sourceConfigState = sourceConfigState
+            ).fetchAndUpdateSourceConfig()
+        }
     }
 
     /**
@@ -96,7 +136,7 @@ open class Analytics protected constructor(
      *
      * @param logger The `Logger` instance to use for logging. Defaults to an instance of `KotlinLogger`.
      */
-    fun setLogger(logger: Logger) {
+    protected fun setLogger(logger: Logger) {
         if (!isAnalyticsActive()) return
         LoggerAnalytics.setup(logger = logger, logLevel = configuration.logLevel)
     }
@@ -307,16 +347,8 @@ open class Analytics protected constructor(
      * and `RudderStackDataplanePlugin`. This function is called during initialization.
      */
     private fun setup() {
-        setLogger(logger = KotlinLogger())
         add(LibraryInfoPlugin())
         add(RudderStackDataplanePlugin())
-
-        analyticsScope.launch(analyticsDispatcher) {
-            SourceConfigManager(
-                analytics = this@Analytics,
-                sourceConfigState = sourceConfigState
-            ).fetchAndUpdateSourceConfig()
-        }
     }
 
     /**

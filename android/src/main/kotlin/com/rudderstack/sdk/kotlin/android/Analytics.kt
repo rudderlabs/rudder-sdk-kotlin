@@ -79,10 +79,29 @@ class Analytics(
     internal val activityLifecycleManagementPlugin = ActivityLifecycleManagementPlugin()
     internal val processLifecycleManagementPlugin = ProcessLifecycleManagementPlugin()
     private val sessionTrackingPlugin = SessionTrackingPlugin()
-    override lateinit var connectivityObserver: ConnectivityObserver
+    override val connectivityObserver: ConnectivityObserver
 
+    /**
+     * Initializes the core components of the class upon instantiation.
+     *
+     * This `init` block ensures that essential components are set up in the correct order.
+     * The following components are initialized:
+     *
+     * - **Logger**: Initializes the logging mechanism using `AndroidLogger`. This must be called first to ensure proper logging for all subsequent setup tasks.
+     * - **Connectivity Observer**: Configures an observer to monitor network connectivity changes, utilizing the application context and core analytics instance.
+     * - **Core Analytics Setup**: Initializes core analytics components, ensuring they are ready before any other setup or operations begin.
+     * - **Android-Specific Setup**: Sets up other Android-specific components and dependencies needed for the class.
+     * - **Source Configuration Setup**: Setup the SourceConfig.
+     */
     init {
+        setLogger(logger = AndroidLogger())
+        connectivityObserver = AndroidConnectivityObserver(
+            application = configuration.application,
+            coreAnalytics = this
+        )
+        setupCoreAnalytics()
         setup()
+        setupSourceConfig()
     }
 
     /**
@@ -205,7 +224,6 @@ class Analytics(
     }
 
     private fun setup() {
-        setLogger(logger = AndroidLogger())
         add(DeviceInfoPlugin())
         add(AppInfoPlugin())
         add(NetworkInfoPlugin())
@@ -223,8 +241,6 @@ class Analytics(
         // adding lifecycle management plugins last so that lifecycle callbacks are invoked after all the observers in plugins are added.
         add(processLifecycleManagementPlugin)
         add(activityLifecycleManagementPlugin)
-
-        connectivityObserver = AndroidConnectivityObserver((configuration as Configuration).application, this)
     }
 
     override fun getPlatformType(): PlatformType = PlatformType.Mobile
