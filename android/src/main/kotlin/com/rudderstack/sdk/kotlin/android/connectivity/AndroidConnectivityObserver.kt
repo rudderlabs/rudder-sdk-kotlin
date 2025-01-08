@@ -35,11 +35,11 @@ import java.util.concurrent.atomic.AtomicBoolean
  * **NOTE**: Subscribers are notified exactly once.
  *
  * @param application The [Application] instance.
- * @param analytics The [Analytics] instance.
+ * @param coreAnalytics The core [Analytics] instance.
  */
 internal class AndroidConnectivityObserver(
     private val application: Application,
-    private val analytics: Analytics,
+    private val coreAnalytics: Analytics,
 ) : ConnectivityObserver {
 
     private var networkAvailable: AtomicBoolean = AtomicBoolean(false)
@@ -92,7 +92,7 @@ internal class AndroidConnectivityObserver(
     }
 
     private fun notifySubscriber() {
-        this.analytics.analyticsScope.launch {
+        this.coreAnalytics.analyticsScope.launch {
             pendingSubscribers.forEach {
                 it()
             }
