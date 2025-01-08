@@ -1,5 +1,8 @@
 package com.rudderstack.sdk.kotlin.core
 
+import com.rudderstack.sdk.kotlin.core.internals.connectivity.BaseConnectivityObserver
+import com.rudderstack.sdk.kotlin.core.internals.connectivity.ConnectivityObserver
+import com.rudderstack.sdk.kotlin.core.internals.connectivity.DefaultConnectivityObserver
 import com.rudderstack.sdk.kotlin.core.internals.logger.KotlinLogger
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
@@ -64,7 +67,7 @@ open class Analytics protected constructor(
             analyticsConfiguration.storage
         )
     ),
-) : AnalyticsConfiguration by analyticsConfiguration, Platform {
+) : AnalyticsConfiguration by analyticsConfiguration, Platform, BaseConnectivityObserver() {
 
     private val pluginChain: PluginChain = PluginChain().also { it.analytics = this }
 
@@ -76,6 +79,8 @@ open class Analytics protected constructor(
     @Volatile
     internal var isAnalyticsShutdown = false
         private set
+
+    override val connectivityObserver: ConnectivityObserver by lazy { DefaultConnectivityObserver() }
 
     init {
         processEvents()
