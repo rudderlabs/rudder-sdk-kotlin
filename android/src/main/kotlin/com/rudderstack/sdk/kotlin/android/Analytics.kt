@@ -3,6 +3,7 @@ package com.rudderstack.sdk.kotlin.android
 import android.app.Activity
 import androidx.navigation.NavController
 import androidx.navigation.NavController.OnDestinationChangedListener
+import com.rudderstack.sdk.kotlin.android.connectivity.AndroidConnectivityObserver
 import com.rudderstack.sdk.kotlin.android.logger.AndroidLogger
 import com.rudderstack.sdk.kotlin.android.plugins.AndroidLifecyclePlugin
 import com.rudderstack.sdk.kotlin.android.plugins.AppInfoPlugin
@@ -22,6 +23,7 @@ import com.rudderstack.sdk.kotlin.android.plugins.sessiontracking.SessionTrackin
 import com.rudderstack.sdk.kotlin.android.state.NavContext
 import com.rudderstack.sdk.kotlin.android.storage.provideAndroidStorage
 import com.rudderstack.sdk.kotlin.core.Analytics
+import com.rudderstack.sdk.kotlin.core.internals.connectivity.ConnectivityObserver
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.platform.Platform
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
@@ -77,6 +79,7 @@ class Analytics(
     internal val activityLifecycleManagementPlugin = ActivityLifecycleManagementPlugin()
     internal val processLifecycleManagementPlugin = ProcessLifecycleManagementPlugin()
     private val sessionTrackingPlugin = SessionTrackingPlugin()
+    override lateinit var connectivityObserver: ConnectivityObserver
 
     init {
         setup()
@@ -220,6 +223,8 @@ class Analytics(
         // adding lifecycle management plugins last so that lifecycle callbacks are invoked after all the observers in plugins are added.
         add(processLifecycleManagementPlugin)
         add(activityLifecycleManagementPlugin)
+
+        connectivityObserver = AndroidConnectivityObserver((configuration as Configuration).application, this)
     }
 
     override fun getPlatformType(): PlatformType = PlatformType.Mobile

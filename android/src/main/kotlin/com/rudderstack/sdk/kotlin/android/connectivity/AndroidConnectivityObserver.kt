@@ -1,0 +1,119 @@
+@file:Suppress("DEPRECATION")
+
+package com.rudderstack.sdk.kotlin.android.connectivity
+
+import android.app.Application
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkInfo
+import android.os.Build
+import com.rudderstack.sdk.kotlin.core.Analytics
+import com.rudderstack.sdk.kotlin.core.internals.connectivity.ConnectivityObserver
+import com.rudderstack.sdk.kotlin.core.internals.connectivity.ConnectivitySubscriber
+import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.utils.safelyExecute
+import kotlinx.coroutines.launch
+import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.atomic.AtomicBoolean
+
+/**
+ * AndroidConnectivityObserver is an implementation of [ConnectivityObserver] for Android platform.
+ *
+ * It uses [ConnectivityManager] to observe the network connectivity changes for Android API level 24 and above.
+ * For lower API levels, it uses [BroadcastReceiver] to observe the network connectivity changes.
+ *
+ * It also implements [ConnectivitySubscriber] to provide the network availability status to the subscribers.
+ * If the network is available, it notifies the subscriber immediately. Otherwise, it waits for the network to be available.
+ *
+ * In case of any exception while registering the connectivity subscriber, it sets the network available status to true
+ * and notifies the subscribers.
+ *
+ * **NOTE**: Subscribers are notified exactly once.
+ *
+ * @param application The [Application] instance.
+ * @param analytics The [Analytics] instance.
+ */
+internal class AndroidConnectivityObserver(
+    private val application: Application,
+    private val analytics: Analytics,
+) : ConnectivityObserver {
+
+    private var networkAvailable: AtomicBoolean = AtomicBoolean(false)
+    private val pendingSubscribers = CopyOnWriteArrayList<suspend () -> Unit>()
+
+    private val networkCallback by lazy {
+        object : ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: Network) {
+                super.onAvailable(network)
+                networkAvailable.set(true)
+                notifySubscriber()
+            }
+        }
+    }
+
+    private val connectivityReceiver: BroadcastReceiver by lazy {
+        object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent?) {
+                val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+                val networkInfo: NetworkInfo? = connectivityManager.activeNetworkInfo
+                val isConnected = networkInfo != null && networkInfo.isConnected
+                if (isConnected) {
+                    networkAvailable.set(true)
+                    notifySubscriber()
+                }
+            }
+        }
+    }
+
+    init {
+        safelyExecute({ registerConnectivityObserver() }) {
+            LoggerAnalytics.error(
+                "Failed to register connectivity subscriber. Setting network availability to true.",
+                it
+            )
+            networkAvailable = AtomicBoolean(true)
+            notifySubscriber()
+        }
+    }
+
+    @Throws(RuntimeException::class)
+    private fun registerConnectivityObserver() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            val connectivityManager = this.application.getSystemService(ConnectivityManager::class.java)
+            connectivityManager.registerDefaultNetworkCallback(networkCallback)
+        } else {
+            val intentFilter = IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION)
+            this.application.registerReceiver(connectivityReceiver, intentFilter)
+        }
+    }
+
+    private fun notifySubscriber() {
+        this.analytics.analyticsScope.launch {
+            pendingSubscribers.forEach {
+                it()
+            }
+            pendingSubscribers.clear()
+        }
+    }
+
+    /**
+     * Observes the network availability and notifies the subscriber immediately if the network is available.
+     * Otherwise, it waits for the network to be available and then notifies the subscriber.
+     *
+     * **NOTE**: Subscriber are notified exactly once.
+     *
+     * @param subscriber The subscriber to be notified when the network is available.
+     */
+    override suspend fun notifyImmediatelyOrSubscribe(subscriber: suspend () -> Unit) {
+        networkAvailable.get().also {
+            when (it) {
+                true -> subscriber()
+                false -> this.pendingSubscribers.add(subscriber)
+            }
+        }
+    }
+}
