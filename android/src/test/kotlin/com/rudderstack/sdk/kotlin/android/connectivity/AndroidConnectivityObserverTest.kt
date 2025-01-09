@@ -5,7 +5,9 @@ import android.content.BroadcastReceiver
 import android.net.ConnectivityManager
 import android.os.Build
 import com.rudderstack.sdk.kotlin.android.utils.AppSDKVersion
+import com.rudderstack.sdk.kotlin.android.utils.Block
 import com.rudderstack.sdk.kotlin.android.utils.mockAnalytics
+import com.rudderstack.sdk.kotlin.android.utils.provideSpyBlock
 import io.mockk.MockKAnnotations
 import io.mockk.coVerify
 import io.mockk.every
@@ -14,7 +16,6 @@ import io.mockk.invoke
 import io.mockk.mockkObject
 import io.mockk.mockkStatic
 import io.mockk.slot
-import io.mockk.spyk
 import io.mockk.unmockkStatic
 import junit.framework.TestCase.assertTrue
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -73,6 +74,8 @@ class AndroidConnectivityObserverTest {
                 notifySubscriber = capture(broadcastReceiverSubscribersSlot),
             )
         } returns mockBroadcastReceiver
+
+        mockkObject(AppSDKVersion)
     }
 
     @After
@@ -84,14 +87,13 @@ class AndroidConnectivityObserverTest {
     fun `given connection is not available initially, when connection gets available, then pending subscribers are notified`() =
         runTest(testDispatcher) {
             sdkVersions.forEach { sdkVersion ->
-                val subscriber1 = createSpySubscriber()
-                val subscriber2 = createSpySubscriber()
-                mockkObject(AppSDKVersion)
+                val subscriber1 = provideSpyBlock()
+                val subscriber2 = provideSpyBlock()
                 every { AppSDKVersion.getVersionSDKInt() } returns sdkVersion
                 provideAndroidConnectivityObserver().also {
                     // This will be added in the pending subscribers list and will be notified when the network is available.
-                    it.notifyImmediatelyOrSubscribe { subscriber1.subscribe() }
-                    it.notifyImmediatelyOrSubscribe { subscriber2.subscribe() }
+                    it.notifyImmediatelyOrSubscribe { subscriber1.execute() }
+                    it.notifyImmediatelyOrSubscribe { subscriber2.execute() }
                 }
 
                 simulateNetworkAvailability()
@@ -105,16 +107,15 @@ class AndroidConnectivityObserverTest {
     fun `given connection is available initially, when subscribed, then they are notified immediately`() =
         runTest(testDispatcher) {
             sdkVersions.forEach { sdkVersion ->
-                val subscriber1 = createSpySubscriber()
-                val subscriber2 = createSpySubscriber()
-                mockkObject(AppSDKVersion)
+                val subscriber1 = provideSpyBlock()
+                val subscriber2 = provideSpyBlock()
                 every { AppSDKVersion.getVersionSDKInt() } returns sdkVersion
                 val androidConnectivityObserver = provideAndroidConnectivityObserver()
                 simulateNetworkAvailability()
 
                 // This will be notified immediately as the network is available.
-                androidConnectivityObserver.notifyImmediatelyOrSubscribe { subscriber1.subscribe() }
-                androidConnectivityObserver.notifyImmediatelyOrSubscribe { subscriber2.subscribe() }
+                androidConnectivityObserver.notifyImmediatelyOrSubscribe { subscriber1.execute() }
+                androidConnectivityObserver.notifyImmediatelyOrSubscribe { subscriber2.execute() }
 
                 verifySubscribersAreNotified(subscriber1, subscriber2)
             }
@@ -124,18 +125,17 @@ class AndroidConnectivityObserverTest {
     fun `given initially connection is not available, when connection gets available, then both pending and new subscribers are notified`() =
         runTest(testDispatcher) {
             sdkVersions.forEach { sdkVersion ->
-                val subscriber1 = createSpySubscriber()
-                val subscriber2 = createSpySubscriber()
-                mockkObject(AppSDKVersion)
+                val subscriber1 = provideSpyBlock()
+                val subscriber2 = provideSpyBlock()
                 every { AppSDKVersion.getVersionSDKInt() } returns sdkVersion
                 val androidConnectivityObserver = provideAndroidConnectivityObserver().also {
                     // This will be added in the pending subscribers list and will be notified when the network is available.
-                    it.notifyImmediatelyOrSubscribe { subscriber1.subscribe() }
+                    it.notifyImmediatelyOrSubscribe { subscriber1.execute() }
                 }
 
                 simulateNetworkAvailability()
                 // This will be notified immediately as the network is available.
-                androidConnectivityObserver.notifyImmediatelyOrSubscribe { subscriber2.subscribe() }
+                androidConnectivityObserver.notifyImmediatelyOrSubscribe { subscriber2.execute() }
 
                 assertTrue(networkCallbackSubscribersSlot.isCaptured)
                 verifySubscribersAreNotified(subscriber1, subscriber2)
@@ -145,17 +145,16 @@ class AndroidConnectivityObserverTest {
     @Test
     fun `given some exception is thrown and compatible SDK version is used and initially no subscriber is present, when subscribed, then they are notified immediately`() =
         runTest(testDispatcher) {
-            val subscriber1 = createSpySubscriber()
-            val subscriber2 = createSpySubscriber()
-            mockkObject(AppSDKVersion)
+            val subscriber1 = provideSpyBlock()
+            val subscriber2 = provideSpyBlock()
             every { AppSDKVersion.getVersionSDKInt() } returns Build.VERSION_CODES.N
             // As per the API of getSystemService, it can throw RuntimeException.
             every { mockApplication.getSystemService(ConnectivityManager::class.java) } throws RuntimeException()
             val androidConnectivityObserver = provideAndroidConnectivityObserver()
 
             // They will be notified immediately.
-            androidConnectivityObserver.notifyImmediatelyOrSubscribe { subscriber1.subscribe() }
-            androidConnectivityObserver.notifyImmediatelyOrSubscribe { subscriber2.subscribe() }
+            androidConnectivityObserver.notifyImmediatelyOrSubscribe { subscriber1.execute() }
+            androidConnectivityObserver.notifyImmediatelyOrSubscribe { subscriber2.execute() }
 
             verifySubscribersAreNotified(subscriber1, subscriber2)
         }
@@ -177,20 +176,10 @@ class AndroidConnectivityObserverTest {
         testDispatcher.scheduler.advanceUntilIdle()
     }
 
-    private fun verifySubscribersAreNotified(subscriber1: NetworkObserver, subscriber2: NetworkObserver) {
-        coVerify(exactly = 1) { subscriber1.subscribe() }
-        coVerify(exactly = 1) { subscriber2.subscribe() }
-    }
-
-    private fun createSpySubscriber(): NetworkObserver {
-        return spyk(NetworkObserver())
+    private fun verifySubscribersAreNotified(subscriber1: Block, subscriber2: Block) {
+        coVerify(exactly = 1) { subscriber1.execute() }
+        coVerify(exactly = 1) { subscriber2.execute() }
     }
 }
 
-// As Mockk doesn't support spying on suspend lambda function, we need to create a class for the same.
-private class NetworkObserver {
 
-    fun subscribe() {
-        // Do nothing
-    }
-}
