@@ -70,7 +70,7 @@ internal class DeviceModeDestinationPlugin : Plugin {
         destinationReadyCallbacks.clear()
     }
 
-    fun onDestinationReady(key: String, onReady: (Any?, DestinationResult) -> Unit) {
+    internal fun onDestinationReady(key: String, onReady: (Any?, DestinationResult) -> Unit) {
         destinationReadyCallbacks
             .getOrPut(key) { mutableListOf() }
             .add(onReady)
@@ -78,18 +78,18 @@ internal class DeviceModeDestinationPlugin : Plugin {
         destinationPluginChain.findDestination(key)?.let { invokeOnReady(it) }
     }
 
-    fun addDestination(plugin: DestinationPlugin) {
+    internal fun addDestination(plugin: DestinationPlugin) {
         destinationPluginChain.add(plugin)
         if (isSourceEnabled) {
             initAndNotifyReady(analytics.sourceConfigState.value, plugin)
         }
     }
 
-    fun removeDestination(plugin: DestinationPlugin) {
+    internal fun removeDestination(plugin: DestinationPlugin) {
         destinationPluginChain.remove(plugin)
     }
 
-    fun reset() {
+    internal fun reset() {
         destinationPluginChain.applyClosure { plugin ->
             if (plugin is DestinationPlugin) {
                 if (plugin.destinationState.isReady()) {
@@ -104,7 +104,7 @@ internal class DeviceModeDestinationPlugin : Plugin {
         }
     }
 
-    fun flush() {
+    internal fun flush() {
         destinationPluginChain.applyClosure { plugin ->
             if (plugin is DestinationPlugin) {
                 if (plugin.destinationState.isReady()) {
