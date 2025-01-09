@@ -9,7 +9,6 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.net.ConnectivityManager
 import android.net.Network
-import android.net.NetworkInfo
 import android.os.Build
 import androidx.annotation.VisibleForTesting
 import com.rudderstack.sdk.kotlin.android.utils.runBasedOnSDK
@@ -48,14 +47,8 @@ internal class AndroidConnectivityObserver(
     private var networkAvailable: AtomicBoolean = AtomicBoolean(false)
     private val pendingSubscribers = CopyOnWriteArrayList<suspend () -> Unit>()
 
-    private val networkCallback by lazy {
-        createNetworkCallback(networkAvailable) {
-            notifySubscribers()
-        }
-    }
-    private val broadcastReceiver: BroadcastReceiver by lazy {
-        createBroadcastReceiver(networkAvailable) { notifySubscribers() }
-    }
+    private val networkCallback by lazy { createNetworkCallback(networkAvailable) { notifySubscribers() } }
+    private val broadcastReceiver by lazy { createBroadcastReceiver(networkAvailable) { notifySubscribers() } }
 
     init {
         safelyExecute(
@@ -65,8 +58,7 @@ internal class AndroidConnectivityObserver(
                     "Failed to register connectivity subscriber. Setting network availability to true.",
                     it
                 )
-                networkAvailable = AtomicBoolean(true)
-                notifySubscribers()
+                defaultBehaviour()
             },
         )
     }
@@ -86,13 +78,25 @@ internal class AndroidConnectivityObserver(
         )
     }
 
+    /**
+     * Default behavior when the network becomes available.
+     *
+     * Sets the network availability status to true and notifies subscribers.
+     *
+     * This behavior ensures that network-related operations are unblocked in case of issues
+     * while monitoring the network connection status.
+     */
+    private fun defaultBehaviour() {
+        networkAvailable = AtomicBoolean(true)
+        notifySubscribers()
+    }
+
     private fun notifySubscribers() {
+        val currentSubscribers = pendingSubscribers.toList()
         this.analyticsScope.launch {
-            pendingSubscribers.also {
-                it.forEach { subscriber -> subscriber() }
-                it.clear()
-            }
+            currentSubscribers.forEach { subscriber -> subscriber() }
         }
+        pendingSubscribers.clear()
     }
 
     /**
@@ -118,21 +122,32 @@ internal fun createNetworkCallback(networkAvailable: AtomicBoolean, notifySubscr
     object : ConnectivityManager.NetworkCallback() {
         override fun onAvailable(network: Network) {
             super.onAvailable(network)
-            networkAvailable.set(true)
-            notifySubscriber()
+            notifySubscriberOnceOnNetworkAvailable(networkAvailable, notifySubscriber)
+        }
+
+        override fun onLost(network: Network) {
+            super.onLost(network)
+            networkAvailable.set(false)
         }
     }
 
 @VisibleForTesting
-internal fun createBroadcastReceiver(networkAvailable: AtomicBoolean, notifySubscriber: () -> Unit) =
+internal fun createBroadcastReceiver(networkAvailable: AtomicBoolean, notifySubscriber: () -> Unit,) =
     object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent?) {
-            val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-            val networkInfo: NetworkInfo? = connectivityManager.activeNetworkInfo
-            val isConnected = networkInfo != null && networkInfo.isConnected
-            if (isConnected) {
-                networkAvailable.set(true)
-                notifySubscriber()
+            (context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).activeNetworkInfo?.let {
+                when (it.isConnected) {
+                    true -> notifySubscriberOnceOnNetworkAvailable(networkAvailable, notifySubscriber)
+                    false -> networkAvailable.set(false)
+                }
+            } ?: run { // if activeNetworkInfo is null, it means the device is not connected to any network.
+                networkAvailable.set(false)
             }
         }
     }
+
+private inline fun notifySubscriberOnceOnNetworkAvailable(networkAvailable: AtomicBoolean, notifySubscriber: () -> Unit) {
+    if (!networkAvailable.getAndSet(true)) {
+        notifySubscriber()
+    }
+}
