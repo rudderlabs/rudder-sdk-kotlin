@@ -15,6 +15,7 @@ import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
+import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
@@ -63,6 +64,16 @@ object RudderAnalyticsUtils {
                 return event
             }
         })
+        analytics.onDestinationReady(amplitudePlugin.key) { _, destinationResult ->
+            when(destinationResult) {
+                is Result.Success -> {
+                    LoggerAnalytics.debug("SampleAmplitudePlugin: destination ready")
+                }
+                is Result.Failure -> {
+                    LoggerAnalytics.debug("SampleAmplitudePlugin: destination failed to initialise.")
+                }
+            }
+        }
         analytics.addDestination(amplitudePlugin)
     }
 }

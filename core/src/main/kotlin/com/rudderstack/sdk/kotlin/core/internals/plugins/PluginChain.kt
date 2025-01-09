@@ -3,6 +3,7 @@ package com.rudderstack.sdk.kotlin.core.internals.plugins
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
+import kotlin.reflect.KClass
 
 @InternalRudderApi
 class PluginChain(
@@ -42,6 +43,22 @@ class PluginChain(
         pluginList.forEach { (_, mediator) ->
             mediator.applyClosure(closure)
         }
+    }
+
+    fun <T : Plugin> find(pluginClass: KClass<T>): T? {
+        pluginList.forEach { (_, list) ->
+            return list.find(pluginClass)
+        }
+        return null
+    }
+
+    fun <T : Plugin> findAll(pluginClass: KClass<T>): List<T> {
+        val result = mutableListOf<T>()
+        pluginList.forEach { (_, list) ->
+            val found = list.findAll(pluginClass)
+            result.addAll(found)
+        }
+        return result
     }
 
     fun removeAll() {

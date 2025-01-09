@@ -14,6 +14,7 @@ import com.rudderstack.sdk.kotlin.android.plugins.OSInfoPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.ScreenInfoPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.TimezoneInfoPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.DestinationPlugin
+import com.rudderstack.sdk.kotlin.android.plugins.devicemode.DestinationResult
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.DeviceModeDestinationPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleManagementPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ProcessLifecycleManagementPlugin
@@ -217,11 +218,7 @@ class Analytics(
     fun addDestination(plugin: DestinationPlugin) {
         if (!isAnalyticsActive()) return
 
-        synchronized(this) {
-            if (deviceModeDestinationPlugin == null) {
-                deviceModeDestinationPlugin = DeviceModeDestinationPlugin().also { add(it) }
-            }
-        }
+        initDeviceModeDestinationPlugin()
 
         deviceModeDestinationPlugin?.addDestination(plugin)
     }
@@ -230,6 +227,26 @@ class Analytics(
         if (!isAnalyticsActive()) return
 
         deviceModeDestinationPlugin?.removeDestination(plugin)
+    }
+
+    fun onDestinationReady(key: String, onReady: (Any?, DestinationResult) -> Unit) {
+        if (!isAnalyticsActive()) return
+
+        initDeviceModeDestinationPlugin()
+
+        deviceModeDestinationPlugin?.onDestinationReady(key, onReady)
+    }
+
+    fun onDestinationReady(plugin: DestinationPlugin, onReady: (Any?, DestinationResult) -> Unit) {
+        onDestinationReady(plugin.key, onReady)
+    }
+
+    private fun initDeviceModeDestinationPlugin() {
+        synchronized(this) {
+            if (deviceModeDestinationPlugin == null) {
+                deviceModeDestinationPlugin = DeviceModeDestinationPlugin().also { add(it) }
+            }
+        }
     }
 
     private fun setup() {

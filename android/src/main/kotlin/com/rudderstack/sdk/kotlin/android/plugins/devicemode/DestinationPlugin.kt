@@ -14,8 +14,11 @@ import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.plugins.EventPlugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.PluginChain
+import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import kotlinx.serialization.json.JsonObject
+import java.util.concurrent.CopyOnWriteArrayList
 
+@Suppress("TooGenericExceptionCaught")
 abstract class DestinationPlugin : EventPlugin {
 
     final override val pluginType: Plugin.PluginType = Plugin.PluginType.Destination
@@ -23,19 +26,15 @@ abstract class DestinationPlugin : EventPlugin {
     final override lateinit var analytics: Analytics
 
     abstract val key: String
-    internal var isDestinationReady: Boolean = false
+
+    @Volatile
+    internal var destinationState: DestinationState = DestinationState.Uninitialised
         private set
 
     private lateinit var pluginChain: PluginChain
-    private val pluginList: MutableList<Plugin> = mutableListOf()
+    private val pluginList = CopyOnWriteArrayList<Plugin>()
 
-    protected abstract fun create(
-        destinationConfig: JsonObject,
-        analytics: Analytics,
-        config: Configuration
-    ): DestinationResult
-
-    protected open fun onDestinationReady(destination: Any?) {}
+    protected abstract fun create(destinationConfig: JsonObject, analytics: Analytics, config: Configuration): Boolean
 
     open fun getUnderlyingInstance(): Any? {
         return null
@@ -61,32 +60,34 @@ abstract class DestinationPlugin : EventPlugin {
                 return
             }
             when (
-                val destinationResult = create(
-                    configDestination.destinationConfig,
-                    analytics,
-                    analytics.configuration as Configuration
-                )
+                try {
+                    create(
+                        configDestination.destinationConfig,
+                        analytics,
+                        analytics.configuration as Configuration
+                    )
+                } catch (e: Exception) {
+                    LoggerAnalytics.error("DestinationPlugin: Error: ${e.message} initializing destination $key.")
+                    false
+                }
             ) {
-                DestinationResult.Success -> {
-                    val destination = getUnderlyingInstance()
-                    onDestinationReady(destination)
-                    isDestinationReady = true
+                true -> {
+                    destinationState = DestinationState.Ready
+                    LoggerAnalytics.debug("DestinationPlugin: Destination $key is ready.")
                     applyDefaultPlugins()
                     applyCustomPlugins()
                 }
 
-                is DestinationResult.Failure -> {
-                    LoggerAnalytics.error(
-                        "DestinationPlugin: Error initializing " +
-                            "destination $key: ${destinationResult.message}"
-                    )
+                false -> {
+                    destinationState = DestinationState.Failed
+                    LoggerAnalytics.debug("DestinationPlugin: Destination $key is not initialised.")
                 }
             }
         }
     }
 
     final override suspend fun intercept(event: Event): Event {
-        if (isDestinationReady) {
+        if (destinationState.isReady()) {
             event.copy<Event>()
                 .let { pluginChain.applyPlugins(Plugin.PluginType.PreProcess, it) }
                 ?.let { pluginChain.applyPlugins(Plugin.PluginType.OnProcess, it) }
@@ -96,7 +97,6 @@ abstract class DestinationPlugin : EventPlugin {
         return event
     }
 
-    @Suppress("TooGenericExceptionCaught")
     private fun processEvent(event: Event) {
         try {
             when (event) {
@@ -115,7 +115,7 @@ abstract class DestinationPlugin : EventPlugin {
     }
 
     override fun teardown() {
-        if (isDestinationReady) {
+        if (destinationState.isReady()) {
             pluginChain.removeAll()
         } else {
             pluginList.clear()
@@ -123,7 +123,7 @@ abstract class DestinationPlugin : EventPlugin {
     }
 
     fun add(plugin: Plugin) {
-        if (isDestinationReady) {
+        if (destinationState.isReady()) {
             pluginChain.add(plugin)
         } else {
             pluginList.add(plugin)
@@ -131,7 +131,7 @@ abstract class DestinationPlugin : EventPlugin {
     }
 
     fun remove(plugin: Plugin) {
-        if (isDestinationReady) {
+        if (destinationState.isReady()) {
             pluginChain.remove(plugin)
         } else {
             pluginList.remove(plugin)
@@ -152,7 +152,12 @@ abstract class DestinationPlugin : EventPlugin {
     }
 }
 
-sealed interface DestinationResult {
-    data object Success : DestinationResult
-    data class Failure(val message: String) : DestinationResult
+typealias DestinationResult = Result<Unit, Unit>
+
+internal enum class DestinationState {
+    Ready,
+    Uninitialised,
+    Failed;
+
+    fun isReady() = this == Ready
 }

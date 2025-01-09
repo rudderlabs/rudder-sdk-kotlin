@@ -3,12 +3,15 @@ package com.rudderstack.sdk.kotlin.android.plugins.devicemode
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
+import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.PluginChain
+import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import java.util.concurrent.ConcurrentHashMap
 
 private const val MAX_QUEUE_SIZE = 1000
 
@@ -22,23 +25,28 @@ internal class DeviceModeDestinationPlugin : Plugin {
 
     override lateinit var analytics: Analytics
 
-    private lateinit var destinationPluginChain: PluginChain
-    private val destinationPluginList: MutableList<DestinationPlugin> = mutableListOf()
+    private val destinationPluginChain = PluginChain()
+
+    private val destinationReadyCallbacks = ConcurrentHashMap<String, MutableList<(Any?, DestinationResult) -> Unit>>()
+
     private val queuedEventsChannel: Channel<Event> = Channel(MAX_QUEUE_SIZE)
+
+    private val isSourceEnabled: Boolean
+        get() = analytics.sourceConfigState.value.source.isSourceEnabled
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
 
-        destinationPluginChain = PluginChain().also { it.analytics = analytics }
+        destinationPluginChain.analytics = analytics
         analytics.analyticsScope.launch(analytics.analyticsDispatcher) {
             analytics.sourceConfigState
                 .filter { it.source.isSourceEnabled }
                 .first()
                 .let { sourceConfig ->
-                    destinationPluginList.forEach { destinationPlugin ->
-                        destinationPluginChain.add(destinationPlugin)
-                        // device mode destination SDKs are initialized here
-                        destinationPlugin.initialize(sourceConfig)
+                    destinationPluginChain.applyClosure { plugin ->
+                        if (plugin is DestinationPlugin && plugin.destinationState == DestinationState.Uninitialised) {
+                            initAndNotifyReady(sourceConfig, plugin)
+                        }
                     }
                     processEvents()
                 }
@@ -50,7 +58,7 @@ internal class DeviceModeDestinationPlugin : Plugin {
         val queuedEventResult = queuedEventsChannel.trySend(event)
 
         if (queuedEventResult.isFailure) {
-            popAndSendEvent(event)
+            dropOldestAndSend(event)
         }
 
         return event
@@ -59,22 +67,32 @@ internal class DeviceModeDestinationPlugin : Plugin {
     override fun teardown() {
         destinationPluginChain.removeAll()
         queuedEventsChannel.cancel()
-        destinationPluginList.clear()
+        destinationReadyCallbacks.clear()
+    }
+
+    fun onDestinationReady(key: String, onReady: (Any?, DestinationResult) -> Unit) {
+        destinationReadyCallbacks
+            .getOrPut(key) { mutableListOf() }
+            .add(onReady)
+
+        destinationPluginChain.findDestination(key)?.let { invokeOnReady(it) }
     }
 
     fun addDestination(plugin: DestinationPlugin) {
-        destinationPluginList.add(plugin)
+        destinationPluginChain.add(plugin)
+        if (isSourceEnabled) {
+            initAndNotifyReady(analytics.sourceConfigState.value, plugin)
+        }
     }
 
     fun removeDestination(plugin: DestinationPlugin) {
-        destinationPluginList.remove(plugin)
         destinationPluginChain.remove(plugin)
     }
 
     fun reset() {
         destinationPluginChain.applyClosure { plugin ->
             if (plugin is DestinationPlugin) {
-                if (plugin.isDestinationReady) {
+                if (plugin.destinationState.isReady()) {
                     plugin.reset()
                 } else {
                     LoggerAnalytics.debug(
@@ -89,7 +107,7 @@ internal class DeviceModeDestinationPlugin : Plugin {
     fun flush() {
         destinationPluginChain.applyClosure { plugin ->
             if (plugin is DestinationPlugin) {
-                if (plugin.isDestinationReady) {
+                if (plugin.destinationState.isReady()) {
                     plugin.flush()
                 } else {
                     LoggerAnalytics.debug(
@@ -101,7 +119,36 @@ internal class DeviceModeDestinationPlugin : Plugin {
         }
     }
 
-    private fun popAndSendEvent(event: Event) {
+    private fun initAndNotifyReady(sourceConfig: SourceConfig, plugin: DestinationPlugin) {
+        plugin.initialize(sourceConfig)
+        invokeOnReady(plugin)
+    }
+
+    @Synchronized
+    private fun invokeOnReady(plugin: DestinationPlugin) {
+        val callBacks = destinationReadyCallbacks[plugin.key]?.toList()
+        callBacks?.forEach { callback ->
+            when (plugin.destinationState) {
+                DestinationState.Ready -> invokeAndRemoveCallback(plugin, callback, Result.Success(Unit))
+                DestinationState.Failed -> invokeAndRemoveCallback(plugin, callback, Result.Failure(error = Unit))
+                DestinationState.Uninitialised -> Unit
+            }
+        }
+    }
+
+    private fun invokeAndRemoveCallback(
+        plugin: DestinationPlugin,
+        callback: (Any?, DestinationResult) -> Unit,
+        result: DestinationResult
+    ) {
+        callback.invoke(plugin.getUnderlyingInstance(), result)
+        destinationReadyCallbacks[plugin.key]?.remove(callback)
+        if (destinationReadyCallbacks[plugin.key].isNullOrEmpty()) {
+            destinationReadyCallbacks.remove(plugin.key)
+        }
+    }
+
+    private fun dropOldestAndSend(event: Event) {
         queuedEventsChannel.tryReceive()
         queuedEventsChannel.trySend(event)
     }
@@ -113,4 +160,8 @@ internal class DeviceModeDestinationPlugin : Plugin {
             }
         }
     }
+}
+
+private fun PluginChain.findDestination(key: String): DestinationPlugin? {
+    return findAll(DestinationPlugin::class).find { it.key == key }
 }

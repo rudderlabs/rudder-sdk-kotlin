@@ -2,7 +2,6 @@ package com.rudderstack.sampleapp.analytics.customplugins
 
 import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.DestinationPlugin
-import com.rudderstack.sdk.kotlin.android.plugins.devicemode.DestinationResult
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
@@ -19,26 +18,21 @@ class SampleAmplitudePlugin: DestinationPlugin() {
     override val key: String
         get() = "Amplitude"
 
-    override fun create(destinationConfig: JsonObject, analytics: Analytics, config: Configuration): DestinationResult {
+    override fun create(destinationConfig: JsonObject, analytics: Analytics, config: Configuration): Boolean {
         try {
             val apiKey = destinationConfig["apiKey"]?.jsonPrimitive?.content
             apiKey?.let {
                 amplitudeSdk = SampleAmplitudeSdk.create(it)
-                return DestinationResult.Success
+                return true
             }
-            return DestinationResult.Failure("API Key not found")
+            return false
         } catch (e: Exception) {
-            return DestinationResult.Failure(e.message ?: "Unknown error")
+            return false
         }
     }
 
     override fun getUnderlyingInstance(): Any? {
         return amplitudeSdk
-    }
-
-    override fun onDestinationReady(destination: Any?) {
-        amplitudeSdk = destination as? SampleAmplitudeSdk
-        LoggerAnalytics.debug("SampleAmplitudePlugin: Destination $key is ready")
     }
 
     override fun track(payload: TrackEvent): Event {
