@@ -67,7 +67,7 @@ open class Analytics protected constructor(
     ),
 ) : AnalyticsConfiguration by analyticsConfiguration, Platform {
 
-    protected val pluginChain: PluginChain = PluginChain().also { it.analytics = this }
+    private val pluginChain: PluginChain = PluginChain().also { it.analytics = this }
 
     @InternalRudderApi
     val sourceConfigState = FlowState(initialState = SourceConfig.initialState())
