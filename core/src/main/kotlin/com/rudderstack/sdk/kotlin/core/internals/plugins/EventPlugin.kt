@@ -10,6 +10,7 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 
 @InternalRudderApi
 interface EventPlugin : Plugin {
+
     fun track(payload: TrackEvent): Event? {
         return payload
     }
@@ -30,7 +31,9 @@ interface EventPlugin : Plugin {
         return payload
     }
 
-    override suspend fun intercept(event: Event): Event? = when (event) {
+    override suspend fun intercept(event: Event): Event? = handleEvent(event)
+
+    fun handleEvent(event: Event): Event? = when (event) {
         is TrackEvent -> track(event)
         is ScreenEvent -> screen(event)
         is GroupEvent -> group(event)

@@ -3,14 +3,9 @@ package com.rudderstack.sdk.kotlin.android.plugins.devicemode
 import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
-import com.rudderstack.sdk.kotlin.core.internals.models.AliasEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.Destination
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
-import com.rudderstack.sdk.kotlin.core.internals.models.GroupEvent
-import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
-import com.rudderstack.sdk.kotlin.core.internals.models.ScreenEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
-import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.plugins.EventPlugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.PluginChain
@@ -91,27 +86,10 @@ abstract class DestinationPlugin : EventPlugin {
             event.copy<Event>()
                 .let { pluginChain.applyPlugins(Plugin.PluginType.PreProcess, it) }
                 ?.let { pluginChain.applyPlugins(Plugin.PluginType.OnProcess, it) }
-                ?.let { processEvent(it) }
+                ?.let { handleEvent(it) }
         }
 
         return event
-    }
-
-    private fun processEvent(event: Event) {
-        try {
-            when (event) {
-                is TrackEvent -> track(event)
-                is ScreenEvent -> screen(event)
-                is GroupEvent -> group(event)
-                is IdentifyEvent -> identify(event)
-                is AliasEvent -> alias(event)
-            }
-        } catch (e: Exception) {
-            LoggerAnalytics.error(
-                "DestinationPlugin: Error processing event " +
-                    "for destination $key: ${e.message}"
-            )
-        }
     }
 
     override fun teardown() {
