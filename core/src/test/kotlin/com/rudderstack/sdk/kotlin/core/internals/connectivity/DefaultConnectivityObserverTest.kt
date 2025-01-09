@@ -13,12 +13,10 @@ class DefaultConnectivityObserverTest {
         val subscriber2 = provideSpyBlock()
         val defaultObserver = DefaultConnectivityObserver()
 
-        defaultObserver.immediateNotifyOrObserveConnectivity {
-            subscriber1.execute()
-            defaultObserver.immediateNotifyOrObserveConnectivity { subscriber2.execute() }
+        defaultObserver.immediateNotifyOrObserveConnectivity { subscriber1.execute() }
+        defaultObserver.immediateNotifyOrObserveConnectivity { subscriber2.execute() }
 
-            coVerify { subscriber1.execute() }
-            coVerify { subscriber2.execute() }
-        }
+        coVerify { subscriber1.execute() }
+        coVerify { subscriber2.execute() }
     }
 }
