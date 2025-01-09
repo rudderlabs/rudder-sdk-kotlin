@@ -103,7 +103,7 @@ internal class AndroidConnectivityObserver(
      *
      * @param subscriber The subscriber to be notified when the network is available.
      */
-    override suspend fun notifyImmediatelyOrSubscribe(subscriber: suspend () -> Unit) {
+    override suspend fun immediateNotifyOrObserveConnectivity(subscriber: suspend () -> Unit) {
         networkAvailable.get().also {
             when (it) {
                 true -> subscriber()

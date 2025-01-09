@@ -16,5 +16,5 @@ interface ConnectivitySubscriber {
      *
      * @param subscriber The subscriber to be notified when the network is available.
      */
-    suspend fun notifyImmediatelyOrSubscribe(subscriber: suspend () -> Unit)
+    suspend fun immediateNotifyOrObserveConnectivity(subscriber: suspend () -> Unit)
 }

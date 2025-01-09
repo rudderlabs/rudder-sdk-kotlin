@@ -12,7 +12,7 @@ internal class DefaultConnectivityObserver : ConnectivityObserver {
      *
      * @param subscriber The subscriber to be notified.
      */
-    override suspend fun notifyImmediatelyOrSubscribe(subscriber: suspend () -> Unit) {
+    override suspend fun immediateNotifyOrObserveConnectivity(subscriber: suspend () -> Unit) {
         subscriber()
     }
 }
