@@ -97,7 +97,7 @@ class Analytics(
         setLogger(logger = AndroidLogger())
         connectivityObserver = AndroidConnectivityObserver(
             application = configuration.application,
-            coreAnalytics = this
+            analyticsScope = this.analyticsScope
         )
         setupCoreAnalytics()
         setup()
