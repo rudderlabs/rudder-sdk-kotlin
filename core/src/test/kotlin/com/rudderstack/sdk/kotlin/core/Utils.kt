@@ -79,6 +79,10 @@ class Block {
     fun execute() {
         // Do nothing
     }
+
+    fun executeAndThrowException() {
+        throw Exception("Exception occurred")
+    }
 }
 
 fun provideSpyBlock(): Block {
