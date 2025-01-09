@@ -3,11 +3,11 @@ package com.rudderstack.sdk.kotlin.android.plugins
 import android.app.Application
 import com.rudderstack.sdk.kotlin.android.Analytics
 import com.rudderstack.sdk.kotlin.android.Configuration
+import com.rudderstack.sdk.kotlin.android.utils.mergeWithHigherPriorityTo
 import com.rudderstack.sdk.kotlin.android.utils.provideEvent
 import com.rudderstack.sdk.kotlin.android.utils.putIfNotNull
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
-import com.rudderstack.sdk.kotlin.core.internals.utils.putAll
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
@@ -89,8 +89,7 @@ class DeviceInfoPluginTest {
         val actualMessage = plugin.attachDeviceInfo(provideEvent())
 
         val expectedMessage = provideEvent().apply {
-            context = buildJsonObject {
-                putAll(context)
+            context = context mergeWithHigherPriorityTo buildJsonObject {
                 put(DEVICE, provideLocaleContextPayload())
             }
         }

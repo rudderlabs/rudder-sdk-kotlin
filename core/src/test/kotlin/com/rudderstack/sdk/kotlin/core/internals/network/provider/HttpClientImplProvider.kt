@@ -5,7 +5,7 @@ import com.rudderstack.sdk.kotlin.core.internals.network.HttpClientImpl
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpURLConnectionFactory
 import java.net.HttpURLConnection
 
-fun provideHttpClientImplForGetRequest(
+internal fun provideHttpClientImplForGetRequest(
     connectionFactory: HttpURLConnectionFactory,
     baseUrl: String = "https://api.example.com",
     endPoint: String = "/test",
@@ -25,7 +25,7 @@ fun provideHttpClientImplForGetRequest(
     connectionFactory = connectionFactory,
 )
 
-fun provideHttpClientImplForPostRequest(
+internal fun provideHttpClientImplForPostRequest(
     connectionFactory: HttpURLConnectionFactory,
     baseUrl: String = "https://api.example.com",
     endPoint: String = "/test",

@@ -68,6 +68,7 @@ private class AnalyticsConfigurationImpl(
 /**
  * Get the analytics configuration.
  */
+@InternalRudderApi
 fun provideAnalyticsConfiguration(storage: Storage): AnalyticsConfiguration {
     return AnalyticsConfigurationImpl(storage)
 }

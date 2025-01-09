@@ -102,13 +102,13 @@ internal class SessionTrackingPlugin(
         }
     }
 
-    fun checkAndStartSessionOnForeground() {
+    internal fun checkAndStartSessionOnForeground() {
         if (shouldStartNewSessionOnForeground()) {
             startSession(sessionId = generateSessionId(), isSessionManual = false)
         }
     }
 
-    fun refreshSession() {
+    internal fun refreshSession() {
         if (sessionId != DEFAULT_SESSION_ID) {
             startSession(sessionId = generateSessionId(), shouldUpdateIsSessionManual = false)
         }
@@ -121,7 +121,11 @@ internal class SessionTrackingPlugin(
      * @param isSessionManual Flag to indicate if the session is manual or automatic. Defaults to `false`.
      * @param shouldUpdateIsSessionManual Flag to indicate if the `isSessionManual` should be updated. Defaults to `true`.
      */
-    fun startSession(sessionId: Long, isSessionManual: Boolean = false, shouldUpdateIsSessionManual: Boolean = true) {
+    internal fun startSession(
+        sessionId: Long,
+        isSessionManual: Boolean = false,
+        shouldUpdateIsSessionManual: Boolean = true
+    ) {
         updateIsSessionStartIfChanged(true)
         if (shouldUpdateIsSessionManual) {
             updateIsSessionManualIfChanged(isSessionManual)
@@ -155,7 +159,7 @@ internal class SessionTrackingPlugin(
         }
     }
 
-    fun updateLastActivityTime() {
+    internal fun updateLastActivityTime() {
         val lastActivityTime = getMonotonicCurrentTime()
         sessionState.dispatch(SessionState.UpdateLastActivityTimeAction(lastActivityTime))
         withSessionDispatcher {
@@ -172,14 +176,14 @@ internal class SessionTrackingPlugin(
         }
     }
 
-    fun endSession() {
+    internal fun endSession() {
         sessionState.dispatch(SessionState.EndSessionAction)
         withSessionDispatcher {
             sessionState.value.removeSessionData(storage)
         }
     }
 
-    fun generateSessionId(): Long {
+    internal fun generateSessionId(): Long {
         return TimeUnit.MILLISECONDS.toSeconds(DateTimeUtils.getSystemCurrentTime())
     }
 

@@ -13,7 +13,7 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.toAndroidPrefsKey
 import java.io.File
 
 private const val RUDDER_PREFS = "rl_prefs"
-internal const val DIRECTORY_NAME = "rudder-android-store"
+private const val DIRECTORY_NAME = "rudder-android-store"
 
 internal class AndroidStorage(
     private val context: Context,
@@ -112,7 +112,7 @@ internal class AndroidStorage(
  *  @param application The application context.
  *  @return An instance of [AndroidStorage].
  */
-fun provideAndroidStorage(writeKey: String, application: Context): Storage {
+internal fun provideAndroidStorage(writeKey: String, application: Context): Storage {
     return AndroidStorage(
         context = application,
         writeKey = writeKey,

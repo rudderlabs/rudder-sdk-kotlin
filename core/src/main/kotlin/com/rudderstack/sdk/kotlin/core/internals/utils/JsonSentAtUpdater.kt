@@ -6,7 +6,7 @@ private const val SENT_AT_PATTERN = """"sentAt":"$DEFAULT_SENT_AT_TIMESTAMP""""
 
 internal class JsonSentAtUpdater {
 
-    fun updateSentAt(jsonString: String): String {
+    internal fun updateSentAt(jsonString: String): String {
         val latestTimestamp = DateTimeUtils.now()
 
         val updatedJsonString = jsonString.replace(

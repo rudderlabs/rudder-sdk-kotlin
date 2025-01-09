@@ -1,6 +1,7 @@
 package com.rudderstack.sdk.kotlin.core.internals.storage
 
 import com.rudderstack.sdk.kotlin.core.internals.models.DEFAULT_SENT_AT_TIMESTAMP
+import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import com.rudderstack.sdk.kotlin.core.internals.utils.toFileDirectory
 import kotlinx.coroutines.sync.Semaphore
 import org.jetbrains.annotations.VisibleForTesting
@@ -23,6 +24,7 @@ internal const val TMP_SUFFIX = ".tmp"
  * @property keyValueStorage A [KeyValueStorage] instance for storing and retrieving file index information.
  */
 @Suppress("Detekt.TooManyFunctions")
+@InternalRudderApi
 class EventBatchFileManager(
     private val directory: File,
     private val writeKey: String,

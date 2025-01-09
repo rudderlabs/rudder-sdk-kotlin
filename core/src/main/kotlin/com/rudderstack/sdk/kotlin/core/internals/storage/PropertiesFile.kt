@@ -22,7 +22,7 @@ internal class PropertiesFile(
      * Loads properties from the file. If the file does not exist or fails to load, it creates a new file.
      */
     @Suppress("TooGenericExceptionCaught")
-    fun load() {
+    internal fun load() {
         if (propsFile.exists()) {
             try {
                 FileInputStream(propsFile).use {
@@ -102,7 +102,7 @@ internal class PropertiesFile(
         properties.clear()
     }
 
-    fun remove(key: String): Boolean {
+    internal fun remove(key: String): Boolean {
         properties.remove(key)
         save()
         return true
