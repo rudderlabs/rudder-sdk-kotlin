@@ -18,6 +18,7 @@ import com.rudderstack.sdk.kotlin.core.internals.connectivity.ConnectivityObserv
 import com.rudderstack.sdk.kotlin.core.internals.connectivity.ConnectivitySubscriber
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.utils.safelyExecute
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicBoolean
@@ -37,11 +38,11 @@ import java.util.concurrent.atomic.AtomicBoolean
  * **NOTE**: Subscribers are notified exactly once.
  *
  * @param application The [Application] instance.
- * @param coreAnalytics The core [Analytics] instance.
+ * @param analyticsScope The core [Analytics] instance.
  */
 internal class AndroidConnectivityObserver(
     private val application: Application,
-    private val coreAnalytics: Analytics,
+    private val analyticsScope: CoroutineScope,
 ) : ConnectivityObserver {
 
     private var networkAvailable: AtomicBoolean = AtomicBoolean(false)
@@ -86,7 +87,7 @@ internal class AndroidConnectivityObserver(
     }
 
     private fun notifySubscribers() {
-        this.coreAnalytics.analyticsScope.launch {
+        this.analyticsScope.launch {
             pendingSubscribers.also {
                 it.forEach { subscriber -> subscriber() }
                 it.clear()

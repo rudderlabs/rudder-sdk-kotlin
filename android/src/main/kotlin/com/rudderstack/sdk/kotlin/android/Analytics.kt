@@ -224,7 +224,7 @@ class Analytics(
         add(processLifecycleManagementPlugin)
         add(activityLifecycleManagementPlugin)
 
-        connectivityObserver = AndroidConnectivityObserver((configuration as Configuration).application, this)
+        connectivityObserver = AndroidConnectivityObserver((configuration as Configuration).application, this.analyticsScope)
     }
 
     override fun getPlatformType(): PlatformType = PlatformType.Mobile
