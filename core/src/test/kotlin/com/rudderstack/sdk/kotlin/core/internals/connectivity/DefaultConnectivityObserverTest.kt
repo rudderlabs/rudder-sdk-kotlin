@@ -1,9 +1,6 @@
 package com.rudderstack.sdk.kotlin.core.internals.connectivity
 
-import io.mockk.Runs
-import io.mockk.coEvery
 import io.mockk.coVerify
-import io.mockk.just
 import io.mockk.spyk
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
@@ -24,9 +21,7 @@ class DefaultConnectivityObserverTest {
     }
 
     private fun createSpySubscriber(): NetworkObserver {
-        return spyk(NetworkObserver()).apply {
-            coEvery { subscribe() } just Runs
-        }
+        return spyk(NetworkObserver())
     }
 }
 

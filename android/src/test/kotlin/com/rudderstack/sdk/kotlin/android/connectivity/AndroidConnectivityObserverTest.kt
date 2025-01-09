@@ -7,13 +7,10 @@ import android.os.Build
 import com.rudderstack.sdk.kotlin.android.utils.AppSDKVersion
 import com.rudderstack.sdk.kotlin.android.utils.mockAnalytics
 import io.mockk.MockKAnnotations
-import io.mockk.Runs
-import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.invoke
-import io.mockk.just
 import io.mockk.mockkObject
 import io.mockk.mockkStatic
 import io.mockk.slot
@@ -186,9 +183,7 @@ class AndroidConnectivityObserverTest {
     }
 
     private fun createSpySubscriber(): NetworkObserver {
-        return spyk(NetworkObserver()).apply {
-            coEvery { subscribe() } just Runs
-        }
+        return spyk(NetworkObserver())
     }
 }
 
