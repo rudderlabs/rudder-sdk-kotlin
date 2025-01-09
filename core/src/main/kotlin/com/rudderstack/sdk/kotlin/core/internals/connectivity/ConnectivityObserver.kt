@@ -27,7 +27,7 @@ abstract class BaseConnectivityObserver : ConnectivitySubscriber {
      *
      * @param subscriber The subscriber to be notified when the network is available.
      */
-    override suspend fun notifyImmediatelyOrSubscribe(subscriber: suspend () -> Unit) {
-        connectivityObserver.notifyImmediatelyOrSubscribe(subscriber)
+    override suspend fun immediateNotifyOrObserveConnectivity(subscriber: suspend () -> Unit) {
+        connectivityObserver.immediateNotifyOrObserveConnectivity(subscriber)
     }
 }

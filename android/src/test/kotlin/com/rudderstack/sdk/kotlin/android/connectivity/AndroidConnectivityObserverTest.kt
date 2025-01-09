@@ -92,8 +92,8 @@ class AndroidConnectivityObserverTest {
                 every { AppSDKVersion.getVersionSDKInt() } returns sdkVersion
                 provideAndroidConnectivityObserver().also {
                     // This will be added in the pending subscribers list and will be notified when the network is available.
-                    it.notifyImmediatelyOrSubscribe { subscriber1.execute() }
-                    it.notifyImmediatelyOrSubscribe { subscriber2.execute() }
+                    it.immediateNotifyOrObserveConnectivity { subscriber1.execute() }
+                    it.immediateNotifyOrObserveConnectivity { subscriber2.execute() }
                 }
 
                 simulateNetworkAvailability()
@@ -114,8 +114,8 @@ class AndroidConnectivityObserverTest {
                 simulateNetworkAvailability()
 
                 // This will be notified immediately as the network is available.
-                androidConnectivityObserver.notifyImmediatelyOrSubscribe { subscriber1.execute() }
-                androidConnectivityObserver.notifyImmediatelyOrSubscribe { subscriber2.execute() }
+                androidConnectivityObserver.immediateNotifyOrObserveConnectivity { subscriber1.execute() }
+                androidConnectivityObserver.immediateNotifyOrObserveConnectivity { subscriber2.execute() }
 
                 verifySubscribersAreNotified(subscriber1, subscriber2)
             }
@@ -130,12 +130,12 @@ class AndroidConnectivityObserverTest {
                 every { AppSDKVersion.getVersionSDKInt() } returns sdkVersion
                 val androidConnectivityObserver = provideAndroidConnectivityObserver().also {
                     // This will be added in the pending subscribers list and will be notified when the network is available.
-                    it.notifyImmediatelyOrSubscribe { subscriber1.execute() }
+                    it.immediateNotifyOrObserveConnectivity { subscriber1.execute() }
                 }
 
                 simulateNetworkAvailability()
                 // This will be notified immediately as the network is available.
-                androidConnectivityObserver.notifyImmediatelyOrSubscribe { subscriber2.execute() }
+                androidConnectivityObserver.immediateNotifyOrObserveConnectivity { subscriber2.execute() }
 
                 assertTrue(networkCallbackSubscribersSlot.isCaptured)
                 verifySubscribersAreNotified(subscriber1, subscriber2)
@@ -153,8 +153,8 @@ class AndroidConnectivityObserverTest {
             val androidConnectivityObserver = provideAndroidConnectivityObserver()
 
             // They will be notified immediately.
-            androidConnectivityObserver.notifyImmediatelyOrSubscribe { subscriber1.execute() }
-            androidConnectivityObserver.notifyImmediatelyOrSubscribe { subscriber2.execute() }
+            androidConnectivityObserver.immediateNotifyOrObserveConnectivity { subscriber1.execute() }
+            androidConnectivityObserver.immediateNotifyOrObserveConnectivity { subscriber2.execute() }
 
             verifySubscribersAreNotified(subscriber1, subscriber2)
         }
