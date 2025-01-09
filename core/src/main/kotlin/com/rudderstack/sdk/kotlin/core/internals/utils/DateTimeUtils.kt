@@ -16,6 +16,7 @@ import java.util.TimeZone
  *
  * The format used by this utility is: `yyyy-MM-dd'T'HH:mm:ss.SSS'Z'`
  */
+@InternalRudderApi
 object DateTimeUtils {
 
     /**

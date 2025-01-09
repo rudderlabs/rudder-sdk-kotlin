@@ -1,5 +1,6 @@
 package com.rudderstack.sdk.kotlin.core.internals.statemanagement
 
+import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 
@@ -28,6 +29,7 @@ private class FlowStateImpl<T>(initialState: T) : FlowState<T>, MutableStateFlow
 /**
  * Creates a [FlowState] with the given initial [initialState].
  */
+@InternalRudderApi
 fun <T> FlowState(initialState: T): FlowState<T> {
     return FlowStateImpl(initialState)
 }
