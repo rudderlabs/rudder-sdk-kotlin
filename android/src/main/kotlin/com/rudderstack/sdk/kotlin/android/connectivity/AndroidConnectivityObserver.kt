@@ -122,7 +122,7 @@ internal fun createNetworkCallback(networkAvailable: AtomicBoolean, notifySubscr
     object : ConnectivityManager.NetworkCallback() {
         override fun onAvailable(network: Network) {
             super.onAvailable(network)
-            notifySubscriberOnceOnNetworkAvailable(networkAvailable, notifySubscriber)
+            enableNetworkAndNotify(networkAvailable, notifySubscriber)
         }
 
         override fun onLost(network: Network) {
@@ -132,12 +132,12 @@ internal fun createNetworkCallback(networkAvailable: AtomicBoolean, notifySubscr
     }
 
 @VisibleForTesting
-internal fun createBroadcastReceiver(networkAvailable: AtomicBoolean, notifySubscriber: () -> Unit,) =
+internal fun createBroadcastReceiver(networkAvailable: AtomicBoolean, notifySubscriber: () -> Unit) =
     object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent?) {
             (context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).activeNetworkInfo?.let {
                 when (it.isConnected) {
-                    true -> notifySubscriberOnceOnNetworkAvailable(networkAvailable, notifySubscriber)
+                    true -> enableNetworkAndNotify(networkAvailable, notifySubscriber)
                     false -> networkAvailable.set(false)
                 }
             } ?: run { // if activeNetworkInfo is null, it means the device is not connected to any network.
@@ -146,8 +146,7 @@ internal fun createBroadcastReceiver(networkAvailable: AtomicBoolean, notifySubs
         }
     }
 
-private inline fun notifySubscriberOnceOnNetworkAvailable(networkAvailable: AtomicBoolean, notifySubscriber: () -> Unit) {
-    if (!networkAvailable.getAndSet(true)) {
-        notifySubscriber()
-    }
+private inline fun enableNetworkAndNotify(networkAvailable: AtomicBoolean, notifySubscriber: () -> Unit) {
+    networkAvailable.set(true)
+    notifySubscriber()
 }
