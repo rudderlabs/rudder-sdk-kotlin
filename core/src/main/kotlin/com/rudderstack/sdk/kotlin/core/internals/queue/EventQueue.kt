@@ -69,11 +69,11 @@ internal class EventQueue(
             }.launchIn(analytics.analyticsScope)
     }
 
-    fun put(event: Event) {
+    internal fun put(event: Event) {
         writeChannel.trySend(QueueMessage(QueueMessage.QueueMessageType.MESSAGE, event))
     }
 
-    fun start() {
+    internal fun start() {
         if (running) return
         running = true
 
@@ -86,11 +86,11 @@ internal class EventQueue(
         upload()
     }
 
-    fun flush() {
+    internal fun flush() {
         writeChannel.trySend(flushSignal)
     }
 
-    fun stop() {
+    internal fun stop() {
         if (!running) return
         running = false
 
