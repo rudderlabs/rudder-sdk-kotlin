@@ -23,11 +23,11 @@ interface EventPlugin : Plugin {
         return payload
     }
 
-    fun identify(payload: IdentifyEvent): Event {
+    fun identify(payload: IdentifyEvent): Event? {
         return payload
     }
 
-    fun alias(payload: AliasEvent): Event {
+    fun alias(payload: AliasEvent): Event? {
         return payload
     }
 
