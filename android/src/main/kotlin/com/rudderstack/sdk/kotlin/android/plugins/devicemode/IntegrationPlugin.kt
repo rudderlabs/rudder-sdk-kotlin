@@ -12,6 +12,12 @@ import com.rudderstack.sdk.kotlin.core.internals.plugins.PluginChain
 import kotlinx.serialization.json.JsonObject
 import java.util.concurrent.CopyOnWriteArrayList
 
+/**
+ * Base plugin class for all integration plugins.
+ *
+ * An integration plugin is a plugin that is responsible for sending events directly
+ * to a 3rd party destination without sending it to Rudder server first.
+ */
 @Suppress("TooGenericExceptionCaught")
 abstract class IntegrationPlugin : EventPlugin {
 
@@ -19,6 +25,9 @@ abstract class IntegrationPlugin : EventPlugin {
 
     final override lateinit var analytics: Analytics
 
+    /**
+     * The key for the destination present in the source config.
+     */
     abstract val key: String
 
     @Volatile
@@ -28,14 +37,34 @@ abstract class IntegrationPlugin : EventPlugin {
     private lateinit var pluginChain: PluginChain
     private val pluginList = CopyOnWriteArrayList<Plugin>()
 
+    /**
+     * Creates the destination instance. Override this method for the initialisation of destination.
+     * This method must return true if the destination was created successfully, false otherwise.
+     *
+     * @param destinationConfig The configuration for the destination.
+     * @param analytics The analytics instance.
+     * @param config The configuration instance.
+     * @return true if the destination was created successfully, false otherwise.
+     */
     protected abstract fun create(destinationConfig: JsonObject, analytics: Analytics, config: Configuration): Boolean
 
+    /**
+     * Returns the instance of the destination which was created.
+     *
+     * @return The instance of the destination.
+     */
     open fun getUnderlyingInstance(): Any? {
         return null
     }
 
+    /**
+     * Override this method to control the behaviour of [Analytics.flush] for this destination.
+     */
     open fun flush() {}
 
+    /**
+     * Override this method to control the behaviour of [Analytics.reset] for this destination.
+     */
     open fun reset() {}
 
     final override fun setup(analytics: Analytics) {
@@ -91,6 +120,11 @@ abstract class IntegrationPlugin : EventPlugin {
         return event
     }
 
+    /**
+     * Override this method to cleanup any resources before this integration plugin is removed.
+     *
+     * **Note**: Calling of `super.teardown()` is recommended when overriding this method.
+     */
     override fun teardown() {
         if (destinationState.isReady()) {
             pluginChain.removeAll()
@@ -99,6 +133,11 @@ abstract class IntegrationPlugin : EventPlugin {
         }
     }
 
+    /**
+     * This method adds a plugin to modify the events before sending to this destination.
+     *
+     * @param plugin The plugin to be added.
+     */
     fun add(plugin: Plugin) {
         if (destinationState.isReady()) {
             pluginChain.add(plugin)
@@ -107,6 +146,11 @@ abstract class IntegrationPlugin : EventPlugin {
         }
     }
 
+    /**
+     * This method removes a plugin from the destination.
+     *
+     * @param plugin The plugin to be removed.
+     */
     fun remove(plugin: Plugin) {
         if (destinationState.isReady()) {
             pluginChain.remove(plugin)
