@@ -45,11 +45,11 @@ class PluginChain(
         }
     }
 
-    fun <T : Plugin> findAll(pluginClass: KClass<T>): List<T> {
+    fun <T : Plugin> findAll(pluginType: Plugin.PluginType, pluginClass: KClass<T>): List<T> {
         val result = mutableListOf<T>()
-        pluginList.forEach { (_, list) ->
-            val found = list.findAll(pluginClass)
-            result.addAll(found)
+
+        pluginList[pluginType]?.findAll(pluginClass)?.let {
+            result.addAll(it)
         }
         return result
     }

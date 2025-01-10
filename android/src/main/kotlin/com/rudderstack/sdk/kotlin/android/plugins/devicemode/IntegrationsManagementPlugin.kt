@@ -167,5 +167,5 @@ internal class IntegrationsManagementPlugin : Plugin {
 }
 
 private fun PluginChain.findIntegration(key: String): IntegrationPlugin? {
-    return findAll(IntegrationPlugin::class).find { it.key == key }
+    return findAll(Plugin.PluginType.Destination, IntegrationPlugin::class).find { it.key == key }
 }
