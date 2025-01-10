@@ -229,16 +229,12 @@ class Analytics(
         integrationsManagementPlugin?.removeIntegration(plugin)
     }
 
-    fun onDestinationReady(key: String, onReady: (Any?, DestinationResult) -> Unit) {
+    fun onDestinationReady(plugin: IntegrationPlugin, onReady: (Any?, DestinationResult) -> Unit) {
         if (!isAnalyticsActive()) return
 
         initIntegrationsManagementPlugin()
 
-        integrationsManagementPlugin?.onDestinationReady(key, onReady)
-    }
-
-    fun onDestinationReady(plugin: IntegrationPlugin, onReady: (Any?, DestinationResult) -> Unit) {
-        onDestinationReady(plugin.key, onReady)
+        integrationsManagementPlugin?.onDestinationReady(plugin, onReady)
     }
 
     private fun initIntegrationsManagementPlugin() {

@@ -64,7 +64,7 @@ object RudderAnalyticsUtils {
                 return event
             }
         })
-        analytics.onDestinationReady(amplitudePlugin.key) { _, destinationResult ->
+        analytics.onDestinationReady(amplitudePlugin) { _, destinationResult ->
             when (destinationResult) {
                 is Result.Success ->
                     LoggerAnalytics.debug("SampleAmplitudePlugin: destination ready")

@@ -70,12 +70,14 @@ internal class IntegrationsManagementPlugin : Plugin {
         destinationReadyCallbacks.clear()
     }
 
-    internal fun onDestinationReady(key: String, onReady: (Any?, DestinationResult) -> Unit) {
+    internal fun onDestinationReady(plugin: IntegrationPlugin, onReady: (Any?, DestinationResult) -> Unit) {
         destinationReadyCallbacks
-            .getOrPut(key) { mutableListOf() }
+            .getOrPut(plugin.key) { mutableListOf() }
             .add(onReady)
 
-        integrationPluginChain.findIntegration(key)?.let { notifyOnDestinationReady(it) }
+        if (integrationPluginChain.hasIntegration(plugin)) {
+            notifyOnDestinationReady(plugin)
+        }
     }
 
     internal fun addIntegration(plugin: IntegrationPlugin) {
@@ -166,6 +168,6 @@ internal class IntegrationsManagementPlugin : Plugin {
     }
 }
 
-private fun PluginChain.findIntegration(key: String): IntegrationPlugin? {
-    return findAll(Plugin.PluginType.Destination, IntegrationPlugin::class).find { it.key == key }
+private fun PluginChain.hasIntegration(plugin: IntegrationPlugin): Boolean {
+    return findAll(Plugin.PluginType.Destination, IntegrationPlugin::class).contains(plugin)
 }
