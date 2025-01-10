@@ -75,7 +75,7 @@ internal class IntegrationsManagementPlugin : Plugin {
             .getOrPut(key) { mutableListOf() }
             .add(onReady)
 
-        integrationPluginChain.findIntegration(key)?.let { invokeOnReady(it) }
+        integrationPluginChain.findIntegration(key)?.let { notifyOnDestinationReady(it) }
     }
 
     internal fun addIntegration(plugin: IntegrationPlugin) {
@@ -121,22 +121,22 @@ internal class IntegrationsManagementPlugin : Plugin {
 
     private fun initAndNotifyReady(sourceConfig: SourceConfig, plugin: IntegrationPlugin) {
         plugin.initialize(sourceConfig)
-        invokeOnReady(plugin)
+        notifyOnDestinationReady(plugin)
     }
 
     @Synchronized
-    private fun invokeOnReady(plugin: IntegrationPlugin) {
+    private fun notifyOnDestinationReady(plugin: IntegrationPlugin) {
         val callBacks = destinationReadyCallbacks[plugin.key]?.toList()
         callBacks?.forEach { callback ->
             when (plugin.destinationState) {
-                DestinationState.Ready -> invokeAndRemoveCallback(plugin, callback, Result.Success(Unit))
-                DestinationState.Failed -> invokeAndRemoveCallback(plugin, callback, Result.Failure(error = Unit))
+                DestinationState.Ready -> notifyAndRemoveCallback(plugin, callback, Result.Success(Unit))
+                DestinationState.Failed -> notifyAndRemoveCallback(plugin, callback, Result.Failure(error = Unit))
                 DestinationState.Uninitialised -> Unit
             }
         }
     }
 
-    private fun invokeAndRemoveCallback(
+    private fun notifyAndRemoveCallback(
         plugin: IntegrationPlugin,
         callback: (Any?, DestinationResult) -> Unit,
         result: DestinationResult
