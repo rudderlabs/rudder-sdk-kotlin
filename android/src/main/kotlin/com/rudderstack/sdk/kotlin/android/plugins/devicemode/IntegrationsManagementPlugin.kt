@@ -17,9 +17,9 @@ private const val MAX_QUEUE_SIZE = 1000
 
 /*
  * This plugin will queue the events till the sourceConfig is fetched and
- * will host all the device mode destination plugins in its PluginChain instance.
+ * will host all the device mode integration plugins in its PluginChain instance.
  */
-internal class DeviceModeDestinationPlugin : Plugin {
+internal class IntegrationsManagementPlugin : Plugin {
 
     override val pluginType: Plugin.PluginType = Plugin.PluginType.Destination
 
@@ -54,7 +54,7 @@ internal class DeviceModeDestinationPlugin : Plugin {
     }
 
     override suspend fun intercept(event: Event): Event {
-        LoggerAnalytics.debug("DeviceModeDestinationPlugin: queueing event")
+        LoggerAnalytics.debug("IntegrationsManagementPlugin: queueing event")
         val queuedEventResult = queuedEventsChannel.trySend(event)
 
         if (queuedEventResult.isFailure) {
@@ -96,7 +96,7 @@ internal class DeviceModeDestinationPlugin : Plugin {
                     plugin.reset()
                 } else {
                     LoggerAnalytics.debug(
-                        "DeviceModeDestinationPlugin: Destination ${plugin.key} is " +
+                        "IntegrationsManagementPlugin: Destination ${plugin.key} is " +
                             "not ready yet. Reset discarded."
                     )
                 }
@@ -111,7 +111,7 @@ internal class DeviceModeDestinationPlugin : Plugin {
                     plugin.flush()
                 } else {
                     LoggerAnalytics.debug(
-                        "DeviceModeDestinationPlugin: Destination ${plugin.key} is " +
+                        "IntegrationsManagementPlugin: Destination ${plugin.key} is " +
                             "not ready yet. Flush discarded."
                     )
                 }

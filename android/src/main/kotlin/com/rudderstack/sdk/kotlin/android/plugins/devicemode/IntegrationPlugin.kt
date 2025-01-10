@@ -49,7 +49,7 @@ abstract class IntegrationPlugin : EventPlugin {
         findDestination(sourceConfig)?.let { configDestination ->
             if (!configDestination.isDestinationEnabled) {
                 LoggerAnalytics.warn(
-                    "DestinationPlugin: Destination $key is disabled in dashboard. " +
+                    "IntegrationPlugin: Destination $key is disabled in dashboard. " +
                         "No events will be sent to this destination."
                 )
                 return
@@ -62,20 +62,20 @@ abstract class IntegrationPlugin : EventPlugin {
                         analytics.configuration as Configuration
                     )
                 } catch (e: Exception) {
-                    LoggerAnalytics.error("DestinationPlugin: Error: ${e.message} initializing destination $key.")
+                    LoggerAnalytics.error("IntegrationPlugin: Error: ${e.message} initializing destination $key.")
                     false
                 }
             ) {
                 true -> {
                     destinationState = DestinationState.Ready
-                    LoggerAnalytics.debug("DestinationPlugin: Destination $key is ready.")
+                    LoggerAnalytics.debug("IntegrationPlugin: Destination $key is ready.")
                     applyDefaultPlugins()
                     applyCustomPlugins()
                 }
 
                 false -> {
                     destinationState = DestinationState.Failed
-                    LoggerAnalytics.debug("DestinationPlugin: Destination $key is not initialised.")
+                    LoggerAnalytics.debug("IntegrationPlugin: Destination $key failed to initialise.")
                 }
             }
         }

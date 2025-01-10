@@ -13,9 +13,9 @@ import com.rudderstack.sdk.kotlin.android.plugins.NetworkInfoPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.OSInfoPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.ScreenInfoPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.TimezoneInfoPlugin
-import com.rudderstack.sdk.kotlin.android.plugins.devicemode.IntegrationPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.DestinationResult
-import com.rudderstack.sdk.kotlin.android.plugins.devicemode.DeviceModeDestinationPlugin
+import com.rudderstack.sdk.kotlin.android.plugins.devicemode.IntegrationPlugin
+import com.rudderstack.sdk.kotlin.android.plugins.devicemode.IntegrationsManagementPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleManagementPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ProcessLifecycleManagementPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.screenrecording.ActivityTrackingPlugin
@@ -79,7 +79,7 @@ class Analytics(
 
     internal val activityLifecycleManagementPlugin = ActivityLifecycleManagementPlugin()
     internal val processLifecycleManagementPlugin = ProcessLifecycleManagementPlugin()
-    private var deviceModeDestinationPlugin: DeviceModeDestinationPlugin? = null
+    private var integrationsManagementPlugin: IntegrationsManagementPlugin? = null
     private val sessionTrackingPlugin = SessionTrackingPlugin()
 
     init {
@@ -133,7 +133,7 @@ class Analytics(
         super.reset(clearAnonymousId)
 
         sessionTrackingPlugin.refreshSession()
-        this.deviceModeDestinationPlugin?.reset()
+        this.integrationsManagementPlugin?.reset()
     }
 
     override fun flush() {
@@ -141,7 +141,7 @@ class Analytics(
 
         super.flush()
 
-        this.deviceModeDestinationPlugin?.flush()
+        this.integrationsManagementPlugin?.flush()
     }
 
     /**
@@ -218,33 +218,33 @@ class Analytics(
     fun addIntegration(plugin: IntegrationPlugin) {
         if (!isAnalyticsActive()) return
 
-        initDeviceModeDestinationPlugin()
+        initIntegrationsManagementPlugin()
 
-        deviceModeDestinationPlugin?.addIntegration(plugin)
+        integrationsManagementPlugin?.addIntegration(plugin)
     }
 
     fun removeIntegration(plugin: IntegrationPlugin) {
         if (!isAnalyticsActive()) return
 
-        deviceModeDestinationPlugin?.removeIntegration(plugin)
+        integrationsManagementPlugin?.removeIntegration(plugin)
     }
 
     fun onDestinationReady(key: String, onReady: (Any?, DestinationResult) -> Unit) {
         if (!isAnalyticsActive()) return
 
-        initDeviceModeDestinationPlugin()
+        initIntegrationsManagementPlugin()
 
-        deviceModeDestinationPlugin?.onDestinationReady(key, onReady)
+        integrationsManagementPlugin?.onDestinationReady(key, onReady)
     }
 
     fun onDestinationReady(plugin: IntegrationPlugin, onReady: (Any?, DestinationResult) -> Unit) {
         onDestinationReady(plugin.key, onReady)
     }
 
-    private fun initDeviceModeDestinationPlugin() {
+    private fun initIntegrationsManagementPlugin() {
         synchronized(this) {
-            if (deviceModeDestinationPlugin == null) {
-                deviceModeDestinationPlugin = DeviceModeDestinationPlugin().also { add(it) }
+            if (integrationsManagementPlugin == null) {
+                integrationsManagementPlugin = IntegrationsManagementPlugin().also { add(it) }
             }
         }
     }
