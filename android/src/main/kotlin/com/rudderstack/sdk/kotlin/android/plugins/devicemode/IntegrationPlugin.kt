@@ -9,7 +9,6 @@ import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.plugins.EventPlugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.PluginChain
-import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import kotlinx.serialization.json.JsonObject
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -129,8 +128,6 @@ abstract class IntegrationPlugin : EventPlugin {
         return sourceConfig.source.destinations.firstOrNull { it.destinationDefinition.displayName == key }
     }
 }
-
-typealias DestinationResult = Result<Unit, Exception>
 
 internal sealed interface DestinationState {
     data object Ready : DestinationState
