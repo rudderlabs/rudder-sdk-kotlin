@@ -65,13 +65,11 @@ object RudderAnalyticsUtils {
             }
         })
         analytics.onDestinationReady(amplitudePlugin.key) { _, destinationResult ->
-            when(destinationResult) {
-                is Result.Success -> {
+            when (destinationResult) {
+                is Result.Success ->
                     LoggerAnalytics.debug("SampleAmplitudePlugin: destination ready")
-                }
-                is Result.Failure -> {
-                    LoggerAnalytics.debug("SampleAmplitudePlugin: destination failed to initialise.")
-                }
+                is Result.Failure ->
+                    LoggerAnalytics.debug("SampleAmplitudePlugin: destination failed to initialise: ${destinationResult.error.message}.")
             }
         }
         analytics.addIntegration(amplitudePlugin)

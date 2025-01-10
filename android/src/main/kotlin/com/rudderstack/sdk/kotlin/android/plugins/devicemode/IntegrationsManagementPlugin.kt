@@ -128,9 +128,13 @@ internal class IntegrationsManagementPlugin : Plugin {
     private fun notifyOnDestinationReady(plugin: IntegrationPlugin) {
         val callBacks = destinationReadyCallbacks[plugin.key]?.toList()
         callBacks?.forEach { callback ->
-            when (plugin.destinationState) {
+            when (val destinationState = plugin.destinationState) {
                 DestinationState.Ready -> notifyAndRemoveCallback(plugin, callback, Result.Success(Unit))
-                DestinationState.Failed -> notifyAndRemoveCallback(plugin, callback, Result.Failure(error = Unit))
+                is DestinationState.Failed -> notifyAndRemoveCallback(
+                    plugin,
+                    callback,
+                    Result.Failure(error = destinationState.exception)
+                )
                 DestinationState.Uninitialised -> Unit
             }
         }

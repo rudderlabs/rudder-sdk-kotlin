@@ -48,35 +48,35 @@ abstract class IntegrationPlugin : EventPlugin {
     internal fun initialize(sourceConfig: SourceConfig) {
         findDestination(sourceConfig)?.let { configDestination ->
             if (!configDestination.isDestinationEnabled) {
-                LoggerAnalytics.warn(
-                    "IntegrationPlugin: Destination $key is disabled in dashboard. " +
-                        "No events will be sent to this destination."
-                )
+                val errorMessage = "Destination $key is disabled in dashboard. No events will be sent to this destination."
+                LoggerAnalytics.warn(errorMessage)
+                destinationState = DestinationState.Failed(SdkNotInitializedException(errorMessage))
                 return
             }
-            when (
-                try {
+
+            try {
+                when (
                     create(
                         configDestination.destinationConfig,
                         analytics,
                         analytics.configuration as Configuration
                     )
-                } catch (e: Exception) {
-                    LoggerAnalytics.error("IntegrationPlugin: Error: ${e.message} initializing destination $key.")
-                    false
+                ) {
+                    true -> {
+                        destinationState = DestinationState.Ready
+                        LoggerAnalytics.debug("IntegrationPlugin: Destination $key is ready.")
+                        applyDefaultPlugins()
+                        applyCustomPlugins()
+                    }
+                    false -> {
+                        val errorMessage = "Destination $key failed to initialise."
+                        destinationState = DestinationState.Failed(SdkNotInitializedException(errorMessage))
+                        LoggerAnalytics.warn("IntegrationPlugin: $errorMessage")
+                    }
                 }
-            ) {
-                true -> {
-                    destinationState = DestinationState.Ready
-                    LoggerAnalytics.debug("IntegrationPlugin: Destination $key is ready.")
-                    applyDefaultPlugins()
-                    applyCustomPlugins()
-                }
-
-                false -> {
-                    destinationState = DestinationState.Failed
-                    LoggerAnalytics.debug("IntegrationPlugin: Destination $key failed to initialise.")
-                }
+            } catch (e: Exception) {
+                destinationState = DestinationState.Failed(e)
+                LoggerAnalytics.error("IntegrationPlugin: Error: ${e.message} initializing destination $key.")
             }
         }
     }
@@ -130,12 +130,14 @@ abstract class IntegrationPlugin : EventPlugin {
     }
 }
 
-typealias DestinationResult = Result<Unit, Unit>
+typealias DestinationResult = Result<Unit, Exception>
 
-internal enum class DestinationState {
-    Ready,
-    Uninitialised,
-    Failed;
+internal sealed interface DestinationState {
+    data object Ready : DestinationState
+    data object Uninitialised : DestinationState
+    data class Failed(
+        val exception: Exception
+    ) : DestinationState
 
     fun isReady() = this == Ready
 }
