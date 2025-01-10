@@ -14,7 +14,7 @@ import kotlinx.serialization.json.JsonObject
 import java.util.concurrent.CopyOnWriteArrayList
 
 @Suppress("TooGenericExceptionCaught")
-abstract class DestinationPlugin : EventPlugin {
+abstract class IntegrationPlugin : EventPlugin {
 
     final override val pluginType: Plugin.PluginType = Plugin.PluginType.Destination
 

@@ -13,7 +13,7 @@ import com.rudderstack.sdk.kotlin.android.plugins.NetworkInfoPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.OSInfoPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.ScreenInfoPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.TimezoneInfoPlugin
-import com.rudderstack.sdk.kotlin.android.plugins.devicemode.DestinationPlugin
+import com.rudderstack.sdk.kotlin.android.plugins.devicemode.IntegrationPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.DestinationResult
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.DeviceModeDestinationPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleManagementPlugin
@@ -215,18 +215,18 @@ class Analytics(
         )
     }
 
-    fun addDestination(plugin: DestinationPlugin) {
+    fun addIntegration(plugin: IntegrationPlugin) {
         if (!isAnalyticsActive()) return
 
         initDeviceModeDestinationPlugin()
 
-        deviceModeDestinationPlugin?.addDestination(plugin)
+        deviceModeDestinationPlugin?.addIntegration(plugin)
     }
 
-    fun removeDestination(plugin: DestinationPlugin) {
+    fun removeIntegration(plugin: IntegrationPlugin) {
         if (!isAnalyticsActive()) return
 
-        deviceModeDestinationPlugin?.removeDestination(plugin)
+        deviceModeDestinationPlugin?.removeIntegration(plugin)
     }
 
     fun onDestinationReady(key: String, onReady: (Any?, DestinationResult) -> Unit) {
@@ -237,7 +237,7 @@ class Analytics(
         deviceModeDestinationPlugin?.onDestinationReady(key, onReady)
     }
 
-    fun onDestinationReady(plugin: DestinationPlugin, onReady: (Any?, DestinationResult) -> Unit) {
+    fun onDestinationReady(plugin: IntegrationPlugin, onReady: (Any?, DestinationResult) -> Unit) {
         onDestinationReady(plugin.key, onReady)
     }
 

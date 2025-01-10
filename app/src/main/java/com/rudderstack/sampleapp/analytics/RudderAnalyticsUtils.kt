@@ -74,6 +74,6 @@ object RudderAnalyticsUtils {
                 }
             }
         }
-        analytics.addDestination(amplitudePlugin)
+        analytics.addIntegration(amplitudePlugin)
     }
 }

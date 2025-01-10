@@ -25,7 +25,7 @@ internal class DeviceModeDestinationPlugin : Plugin {
 
     override lateinit var analytics: Analytics
 
-    private val destinationPluginChain = PluginChain()
+    private val integrationPluginChain = PluginChain()
 
     private val destinationReadyCallbacks = ConcurrentHashMap<String, MutableList<(Any?, DestinationResult) -> Unit>>()
 
@@ -37,14 +37,14 @@ internal class DeviceModeDestinationPlugin : Plugin {
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
 
-        destinationPluginChain.analytics = analytics
+        integrationPluginChain.analytics = analytics
         analytics.analyticsScope.launch(analytics.analyticsDispatcher) {
             analytics.sourceConfigState
                 .filter { it.source.isSourceEnabled }
                 .first()
                 .let { sourceConfig ->
-                    destinationPluginChain.applyClosure { plugin ->
-                        if (plugin is DestinationPlugin && plugin.destinationState == DestinationState.Uninitialised) {
+                    integrationPluginChain.applyClosure { plugin ->
+                        if (plugin is IntegrationPlugin && plugin.destinationState == DestinationState.Uninitialised) {
                             initAndNotifyReady(sourceConfig, plugin)
                         }
                     }
@@ -65,7 +65,7 @@ internal class DeviceModeDestinationPlugin : Plugin {
     }
 
     override fun teardown() {
-        destinationPluginChain.removeAll()
+        integrationPluginChain.removeAll()
         queuedEventsChannel.cancel()
         destinationReadyCallbacks.clear()
     }
@@ -75,23 +75,23 @@ internal class DeviceModeDestinationPlugin : Plugin {
             .getOrPut(key) { mutableListOf() }
             .add(onReady)
 
-        destinationPluginChain.findDestination(key)?.let { invokeOnReady(it) }
+        integrationPluginChain.findIntegration(key)?.let { invokeOnReady(it) }
     }
 
-    internal fun addDestination(plugin: DestinationPlugin) {
-        destinationPluginChain.add(plugin)
+    internal fun addIntegration(plugin: IntegrationPlugin) {
+        integrationPluginChain.add(plugin)
         if (isSourceEnabled) {
             initAndNotifyReady(analytics.sourceConfigState.value, plugin)
         }
     }
 
-    internal fun removeDestination(plugin: DestinationPlugin) {
-        destinationPluginChain.remove(plugin)
+    internal fun removeIntegration(plugin: IntegrationPlugin) {
+        integrationPluginChain.remove(plugin)
     }
 
     internal fun reset() {
-        destinationPluginChain.applyClosure { plugin ->
-            if (plugin is DestinationPlugin) {
+        integrationPluginChain.applyClosure { plugin ->
+            if (plugin is IntegrationPlugin) {
                 if (plugin.destinationState.isReady()) {
                     plugin.reset()
                 } else {
@@ -105,8 +105,8 @@ internal class DeviceModeDestinationPlugin : Plugin {
     }
 
     internal fun flush() {
-        destinationPluginChain.applyClosure { plugin ->
-            if (plugin is DestinationPlugin) {
+        integrationPluginChain.applyClosure { plugin ->
+            if (plugin is IntegrationPlugin) {
                 if (plugin.destinationState.isReady()) {
                     plugin.flush()
                 } else {
@@ -119,13 +119,13 @@ internal class DeviceModeDestinationPlugin : Plugin {
         }
     }
 
-    private fun initAndNotifyReady(sourceConfig: SourceConfig, plugin: DestinationPlugin) {
+    private fun initAndNotifyReady(sourceConfig: SourceConfig, plugin: IntegrationPlugin) {
         plugin.initialize(sourceConfig)
         invokeOnReady(plugin)
     }
 
     @Synchronized
-    private fun invokeOnReady(plugin: DestinationPlugin) {
+    private fun invokeOnReady(plugin: IntegrationPlugin) {
         val callBacks = destinationReadyCallbacks[plugin.key]?.toList()
         callBacks?.forEach { callback ->
             when (plugin.destinationState) {
@@ -137,7 +137,7 @@ internal class DeviceModeDestinationPlugin : Plugin {
     }
 
     private fun invokeAndRemoveCallback(
-        plugin: DestinationPlugin,
+        plugin: IntegrationPlugin,
         callback: (Any?, DestinationResult) -> Unit,
         result: DestinationResult
     ) {
@@ -156,12 +156,12 @@ internal class DeviceModeDestinationPlugin : Plugin {
     private fun processEvents() {
         analytics.analyticsScope.launch(analytics.analyticsDispatcher) {
             for (event in queuedEventsChannel) {
-                destinationPluginChain.process(event)
+                integrationPluginChain.process(event)
             }
         }
     }
 }
 
-private fun PluginChain.findDestination(key: String): DestinationPlugin? {
-    return findAll(DestinationPlugin::class).find { it.key == key }
+private fun PluginChain.findIntegration(key: String): IntegrationPlugin? {
+    return findAll(IntegrationPlugin::class).find { it.key == key }
 }

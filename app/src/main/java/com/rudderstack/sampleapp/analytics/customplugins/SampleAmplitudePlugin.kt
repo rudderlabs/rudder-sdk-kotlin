@@ -1,7 +1,7 @@
 package com.rudderstack.sampleapp.analytics.customplugins
 
 import com.rudderstack.sdk.kotlin.android.Configuration
-import com.rudderstack.sdk.kotlin.android.plugins.devicemode.DestinationPlugin
+import com.rudderstack.sdk.kotlin.android.plugins.devicemode.IntegrationPlugin
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
@@ -11,7 +11,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
-class SampleAmplitudePlugin: DestinationPlugin() {
+class SampleAmplitudePlugin: IntegrationPlugin() {
 
     private var amplitudeSdk: SampleAmplitudeSdk? = null
 
