@@ -215,6 +215,14 @@ class Analytics(
         )
     }
 
+    /**
+     * Adds an [IntegrationPlugin] to the analytics instance.
+     *
+     * An [IntegrationPlugin] is responsible for sending events directly to a 3rd party
+     * destination without sending it to the RudderStack server first.
+     *
+     * @param plugin The [IntegrationPlugin] to be added.
+     */
     fun addIntegration(plugin: IntegrationPlugin) {
         if (!isAnalyticsActive()) return
 
@@ -223,12 +231,23 @@ class Analytics(
         integrationsManagementPlugin?.addIntegration(plugin)
     }
 
+    /**
+     * Removes an [IntegrationPlugin] from the analytics instance.
+     *
+     * @param plugin The [IntegrationPlugin] to be removed.
+     */
     fun removeIntegration(plugin: IntegrationPlugin) {
         if (!isAnalyticsActive()) return
 
         integrationsManagementPlugin?.removeIntegration(plugin)
     }
 
+    /**
+     * Registers a callback to be invoked when the destination of the [plugin] is ready.
+     *
+     * @param plugin The [IntegrationPlugin] for which the callback needs to be invoked.
+     * @param onReady The callback to be invoked when the destination is ready.
+     */
     fun onDestinationReady(plugin: IntegrationPlugin, onReady: (Any?, DestinationResult) -> Unit) {
         if (!isAnalyticsActive()) return
 
