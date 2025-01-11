@@ -8,6 +8,7 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.TestScope
+import java.io.BufferedReader
 import com.rudderstack.sdk.kotlin.android.Analytics as AndroidAnalytics
 
 fun mockAnalytics(testScope: TestScope, testDispatcher: TestDispatcher): Analytics {
@@ -66,4 +67,9 @@ fun mockUri(
 
 fun setupLogger(logger: Logger, level: Logger.LogLevel = Logger.LogLevel.VERBOSE) {
     LoggerAnalytics.setup(logger = logger, logLevel = level)
+}
+
+fun Any.readFileAsString(fileName: String): String {
+    val inputStream = this::class.java.classLoader?.getResourceAsStream(fileName)
+    return inputStream?.bufferedReader()?.use(BufferedReader::readText) ?: ""
 }
