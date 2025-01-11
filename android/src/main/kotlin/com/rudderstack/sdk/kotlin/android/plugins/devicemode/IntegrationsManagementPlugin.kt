@@ -45,7 +45,7 @@ internal class IntegrationsManagementPlugin : Plugin {
                 .let { sourceConfig ->
                     integrationPluginChain.applyClosure { plugin ->
                         if (plugin is IntegrationPlugin && plugin.destinationState == DestinationState.Uninitialised) {
-                            initAndNotifyReady(sourceConfig, plugin)
+                            initAndNotifyCallbacks(sourceConfig, plugin)
                         }
                     }
                     processEvents()
@@ -76,14 +76,14 @@ internal class IntegrationsManagementPlugin : Plugin {
             .add(onReady)
 
         if (integrationPluginChain.hasIntegration(plugin)) {
-            notifyOnDestinationReady(plugin)
+            notifyDestinationCallbacks(plugin)
         }
     }
 
     internal fun addIntegration(plugin: IntegrationPlugin) {
         integrationPluginChain.add(plugin)
         if (isSourceEnabled) {
-            initAndNotifyReady(analytics.sourceConfigState.value, plugin)
+            initAndNotifyCallbacks(analytics.sourceConfigState.value, plugin)
         }
     }
 
@@ -121,23 +121,23 @@ internal class IntegrationsManagementPlugin : Plugin {
         }
     }
 
-    private fun initAndNotifyReady(sourceConfig: SourceConfig, plugin: IntegrationPlugin) {
+    private fun initAndNotifyCallbacks(sourceConfig: SourceConfig, plugin: IntegrationPlugin) {
         plugin.initialize(sourceConfig)
-        notifyOnDestinationReady(plugin)
+        notifyDestinationCallbacks(plugin)
     }
 
     @Synchronized
-    private fun notifyOnDestinationReady(plugin: IntegrationPlugin) {
+    private fun notifyDestinationCallbacks(plugin: IntegrationPlugin) {
         val callBacks = destinationReadyCallbacks[plugin.key]?.toList()
         callBacks?.forEach { callback ->
             when (val destinationState = plugin.destinationState) {
-                DestinationState.Ready -> notifyAndRemoveCallback(plugin, callback, Result.Success(Unit))
+                is DestinationState.Ready -> notifyAndRemoveCallback(plugin, callback, Result.Success(Unit))
                 is DestinationState.Failed -> notifyAndRemoveCallback(
                     plugin,
                     callback,
                     Result.Failure(error = destinationState.exception)
                 )
-                DestinationState.Uninitialised -> Unit
+                is DestinationState.Uninitialised -> Unit
             }
         }
     }
