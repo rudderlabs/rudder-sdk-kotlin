@@ -24,6 +24,11 @@ data class SourceConfig(
 
     companion object {
 
+        /**
+         * Method to create an initial state of the source configuration.
+         *
+         * @return The initial state of the source configuration.
+         */
         fun initialState(): SourceConfig = SourceConfig(
             source = RudderServerConfigSource(
                 sourceId = String.empty(),
@@ -36,6 +41,11 @@ data class SourceConfig(
         )
     }
 
+    /**
+     * Action to update the source configuration.
+     *
+     * @param updatedSourceConfig The updated source configuration.
+     */
     class UpdateAction(@VisibleForTesting internal val updatedSourceConfig: SourceConfig) : FlowAction<SourceConfig> {
 
         override fun reduce(currentState: SourceConfig): SourceConfig {
@@ -43,6 +53,9 @@ data class SourceConfig(
         }
     }
 
+    /**
+     * Method to store the source configuration in the storage.
+     */
     suspend fun storeSourceConfig(storage: Storage) {
         storage.write(StorageKeys.SOURCE_CONFIG_PAYLOAD, Json.encodeToString(serializer(), this))
     }
