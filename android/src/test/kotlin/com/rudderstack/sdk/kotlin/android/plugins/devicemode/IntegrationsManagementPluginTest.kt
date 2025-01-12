@@ -37,6 +37,12 @@ class IntegrationsManagementPluginTest {
     private val testScope = TestScope(testDispatcher)
     private val mockAnalytics = mockAnalytics(testScope, testDispatcher)
     private val integrationPlugin = spyk(MockDestinationIntegrationPlugin())
+    private val sourceConfigWithCorrectApiKey = LenientJson.decodeFromString<SourceConfig>(
+        readFileAsString(pathToSourceConfigWithCorrectApiKey)
+    )
+    private val sourceConfigWithIncorrectApiKey = LenientJson.decodeFromString<SourceConfig>(
+        readFileAsString(pathToSourceConfigWithIncorrectApiKey)
+    )
 
     private val plugin = IntegrationsManagementPlugin()
 
@@ -58,40 +64,31 @@ class IntegrationsManagementPluginTest {
     @Test
     fun `given an integration, when it is added using addIntegration before sourceConfig is fetched, then destination is initialised`() =
         runTest {
-            val sourceConfigString = readFileAsString(sourceConfigWithCorrectApiKey)
-            val sourceConfig = LenientJson.decodeFromString<SourceConfig>(sourceConfigString)
-
             plugin.addIntegration(integrationPlugin)
-            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfig))
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
             advanceUntilIdle()
 
-            verify(exactly = 1) { integrationPlugin.initialize(sourceConfig) }
+            verify(exactly = 1) { integrationPlugin.initialize(sourceConfigWithCorrectApiKey) }
         }
 
     @Test
     fun `given an integration, when it is added using addIntegration after sourceConfig is fetched, then destination is initialised`() =
         runTest {
-            val sourceConfigString = readFileAsString(sourceConfigWithCorrectApiKey)
-            val sourceConfig = LenientJson.decodeFromString<SourceConfig>(sourceConfigString)
-
-            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfig))
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
             plugin.addIntegration(integrationPlugin)
             advanceUntilIdle()
 
-            verify(exactly = 1) { integrationPlugin.initialize(sourceConfig) }
+            verify(exactly = 1) { integrationPlugin.initialize(sourceConfigWithCorrectApiKey) }
         }
 
     @Test
     fun `given an integration, when a callback is registered before sourceConfig is fetched and integration is added, then it is called after successful initialisation`() =
         runTest {
-            val sourceConfigString = readFileAsString(sourceConfigWithCorrectApiKey)
-            val sourceConfig = LenientJson.decodeFromString<SourceConfig>(sourceConfigString)
-
             val callback = mockk<(Any?, DestinationResult) -> Unit>(relaxed = true)
 
             plugin.onDestinationReady(integrationPlugin, callback)
             plugin.addIntegration(integrationPlugin)
-            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfig))
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
             advanceUntilIdle()
 
             val mockDestinationSdk = integrationPlugin.getUnderlyingInstance() as? MockDestinationSdk
@@ -102,14 +99,11 @@ class IntegrationsManagementPluginTest {
     @Test
     fun `given an integration, when a callback is registered before sourceConfig is fetched but after integration is added, then it is called after successful initialisation`() =
         runTest {
-            val sourceConfigString = readFileAsString(sourceConfigWithCorrectApiKey)
-            val sourceConfig = LenientJson.decodeFromString<SourceConfig>(sourceConfigString)
-
             val callback = mockk<(Any?, DestinationResult) -> Unit>(relaxed = true)
 
             plugin.addIntegration(integrationPlugin)
             plugin.onDestinationReady(integrationPlugin, callback)
-            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfig))
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
             advanceUntilIdle()
 
             val mockDestinationSdk = integrationPlugin.getUnderlyingInstance() as? MockDestinationSdk
@@ -120,13 +114,10 @@ class IntegrationsManagementPluginTest {
     @Test
     fun `given an integration, when a callback is registered after sourceConfig is fetched and integration is added, then it is called after successful initialisation`() =
         runTest {
-            val sourceConfigString = readFileAsString(sourceConfigWithCorrectApiKey)
-            val sourceConfig = LenientJson.decodeFromString<SourceConfig>(sourceConfigString)
-
             val callback = mockk<(Any?, DestinationResult) -> Unit>(relaxed = true)
 
             plugin.addIntegration(integrationPlugin)
-            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfig))
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
             plugin.onDestinationReady(integrationPlugin, callback)
             advanceUntilIdle()
 
@@ -137,11 +128,8 @@ class IntegrationsManagementPluginTest {
 
     @Test
     fun `given an initialised integration, when flush is called, then integration plugin's flush is called`() = runTest {
-        val sourceConfigString = readFileAsString(sourceConfigWithCorrectApiKey)
-        val sourceConfig = LenientJson.decodeFromString<SourceConfig>(sourceConfigString)
-
         plugin.addIntegration(integrationPlugin)
-        mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfig))
+        mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
         advanceUntilIdle()
 
         plugin.flush()
@@ -151,11 +139,8 @@ class IntegrationsManagementPluginTest {
 
     @Test
     fun `given a failed integration, when flush is called, then integration plugin's flush is not called`() = runTest {
-        val sourceConfigString = readFileAsString(sourceConfigWithIncorrectApiKey)
-        val sourceConfig = LenientJson.decodeFromString<SourceConfig>(sourceConfigString)
-
         plugin.addIntegration(integrationPlugin)
-        mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfig))
+        mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithIncorrectApiKey))
         advanceUntilIdle()
 
         plugin.flush()
@@ -165,11 +150,8 @@ class IntegrationsManagementPluginTest {
 
     @Test
     fun `given an initialised integration, when reset is called, then integration plugin's reset is called`() = runTest {
-        val sourceConfigString = readFileAsString(sourceConfigWithCorrectApiKey)
-        val sourceConfig = LenientJson.decodeFromString<SourceConfig>(sourceConfigString)
-
         plugin.addIntegration(integrationPlugin)
-        mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfig))
+        mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
         advanceUntilIdle()
 
         plugin.reset()
@@ -179,11 +161,8 @@ class IntegrationsManagementPluginTest {
 
     @Test
     fun `given a failed integration, when reset is called, then integration plugin's reset is not called`() = runTest {
-        val sourceConfigString = readFileAsString(sourceConfigWithIncorrectApiKey)
-        val sourceConfig = LenientJson.decodeFromString<SourceConfig>(sourceConfigString)
-
         plugin.addIntegration(integrationPlugin)
-        mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfig))
+        mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithIncorrectApiKey))
         advanceUntilIdle()
 
         plugin.reset()
@@ -194,8 +173,6 @@ class IntegrationsManagementPluginTest {
     @Test
     fun `given an integration, when intercept is called max_queue_size times before sourceConfig is fetched, then integration's intercept is called after it is fetched`() =
         runTest {
-            val sourceConfigString = readFileAsString(sourceConfigWithCorrectApiKey)
-            val sourceConfig = LenientJson.decodeFromString<SourceConfig>(sourceConfigString)
             val events = mutableListOf<TrackEvent>()
 
             plugin.addIntegration(integrationPlugin)
@@ -206,7 +183,7 @@ class IntegrationsManagementPluginTest {
                 plugin.intercept(event)
             }
 
-            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfig))
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
             advanceUntilIdle()
 
             events.forEach {
@@ -217,8 +194,6 @@ class IntegrationsManagementPluginTest {
     @Test
     fun `given an integration, when intercept is called more than max_queue_size times, then integration's intercept is called for latest max_queue_size events`() =
         runTest {
-            val sourceConfigString = readFileAsString(sourceConfigWithCorrectApiKey)
-            val sourceConfig = LenientJson.decodeFromString<SourceConfig>(sourceConfigString)
             val events = mutableListOf<TrackEvent>()
             val eventsOverflowCount = 5
 
@@ -230,7 +205,7 @@ class IntegrationsManagementPluginTest {
                 plugin.intercept(event)
             }
 
-            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfig))
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
             advanceUntilIdle()
 
             events.forEachIndexed { index, event ->
@@ -244,11 +219,8 @@ class IntegrationsManagementPluginTest {
 
     @Test
     fun `given an integration, when teardown is called, then that integration's teardown is also called`() = runTest {
-        val sourceConfigString = readFileAsString(sourceConfigWithCorrectApiKey)
-        val sourceConfig = LenientJson.decodeFromString<SourceConfig>(sourceConfigString)
-
         plugin.addIntegration(integrationPlugin)
-        mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfig))
+        mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
         advanceUntilIdle()
 
         plugin.teardown()

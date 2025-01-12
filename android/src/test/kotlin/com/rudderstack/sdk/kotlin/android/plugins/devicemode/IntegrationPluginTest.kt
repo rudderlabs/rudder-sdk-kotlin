@@ -33,8 +33,8 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 
-internal const val sourceConfigWithCorrectApiKey = "mockdestinationconfig/source_config_with_correct_api_key.json"
-internal const val sourceConfigWithIncorrectApiKey = "mockdestinationconfig/source_config_with_incorrect_api_key.json"
+internal const val pathToSourceConfigWithCorrectApiKey = "mockdestinationconfig/source_config_with_correct_api_key.json"
+internal const val pathToSourceConfigWithIncorrectApiKey = "mockdestinationconfig/source_config_with_incorrect_api_key.json"
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class IntegrationPluginTest {
@@ -43,6 +43,12 @@ class IntegrationPluginTest {
     private val testScope = TestScope(testDispatcher)
 
     private val mockAnalytics = mockAnalytics(testScope, testDispatcher)
+    private val sourceConfigWithCorrectApiKey = LenientJson.decodeFromString<SourceConfig>(
+        readFileAsString(pathToSourceConfigWithCorrectApiKey)
+    )
+    private val sourceConfigWithIncorrectApiKey = LenientJson.decodeFromString<SourceConfig>(
+        readFileAsString(pathToSourceConfigWithIncorrectApiKey)
+    )
 
     private lateinit var plugin: IntegrationPlugin
 
@@ -64,10 +70,7 @@ class IntegrationPluginTest {
     @Test
     fun `given a destination, when initialize called with correct source config, then destination is initialised`() =
         runTest {
-            val sourceConfigString = readFileAsString(sourceConfigWithCorrectApiKey)
-            val sourceConfig = LenientJson.decodeFromString<SourceConfig>(sourceConfigString)
-
-            plugin.initialize(sourceConfig)
+            plugin.initialize(sourceConfigWithCorrectApiKey)
             val mockDestinationSdk = plugin.getUnderlyingInstance() as? MockDestinationSdk
 
             assert(mockDestinationSdk != null)
@@ -77,10 +80,7 @@ class IntegrationPluginTest {
     @Test
     fun `given a destination, when initialize called with incorrect source config, then destination is not initialised`() =
         runTest {
-            val sourceConfigString = readFileAsString(sourceConfigWithIncorrectApiKey)
-            val sourceConfig = LenientJson.decodeFromString<SourceConfig>(sourceConfigString)
-
-            plugin.initialize(sourceConfig)
+            plugin.initialize(sourceConfigWithIncorrectApiKey)
             val mockDestinationSdk = plugin.getUnderlyingInstance() as? MockDestinationSdk
 
             assert(mockDestinationSdk == null)
@@ -91,10 +91,7 @@ class IntegrationPluginTest {
     @Test
     fun `given an initialised destination, when intercept called with TrackEvent, then trackEvent is called for destination`() =
         runTest {
-            val sourceConfigString = readFileAsString(sourceConfigWithCorrectApiKey)
-            val sourceConfig = LenientJson.decodeFromString<SourceConfig>(sourceConfigString)
-
-            plugin.initialize(sourceConfig)
+            plugin.initialize(sourceConfigWithCorrectApiKey)
             val mockDestinationSdk = plugin.getUnderlyingInstance() as MockDestinationSdk
 
             val event = TrackEvent("test", emptyJsonObject)
@@ -108,10 +105,7 @@ class IntegrationPluginTest {
     @Test
     fun `given an initialised destination, when intercept called with ScreenEvent, then screenEvent is called for destination`() =
         runTest {
-            val sourceConfigString = readFileAsString(sourceConfigWithCorrectApiKey)
-            val sourceConfig = LenientJson.decodeFromString<SourceConfig>(sourceConfigString)
-
-            plugin.initialize(sourceConfig)
+            plugin.initialize(sourceConfigWithCorrectApiKey)
             val mockDestinationSdk = plugin.getUnderlyingInstance() as MockDestinationSdk
 
             val event = ScreenEvent("test_screen", emptyJsonObject)
@@ -125,10 +119,7 @@ class IntegrationPluginTest {
     @Test
     fun `given an initialised destination, when intercept called with GroupEvent, then groupEvent is called for destination`() =
         runTest {
-            val sourceConfigString = readFileAsString(sourceConfigWithCorrectApiKey)
-            val sourceConfig = LenientJson.decodeFromString<SourceConfig>(sourceConfigString)
-
-            plugin.initialize(sourceConfig)
+            plugin.initialize(sourceConfigWithCorrectApiKey)
             val mockDestinationSdk = plugin.getUnderlyingInstance() as MockDestinationSdk
 
             val event = GroupEvent("test_group_id", emptyJsonObject)
@@ -142,10 +133,7 @@ class IntegrationPluginTest {
     @Test
     fun `given an initialised destination, when intercept called with IdentifyEvent, then identifyUser is called for destination`() =
         runTest {
-            val sourceConfigString = readFileAsString(sourceConfigWithCorrectApiKey)
-            val sourceConfig = LenientJson.decodeFromString<SourceConfig>(sourceConfigString)
-
-            plugin.initialize(sourceConfig)
+            plugin.initialize(sourceConfigWithCorrectApiKey)
             val mockDestinationSdk = plugin.getUnderlyingInstance() as MockDestinationSdk
 
             val event = IdentifyEvent()
@@ -160,10 +148,7 @@ class IntegrationPluginTest {
     @Test
     fun `given an initialised destination, when intercept called with AliasEvent, then aliasUser is called for destination`() =
         runTest {
-            val sourceConfigString = readFileAsString(sourceConfigWithCorrectApiKey)
-            val sourceConfig = LenientJson.decodeFromString<SourceConfig>(sourceConfigString)
-
-            plugin.initialize(sourceConfig)
+            plugin.initialize(sourceConfigWithCorrectApiKey)
             val mockDestinationSdk = plugin.getUnderlyingInstance() as MockDestinationSdk
 
             val event = AliasEvent(previousId = "test_previous_id")
@@ -177,10 +162,7 @@ class IntegrationPluginTest {
 
     @Test
     fun `given an initialised destination, when reset called, then reset is called for destination`() = runTest {
-        val sourceConfigString = readFileAsString(sourceConfigWithCorrectApiKey)
-        val sourceConfig = LenientJson.decodeFromString<SourceConfig>(sourceConfigString)
-
-        plugin.initialize(sourceConfig)
+        plugin.initialize(sourceConfigWithCorrectApiKey)
         val mockDestinationSdk = plugin.getUnderlyingInstance() as MockDestinationSdk
 
         plugin.reset()
@@ -190,10 +172,7 @@ class IntegrationPluginTest {
 
     @Test
     fun `given an initialised destination, when flush called, then flush is called for destination`() = runTest {
-        val sourceConfigString = readFileAsString(sourceConfigWithCorrectApiKey)
-        val sourceConfig = LenientJson.decodeFromString<SourceConfig>(sourceConfigString)
-
-        plugin.initialize(sourceConfig)
+        plugin.initialize(sourceConfigWithCorrectApiKey)
         val mockDestinationSdk = plugin.getUnderlyingInstance() as MockDestinationSdk
 
         plugin.flush()
@@ -204,11 +183,9 @@ class IntegrationPluginTest {
     @Test
     fun `given a destination integration, when a plugin is added after initialisation, then the plugin's intercept is called when an event is sent`() =
         runTest {
-            val sourceConfigString = readFileAsString(sourceConfigWithCorrectApiKey)
-            val sourceConfig = LenientJson.decodeFromString<SourceConfig>(sourceConfigString)
             val customPlugin = spyk(MockDestinationCustomPlugin())
 
-            plugin.initialize(sourceConfig)
+            plugin.initialize(sourceConfigWithCorrectApiKey)
             plugin.add(customPlugin)
 
             val event = TrackEvent("test", emptyJsonObject)
@@ -222,12 +199,10 @@ class IntegrationPluginTest {
     @Test
     fun `given a destination integration, when a plugin is added before initialisation, then the plugin's intercept is called when an event is sent`() =
         runTest {
-            val sourceConfigString = readFileAsString(sourceConfigWithCorrectApiKey)
-            val sourceConfig = LenientJson.decodeFromString<SourceConfig>(sourceConfigString)
             val customPlugin = spyk(MockDestinationCustomPlugin())
 
             plugin.add(customPlugin)
-            plugin.initialize(sourceConfig)
+            plugin.initialize(sourceConfigWithCorrectApiKey)
 
             val event = TrackEvent("test", emptyJsonObject)
             applyBaseDataToEvent(event)
@@ -240,11 +215,9 @@ class IntegrationPluginTest {
     @Test
     fun `given a destination integration, when a plugin is removed after initialisation, then the plugin's teardown is called`() =
         runTest {
-            val sourceConfigString = readFileAsString(sourceConfigWithCorrectApiKey)
-            val sourceConfig = LenientJson.decodeFromString<SourceConfig>(sourceConfigString)
             val customPlugin = spyk(MockDestinationCustomPlugin())
 
-            plugin.initialize(sourceConfig)
+            plugin.initialize(sourceConfigWithCorrectApiKey)
             plugin.add(customPlugin)
             plugin.remove(customPlugin)
 
@@ -254,17 +227,14 @@ class IntegrationPluginTest {
     @Test
     fun `given a destination integration, when a plugin is removed before initialisation, then the plugin's teardown is not called`() =
         runTest {
-            val sourceConfigString = readFileAsString(sourceConfigWithCorrectApiKey)
-            val sourceConfig = LenientJson.decodeFromString<SourceConfig>(sourceConfigString)
             val customPlugin = spyk(MockDestinationCustomPlugin())
 
             plugin.add(customPlugin)
             plugin.remove(customPlugin)
-            plugin.initialize(sourceConfig)
+            plugin.initialize(sourceConfigWithCorrectApiKey)
 
             verify(exactly = 0) { customPlugin.teardown() }
         }
-
 }
 
 internal fun applyBaseDataToEvent(event: Event) {
