@@ -33,8 +33,8 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 
-private const val sourceConfigWithCorrectApiKey = "mockdestinationconfig/source_config_with_correct_api_key.json"
-private const val sourceConfigWithIncorrectApiKey = "mockdestinationconfig/source_config_with_incorrect_api_key.json"
+internal const val sourceConfigWithCorrectApiKey = "mockdestinationconfig/source_config_with_correct_api_key.json"
+internal const val sourceConfigWithIncorrectApiKey = "mockdestinationconfig/source_config_with_incorrect_api_key.json"
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class IntegrationPluginTest {
@@ -85,6 +85,7 @@ class IntegrationPluginTest {
 
             assert(mockDestinationSdk == null)
             assert(plugin.destinationState is DestinationState.Failed)
+            assert((plugin.destinationState as DestinationState.Failed).exception is SdkNotInitializedException)
         }
 
     @Test
@@ -264,9 +265,10 @@ class IntegrationPluginTest {
             verify(exactly = 0) { customPlugin.teardown() }
         }
 
-    private fun applyBaseDataToEvent(event: Event) {
-        event.integrations = emptyJsonObject
-        event.anonymousId = "anonymousId"
-        event.channel = PlatformType.Mobile
-    }
+}
+
+internal fun applyBaseDataToEvent(event: Event) {
+    event.integrations = emptyJsonObject
+    event.anonymousId = "anonymousId"
+    event.channel = PlatformType.Mobile
 }

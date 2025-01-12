@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.util.concurrent.ConcurrentHashMap
 
-private const val MAX_QUEUE_SIZE = 1000
+internal const val MAX_QUEUE_SIZE = 1000
 
 /*
  * This plugin will queue the events till the sourceConfig is fetched and
