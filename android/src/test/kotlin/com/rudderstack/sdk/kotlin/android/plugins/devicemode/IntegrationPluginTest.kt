@@ -6,6 +6,7 @@ import com.rudderstack.sdk.kotlin.android.plugins.devicemode.utils.MockDestinati
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.utils.MockDestinationIntegrationPlugin
 import com.rudderstack.sdk.kotlin.android.utils.mockAnalytics
 import com.rudderstack.sdk.kotlin.android.utils.readFileAsString
+import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.AliasEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.GroupEvent
@@ -29,6 +30,7 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.serialization.json.JsonObject
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -86,6 +88,25 @@ class IntegrationPluginTest {
             assert(mockDestinationSdk == null)
             assert(plugin.destinationState is DestinationState.Failed)
             assert((plugin.destinationState as DestinationState.Failed).exception is SdkNotInitializedException)
+        }
+
+    @Test
+    fun `given a destination and create throws an exception, when initialise called, then destination is not initialised`() =
+        runTest {
+            val exception = Exception("Test exception")
+            val plugin = object : IntegrationPlugin() {
+                override val key: String
+                    get() = "MockDestination"
+
+                override fun create(destinationConfig: JsonObject, analytics: Analytics, config: Configuration): Boolean {
+                    throw exception
+                }
+            }
+            plugin.setup(mockAnalytics)
+            plugin.initialize(sourceConfigWithCorrectApiKey)
+
+            assert(plugin.destinationState is DestinationState.Failed)
+            assert((plugin.destinationState as DestinationState.Failed).exception == exception)
         }
 
     @Test

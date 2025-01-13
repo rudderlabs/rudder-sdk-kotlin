@@ -106,6 +106,10 @@ abstract class IntegrationPlugin : EventPlugin {
                 destinationState = DestinationState.Failed(e)
                 LoggerAnalytics.error("IntegrationPlugin: Error: ${e.message} initializing destination $key.")
             }
+        } ?: run {
+            val errorMessage = "Destination $key not found in the source config. No events will be sent to this destination."
+            destinationState = DestinationState.Failed(SdkNotInitializedException(errorMessage))
+            LoggerAnalytics.warn("IntegrationPlugin: $errorMessage")
         }
     }
 
