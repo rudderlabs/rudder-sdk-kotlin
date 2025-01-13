@@ -11,9 +11,9 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
-class SampleAmplitudePlugin: IntegrationPlugin() {
+class SampleIntegrationPlugin: IntegrationPlugin() {
 
-    private var amplitudeSdk: SampleAmplitudeSdk? = null
+    private var destinationSdk: SampleDestinationSdk? = null
 
     override val key: String
         get() = "Amplitude"
@@ -22,7 +22,7 @@ class SampleAmplitudePlugin: IntegrationPlugin() {
         try {
             val apiKey = destinationConfig["apiKey"]?.jsonPrimitive?.content
             apiKey?.let {
-                amplitudeSdk = SampleAmplitudeSdk.create(it)
+                destinationSdk = SampleDestinationSdk.create(it)
                 return true
             }
             return false
@@ -32,17 +32,17 @@ class SampleAmplitudePlugin: IntegrationPlugin() {
     }
 
     override fun getUnderlyingInstance(): Any? {
-        return amplitudeSdk
+        return destinationSdk
     }
 
     override fun track(payload: TrackEvent): Event {
-        val destination = amplitudeSdk
+        val destination = destinationSdk
         destination?.track(payload.event, payload.properties)
         return payload
     }
 }
 
-class SampleAmplitudeSdk private constructor(private val key: String) {
+class SampleDestinationSdk private constructor(private val key: String) {
 
     fun track(event: String, properties: Map<String, Any>) {
         // Track event using Amplitude SDK
@@ -51,12 +51,12 @@ class SampleAmplitudeSdk private constructor(private val key: String) {
 
     companion object {
 
-        fun create(key: String): SampleAmplitudeSdk {
+        fun create(key: String): SampleDestinationSdk {
             // Create Amplitude SDK instance
             return runBlocking {
                 // simulate a delay in creation
                 delay(1000)
-                SampleAmplitudeSdk(key)
+                SampleDestinationSdk(key)
             }
         }
     }
