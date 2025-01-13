@@ -44,7 +44,7 @@ internal class AndroidConnectivityObserver(
     private val analyticsScope: CoroutineScope,
 ) : ConnectivityObserver {
 
-    private var networkAvailable: AtomicBoolean = AtomicBoolean(false)
+    private val networkAvailable: AtomicBoolean = AtomicBoolean(false)
     private val pendingSubscribers = CopyOnWriteArrayList<suspend () -> Unit>()
 
     private val networkCallback by lazy { createNetworkCallback(networkAvailable) { notifySubscribers() } }
@@ -87,7 +87,7 @@ internal class AndroidConnectivityObserver(
      * while monitoring the network connection status.
      */
     private fun defaultBehaviour() {
-        networkAvailable = AtomicBoolean(true)
+        networkAvailable.set(true)
         notifySubscribers()
     }
 
