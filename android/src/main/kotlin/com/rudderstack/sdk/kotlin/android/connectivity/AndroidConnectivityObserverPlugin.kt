@@ -11,7 +11,7 @@ import androidx.annotation.VisibleForTesting
 import com.rudderstack.sdk.kotlin.android.utils.application
 import com.rudderstack.sdk.kotlin.android.utils.runBasedOnSDK
 import com.rudderstack.sdk.kotlin.core.Analytics
-import com.rudderstack.sdk.kotlin.core.internals.connectivity.ConnectivityState
+import com.rudderstack.sdk.kotlin.core.internals.models.connectivity.ConnectivityState
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.FlowState
 import com.rudderstack.sdk.kotlin.core.internals.utils.defaultExceptionHandler

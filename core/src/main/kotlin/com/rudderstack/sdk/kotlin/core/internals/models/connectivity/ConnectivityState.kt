@@ -1,4 +1,4 @@
-package com.rudderstack.sdk.kotlin.core.internals.connectivity
+package com.rudderstack.sdk.kotlin.core.internals.models.connectivity
 
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.FlowAction
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi

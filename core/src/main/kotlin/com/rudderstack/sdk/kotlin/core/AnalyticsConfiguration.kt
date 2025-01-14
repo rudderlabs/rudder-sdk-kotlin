@@ -1,7 +1,7 @@
 package com.rudderstack.sdk.kotlin.core
 
-import com.rudderstack.sdk.kotlin.core.internals.connectivity.ConnectivityState
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.models.connectivity.ConnectivityState
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.FlowState
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
