@@ -23,15 +23,15 @@ class ConnectivityStateTest {
     }
 
     @Test
-    fun `when connection state is toggled to true, then it should reduce to true`() {
-        val result = ConnectivityState.ToggleStateAction(true)
+    fun `when connection state is enabled, then it should reduce to true`() {
+        val result = ConnectivityState.EnableConnectivityAction()
 
         assertTrue(result.reduce(currentState = CURRENT_STATE))
     }
 
     @Test
-    fun `when connection state is toggled to false, then it should reduce to false`() {
-        val result = ConnectivityState.ToggleStateAction(false)
+    fun `when connection state is disable, then it should reduce to false`() {
+        val result = ConnectivityState.DisableConnectivityAction()
 
         assertFalse(result.reduce(currentState = CURRENT_STATE))
     }

@@ -4,6 +4,8 @@ import com.rudderstack.sdk.kotlin.core.internals.statemanagement.FlowAction
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 
 private const val DEFAULT_STATE = true
+private const val CONNECTION_AVAILABLE = true
+private const val CONNECTION_UNAVAILABLE = false
 
 /**
  * State management for connectivity.
@@ -28,14 +30,22 @@ class ConnectivityState {
     }
 
     /**
-     * Action to toggle the current state of connectivity.
-     *
-     * @param newState The new state of connectivity.
+     * Action to enable the connectivity.
      */
-    class ToggleStateAction(private val newState: Boolean) : FlowAction<Boolean> {
+    class EnableConnectivityAction : FlowAction<Boolean> {
 
         override fun reduce(currentState: Boolean): Boolean {
-            return newState
+            return CONNECTION_AVAILABLE
+        }
+    }
+
+    /**
+     * Action to disable the connectivity.
+     */
+    class DisableConnectivityAction : FlowAction<Boolean> {
+
+        override fun reduce(currentState: Boolean): Boolean {
+            return CONNECTION_UNAVAILABLE
         }
     }
 }
