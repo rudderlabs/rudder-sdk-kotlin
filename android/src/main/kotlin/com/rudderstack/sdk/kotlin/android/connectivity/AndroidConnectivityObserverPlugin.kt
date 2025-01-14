@@ -36,15 +36,14 @@ internal class AndroidConnectivityObserverPlugin(
 ) : Plugin {
 
     override val pluginType: Plugin.PluginType = Plugin.PluginType.PreProcess
-
     override lateinit var analytics: Analytics
 
     private lateinit var application: Application
+
     private var connectivityManager: ConnectivityManager? = null
-
     private var intentFilter: IntentFilter? = null
-    private val networkCallback by lazy { createNetworkCallback(::toggleConnectivityState) }
 
+    private val networkCallback by lazy { createNetworkCallback(::toggleConnectivityState) }
     private val broadcastReceiver by lazy { createBroadcastReceiver(::toggleConnectivityState) }
 
     private fun toggleConnectivityState(newState: Boolean) {
@@ -67,6 +66,7 @@ internal class AndroidConnectivityObserverPlugin(
         )
     }
 
+    @Suppress("Deprecated")
     @Throws(RuntimeException::class)
     private fun registerConnectivityObserver() {
         runBasedOnSDK(
@@ -110,6 +110,7 @@ internal fun createNetworkCallback(toggleConnectivityState: (Boolean) -> Unit) =
     }
 
 @VisibleForTesting
+@Suppress("Deprecated")
 internal fun createBroadcastReceiver(toggleConnectivityState: (Boolean) -> Unit) = object : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
         (context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).activeNetworkInfo?.let {
