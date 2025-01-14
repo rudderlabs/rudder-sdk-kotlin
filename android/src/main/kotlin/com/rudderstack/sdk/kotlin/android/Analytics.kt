@@ -3,6 +3,7 @@ package com.rudderstack.sdk.kotlin.android
 import android.app.Activity
 import androidx.navigation.NavController
 import androidx.navigation.NavController.OnDestinationChangedListener
+import com.rudderstack.sdk.kotlin.android.connectivity.AndroidConnectivityObserverPlugin
 import com.rudderstack.sdk.kotlin.android.logger.AndroidLogger
 import com.rudderstack.sdk.kotlin.android.plugins.AndroidLifecyclePlugin
 import com.rudderstack.sdk.kotlin.android.plugins.AppInfoPlugin
@@ -203,6 +204,7 @@ class Analytics(
 
     private fun setup() {
         setLogger(logger = AndroidLogger())
+        add(AndroidConnectivityObserverPlugin(connectivityState))
         add(DeviceInfoPlugin())
         add(AppInfoPlugin())
         add(NetworkInfoPlugin())
