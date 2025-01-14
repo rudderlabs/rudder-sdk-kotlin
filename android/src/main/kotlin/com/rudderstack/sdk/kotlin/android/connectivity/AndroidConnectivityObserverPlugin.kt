@@ -62,6 +62,7 @@ internal class AndroidConnectivityObserverPlugin(
         )
     }
 
+    // Suppressing deprecation warning as we need to support lower API levels.
     @Suppress("DEPRECATION")
     @Throws(RuntimeException::class)
     private fun registerConnectivityObserver() {
@@ -106,6 +107,7 @@ internal fun createNetworkCallback(toggleConnectivityState: (Boolean) -> Unit) =
     }
 
 @VisibleForTesting
+// Suppressing deprecation warning as we need to support lower API levels.
 @Suppress("DEPRECATION")
 internal fun createBroadcastReceiver(toggleConnectivityState: (Boolean) -> Unit) = object : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
