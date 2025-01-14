@@ -16,7 +16,7 @@ class AndroidUtilsTest {
     }
 
     @Test
-    fun `when block is run on compatible SDK version, then run the compatible block`() {
+    fun `when block is targeted to run on compatible SDK version, then run that compatible block`() {
         val compatibleBlock = provideSpyBlock()
         val legacyBlock = provideSpyBlock()
         every { AppSDKVersion.getVersionSDKInt() } returns MIN_SUPPORTED_VERSION
@@ -31,7 +31,7 @@ class AndroidUtilsTest {
     }
 
     @Test
-    fun `when block is run on legacy SDK version, then run the legacy block`() {
+    fun `when block is targeted to run on legacy SDK version, then run that legacy block`() {
         val minCompatibleVersion = MIN_SUPPORTED_VERSION
         val compatibleBlock = provideSpyBlock()
         val legacyBlock = provideSpyBlock()
