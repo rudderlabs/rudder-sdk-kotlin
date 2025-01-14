@@ -10,15 +10,19 @@ import org.junit.Test
 private const val MIN_SUPPORTED_VERSION = Build.VERSION_CODES.N // 24
 class AndroidUtilsTest {
 
+    private lateinit var compatibleBlock: Block
+    private lateinit var legacyBlock: Block
+
     @Before
     fun setup() {
         mockkObject(AppSDKVersion)
+
+        compatibleBlock = provideSpyBlock()
+        legacyBlock = provideSpyBlock()
     }
 
     @Test
-    fun `when block is targeted to run on compatible SDK version, then run that compatible block`() {
-        val compatibleBlock = provideSpyBlock()
-        val legacyBlock = provideSpyBlock()
+    fun `given the SDK version is at least the minimum supported version, when block is executed, then run the compatible block`() {
         every { AppSDKVersion.getVersionSDKInt() } returns MIN_SUPPORTED_VERSION
 
         runBasedOnSDK(
@@ -31,14 +35,11 @@ class AndroidUtilsTest {
     }
 
     @Test
-    fun `when block is targeted to run on legacy SDK version, then run that legacy block`() {
-        val minCompatibleVersion = MIN_SUPPORTED_VERSION
-        val compatibleBlock = provideSpyBlock()
-        val legacyBlock = provideSpyBlock()
+    fun `given the SDK version is below the minimum supported version, when block is executed, then run the legacy block`() {
         every { AppSDKVersion.getVersionSDKInt() } returns Build.VERSION_CODES.LOLLIPOP // 21
 
         runBasedOnSDK(
-            minCompatibleVersion = minCompatibleVersion,
+            minCompatibleVersion = MIN_SUPPORTED_VERSION,
             onCompatibleVersion = { compatibleBlock.execute() },
             onLegacyVersion = { legacyBlock.execute() },
         )
