@@ -222,6 +222,9 @@ class Analytics(
         // adding lifecycle management plugins last so that lifecycle callbacks are invoked after all the observers in plugins are added.
         add(processLifecycleManagementPlugin)
         add(activityLifecycleManagementPlugin)
+
+        // Setup source config
+        setupSourceConfig()
     }
 
     override fun getPlatformType(): PlatformType = PlatformType.Mobile

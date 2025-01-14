@@ -89,6 +89,17 @@ open class Analytics protected constructor(
         if (this::class == Analytics::class) {
             setLogger(logger = KotlinLogger())
             connectivityState.dispatch(ConnectivityState.SetDefaultStateAction())
+            setupSourceConfig()
+        }
+    }
+
+    protected fun setupSourceConfig() {
+        SourceConfigManager(
+            analytics = this,
+            sourceConfigState = sourceConfigState
+        ).apply {
+            fetchCachedSourceConfigAndNotifyObservers()
+            refreshSourceConfigAndNotifyObservers()
         }
     }
 
@@ -313,14 +324,6 @@ open class Analytics protected constructor(
     private fun setup() {
         add(LibraryInfoPlugin())
         add(RudderStackDataplanePlugin())
-
-        SourceConfigManager(
-            analytics = this,
-            sourceConfigState = sourceConfigState
-        ).apply {
-            fetchCachedSourceConfigAndNotifyObservers()
-            refreshSourceConfigAndNotifyObservers()
-        }
     }
 
     /**
