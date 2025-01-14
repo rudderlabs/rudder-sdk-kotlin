@@ -2,6 +2,7 @@ package com.rudderstack.sdk.kotlin.core.internals.utils
 
 import com.rudderstack.sdk.kotlin.core.provideSpyBlock
 import io.mockk.verify
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 class ExceptionHandlingTest {
@@ -33,5 +34,16 @@ class ExceptionHandlingTest {
 
         verify { exceptionBlock.executeAndThrowException() }
         verify { finallyBlock.execute() }
+    }
+
+    @Test
+    fun `given exception occurs, when certain block is executed safely, then exception is handled by default exception handler`() {
+        val exceptionBlock = provideSpyBlock()
+
+        val result = safelyExecute(
+            block = { exceptionBlock.executeAndThrowException() },
+        )
+
+        assertNull(result)
     }
 }

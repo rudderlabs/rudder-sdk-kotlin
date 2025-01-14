@@ -39,6 +39,37 @@ inline fun safelyExecute(block: () -> Unit, onException: (Exception) -> Unit, on
 }
 
 /**
+ * Use this method for default exception handling.
+ *
+ * It can be extended to integrate with crash reporting tools.
+ *
+ * Use:
+ * ```
+ * val block = { someCode() }
+ * safelyExecute {
+ *      block()
+ * }
+ * ```
+ *
+ * **NOTE**: It catches the generic `Exception` type. Use it with caution.
+ *
+ * @param block The block to be executed.
+ */
+@InternalRudderApi
+@Suppress("TooGenericExceptionCaught")
+inline fun <T> safelyExecute(block: () -> T?): T? {
+    return try {
+        block()
+    } catch (e: Exception) {
+        defaultExceptionHandler(
+            errorMsg = "Exception occurred:",
+            exception = e,
+        )
+        null
+    }
+}
+
+/**
  * Default exception handler that logs the exception along with its full stack trace.
  *
  * **NOTE**: This handler can be extended to integrate with crash reporting tools.
