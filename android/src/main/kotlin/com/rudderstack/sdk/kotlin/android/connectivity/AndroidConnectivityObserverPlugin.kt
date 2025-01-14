@@ -1,6 +1,5 @@
 package com.rudderstack.sdk.kotlin.android.connectivity
 
-import android.app.Application
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -9,7 +8,7 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.os.Build
 import androidx.annotation.VisibleForTesting
-import com.rudderstack.sdk.kotlin.android.Configuration
+import com.rudderstack.sdk.kotlin.android.utils.application
 import com.rudderstack.sdk.kotlin.android.utils.runBasedOnSDK
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.connectivity.ConnectivityState
@@ -38,8 +37,6 @@ internal class AndroidConnectivityObserverPlugin(
     override val pluginType: Plugin.PluginType = Plugin.PluginType.PreProcess
     override lateinit var analytics: Analytics
 
-    private lateinit var application: Application
-
     private var connectivityManager: ConnectivityManager? = null
     private var intentFilter: IntentFilter? = null
 
@@ -52,7 +49,6 @@ internal class AndroidConnectivityObserverPlugin(
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
-        application = (analytics.configuration as Configuration).application
 
         safelyExecute(
             block = { registerConnectivityObserver() },
@@ -66,18 +62,18 @@ internal class AndroidConnectivityObserverPlugin(
         )
     }
 
-    @Suppress("Deprecated")
+    @Suppress("DEPRECATION")
     @Throws(RuntimeException::class)
     private fun registerConnectivityObserver() {
         runBasedOnSDK(
             minCompatibleVersion = MIN_SUPPORTED_VERSION,
             onCompatibleVersion = {
-                connectivityManager = application.getSystemService(ConnectivityManager::class.java)
+                connectivityManager = this.analytics.application.getSystemService(ConnectivityManager::class.java)
                 connectivityManager?.registerDefaultNetworkCallback(networkCallback)
             },
             onLegacyVersion = {
                 intentFilter = IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION)
-                this.application.registerReceiver(broadcastReceiver, intentFilter)
+                this.analytics.application.registerReceiver(broadcastReceiver, intentFilter)
             },
         )
     }
@@ -88,7 +84,7 @@ internal class AndroidConnectivityObserverPlugin(
             onCompatibleVersion = { this.connectivityManager?.unregisterNetworkCallback(networkCallback) },
             onLegacyVersion = {
                 this.intentFilter?.let {
-                    this.application.unregisterReceiver(broadcastReceiver)
+                    this.analytics.application.unregisterReceiver(broadcastReceiver)
                 }
             },
         )
@@ -110,7 +106,7 @@ internal fun createNetworkCallback(toggleConnectivityState: (Boolean) -> Unit) =
     }
 
 @VisibleForTesting
-@Suppress("Deprecated")
+@Suppress("DEPRECATION")
 internal fun createBroadcastReceiver(toggleConnectivityState: (Boolean) -> Unit) = object : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
         (context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).activeNetworkInfo?.let {
