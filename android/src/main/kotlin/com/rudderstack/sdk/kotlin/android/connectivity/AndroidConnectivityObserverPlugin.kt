@@ -40,12 +40,8 @@ internal class AndroidConnectivityObserverPlugin(
     private var connectivityManager: ConnectivityManager? = null
     private var intentFilter: IntentFilter? = null
 
-    private val networkCallback by lazy { createNetworkCallback(::toggleConnectivityState) }
-    private val broadcastReceiver by lazy { createBroadcastReceiver(::toggleConnectivityState) }
-
-    private fun toggleConnectivityState(newState: Boolean) {
-        connectivityState.dispatch(ConnectivityState.ToggleStateAction(newState))
-    }
+    private val networkCallback by lazy { createNetworkCallback(connectivityState) }
+    private val broadcastReceiver by lazy { createBroadcastReceiver(connectivityState) }
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
@@ -57,8 +53,8 @@ internal class AndroidConnectivityObserverPlugin(
                     errorMsg = "Failed to register connectivity subscriber. Setting network availability to true. Exception:",
                     exception = exception
                 )
+                connectivityState.dispatch(ConnectivityState.SetDefaultStateAction())
             },
-            onFinally = { connectivityState.dispatch(ConnectivityState.SetDefaultStateAction()) }
         )
     }
 
@@ -93,31 +89,30 @@ internal class AndroidConnectivityObserverPlugin(
 }
 
 @VisibleForTesting
-internal fun createNetworkCallback(toggleConnectivityState: (Boolean) -> Unit) =
-    object : ConnectivityManager.NetworkCallback() {
-        override fun onAvailable(network: Network) {
-            super.onAvailable(network)
-            toggleConnectivityState(true)
-        }
-
-        override fun onLost(network: Network) {
-            super.onLost(network)
-            toggleConnectivityState(false)
-        }
+internal fun createNetworkCallback(connectivityState: FlowState<Boolean>) = object : ConnectivityManager.NetworkCallback() {
+    override fun onAvailable(network: Network) {
+        super.onAvailable(network)
+        connectivityState.dispatch(ConnectivityState.EnableConnectivityAction())
     }
+
+    override fun onLost(network: Network) {
+        super.onLost(network)
+        connectivityState.dispatch(ConnectivityState.DisableConnectivityAction())
+    }
+}
 
 @VisibleForTesting
 // Suppressing deprecation warning as we need to support lower API levels.
 @Suppress("DEPRECATION")
-internal fun createBroadcastReceiver(toggleConnectivityState: (Boolean) -> Unit) = object : BroadcastReceiver() {
+internal fun createBroadcastReceiver(connectivityState: FlowState<Boolean>) = object : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
         (context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).activeNetworkInfo?.let {
             when (it.isConnected) {
-                true -> toggleConnectivityState(true)
-                false -> toggleConnectivityState(false)
+                true -> connectivityState.dispatch(ConnectivityState.EnableConnectivityAction())
+                false -> connectivityState.dispatch(ConnectivityState.DisableConnectivityAction())
             }
         } ?: run { // if activeNetworkInfo is null, it means the device is not connected to any network.
-            toggleConnectivityState(false)
+            connectivityState.dispatch(ConnectivityState.DisableConnectivityAction())
         }
     }
 }
