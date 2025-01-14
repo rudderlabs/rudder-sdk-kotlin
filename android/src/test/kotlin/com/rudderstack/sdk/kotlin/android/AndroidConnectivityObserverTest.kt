@@ -100,7 +100,7 @@ class AndroidConnectivityObserverTest {
     }
 
     @Test
-    fun `given compatible sdk version, when connection gets unavailable, then connection state is enabled`() {
+    fun `given compatible sdk version, when connection gets unavailable, then connection state is disabled`() {
         every { AppSDKVersion.getVersionSDKInt() } returns COMPATIBLE_SDK_VERSION
         provideAndroidConnectivityObserverPlugin()
 
@@ -110,7 +110,7 @@ class AndroidConnectivityObserverTest {
     }
 
     @Test
-    fun `given legacy sdk version, when connection gets unavailable, then connection state is enabled`() {
+    fun `given legacy sdk version, when connection gets unavailable, then connection state is disabled`() {
         every { AppSDKVersion.getVersionSDKInt() } returns LEGACY_SDK_VERSION
         provideAndroidConnectivityObserverPlugin()
 
