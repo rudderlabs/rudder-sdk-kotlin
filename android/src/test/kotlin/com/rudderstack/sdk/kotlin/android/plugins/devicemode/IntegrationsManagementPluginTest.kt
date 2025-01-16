@@ -69,7 +69,7 @@ class IntegrationsManagementPluginTest {
             mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
             advanceUntilIdle()
 
-            verify(exactly = 1) { integrationPlugin.initialize(sourceConfigWithCorrectApiKey) }
+            verify(exactly = 1) { integrationPlugin.findAndInitDestination(sourceConfigWithCorrectApiKey) }
         }
 
     @Test
@@ -81,7 +81,7 @@ class IntegrationsManagementPluginTest {
             plugin.addIntegration(integrationPlugin)
             advanceUntilIdle()
 
-            verify(exactly = 1) { integrationPlugin.initialize(sourceConfigWithCorrectApiKey) }
+            verify(exactly = 1) { integrationPlugin.findAndInitDestination(sourceConfigWithCorrectApiKey) }
         }
 
     @Test

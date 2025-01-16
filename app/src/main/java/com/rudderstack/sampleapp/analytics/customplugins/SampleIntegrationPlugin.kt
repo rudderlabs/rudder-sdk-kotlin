@@ -31,6 +31,14 @@ class SampleIntegrationPlugin: IntegrationPlugin() {
         }
     }
 
+    override fun update(destinationConfig: JsonObject) {
+        // Update destination instance if needed
+        val apiKey = destinationConfig["apiKey"]?.jsonPrimitive?.content
+        apiKey?.let {
+            destinationSdk = SampleDestinationSdk.create(it)
+        }
+    }
+
     override fun getUnderlyingInstance(): Any? {
         return destinationSdk
     }

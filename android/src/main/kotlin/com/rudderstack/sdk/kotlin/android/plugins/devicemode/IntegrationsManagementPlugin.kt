@@ -8,12 +8,13 @@ import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.PluginChain
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.collectIndexed
 import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.util.concurrent.ConcurrentHashMap
 
 internal const val MAX_QUEUE_SIZE = 1000
+internal const val FIRST_INDEX = 0
 
 /*
  * This plugin will queue the events till the sourceConfig is fetched and
@@ -41,14 +42,19 @@ internal class IntegrationsManagementPlugin : Plugin {
         analytics.analyticsScope.launch(analytics.analyticsDispatcher) {
             analytics.sourceConfigState
                 .filter { it.source.isSourceEnabled }
-                .first()
-                .let { sourceConfig ->
+                .collectIndexed { index, sourceConfig ->
                     integrationPluginChain.applyClosure { plugin ->
                         if (plugin is IntegrationPlugin && plugin.destinationState == DestinationState.Uninitialised) {
-                            initAndNotifyCallbacks(sourceConfig, plugin)
+                            if (index == FIRST_INDEX) {
+                                initAndNotifyCallbacks(sourceConfig, plugin)
+                            } else {
+                                plugin.findAndUpdateDestination(sourceConfig)
+                            }
                         }
                     }
-                    processEvents()
+                    if (index == FIRST_INDEX) {
+                        processEvents()
+                    }
                 }
         }
     }
@@ -122,7 +128,7 @@ internal class IntegrationsManagementPlugin : Plugin {
     }
 
     private fun initAndNotifyCallbacks(sourceConfig: SourceConfig, plugin: IntegrationPlugin) {
-        plugin.initialize(sourceConfig)
+        plugin.findAndInitDestination(sourceConfig)
         notifyDestinationCallbacks(plugin)
     }
 

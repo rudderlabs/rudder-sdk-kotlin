@@ -79,7 +79,7 @@ class IntegrationPluginTest {
     @Test
     fun `given a sourceConfig with correct destination config, when plugin is initialised with it, then destination is initialised`() =
         runTest {
-            plugin.initialize(sourceConfigWithCorrectApiKey)
+            plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
             val mockDestinationSdk = plugin.getUnderlyingInstance() as? MockDestinationSdk
 
             assertNotNull(mockDestinationSdk)
@@ -89,7 +89,7 @@ class IntegrationPluginTest {
     @Test
     fun `given a sourceConfig with incorrect api key for destination, when plugin is initialised with it, then destination is not initialised`() =
         runTest {
-            plugin.initialize(sourceConfigWithIncorrectApiKey)
+            plugin.findAndInitDestination(sourceConfigWithIncorrectApiKey)
             val mockDestinationSdk = plugin.getUnderlyingInstance() as? MockDestinationSdk
 
             assert(mockDestinationSdk == null)
@@ -103,7 +103,7 @@ class IntegrationPluginTest {
             val sourceConfigWithAbsentDestinationConfig = LenientJson.decodeFromString<SourceConfig>(
                 readFileAsString(pathToSourceConfigWithAbsentDestinationConfig)
             )
-            plugin.initialize(sourceConfigWithAbsentDestinationConfig)
+            plugin.findAndInitDestination(sourceConfigWithAbsentDestinationConfig)
             val mockDestinationSdk = plugin.getUnderlyingInstance() as? MockDestinationSdk
 
             assert(mockDestinationSdk == null)
@@ -117,7 +117,7 @@ class IntegrationPluginTest {
             val sourceConfigWithDisabledDestination = LenientJson.decodeFromString<SourceConfig>(
                 readFileAsString(pathToSourceConfigWithDestinationDisabled)
             )
-            plugin.initialize(sourceConfigWithDisabledDestination)
+            plugin.findAndInitDestination(sourceConfigWithDisabledDestination)
             val mockDestinationSdk = plugin.getUnderlyingInstance() as? MockDestinationSdk
 
             assert(mockDestinationSdk == null)
@@ -138,7 +138,7 @@ class IntegrationPluginTest {
                 }
             }
             plugin.setup(mockAnalytics)
-            plugin.initialize(sourceConfigWithCorrectApiKey)
+            plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
 
             assert(plugin.destinationState is DestinationState.Failed)
             assert((plugin.destinationState as DestinationState.Failed).exception == exception)
@@ -147,7 +147,7 @@ class IntegrationPluginTest {
     @Test
     fun `given an initialised integration, when its intercept called with TrackEvent, then trackEvent is called for destination`() =
         runTest {
-            plugin.initialize(sourceConfigWithCorrectApiKey)
+            plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
             val mockDestinationSdk = plugin.getUnderlyingInstance() as MockDestinationSdk
 
             val event = TrackEvent("test", emptyJsonObject)
@@ -161,7 +161,7 @@ class IntegrationPluginTest {
     @Test
     fun `given an initialised integration, when its intercept called with ScreenEvent, then screenEvent is called for destination`() =
         runTest {
-            plugin.initialize(sourceConfigWithCorrectApiKey)
+            plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
             val mockDestinationSdk = plugin.getUnderlyingInstance() as MockDestinationSdk
 
             val event = ScreenEvent("test_screen", emptyJsonObject)
@@ -175,7 +175,7 @@ class IntegrationPluginTest {
     @Test
     fun `given an initialised integration, when its intercept called with GroupEvent, then groupEvent is called for destination`() =
         runTest {
-            plugin.initialize(sourceConfigWithCorrectApiKey)
+            plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
             val mockDestinationSdk = plugin.getUnderlyingInstance() as MockDestinationSdk
 
             val event = GroupEvent("test_group_id", emptyJsonObject)
@@ -189,7 +189,7 @@ class IntegrationPluginTest {
     @Test
     fun `given an initialised integration, when its intercept called with IdentifyEvent, then identifyUser is called for destination`() =
         runTest {
-            plugin.initialize(sourceConfigWithCorrectApiKey)
+            plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
             val mockDestinationSdk = plugin.getUnderlyingInstance() as MockDestinationSdk
 
             val event = IdentifyEvent()
@@ -204,7 +204,7 @@ class IntegrationPluginTest {
     @Test
     fun `given an initialised integration, when its intercept called with AliasEvent, then aliasUser is called for destination`() =
         runTest {
-            plugin.initialize(sourceConfigWithCorrectApiKey)
+            plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
             val mockDestinationSdk = plugin.getUnderlyingInstance() as MockDestinationSdk
 
             val event = AliasEvent(previousId = "test_previous_id")
@@ -218,7 +218,7 @@ class IntegrationPluginTest {
 
     @Test
     fun `given an initialised integration, when reset called, then reset is called for destination`() = runTest {
-        plugin.initialize(sourceConfigWithCorrectApiKey)
+        plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
         val mockDestinationSdk = plugin.getUnderlyingInstance() as MockDestinationSdk
 
         plugin.reset()
@@ -228,7 +228,7 @@ class IntegrationPluginTest {
 
     @Test
     fun `given an initialised integration, when flush called, then flush is called for destination`() = runTest {
-        plugin.initialize(sourceConfigWithCorrectApiKey)
+        plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
         val mockDestinationSdk = plugin.getUnderlyingInstance() as MockDestinationSdk
 
         plugin.flush()
@@ -241,7 +241,7 @@ class IntegrationPluginTest {
         runTest {
             val customPlugin = spyk(MockDestinationCustomPlugin())
 
-            plugin.initialize(sourceConfigWithCorrectApiKey)
+            plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
             plugin.add(customPlugin)
 
             val event = TrackEvent("test", emptyJsonObject)
@@ -258,7 +258,7 @@ class IntegrationPluginTest {
             val customPlugin = spyk(MockDestinationCustomPlugin())
 
             plugin.add(customPlugin)
-            plugin.initialize(sourceConfigWithCorrectApiKey)
+            plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
 
             val event = TrackEvent("test", emptyJsonObject)
             applyBaseDataToEvent(event)
@@ -276,7 +276,7 @@ class IntegrationPluginTest {
             applyBaseDataToEvent(modifiedEvent)
             coEvery { customPlugin.intercept(any()) } returns modifiedEvent
 
-            plugin.initialize(sourceConfigWithCorrectApiKey)
+            plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
             plugin.add(customPlugin)
             val mockDestinationSdk = plugin.getUnderlyingInstance() as MockDestinationSdk
 
@@ -294,7 +294,7 @@ class IntegrationPluginTest {
             val customPlugin = spyk(MockDestinationCustomPlugin())
             coEvery { customPlugin.intercept(any()) } returns null
 
-            plugin.initialize(sourceConfigWithCorrectApiKey)
+            plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
             plugin.add(customPlugin)
             val mockDestinationSdk = plugin.getUnderlyingInstance() as MockDestinationSdk
 
@@ -317,7 +317,7 @@ class IntegrationPluginTest {
             val originalEvent = TrackEvent("test", emptyJsonObject)
             applyBaseDataToEvent(originalEvent)
 
-            plugin.initialize(sourceConfigWithCorrectApiKey)
+            plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
             plugin.add(customPlugin)
 
             val returnedEvent = plugin.intercept(originalEvent)
@@ -326,11 +326,11 @@ class IntegrationPluginTest {
         }
 
     @Test
-    fun `given a custom plugin, when it is removed after initialisation, then the plugin's teardown is called`() =
+    fun `given a custom plugin added in integration, when it is removed, then the plugin's teardown is called`() =
         runTest {
             val customPlugin = spyk(MockDestinationCustomPlugin())
 
-            plugin.initialize(sourceConfigWithCorrectApiKey)
+            plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
             plugin.add(customPlugin)
             plugin.remove(customPlugin)
 
@@ -338,23 +338,11 @@ class IntegrationPluginTest {
         }
 
     @Test
-    fun `given a custom plugin, when it is removed before initialisation, then the plugin's teardown is not called`() =
-        runTest {
-            val customPlugin = spyk(MockDestinationCustomPlugin())
-
-            plugin.add(customPlugin)
-            plugin.remove(customPlugin)
-            plugin.initialize(sourceConfigWithCorrectApiKey)
-
-            verify(exactly = 0) { customPlugin.teardown() }
-        }
-
-    @Test
     fun `given an integration with custom plugin added, when integration's teardown is called, then custom plugin's teardown is also called`() =
         runTest {
             val customPlugin = spyk(MockDestinationCustomPlugin())
 
-            plugin.initialize(sourceConfigWithCorrectApiKey)
+            plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
             plugin.add(customPlugin)
             plugin.teardown()
 

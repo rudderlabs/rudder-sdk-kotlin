@@ -18,7 +18,7 @@ import java.util.concurrent.CopyOnWriteArrayList
  * An integration plugin is a plugin that is responsible for sending events directly
  * to a 3rd party destination without sending it to Rudder server first.
  */
-@Suppress("TooGenericExceptionCaught")
+@Suppress("TooGenericExceptionCaught", "TooManyFunctions")
 abstract class IntegrationPlugin : EventPlugin {
 
     final override val pluginType: Plugin.PluginType = Plugin.PluginType.Destination
@@ -37,6 +37,9 @@ abstract class IntegrationPlugin : EventPlugin {
     private lateinit var pluginChain: PluginChain
     private val pluginList = CopyOnWriteArrayList<Plugin>()
 
+    @Volatile
+    private var isPluginSetup = false
+
     /**
      * Creates the destination instance. Override this method for the initialisation of destination.
      * This method must return true if the destination was created successfully, false otherwise.
@@ -47,6 +50,8 @@ abstract class IntegrationPlugin : EventPlugin {
      * @return true if the destination was created successfully, false otherwise.
      */
     protected abstract fun create(destinationConfig: JsonObject, analytics: Analytics, config: Configuration): Boolean
+
+    protected open fun update(destinationConfig: JsonObject) {}
 
     /**
      * Returns the instance of the destination which was created.
@@ -71,45 +76,20 @@ abstract class IntegrationPlugin : EventPlugin {
         super.setup(analytics)
 
         pluginChain = PluginChain().also { it.analytics = analytics }
+        isPluginSetup = true
+        applyDefaultPlugins()
+        applyCustomPlugins()
     }
 
-    internal fun initialize(sourceConfig: SourceConfig) {
-        findDestination(sourceConfig)?.let { configDestination ->
-            if (!configDestination.isDestinationEnabled) {
-                val errorMessage = "Destination $key is disabled in dashboard. No events will be sent to this destination."
-                LoggerAnalytics.warn(errorMessage)
-                destinationState = DestinationState.Failed(SdkNotInitializedException(errorMessage))
-                return
-            }
+    internal fun findAndInitDestination(sourceConfig: SourceConfig) {
+        findDestinationAndExecuteBlock(sourceConfig) { destinationConfig ->
+            initialise(destinationConfig)
+        }
+    }
 
-            try {
-                when (
-                    create(
-                        configDestination.destinationConfig,
-                        analytics,
-                        analytics.configuration as Configuration
-                    )
-                ) {
-                    true -> {
-                        destinationState = DestinationState.Ready
-                        LoggerAnalytics.debug("IntegrationPlugin: Destination $key is ready.")
-                        applyDefaultPlugins()
-                        applyCustomPlugins()
-                    }
-                    false -> {
-                        val errorMessage = "Destination $key failed to initialise."
-                        destinationState = DestinationState.Failed(SdkNotInitializedException(errorMessage))
-                        LoggerAnalytics.warn("IntegrationPlugin: $errorMessage")
-                    }
-                }
-            } catch (e: Exception) {
-                destinationState = DestinationState.Failed(e)
-                LoggerAnalytics.error("IntegrationPlugin: Error: ${e.message} initializing destination $key.")
-            }
-        } ?: run {
-            val errorMessage = "Destination $key not found in the source config. No events will be sent to this destination."
-            destinationState = DestinationState.Failed(SdkNotInitializedException(errorMessage))
-            LoggerAnalytics.warn("IntegrationPlugin: $errorMessage")
+    internal fun findAndUpdateDestination(sourceConfig: SourceConfig) {
+        findDestinationAndExecuteBlock(sourceConfig) { destinationConfig ->
+            updateSafely(destinationConfig)
         }
     }
 
@@ -130,10 +110,9 @@ abstract class IntegrationPlugin : EventPlugin {
      * **Note**: Calling of `super.teardown()` is recommended when overriding this method.
      */
     override fun teardown() {
-        if (destinationState.isReady()) {
+        pluginList.clear()
+        if (isPluginSetup) {
             pluginChain.removeAll()
-        } else {
-            pluginList.clear()
         }
     }
 
@@ -143,7 +122,7 @@ abstract class IntegrationPlugin : EventPlugin {
      * @param plugin The plugin to be added.
      */
     fun add(plugin: Plugin) {
-        if (destinationState.isReady()) {
+        if (isPluginSetup) {
             pluginChain.add(plugin)
         } else {
             pluginList.add(plugin)
@@ -156,10 +135,61 @@ abstract class IntegrationPlugin : EventPlugin {
      * @param plugin The plugin to be removed.
      */
     fun remove(plugin: Plugin) {
-        if (destinationState.isReady()) {
+        pluginList.remove(plugin)
+        if (isPluginSetup) {
             pluginChain.remove(plugin)
-        } else {
-            pluginList.remove(plugin)
+        }
+    }
+
+    private fun findDestinationAndExecuteBlock(sourceConfig: SourceConfig, block: (JsonObject) -> Unit) {
+        findDestination(sourceConfig)?.let { configDestination ->
+            if (!configDestination.isDestinationEnabled) {
+                val errorMessage = "Destination $key is disabled in dashboard. No events will be sent to this destination."
+                LoggerAnalytics.warn(errorMessage)
+                destinationState = DestinationState.Failed(SdkNotInitializedException(errorMessage))
+                return
+            }
+            block(configDestination.destinationConfig)
+        } ?: run {
+            val errorMessage = "Destination $key not found in the source config. No events will be sent to this destination."
+            destinationState = DestinationState.Failed(SdkNotInitializedException(errorMessage))
+            LoggerAnalytics.warn("IntegrationPlugin: $errorMessage")
+        }
+    }
+
+    private fun initialise(destinationConfig: JsonObject) {
+        try {
+            when (
+                create(
+                    destinationConfig,
+                    analytics,
+                    analytics.configuration as Configuration
+                )
+            ) {
+                true -> {
+                    destinationState = DestinationState.Ready
+                    LoggerAnalytics.debug("IntegrationPlugin: Destination $key is ready.")
+                }
+
+                false -> {
+                    val errorMessage = "Destination $key failed to initialise."
+                    destinationState = DestinationState.Failed(SdkNotInitializedException(errorMessage))
+                    LoggerAnalytics.warn("IntegrationPlugin: $errorMessage")
+                }
+            }
+        } catch (e: Exception) {
+            destinationState = DestinationState.Failed(e)
+            LoggerAnalytics.error("IntegrationPlugin: Error: ${e.message} initializing destination $key.")
+        }
+    }
+
+    private fun updateSafely(destinationConfig: JsonObject) {
+        // todo: use safelyExecute method
+        try {
+            update(destinationConfig)
+            LoggerAnalytics.debug("IntegrationPlugin: Destination $key updated.")
+        } catch (e: Exception) {
+            LoggerAnalytics.error("IntegrationPlugin: Error: ${e.message} updating destination $key.")
         }
     }
 
