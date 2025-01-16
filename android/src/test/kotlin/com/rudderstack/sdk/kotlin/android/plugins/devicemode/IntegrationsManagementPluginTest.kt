@@ -52,7 +52,6 @@ class IntegrationsManagementPluginTest {
 
         every { mockAnalytics.configuration } returns mockk<Configuration>(relaxed = true)
         every { mockAnalytics.sourceConfigState } returns FlowState(initialState = SourceConfig.initialState())
-        plugin.setup(mockAnalytics)
     }
 
     @After
@@ -62,8 +61,10 @@ class IntegrationsManagementPluginTest {
     }
 
     @Test
-    fun `given an integration, when it is added using addIntegration before sourceConfig is fetched, then destination is initialised`() =
+    fun `given an integration plugin, when it is added before sourceConfig is fetched and setup is called, then it is initialised`() =
         runTest {
+            plugin.setup(mockAnalytics)
+
             plugin.addIntegration(integrationPlugin)
             mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
             advanceUntilIdle()
@@ -72,20 +73,35 @@ class IntegrationsManagementPluginTest {
         }
 
     @Test
-    fun `given an integration, when it is added using addIntegration after sourceConfig is fetched, then destination is initialised`() =
+    fun `given an integration plugin, when it is added after sourceConfig is fetched and setup is called, then it is initialised`() =
         runTest {
+            plugin.setup(mockAnalytics)
+
             mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
             plugin.addIntegration(integrationPlugin)
             advanceUntilIdle()
 
             verify(exactly = 1) { integrationPlugin.initialize(sourceConfigWithCorrectApiKey) }
         }
+
+    @Test
+    fun `given an added integration plugin, when it is removed, then its teardown is called`() = runTest {
+        plugin.setup(mockAnalytics)
+        plugin.addIntegration(integrationPlugin)
+        mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
+        advanceUntilIdle()
+
+        plugin.removeIntegration(integrationPlugin)
+
+        verify(exactly = 1) { integrationPlugin.teardown() }
+    }
 
     @Test
     fun `given an integration, when a callback is registered before sourceConfig is fetched and integration is added, then it is called after successful initialisation`() =
         runTest {
             val callback = mockk<(Any?, DestinationResult) -> Unit>(relaxed = true)
 
+            plugin.setup(mockAnalytics)
             plugin.onDestinationReady(integrationPlugin, callback)
             plugin.addIntegration(integrationPlugin)
             mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
@@ -101,6 +117,7 @@ class IntegrationsManagementPluginTest {
         runTest {
             val callback = mockk<(Any?, DestinationResult) -> Unit>(relaxed = true)
 
+            plugin.setup(mockAnalytics)
             plugin.addIntegration(integrationPlugin)
             plugin.onDestinationReady(integrationPlugin, callback)
             mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
@@ -116,6 +133,7 @@ class IntegrationsManagementPluginTest {
         runTest {
             val callback = mockk<(Any?, DestinationResult) -> Unit>(relaxed = true)
 
+            plugin.setup(mockAnalytics)
             plugin.addIntegration(integrationPlugin)
             mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
             plugin.onDestinationReady(integrationPlugin, callback)
@@ -127,54 +145,96 @@ class IntegrationsManagementPluginTest {
         }
 
     @Test
-    fun `given an initialised integration, when flush is called, then integration plugin's flush is called`() = runTest {
-        plugin.addIntegration(integrationPlugin)
-        mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
-        advanceUntilIdle()
+    fun `given an integration and multiple callbacks, when they are registered, then each of them is called after successful initialisation`() =
+        runTest {
+            val callback1 = mockk<(Any?, DestinationResult) -> Unit>(relaxed = true)
+            val callback2 = mockk<(Any?, DestinationResult) -> Unit>(relaxed = true)
 
-        plugin.flush()
+            plugin.setup(mockAnalytics)
+            plugin.addIntegration(integrationPlugin)
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
+            plugin.onDestinationReady(integrationPlugin, callback1)
+            plugin.onDestinationReady(integrationPlugin, callback2)
+            advanceUntilIdle()
 
-        verify(exactly = 1) { integrationPlugin.flush() }
-    }
+            val mockDestinationSdk = integrationPlugin.getUnderlyingInstance() as? MockDestinationSdk
 
-    @Test
-    fun `given a failed integration, when flush is called, then integration plugin's flush is not called`() = runTest {
-        plugin.addIntegration(integrationPlugin)
-        mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithIncorrectApiKey))
-        advanceUntilIdle()
-
-        plugin.flush()
-
-        verify(exactly = 0) { integrationPlugin.flush() }
-    }
+            verify(exactly = 1) { callback1.invoke(mockDestinationSdk, ofType(Result.Success::class) as DestinationResult) }
+            verify(exactly = 1) { callback2.invoke(mockDestinationSdk, ofType(Result.Success::class) as DestinationResult) }
+        }
 
     @Test
-    fun `given an initialised integration, when reset is called, then integration plugin's reset is called`() = runTest {
-        plugin.addIntegration(integrationPlugin)
-        mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
-        advanceUntilIdle()
+    fun `given an integration which will fail to initialise and a callback, when it is registered, then it is called with a failure exception after the initialisation attempt`() =
+        runTest {
+            val callback = mockk<(Any?, DestinationResult) -> Unit>(relaxed = true)
 
-        plugin.reset()
+            plugin.setup(mockAnalytics)
+            plugin.addIntegration(integrationPlugin)
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithIncorrectApiKey))
+            plugin.onDestinationReady(integrationPlugin, callback)
+            advanceUntilIdle()
 
-        verify(exactly = 1) { integrationPlugin.reset() }
-    }
+            verify(exactly = 1) { callback.invoke(null, ofType(Result.Failure::class) as DestinationResult) }
+        }
 
     @Test
-    fun `given a failed integration, when reset is called, then integration plugin's reset is not called`() = runTest {
-        plugin.addIntegration(integrationPlugin)
-        mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithIncorrectApiKey))
-        advanceUntilIdle()
+    fun `given an initialised integration, when flush is called for management plugin, then integration plugin's flush is called`() =
+        runTest {
+            plugin.setup(mockAnalytics)
+            plugin.addIntegration(integrationPlugin)
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
+            advanceUntilIdle()
 
-        plugin.reset()
+            plugin.flush()
 
-        verify(exactly = 0) { integrationPlugin.reset() }
-    }
+            verify(exactly = 1) { integrationPlugin.flush() }
+        }
+
+    @Test
+    fun `given a failed integration, when flush is called for management plugin, then integration plugin's flush is not called`() =
+        runTest {
+            plugin.setup(mockAnalytics)
+            plugin.addIntegration(integrationPlugin)
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithIncorrectApiKey))
+            advanceUntilIdle()
+
+            plugin.flush()
+
+            verify(exactly = 0) { integrationPlugin.flush() }
+        }
+
+    @Test
+    fun `given an initialised integration, when reset is called for management plugin, then integration plugin's reset is called`() =
+        runTest {
+            plugin.setup(mockAnalytics)
+            plugin.addIntegration(integrationPlugin)
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
+            advanceUntilIdle()
+
+            plugin.reset()
+
+            verify(exactly = 1) { integrationPlugin.reset() }
+        }
+
+    @Test
+    fun `given a failed integration, when reset is called for management plugin, then integration plugin's reset is not called`() =
+        runTest {
+            plugin.setup(mockAnalytics)
+            plugin.addIntegration(integrationPlugin)
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithIncorrectApiKey))
+            advanceUntilIdle()
+
+            plugin.reset()
+
+            verify(exactly = 0) { integrationPlugin.reset() }
+        }
 
     @Test
     fun `given an integration, when intercept is called max_queue_size times before sourceConfig is fetched, then integration's intercept is called after it is fetched`() =
         runTest {
             val events = mutableListOf<TrackEvent>()
 
+            plugin.setup(mockAnalytics)
             plugin.addIntegration(integrationPlugin)
             repeat(MAX_QUEUE_SIZE) {
                 val event = TrackEvent("test event $it", emptyJsonObject)
@@ -197,6 +257,7 @@ class IntegrationsManagementPluginTest {
             val events = mutableListOf<TrackEvent>()
             val eventsOverflowCount = 5
 
+            plugin.setup(mockAnalytics)
             plugin.addIntegration(integrationPlugin)
             repeat(MAX_QUEUE_SIZE + eventsOverflowCount) {
                 val event = TrackEvent("test event $it", emptyJsonObject)
@@ -219,6 +280,7 @@ class IntegrationsManagementPluginTest {
 
     @Test
     fun `given an integration, when teardown is called, then that integration's teardown is also called`() = runTest {
+        plugin.setup(mockAnalytics)
         plugin.addIntegration(integrationPlugin)
         mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
         advanceUntilIdle()
@@ -227,4 +289,6 @@ class IntegrationsManagementPluginTest {
 
         verify(exactly = 1) { integrationPlugin.teardown() }
     }
+
+    // todo: add test scenarios for multiple emissions of sourceConfig state when adding support for dynamic updates
 }
