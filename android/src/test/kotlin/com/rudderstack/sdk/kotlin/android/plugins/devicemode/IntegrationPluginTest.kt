@@ -4,6 +4,7 @@ import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.utils.MockDestinationCustomPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.utils.MockDestinationSdk
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.utils.MockDestinationIntegrationPlugin
+import com.rudderstack.sdk.kotlin.android.utils.assertDoesNotThrow
 import com.rudderstack.sdk.kotlin.android.utils.mockAnalytics
 import com.rudderstack.sdk.kotlin.android.utils.readFileAsString
 import com.rudderstack.sdk.kotlin.core.Analytics
@@ -142,6 +143,57 @@ class IntegrationPluginTest {
 
             assert(plugin.destinationState is DestinationState.Failed)
             assert((plugin.destinationState as DestinationState.Failed).exception == exception)
+        }
+
+    @Test
+    fun `given an initialised destination and a sourceConfig, when plugin is updated with it, then destination is updated`() =
+        runTest {
+            plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
+
+            plugin.findAndUpdateDestination(sourceConfigWithCorrectApiKey)
+            val updatedMockDestinationSdk = plugin.getUnderlyingInstance() as? MockDestinationSdk
+
+            verify(exactly = 1) { updatedMockDestinationSdk?.update() }
+        }
+
+    @Test
+    fun `given an initialised destination and its update throws an exception, when plugin is updated with a sourceConfig, then the exception is not rethrown`() =
+        runTest {
+            plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
+
+            val exception = Exception("Test exception")
+            val mockDestinationSdk = plugin.getUnderlyingInstance() as MockDestinationSdk
+            every { mockDestinationSdk.update() } throws exception
+
+            assertDoesNotThrow { plugin.findAndUpdateDestination(sourceConfigWithCorrectApiKey) }
+        }
+
+    @Test
+    fun `given an initialised destination and sourceConfig with disabled destination, when plugin is updated with it, then destination moves to Failed state`() =
+        runTest {
+            plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
+
+            val sourceConfigWithDisabledDestination = LenientJson.decodeFromString<SourceConfig>(
+                readFileAsString(pathToSourceConfigWithDestinationDisabled)
+            )
+            plugin.findAndUpdateDestination(sourceConfigWithDisabledDestination)
+
+            assert(plugin.destinationState is DestinationState.Failed)
+            assert((plugin.destinationState as DestinationState.Failed).exception is SdkNotInitializedException)
+        }
+
+    @Test
+    fun `given an initialised destination and sourceConfig without destination, when plugin is updated with it, then destination moves to Failed state`() =
+        runTest {
+            plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
+
+            val sourceConfigWithAbsentDestinationConfig = LenientJson.decodeFromString<SourceConfig>(
+                readFileAsString(pathToSourceConfigWithAbsentDestinationConfig)
+            )
+            plugin.findAndUpdateDestination(sourceConfigWithAbsentDestinationConfig)
+
+            assert(plugin.destinationState is DestinationState.Failed)
+            assert((plugin.destinationState as DestinationState.Failed).exception is SdkNotInitializedException)
         }
 
     @Test

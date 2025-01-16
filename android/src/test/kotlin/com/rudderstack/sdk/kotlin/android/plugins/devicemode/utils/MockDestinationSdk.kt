@@ -34,6 +34,10 @@ class MockDestinationSdk private constructor(private val apiKey: String) {
         println("MockDestinationSdk: Flushing")
     }
 
+    fun update() {
+        println("MockDestinationSdk: Updating")
+    }
+
     companion object {
 
         fun initialise(apiKey: String): MockDestinationSdk {

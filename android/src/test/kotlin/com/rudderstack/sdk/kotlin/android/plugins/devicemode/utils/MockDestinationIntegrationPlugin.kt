@@ -32,6 +32,10 @@ class MockDestinationIntegrationPlugin : IntegrationPlugin() {
         }
     }
 
+    override fun update(destinationConfig: JsonObject) {
+        mockDestinationSdk?.update()
+    }
+
     override fun getUnderlyingInstance(): Any? {
         return mockDestinationSdk
     }

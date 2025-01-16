@@ -73,3 +73,11 @@ fun Any.readFileAsString(fileName: String): String {
     val inputStream = this::class.java.classLoader?.getResourceAsStream(fileName)
     return inputStream?.bufferedReader()?.use(BufferedReader::readText) ?: ""
 }
+
+inline fun assertDoesNotThrow(block: () -> Unit) {
+    try {
+        block()
+    } catch (e: Throwable) {
+        throw AssertionError("Expected no exception, but got ${e::class.simpleName}: ${e.message}", e)
+    }
+}
