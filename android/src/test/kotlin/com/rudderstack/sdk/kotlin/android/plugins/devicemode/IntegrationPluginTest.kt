@@ -197,6 +197,17 @@ class IntegrationPluginTest {
         }
 
     @Test
+    fun `given a failed destination, when the plugin is updated with a new correct sourceConfig, then destination moves to Ready state`() = runTest {
+        plugin.findAndInitDestination(sourceConfigWithIncorrectApiKey)
+
+        plugin.findAndUpdateDestination(sourceConfigWithCorrectApiKey)
+        val updatedMockDestinationSdk = plugin.getUnderlyingInstance() as? MockDestinationSdk
+
+        assert(plugin.destinationState is DestinationState.Ready)
+        verify(exactly = 1) { updatedMockDestinationSdk?.update() }
+    }
+
+    @Test
     fun `given an initialised integration, when its intercept called with TrackEvent, then trackEvent is called for destination`() =
         runTest {
             plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)

@@ -33,6 +33,13 @@ class MockDestinationIntegrationPlugin : IntegrationPlugin() {
     }
 
     override fun update(destinationConfig: JsonObject): Boolean {
+        // this is a simulated version of how to update the destination
+        // destination SDK is reinitialised with the new API key and then update method of SDK is called.
+        val apiKey = destinationConfig["apiKey"]?.jsonPrimitive?.content
+        apiKey?.let {
+            mockDestinationSdk = MockDestinationSdk.initialise(it)
+        }
+
         return mockDestinationSdk?.let {
             it.update()
             true
