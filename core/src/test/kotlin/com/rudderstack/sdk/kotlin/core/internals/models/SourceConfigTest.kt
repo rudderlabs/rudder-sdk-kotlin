@@ -92,7 +92,7 @@ class SourceConfigTest {
                 sourceId = String.empty(),
                 sourceName = String.empty(),
                 writeKey = String.empty(),
-                isSourceEnabled = true,
+                isSourceEnabled = false,
                 workspaceId = String.empty(),
                 updatedAt = String.empty()
             )

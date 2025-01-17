@@ -30,6 +30,7 @@ import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.PluginChain
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.FlowState
 import com.rudderstack.sdk.kotlin.core.internals.storage.provideBasicStorage
+import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import com.rudderstack.sdk.kotlin.core.internals.utils.addNameAndCategoryToProperties
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import com.rudderstack.sdk.kotlin.core.internals.utils.isAnalyticsActive
@@ -69,7 +70,11 @@ open class Analytics protected constructor(
 
     private val pluginChain: PluginChain = PluginChain().also { it.analytics = this }
 
-    private val sourceConfigState = FlowState(initialState = SourceConfig.initialState())
+    /**
+     * The `sourceConfigState` is a state flow that manages the source configuration for the analytics instance.
+     */
+    @InternalRudderApi
+    val sourceConfigState = FlowState(initialState = SourceConfig.initialState())
 
     private val processEventChannel: Channel<Event> = Channel(Channel.UNLIMITED)
     private var processEventJob: Job? = null
@@ -277,7 +282,7 @@ open class Analytics protected constructor(
      * Flushes all pending events that are currently queued in the plugin chain.
      * This method specifically targets the `RudderStackDataplanePlugin` to initiate the flush operation.
      */
-    fun flush() {
+    open fun flush() {
         if (!isAnalyticsActive()) return
 
         this.pluginChain.applyClosure {

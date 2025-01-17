@@ -9,6 +9,7 @@ import io.mockk.mockk
 import io.mockk.spyk
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.TestScope
+import java.io.BufferedReader
 import com.rudderstack.sdk.kotlin.android.Analytics as AndroidAnalytics
 
 fun mockAnalytics(testScope: TestScope, testDispatcher: TestDispatcher): Analytics {
@@ -79,4 +80,9 @@ class Block {
 
 fun provideSpyBlock(): Block {
     return spyk(Block())
+}
+
+fun Any.readFileAsString(fileName: String): String {
+    val inputStream = this::class.java.classLoader?.getResourceAsStream(fileName)
+    return inputStream?.bufferedReader()?.use(BufferedReader::readText) ?: ""
 }

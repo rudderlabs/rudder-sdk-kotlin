@@ -22,7 +22,8 @@ import kotlinx.serialization.json.jsonObject
  * This configuration can be beneficial when working with APIs or data sources that might evolve over time or provide inconsistent JSON data.
  *
  */
-internal val LenientJson = Json {
+@InternalRudderApi
+val LenientJson = Json {
     /**
      * Instructs the parser to ignore any unknown keys in the JSON input.
      * This setting is useful when the data source might include additional fields that are not defined in the data model.
