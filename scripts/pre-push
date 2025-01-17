@@ -2,8 +2,9 @@
 
 echo "Running unit tests..."
 
-./gradlew test --daemon
-./gradlew :core:test --daemon
+./gradlew clean # First clean the project
+./gradlew test # Run the tests
+
 
 status=$?
 
