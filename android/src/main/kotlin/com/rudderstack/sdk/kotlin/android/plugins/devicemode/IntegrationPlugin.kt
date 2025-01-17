@@ -9,6 +9,7 @@ import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.plugins.EventPlugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.PluginChain
+import com.rudderstack.sdk.kotlin.core.internals.utils.safelyExecute
 import kotlinx.serialization.json.JsonObject
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -18,7 +19,7 @@ import java.util.concurrent.CopyOnWriteArrayList
  * An integration plugin is a plugin that is responsible for sending events directly
  * to a 3rd party destination without sending it to Rudder server first.
  */
-@Suppress("TooGenericExceptionCaught", "TooManyFunctions")
+@Suppress("TooManyFunctions")
 abstract class IntegrationPlugin : EventPlugin {
 
     final override val pluginType: Plugin.PluginType = Plugin.PluginType.Destination
@@ -171,46 +172,51 @@ abstract class IntegrationPlugin : EventPlugin {
     }
 
     private fun createSafelyAndChangeState(destinationConfig: JsonObject) {
-        try {
-            when (
-                create(
-                    destinationConfig,
-                    analytics,
-                    analytics.configuration as Configuration
-                )
-            ) {
-                true -> {
-                    destinationState = DestinationState.Ready
-                    LoggerAnalytics.debug("IntegrationPlugin: Destination $key is ready.")
+        safelyExecute(
+            block = {
+                when (
+                    create(
+                        destinationConfig,
+                        analytics,
+                        analytics.configuration as Configuration
+                    )
+                ) {
+                    true -> {
+                        destinationState = DestinationState.Ready
+                        LoggerAnalytics.debug("IntegrationPlugin: Destination $key is ready.")
+                    }
+                    false -> {
+                        val errorMessage = "Destination $key failed to initialise."
+                        destinationState = DestinationState.Failed(SdkNotInitializedException(errorMessage))
+                        LoggerAnalytics.warn("IntegrationPlugin: $errorMessage")
+                    }
                 }
-                false -> {
-                    val errorMessage = "Destination $key failed to initialise."
-                    destinationState = DestinationState.Failed(SdkNotInitializedException(errorMessage))
-                    LoggerAnalytics.warn("IntegrationPlugin: $errorMessage")
-                }
+            },
+            onException = {
+                destinationState = DestinationState.Failed(it)
+                LoggerAnalytics.error("IntegrationPlugin: Error: ${it.message} initializing destination $key.")
             }
-        } catch (e: Exception) {
-            destinationState = DestinationState.Failed(e)
-            LoggerAnalytics.error("IntegrationPlugin: Error: ${e.message} initializing destination $key.")
-        }
+        )
     }
 
     private fun updateSafelyAndChangeState(destinationConfig: JsonObject) {
-        // todo: use safelyExecute function
-        try {
-            when (update(destinationConfig)) {
-                true -> {
-                    destinationState = DestinationState.Ready
-                    LoggerAnalytics.debug("IntegrationPlugin: Destination $key updated.")
+        safelyExecute(
+            block = {
+                when (update(destinationConfig)) {
+                    true -> {
+                        destinationState = DestinationState.Ready
+                        LoggerAnalytics.debug("IntegrationPlugin: Destination $key updated.")
+                    }
+                    false -> {
+                        val errorMessage = "Destination $key failed to update."
+                        LoggerAnalytics.warn("IntegrationPlugin: $errorMessage")
+                    }
                 }
-                false -> {
-                    val errorMessage = "Destination $key failed to update."
-                    LoggerAnalytics.warn("IntegrationPlugin: $errorMessage")
-                }
+            },
+            onException = {
+                LoggerAnalytics.error("IntegrationPlugin: Error: ${it.message} updating destination $key.")
             }
-        } catch (e: Exception) {
-            LoggerAnalytics.error("IntegrationPlugin: Error: ${e.message} updating destination $key.")
-        }
+        )
     }
 
     private fun applyDefaultPlugins() {
