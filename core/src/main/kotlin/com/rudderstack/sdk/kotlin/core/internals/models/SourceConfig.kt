@@ -15,7 +15,6 @@ import org.jetbrains.annotations.VisibleForTesting
  *
  * @property source The configuration details of a RudderStack source.
  */
-@Suppress("MaximumLineLength")
 @Serializable
 internal data class SourceConfig(
     val source: RudderServerConfigSource
@@ -35,7 +34,9 @@ internal data class SourceConfig(
         )
     }
 
-    class NotifyObserversAction(@VisibleForTesting internal val updatedSourceConfig: SourceConfig) : FlowAction<SourceConfig> {
+    class NotifyObserversAction(
+        @VisibleForTesting internal val updatedSourceConfig: SourceConfig
+    ) : FlowAction<SourceConfig> {
 
         override fun reduce(currentState: SourceConfig): SourceConfig {
             return updatedSourceConfig
