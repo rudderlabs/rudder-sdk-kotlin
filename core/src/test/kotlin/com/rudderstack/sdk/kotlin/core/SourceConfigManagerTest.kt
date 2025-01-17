@@ -60,11 +60,6 @@ class SourceConfigManagerTest {
         sourceConfigManager = SourceConfigManager(analytics, sourceConfigState, httpClient)
     }
 
-    @After
-    fun tearDown() {
-        Dispatchers.resetMain()
-    }
-
     @Test
     fun `given source config is cached in the storage, when it is fetched from the storage, then observer is notified`() =
         runTest(testDispatcher) {
