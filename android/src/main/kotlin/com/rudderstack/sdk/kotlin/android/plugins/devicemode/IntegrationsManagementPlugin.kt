@@ -44,10 +44,13 @@ internal class IntegrationsManagementPlugin : Plugin {
                 .filter { it.source.isSourceEnabled }
                 .collectIndexed { index, sourceConfig ->
                     integrationPluginChain.applyClosure { plugin ->
-                        if (plugin is IntegrationPlugin && plugin.destinationState == DestinationState.Uninitialised) {
-                            if (index == FIRST_INDEX) {
+                        if (index == FIRST_INDEX) {
+                            if (plugin is IntegrationPlugin && plugin.destinationState == DestinationState.Uninitialised) {
                                 initAndNotifyCallbacks(sourceConfig, plugin)
-                            } else {
+                            }
+                            processEvents()
+                        } else {
+                            if (plugin is IntegrationPlugin) {
                                 plugin.findAndUpdateDestination(sourceConfig)
                             }
                         }

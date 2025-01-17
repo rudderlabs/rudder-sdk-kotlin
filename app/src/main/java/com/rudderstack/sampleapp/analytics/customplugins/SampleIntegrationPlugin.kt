@@ -31,11 +31,14 @@ class SampleIntegrationPlugin: IntegrationPlugin() {
         }
     }
 
-    override fun update(destinationConfig: JsonObject) {
+    override fun update(destinationConfig: JsonObject): Boolean {
         // Update destination instance if needed
         val apiKey = destinationConfig["apiKey"]?.jsonPrimitive?.content
-        apiKey?.let {
+        return apiKey?.let {
             destinationSdk = SampleDestinationSdk.create(it)
+            true
+        } ?: run {
+            false
         }
     }
 

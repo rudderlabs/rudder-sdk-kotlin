@@ -51,7 +51,20 @@ abstract class IntegrationPlugin : EventPlugin {
      */
     protected abstract fun create(destinationConfig: JsonObject, analytics: Analytics, config: Configuration): Boolean
 
-    protected open fun update(destinationConfig: JsonObject) {}
+    /**
+     * Updates the destination.
+     * Override this method if any kind of updating/reinitialising is required for a destination when
+     * a new [SourceConfig] is fetched from control plane.
+     *
+     * @param destinationConfig The newly fetched configuration for the destination.
+     * @return true if the destination was updated successfully AND ready to accept new events, false otherwise.
+     *
+     * **Note**: If the destination is not ready to accept new events, return false. The false return value indicates
+     * that no change to the state of the destination was made.
+     */
+    protected open fun update(destinationConfig: JsonObject): Boolean {
+        return false
+    }
 
     /**
      * Returns the instance of the destination which was created.
@@ -83,13 +96,13 @@ abstract class IntegrationPlugin : EventPlugin {
 
     internal fun findAndInitDestination(sourceConfig: SourceConfig) {
         findDestinationAndExecuteBlock(sourceConfig) { destinationConfig ->
-            initialise(destinationConfig)
+            createSafelyAndChangeState(destinationConfig)
         }
     }
 
     internal fun findAndUpdateDestination(sourceConfig: SourceConfig) {
         findDestinationAndExecuteBlock(sourceConfig) { destinationConfig ->
-            updateSafely(destinationConfig)
+            updateSafelyAndChangeState(destinationConfig)
         }
     }
 
@@ -157,7 +170,7 @@ abstract class IntegrationPlugin : EventPlugin {
         }
     }
 
-    private fun initialise(destinationConfig: JsonObject) {
+    private fun createSafelyAndChangeState(destinationConfig: JsonObject) {
         try {
             when (
                 create(
@@ -170,7 +183,6 @@ abstract class IntegrationPlugin : EventPlugin {
                     destinationState = DestinationState.Ready
                     LoggerAnalytics.debug("IntegrationPlugin: Destination $key is ready.")
                 }
-
                 false -> {
                     val errorMessage = "Destination $key failed to initialise."
                     destinationState = DestinationState.Failed(SdkNotInitializedException(errorMessage))
@@ -183,11 +195,19 @@ abstract class IntegrationPlugin : EventPlugin {
         }
     }
 
-    private fun updateSafely(destinationConfig: JsonObject) {
-        // todo: use safelyExecute method
+    private fun updateSafelyAndChangeState(destinationConfig: JsonObject) {
+        // todo: use safelyExecute function
         try {
-            update(destinationConfig)
-            LoggerAnalytics.debug("IntegrationPlugin: Destination $key updated.")
+            when (update(destinationConfig)) {
+                true -> {
+                    destinationState = DestinationState.Ready
+                    LoggerAnalytics.debug("IntegrationPlugin: Destination $key updated.")
+                }
+                false -> {
+                    val errorMessage = "Destination $key failed to update."
+                    LoggerAnalytics.warn("IntegrationPlugin: $errorMessage")
+                }
+            }
         } catch (e: Exception) {
             LoggerAnalytics.error("IntegrationPlugin: Error: ${e.message} updating destination $key.")
         }

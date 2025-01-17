@@ -32,8 +32,13 @@ class MockDestinationIntegrationPlugin : IntegrationPlugin() {
         }
     }
 
-    override fun update(destinationConfig: JsonObject) {
-        mockDestinationSdk?.update()
+    override fun update(destinationConfig: JsonObject): Boolean {
+        return mockDestinationSdk?.let {
+            it.update()
+            true
+        } ?: run {
+            false
+        }
     }
 
     override fun getUnderlyingInstance(): Any? {
