@@ -306,6 +306,4 @@ class IntegrationsManagementPluginTest {
 
         verify(exactly = 1) { integrationPlugin.teardown() }
     }
-
-    // todo: add test scenarios for multiple emissions of sourceConfig state when adding support for dynamic updates
 }

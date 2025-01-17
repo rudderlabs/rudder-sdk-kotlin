@@ -6,6 +6,7 @@ import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.spyk
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.TestScope
 import java.io.BufferedReader
@@ -67,6 +68,18 @@ fun mockUri(
 
 fun setupLogger(logger: Logger, level: Logger.LogLevel = Logger.LogLevel.VERBOSE) {
     LoggerAnalytics.setup(logger = logger, logLevel = level)
+}
+
+// As Mockk doesn't seems to support spying on lambda function, we need to create a class for the same.
+class Block {
+
+    fun execute() {
+        // Do nothing
+    }
+}
+
+fun provideSpyBlock(): Block {
+    return spyk(Block())
 }
 
 fun Any.readFileAsString(fileName: String): String {

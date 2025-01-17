@@ -3,6 +3,7 @@ package com.rudderstack.sdk.kotlin.android
 import android.app.Activity
 import androidx.navigation.NavController
 import androidx.navigation.NavController.OnDestinationChangedListener
+import com.rudderstack.sdk.kotlin.android.connectivity.AndroidConnectivityObserverPlugin
 import com.rudderstack.sdk.kotlin.android.logger.AndroidLogger
 import com.rudderstack.sdk.kotlin.android.plugins.AndroidLifecyclePlugin
 import com.rudderstack.sdk.kotlin.android.plugins.AppInfoPlugin
@@ -60,7 +61,7 @@ private const val MIN_SESSION_ID_LENGTH = 10
  * val analytics = Analytics(configuration)
  * ```
  *
- * @see com.rudderstack.kotlin.Analytics
+ * @see com.rudderstack.sdk.kotlin.core.Analytics
  */
 class Analytics(
     configuration: Configuration,
@@ -266,6 +267,7 @@ class Analytics(
 
     private fun setup() {
         setLogger(logger = AndroidLogger())
+        add(AndroidConnectivityObserverPlugin(connectivityState))
         add(DeviceInfoPlugin())
         add(AppInfoPlugin())
         add(NetworkInfoPlugin())
@@ -283,6 +285,9 @@ class Analytics(
         // adding lifecycle management plugins last so that lifecycle callbacks are invoked after all the observers in plugins are added.
         add(processLifecycleManagementPlugin)
         add(activityLifecycleManagementPlugin)
+
+        // Setup source config
+        setupSourceConfig()
     }
 
     override fun getPlatformType(): PlatformType = PlatformType.Mobile

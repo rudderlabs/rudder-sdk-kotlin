@@ -22,7 +22,7 @@ internal class NavControllerActivityObserver(
 
     private val isActivityGettingCreated = AtomicBoolean(true)
 
-    fun find(navContext: NavContext) = navContext == this.navContext
+    internal fun find(navContext: NavContext) = navContext == this.navContext
 
     override fun onStart(owner: LifecycleOwner) {
         if (!isActivityGettingCreated.getAndSet(false)) {
