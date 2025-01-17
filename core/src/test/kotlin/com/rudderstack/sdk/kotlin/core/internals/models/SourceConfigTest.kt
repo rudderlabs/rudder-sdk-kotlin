@@ -115,7 +115,7 @@ class SourceConfigTest {
             )
         )
 
-        sourceConfigFlowState.dispatch(SourceConfig.NotifyObserversAction(newSourceConfig))
+        sourceConfigFlowState.dispatch(SourceConfig.UpdateAction(newSourceConfig))
 
         assertEquals(newSourceConfig, sourceConfigFlowState.value)
     }

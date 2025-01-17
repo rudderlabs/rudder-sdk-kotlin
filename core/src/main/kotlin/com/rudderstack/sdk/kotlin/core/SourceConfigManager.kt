@@ -91,7 +91,7 @@ internal class SourceConfigManager(
 
     private fun notifyObservers(sourceConfig: SourceConfig) {
         LoggerAnalytics.verbose("Notifying observers with sourceConfig.")
-        sourceConfigState.dispatch(SourceConfig.NotifyObserversAction(sourceConfig))
+        sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfig))
     }
 }
 

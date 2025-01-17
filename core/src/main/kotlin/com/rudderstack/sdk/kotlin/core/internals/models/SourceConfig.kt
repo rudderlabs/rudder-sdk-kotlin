@@ -34,7 +34,7 @@ internal data class SourceConfig(
         )
     }
 
-    class NotifyObserversAction(
+    class UpdateAction(
         @VisibleForTesting internal val updatedSourceConfig: SourceConfig
     ) : FlowAction<SourceConfig> {
 

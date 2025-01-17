@@ -18,16 +18,13 @@ import io.mockk.impl.annotations.MockK
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
-import org.junit.After
 import org.junit.Before
 import org.junit.Test
 
@@ -75,7 +72,7 @@ class SourceConfigManagerTest {
 
             val sourceConfig = LenientJson.decodeFromString<SourceConfig>(sourceConfigString)
             verify(exactly = 1) {
-                sourceConfigState.dispatch(match { it is SourceConfig.NotifyObserversAction && it.updatedSourceConfig == sourceConfig })
+                sourceConfigState.dispatch(match { it is SourceConfig.UpdateAction && it.updatedSourceConfig == sourceConfig })
             }
         }
 
@@ -114,7 +111,7 @@ class SourceConfigManagerTest {
                     )
                 }
                 verify(exactly = 1) {
-                    sourceConfigState.dispatch(match { it is SourceConfig.NotifyObserversAction && it.updatedSourceConfig == sourceConfig })
+                    sourceConfigState.dispatch(match { it is SourceConfig.UpdateAction && it.updatedSourceConfig == sourceConfig })
                 }
             }
         }
