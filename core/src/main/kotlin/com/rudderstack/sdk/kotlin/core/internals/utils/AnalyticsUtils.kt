@@ -6,6 +6,7 @@ import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 /**
  * Checks if the analytics instance is active.
  */
+@InternalRudderApi
 fun Analytics.isAnalyticsActive(): Boolean {
     if (isAnalyticsShutdown) {
         LoggerAnalytics.error("Analytics instance has been shutdown. No further operations are allowed.")

@@ -42,11 +42,11 @@ internal class ProcessLifecycleManagementPlugin : Plugin, DefaultLifecycleObserv
         }
     }
 
-    fun addObserver(observer: ProcessLifecycleObserver) {
+    internal fun addObserver(observer: ProcessLifecycleObserver) {
         processObservers.add(observer)
     }
 
-    fun removeObserver(observer: ProcessLifecycleObserver) {
+    internal fun removeObserver(observer: ProcessLifecycleObserver) {
         processObservers.remove(observer)
     }
 

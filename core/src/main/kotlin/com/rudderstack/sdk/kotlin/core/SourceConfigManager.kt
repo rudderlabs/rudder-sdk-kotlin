@@ -11,6 +11,8 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.LenientJson
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import com.rudderstack.sdk.kotlin.core.internals.utils.encodeToBase64
+import com.rudderstack.sdk.kotlin.core.internals.utils.notifyOnlyOnceOnConnectionAvailable
+import com.rudderstack.sdk.kotlin.core.internals.utils.safelyExecute
 import kotlinx.coroutines.withContext
 
 private const val SOURCE_CONFIG_ENDPOINT = "/sourceConfig"
@@ -26,26 +28,47 @@ internal class SourceConfigManager(
     private val httpClientFactory: HttpClient = analytics.createGetHttpClientFactory(),
 ) {
 
-    suspend fun fetchAndUpdateSourceConfig() {
-        val downloadedSourceConfig = downloadSourceConfig()
-        downloadedSourceConfig?.let {
-            updateSourceConfigState(it)
-            storeSourceConfig(it)
-        } ?: run {
-            val fetchedSourceConfig = fetchStoredSourceConfig()
-            fetchedSourceConfig?.let { updateSourceConfigState(it) }
+    internal fun fetchCachedSourceConfigAndNotifyObservers() {
+        fetchCachedSourceConfig()?.let { sourceConfig ->
+            notifyObservers(sourceConfig)
         }
     }
 
-    @Suppress("TooGenericExceptionCaught")
+    private fun fetchCachedSourceConfig(): SourceConfig? {
+        val cachedSourceConfig = analytics.storage.readString(
+            StorageKeys.SOURCE_CONFIG_PAYLOAD,
+            defaultVal = String.empty()
+        )
+
+        return if (cachedSourceConfig.isNotEmpty()) {
+            LenientJson.decodeFromString<SourceConfig>(cachedSourceConfig).let { sourceConfig ->
+                LoggerAnalytics.info("SourceConfig fetched from storage: $sourceConfig")
+                sourceConfig
+            }
+        } else {
+            LoggerAnalytics.info("SourceConfig not found in storage")
+            null
+        }
+    }
+
+    internal fun refreshSourceConfigAndNotifyObservers() {
+        this.analytics.notifyOnlyOnceOnConnectionAvailable {
+            downloadSourceConfig()?.let { sourceConfig ->
+                storeSourceConfig(sourceConfig)
+                notifyObservers(sourceConfig)
+            }
+        }
+    }
+
     private suspend fun downloadSourceConfig(): SourceConfig? {
         return withContext(analytics.networkDispatcher) {
-            try {
+            safelyExecute {
                 when (val sourceConfigResult = httpClientFactory.getData()) {
                     is Result.Success -> {
-                        val config = LenientJson.decodeFromString<SourceConfig>(sourceConfigResult.response)
-                        LoggerAnalytics.info("SourceConfig is fetched successfully: $config")
-                        config
+                        LenientJson.decodeFromString<SourceConfig>(sourceConfigResult.response).let { config ->
+                            LoggerAnalytics.info("SourceConfig is fetched successfully: $config")
+                            config
+                        }
                     }
 
                     is Result.Failure -> {
@@ -55,36 +78,19 @@ internal class SourceConfigManager(
                         null
                     }
                 }
-            } catch (e: Exception) {
-                LoggerAnalytics.error("Failed to get sourceConfig due to $e")
-                null
             }
-        }
-    }
-
-    private fun fetchStoredSourceConfig(): SourceConfig? {
-        val sourceConfigString = analytics.storage.readString(
-            StorageKeys.SOURCE_CONFIG_PAYLOAD,
-            defaultVal = String.empty()
-        )
-
-        return if (sourceConfigString.isNotEmpty()) {
-            val sourceConfig = LenientJson.decodeFromString<SourceConfig>(sourceConfigString)
-            LoggerAnalytics.info("SourceConfig fetched from storage: $sourceConfig")
-            sourceConfig
-        } else {
-            LoggerAnalytics.info("SourceConfig not found in storage")
-            null
         }
     }
 
     private suspend fun storeSourceConfig(sourceConfig: SourceConfig) {
         withContext(analytics.storageDispatcher) {
+            LoggerAnalytics.verbose("Storing sourceConfig in storage.")
             sourceConfig.storeSourceConfig(analytics.storage)
         }
     }
 
-    private fun updateSourceConfigState(sourceConfig: SourceConfig) {
+    private fun notifyObservers(sourceConfig: SourceConfig) {
+        LoggerAnalytics.verbose("Notifying observers with sourceConfig.")
         sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfig))
     }
 }

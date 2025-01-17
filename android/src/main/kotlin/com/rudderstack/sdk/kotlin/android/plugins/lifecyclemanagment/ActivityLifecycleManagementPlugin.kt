@@ -44,11 +44,11 @@ internal class ActivityLifecycleManagementPlugin : Plugin, Application.ActivityL
         }
     }
 
-    fun addObserver(observer: ActivityLifecycleObserver) {
+    internal fun addObserver(observer: ActivityLifecycleObserver) {
         activityObservers.add(observer)
     }
 
-    fun removeObserver(observer: ActivityLifecycleObserver) {
+    internal fun removeObserver(observer: ActivityLifecycleObserver) {
         activityObservers.remove(observer)
     }
 
