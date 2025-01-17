@@ -129,6 +129,7 @@ internal class IntegrationsManagementPlugin : Plugin {
         }
     }
 
+    @Synchronized
     private fun initAndNotifyCallbacks(sourceConfig: SourceConfig, plugin: IntegrationPlugin) {
         plugin.findAndInitDestination(sourceConfig)
         notifyDestinationCallbacks(plugin)
