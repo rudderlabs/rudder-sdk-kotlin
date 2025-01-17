@@ -10,6 +10,12 @@ import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
 import com.rudderstack.sampleapp.analytics.customplugins.AndroidAdvertisingIdPlugin
 import com.rudderstack.sampleapp.analytics.customplugins.AndroidAdvertisingIdPlugin.Companion.isAdvertisingLibraryAvailable
 import com.rudderstack.sampleapp.analytics.customplugins.OptionPlugin
+import com.rudderstack.sampleapp.analytics.customplugins.SampleIntegrationPlugin
+import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.models.Event
+import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
+import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
+import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
@@ -45,5 +51,28 @@ object RudderAnalyticsUtils {
                 }
             )
         ))
+        
+        val sampleIntegrationPlugin = SampleIntegrationPlugin()
+        sampleIntegrationPlugin.add(object : Plugin {
+            override val pluginType: Plugin.PluginType = Plugin.PluginType.PreProcess
+            override lateinit var analytics: com.rudderstack.sdk.kotlin.core.Analytics
+
+            override suspend fun intercept(event: Event): Event? {
+                if (event is TrackEvent && event.event == "Track Event 1") {
+                    LoggerAnalytics.debug("SampleAmplitudePlugin: dropping event")
+                    return null
+                }
+                return event
+            }
+        })
+        analytics.onDestinationReady(sampleIntegrationPlugin) { _, destinationResult ->
+            when (destinationResult) {
+                is Result.Success ->
+                    LoggerAnalytics.debug("SampleAmplitudePlugin: destination ready")
+                is Result.Failure ->
+                    LoggerAnalytics.debug("SampleAmplitudePlugin: destination failed to initialise: ${destinationResult.error.message}.")
+            }
+        }
+        analytics.addIntegration(sampleIntegrationPlugin)
     }
 }

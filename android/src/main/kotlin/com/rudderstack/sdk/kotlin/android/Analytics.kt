@@ -14,6 +14,9 @@ import com.rudderstack.sdk.kotlin.android.plugins.NetworkInfoPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.OSInfoPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.ScreenInfoPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.TimezoneInfoPlugin
+import com.rudderstack.sdk.kotlin.android.plugins.devicemode.DestinationResult
+import com.rudderstack.sdk.kotlin.android.plugins.devicemode.IntegrationPlugin
+import com.rudderstack.sdk.kotlin.android.plugins.devicemode.IntegrationsManagementPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleManagementPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ProcessLifecycleManagementPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.screenrecording.ActivityTrackingPlugin
@@ -77,6 +80,7 @@ class Analytics(
 
     internal val activityLifecycleManagementPlugin = ActivityLifecycleManagementPlugin()
     internal val processLifecycleManagementPlugin = ProcessLifecycleManagementPlugin()
+    private var integrationsManagementPlugin: IntegrationsManagementPlugin? = null
     private val sessionTrackingPlugin = SessionTrackingPlugin()
 
     init {
@@ -128,7 +132,17 @@ class Analytics(
         if (!isAnalyticsActive()) return
 
         super.reset(clearAnonymousId)
+
         sessionTrackingPlugin.refreshSession()
+        this.integrationsManagementPlugin?.reset()
+    }
+
+    override fun flush() {
+        if (!isAnalyticsActive()) return
+
+        super.flush()
+
+        this.integrationsManagementPlugin?.flush()
     }
 
     /**
@@ -200,6 +214,55 @@ class Analytics(
                 )
             )
         )
+    }
+
+    /**
+     * Adds an [IntegrationPlugin] to the analytics instance.
+     *
+     * An [IntegrationPlugin] is responsible for sending events directly to a 3rd party
+     * destination without sending it to the RudderStack server first.
+     *
+     * @param plugin The [IntegrationPlugin] to be added.
+     */
+    fun addIntegration(plugin: IntegrationPlugin) {
+        if (!isAnalyticsActive()) return
+
+        initIntegrationsManagementPlugin()
+
+        integrationsManagementPlugin?.addIntegration(plugin)
+    }
+
+    /**
+     * Removes an [IntegrationPlugin] from the analytics instance.
+     *
+     * @param plugin The [IntegrationPlugin] to be removed.
+     */
+    fun removeIntegration(plugin: IntegrationPlugin) {
+        if (!isAnalyticsActive()) return
+
+        integrationsManagementPlugin?.removeIntegration(plugin)
+    }
+
+    /**
+     * Registers a callback to be invoked when the destination of the [plugin] is ready.
+     *
+     * @param plugin The [IntegrationPlugin] for which the callback needs to be invoked.
+     * @param onReady The callback to be invoked when the destination is ready.
+     */
+    fun onDestinationReady(plugin: IntegrationPlugin, onReady: (Any?, DestinationResult) -> Unit) {
+        if (!isAnalyticsActive()) return
+
+        initIntegrationsManagementPlugin()
+
+        integrationsManagementPlugin?.onDestinationReady(plugin, onReady)
+    }
+
+    private fun initIntegrationsManagementPlugin() {
+        synchronized(this) {
+            if (integrationsManagementPlugin == null) {
+                integrationsManagementPlugin = IntegrationsManagementPlugin().also { add(it) }
+            }
+        }
     }
 
     private fun setup() {
