@@ -81,7 +81,7 @@ class IntegrationPluginTest {
     fun `given a sourceConfig with correct destination config, when plugin is initialised with it, then destination is initialised`() =
         runTest {
             plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
-            val mockDestinationSdk = plugin.getUnderlyingInstance() as? MockDestinationSdk
+            val mockDestinationSdk = plugin.getDestinationInstance() as? MockDestinationSdk
 
             assertNotNull(mockDestinationSdk)
             assert(plugin.destinationState is DestinationState.Ready)
@@ -91,7 +91,7 @@ class IntegrationPluginTest {
     fun `given a sourceConfig with incorrect api key for destination, when plugin is initialised with it, then destination is not initialised`() =
         runTest {
             plugin.findAndInitDestination(sourceConfigWithIncorrectApiKey)
-            val mockDestinationSdk = plugin.getUnderlyingInstance() as? MockDestinationSdk
+            val mockDestinationSdk = plugin.getDestinationInstance() as? MockDestinationSdk
 
             assert(mockDestinationSdk == null)
             assert(plugin.destinationState is DestinationState.Failed)
@@ -105,7 +105,7 @@ class IntegrationPluginTest {
                 readFileAsString(pathToSourceConfigWithAbsentDestinationConfig)
             )
             plugin.findAndInitDestination(sourceConfigWithAbsentDestinationConfig)
-            val mockDestinationSdk = plugin.getUnderlyingInstance() as? MockDestinationSdk
+            val mockDestinationSdk = plugin.getDestinationInstance() as? MockDestinationSdk
 
             assert(mockDestinationSdk == null)
             assert(plugin.destinationState is DestinationState.Failed)
@@ -119,7 +119,7 @@ class IntegrationPluginTest {
                 readFileAsString(pathToSourceConfigWithDestinationDisabled)
             )
             plugin.findAndInitDestination(sourceConfigWithDisabledDestination)
-            val mockDestinationSdk = plugin.getUnderlyingInstance() as? MockDestinationSdk
+            val mockDestinationSdk = plugin.getDestinationInstance() as? MockDestinationSdk
 
             assert(mockDestinationSdk == null)
             assert(plugin.destinationState is DestinationState.Failed)
@@ -151,7 +151,7 @@ class IntegrationPluginTest {
             plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
 
             plugin.findAndUpdateDestination(sourceConfigWithCorrectApiKey)
-            val updatedMockDestinationSdk = plugin.getUnderlyingInstance() as? MockDestinationSdk
+            val updatedMockDestinationSdk = plugin.getDestinationInstance() as? MockDestinationSdk
 
             verify(exactly = 1) { updatedMockDestinationSdk?.update() }
         }
@@ -162,7 +162,7 @@ class IntegrationPluginTest {
             plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
 
             val exception = Exception("Test exception")
-            val mockDestinationSdk = plugin.getUnderlyingInstance() as MockDestinationSdk
+            val mockDestinationSdk = plugin.getDestinationInstance() as MockDestinationSdk
             every { mockDestinationSdk.update() } throws exception
 
             assertDoesNotThrow { plugin.findAndUpdateDestination(sourceConfigWithCorrectApiKey) }
@@ -201,7 +201,7 @@ class IntegrationPluginTest {
         plugin.findAndInitDestination(sourceConfigWithIncorrectApiKey)
 
         plugin.findAndUpdateDestination(sourceConfigWithCorrectApiKey)
-        val updatedMockDestinationSdk = plugin.getUnderlyingInstance() as? MockDestinationSdk
+        val updatedMockDestinationSdk = plugin.getDestinationInstance() as? MockDestinationSdk
 
         assert(plugin.destinationState is DestinationState.Ready)
         verify(exactly = 1) { updatedMockDestinationSdk?.update() }
@@ -211,7 +211,7 @@ class IntegrationPluginTest {
     fun `given an initialised integration, when its intercept called with TrackEvent, then trackEvent is called for destination`() =
         runTest {
             plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
-            val mockDestinationSdk = plugin.getUnderlyingInstance() as MockDestinationSdk
+            val mockDestinationSdk = plugin.getDestinationInstance() as MockDestinationSdk
 
             val event = TrackEvent("test", emptyJsonObject)
             applyBaseDataToEvent(event)
@@ -225,7 +225,7 @@ class IntegrationPluginTest {
     fun `given an initialised integration, when its intercept called with ScreenEvent, then screenEvent is called for destination`() =
         runTest {
             plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
-            val mockDestinationSdk = plugin.getUnderlyingInstance() as MockDestinationSdk
+            val mockDestinationSdk = plugin.getDestinationInstance() as MockDestinationSdk
 
             val event = ScreenEvent("test_screen", emptyJsonObject)
             applyBaseDataToEvent(event)
@@ -239,7 +239,7 @@ class IntegrationPluginTest {
     fun `given an initialised integration, when its intercept called with GroupEvent, then groupEvent is called for destination`() =
         runTest {
             plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
-            val mockDestinationSdk = plugin.getUnderlyingInstance() as MockDestinationSdk
+            val mockDestinationSdk = plugin.getDestinationInstance() as MockDestinationSdk
 
             val event = GroupEvent("test_group_id", emptyJsonObject)
             applyBaseDataToEvent(event)
@@ -253,7 +253,7 @@ class IntegrationPluginTest {
     fun `given an initialised integration, when its intercept called with IdentifyEvent, then identifyUser is called for destination`() =
         runTest {
             plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
-            val mockDestinationSdk = plugin.getUnderlyingInstance() as MockDestinationSdk
+            val mockDestinationSdk = plugin.getDestinationInstance() as MockDestinationSdk
 
             val event = IdentifyEvent()
             event.userId = "test_user_id"
@@ -268,7 +268,7 @@ class IntegrationPluginTest {
     fun `given an initialised integration, when its intercept called with AliasEvent, then aliasUser is called for destination`() =
         runTest {
             plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
-            val mockDestinationSdk = plugin.getUnderlyingInstance() as MockDestinationSdk
+            val mockDestinationSdk = plugin.getDestinationInstance() as MockDestinationSdk
 
             val event = AliasEvent(previousId = "test_previous_id")
             event.userId = "test_user_id"
@@ -282,7 +282,7 @@ class IntegrationPluginTest {
     @Test
     fun `given an initialised integration, when reset called, then reset is called for destination`() = runTest {
         plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
-        val mockDestinationSdk = plugin.getUnderlyingInstance() as MockDestinationSdk
+        val mockDestinationSdk = plugin.getDestinationInstance() as MockDestinationSdk
 
         plugin.reset()
 
@@ -292,7 +292,7 @@ class IntegrationPluginTest {
     @Test
     fun `given an initialised integration, when flush called, then flush is called for destination`() = runTest {
         plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
-        val mockDestinationSdk = plugin.getUnderlyingInstance() as MockDestinationSdk
+        val mockDestinationSdk = plugin.getDestinationInstance() as MockDestinationSdk
 
         plugin.flush()
 
@@ -341,7 +341,7 @@ class IntegrationPluginTest {
 
             plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
             plugin.add(customPlugin)
-            val mockDestinationSdk = plugin.getUnderlyingInstance() as MockDestinationSdk
+            val mockDestinationSdk = plugin.getDestinationInstance() as MockDestinationSdk
 
             val event = TrackEvent("test", emptyJsonObject)
             applyBaseDataToEvent(event)
@@ -359,7 +359,7 @@ class IntegrationPluginTest {
 
             plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
             plugin.add(customPlugin)
-            val mockDestinationSdk = plugin.getUnderlyingInstance() as MockDestinationSdk
+            val mockDestinationSdk = plugin.getDestinationInstance() as MockDestinationSdk
 
             val event = TrackEvent("test", emptyJsonObject)
             applyBaseDataToEvent(event)

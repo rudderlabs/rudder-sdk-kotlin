@@ -48,7 +48,7 @@ class MockDestinationIntegrationPlugin : IntegrationPlugin() {
         }
     }
 
-    override fun getUnderlyingInstance(): Any? {
+    override fun getDestinationInstance(): Any? {
         return mockDestinationSdk
     }
 

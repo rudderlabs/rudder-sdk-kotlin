@@ -42,7 +42,7 @@ class SampleIntegrationPlugin: IntegrationPlugin() {
         }
     }
 
-    override fun getUnderlyingInstance(): Any? {
+    override fun getDestinationInstance(): Any? {
         return destinationSdk
     }
 

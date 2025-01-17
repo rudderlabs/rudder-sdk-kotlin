@@ -124,7 +124,7 @@ class IntegrationsManagementPluginTest {
             mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
             advanceUntilIdle()
 
-            val mockDestinationSdk = integrationPlugin.getUnderlyingInstance() as? MockDestinationSdk
+            val mockDestinationSdk = integrationPlugin.getDestinationInstance() as? MockDestinationSdk
 
             verify(exactly = 1) { callback.invoke(mockDestinationSdk, ofType(Result.Success::class) as DestinationResult) }
         }
@@ -140,7 +140,7 @@ class IntegrationsManagementPluginTest {
             mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
             advanceUntilIdle()
 
-            val mockDestinationSdk = integrationPlugin.getUnderlyingInstance() as? MockDestinationSdk
+            val mockDestinationSdk = integrationPlugin.getDestinationInstance() as? MockDestinationSdk
 
             verify(exactly = 1) { callback.invoke(mockDestinationSdk, ofType(Result.Success::class) as DestinationResult) }
         }
@@ -156,7 +156,7 @@ class IntegrationsManagementPluginTest {
             plugin.onDestinationReady(integrationPlugin, callback)
             advanceUntilIdle()
 
-            val mockDestinationSdk = integrationPlugin.getUnderlyingInstance() as? MockDestinationSdk
+            val mockDestinationSdk = integrationPlugin.getDestinationInstance() as? MockDestinationSdk
 
             verify(exactly = 1) { callback.invoke(mockDestinationSdk, ofType(Result.Success::class) as DestinationResult) }
         }
@@ -174,7 +174,7 @@ class IntegrationsManagementPluginTest {
             plugin.onDestinationReady(integrationPlugin, callback2)
             advanceUntilIdle()
 
-            val mockDestinationSdk = integrationPlugin.getUnderlyingInstance() as? MockDestinationSdk
+            val mockDestinationSdk = integrationPlugin.getDestinationInstance() as? MockDestinationSdk
 
             verify(exactly = 1) { callback1.invoke(mockDestinationSdk, ofType(Result.Success::class) as DestinationResult) }
             verify(exactly = 1) { callback2.invoke(mockDestinationSdk, ofType(Result.Success::class) as DestinationResult) }

@@ -72,7 +72,7 @@ abstract class IntegrationPlugin : EventPlugin {
      *
      * @return The instance of the destination.
      */
-    open fun getUnderlyingInstance(): Any? {
+    open fun getDestinationInstance(): Any? {
         return null
     }
 

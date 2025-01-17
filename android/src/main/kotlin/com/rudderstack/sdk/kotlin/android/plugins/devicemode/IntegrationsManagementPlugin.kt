@@ -156,7 +156,7 @@ internal class IntegrationsManagementPlugin : Plugin {
         callback: (Any?, DestinationResult) -> Unit,
         result: DestinationResult
     ) {
-        callback.invoke(plugin.getUnderlyingInstance(), result)
+        callback.invoke(plugin.getDestinationInstance(), result)
         destinationReadyCallbacks[plugin.key]?.remove(callback)
         if (destinationReadyCallbacks[plugin.key].isNullOrEmpty()) {
             destinationReadyCallbacks.remove(plugin.key)
