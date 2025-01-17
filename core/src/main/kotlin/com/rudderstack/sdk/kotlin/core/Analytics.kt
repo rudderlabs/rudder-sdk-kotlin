@@ -303,6 +303,10 @@ open class Analytics protected constructor(
      */
     private fun setup() {
         setLogger(logger = KotlinLogger())
+
+        // TODO: We need to ensure this is called only on core module. This logic will be implemented in an incremental PR.
+//        connectivityState.dispatch(ConnectivityState.SetDefaultStateAction())
+
         add(LibraryInfoPlugin())
         add(RudderStackDataplanePlugin())
 

@@ -9,6 +9,7 @@ import com.rudderstack.sdk.kotlin.core.internals.policies.DEFAULT_FLUSH_INTERVAL
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.spyk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -70,4 +71,20 @@ private fun String.cleanJsonString(): String {
 
 fun setupLogger(logger: Logger, level: Logger.LogLevel = Logger.LogLevel.VERBOSE) {
     LoggerAnalytics.setup(logger = logger, logLevel = level)
+}
+
+// As Mockk doesn't seems to support spying on lambda function, we need to create a class for the same.
+internal class Block {
+
+    fun execute() {
+        // Do nothing
+    }
+
+    fun executeAndThrowException() {
+        throw Exception("Exception occurred")
+    }
+}
+
+internal fun provideSpyBlock(): Block {
+    return spyk(Block())
 }
