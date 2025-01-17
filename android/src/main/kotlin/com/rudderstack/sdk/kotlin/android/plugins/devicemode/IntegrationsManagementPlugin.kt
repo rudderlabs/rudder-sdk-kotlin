@@ -43,19 +43,18 @@ internal class IntegrationsManagementPlugin : Plugin {
             analytics.sourceConfigState
                 .filter { it.source.isSourceEnabled }
                 .collectIndexed { index, sourceConfig ->
+                    val isFirstEmission = index == FIRST_INDEX
+
                     integrationPluginChain.applyClosure { plugin ->
-                        if (index == FIRST_INDEX) {
-                            if (plugin is IntegrationPlugin && plugin.destinationState == DestinationState.Uninitialised) {
-                                initAndNotifyCallbacks(sourceConfig, plugin)
-                            }
-                            processEvents()
-                        } else {
-                            if (plugin is IntegrationPlugin) {
-                                plugin.findAndUpdateDestination(sourceConfig)
+                        if (plugin is IntegrationPlugin) {
+                            when {
+                                isFirstEmission && plugin.destinationState == DestinationState.Uninitialised ->
+                                    initAndNotifyCallbacks(sourceConfig, plugin)
+                                !isFirstEmission -> plugin.findAndUpdateDestination(sourceConfig)
                             }
                         }
                     }
-                    if (index == FIRST_INDEX) {
+                    if (isFirstEmission) {
                         processEvents()
                     }
                 }
