@@ -97,6 +97,23 @@ class IntegrationsManagementPluginTest {
     }
 
     @Test
+    fun `given an integration plugin, when sourceConfig is emitted multiple times, then integration is initialised for first and updated for subsequent emissions`() =
+        runTest {
+            plugin.setup(mockAnalytics)
+
+            plugin.addIntegration(integrationPlugin)
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
+            advanceUntilIdle()
+
+            verify(exactly = 1) { integrationPlugin.findAndInitDestination(sourceConfigWithCorrectApiKey) }
+
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithIncorrectApiKey))
+            advanceUntilIdle()
+
+            verify(exactly = 1) { integrationPlugin.findAndUpdateDestination(sourceConfigWithIncorrectApiKey) }
+        }
+
+    @Test
     fun `given an integration, when a callback is registered before sourceConfig is fetched and integration is added, then it is called after successful initialisation`() =
         runTest {
             val callback = mockk<(Any?, DestinationResult) -> Unit>(relaxed = true)
