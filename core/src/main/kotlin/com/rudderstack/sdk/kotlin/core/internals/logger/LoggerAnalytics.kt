@@ -29,7 +29,7 @@ package com.rudderstack.sdk.kotlin.core.internals.logger
  * and clarity for debugging and tracking events across SDK modules.
  */
 object LoggerAnalytics {
-    private lateinit var logger: Logger
+    private var logger: Logger? = null
     private var logLevel: Logger.LogLevel = Logger.DEFAULT_LOG_LEVEL
         @Synchronized private set
 
@@ -43,9 +43,9 @@ object LoggerAnalytics {
      * @param tag A string tag to associate with all log messages. It is optional and defaults to `Rudder-Analytics`.
      */
     fun setup(logger: Logger, logLevel: Logger.LogLevel, tag: String = TAG) {
-        LoggerAnalytics.logger = logger
-        LoggerAnalytics.logLevel = logLevel
-        LoggerAnalytics.logger.setTag(tag)
+        this.logger = logger
+        this.logLevel = logLevel
+        this.logger?.setTag(tag)
     }
 
     /**
@@ -55,7 +55,7 @@ object LoggerAnalytics {
      */
     fun verbose(log: String) {
         if (Logger.LogLevel.VERBOSE >= logLevel) {
-            logger.verbose(log)
+            logger?.verbose(log)
         }
     }
 
@@ -66,7 +66,7 @@ object LoggerAnalytics {
      */
     fun debug(log: String) {
         if (Logger.LogLevel.DEBUG >= logLevel) {
-            logger.debug(log)
+            logger?.debug(log)
         }
     }
 
@@ -77,7 +77,7 @@ object LoggerAnalytics {
      */
     fun info(log: String) {
         if (Logger.LogLevel.INFO >= logLevel) {
-            logger.info(log)
+            logger?.info(log)
         }
     }
 
@@ -88,7 +88,7 @@ object LoggerAnalytics {
      */
     fun warn(log: String) {
         if (Logger.LogLevel.WARN >= logLevel) {
-            logger.warn(log)
+            logger?.warn(log)
         }
     }
 
@@ -100,7 +100,7 @@ object LoggerAnalytics {
      */
     fun error(log: String, throwable: Throwable? = null) {
         if (Logger.LogLevel.ERROR >= logLevel) {
-            logger.error(log, throwable)
+            logger?.error(log, throwable)
         }
     }
 }

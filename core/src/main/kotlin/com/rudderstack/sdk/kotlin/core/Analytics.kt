@@ -13,6 +13,7 @@ import com.rudderstack.sdk.kotlin.core.internals.models.RudderTraits
 import com.rudderstack.sdk.kotlin.core.internals.models.ScreenEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
+import com.rudderstack.sdk.kotlin.core.internals.models.connectivity.ConnectivityState
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.ResetUserIdentityAction
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.SetAnonymousIdAction
@@ -78,9 +79,28 @@ open class Analytics protected constructor(
         private set
 
     init {
+        runForBaseTypeOnly()
         processEvents()
         setup()
         storeAnonymousId()
+    }
+
+    private fun runForBaseTypeOnly() {
+        if (this::class == Analytics::class) {
+            setLogger(logger = KotlinLogger())
+            connectivityState.dispatch(ConnectivityState.SetDefaultStateAction())
+            setupSourceConfig()
+        }
+    }
+
+    protected fun setupSourceConfig() {
+        SourceConfigManager(
+            analytics = this,
+            sourceConfigState = sourceConfigState
+        ).apply {
+            fetchCachedSourceConfigAndNotifyObservers()
+            refreshSourceConfigAndNotifyObservers()
+        }
     }
 
     /**
@@ -299,23 +319,11 @@ open class Analytics protected constructor(
 
     /**
      * Sets up the initial plugin chain by adding the default plugins such as `PocPlugin`
-     * and `RudderStackDataplanePlugin`. This function is called during initialization.
+     * and `RudderStackDataPlanePlugin`. This function is called during initialization.
      */
     private fun setup() {
-        setLogger(logger = KotlinLogger())
-
-        // TODO: We need to ensure this is called only on core module. This logic will be implemented in an incremental PR.
-//        connectivityState.dispatch(ConnectivityState.SetDefaultStateAction())
-
         add(LibraryInfoPlugin())
         add(RudderStackDataplanePlugin())
-
-        analyticsScope.launch(analyticsDispatcher) {
-            SourceConfigManager(
-                analytics = this@Analytics,
-                sourceConfigState = sourceConfigState
-            ).fetchAndUpdateSourceConfig()
-        }
     }
 
     /**
