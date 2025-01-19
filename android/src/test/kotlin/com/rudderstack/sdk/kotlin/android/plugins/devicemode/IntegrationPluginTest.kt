@@ -83,7 +83,7 @@ class IntegrationPluginTest {
             val mockDestinationSdk = plugin.getDestinationInstance() as? MockDestinationSdk
 
             assertNotNull(mockDestinationSdk)
-            assert(plugin.destinationState is DestinationState.Ready)
+            assert(plugin.integrationState is IntegrationState.Ready)
         }
 
     @Test
@@ -93,8 +93,8 @@ class IntegrationPluginTest {
             val mockDestinationSdk = plugin.getDestinationInstance() as? MockDestinationSdk
 
             assert(mockDestinationSdk == null)
-            assert(plugin.destinationState is DestinationState.Failed)
-            assert((plugin.destinationState as DestinationState.Failed).exception is SdkNotInitializedException)
+            assert(plugin.integrationState is IntegrationState.Failed)
+            assert((plugin.integrationState as IntegrationState.Failed).exception is SdkNotInitializedException)
         }
 
     @Test
@@ -107,8 +107,8 @@ class IntegrationPluginTest {
             val mockDestinationSdk = plugin.getDestinationInstance() as? MockDestinationSdk
 
             assert(mockDestinationSdk == null)
-            assert(plugin.destinationState is DestinationState.Failed)
-            assert((plugin.destinationState as DestinationState.Failed).exception is SdkNotInitializedException)
+            assert(plugin.integrationState is IntegrationState.Failed)
+            assert((plugin.integrationState as IntegrationState.Failed).exception is SdkNotInitializedException)
         }
 
     @Test
@@ -121,8 +121,8 @@ class IntegrationPluginTest {
             val mockDestinationSdk = plugin.getDestinationInstance() as? MockDestinationSdk
 
             assert(mockDestinationSdk == null)
-            assert(plugin.destinationState is DestinationState.Failed)
-            assert((plugin.destinationState as DestinationState.Failed).exception is SdkNotInitializedException)
+            assert(plugin.integrationState is IntegrationState.Failed)
+            assert((plugin.integrationState as IntegrationState.Failed).exception is SdkNotInitializedException)
         }
 
     @Test
@@ -140,8 +140,8 @@ class IntegrationPluginTest {
             plugin.setup(mockAnalytics)
             plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
 
-            assert(plugin.destinationState is DestinationState.Failed)
-            assert((plugin.destinationState as DestinationState.Failed).exception == exception)
+            assert(plugin.integrationState is IntegrationState.Failed)
+            assert((plugin.integrationState as IntegrationState.Failed).exception == exception)
         }
 
     @Test
@@ -177,8 +177,8 @@ class IntegrationPluginTest {
             )
             plugin.findAndUpdateDestination(sourceConfigWithDisabledDestination)
 
-            assert(plugin.destinationState is DestinationState.Failed)
-            assert((plugin.destinationState as DestinationState.Failed).exception is SdkNotInitializedException)
+            assert(plugin.integrationState is IntegrationState.Failed)
+            assert((plugin.integrationState as IntegrationState.Failed).exception is SdkNotInitializedException)
         }
 
     @Test
@@ -191,8 +191,8 @@ class IntegrationPluginTest {
             )
             plugin.findAndUpdateDestination(sourceConfigWithAbsentDestinationConfig)
 
-            assert(plugin.destinationState is DestinationState.Failed)
-            assert((plugin.destinationState as DestinationState.Failed).exception is SdkNotInitializedException)
+            assert(plugin.integrationState is IntegrationState.Failed)
+            assert((plugin.integrationState as IntegrationState.Failed).exception is SdkNotInitializedException)
         }
 
     @Test
@@ -202,7 +202,7 @@ class IntegrationPluginTest {
         plugin.findAndUpdateDestination(sourceConfigWithCorrectApiKey)
         val updatedMockDestinationSdk = plugin.getDestinationInstance() as? MockDestinationSdk
 
-        assert(plugin.destinationState is DestinationState.Ready)
+        assert(plugin.integrationState is IntegrationState.Ready)
         verify(exactly = 1) { updatedMockDestinationSdk?.update() }
     }
 

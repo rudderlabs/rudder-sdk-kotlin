@@ -48,7 +48,7 @@ internal class IntegrationsManagementPlugin : Plugin {
                     integrationPluginChain.applyClosure { plugin ->
                         if (plugin is IntegrationPlugin) {
                             when {
-                                isFirstEmission && plugin.destinationState == DestinationState.Uninitialised ->
+                                isFirstEmission && plugin.integrationState == IntegrationState.Uninitialised ->
                                     initAndNotifyCallbacks(sourceConfig, plugin)
                                 !isFirstEmission -> plugin.findAndUpdateDestination(sourceConfig)
                             }
@@ -102,7 +102,7 @@ internal class IntegrationsManagementPlugin : Plugin {
     internal fun reset() {
         integrationPluginChain.applyClosure { plugin ->
             if (plugin is IntegrationPlugin) {
-                if (plugin.destinationState.isReady()) {
+                if (plugin.integrationState.isReady()) {
                     plugin.reset()
                 } else {
                     LoggerAnalytics.debug(
@@ -117,7 +117,7 @@ internal class IntegrationsManagementPlugin : Plugin {
     internal fun flush() {
         integrationPluginChain.applyClosure { plugin ->
             if (plugin is IntegrationPlugin) {
-                if (plugin.destinationState.isReady()) {
+                if (plugin.integrationState.isReady()) {
                     plugin.flush()
                 } else {
                     LoggerAnalytics.debug(
@@ -139,14 +139,14 @@ internal class IntegrationsManagementPlugin : Plugin {
     private fun notifyDestinationCallbacks(plugin: IntegrationPlugin) {
         val callBacks = destinationReadyCallbacks[plugin.key]?.toList()
         callBacks?.forEach { callback ->
-            when (val destinationState = plugin.destinationState) {
-                is DestinationState.Ready -> notifyAndRemoveCallback(plugin, callback, Result.Success(Unit))
-                is DestinationState.Failed -> notifyAndRemoveCallback(
+            when (val integrationState = plugin.integrationState) {
+                is IntegrationState.Ready -> notifyAndRemoveCallback(plugin, callback, Result.Success(Unit))
+                is IntegrationState.Failed -> notifyAndRemoveCallback(
                     plugin,
                     callback,
-                    Result.Failure(error = destinationState.exception)
+                    Result.Failure(error = integrationState.exception)
                 )
-                is DestinationState.Uninitialised -> Unit
+                is IntegrationState.Uninitialised -> Unit
             }
         }
     }

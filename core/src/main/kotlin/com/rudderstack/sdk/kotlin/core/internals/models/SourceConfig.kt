@@ -46,7 +46,9 @@ data class SourceConfig(
      *
      * @param updatedSourceConfig The updated source configuration.
      */
-    class UpdateAction(@VisibleForTesting internal val updatedSourceConfig: SourceConfig) : FlowAction<SourceConfig> {
+    class UpdateAction(
+        @VisibleForTesting internal val updatedSourceConfig: SourceConfig
+    ) : FlowAction<SourceConfig> {
 
         override fun reduce(currentState: SourceConfig): SourceConfig {
             return updatedSourceConfig

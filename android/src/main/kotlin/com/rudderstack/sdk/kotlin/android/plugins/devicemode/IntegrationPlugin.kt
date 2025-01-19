@@ -31,7 +31,7 @@ abstract class IntegrationPlugin : EventPlugin {
     abstract val key: String
 
     @Volatile
-    internal var destinationState: DestinationState = DestinationState.Uninitialised
+    internal var integrationState: IntegrationState = IntegrationState.Uninitialised
         private set
 
     private lateinit var pluginChain: PluginChain
@@ -105,7 +105,7 @@ abstract class IntegrationPlugin : EventPlugin {
     }
 
     final override suspend fun intercept(event: Event): Event {
-        if (destinationState.isReady()) {
+        if (integrationState.isReady()) {
             event.copy<Event>()
                 .let { pluginChain.applyPlugins(Plugin.PluginType.PreProcess, it) }
                 ?.let { pluginChain.applyPlugins(Plugin.PluginType.OnProcess, it) }
@@ -157,13 +157,13 @@ abstract class IntegrationPlugin : EventPlugin {
             if (!configDestination.isDestinationEnabled) {
                 val errorMessage = "Destination $key is disabled in dashboard. No events will be sent to this destination."
                 LoggerAnalytics.warn(errorMessage)
-                destinationState = DestinationState.Failed(SdkNotInitializedException(errorMessage))
+                integrationState = IntegrationState.Failed(SdkNotInitializedException(errorMessage))
                 return
             }
             block(configDestination.destinationConfig)
         } ?: run {
             val errorMessage = "Destination $key not found in the source config. No events will be sent to this destination."
-            destinationState = DestinationState.Failed(SdkNotInitializedException(errorMessage))
+            integrationState = IntegrationState.Failed(SdkNotInitializedException(errorMessage))
             LoggerAnalytics.warn("IntegrationPlugin: $errorMessage")
         }
     }
@@ -173,18 +173,18 @@ abstract class IntegrationPlugin : EventPlugin {
             block = {
                 when (create(destinationConfig)) {
                     true -> {
-                        destinationState = DestinationState.Ready
+                        integrationState = IntegrationState.Ready
                         LoggerAnalytics.debug("IntegrationPlugin: Destination $key is ready.")
                     }
                     false -> {
                         val errorMessage = "Destination $key failed to initialise."
-                        destinationState = DestinationState.Failed(SdkNotInitializedException(errorMessage))
+                        integrationState = IntegrationState.Failed(SdkNotInitializedException(errorMessage))
                         LoggerAnalytics.warn("IntegrationPlugin: $errorMessage")
                     }
                 }
             },
             onException = {
-                destinationState = DestinationState.Failed(it)
+                integrationState = IntegrationState.Failed(it)
                 LoggerAnalytics.error("IntegrationPlugin: Error: ${it.message} initializing destination $key.")
             }
         )
@@ -195,7 +195,7 @@ abstract class IntegrationPlugin : EventPlugin {
             block = {
                 when (update(destinationConfig)) {
                     true -> {
-                        destinationState = DestinationState.Ready
+                        integrationState = IntegrationState.Ready
                         LoggerAnalytics.debug("IntegrationPlugin: Destination $key updated.")
                     }
                     false -> {
@@ -224,12 +224,12 @@ abstract class IntegrationPlugin : EventPlugin {
     }
 }
 
-internal sealed interface DestinationState {
-    data object Ready : DestinationState
-    data object Uninitialised : DestinationState
+internal sealed interface IntegrationState {
+    data object Ready : IntegrationState
+    data object Uninitialised : IntegrationState
     data class Failed(
         val exception: Exception
-    ) : DestinationState
+    ) : IntegrationState
 
     fun isReady() = this == Ready
 }
