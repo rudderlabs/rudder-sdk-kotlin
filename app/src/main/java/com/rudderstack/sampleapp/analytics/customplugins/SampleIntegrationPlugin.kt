@@ -1,8 +1,6 @@
 package com.rudderstack.sampleapp.analytics.customplugins
 
-import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.IntegrationPlugin
-import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
@@ -18,7 +16,7 @@ class SampleIntegrationPlugin: IntegrationPlugin() {
     override val key: String
         get() = "Amplitude"
 
-    override fun create(destinationConfig: JsonObject, analytics: Analytics, config: Configuration): Boolean {
+    override fun create(destinationConfig: JsonObject): Boolean {
         try {
             val apiKey = destinationConfig["apiKey"]?.jsonPrimitive?.content
             apiKey?.let {

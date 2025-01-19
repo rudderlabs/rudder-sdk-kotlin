@@ -1,6 +1,5 @@
 package com.rudderstack.sdk.kotlin.android.plugins.devicemode
 
-import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Destination
@@ -46,11 +45,9 @@ abstract class IntegrationPlugin : EventPlugin {
      * This method must return true if the destination was created successfully, false otherwise.
      *
      * @param destinationConfig The configuration for the destination.
-     * @param analytics The analytics instance.
-     * @param config The configuration instance.
      * @return true if the destination was created successfully, false otherwise.
      */
-    protected abstract fun create(destinationConfig: JsonObject, analytics: Analytics, config: Configuration): Boolean
+    protected abstract fun create(destinationConfig: JsonObject): Boolean
 
     /**
      * Updates the destination.
@@ -174,13 +171,7 @@ abstract class IntegrationPlugin : EventPlugin {
     private fun createSafelyAndChangeState(destinationConfig: JsonObject) {
         safelyExecute(
             block = {
-                when (
-                    create(
-                        destinationConfig,
-                        analytics,
-                        analytics.configuration as Configuration
-                    )
-                ) {
+                when (create(destinationConfig)) {
                     true -> {
                         destinationState = DestinationState.Ready
                         LoggerAnalytics.debug("IntegrationPlugin: Destination $key is ready.")
@@ -209,7 +200,7 @@ abstract class IntegrationPlugin : EventPlugin {
                     }
                     false -> {
                         val errorMessage = "Destination $key failed to update."
-                        LoggerAnalytics.warn("IntegrationPlugin: $errorMessage")
+                        LoggerAnalytics.debug("IntegrationPlugin: $errorMessage")
                     }
                 }
             },

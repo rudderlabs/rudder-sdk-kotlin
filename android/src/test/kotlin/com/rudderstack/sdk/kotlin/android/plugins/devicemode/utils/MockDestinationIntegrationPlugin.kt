@@ -1,8 +1,6 @@
 package com.rudderstack.sdk.kotlin.android.plugins.devicemode.utils
 
-import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.IntegrationPlugin
-import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.AliasEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.GroupEvent
@@ -19,7 +17,7 @@ class MockDestinationIntegrationPlugin : IntegrationPlugin() {
     override val key: String
         get() = "MockDestination"
 
-    override fun create(destinationConfig: JsonObject, analytics: Analytics, config: Configuration): Boolean {
+    override fun create(destinationConfig: JsonObject): Boolean {
         try {
             val apiKey = destinationConfig["apiKey"]?.jsonPrimitive?.content
             apiKey?.let {

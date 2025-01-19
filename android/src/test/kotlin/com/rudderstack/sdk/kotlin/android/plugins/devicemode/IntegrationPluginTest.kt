@@ -7,7 +7,6 @@ import com.rudderstack.sdk.kotlin.android.plugins.devicemode.utils.MockDestinati
 import com.rudderstack.sdk.kotlin.android.utils.assertDoesNotThrow
 import com.rudderstack.sdk.kotlin.android.utils.mockAnalytics
 import com.rudderstack.sdk.kotlin.android.utils.readFileAsString
-import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.AliasEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.GroupEvent
@@ -134,7 +133,7 @@ class IntegrationPluginTest {
                 override val key: String
                     get() = "MockDestination"
 
-                override fun create(destinationConfig: JsonObject, analytics: Analytics, config: Configuration): Boolean {
+                override fun create(destinationConfig: JsonObject): Boolean {
                     throw exception
                 }
             }
