@@ -87,6 +87,16 @@ internal fun String?.parseFilePaths(): List<String> {
 fun String.Companion.empty(): String = EMPTY_STRING
 
 /**
+ * Returns the string itself if it is not null; otherwise, returns an empty string.
+ *
+ * This extension function returns the string itself if it is not null; otherwise, it returns an empty string.
+ *
+ * @return The string itself if it is not null; otherwise, an empty string.
+ */
+@InternalRudderApi
+fun String?.orEmpty(): String = this ?: EMPTY_STRING
+
+/**
  * Validates and formats a base URL by ensuring it ends with a slash (`/`).
  *
  * This property checks if the string ends with a slash. If not, it appends a slash to the end.
