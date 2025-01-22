@@ -4,7 +4,6 @@ import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.utils.MockDestinationCustomPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.utils.MockDestinationSdk
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.utils.MockDestinationIntegrationPlugin
-import com.rudderstack.sdk.kotlin.android.utils.assertDoesNotThrow
 import com.rudderstack.sdk.kotlin.android.utils.mockAnalytics
 import com.rudderstack.sdk.kotlin.android.utils.readFileAsString
 import com.rudderstack.sdk.kotlin.core.internals.models.AliasEvent
@@ -60,14 +59,16 @@ class IntegrationPluginTest {
     private val sourceConfigWithIncorrectApiKey = LenientJson.decodeFromString<SourceConfig>(
         readFileAsString(pathToSourceConfigWithIncorrectApiKey)
     )
+    private val apiKeyRegex = Regex("[^a-zA-Z0-9-]")
 
-    private lateinit var plugin: IntegrationPlugin
+    private lateinit var plugin: MockDestinationIntegrationPlugin
 
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
 
-        plugin = MockDestinationIntegrationPlugin()
+        plugin = spyk(MockDestinationIntegrationPlugin())
+        mockInitialiseSdk()
         every { mockAnalytics.configuration } returns mockk<Configuration>(relaxed = true)
         plugin.setup(mockAnalytics)
     }
@@ -147,7 +148,7 @@ class IntegrationPluginTest {
         }
 
     @Test
-    fun `given an initialised destination and a sourceConfig, when plugin is updated with it, then integration is updated`() =
+    fun `given an initialised integration and a sourceConfig, when plugin is updated with it, then integration is updated`() =
         runTest {
             val sourceConfigWithAnotherCorrectApiKey = LenientJson.decodeFromString<SourceConfig>(
                 readFileAsString(pathToSourceConfigWithAnotherCorrectApiKey)
@@ -164,7 +165,7 @@ class IntegrationPluginTest {
         }
 
     @Test
-    fun `given an initialised destination and sourceConfig with disabled destination, when plugin is updated with it, then destination moves to Failed state`() =
+    fun `given an initialised integration and sourceConfig with disabled destination, when plugin is updated with it, then destination moves to Failed state`() =
         runTest {
             plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
 
@@ -178,7 +179,7 @@ class IntegrationPluginTest {
         }
 
     @Test
-    fun `given an initialised destination, when plugin is updated with sourceConfig without destination, then integration moves to Failed state`() =
+    fun `given an initialised integration, when plugin is updated with sourceConfig without destination, then integration moves to Failed state`() =
         runTest {
             plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
 
@@ -192,7 +193,7 @@ class IntegrationPluginTest {
         }
 
     @Test
-    fun `given a failed destination, when the plugin is updated with a new correct sourceConfig, then integration moves to Ready state`() =
+    fun `given a Failed integration, when the plugin is updated with a new correct sourceConfig, then integration moves to Ready state`() =
         runTest {
             plugin.findAndInitDestination(sourceConfigWithIncorrectApiKey)
 
@@ -405,6 +406,13 @@ class IntegrationPluginTest {
 
             verify(exactly = 1) { customPlugin.teardown() }
         }
+
+    private fun mockInitialiseSdk() {
+        every { plugin.initialiseMockSdk(match { it.contains(apiKeyRegex) }) } throws IllegalArgumentException("Invalid API key")
+        every { plugin.initialiseMockSdk(match { !it.contains(apiKeyRegex) }) } answers {
+            spyk(MockDestinationSdk.initialise(arg<String>(0)))
+        }
+    }
 }
 
 internal fun applyBaseDataToEvent(event: Event) {

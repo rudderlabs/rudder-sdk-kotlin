@@ -24,13 +24,17 @@ class MockDestinationIntegrationPlugin : IntegrationPlugin() {
             val apiKey = destinationConfig["apiKey"]?.jsonPrimitive?.content
             apiKey?.let {
                 previousApiKey = it
-                mockDestinationSdk = MockDestinationSdk.initialise(it)
+                mockDestinationSdk = initialiseMockSdk(it)
                 return true
             }
             return false
         } catch (e: Exception) {
             return false
         }
+    }
+
+    internal fun initialiseMockSdk(apiKey: String): MockDestinationSdk {
+        return MockDestinationSdk.initialise(apiKey)
     }
 
     override fun update(destinationConfig: JsonObject): Boolean {

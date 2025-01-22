@@ -1,7 +1,5 @@
 package com.rudderstack.sdk.kotlin.android.plugins.devicemode.utils
 
-import io.mockk.spyk
-
 class MockDestinationSdk private constructor(private val apiKey: String) {
 
     fun trackEvent(event: String) {
@@ -39,7 +37,7 @@ class MockDestinationSdk private constructor(private val apiKey: String) {
             if (apiKey.contains(Regex("[^a-zA-Z0-9-]"))) {
                 throw IllegalArgumentException("Invalid API key")
             }
-            return spyk(MockDestinationSdk(apiKey))
+            return MockDestinationSdk(apiKey)
         }
     }
 }
