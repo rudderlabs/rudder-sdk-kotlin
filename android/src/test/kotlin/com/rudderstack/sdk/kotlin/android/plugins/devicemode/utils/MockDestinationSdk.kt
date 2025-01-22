@@ -2,8 +2,6 @@ package com.rudderstack.sdk.kotlin.android.plugins.devicemode.utils
 
 import io.mockk.spyk
 
-private const val API_KEY = "test-api-key"
-
 class MockDestinationSdk private constructor(private val apiKey: String) {
 
     fun trackEvent(event: String) {
@@ -34,18 +32,14 @@ class MockDestinationSdk private constructor(private val apiKey: String) {
         println("MockDestinationSdk: Flushing")
     }
 
-    fun update() {
-        println("MockDestinationSdk: Updating")
-    }
-
     companion object {
 
         fun initialise(apiKey: String): MockDestinationSdk {
-            return if (apiKey == API_KEY) {
-                spyk(MockDestinationSdk(apiKey))
-            } else {
-                throw IllegalArgumentException("MockDestinationSdk: Invalid API Key")
+            // if the API key has any special characters other than hyphen, throw an exception
+            if (apiKey.contains(Regex("[^a-zA-Z0-9-]"))) {
+                throw IllegalArgumentException("Invalid API key")
             }
+            return spyk(MockDestinationSdk(apiKey))
         }
     }
 }

@@ -39,6 +39,8 @@ import org.junit.Before
 import org.junit.Test
 
 internal const val pathToSourceConfigWithCorrectApiKey = "mockdestinationconfig/source_config_with_correct_api_key.json"
+internal const val pathToSourceConfigWithAnotherCorrectApiKey =
+    "mockdestinationconfig/source_config_with_another_correct_api_key.json"
 internal const val pathToSourceConfigWithIncorrectApiKey = "mockdestinationconfig/source_config_with_incorrect_api_key.json"
 internal const val pathToSourceConfigWithAbsentDestinationConfig =
     "mockdestinationconfig/source_config_with_other_destination.json"
@@ -147,24 +149,18 @@ class IntegrationPluginTest {
     @Test
     fun `given an initialised destination and a sourceConfig, when plugin is updated with it, then destination is updated`() =
         runTest {
+            val sourceConfigWithAnotherCorrectApiKey = LenientJson.decodeFromString<SourceConfig>(
+                readFileAsString(pathToSourceConfigWithAnotherCorrectApiKey)
+            )
             plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
+            val initialMockDestinationSdk = plugin.getDestinationInstance() as MockDestinationSdk
 
-            plugin.findAndUpdateDestination(sourceConfigWithCorrectApiKey)
-            val updatedMockDestinationSdk = plugin.getDestinationInstance() as? MockDestinationSdk
+            plugin.findAndUpdateDestination(sourceConfigWithAnotherCorrectApiKey)
+            val updatedMockDestinationSdk = plugin.getDestinationInstance() as MockDestinationSdk
 
-            verify(exactly = 1) { updatedMockDestinationSdk?.update() }
-        }
-
-    @Test
-    fun `given an initialised destination and its update throws an exception, when plugin is updated with a sourceConfig, then the exception is not rethrown`() =
-        runTest {
-            plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
-
-            val exception = Exception("Test exception")
-            val mockDestinationSdk = plugin.getDestinationInstance() as MockDestinationSdk
-            every { mockDestinationSdk.update() } throws exception
-
-            assertDoesNotThrow { plugin.findAndUpdateDestination(sourceConfigWithCorrectApiKey) }
+            assert(initialMockDestinationSdk != updatedMockDestinationSdk)
+            assertNotNull(updatedMockDestinationSdk)
+            assertNotNull(initialMockDestinationSdk)
         }
 
     @Test
@@ -196,15 +192,14 @@ class IntegrationPluginTest {
         }
 
     @Test
-    fun `given a failed destination, when the plugin is updated with a new correct sourceConfig, then destination moves to Ready state`() = runTest {
-        plugin.findAndInitDestination(sourceConfigWithIncorrectApiKey)
+    fun `given a failed destination, when the plugin is updated with a new correct sourceConfig, then destination moves to Ready state`() =
+        runTest {
+            plugin.findAndInitDestination(sourceConfigWithIncorrectApiKey)
 
-        plugin.findAndUpdateDestination(sourceConfigWithCorrectApiKey)
-        val updatedMockDestinationSdk = plugin.getDestinationInstance() as? MockDestinationSdk
+            plugin.findAndUpdateDestination(sourceConfigWithCorrectApiKey)
 
-        assert(plugin.integrationState is IntegrationState.Ready)
-        verify(exactly = 1) { updatedMockDestinationSdk?.update() }
-    }
+            assert(plugin.integrationState is IntegrationState.Ready)
+        }
 
     @Test
     fun `given an initialised integration, when its intercept called with TrackEvent, then trackEvent is called for destination`() =

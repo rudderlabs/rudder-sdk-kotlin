@@ -7,12 +7,14 @@ import com.rudderstack.sdk.kotlin.core.internals.models.GroupEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.ScreenEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
+import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
 class MockDestinationIntegrationPlugin : IntegrationPlugin() {
 
     private var mockDestinationSdk: MockDestinationSdk? = null
+    private var previousApiKey = String.empty()
 
     override val key: String
         get() = "MockDestination"
@@ -21,6 +23,7 @@ class MockDestinationIntegrationPlugin : IntegrationPlugin() {
         try {
             val apiKey = destinationConfig["apiKey"]?.jsonPrimitive?.content
             apiKey?.let {
+                previousApiKey = it
                 mockDestinationSdk = MockDestinationSdk.initialise(it)
                 return true
             }
@@ -32,18 +35,13 @@ class MockDestinationIntegrationPlugin : IntegrationPlugin() {
 
     override fun update(destinationConfig: JsonObject): Boolean {
         // this is a simulated version of how to update the destination
-        // destination SDK is reinitialised with the new API key and then update method of SDK is called.
         val apiKey = destinationConfig["apiKey"]?.jsonPrimitive?.content
-        apiKey?.let {
-            mockDestinationSdk = MockDestinationSdk.initialise(it)
+        // destination SDK is reinitialised with the new API key if it is null or API key is different.
+        if (mockDestinationSdk == null || apiKey != previousApiKey) {
+            return create(destinationConfig)
         }
-
-        return mockDestinationSdk?.let {
-            it.update()
-            true
-        } ?: run {
-            false
-        }
+        // if the above check is passed then the destination is already in ready state, so return true.
+        return true
     }
 
     override fun getDestinationInstance(): Any? {
