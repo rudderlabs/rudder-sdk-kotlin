@@ -1,9 +1,9 @@
 package com.rudderstack.sdk.kotlin.android.plugins.devicemode
 
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing.EventFilteringPlugin
+import com.rudderstack.sdk.kotlin.android.utils.findDestination
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
-import com.rudderstack.sdk.kotlin.core.internals.models.Destination
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.plugins.EventPlugin
@@ -223,10 +223,6 @@ abstract class IntegrationPlugin : EventPlugin {
         pluginList.forEach { plugin -> add(plugin) }
         pluginList.clear()
     }
-}
-
-internal fun findDestination(sourceConfig: SourceConfig, key: String): Destination? {
-    return sourceConfig.source.destinations.firstOrNull { it.destinationDefinition.displayName == key }
 }
 
 internal sealed interface IntegrationState {

@@ -1,6 +1,6 @@
 package com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing
 
-import com.rudderstack.sdk.kotlin.android.plugins.devicemode.findDestination
+import com.rudderstack.sdk.kotlin.android.utils.findDestination
 import com.rudderstack.sdk.kotlin.android.utils.getString
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
