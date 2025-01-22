@@ -33,6 +33,7 @@ import kotlinx.coroutines.test.setMain
 import kotlinx.serialization.json.JsonObject
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Before
 import org.junit.Test
@@ -148,7 +149,7 @@ class IntegrationPluginTest {
         }
 
     @Test
-    fun `given an initialised integration and a sourceConfig, when plugin is updated with it, then integration is updated`() =
+    fun `given an initialised integration, when plugin is updated with a sourceConfig, then integration is updated`() =
         runTest {
             val sourceConfigWithAnotherCorrectApiKey = LenientJson.decodeFromString<SourceConfig>(
                 readFileAsString(pathToSourceConfigWithAnotherCorrectApiKey)
@@ -165,7 +166,22 @@ class IntegrationPluginTest {
         }
 
     @Test
-    fun `given an initialised integration and sourceConfig with disabled destination, when plugin is updated with it, then destination moves to Failed state`() =
+    fun `given an initialised integration, when plugin is updated with a sourceConfig, then destinationConfig in integration is updated`() =
+        runTest {
+            val sourceConfigWithAnotherCorrectApiKey = LenientJson.decodeFromString<SourceConfig>(
+                readFileAsString(pathToSourceConfigWithAnotherCorrectApiKey)
+            )
+            plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
+            val initialDestinationConfig = plugin.destinationConfig
+
+            plugin.findAndUpdateDestination(sourceConfigWithAnotherCorrectApiKey)
+            val destinationConfig = plugin.destinationConfig
+
+            assertNotEquals(initialDestinationConfig, destinationConfig)
+        }
+
+    @Test
+    fun `given an initialised integration, when plugin is updated with a sourceConfig with disabled destination, then destination moves to Failed state`() =
         runTest {
             plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
 

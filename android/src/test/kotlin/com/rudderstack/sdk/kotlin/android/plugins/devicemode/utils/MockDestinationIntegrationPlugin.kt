@@ -15,12 +15,14 @@ class MockDestinationIntegrationPlugin : IntegrationPlugin() {
 
     private var mockDestinationSdk: MockDestinationSdk? = null
     private var previousApiKey = String.empty()
+    internal lateinit var destinationConfig: JsonObject
 
     override val key: String
         get() = "MockDestination"
 
     override fun create(destinationConfig: JsonObject): Boolean {
         try {
+            this.destinationConfig = destinationConfig
             val apiKey = destinationConfig["apiKey"]?.jsonPrimitive?.content
             apiKey?.let {
                 previousApiKey = it
@@ -39,6 +41,7 @@ class MockDestinationIntegrationPlugin : IntegrationPlugin() {
 
     override fun update(destinationConfig: JsonObject): Boolean {
         // this is a simulated version of how to update the destination
+        this.destinationConfig = destinationConfig
         val apiKey = destinationConfig["apiKey"]?.jsonPrimitive?.content
         // destination SDK is reinitialised with the new API key if it is null or API key is different.
         if (mockDestinationSdk == null || apiKey != previousApiKey) {
