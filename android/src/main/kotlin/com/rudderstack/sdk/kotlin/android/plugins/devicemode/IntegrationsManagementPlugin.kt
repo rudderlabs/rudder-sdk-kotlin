@@ -47,10 +47,9 @@ internal class IntegrationsManagementPlugin : Plugin {
 
                     integrationPluginChain.applyClosure { plugin ->
                         if (plugin is IntegrationPlugin) {
-                            when {
-                                isFirstEmission && plugin.integrationState == IntegrationState.Uninitialised ->
-                                    initAndNotifyCallbacks(sourceConfig, plugin)
-                                !isFirstEmission -> plugin.findAndUpdateDestination(sourceConfig)
+                            when (isFirstEmission) {
+                                true -> initAndNotifyCallbacks(sourceConfig, plugin)
+                                false -> plugin.findAndUpdateDestination(sourceConfig)
                             }
                         }
                     }
