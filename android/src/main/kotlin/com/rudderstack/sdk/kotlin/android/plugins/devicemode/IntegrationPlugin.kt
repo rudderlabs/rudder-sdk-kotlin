@@ -8,6 +8,7 @@ import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.plugins.EventPlugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.PluginChain
+import com.rudderstack.sdk.kotlin.core.internals.utils.defaultExceptionHandler
 import com.rudderstack.sdk.kotlin.core.internals.utils.safelyExecute
 import kotlinx.serialization.json.JsonObject
 import java.util.concurrent.CopyOnWriteArrayList
@@ -152,7 +153,7 @@ abstract class IntegrationPlugin : EventPlugin {
         }
     }
 
-    private fun findDestinationAndExecuteBlock(sourceConfig: SourceConfig, block: (JsonObject) -> Unit) {
+    private inline fun findDestinationAndExecuteBlock(sourceConfig: SourceConfig, block: (JsonObject) -> Unit) {
         findDestination(sourceConfig)?.let { configDestination ->
             if (!configDestination.isDestinationEnabled) {
                 val errorMessage = "Destination $key is disabled in dashboard. No events will be sent to this destination."
@@ -204,8 +205,11 @@ abstract class IntegrationPlugin : EventPlugin {
                     }
                 }
             },
-            onException = {
-                LoggerAnalytics.error("IntegrationPlugin: Error: ${it.message} updating destination $key.")
+            onException = { exception ->
+                defaultExceptionHandler(
+                    errorMsg = "IntegrationPlugin: Error updating destination $key",
+                    exception = exception,
+                )
             }
         )
     }
