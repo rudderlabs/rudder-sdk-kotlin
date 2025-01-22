@@ -79,7 +79,7 @@ class IntegrationPluginTest {
     }
 
     @Test
-    fun `given a sourceConfig with correct destination config, when plugin is initialised with it, then destination is initialised`() =
+    fun `given a sourceConfig with correct destination config, when plugin is initialised with it, then integration is ready`() =
         runTest {
             plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
             val mockDestinationSdk = plugin.getDestinationInstance() as? MockDestinationSdk
@@ -89,7 +89,7 @@ class IntegrationPluginTest {
         }
 
     @Test
-    fun `given a sourceConfig with incorrect api key for destination, when plugin is initialised with it, then destination is not initialised`() =
+    fun `given a sourceConfig with incorrect api key for destination, when plugin is initialised with it, then integration is Failed`() =
         runTest {
             plugin.findAndInitDestination(sourceConfigWithIncorrectApiKey)
             val mockDestinationSdk = plugin.getDestinationInstance() as? MockDestinationSdk
@@ -100,7 +100,7 @@ class IntegrationPluginTest {
         }
 
     @Test
-    fun `given a sourceConfig without destination config, when plugin is initialised with it, then destination is not initialised`() =
+    fun `given a sourceConfig without destination config, when plugin is initialised with it, then integration is Failed`() =
         runTest {
             val sourceConfigWithAbsentDestinationConfig = LenientJson.decodeFromString<SourceConfig>(
                 readFileAsString(pathToSourceConfigWithAbsentDestinationConfig)
@@ -114,7 +114,7 @@ class IntegrationPluginTest {
         }
 
     @Test
-    fun `given a sourceConfig with destination disabled, when plugin is initialised with it, then destination is not initialised`() =
+    fun `given a sourceConfig with destination disabled, when plugin is initialised with it, then integration is Failed`() =
         runTest {
             val sourceConfigWithDisabledDestination = LenientJson.decodeFromString<SourceConfig>(
                 readFileAsString(pathToSourceConfigWithDestinationDisabled)
@@ -128,7 +128,7 @@ class IntegrationPluginTest {
         }
 
     @Test
-    fun `given an integration plugin for which create throws an exception, when plugin is initialised, then destination is not initialised`() =
+    fun `given an integration plugin for which create throws an exception, when plugin is initialised, then integration is Failed`() =
         runTest {
             val exception = Exception("Test exception")
             val plugin = object : IntegrationPlugin() {
@@ -147,7 +147,7 @@ class IntegrationPluginTest {
         }
 
     @Test
-    fun `given an initialised destination and a sourceConfig, when plugin is updated with it, then destination is updated`() =
+    fun `given an initialised destination and a sourceConfig, when plugin is updated with it, then integration is updated`() =
         runTest {
             val sourceConfigWithAnotherCorrectApiKey = LenientJson.decodeFromString<SourceConfig>(
                 readFileAsString(pathToSourceConfigWithAnotherCorrectApiKey)
@@ -178,7 +178,7 @@ class IntegrationPluginTest {
         }
 
     @Test
-    fun `given an initialised destination and sourceConfig without destination, when plugin is updated with it, then destination moves to Failed state`() =
+    fun `given an initialised destination, when plugin is updated with sourceConfig without destination, then integration moves to Failed state`() =
         runTest {
             plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
 
@@ -192,7 +192,7 @@ class IntegrationPluginTest {
         }
 
     @Test
-    fun `given a failed destination, when the plugin is updated with a new correct sourceConfig, then destination moves to Ready state`() =
+    fun `given a failed destination, when the plugin is updated with a new correct sourceConfig, then integration moves to Ready state`() =
         runTest {
             plugin.findAndInitDestination(sourceConfigWithIncorrectApiKey)
 
