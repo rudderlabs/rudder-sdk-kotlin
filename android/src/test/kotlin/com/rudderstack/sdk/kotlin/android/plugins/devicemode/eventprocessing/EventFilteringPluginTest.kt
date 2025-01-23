@@ -97,6 +97,30 @@ class EventFilteringPluginTest {
         }
 
     @Test
+    fun `given a sourceConfig with whiteListedEvents, when plugin's intercept is called with an event with leading and trailing spaces but present in list, then it returns the event`() =
+        runTest {
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithWhiteListEvents))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val allowedEvent = TrackEvent(" Track Event 1  ", emptyJsonObject)
+            val returnedEvent = plugin.intercept(allowedEvent)
+
+            assertEquals(allowedEvent, returnedEvent)
+        }
+
+    @Test
+    fun `given a sourceConfig with blackListedEvents, when plugin's intercept is called with an event with leading and trailing spaces but present in list, then it returns null`() =
+        runTest {
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithBlackListEvents))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val disallowedEvent = TrackEvent(" Track Event 2  ", emptyJsonObject)
+            val returnedEvent = plugin.intercept(disallowedEvent)
+
+            assertNull(returnedEvent)
+        }
+
+    @Test
     fun `given any sourceConfig, when plugin's intercept is called with any event other than TrackEvent, then it returns that event`() =
         runTest(testDispatcher) {
             mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithWhiteListEvents))

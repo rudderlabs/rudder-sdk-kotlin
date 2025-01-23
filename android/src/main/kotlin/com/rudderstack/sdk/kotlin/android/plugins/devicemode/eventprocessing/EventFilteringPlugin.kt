@@ -57,7 +57,7 @@ internal class EventFilteringPlugin(private val key: String) : Plugin {
 
         return when (filteringOption) {
             WHITE_LIST_EVENTS -> {
-                if (filteringList.contains(event.event)) {
+                if (filteringList.contains(event.event.trim())) {
                     event
                 } else {
                     null
@@ -65,7 +65,7 @@ internal class EventFilteringPlugin(private val key: String) : Plugin {
             }
 
             BLACK_LIST_EVENTS -> {
-                if (!filteringList.contains(event.event)) {
+                if (!filteringList.contains(event.event.trim())) {
                     event
                 } else {
                     null
@@ -95,7 +95,7 @@ internal class EventFilteringPlugin(private val key: String) : Plugin {
                     null
                 }
             }
-            ?.map { it.eventName }
+            ?.map { it.eventName.trim() }
             ?.filter { it.isNotEmpty() }
             ?: emptyList()
     }
