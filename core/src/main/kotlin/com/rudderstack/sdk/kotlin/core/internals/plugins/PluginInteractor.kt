@@ -57,6 +57,12 @@ class PluginInteractor(private var pluginList: CopyOnWriteArrayList<Plugin> = Co
         }
     }
 
+    suspend fun applySuspendingClosure(closure: suspend (Plugin) -> Unit) {
+        pluginList.forEach { plugin ->
+            closure(plugin)
+        }
+    }
+
     /**
      * Finds a plugin of the given class in the list
      * and returns it if found, otherwise returns null.

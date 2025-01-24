@@ -63,6 +63,12 @@ class PluginChain(
         }
     }
 
+    suspend fun applySuspendingClosure(closure: suspend (Plugin) -> Unit) {
+        pluginList.forEach { (_, mediator) ->
+            mediator.applySuspendingClosure(closure)
+        }
+    }
+
     /**
      * Finds all plugins of the given class and type in the plugin chain.
      */

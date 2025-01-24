@@ -14,7 +14,6 @@ import com.rudderstack.sdk.kotlin.android.plugins.NetworkInfoPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.OSInfoPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.ScreenInfoPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.TimezoneInfoPlugin
-import com.rudderstack.sdk.kotlin.android.plugins.devicemode.DestinationResult
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.IntegrationPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.IntegrationsManagementPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleManagementPlugin
@@ -241,20 +240,6 @@ class Analytics(
         if (!isAnalyticsActive()) return
 
         integrationsManagementPlugin?.removeIntegration(plugin)
-    }
-
-    /**
-     * Registers a callback to be invoked when the destination of the [plugin] is ready.
-     *
-     * @param plugin The [IntegrationPlugin] for which the callback needs to be invoked.
-     * @param onReady The callback to be invoked when the destination is ready.
-     */
-    fun onDestinationReady(plugin: IntegrationPlugin, onReady: (Any?, DestinationResult) -> Unit) {
-        if (!isAnalyticsActive()) return
-
-        initIntegrationsManagementPlugin()
-
-        integrationsManagementPlugin?.onDestinationReady(plugin, onReady)
     }
 
     private fun initIntegrationsManagementPlugin() {

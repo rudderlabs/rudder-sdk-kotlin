@@ -29,12 +29,11 @@ class SampleIntegrationPlugin: IntegrationPlugin() {
         }
     }
 
-    override fun update(destinationConfig: JsonObject): Boolean {
+    override fun update(destinationConfig: JsonObject?, isDestinationDisabled: Boolean) {
         // Update destination instance if needed
-        if (destinationSdk == null) {
-            return create(destinationConfig)
+        if (destinationSdk == null && destinationConfig != null) {
+            create(destinationConfig)
         }
-        return false
     }
 
     override fun getDestinationInstance(): Any? {
