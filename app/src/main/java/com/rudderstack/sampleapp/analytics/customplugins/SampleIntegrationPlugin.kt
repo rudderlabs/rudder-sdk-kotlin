@@ -9,9 +9,12 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
-class SampleIntegrationPlugin: IntegrationPlugin() {
+class SampleIntegrationPlugin : IntegrationPlugin() {
 
     private var destinationSdk: SampleDestinationSdk? = null
+
+    @Volatile
+    private var isDestinationDisabled: Boolean = false
 
     override val key: String
         get() = "Amplitude"
@@ -29,12 +32,12 @@ class SampleIntegrationPlugin: IntegrationPlugin() {
         }
     }
 
-    override fun update(destinationConfig: JsonObject): Boolean {
+    override fun onConfigUpdate(destinationConfig: JsonObject, isDestinationDisabled: Boolean) {
         // Update destination instance if needed
+        this.isDestinationDisabled = isDestinationDisabled
         if (destinationSdk == null) {
-            return create(destinationConfig)
+            create(destinationConfig)
         }
-        return false
     }
 
     override fun getDestinationInstance(): Any? {
@@ -43,7 +46,9 @@ class SampleIntegrationPlugin: IntegrationPlugin() {
 
     override fun track(payload: TrackEvent): Event {
         val destination = destinationSdk
-        destination?.track(payload.event, payload.properties)
+        if (!isDestinationDisabled) {
+            destination?.track(payload.event, payload.properties)
+        }
         return payload
     }
 }

@@ -5,13 +5,17 @@ import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Destination
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
+import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.plugins.EventPlugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.PluginChain
+import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import com.rudderstack.sdk.kotlin.core.internals.utils.defaultExceptionHandler
 import com.rudderstack.sdk.kotlin.core.internals.utils.safelyExecute
 import kotlinx.serialization.json.JsonObject
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 /**
  * Base plugin class for all integration plugins.
@@ -31,15 +35,16 @@ abstract class IntegrationPlugin : EventPlugin {
      */
     abstract val key: String
 
-    @Volatile
-    internal var integrationState: IntegrationState = IntegrationState.Uninitialised
-        private set
-
     private lateinit var pluginChain: PluginChain
     private val pluginList = CopyOnWriteArrayList<Plugin>()
 
     @Volatile
     private var isPluginSetup = false
+
+    @Volatile
+    private lateinit var destinationResult: DestinationResult
+    private val destinationReadyCallbacks = mutableListOf<(Any?, DestinationResult) -> Unit>()
+    private val reentrantLock = ReentrantLock()
 
     /**
      * Creates the destination instance. Override this method for the initialisation of destination.
@@ -51,19 +56,17 @@ abstract class IntegrationPlugin : EventPlugin {
     protected abstract fun create(destinationConfig: JsonObject): Boolean
 
     /**
-     * Updates the destination.
+     * This method is called for the subsequent fetches of [SourceConfig].
+     *
      * Override this method if any kind of updating/reinitialising is required for a destination when
      * a new [SourceConfig] is fetched from control plane.
      *
      * @param destinationConfig The newly fetched configuration for the destination.
-     * @return true if the destination was updated successfully AND ready to accept new events, false otherwise.
+     * @param isDestinationDisabled `true` if the destination is disabled or absent in the dashboard, `false` otherwise.
      *
-     * **Note**: If the destination is not ready to accept new events, return false. The false return value indicates
-     * that no change to the state of the destination was made.
+     * **Note** - If the destination is disabled in dashboard, stop sending events to this destination.
      */
-    protected open fun update(destinationConfig: JsonObject): Boolean {
-        return false
-    }
+    protected abstract fun onConfigUpdate(destinationConfig: JsonObject, isDestinationDisabled: Boolean)
 
     /**
      * Returns the instance of the destination which was created.
@@ -94,24 +97,49 @@ abstract class IntegrationPlugin : EventPlugin {
     }
 
     internal fun findAndInitDestination(sourceConfig: SourceConfig) {
-        findDestinationAndExecuteBlock(sourceConfig) { destinationConfig ->
-            createSafelyAndChangeState(destinationConfig)
+        findDestination(sourceConfig)?.let { configDestination ->
+            if (!configDestination.isDestinationEnabled) {
+                val errorMessage = "Destination $key is disabled in dashboard. " +
+                    "No events will be sent to this destination."
+                LoggerAnalytics.warn("IntegrationPlugin: $errorMessage")
+                destinationResult = Result.Failure(null, SdkNotInitializedException(errorMessage))
+                return
+            }
+            createSafelyAndSetResult(configDestination.destinationConfig)
+        } ?: run {
+            val errorMessage = "Destination $key not found in the source config. " +
+                "No events will be sent to this destination."
+            LoggerAnalytics.warn("IntegrationPlugin: $errorMessage")
+            destinationResult = Result.Failure(null, SdkNotInitializedException(errorMessage))
         }
+        notifyCallbacks()
     }
 
     internal fun findAndUpdateDestination(sourceConfig: SourceConfig) {
-        findDestinationAndExecuteBlock(sourceConfig) { destinationConfig ->
-            updateSafelyAndChangeState(destinationConfig)
+        findDestination(sourceConfig)?.let { configDestination ->
+            if (!configDestination.isDestinationEnabled) {
+                LoggerAnalytics.warn(
+                    "IntegrationPlugin: Destination $key is disabled in dashboard. " +
+                        "No events will be sent to this destination."
+                )
+                updateSafely(emptyJsonObject, true)
+                return
+            }
+            updateSafely(configDestination.destinationConfig, false)
+        } ?: run {
+            updateSafely(emptyJsonObject, true)
+            LoggerAnalytics.warn(
+                "IntegrationPlugin: Destination $key not found in the source config. " +
+                    "No events will be sent to this destination."
+            )
         }
     }
 
     final override suspend fun intercept(event: Event): Event {
-        if (integrationState.isReady()) {
-            event.copy<Event>()
-                .let { pluginChain.applyPlugins(Plugin.PluginType.PreProcess, it) }
-                ?.let { pluginChain.applyPlugins(Plugin.PluginType.OnProcess, it) }
-                ?.let { handleEvent(it) }
-        }
+        event.copy<Event>()
+            .let { pluginChain.applyPlugins(Plugin.PluginType.PreProcess, it) }
+            ?.let { pluginChain.applyPlugins(Plugin.PluginType.OnProcess, it) }
+            ?.let { handleEvent(it) }
 
         return event
     }
@@ -153,58 +181,53 @@ abstract class IntegrationPlugin : EventPlugin {
         }
     }
 
-    private inline fun findDestinationAndExecuteBlock(sourceConfig: SourceConfig, block: (JsonObject) -> Unit) {
-        findDestination(sourceConfig)?.let { configDestination ->
-            if (!configDestination.isDestinationEnabled) {
-                val errorMessage = "Destination $key is disabled in dashboard. No events will be sent to this destination."
-                LoggerAnalytics.warn(errorMessage)
-                integrationState = IntegrationState.Failed(SdkNotInitializedException(errorMessage))
-                return
+    /**
+     * Registers a callback to be invoked when the destination of this plugin is ready.
+     *
+     * @param callback The callback to be invoked when the destination is ready.
+     */
+    fun onDestinationReady(callback: (Any?, DestinationResult) -> Unit) {
+        if (::destinationResult.isInitialized) {
+            callback(getDestinationInstance(), destinationResult)
+        } else {
+            reentrantLock.withLock {
+                destinationReadyCallbacks.add(callback)
             }
-            block(configDestination.destinationConfig)
-        } ?: run {
-            val errorMessage = "Destination $key not found in the source config. No events will be sent to this destination."
-            integrationState = IntegrationState.Failed(SdkNotInitializedException(errorMessage))
-            LoggerAnalytics.warn("IntegrationPlugin: $errorMessage")
         }
     }
 
-    private fun createSafelyAndChangeState(destinationConfig: JsonObject) {
+    private fun notifyCallbacks() {
+        reentrantLock.withLock {
+            destinationReadyCallbacks.forEach { callback -> callback(getDestinationInstance(), destinationResult) }
+            destinationReadyCallbacks.clear()
+        }
+    }
+
+    private fun createSafelyAndSetResult(destinationConfig: JsonObject) {
         safelyExecute(
             block = {
                 when (create(destinationConfig)) {
                     true -> {
-                        integrationState = IntegrationState.Ready
+                        destinationResult = Result.Success(Unit)
                         LoggerAnalytics.debug("IntegrationPlugin: Destination $key is ready.")
                     }
                     false -> {
                         val errorMessage = "Destination $key failed to initialise."
-                        integrationState = IntegrationState.Failed(SdkNotInitializedException(errorMessage))
+                        destinationResult = Result.Failure(null, SdkNotInitializedException(errorMessage))
                         LoggerAnalytics.warn("IntegrationPlugin: $errorMessage")
                     }
                 }
             },
             onException = {
-                integrationState = IntegrationState.Failed(it)
+                destinationResult = Result.Failure(null, it)
                 LoggerAnalytics.error("IntegrationPlugin: Error: ${it.message} initializing destination $key.")
             }
         )
     }
 
-    private fun updateSafelyAndChangeState(destinationConfig: JsonObject) {
+    private fun updateSafely(destinationConfig: JsonObject, isDestinationDisabled: Boolean) {
         safelyExecute(
-            block = {
-                when (update(destinationConfig)) {
-                    true -> {
-                        integrationState = IntegrationState.Ready
-                        LoggerAnalytics.debug("IntegrationPlugin: Destination $key updated.")
-                    }
-                    false -> {
-                        val errorMessage = "Destination $key failed to update."
-                        LoggerAnalytics.debug("IntegrationPlugin: $errorMessage")
-                    }
-                }
-            },
+            block = { onConfigUpdate(destinationConfig, isDestinationDisabled) },
             onException = { exception ->
                 defaultExceptionHandler(
                     errorMsg = "IntegrationPlugin: Error updating destination $key",
@@ -226,14 +249,4 @@ abstract class IntegrationPlugin : EventPlugin {
     private fun findDestination(sourceConfig: SourceConfig): Destination? {
         return sourceConfig.source.destinations.firstOrNull { it.destinationDefinition.displayName == key }
     }
-}
-
-internal sealed interface IntegrationState {
-    data object Ready : IntegrationState
-    data object Uninitialised : IntegrationState
-    data class Failed(
-        val exception: Exception
-    ) : IntegrationState
-
-    fun isReady() = this == Ready
 }
