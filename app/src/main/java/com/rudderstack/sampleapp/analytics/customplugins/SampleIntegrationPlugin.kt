@@ -4,14 +4,20 @@ import com.rudderstack.sdk.kotlin.android.plugins.devicemode.IntegrationPlugin
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
-class SampleIntegrationPlugin: IntegrationPlugin() {
+class SampleIntegrationPlugin : IntegrationPlugin() {
 
     private var destinationSdk: SampleDestinationSdk? = null
+
+    @Volatile
+    private var isDestinationDisabled: Boolean = false
 
     override val key: String
         get() = "Amplitude"
@@ -29,12 +35,16 @@ class SampleIntegrationPlugin: IntegrationPlugin() {
         }
     }
 
-    override fun update(destinationConfig: JsonObject): Boolean {
-        // Update destination instance if needed
-        if (destinationSdk == null) {
-            return create(destinationConfig)
-        }
-        return false
+    init {
+
+        this.destinationConfigStateFlow
+            .onEach {
+                isDestinationDisabled = it.isEmpty()
+                if (destinationSdk == null && !isDestinationDisabled) {
+                    create(it)
+                }
+            }
+            .launchIn(GlobalScope)
     }
 
     override fun getDestinationInstance(): Any? {
@@ -43,7 +53,9 @@ class SampleIntegrationPlugin: IntegrationPlugin() {
 
     override fun track(payload: TrackEvent): Event {
         val destination = destinationSdk
-        destination?.track(payload.event, payload.properties)
+        if (!isDestinationDisabled) {
+            destination?.track(payload.event, payload.properties)
+        }
         return payload
     }
 }
