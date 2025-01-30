@@ -16,7 +16,6 @@ import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.connectivity.ConnectivityState
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.ResetUserIdentityAction
-import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.SetAnonymousIdAction
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.SetUserIdForAliasEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.SetUserIdTraitsAndExternalIdsAction
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.UserIdentity
@@ -343,33 +342,6 @@ open class Analytics protected constructor(
     }
 
     /**
-     * Sets or updates the anonymous ID for the current user identity.
-     *
-     * The `setAnonymousId` method is used to update the `anonymousID` value within the `UserIdentityStore`.
-     * This ID is typically generated automatically to track users who have not yet been identified
-     * (e.g., before they log in or sign up). This function dispatches an action to modify the `UserIdentityState`,
-     * ensuring that the new ID is correctly stored and managed.
-     *
-     * @param anonymousId The new anonymous ID to be set for the current user. This ID should be a unique,
-     * non-null string used to represent the user anonymously.
-     */
-    fun setAnonymousId(anonymousId: String) {
-        if (!isAnalyticsActive()) return
-
-        userIdentityState.dispatch(SetAnonymousIdAction(anonymousId))
-        storeAnonymousId()
-    }
-
-    /**
-     * The `getAnonymousId` method always retrieves the current anonymous ID.
-     */
-    fun getAnonymousId(): String? {
-        if (!isAnalyticsActive()) return null
-
-        return userIdentityState.value.anonymousId
-    }
-
-    /**
      * Resets the user identity, clearing the user ID, traits, and external IDs.
      * If clearAnonymousId is true, clears the existing anonymous ID and generate a new one.
      *
@@ -404,7 +376,7 @@ open class Analytics protected constructor(
         }
     }
 
-    private fun storeAnonymousId() {
+    internal fun storeAnonymousId() {
         analyticsScope.launch(storageDispatcher) {
             userIdentityState.value.storeAnonymousId(storage = storage)
         }
