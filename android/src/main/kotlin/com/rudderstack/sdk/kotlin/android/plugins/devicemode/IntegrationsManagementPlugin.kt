@@ -116,11 +116,9 @@ internal class IntegrationsManagementPlugin : Plugin {
         queuedEventsChannel.trySend(event)
     }
 
-    private fun processEvents() {
-        analytics.withIntegrationsDispatcher {
-            for (event in queuedEventsChannel) {
-                integrationPluginChain.process(event)
-            }
+    private suspend fun processEvents() {
+        for (event in queuedEventsChannel) {
+            integrationPluginChain.process(event)
         }
     }
 }

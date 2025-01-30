@@ -79,7 +79,7 @@ class Analytics(
 
     internal val activityLifecycleManagementPlugin = ActivityLifecycleManagementPlugin()
     internal val processLifecycleManagementPlugin = ProcessLifecycleManagementPlugin()
-    private var integrationsManagementPlugin: IntegrationsManagementPlugin? = null
+    private var integrationsManagementPlugin = IntegrationsManagementPlugin()
     private val sessionTrackingPlugin = SessionTrackingPlugin()
 
     init {
@@ -133,7 +133,7 @@ class Analytics(
         super.reset(clearAnonymousId)
 
         sessionTrackingPlugin.refreshSession()
-        this.integrationsManagementPlugin?.reset()
+        integrationsManagementPlugin.reset()
     }
 
     override fun flush() {
@@ -141,7 +141,7 @@ class Analytics(
 
         super.flush()
 
-        this.integrationsManagementPlugin?.flush()
+        integrationsManagementPlugin.flush()
     }
 
     /**
@@ -226,9 +226,7 @@ class Analytics(
     fun addIntegration(plugin: IntegrationPlugin) {
         if (!isAnalyticsActive()) return
 
-        initIntegrationsManagementPlugin()
-
-        integrationsManagementPlugin?.addIntegration(plugin)
+        integrationsManagementPlugin.addIntegration(plugin)
     }
 
     /**
@@ -239,15 +237,7 @@ class Analytics(
     fun removeIntegration(plugin: IntegrationPlugin) {
         if (!isAnalyticsActive()) return
 
-        integrationsManagementPlugin?.removeIntegration(plugin)
-    }
-
-    private fun initIntegrationsManagementPlugin() {
-        synchronized(this) {
-            if (integrationsManagementPlugin == null) {
-                integrationsManagementPlugin = IntegrationsManagementPlugin().also { add(it) }
-            }
-        }
+        integrationsManagementPlugin.removeIntegration(plugin)
     }
 
     private fun setup() {
@@ -261,6 +251,7 @@ class Analytics(
         add(ScreenInfoPlugin())
         add(TimezoneInfoPlugin())
         add(sessionTrackingPlugin)
+        add(integrationsManagementPlugin)
 
         // Add these plugins at last in chain
         add(AndroidLifecyclePlugin())

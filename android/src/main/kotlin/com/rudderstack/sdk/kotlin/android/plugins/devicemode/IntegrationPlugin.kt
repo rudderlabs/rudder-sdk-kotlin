@@ -56,7 +56,6 @@ abstract class IntegrationPlugin : EventPlugin {
      * This method must return true if the destination was created successfully, false otherwise.
      *
      * @param destinationConfig The configuration for the destination.
-     * @return true if the destination was created successfully, false otherwise.
      */
     protected abstract fun create(destinationConfig: JsonObject)
 
