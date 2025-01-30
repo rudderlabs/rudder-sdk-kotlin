@@ -5,4 +5,4 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 /**
  * The result of a destination initialisation returned in `onDestinationReady` callback.
  */
-typealias DestinationResult = Result<Unit, Exception>
+typealias DestinationResult = Result<Unit, Throwable>

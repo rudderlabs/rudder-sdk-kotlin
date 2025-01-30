@@ -45,6 +45,11 @@ interface AnalyticsConfiguration {
     val networkDispatcher: CoroutineDispatcher
 
     /**
+     * Dispatcher for integrations related tasks.
+     */
+    val integrationsDispatcher: CoroutineDispatcher
+
+    /**
      * Job for analytics coroutines.
      */
     val analyticsJob: Job
@@ -70,6 +75,7 @@ private class AnalyticsConfigurationImpl(
     override val analyticsDispatcher: CoroutineDispatcher = Dispatchers.IO
     override val storageDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(2)
     override val networkDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(1)
+    override val integrationsDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(1)
 
     override val connectivityState: FlowState<Boolean> = FlowState(initialState = ConnectivityState.INITIAL_STATE)
 }
