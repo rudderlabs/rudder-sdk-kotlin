@@ -146,6 +146,17 @@ class MainActivity : ComponentActivity() {
                 weight = .5f,
                 viewModel = viewModel
             )
+            Spacer(modifier = Modifier.height(2.dp))
+            CreateRowOfApis(
+                names = arrayOf(
+                    AnalyticsState.SetAnonymousId,
+                    AnalyticsState.GetAnonymousId,
+                    AnalyticsState.GetUserId,
+                    AnalyticsState.GetTraits,
+                ),
+                weight = .5f,
+                viewModel = viewModel
+            )
             CreateLogcat(state.logDataList)
         }
     }

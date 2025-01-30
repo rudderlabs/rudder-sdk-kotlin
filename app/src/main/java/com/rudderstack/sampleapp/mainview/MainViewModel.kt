@@ -6,6 +6,9 @@ import com.rudderstack.sdk.kotlin.core.internals.models.ExternalId
 import com.rudderstack.sdk.kotlin.core.internals.models.Properties
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
 import com.rudderstack.sampleapp.analytics.RudderAnalyticsUtils
+import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.anonymousId
+import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.traits
+import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.userId
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -117,6 +120,26 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             AnalyticsState.Initialize -> {
                 RudderAnalyticsUtils.initialize(getApplication())
                 "SDK initialized"
+            }
+
+            AnalyticsState.SetAnonymousId -> {
+                RudderAnalyticsUtils.analytics.anonymousId = "Custom Anonymous ID"
+                "Anonymous ID is set as: ${RudderAnalyticsUtils.analytics.anonymousId}"
+            }
+
+            AnalyticsState.GetAnonymousId -> {
+                val anonymousId = RudderAnalyticsUtils.analytics.anonymousId
+                "Anonymous ID: $anonymousId"
+            }
+
+            AnalyticsState.GetUserId -> {
+                val userId = RudderAnalyticsUtils.analytics.userId
+                "User ID: $userId"
+            }
+
+            AnalyticsState.GetTraits -> {
+                val traits = RudderAnalyticsUtils.analytics.traits
+                "Traits: $traits"
             }
         }
         if (log.isNotEmpty()) addLogData(LogData(Date(), log))
