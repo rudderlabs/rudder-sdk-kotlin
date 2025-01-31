@@ -69,7 +69,7 @@ class IntegrationsManagementPluginTest {
             mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
             advanceUntilIdle()
 
-            verify(exactly = 1) { integrationPlugin.initialize(sourceConfigWithCorrectApiKey) }
+            verify(exactly = 1) { integrationPlugin.findAndInitDestination(sourceConfigWithCorrectApiKey) }
         }
 
     @Test
@@ -78,10 +78,10 @@ class IntegrationsManagementPluginTest {
             plugin.setup(mockAnalytics)
 
             mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
-            plugin.addIntegration(integrationPlugin)
             advanceUntilIdle()
+            plugin.addIntegration(integrationPlugin)
 
-            verify(exactly = 1) { integrationPlugin.initialize(sourceConfigWithCorrectApiKey) }
+            verify(exactly = 1) { integrationPlugin.findAndInitDestination(sourceConfigWithCorrectApiKey) }
         }
 
     @Test
@@ -97,6 +97,23 @@ class IntegrationsManagementPluginTest {
     }
 
     @Test
+    fun `given an integration plugin, when sourceConfig is emitted multiple times, then integration is initialised for first and updated for subsequent emissions`() =
+        runTest {
+            plugin.setup(mockAnalytics)
+
+            plugin.addIntegration(integrationPlugin)
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
+            advanceUntilIdle()
+
+            verify(exactly = 1) { integrationPlugin.findAndInitDestination(sourceConfigWithCorrectApiKey) }
+
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithIncorrectApiKey))
+            advanceUntilIdle()
+
+            verify(exactly = 1) { integrationPlugin.findAndUpdateDestination(sourceConfigWithIncorrectApiKey) }
+        }
+
+    @Test
     fun `given an integration, when a callback is registered before sourceConfig is fetched and integration is added, then it is called after successful initialisation`() =
         runTest {
             val callback = mockk<(Any?, DestinationResult) -> Unit>(relaxed = true)
@@ -107,7 +124,7 @@ class IntegrationsManagementPluginTest {
             mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
             advanceUntilIdle()
 
-            val mockDestinationSdk = integrationPlugin.getUnderlyingInstance() as? MockDestinationSdk
+            val mockDestinationSdk = integrationPlugin.getDestinationInstance() as? MockDestinationSdk
 
             verify(exactly = 1) { callback.invoke(mockDestinationSdk, ofType(Result.Success::class) as DestinationResult) }
         }
@@ -123,7 +140,7 @@ class IntegrationsManagementPluginTest {
             mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
             advanceUntilIdle()
 
-            val mockDestinationSdk = integrationPlugin.getUnderlyingInstance() as? MockDestinationSdk
+            val mockDestinationSdk = integrationPlugin.getDestinationInstance() as? MockDestinationSdk
 
             verify(exactly = 1) { callback.invoke(mockDestinationSdk, ofType(Result.Success::class) as DestinationResult) }
         }
@@ -139,7 +156,7 @@ class IntegrationsManagementPluginTest {
             plugin.onDestinationReady(integrationPlugin, callback)
             advanceUntilIdle()
 
-            val mockDestinationSdk = integrationPlugin.getUnderlyingInstance() as? MockDestinationSdk
+            val mockDestinationSdk = integrationPlugin.getDestinationInstance() as? MockDestinationSdk
 
             verify(exactly = 1) { callback.invoke(mockDestinationSdk, ofType(Result.Success::class) as DestinationResult) }
         }
@@ -157,7 +174,7 @@ class IntegrationsManagementPluginTest {
             plugin.onDestinationReady(integrationPlugin, callback2)
             advanceUntilIdle()
 
-            val mockDestinationSdk = integrationPlugin.getUnderlyingInstance() as? MockDestinationSdk
+            val mockDestinationSdk = integrationPlugin.getDestinationInstance() as? MockDestinationSdk
 
             verify(exactly = 1) { callback1.invoke(mockDestinationSdk, ofType(Result.Success::class) as DestinationResult) }
             verify(exactly = 1) { callback2.invoke(mockDestinationSdk, ofType(Result.Success::class) as DestinationResult) }
@@ -289,6 +306,4 @@ class IntegrationsManagementPluginTest {
 
         verify(exactly = 1) { integrationPlugin.teardown() }
     }
-
-    // todo: add test scenarios for multiple emissions of sourceConfig state when adding support for dynamic updates
 }
