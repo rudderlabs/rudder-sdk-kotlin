@@ -39,26 +39,7 @@ internal class EventFilteringPlugin(private val key: String) : Plugin {
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
-        analytics.analyticsScope.launch {
-            analytics.sourceConfigState
-                .filter { it.source.isSourceEnabled }
-                .collect { sourceConfig ->
-                    val destinationConfig = findDestination(sourceConfig, key)?.destinationConfig
-
-                    filteringOption = destinationConfig
-                        ?.getString(EVENT_FILTERING_OPTION)
-                        ?.also { option ->
-                            filteringList.clear()
-                            filteringList.addAll(getEventFilteringList(option, destinationConfig))
-                        } ?: run {
-                        LoggerAnalytics.error(
-                            "EventFilteringPlugin: Event filtering option not found " +
-                                "in destination config for destination: $key"
-                        )
-                        String.empty()
-                    }
-                }
-        }
+        listenForConfigChanges()
     }
 
     override suspend fun intercept(event: Event): Event? {
@@ -66,31 +47,12 @@ internal class EventFilteringPlugin(private val key: String) : Plugin {
             return event
         }
 
-        return when (filteringOption) {
-            WHITE_LIST_EVENTS -> {
-                if (filteringList.contains(event.event.trim())) {
-                    event
-                } else {
-                    LoggerAnalytics.debug(
-                        "EventFilteringPlugin: Dropping event: ${event.event} " +
-                            "based on whiteList for destination: $key"
-                    )
-                    null
-                }
+        val eventName = event.event.trim()
+        return when {
+            shouldDropEvent(eventName) -> {
+                LoggerAnalytics.debug("EventFilteringPlugin: Dropped event '$eventName' for destination: $key")
+                null
             }
-
-            BLACK_LIST_EVENTS -> {
-                if (!filteringList.contains(event.event.trim())) {
-                    event
-                } else {
-                    LoggerAnalytics.debug(
-                        "EventFilteringPlugin: Dropping event: ${event.event} " +
-                            "based on blackList for destination: $key"
-                    )
-                    null
-                }
-            }
-
             else -> event
         }
     }
@@ -99,45 +61,63 @@ internal class EventFilteringPlugin(private val key: String) : Plugin {
         filteringList.clear()
     }
 
-    private fun getEventFilteringList(eventFilteringOption: String, destinationConfig: JsonObject): List<String> {
-        val serializedFilteredEvents = when (eventFilteringOption) {
-            WHITE_LIST_EVENTS -> destinationConfig[WHITE_LIST_EVENTS]
-                ?.toString()
-                .also {
-                    if (it == null) {
-                        LoggerAnalytics.error(
-                            "EventFilteringPlugin: Whitelisted events not found " +
-                                "in destination config for destination: $key"
-                        )
-                    }
-                }
+    private fun shouldDropEvent(eventName: String): Boolean {
+        return when (filteringOption) {
+            WHITE_LIST_EVENTS -> eventName !in filteringList
+            BLACK_LIST_EVENTS -> eventName in filteringList
+            else -> false
+        }
+    }
 
-            BLACK_LIST_EVENTS -> destinationConfig[BLACK_LIST_EVENTS]
-                ?.toString()
-                .also {
-                    if (it == null) {
-                        LoggerAnalytics.error(
-                            "EventFilteringPlugin: Blacklisted events not found " +
-                                "in destination config for destination: $key"
-                        )
-                    }
+    private fun listenForConfigChanges() {
+        analytics.analyticsScope.launch {
+            analytics.sourceConfigState
+                .filter { it.source.isSourceEnabled }
+                .collect { sourceConfig ->
+                    val destinationConfig = findDestination(sourceConfig, key)?.destinationConfig
+                    updateFilteringConfiguration(destinationConfig)
                 }
+        }
+    }
 
-            else -> null
+    private fun updateFilteringConfiguration(destinationConfig: JsonObject?) {
+        filteringOption = destinationConfig?.getString(EVENT_FILTERING_OPTION).orEmpty()
+
+        if (filteringOption.isBlank()) {
+            LoggerAnalytics.error("EventFilteringPlugin: Missing event filtering option for destination: $key")
+            filteringList.clear()
+            return
         }
 
-        return serializedFilteredEvents
-            ?.let {
-                try {
-                    LenientJson.decodeFromString<List<FilteredEvent>>(it)
-                } catch (e: IllegalArgumentException) {
-                    LoggerAnalytics.error("EventFilteringPlugin: Error decoding filtered events list: ${e.message}")
-                    null
-                }
+        filteringList.addAll(getEventFilteringList(filteringOption, destinationConfig))
+    }
+
+    private fun getEventFilteringList(eventFilteringOption: String, destinationConfig: JsonObject?): List<String> {
+        val listKey = when (eventFilteringOption) {
+            WHITE_LIST_EVENTS -> WHITE_LIST_EVENTS
+            BLACK_LIST_EVENTS -> BLACK_LIST_EVENTS
+            else -> return emptyList()
+        }
+
+        val serializedEvents = destinationConfig?.get(listKey)?.toString()
+
+        if (serializedEvents.isNullOrBlank()) {
+            LoggerAnalytics.error("EventFilteringPlugin: Missing $listKey in destination config for: $key")
+            return emptyList()
+        }
+
+        return parseFilteredEvents(serializedEvents)
+    }
+
+    private fun parseFilteredEvents(serializedEvents: String): List<String> {
+        return try {
+            LenientJson.decodeFromString<List<FilteredEvent>>(serializedEvents).mapNotNull {
+                it.eventName.trim().takeIf { name -> name.isNotEmpty() }
             }
-            ?.map { it.eventName.trim() }
-            ?.filter { it.isNotEmpty() }
-            ?: emptyList()
+        } catch (e: IllegalArgumentException) {
+            LoggerAnalytics.error("EventFilteringPlugin: Error decoding event list: ${e.message}")
+            emptyList()
+        }
     }
 
     @Serializable
