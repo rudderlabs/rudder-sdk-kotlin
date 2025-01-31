@@ -186,8 +186,8 @@ class EventFilteringPluginTest {
             mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithWhiteListEvents))
             testDispatcher.scheduler.advanceUntilIdle()
 
-            val screenEvent = ScreenEvent("Screen Event 1", emptyJsonObject)
-            val groupEvent = GroupEvent("Group Event 1", emptyJsonObject)
+            val screenEvent = ScreenEvent("Track Event 1", emptyJsonObject)
+            val groupEvent = GroupEvent("Track Event 1", emptyJsonObject)
             val identifyEvent = IdentifyEvent()
             identifyEvent.userId = "123"
             val aliasEvent = AliasEvent(previousId = "123")
