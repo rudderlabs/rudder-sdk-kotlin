@@ -19,6 +19,14 @@ private const val WHITE_LIST_EVENTS = "whitelistedEvents"
 private const val BLACK_LIST_EVENTS = "blacklistedEvents"
 private const val EVENT_FILTERING_OPTION = "eventFilteringOption"
 
+/**
+ * A plugin to filter events based on the event filtering option provided in the destination config.
+ *
+ * This plugin filters the events based on the event filtering option provided in the destination config.
+ * The plugin supports two types of event filtering options based on the dashboard configuration:
+ * 1. Whitelist events: Only the events present in the whitelist will be allowed.
+ * 2. Blacklist events: All the events except the ones present in the blacklist will be allowed.
+ */
 internal class EventFilteringPlugin(private val key: String) : Plugin {
 
     override val pluginType: Plugin.PluginType = Plugin.PluginType.PreProcess
