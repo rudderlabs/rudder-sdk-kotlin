@@ -21,7 +21,7 @@
         "name": "Mock Destination",
         "enabled": true,
         "config": {
-          "apiKey": "##incorrect_api_key##"
+          "apiKey": "test-api-key2"
         },
         "destinationDefinitionId": "<DESTINATION_DEFINITION_ID>",
         "destinationDefinition": {

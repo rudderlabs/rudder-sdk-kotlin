@@ -8,12 +8,13 @@ import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.PluginChain
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.collectIndexed
 import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.util.concurrent.ConcurrentHashMap
 
 internal const val MAX_QUEUE_SIZE = 1000
+internal const val FIRST_INDEX = 0
 
 /*
  * This plugin will queue the events till the sourceConfig is fetched and
@@ -41,14 +42,20 @@ internal class IntegrationsManagementPlugin : Plugin {
         analytics.analyticsScope.launch(analytics.analyticsDispatcher) {
             analytics.sourceConfigState
                 .filter { it.source.isSourceEnabled }
-                .first()
-                .let { sourceConfig ->
+                .collectIndexed { index, sourceConfig ->
+                    val isFirstEmission = index == FIRST_INDEX
+
                     integrationPluginChain.applyClosure { plugin ->
-                        if (plugin is IntegrationPlugin && plugin.destinationState == DestinationState.Uninitialised) {
-                            initAndNotifyCallbacks(sourceConfig, plugin)
+                        if (plugin is IntegrationPlugin) {
+                            when (isFirstEmission) {
+                                true -> initAndNotifyCallbacks(sourceConfig, plugin)
+                                false -> plugin.findAndUpdateDestination(sourceConfig)
+                            }
                         }
                     }
-                    processEvents()
+                    if (isFirstEmission) {
+                        processEvents()
+                    }
                 }
         }
     }
@@ -94,7 +101,7 @@ internal class IntegrationsManagementPlugin : Plugin {
     internal fun reset() {
         integrationPluginChain.applyClosure { plugin ->
             if (plugin is IntegrationPlugin) {
-                if (plugin.destinationState.isReady()) {
+                if (plugin.integrationState.isReady()) {
                     plugin.reset()
                 } else {
                     LoggerAnalytics.debug(
@@ -109,7 +116,7 @@ internal class IntegrationsManagementPlugin : Plugin {
     internal fun flush() {
         integrationPluginChain.applyClosure { plugin ->
             if (plugin is IntegrationPlugin) {
-                if (plugin.destinationState.isReady()) {
+                if (plugin.integrationState.isReady()) {
                     plugin.flush()
                 } else {
                     LoggerAnalytics.debug(
@@ -121,8 +128,9 @@ internal class IntegrationsManagementPlugin : Plugin {
         }
     }
 
+    @Synchronized
     private fun initAndNotifyCallbacks(sourceConfig: SourceConfig, plugin: IntegrationPlugin) {
-        plugin.initialize(sourceConfig)
+        plugin.findAndInitDestination(sourceConfig)
         notifyDestinationCallbacks(plugin)
     }
 
@@ -130,14 +138,14 @@ internal class IntegrationsManagementPlugin : Plugin {
     private fun notifyDestinationCallbacks(plugin: IntegrationPlugin) {
         val callBacks = destinationReadyCallbacks[plugin.key]?.toList()
         callBacks?.forEach { callback ->
-            when (val destinationState = plugin.destinationState) {
-                is DestinationState.Ready -> notifyAndRemoveCallback(plugin, callback, Result.Success(Unit))
-                is DestinationState.Failed -> notifyAndRemoveCallback(
+            when (val integrationState = plugin.integrationState) {
+                is IntegrationState.Ready -> notifyAndRemoveCallback(plugin, callback, Result.Success(Unit))
+                is IntegrationState.Failed -> notifyAndRemoveCallback(
                     plugin,
                     callback,
-                    Result.Failure(error = destinationState.exception)
+                    Result.Failure(error = integrationState.exception)
                 )
-                is DestinationState.Uninitialised -> Unit
+                is IntegrationState.Uninitialised -> Unit
             }
         }
     }
@@ -147,7 +155,7 @@ internal class IntegrationsManagementPlugin : Plugin {
         callback: (Any?, DestinationResult) -> Unit,
         result: DestinationResult
     ) {
-        callback.invoke(plugin.getUnderlyingInstance(), result)
+        callback.invoke(plugin.getDestinationInstance(), result)
         destinationReadyCallbacks[plugin.key]?.remove(callback)
         if (destinationReadyCallbacks[plugin.key].isNullOrEmpty()) {
             destinationReadyCallbacks.remove(plugin.key)
