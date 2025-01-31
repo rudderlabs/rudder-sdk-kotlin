@@ -92,7 +92,7 @@ internal class EventFilteringPlugin(private val key: String) : Plugin {
     }
 
     private fun getEventFilteringList(eventFilteringOption: String, destinationConfig: JsonObject): List<String> {
-        val stringifiedFilteredEvents = when (eventFilteringOption) {
+        val serializedFilteredEvents = when (eventFilteringOption) {
             WHITE_LIST_EVENTS -> destinationConfig[WHITE_LIST_EVENTS]
                 ?.toString()
                 .also {
@@ -118,7 +118,7 @@ internal class EventFilteringPlugin(private val key: String) : Plugin {
             else -> null
         }
 
-        return stringifiedFilteredEvents
+        return serializedFilteredEvents
             ?.let {
                 try {
                     LenientJson.decodeFromString<List<FilteredEvent>>(it)
