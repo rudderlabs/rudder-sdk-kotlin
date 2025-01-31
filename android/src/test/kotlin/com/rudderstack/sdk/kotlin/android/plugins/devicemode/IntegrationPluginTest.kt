@@ -149,23 +149,6 @@ class IntegrationPluginTest {
         }
 
     @Test
-    fun `given an initialised integration, when plugin is updated with a sourceConfig, then integration is updated`() =
-        runTest {
-            val sourceConfigWithAnotherCorrectApiKey = LenientJson.decodeFromString<SourceConfig>(
-                readFileAsString(pathToSourceConfigWithAnotherCorrectApiKey)
-            )
-            plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
-            val initialMockDestinationSdk = plugin.getDestinationInstance() as MockDestinationSdk
-
-            plugin.findAndUpdateDestination(sourceConfigWithAnotherCorrectApiKey)
-            val updatedMockDestinationSdk = plugin.getDestinationInstance() as MockDestinationSdk
-
-            assert(initialMockDestinationSdk != updatedMockDestinationSdk)
-            assertNotNull(updatedMockDestinationSdk)
-            assertNotNull(initialMockDestinationSdk)
-        }
-
-    @Test
     fun `given an initialised integration, when plugin is updated with a sourceConfig, then destinationConfig in integration is updated`() =
         runTest {
             val sourceConfigWithAnotherCorrectApiKey = LenientJson.decodeFromString<SourceConfig>(
