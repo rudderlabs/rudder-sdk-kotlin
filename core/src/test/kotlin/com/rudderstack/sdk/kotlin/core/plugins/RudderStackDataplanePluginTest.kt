@@ -5,6 +5,7 @@ import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.queue.EventQueue
 import com.rudderstack.sdk.kotlin.core.mockAnalytics
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.unmockkAll
@@ -22,6 +23,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 
+private const val ANONYMOUS_ID = "anonymousId"
 @OptIn(ExperimentalCoroutinesApi::class)
 class RudderStackDataplanePluginTest {
     private val testDispatcher = StandardTestDispatcher()
@@ -36,6 +38,7 @@ class RudderStackDataplanePluginTest {
         Dispatchers.setMain(testDispatcher)
         mockAnalytics = mockAnalytics(testScope, testDispatcher)
         mockEventQueue = mockk(relaxed = true)
+        every { mockAnalytics.userIdentityState.value.anonymousId } returns ANONYMOUS_ID
 
         plugin = spyk(RudderStackDataplanePlugin())
 
