@@ -15,7 +15,6 @@ import junit.framework.TestCase.assertTrue
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import org.junit.After
 import org.junit.Before
 import org.junit.Test
 
@@ -38,11 +37,6 @@ class AnalyticsTest {
         every { provideBasicStorage(any()) } returns mockStorage
 
         analytics = Analytics(configuration = configuration)
-    }
-
-    @After
-    fun tearDown() {
-        mockStorage.close()
     }
 
     @Test
