@@ -1,12 +1,21 @@
 #!/bin/bash
 
-# check commit message
-commit_message=$(cat $1)
+# Path to the commit message file
+commit_message_file=".git/COMMIT_EDITMSG"
+
+# Read the commit message
+commit_message=$(cat "$commit_message_file")
+
+# Check if the commit message is empty
+if [[ -z "$commit_message" || "$commit_message" =~ ^[[:space:]]*$ ]]; then
+    echo "Error: Commit message cannot be empty." >&2
+    exit 1
+fi
+
+echo "Checking commit message: $commit_message"
 valid_commit_regex="^(feat|fix|refactor|perf|style|test|docs|chore|build|ci|revert)(\(.*\))?!?: .*$|^Merge .*"
 message="There is something wrong with your commit message. Commit messages in this project must adhere to this contract: $valid_commit_regex. Your commit will be rejected. You should amend your commit message to a valid one and try again."
-echo "Checking commit message: $commit_message"
-if [[ ! $commit_message =~ $valid_commit_regex ]]
-then
+if [[ ! $commit_message =~ $valid_commit_regex ]]; then
     echo "$message"
     exit 1
 fi
