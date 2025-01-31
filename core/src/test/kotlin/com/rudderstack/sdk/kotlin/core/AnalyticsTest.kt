@@ -58,7 +58,7 @@ class AnalyticsTest {
     }
 
     @Test
-    fun `given empty string is set as custom anonymousId, when anonymousId is fetched, then it should return the empty anonymousId`() {
+    fun `given empty string is set as anonymousId, when anonymousId is fetched, then it should return the empty value`() {
         analytics.anonymousId = String.empty()
 
         val anonymousId = analytics.anonymousId
@@ -76,7 +76,8 @@ class AnalyticsTest {
     }
 
     @Test
-    fun `given userId and traits are set, when they are fetched, then proper values are returned`() {
+    fun `given userId and traits are set, when they are fetched, then the set values are returned`() {
+        // userId and traits can be set only through identify api
         analytics.identify(userId = USER_ID, traits = TRAITS)
 
         val userId = analytics.userId
@@ -96,8 +97,7 @@ class AnalyticsTest {
     }
 
     @Test
-    fun `given userId and traits are not set and sdk is shutdown, when they are fetched, then it should return null`() {
-        analytics.identify(userId = USER_ID, traits = TRAITS)
+    fun `given sdk is shutdown, when userId and traits are fetched, then it should return null`() {
         analytics.shutdown()
 
         val userId = analytics.userId
