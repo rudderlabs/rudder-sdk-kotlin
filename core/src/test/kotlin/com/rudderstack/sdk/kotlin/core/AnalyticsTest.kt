@@ -117,5 +117,5 @@ class AnalyticsTest {
 private fun provideConfiguration() =
     Configuration(
         writeKey = "<writeKey>",
-        dataPlaneUrl = "https://hosted.rudderlabs.com",
+        dataPlaneUrl = "<data_plane_url>",
     )
