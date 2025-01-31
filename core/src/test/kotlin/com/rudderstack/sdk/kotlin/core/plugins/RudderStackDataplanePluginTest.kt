@@ -24,8 +24,10 @@ import org.junit.Before
 import org.junit.Test
 
 private const val ANONYMOUS_ID = "anonymousId"
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class RudderStackDataplanePluginTest {
+
     private val testDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
 
