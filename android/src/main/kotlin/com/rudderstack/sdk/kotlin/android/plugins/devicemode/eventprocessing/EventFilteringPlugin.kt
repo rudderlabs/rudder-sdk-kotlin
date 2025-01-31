@@ -37,14 +37,18 @@ internal class EventFilteringPlugin(private val key: String) : Plugin {
                 .collect { sourceConfig ->
                     val destinationConfig = findDestination(sourceConfig, key)?.destinationConfig
 
-                    filteringOption = destinationConfig?.let {
-                        destinationConfig.getString(EVENT_FILTERING_OPTION)
-                            .orEmpty()
-                            .also { option ->
-                                filteringList.clear()
-                                filteringList.addAll(getEventFilteringList(option, destinationConfig))
-                            }
-                    }.orEmpty()
+                    filteringOption = destinationConfig
+                        ?.getString(EVENT_FILTERING_OPTION)
+                        ?.also { option ->
+                            filteringList.clear()
+                            filteringList.addAll(getEventFilteringList(option, destinationConfig))
+                        } ?: run {
+                        LoggerAnalytics.error(
+                            "EventFilteringPlugin: Event filtering option not found " +
+                                "in destination config for destination: $key"
+                        )
+                        String.empty()
+                    }
                 }
         }
     }
@@ -81,10 +85,31 @@ internal class EventFilteringPlugin(private val key: String) : Plugin {
 
     private fun getEventFilteringList(eventFilteringOption: String, destinationConfig: JsonObject): List<String> {
         val stringifiedFilteredEvents = when (eventFilteringOption) {
-            WHITE_LIST_EVENTS -> destinationConfig[WHITE_LIST_EVENTS]?.toString()
-            BLACK_LIST_EVENTS -> destinationConfig[BLACK_LIST_EVENTS]?.toString()
+            WHITE_LIST_EVENTS -> destinationConfig[WHITE_LIST_EVENTS]
+                ?.toString()
+                .also {
+                    if (it == null) {
+                        LoggerAnalytics.error(
+                            "EventFilteringPlugin: Whitelisted events not found " +
+                                "in destination config for destination: $key"
+                        )
+                    }
+                }
+
+            BLACK_LIST_EVENTS -> destinationConfig[BLACK_LIST_EVENTS]
+                ?.toString()
+                .also {
+                    if (it == null) {
+                        LoggerAnalytics.error(
+                            "EventFilteringPlugin: Blacklisted events not found " +
+                                "in destination config for destination: $key"
+                        )
+                    }
+                }
+
             else -> null
         }
+
         return stringifiedFilteredEvents
             ?.let {
                 try {
