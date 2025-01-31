@@ -3,6 +3,7 @@ package com.rudderstack.sdk.kotlin.android.plugins.devicemode
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
+import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.PluginChain
 import kotlinx.coroutines.channels.Channel
@@ -26,6 +27,9 @@ internal class IntegrationsManagementPlugin : Plugin {
     private val integrationPluginChain = PluginChain()
 
     private val queuedEventsChannel: Channel<Event> = Channel(MAX_QUEUE_SIZE)
+
+    private val sourceConfig: SourceConfig
+        get() = analytics.sourceConfigState.value
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
@@ -67,8 +71,8 @@ internal class IntegrationsManagementPlugin : Plugin {
     internal fun addIntegration(plugin: IntegrationPlugin) {
         integrationPluginChain.add(plugin)
         analytics.withIntegrationsDispatcher {
-            if (plugin.getDestinationInstance() == null) {
-                plugin.findAndInitDestination(analytics.sourceConfigState.value)
+            if (plugin.isDestinationReady && sourceConfig.source.isSourceEnabled) {
+                plugin.findAndInitDestination(sourceConfig)
             }
         }
     }
@@ -85,8 +89,8 @@ internal class IntegrationsManagementPlugin : Plugin {
                         plugin.reset()
                     } else {
                         LoggerAnalytics.debug(
-                            "IntegrationsManagementPlugin: Integrations are " +
-                                "not initialised yet. Reset discarded."
+                            "IntegrationsManagementPlugin: Integration ${plugin.key} is " +
+                                "not ready. Reset discarded."
                         )
                     }
                 }
@@ -102,8 +106,8 @@ internal class IntegrationsManagementPlugin : Plugin {
                         plugin.flush()
                     } else {
                         LoggerAnalytics.debug(
-                            "IntegrationsManagementPlugin: Integrations are " +
-                                "not initialised yet. Flush discarded."
+                            "IntegrationsManagementPlugin: Integration ${plugin.key} is " +
+                                "not ready. Flush discarded."
                         )
                     }
                 }
