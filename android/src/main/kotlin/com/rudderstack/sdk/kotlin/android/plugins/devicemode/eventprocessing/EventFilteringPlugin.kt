@@ -71,6 +71,10 @@ internal class EventFilteringPlugin(private val key: String) : Plugin {
                 if (filteringList.contains(event.event.trim())) {
                     event
                 } else {
+                    LoggerAnalytics.debug(
+                        "EventFilteringPlugin: Dropping event: ${event.event} " +
+                            "based on whiteList for destination: $key"
+                    )
                     null
                 }
             }
@@ -79,6 +83,10 @@ internal class EventFilteringPlugin(private val key: String) : Plugin {
                 if (!filteringList.contains(event.event.trim())) {
                     event
                 } else {
+                    LoggerAnalytics.debug(
+                        "EventFilteringPlugin: Dropping event: ${event.event} " +
+                            "based on blackList for destination: $key"
+                    )
                     null
                 }
             }
