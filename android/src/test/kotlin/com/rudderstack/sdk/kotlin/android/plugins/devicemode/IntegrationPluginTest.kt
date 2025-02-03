@@ -16,6 +16,7 @@ import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.utils.LenientJson
+import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -33,8 +34,10 @@ import kotlinx.coroutines.test.setMain
 import kotlinx.serialization.json.JsonObject
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -47,6 +50,7 @@ internal const val pathToSourceConfigWithAbsentDestinationConfig =
 internal const val pathToSourceConfigWithDestinationDisabled =
     "mockdestinationconfig/source_config_with_disabled_destination.json"
 
+@Suppress("UNCHECKED_CAST")
 @OptIn(ExperimentalCoroutinesApi::class)
 class IntegrationPluginTest {
 
@@ -87,22 +91,21 @@ class IntegrationPluginTest {
             val mockDestinationSdk = plugin.getDestinationInstance() as? MockDestinationSdk
 
             assertNotNull(mockDestinationSdk)
-            assert(plugin.integrationState is IntegrationState.Ready)
+            assertTrue(plugin.isDestinationReady)
         }
 
     @Test
-    fun `given a sourceConfig with incorrect api key for destination, when plugin is initialised with it, then integration is Failed`() =
+    fun `given a sourceConfig with incorrect api key for destination, when plugin is initialised with it, then integration is not ready`() =
         runTest {
             plugin.findAndInitDestination(sourceConfigWithIncorrectApiKey)
             val mockDestinationSdk = plugin.getDestinationInstance() as? MockDestinationSdk
 
             assert(mockDestinationSdk == null)
-            assert(plugin.integrationState is IntegrationState.Failed)
-            assert((plugin.integrationState as IntegrationState.Failed).exception is SdkNotInitializedException)
+            assertFalse(plugin.isDestinationReady)
         }
 
     @Test
-    fun `given a sourceConfig without destination config, when plugin is initialised with it, then integration is Failed`() =
+    fun `given a sourceConfig without destination config, when plugin is initialised with it, then integration is not ready`() =
         runTest {
             val sourceConfigWithAbsentDestinationConfig = LenientJson.decodeFromString<SourceConfig>(
                 readFileAsString(pathToSourceConfigWithAbsentDestinationConfig)
@@ -111,12 +114,11 @@ class IntegrationPluginTest {
             val mockDestinationSdk = plugin.getDestinationInstance() as? MockDestinationSdk
 
             assert(mockDestinationSdk == null)
-            assert(plugin.integrationState is IntegrationState.Failed)
-            assert((plugin.integrationState as IntegrationState.Failed).exception is SdkNotInitializedException)
+            assertFalse(plugin.isDestinationReady)
         }
 
     @Test
-    fun `given a sourceConfig with destination disabled, when plugin is initialised with it, then integration is Failed`() =
+    fun `given a sourceConfig with destination disabled, when plugin is initialised with it, then integration is not ready`() =
         runTest {
             val sourceConfigWithDisabledDestination = LenientJson.decodeFromString<SourceConfig>(
                 readFileAsString(pathToSourceConfigWithDestinationDisabled)
@@ -125,27 +127,29 @@ class IntegrationPluginTest {
             val mockDestinationSdk = plugin.getDestinationInstance() as? MockDestinationSdk
 
             assert(mockDestinationSdk == null)
-            assert(plugin.integrationState is IntegrationState.Failed)
-            assert((plugin.integrationState as IntegrationState.Failed).exception is SdkNotInitializedException)
+            assertFalse(plugin.isDestinationReady)
         }
 
     @Test
-    fun `given an integration plugin for which create throws an exception, when plugin is initialised, then integration is Failed`() =
+    fun `given an integration plugin for which create throws an exception, when plugin is initialised, then integration is not ready`() =
         runTest {
             val exception = Exception("Test exception")
             val plugin = object : IntegrationPlugin() {
                 override val key: String
                     get() = "MockDestination"
 
-                override fun create(destinationConfig: JsonObject): Boolean {
+                override fun create(destinationConfig: JsonObject) {
                     throw exception
+                }
+
+                override fun getDestinationInstance(): Any? {
+                    return null
                 }
             }
             plugin.setup(mockAnalytics)
             plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
 
-            assert(plugin.integrationState is IntegrationState.Failed)
-            assert((plugin.integrationState as IntegrationState.Failed).exception == exception)
+            assertFalse(plugin.isDestinationReady)
         }
 
     @Test
@@ -157,48 +161,46 @@ class IntegrationPluginTest {
             plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
             val initialDestinationConfig = plugin.destinationConfig
 
-            plugin.findAndUpdateDestination(sourceConfigWithAnotherCorrectApiKey)
+            plugin.findAndInitDestination(sourceConfigWithAnotherCorrectApiKey)
             val destinationConfig = plugin.destinationConfig
 
             assertNotEquals(initialDestinationConfig, destinationConfig)
         }
 
     @Test
-    fun `given an initialised integration, when plugin is updated with a sourceConfig with disabled destination, then destination moves to Failed state`() =
+    fun `given an initialised integration, when plugin is updated with a sourceConfig with disabled destination, then integration becomes not ready`() =
         runTest {
             plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
 
             val sourceConfigWithDisabledDestination = LenientJson.decodeFromString<SourceConfig>(
                 readFileAsString(pathToSourceConfigWithDestinationDisabled)
             )
-            plugin.findAndUpdateDestination(sourceConfigWithDisabledDestination)
+            plugin.findAndInitDestination(sourceConfigWithDisabledDestination)
 
-            assert(plugin.integrationState is IntegrationState.Failed)
-            assert((plugin.integrationState as IntegrationState.Failed).exception is SdkNotInitializedException)
+            assertFalse(plugin.isDestinationReady)
         }
 
     @Test
-    fun `given an initialised integration, when plugin is updated with sourceConfig without destination, then integration moves to Failed state`() =
+    fun `given an initialised integration, when plugin is updated with sourceConfig without destination, then integration becomes not ready`() =
         runTest {
             plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
 
             val sourceConfigWithAbsentDestinationConfig = LenientJson.decodeFromString<SourceConfig>(
                 readFileAsString(pathToSourceConfigWithAbsentDestinationConfig)
             )
-            plugin.findAndUpdateDestination(sourceConfigWithAbsentDestinationConfig)
+            plugin.findAndInitDestination(sourceConfigWithAbsentDestinationConfig)
 
-            assert(plugin.integrationState is IntegrationState.Failed)
-            assert((plugin.integrationState as IntegrationState.Failed).exception is SdkNotInitializedException)
+            assertFalse(plugin.isDestinationReady)
         }
 
     @Test
-    fun `given a Failed integration, when the plugin is updated with a new correct sourceConfig, then integration moves to Ready state`() =
+    fun `given an integration which is not ready, when the plugin is updated with a new correct sourceConfig, then integration becomes ready`() =
         runTest {
             plugin.findAndInitDestination(sourceConfigWithIncorrectApiKey)
+            assertFalse(plugin.isDestinationReady)
 
-            plugin.findAndUpdateDestination(sourceConfigWithCorrectApiKey)
-
-            assert(plugin.integrationState is IntegrationState.Ready)
+            plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
+            assertTrue(plugin.isDestinationReady)
         }
 
     @Test
@@ -292,6 +294,41 @@ class IntegrationPluginTest {
 
         verify(exactly = 1) { mockDestinationSdk.flush() }
     }
+
+    @Test
+    fun `given an initialised integration, when a callback is registered for it, then it is called immediately with success result`() =
+        runTest {
+            plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
+
+            val mockDestinationSdk = plugin.getDestinationInstance() as MockDestinationSdk
+            val callback = mockk<(Any?, DestinationResult) -> Unit>(relaxed = true)
+            plugin.onDestinationReady(callback)
+
+            verify(exactly = 1) { callback.invoke(mockDestinationSdk, ofType(Result.Success::class) as DestinationResult) }
+        }
+
+    @Test
+    fun `given an uninitialised integration, when a callback is registered for it and then it is initialised, then callback is called with success result`() =
+        runTest {
+            val callback = mockk<(Any?, DestinationResult) -> Unit>(relaxed = true)
+            plugin.onDestinationReady(callback)
+
+            plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
+
+            val mockDestinationSdk = plugin.getDestinationInstance() as MockDestinationSdk
+            verify(exactly = 1) { callback.invoke(mockDestinationSdk, ofType(Result.Success::class) as DestinationResult) }
+        }
+
+    @Test
+    fun `given an uninitialised integration, when a callback is registered for it and then it fails to initialise, then callback is called with failure result`() =
+        runTest {
+            val callback = mockk<(Any?, DestinationResult) -> Unit>(relaxed = true)
+            plugin.onDestinationReady(callback)
+
+            plugin.findAndInitDestination(sourceConfigWithIncorrectApiKey)
+
+            verify(exactly = 1) { callback.invoke(null, ofType(Result.Failure::class) as DestinationResult) }
+        }
 
     @Test
     fun `given a custom plugin, when it is added after initialisation and intercept for integration called, then the plugin's intercept is called`() =
