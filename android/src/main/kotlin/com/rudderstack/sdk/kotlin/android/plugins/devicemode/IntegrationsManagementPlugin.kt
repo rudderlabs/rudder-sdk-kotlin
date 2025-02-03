@@ -71,7 +71,7 @@ internal class IntegrationsManagementPlugin : Plugin {
     internal fun addIntegration(plugin: IntegrationPlugin) {
         integrationPluginChain.add(plugin)
         analytics.withIntegrationsDispatcher {
-            if (plugin.isDestinationReady && sourceConfig.source.isSourceEnabled) {
+            if (!plugin.isDestinationReady && sourceConfig.source.isSourceEnabled) {
                 plugin.findAndInitDestination(sourceConfig)
             }
         }
