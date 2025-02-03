@@ -78,11 +78,11 @@ abstract class IntegrationPlugin : EventPlugin {
 
     final override fun setup(analytics: Analytics) {
         super.setup(analytics)
-
         pluginChain = PluginChain().also { it.analytics = analytics }
         isPluginSetup = true
+        pluginList.forEach { plugin -> add(plugin) }
+        pluginList.clear()
         applyDefaultPlugins()
-        applyCustomPlugins()
     }
 
     internal fun findAndInitDestination(sourceConfig: SourceConfig) {
@@ -211,11 +211,6 @@ abstract class IntegrationPlugin : EventPlugin {
 
     private fun applyDefaultPlugins() {
         // todo: add integrations options filtering and event filtering plugins here
-    }
-
-    private fun applyCustomPlugins() {
-        pluginList.forEach { plugin -> add(plugin) }
-        pluginList.clear()
     }
 
     private fun findDestination(sourceConfig: SourceConfig): Destination? {

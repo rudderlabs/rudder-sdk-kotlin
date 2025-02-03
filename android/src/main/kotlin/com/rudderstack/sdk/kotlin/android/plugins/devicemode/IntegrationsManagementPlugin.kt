@@ -54,10 +54,13 @@ internal class IntegrationsManagementPlugin : Plugin {
 
     override suspend fun intercept(event: Event): Event {
         LoggerAnalytics.debug("IntegrationsManagementPlugin: queueing event")
-        val queuedEventResult = queuedEventsChannel.trySend(event)
 
-        if (queuedEventResult.isFailure) {
-            dropOldestAndSend(event)
+        runCatching {
+            queuedEventsChannel.trySend(event).getOrThrow()
+        }.onFailure {
+            // drop the oldest event
+            queuedEventsChannel.tryReceive()
+            queuedEventsChannel.trySend(event)
         }
 
         return event
@@ -84,15 +87,14 @@ internal class IntegrationsManagementPlugin : Plugin {
     internal fun reset() {
         analytics.withIntegrationsDispatcher {
             integrationPluginChain.applyClosure { plugin ->
-                if (plugin is IntegrationPlugin) {
-                    if (plugin.isDestinationReady) {
-                        plugin.reset()
-                    } else {
-                        LoggerAnalytics.debug(
-                            "IntegrationsManagementPlugin: Integration ${plugin.key} is " +
-                                "not ready. Reset discarded."
-                        )
-                    }
+                if (plugin !is IntegrationPlugin) return@applyClosure
+
+                if (plugin.isDestinationReady) {
+                    plugin.reset()
+                } else {
+                    LoggerAnalytics.debug(
+                        "IntegrationsManagementPlugin: Destination ${plugin.key} is not ready. Reset discarded."
+                    )
                 }
             }
         }
@@ -101,23 +103,17 @@ internal class IntegrationsManagementPlugin : Plugin {
     internal fun flush() {
         analytics.withIntegrationsDispatcher {
             integrationPluginChain.applyClosure { plugin ->
-                if (plugin is IntegrationPlugin) {
-                    if (plugin.isDestinationReady) {
-                        plugin.flush()
-                    } else {
-                        LoggerAnalytics.debug(
-                            "IntegrationsManagementPlugin: Integration ${plugin.key} is " +
-                                "not ready. Flush discarded."
-                        )
-                    }
+                if (plugin !is IntegrationPlugin) return@applyClosure
+
+                if (plugin.isDestinationReady) {
+                    plugin.flush()
+                } else {
+                    LoggerAnalytics.debug(
+                        "IntegrationsManagementPlugin: Destination ${plugin.key} is not ready. Flush discarded."
+                    )
                 }
             }
         }
-    }
-
-    private fun dropOldestAndSend(event: Event) {
-        queuedEventsChannel.tryReceive()
-        queuedEventsChannel.trySend(event)
     }
 
     private fun processEvents() {
