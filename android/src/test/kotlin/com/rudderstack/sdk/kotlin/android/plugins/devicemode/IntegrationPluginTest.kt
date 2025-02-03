@@ -320,6 +320,24 @@ class IntegrationPluginTest {
         }
 
     @Test
+    fun `given an integration, when multiple callbacks are registered for it, then all the callbacks are called`() =
+        runTest {
+            val callback1 = mockk<(Any?, DestinationResult) -> Unit>(relaxed = true)
+            val callback2 = mockk<(Any?, DestinationResult) -> Unit>(relaxed = true)
+            val callback3 = mockk<(Any?, DestinationResult) -> Unit>(relaxed = true)
+            plugin.onDestinationReady(callback1)
+            plugin.onDestinationReady(callback2)
+            plugin.onDestinationReady(callback3)
+
+            plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
+
+            val mockDestinationSdk = plugin.getDestinationInstance() as MockDestinationSdk
+            verify(exactly = 1) { callback1.invoke(mockDestinationSdk, ofType(Result.Success::class) as DestinationResult) }
+            verify(exactly = 1) { callback2.invoke(mockDestinationSdk, ofType(Result.Success::class) as DestinationResult) }
+            verify(exactly = 1) { callback3.invoke(mockDestinationSdk, ofType(Result.Success::class) as DestinationResult) }
+        }
+
+    @Test
     fun `given an uninitialised integration, when a callback is registered for it and then it fails to initialise, then callback is called with failure result`() =
         runTest {
             val callback = mockk<(Any?, DestinationResult) -> Unit>(relaxed = true)
