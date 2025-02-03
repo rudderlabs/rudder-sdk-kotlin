@@ -156,6 +156,7 @@ abstract class IntegrationPlugin : EventPlugin {
      *
      * @param callback The callback to be invoked when the destination is ready.
      */
+    // todo: refactor this API to support dynamic callbacks
     fun onDestinationReady(callback: (Any?, DestinationResult) -> Unit) {
         getDestinationInstance()?.let { destinationInstance ->
             if (isDestinationReady) {
