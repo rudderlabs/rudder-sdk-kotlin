@@ -85,21 +85,28 @@ abstract class IntegrationPlugin : EventPlugin {
         applyDefaultPlugins()
     }
 
-    internal fun findAndInitDestination(sourceConfig: SourceConfig) {
+    internal fun initDestination(sourceConfig: SourceConfig) {
+        isDestinationConfigured(sourceConfig)?.let { destinationConfig ->
+            initSafelyAndNotifyCallbacks(destinationConfig)
+        }
+    }
+
+    private fun isDestinationConfigured(sourceConfig: SourceConfig): JsonObject? {
         findDestination(sourceConfig)?.let { configDestination ->
             if (!configDestination.isDestinationEnabled) {
                 val errorMessage = "Destination $key is disabled in dashboard. " +
                     "No events will be sent to this destination."
                 LoggerAnalytics.warn("IntegrationPlugin: $errorMessage")
                 setFailureConfigAndNotifyCallbacks(IllegalStateException(errorMessage))
-                return
+                return null
             }
-            createSafelyAndNotifyCallbacks(configDestination.destinationConfig)
+            return configDestination.destinationConfig
         } ?: run {
             val errorMessage = "Destination $key not found in the source config. " +
                 "No events will be sent to this destination."
             LoggerAnalytics.warn("IntegrationPlugin: $errorMessage")
             setFailureConfigAndNotifyCallbacks(IllegalStateException(errorMessage))
+            return null
         }
     }
 
@@ -174,7 +181,7 @@ abstract class IntegrationPlugin : EventPlugin {
         }
     }
 
-    private fun createSafelyAndNotifyCallbacks(destinationConfig: JsonObject) {
+    private fun initSafelyAndNotifyCallbacks(destinationConfig: JsonObject) {
         safelyExecute(
             block = {
                 if (getDestinationInstance() == null) {

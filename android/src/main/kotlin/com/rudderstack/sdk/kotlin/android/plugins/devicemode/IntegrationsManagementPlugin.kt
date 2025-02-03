@@ -41,7 +41,7 @@ internal class IntegrationsManagementPlugin : Plugin {
                 .collectIndexed { index, sourceConfig ->
                     integrationPluginChain.applyClosure { plugin ->
                         if (plugin is IntegrationPlugin) {
-                            plugin.findAndInitDestination(sourceConfig)
+                            plugin.initDestination(sourceConfig)
                         }
                     }
 
@@ -75,7 +75,7 @@ internal class IntegrationsManagementPlugin : Plugin {
         integrationPluginChain.add(plugin)
         analytics.withIntegrationsDispatcher {
             if (!plugin.isDestinationReady && sourceConfig.source.isSourceEnabled) {
-                plugin.findAndInitDestination(sourceConfig)
+                plugin.initDestination(sourceConfig)
             }
         }
     }
