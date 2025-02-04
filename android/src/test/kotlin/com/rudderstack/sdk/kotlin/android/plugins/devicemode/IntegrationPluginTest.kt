@@ -31,12 +31,14 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Before
 import org.junit.Test
+import kotlinx.serialization.json.put
 
 internal const val pathToSourceConfigWithCorrectApiKey = "mockdestinationconfig/source_config_with_correct_api_key.json"
 internal const val pathToSourceConfigWithAnotherCorrectApiKey =
@@ -146,6 +148,23 @@ class IntegrationPluginTest {
 
             assert(plugin.integrationState is IntegrationState.Failed)
             assert((plugin.integrationState as IntegrationState.Failed).exception == exception)
+        }
+
+    @Test
+    fun `given an initialised integration, when plugin is updated with a sourceConfig, then integration is updated`() =
+        runTest {
+            val sourceConfigWithAnotherCorrectApiKey = LenientJson.decodeFromString<SourceConfig>(
+                readFileAsString(pathToSourceConfigWithAnotherCorrectApiKey)
+            )
+            plugin.findAndInitDestination(sourceConfigWithCorrectApiKey)
+            val initialMockDestinationSdk = plugin.getDestinationInstance() as MockDestinationSdk
+
+            plugin.findAndUpdateDestination(sourceConfigWithAnotherCorrectApiKey)
+            val updatedMockDestinationSdk = plugin.getDestinationInstance() as MockDestinationSdk
+
+            assert(initialMockDestinationSdk != updatedMockDestinationSdk)
+            assertNotNull(updatedMockDestinationSdk)
+            assertNotNull(initialMockDestinationSdk)
         }
 
     @Test
@@ -415,7 +434,9 @@ class IntegrationPluginTest {
 }
 
 internal fun applyBaseDataToEvent(event: Event) {
-    event.integrations = emptyJsonObject
+    event.integrations = buildJsonObject {
+        put("All", true)
+    }
     event.anonymousId = "anonymousId"
     event.channel = PlatformType.Mobile
 }
