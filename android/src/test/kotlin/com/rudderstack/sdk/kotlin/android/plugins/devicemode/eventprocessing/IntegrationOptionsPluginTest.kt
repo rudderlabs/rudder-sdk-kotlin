@@ -15,6 +15,8 @@ import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 
+private const val MOCK_DESTINATION_KEY = "MockDestination"
+
 class IntegrationOptionsPluginTest {
 
     private val testDispatcher = StandardTestDispatcher()
@@ -25,7 +27,7 @@ class IntegrationOptionsPluginTest {
 
     @Before
     fun setup() {
-        integrationOptionsPlugin = IntegrationOptionsPlugin("MockDestination")
+        integrationOptionsPlugin = IntegrationOptionsPlugin(MOCK_DESTINATION_KEY)
         integrationOptionsPlugin.setup(mockAnalytics)
     }
 
@@ -46,7 +48,7 @@ class IntegrationOptionsPluginTest {
         runTest(testDispatcher) {
             val event = TrackEvent(event = "event-name", properties = emptyJsonObject)
             event.integrations = emptyJsonObject
-            event.putIntegrationOption("MockDestination", false)
+            event.putIntegrationOption(MOCK_DESTINATION_KEY, false)
 
             val result = integrationOptionsPlugin.intercept(event)
 
@@ -71,7 +73,7 @@ class IntegrationOptionsPluginTest {
             val event = TrackEvent(event = "event-name", properties = emptyJsonObject)
             event.integrations = emptyJsonObject
             event.putIntegrationOption("All", false)
-            event.putIntegrationOption("MockDestination", true)
+            event.putIntegrationOption(MOCK_DESTINATION_KEY, true)
 
             val result = integrationOptionsPlugin.intercept(event)
 
@@ -87,7 +89,46 @@ class IntegrationOptionsPluginTest {
             val event = TrackEvent(event = "event-name", properties = emptyJsonObject)
             event.integrations = emptyJsonObject
             event.putIntegrationOption("All", true)
-            event.putIntegrationOption("MockDestination", false)
+            event.putIntegrationOption(MOCK_DESTINATION_KEY, false)
+
+            val result = integrationOptionsPlugin.intercept(event)
+
+            assertEquals(event, result)
+        }
+
+    @Test
+    fun `given an event with empty integrations, when plugin's intercept called with it, then it returns that event`() =
+        runTest(testDispatcher) {
+            val event = TrackEvent(event = "event-name", properties = emptyJsonObject)
+            event.integrations = emptyJsonObject
+
+            val result = integrationOptionsPlugin.intercept(event)
+
+            assertEquals(event, result)
+        }
+
+    @Test
+    fun `given an event with integration field set to string type, when plugin's intercept called with it, then it returns that event`() =
+        runTest(testDispatcher) {
+            val event = TrackEvent(event = "event-name", properties = emptyJsonObject)
+            event.integrations = buildJsonObject {
+                put(MOCK_DESTINATION_KEY, "some string value")
+            }
+
+            val result = integrationOptionsPlugin.intercept(event)
+
+            assertEquals(event, result)
+        }
+
+    @Test
+    fun `given an event with integration field set to complex type, when plugin's intercept called with it, then it returns that event`() =
+        runTest(testDispatcher) {
+            val event = TrackEvent(event = "event-name", properties = emptyJsonObject)
+            event.integrations = buildJsonObject {
+                put(MOCK_DESTINATION_KEY, buildJsonObject {
+                    put("key", "value")
+                })
+            }
 
             val result = integrationOptionsPlugin.intercept(event)
 
