@@ -1,6 +1,7 @@
 package com.rudderstack.sdk.kotlin.android.plugins.devicemode
 
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing.EventFilteringPlugin
+import com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing.IntegrationOptionsPlugin
 import com.rudderstack.sdk.kotlin.android.utils.findDestination
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
@@ -217,6 +218,7 @@ abstract class IntegrationPlugin : EventPlugin {
 
     private fun applyDefaultPlugins() {
         add(EventFilteringPlugin(key))
+        add(IntegrationOptionsPlugin(key))
     }
 
     private fun applyCustomPlugins() {
