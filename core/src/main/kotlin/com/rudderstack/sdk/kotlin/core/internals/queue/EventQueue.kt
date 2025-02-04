@@ -3,7 +3,6 @@ package com.rudderstack.sdk.kotlin.core.internals.queue
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
-import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.anonymousId
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClient
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClientImpl
 import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPoliciesFacade

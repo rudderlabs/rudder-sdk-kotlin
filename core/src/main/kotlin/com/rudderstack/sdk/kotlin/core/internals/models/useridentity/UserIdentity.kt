@@ -1,6 +1,5 @@
 package com.rudderstack.sdk.kotlin.core.internals.models.useridentity
 
-import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.ExternalId
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderTraits
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
@@ -9,7 +8,6 @@ import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import com.rudderstack.sdk.kotlin.core.internals.utils.generateUUID
-import com.rudderstack.sdk.kotlin.core.internals.utils.isAnalyticsActive
 import com.rudderstack.sdk.kotlin.core.internals.utils.readValuesOrDefault
 
 /**
@@ -52,74 +50,3 @@ data class UserIdentity(
 
     internal sealed interface UserIdentityAction : FlowAction<UserIdentity>
 }
-
-/**
- * Update or get the stored anonymous ID.
- *
- * The `analyticsInstance.anonymousId` is used to update and get the `anonymousID` value.
- * This ID is typically generated automatically to track users who have not yet been identified
- * (e.g., before they log in or sign up).
- *
- * This can return null if the analytics is shut down.
- *
- * Set the anonymousId:
- * ```kotlin
- * analyticsInstance.anonymousId = "Custom Anonymous ID"
- * ```
- *
- * Get the anonymousId:
- * ```kotlin
- * val anonymousId = analyticsInstance.anonymousId
- * ```
- */
-var Analytics.anonymousId: String?
-    get() {
-        if (!isAnalyticsActive()) return null
-        return userIdentityState.value.anonymousId
-    }
-    set(value) {
-        if (!isAnalyticsActive()) return
-
-        value?.let { anonymousId ->
-            userIdentityState.dispatch(SetAnonymousIdAction(anonymousId))
-            storeAnonymousId()
-        }
-    }
-
-/**
- * Get the user ID.
- *
- * The `analyticsInstance.userId` is used to get the `userId` value.
- * This ID is assigned when an identify event is made.
- *
- * This can return null if the analytics is shut down.
- *
- * Get the userId:
- * ```kotlin
- * val userId = analyticsInstance.userId
- * ```
- */
-val Analytics.userId: String?
-    get() {
-        if (!isAnalyticsActive()) return null
-        return userIdentityState.value.userId
-    }
-
-/**
- * Get the user traits.
- *
- * The `analyticsInstance.traits` is used to get the `traits` value.
- * This traits is assigned when an identify event is made.
- *
- * This can return null if the analytics is shut down.
- *
- * Get the traits:
- * ```kotlin
- * val traits = analyticsInstance.traits
- * ```
- */
-val Analytics.traits: RudderTraits?
-    get() {
-        if (!isAnalyticsActive()) return null
-        return userIdentityState.value.traits
-    }

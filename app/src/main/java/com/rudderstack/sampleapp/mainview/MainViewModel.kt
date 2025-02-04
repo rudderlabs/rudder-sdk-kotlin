@@ -6,9 +6,6 @@ import com.rudderstack.sdk.kotlin.core.internals.models.ExternalId
 import com.rudderstack.sdk.kotlin.core.internals.models.Properties
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
 import com.rudderstack.sampleapp.analytics.RudderAnalyticsUtils
-import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.anonymousId
-import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.traits
-import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.userId
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update

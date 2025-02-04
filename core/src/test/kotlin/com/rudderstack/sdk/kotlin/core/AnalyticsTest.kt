@@ -1,9 +1,6 @@
 package com.rudderstack.sdk.kotlin.core
 
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
-import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.anonymousId
-import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.traits
-import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.userId
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.provideBasicStorage
 import com.rudderstack.sdk.kotlin.core.internals.utils.MockMemoryStorage
