@@ -70,6 +70,7 @@ internal class EventFilteringPlugin(private val key: String) : Plugin {
     }
 
     private fun listenForConfigChanges() {
+        // todo: use integrations dispatcher here and then we don't need to use CopyOnWriteArrayList for filteringList
         analytics.analyticsScope.launch {
             analytics.sourceConfigState
                 .filter { it.source.isSourceEnabled }
