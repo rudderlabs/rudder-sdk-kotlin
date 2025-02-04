@@ -7,6 +7,7 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.MockMemoryStorage
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import io.mockk.every
 import io.mockk.mockkStatic
+import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertNull
 import junit.framework.TestCase.assertTrue
 import kotlinx.serialization.json.JsonObject
@@ -51,7 +52,7 @@ class AnalyticsTest {
 
         val anonymousId = analytics.anonymousId
 
-        assertTrue(anonymousId == CUSTOM_ANONYMOUS_ID)
+        assertEquals(CUSTOM_ANONYMOUS_ID, anonymousId)
     }
 
     @Test
@@ -60,7 +61,7 @@ class AnalyticsTest {
 
         val anonymousId = analytics.anonymousId
 
-        assertTrue(anonymousId == String.empty())
+        assertEquals(String.empty(), anonymousId)
     }
 
     @Test
@@ -80,8 +81,8 @@ class AnalyticsTest {
         val userId = analytics.userId
         val traits = analytics.traits
 
-        assertTrue(userId == USER_ID)
-        assertTrue(traits == TRAITS)
+        assertEquals(USER_ID, userId)
+        assertEquals(TRAITS, traits)
     }
 
     @Test
@@ -89,8 +90,8 @@ class AnalyticsTest {
         val userId = analytics.userId
         val traits = analytics.traits
 
-        assertTrue(userId == String.empty())
-        assertTrue(traits == emptyJsonObject)
+        assertEquals(String.empty(), userId)
+        assertEquals(emptyJsonObject, traits)
     }
 
     @Test
