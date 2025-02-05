@@ -30,12 +30,6 @@ tasks.register<Delete>("clean") {
 nexusPublishing {
     repositories {
         sonatype {
-            if (System.getenv("NEXUS_USERNAME") == null || System.getenv("NEXUS_PASSWORD") == null || System.getenv("SONATYPE_STAGING_PROFILE_ID") == null) {
-                println("RudderStack: Error in fetching the Nexus environment variables.")
-            } else{
-                println("RudderStack: Nexus environment variables fetched successfully.")
-            }
-
             username = System.getenv("NEXUS_USERNAME")
             password = System.getenv("NEXUS_PASSWORD")
             stagingProfileId = System.getenv("SONATYPE_STAGING_PROFILE_ID")

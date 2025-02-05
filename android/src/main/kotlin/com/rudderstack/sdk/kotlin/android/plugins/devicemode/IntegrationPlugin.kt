@@ -1,8 +1,10 @@
 package com.rudderstack.sdk.kotlin.android.plugins.devicemode
 
+import com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing.EventFilteringPlugin
+import com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing.IntegrationOptionsPlugin
+import com.rudderstack.sdk.kotlin.android.utils.findDestination
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
-import com.rudderstack.sdk.kotlin.core.internals.models.Destination
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
@@ -95,7 +97,7 @@ abstract class IntegrationPlugin : EventPlugin {
     }
 
     private fun isDestinationConfigured(sourceConfig: SourceConfig): JsonObject? {
-        findDestination(sourceConfig)?.let { configDestination ->
+        findDestination(sourceConfig, key)?.let { configDestination ->
             if (!configDestination.isDestinationEnabled) {
                 val errorMessage = "Destination $key is disabled in dashboard. " +
                     "No events will be sent to this destination."
@@ -220,10 +222,7 @@ abstract class IntegrationPlugin : EventPlugin {
     }
 
     private fun applyDefaultPlugins() {
-        // todo: add integrations options filtering and event filtering plugins here
-    }
-
-    private fun findDestination(sourceConfig: SourceConfig): Destination? {
-        return sourceConfig.source.destinations.firstOrNull { it.destinationDefinition.displayName == key }
+        add(EventFilteringPlugin(key))
+        add(IntegrationOptionsPlugin(key))
     }
 }

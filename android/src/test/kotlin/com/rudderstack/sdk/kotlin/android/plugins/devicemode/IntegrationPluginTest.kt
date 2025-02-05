@@ -32,6 +32,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -40,6 +41,7 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import kotlinx.serialization.json.put
 
 internal const val pathToSourceConfigWithCorrectApiKey = "mockdestinationconfig/source_config_with_correct_api_key.json"
 internal const val pathToSourceConfigWithAnotherCorrectApiKey =
@@ -470,7 +472,9 @@ class IntegrationPluginTest {
 }
 
 internal fun applyBaseDataToEvent(event: Event) {
-    event.integrations = emptyJsonObject
+    event.integrations = buildJsonObject {
+        put("All", true)
+    }
     event.anonymousId = "anonymousId"
     event.channel = PlatformType.Mobile
 }
