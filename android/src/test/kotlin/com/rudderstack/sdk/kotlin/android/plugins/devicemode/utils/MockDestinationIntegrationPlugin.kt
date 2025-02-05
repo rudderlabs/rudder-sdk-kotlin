@@ -15,40 +15,22 @@ class MockDestinationIntegrationPlugin : IntegrationPlugin() {
 
     private var mockDestinationSdk: MockDestinationSdk? = null
     private var previousApiKey = String.empty()
-    internal lateinit var destinationConfig: JsonObject
 
     override val key: String
         get() = "MockDestination"
 
-    override fun create(destinationConfig: JsonObject): Boolean {
-        try {
-            this.destinationConfig = destinationConfig
+    override fun create(destinationConfig: JsonObject) {
+        if (mockDestinationSdk == null) {
             val apiKey = destinationConfig["apiKey"]?.jsonPrimitive?.content
             apiKey?.let {
                 previousApiKey = it
                 mockDestinationSdk = initialiseMockSdk(it)
-                return true
             }
-            return false
-        } catch (e: Exception) {
-            return false
         }
     }
 
     internal fun initialiseMockSdk(apiKey: String): MockDestinationSdk {
         return MockDestinationSdk.initialise(apiKey)
-    }
-
-    override fun update(destinationConfig: JsonObject): Boolean {
-        // this is a simulated version of how to update the destination
-        this.destinationConfig = destinationConfig
-        val apiKey = destinationConfig["apiKey"]?.jsonPrimitive?.content
-        // destination SDK is reinitialised with the new API key if it is null or API key is different.
-        if (mockDestinationSdk == null || apiKey != previousApiKey) {
-            return create(destinationConfig)
-        }
-        // if the above check is passed then the destination is already in ready state, so return true.
-        return true
     }
 
     override fun getDestinationInstance(): Any? {

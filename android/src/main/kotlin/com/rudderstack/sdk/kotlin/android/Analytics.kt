@@ -14,7 +14,6 @@ import com.rudderstack.sdk.kotlin.android.plugins.NetworkInfoPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.OSInfoPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.ScreenInfoPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.TimezoneInfoPlugin
-import com.rudderstack.sdk.kotlin.android.plugins.devicemode.DestinationResult
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.IntegrationPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.IntegrationsManagementPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleManagementPlugin
@@ -80,7 +79,7 @@ class Analytics(
 
     internal val activityLifecycleManagementPlugin = ActivityLifecycleManagementPlugin()
     internal val processLifecycleManagementPlugin = ProcessLifecycleManagementPlugin()
-    private var integrationsManagementPlugin: IntegrationsManagementPlugin? = null
+    private val integrationsManagementPlugin = IntegrationsManagementPlugin()
     private val sessionTrackingPlugin = SessionTrackingPlugin()
 
     init {
@@ -134,7 +133,7 @@ class Analytics(
         super.reset(clearAnonymousId)
 
         sessionTrackingPlugin.refreshSession()
-        this.integrationsManagementPlugin?.reset()
+        integrationsManagementPlugin.reset()
     }
 
     override fun flush() {
@@ -142,7 +141,7 @@ class Analytics(
 
         super.flush()
 
-        this.integrationsManagementPlugin?.flush()
+        integrationsManagementPlugin.flush()
     }
 
     /**
@@ -227,9 +226,7 @@ class Analytics(
     fun addIntegration(plugin: IntegrationPlugin) {
         if (!isAnalyticsActive()) return
 
-        initIntegrationsManagementPlugin()
-
-        integrationsManagementPlugin?.addIntegration(plugin)
+        integrationsManagementPlugin.addIntegration(plugin)
     }
 
     /**
@@ -240,29 +237,7 @@ class Analytics(
     fun removeIntegration(plugin: IntegrationPlugin) {
         if (!isAnalyticsActive()) return
 
-        integrationsManagementPlugin?.removeIntegration(plugin)
-    }
-
-    /**
-     * Registers a callback to be invoked when the destination of the [plugin] is ready.
-     *
-     * @param plugin The [IntegrationPlugin] for which the callback needs to be invoked.
-     * @param onReady The callback to be invoked when the destination is ready.
-     */
-    fun onDestinationReady(plugin: IntegrationPlugin, onReady: (Any?, DestinationResult) -> Unit) {
-        if (!isAnalyticsActive()) return
-
-        initIntegrationsManagementPlugin()
-
-        integrationsManagementPlugin?.onDestinationReady(plugin, onReady)
-    }
-
-    private fun initIntegrationsManagementPlugin() {
-        synchronized(this) {
-            if (integrationsManagementPlugin == null) {
-                integrationsManagementPlugin = IntegrationsManagementPlugin().also { add(it) }
-            }
-        }
+        integrationsManagementPlugin.removeIntegration(plugin)
     }
 
     private fun setup() {
@@ -276,6 +251,7 @@ class Analytics(
         add(ScreenInfoPlugin())
         add(TimezoneInfoPlugin())
         add(sessionTrackingPlugin)
+        add(integrationsManagementPlugin)
 
         // Add these plugins at last in chain
         add(AndroidLifecyclePlugin())

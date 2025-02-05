@@ -6,12 +6,10 @@ import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.PluginChain
-import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collectIndexed
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
-import java.util.concurrent.ConcurrentHashMap
 
 internal const val MAX_QUEUE_SIZE = 1000
 internal const val FIRST_INDEX = 0
@@ -28,32 +26,26 @@ internal class IntegrationsManagementPlugin : Plugin {
 
     private val integrationPluginChain = PluginChain()
 
-    private val destinationReadyCallbacks = ConcurrentHashMap<String, MutableList<(Any?, DestinationResult) -> Unit>>()
-
     private val queuedEventsChannel: Channel<Event> = Channel(MAX_QUEUE_SIZE)
 
-    private val isSourceEnabled: Boolean
-        get() = analytics.sourceConfigState.value.source.isSourceEnabled
+    private val sourceConfig: SourceConfig
+        get() = analytics.sourceConfigState.value
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
 
         integrationPluginChain.analytics = analytics
-        analytics.analyticsScope.launch(analytics.analyticsDispatcher) {
+        analytics.withIntegrationsDispatcher {
             analytics.sourceConfigState
                 .filter { it.source.isSourceEnabled }
                 .collectIndexed { index, sourceConfig ->
-                    val isFirstEmission = index == FIRST_INDEX
-
                     integrationPluginChain.applyClosure { plugin ->
                         if (plugin is IntegrationPlugin) {
-                            when (isFirstEmission) {
-                                true -> initAndNotifyCallbacks(sourceConfig, plugin)
-                                false -> plugin.findAndUpdateDestination(sourceConfig)
-                            }
+                            plugin.initDestination(sourceConfig)
                         }
                     }
-                    if (isFirstEmission) {
+
+                    if (index == FIRST_INDEX) {
                         processEvents()
                     }
                 }
@@ -62,10 +54,13 @@ internal class IntegrationsManagementPlugin : Plugin {
 
     override suspend fun intercept(event: Event): Event {
         LoggerAnalytics.debug("IntegrationsManagementPlugin: queueing event")
-        val queuedEventResult = queuedEventsChannel.trySend(event)
 
-        if (queuedEventResult.isFailure) {
-            dropOldestAndSend(event)
+        runCatching {
+            queuedEventsChannel.trySend(event).getOrThrow()
+        }.onFailure {
+            // drop the oldest event
+            queuedEventsChannel.tryReceive()
+            queuedEventsChannel.trySend(event)
         }
 
         return event
@@ -74,23 +69,15 @@ internal class IntegrationsManagementPlugin : Plugin {
     override fun teardown() {
         integrationPluginChain.removeAll()
         queuedEventsChannel.cancel()
-        destinationReadyCallbacks.clear()
-    }
-
-    internal fun onDestinationReady(plugin: IntegrationPlugin, onReady: (Any?, DestinationResult) -> Unit) {
-        destinationReadyCallbacks
-            .getOrPut(plugin.key) { mutableListOf() }
-            .add(onReady)
-
-        if (integrationPluginChain.hasIntegration(plugin)) {
-            notifyDestinationCallbacks(plugin)
-        }
     }
 
     internal fun addIntegration(plugin: IntegrationPlugin) {
         integrationPluginChain.add(plugin)
-        if (isSourceEnabled) {
-            initAndNotifyCallbacks(analytics.sourceConfigState.value, plugin)
+        analytics.withIntegrationsDispatcher {
+            // todo: refactor this condition.
+            if (!plugin.isDestinationReady && sourceConfig.source.isSourceEnabled) {
+                plugin.initDestination(sourceConfig)
+            }
         }
     }
 
@@ -99,14 +86,15 @@ internal class IntegrationsManagementPlugin : Plugin {
     }
 
     internal fun reset() {
-        integrationPluginChain.applyClosure { plugin ->
-            if (plugin is IntegrationPlugin) {
-                if (plugin.integrationState.isReady()) {
+        analytics.withIntegrationsDispatcher {
+            integrationPluginChain.applyClosure { plugin ->
+                if (plugin !is IntegrationPlugin) return@applyClosure
+
+                if (plugin.isDestinationReady) {
                     plugin.reset()
                 } else {
                     LoggerAnalytics.debug(
-                        "IntegrationsManagementPlugin: Destination ${plugin.key} is " +
-                            "not ready yet. Reset discarded."
+                        "IntegrationsManagementPlugin: Destination ${plugin.key} is not ready. Reset discarded."
                     )
                 }
             }
@@ -114,61 +102,23 @@ internal class IntegrationsManagementPlugin : Plugin {
     }
 
     internal fun flush() {
-        integrationPluginChain.applyClosure { plugin ->
-            if (plugin is IntegrationPlugin) {
-                if (plugin.integrationState.isReady()) {
+        analytics.withIntegrationsDispatcher {
+            integrationPluginChain.applyClosure { plugin ->
+                if (plugin !is IntegrationPlugin) return@applyClosure
+
+                if (plugin.isDestinationReady) {
                     plugin.flush()
                 } else {
                     LoggerAnalytics.debug(
-                        "IntegrationsManagementPlugin: Destination ${plugin.key} is " +
-                            "not ready yet. Flush discarded."
+                        "IntegrationsManagementPlugin: Destination ${plugin.key} is not ready. Flush discarded."
                     )
                 }
             }
         }
     }
 
-    @Synchronized
-    private fun initAndNotifyCallbacks(sourceConfig: SourceConfig, plugin: IntegrationPlugin) {
-        plugin.findAndInitDestination(sourceConfig)
-        notifyDestinationCallbacks(plugin)
-    }
-
-    @Synchronized
-    private fun notifyDestinationCallbacks(plugin: IntegrationPlugin) {
-        val callBacks = destinationReadyCallbacks[plugin.key]?.toList()
-        callBacks?.forEach { callback ->
-            when (val integrationState = plugin.integrationState) {
-                is IntegrationState.Ready -> notifyAndRemoveCallback(plugin, callback, Result.Success(Unit))
-                is IntegrationState.Failed -> notifyAndRemoveCallback(
-                    plugin,
-                    callback,
-                    Result.Failure(error = integrationState.exception)
-                )
-                is IntegrationState.Uninitialised -> Unit
-            }
-        }
-    }
-
-    private fun notifyAndRemoveCallback(
-        plugin: IntegrationPlugin,
-        callback: (Any?, DestinationResult) -> Unit,
-        result: DestinationResult
-    ) {
-        callback.invoke(plugin.getDestinationInstance(), result)
-        destinationReadyCallbacks[plugin.key]?.remove(callback)
-        if (destinationReadyCallbacks[plugin.key].isNullOrEmpty()) {
-            destinationReadyCallbacks.remove(plugin.key)
-        }
-    }
-
-    private fun dropOldestAndSend(event: Event) {
-        queuedEventsChannel.tryReceive()
-        queuedEventsChannel.trySend(event)
-    }
-
     private fun processEvents() {
-        analytics.analyticsScope.launch(analytics.analyticsDispatcher) {
+        analytics.withIntegrationsDispatcher {
             for (event in queuedEventsChannel) {
                 integrationPluginChain.process(event)
             }
@@ -176,6 +126,8 @@ internal class IntegrationsManagementPlugin : Plugin {
     }
 }
 
-private fun PluginChain.hasIntegration(plugin: IntegrationPlugin): Boolean {
-    return findAll(Plugin.PluginType.Destination, IntegrationPlugin::class).contains(plugin)
+private fun Analytics.withIntegrationsDispatcher(block: suspend () -> Unit) {
+    analyticsScope.launch(integrationsDispatcher) {
+        block()
+    }
 }

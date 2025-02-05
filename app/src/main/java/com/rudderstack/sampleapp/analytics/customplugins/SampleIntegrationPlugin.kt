@@ -9,32 +9,22 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
-class SampleIntegrationPlugin: IntegrationPlugin() {
+class SampleIntegrationPlugin : IntegrationPlugin() {
 
     private var destinationSdk: SampleDestinationSdk? = null
 
     override val key: String
         get() = "Amplitude"
 
-    override fun create(destinationConfig: JsonObject): Boolean {
-        try {
+    override fun create(
+        destinationConfig: JsonObject,
+    ) {
+        if (destinationSdk == null) {
             val apiKey = destinationConfig["apiKey"]?.jsonPrimitive?.content
             apiKey?.let {
                 destinationSdk = SampleDestinationSdk.create(it)
-                return true
             }
-            return false
-        } catch (e: Exception) {
-            return false
         }
-    }
-
-    override fun update(destinationConfig: JsonObject): Boolean {
-        // Update destination instance if needed
-        if (destinationSdk == null) {
-            return create(destinationConfig)
-        }
-        return false
     }
 
     override fun getDestinationInstance(): Any? {
@@ -42,17 +32,34 @@ class SampleIntegrationPlugin: IntegrationPlugin() {
     }
 
     override fun track(payload: TrackEvent): Event {
-        val destination = destinationSdk
-        destination?.track(payload.event, payload.properties)
+        // use the destinationConfig to update the way track call is made to destinationSdk
+        LoggerAnalytics.debug("SampleIntegrationPlugin: destinationConfig $destinationConfig")
+
+        destinationSdk?.track(payload.event, payload.properties)
         return payload
+    }
+
+    override fun flush() {
+        destinationSdk?.flush()
+    }
+
+    override fun reset() {
+        destinationSdk?.reset()
     }
 }
 
 class SampleDestinationSdk private constructor(private val key: String) {
 
     fun track(event: String, properties: Map<String, Any>) {
-        // Track event using Amplitude SDK
         LoggerAnalytics.debug("SampleAmplitudeSdk: track event $event with properties $properties")
+    }
+
+    fun flush() {
+        LoggerAnalytics.debug("SampleAmplitudeSdk: flush")
+    }
+
+    fun reset() {
+        LoggerAnalytics.debug("SampleAmplitudeSdk: reset")
     }
 
     companion object {

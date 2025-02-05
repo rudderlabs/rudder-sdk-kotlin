@@ -51,7 +51,7 @@ object RudderAnalyticsUtils {
                 }
             )
         ))
-        
+
         val sampleIntegrationPlugin = SampleIntegrationPlugin()
         sampleIntegrationPlugin.add(object : Plugin {
             override val pluginType: Plugin.PluginType = Plugin.PluginType.PreProcess
@@ -65,10 +65,11 @@ object RudderAnalyticsUtils {
                 return event
             }
         })
-        analytics.onDestinationReady(sampleIntegrationPlugin) { _, destinationResult ->
+        sampleIntegrationPlugin.onDestinationReady { _, destinationResult ->
             when (destinationResult) {
                 is Result.Success ->
                     LoggerAnalytics.debug("SampleAmplitudePlugin: destination ready")
+
                 is Result.Failure ->
                     LoggerAnalytics.debug("SampleAmplitudePlugin: destination failed to initialise: ${destinationResult.error.message}.")
             }
