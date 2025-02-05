@@ -83,10 +83,10 @@ internal class EventFilteringPlugin(private val key: String) : Plugin {
 
     private fun updateFilteringConfiguration(destinationConfig: JsonObject?) {
         filteringOption = destinationConfig?.getString(EVENT_FILTERING_OPTION).orEmpty()
+        filteringList.clear()
 
         if (filteringOption.isBlank()) {
             LoggerAnalytics.error("EventFilteringPlugin: Missing event filtering option for destination: $key")
-            filteringList.clear()
             return
         }
 
