@@ -85,6 +85,9 @@ abstract class IntegrationPlugin : EventPlugin {
         applyDefaultPlugins()
     }
 
+    // todo: refactor this API to ensure that callbacks are invoked
+    //  only once and destination is initialised only once even when this method is called multiple times.
+    //  There should be no side effect of calling this method multiple times with same SourceConfig.
     internal fun initDestination(sourceConfig: SourceConfig) {
         isDestinationConfigured(sourceConfig)?.let { destinationConfig ->
             initSafelyAndNotifyCallbacks(destinationConfig)

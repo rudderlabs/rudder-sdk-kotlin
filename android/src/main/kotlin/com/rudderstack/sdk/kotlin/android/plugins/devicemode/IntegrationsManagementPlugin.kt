@@ -74,6 +74,7 @@ internal class IntegrationsManagementPlugin : Plugin {
     internal fun addIntegration(plugin: IntegrationPlugin) {
         integrationPluginChain.add(plugin)
         analytics.withIntegrationsDispatcher {
+            // todo: refactor this condition.
             if (!plugin.isDestinationReady && sourceConfig.source.isSourceEnabled) {
                 plugin.initDestination(sourceConfig)
             }

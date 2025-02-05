@@ -79,7 +79,7 @@ class Analytics(
 
     internal val activityLifecycleManagementPlugin = ActivityLifecycleManagementPlugin()
     internal val processLifecycleManagementPlugin = ProcessLifecycleManagementPlugin()
-    private var integrationsManagementPlugin = IntegrationsManagementPlugin()
+    private val integrationsManagementPlugin = IntegrationsManagementPlugin()
     private val sessionTrackingPlugin = SessionTrackingPlugin()
 
     init {
