@@ -1,0 +1,59 @@
+{
+  "source": {
+    "id": "<SOURCE_ID>",
+    "name": "Android",
+    "writeKey": "<WRITE_KEY>",
+    "config": {
+      "statsCollection": {
+        "errors": {
+          "enabled": true
+        },
+        "metrics": {
+          "enabled": false
+        }
+      }
+    },
+    "enabled": true,
+    "workspaceId": "<WORKSPACE_ID>",
+    "destinations": [
+      {
+        "id": "<DESTINATION_ID>",
+        "name": "Mock Destination",
+        "enabled": true,
+        "config": {
+          "apiKey": "test-api-key",
+          "blacklistedEvents" : [],
+          "whitelistedEvents" : [ {
+            "eventName" : "Track Event 1"
+          }, {
+            "eventName" : "Track Event 2"
+          } ],
+          "eventFilteringOption" : "whitelistedEvents"
+        },
+        "destinationDefinitionId": "<DESTINATION_DEFINITION_ID>",
+        "destinationDefinition": {
+          "name": "MOCK DESTINATION",
+          "displayName": "MockDestination"
+        },
+        "updatedAt": "2024-08-28T12:53:34.870Z",
+        "shouldApplyDeviceModeTransformation": false,
+        "propagateEventsUntransformedOnError": false
+      }
+    ],
+    "updatedAt": "2024-08-28T12:53:34.870Z",
+    "dataplanes": {}
+  },
+  "updatedAt": "2024-08-28T12:53:34.870Z",
+  "consentManagementMetadata": {
+    "providers": [
+      {
+        "provider": "oneTrust",
+        "resolutionStrategy": "and"
+      },
+      {
+        "provider": "ketch",
+        "resolutionStrategy": "or"
+      }
+    ]
+  }
+}
