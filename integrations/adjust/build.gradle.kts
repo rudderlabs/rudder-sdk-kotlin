@@ -4,8 +4,8 @@ plugins {
 }
 
 android {
-    namespace = "com.rudderstack.integration.kotlin.adjust"
-    compileSdk = 35
+    namespace = RudderStackBuildConfig.PackageName.Integrations.ADJUST //"com.rudderstack.integration.kotlin.adjust"
+    compileSdk = RudderStackBuildConfig.Android.COMPILE_SDK
 
     defaultConfig {
         minSdk = 21
@@ -21,11 +21,14 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = RudderStackBuildConfig.Build.JAVA_VERSION
+        targetCompatibility = RudderStackBuildConfig.Build.JAVA_VERSION
     }
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = RudderStackBuildConfig.Build.JVM_TARGET
+    }
+    kotlin {
+        jvmToolchain(RudderStackBuildConfig.Build.JVM_TOOLCHAIN)
     }
 }
 
