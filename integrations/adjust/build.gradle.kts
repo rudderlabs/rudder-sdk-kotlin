@@ -30,6 +30,8 @@ android {
 }
 
 dependencies {
+    // RudderStack Android module
+    api(project(":android"))
 
     implementation(libs.android.core.ktx)
     implementation(libs.androidx.appcompat)

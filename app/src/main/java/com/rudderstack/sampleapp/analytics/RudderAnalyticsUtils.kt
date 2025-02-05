@@ -2,6 +2,7 @@ package com.rudderstack.sampleapp.analytics
 
 import android.app.Application
 import com.rudderstack.android.sampleapp.BuildConfig
+import com.rudderstack.integration.kotlin.adjust.AdjustIntegration
 import com.rudderstack.sdk.kotlin.android.Analytics
 import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.android.SessionConfiguration
@@ -51,6 +52,8 @@ object RudderAnalyticsUtils {
                 }
             )
         ))
+
+        analytics.add(AdjustIntegration())
 
         val sampleIntegrationPlugin = SampleIntegrationPlugin()
         sampleIntegrationPlugin.add(object : Plugin {
