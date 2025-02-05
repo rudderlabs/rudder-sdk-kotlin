@@ -23,9 +23,9 @@
         "config": {
           "apiKey": "test-api-key",
           "blacklistedEvents" : [{
-            "eventName" : "Track Event 1"
+            "eventName" : "Track Event 3"
           }, {
-            "eventName" : "Track Event 2"
+            "eventName" : "Track Event 4"
           }],
           "whitelistedEvents" : [],
           "eventFilteringOption" : "blacklistedEvents"

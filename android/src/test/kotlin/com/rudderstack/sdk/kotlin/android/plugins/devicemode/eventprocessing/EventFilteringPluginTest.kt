@@ -93,7 +93,7 @@ class EventFilteringPluginTest {
             mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithBlackListEvents))
             testDispatcher.scheduler.advanceUntilIdle()
 
-            val disallowedEvent = TrackEvent("Track Event 2", emptyJsonObject)
+            val disallowedEvent = TrackEvent("Track Event 3", emptyJsonObject)
             val returnedEvent = eventFilteringPlugin.intercept(disallowedEvent)
 
             assertNull(returnedEvent)
@@ -105,7 +105,7 @@ class EventFilteringPluginTest {
             mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithBlackListEvents))
             testDispatcher.scheduler.advanceUntilIdle()
 
-            val allowedEvent = TrackEvent("Track Event 3", emptyJsonObject)
+            val allowedEvent = TrackEvent("Track Event 1", emptyJsonObject)
             val returnedEvent = eventFilteringPlugin.intercept(allowedEvent)
 
             assertEquals(allowedEvent, returnedEvent)
@@ -129,7 +129,7 @@ class EventFilteringPluginTest {
             mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithBlackListEvents))
             testDispatcher.scheduler.advanceUntilIdle()
 
-            val disallowedEvent = TrackEvent(" Track Event 2  ", emptyJsonObject)
+            val disallowedEvent = TrackEvent(" Track Event 3  ", emptyJsonObject)
             val returnedEvent = eventFilteringPlugin.intercept(disallowedEvent)
 
             assertNull(returnedEvent)
@@ -167,7 +167,7 @@ class EventFilteringPluginTest {
 
     @Test
     fun `given a sourceConfig with event filtering disabled, when plugin's intercept is called with any event, then it returns the same event`() =
-        runTest {
+        runTest(testDispatcher) {
             mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithEventFilteringDisabled))
             testDispatcher.scheduler.advanceUntilIdle()
 
@@ -213,7 +213,29 @@ class EventFilteringPluginTest {
             mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithBlackListEvents))
             testDispatcher.scheduler.advanceUntilIdle()
 
-            assertNull(eventFilteringPlugin.intercept(event1))
+            assertEquals(event1, eventFilteringPlugin.intercept(event1))
+            assertNull(eventFilteringPlugin.intercept(event2))
+        }
+
+    @Test
+    fun `when two different sourceConfig are emitted, then plugin clears and then update the previous filtering logic`() =
+        runTest(testDispatcher) {
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithWhiteListEvents))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val event1 = TrackEvent("Track Event 1", emptyJsonObject)
+            val event2 = TrackEvent("Track Event 2", emptyJsonObject)
+            val event3 = TrackEvent("Track Event 3", emptyJsonObject)
+
+            assertEquals(event1, eventFilteringPlugin.intercept(event1))
             assertEquals(event2, eventFilteringPlugin.intercept(event2))
+            assertNull(eventFilteringPlugin.intercept(event3))
+
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithEmptyWhiteListEvents))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            assertNull(eventFilteringPlugin.intercept(event1))
+            assertNull(eventFilteringPlugin.intercept(event2))
+            assertNull(eventFilteringPlugin.intercept(event3))
         }
 }
