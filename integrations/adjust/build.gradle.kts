@@ -55,6 +55,9 @@ dependencies {
     // detekt plugins
     detektPlugins(libs.detekt.formatting)
 
+    // implementation
     implementation(libs.android.core.ktx)
+
+    // testImplementation
     testImplementation(libs.junit)
 }
