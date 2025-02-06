@@ -116,6 +116,7 @@ abstract class IntegrationPlugin : EventPlugin {
     }
 
     final override suspend fun intercept(event: Event): Event {
+        // TODO("We need to wrap it inside try-catch block to handle exceptions.")
         if (isDestinationReady) {
             event.copy<Event>()
                 .let { pluginChain.applyPlugins(Plugin.PluginType.PreProcess, it) }
