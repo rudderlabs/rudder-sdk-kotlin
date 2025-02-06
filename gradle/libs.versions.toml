@@ -1,6 +1,7 @@
 [versions]
 
 activity-compose = "1.9.3"
+adjust-android = "5.1.0"
 agp = "8.7.2"
 android-core-ktx = "1.15.0"
 foundation = "1.7.5"
@@ -21,6 +22,7 @@ ui = "1.7.5"
 nexus = "2.0.0"
 
 [libraries]
+adjust-android = { module = "com.adjust.sdk:adjust-android", version.ref = "adjust-android" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activity-compose" }
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle-viewmodel-compose" }
 androidx-material = { module = "androidx.compose.material:material", version.ref = "material-version" }

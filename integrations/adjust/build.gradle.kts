@@ -52,6 +52,9 @@ dependencies {
     // RudderStack Android module
     api(project(":android"))
 
+    // Adjust android SDK
+    implementation(libs.adjust.android)
+
     // detekt plugins
     detektPlugins(libs.detekt.formatting)
 
