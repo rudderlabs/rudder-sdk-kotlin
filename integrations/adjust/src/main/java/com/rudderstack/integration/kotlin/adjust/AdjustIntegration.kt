@@ -5,7 +5,10 @@ import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 
-class AdjustIntegration: Plugin {
+/**
+ * AdjustIntegration is a plugin that intercepts the track events and logs them.
+ */
+class AdjustIntegration : Plugin {
     override val pluginType = Plugin.PluginType.OnProcess
 
     override lateinit var analytics: Analytics
