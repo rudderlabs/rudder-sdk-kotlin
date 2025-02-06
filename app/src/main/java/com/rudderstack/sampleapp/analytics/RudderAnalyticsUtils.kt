@@ -53,7 +53,7 @@ object RudderAnalyticsUtils {
             )
         ))
 
-        analytics.add(AdjustIntegration())
+        analytics.addIntegration(AdjustIntegration())
 
         val sampleIntegrationPlugin = SampleIntegrationPlugin()
         sampleIntegrationPlugin.add(object : Plugin {
