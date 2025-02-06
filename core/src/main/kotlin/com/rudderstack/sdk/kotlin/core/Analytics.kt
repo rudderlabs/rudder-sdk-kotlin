@@ -61,7 +61,7 @@ import kotlinx.coroutines.launch
 open class Analytics protected constructor(
     val configuration: Configuration,
     analyticsConfiguration: AnalyticsConfiguration,
-    internal val userIdentityState: FlowState<UserIdentity> = FlowState(
+    val userIdentityState: FlowState<UserIdentity> = FlowState(
         initialState = UserIdentity.initialState(
             analyticsConfiguration.storage
         )
@@ -368,6 +368,25 @@ open class Analytics protected constructor(
 
         return userIdentityState.value.anonymousId
     }
+
+    /**
+     * Get the user traits.
+     *
+     * The `analyticsInstance.traits` is used to get the `traits` value.
+     * This traits is assigned when an identify event is made.
+     *
+     * This can return null if the analytics is shut down.
+     *
+     * Get the traits:
+     * ```kotlin
+     * val traits = analyticsInstance.traits
+     * ```
+     */
+    val traits: RudderTraits?
+        get() {
+            if (!isAnalyticsActive()) return null
+            return userIdentityState.value.traits
+        }
 
     /**
      * Resets the user identity, clearing the user ID, traits, and external IDs.
