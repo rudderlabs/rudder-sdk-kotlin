@@ -1,8 +1,23 @@
+import io.gitlab.arturbosch.detekt.Detekt
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.detekt)
+}
+
+detekt {
+    config.setFrom("$rootDir/config/detekt/detekt.yml")
+    buildUponDefaultConfig = true
+    autoCorrect = true
+    parallel = true
+}
+
+tasks.withType<Detekt>().configureEach {
+    reports {
+        html.required.set(true) // observe findings in your browser with structure and code snippets
+    }
 }
 
 tasks.withType<KotlinJvmCompile>().configureEach {
@@ -40,6 +55,9 @@ android {
 
 dependencies {
     api(project(":android"))
+
+    // detekt plugins
+    detektPlugins(libs.detekt.formatting)
 
     implementation(libs.android.core.ktx)
 

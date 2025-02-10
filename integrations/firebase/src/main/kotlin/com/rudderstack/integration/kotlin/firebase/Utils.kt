@@ -2,20 +2,20 @@ package com.rudderstack.integration.kotlin.firebase
 
 import android.os.Bundle
 import com.google.firebase.analytics.FirebaseAnalytics
-import com.rudderstack.sdk.kotlin.android.utils.toBoolean
-import com.rudderstack.sdk.kotlin.android.utils.toDouble
-import com.rudderstack.sdk.kotlin.android.utils.toInt
-import com.rudderstack.sdk.kotlin.android.utils.toLong
-import com.rudderstack.sdk.kotlin.android.utils.toContentString
+import com.rudderstack.sdk.kotlin.android.utils.getBoolean
+import com.rudderstack.sdk.kotlin.android.utils.getDouble
+import com.rudderstack.sdk.kotlin.android.utils.getInt
+import com.rudderstack.sdk.kotlin.android.utils.getLong
+import com.rudderstack.sdk.kotlin.android.utils.getString
+import com.rudderstack.sdk.kotlin.android.utils.isBoolean
+import com.rudderstack.sdk.kotlin.android.utils.isDouble
+import com.rudderstack.sdk.kotlin.android.utils.isInt
+import com.rudderstack.sdk.kotlin.android.utils.isKeyEmpty
+import com.rudderstack.sdk.kotlin.android.utils.isLong
+import com.rudderstack.sdk.kotlin.android.utils.isString
+import com.rudderstack.sdk.kotlin.core.ecommerce.ECommerceEvents
 import com.rudderstack.sdk.kotlin.core.ecommerce.ECommerceParamNames
-import com.rudderstack.sdk.kotlin.core.internals.utils.empty
-import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.booleanOrNull
-import kotlinx.serialization.json.doubleOrNull
-import kotlinx.serialization.json.intOrNull
 import java.util.Locale
 
 internal val IDENTIFY_RESERVED_KEYWORDS = listOf("age", "gender", "interest")
@@ -26,7 +26,60 @@ internal val TRACK_RESERVED_KEYWORDS = listOf(
     "affiliation", "share_via", "order_id", ECommerceParamNames.PRODUCTS, FirebaseAnalytics.Param.SCREEN_NAME
 )
 
-internal fun getTrimKey(key: String): String {
+internal val ECOMMERCE_EVENTS_MAPPING = mapOf(
+    ECommerceEvents.PAYMENT_INFO_ENTERED to FirebaseAnalytics.Event.ADD_PAYMENT_INFO,
+    ECommerceEvents.PRODUCT_ADDED to FirebaseAnalytics.Event.ADD_TO_CART,
+    ECommerceEvents.PRODUCT_ADDED_TO_WISH_LIST to FirebaseAnalytics.Event.ADD_TO_WISHLIST,
+    ECommerceEvents.CHECKOUT_STARTED to FirebaseAnalytics.Event.BEGIN_CHECKOUT,
+    ECommerceEvents.ORDER_COMPLETED to FirebaseAnalytics.Event.PURCHASE,
+    ECommerceEvents.ORDER_REFUNDED to FirebaseAnalytics.Event.REFUND,
+    ECommerceEvents.PRODUCTS_SEARCHED to FirebaseAnalytics.Event.SEARCH,
+    ECommerceEvents.CART_SHARED to FirebaseAnalytics.Event.SHARE,
+    ECommerceEvents.PRODUCT_SHARED to FirebaseAnalytics.Event.SHARE,
+    ECommerceEvents.PRODUCT_VIEWED to FirebaseAnalytics.Event.VIEW_ITEM,
+    ECommerceEvents.PRODUCT_LIST_VIEWED to FirebaseAnalytics.Event.VIEW_ITEM_LIST,
+    ECommerceEvents.PRODUCT_REMOVED to FirebaseAnalytics.Event.REMOVE_FROM_CART,
+    ECommerceEvents.PRODUCT_CLICKED to FirebaseAnalytics.Event.SELECT_CONTENT,
+    ECommerceEvents.PROMOTION_VIEWED to FirebaseAnalytics.Event.VIEW_PROMOTION,
+    ECommerceEvents.PROMOTION_CLICKED to FirebaseAnalytics.Event.SELECT_PROMOTION,
+    ECommerceEvents.CART_VIEWED to FirebaseAnalytics.Event.VIEW_CART
+)
+
+internal val EVENT_WITH_PRODUCTS_ARRAY = listOf(
+    FirebaseAnalytics.Event.BEGIN_CHECKOUT,
+    FirebaseAnalytics.Event.PURCHASE,
+    FirebaseAnalytics.Event.REFUND,
+    FirebaseAnalytics.Event.VIEW_ITEM_LIST,
+    FirebaseAnalytics.Event.VIEW_CART
+)
+
+internal val EVENT_WITH_PRODUCTS_AT_ROOT = listOf(
+    FirebaseAnalytics.Event.ADD_TO_CART,
+    FirebaseAnalytics.Event.ADD_TO_WISHLIST,
+    FirebaseAnalytics.Event.VIEW_ITEM,
+    FirebaseAnalytics.Event.REMOVE_FROM_CART
+)
+
+internal val ECOMMERCE_PROPERTY_MAPPING = mapOf(
+    "payment_method" to FirebaseAnalytics.Param.PAYMENT_TYPE,
+    "coupon" to FirebaseAnalytics.Param.COUPON,
+    "query" to FirebaseAnalytics.Param.SEARCH_TERM,
+    "list_id" to FirebaseAnalytics.Param.ITEM_LIST_ID,
+    "promotion_id" to FirebaseAnalytics.Param.PROMOTION_ID,
+    "creative" to FirebaseAnalytics.Param.CREATIVE_NAME,
+    "affiliation" to FirebaseAnalytics.Param.AFFILIATION,
+    "share_via" to FirebaseAnalytics.Param.METHOD
+)
+
+internal val PRODUCT_PROPERTIES_MAPPING = mapOf(
+    "product_id" to FirebaseAnalytics.Param.ITEM_ID,
+    "name" to FirebaseAnalytics.Param.ITEM_NAME,
+    "category" to FirebaseAnalytics.Param.ITEM_CATEGORY,
+    "quantity" to FirebaseAnalytics.Param.QUANTITY,
+    "price" to FirebaseAnalytics.Param.PRICE
+)
+
+internal fun getTrimmedKey(key: String): String {
     return key
         .lowercase(Locale.getDefault())
         .trim()
@@ -43,47 +96,30 @@ internal fun attachAllCustomProperties(params: Bundle, properties: JsonObject?) 
         return
     }
     for (key in properties.keys) {
-        val firebaseKey: String = getTrimKey(key)
-        val value = properties[key]
-        if (TRACK_RESERVED_KEYWORDS.contains(firebaseKey) || value?.toString().isNullOrEmpty()) {
+        val firebaseKey: String = getTrimmedKey(key)
+        if (TRACK_RESERVED_KEYWORDS.contains(firebaseKey) || properties.isKeyEmpty(key)) {
             continue
         }
 
         when {
-            checkType(value, String::class.java) -> {
-                var stringVal = value?.toContentString() ?: String.empty()
+            properties.isString(key) -> {
+                var stringVal = properties.getString(key).orEmpty()
                 if (stringVal.length > 100) {
                     stringVal = stringVal.substring(0, 100)
                 }
                 params.putString(firebaseKey, stringVal)
             }
-            checkType(value, Int::class.java) -> params.putInt(firebaseKey, value?.toInt() ?: 0)
-
-            checkType(value, Long::class.java) -> params.putLong(firebaseKey, value?.toLong() ?: 0)
-
-            checkType(value, Double::class.java) -> params.putDouble(firebaseKey, value?.toDouble() ?: 0.0)
-
-            checkType(value, Boolean::class.java) -> params.putBoolean(firebaseKey, value?.toBoolean() ?: false)
-
+            properties.isInt(key) -> params.putInt(firebaseKey, properties.getInt(key) ?: 0)
+            properties.isLong(key) -> params.putLong(firebaseKey, properties.getLong(key) ?: 0)
+            properties.isDouble(key) -> params.putDouble(firebaseKey, properties.getDouble(key) ?: 0.0)
+            properties.isBoolean(key) -> params.putBoolean(firebaseKey, properties.getBoolean(key) ?: false)
             else -> {
-                val stringValue = value.toString()
+                val stringValue = properties[key].toString()
                 // if length exceeds 100, don't send the property
                 if (stringValue.length <= 100) {
                     params.putString(firebaseKey, stringValue)
                 }
             }
         }
-    }
-}
-
-internal fun checkType(element: JsonElement?, clazz: Class<*>): Boolean {
-    return when (clazz) {
-        String::class.java -> element is JsonPrimitive && element.isString
-        Int::class.java -> element is JsonPrimitive && element.intOrNull != null
-        Double::class.java -> element is JsonPrimitive && element.doubleOrNull != null
-        Boolean::class.java -> element is JsonPrimitive && element.booleanOrNull != null
-        JsonArray::class.java -> element is JsonArray
-        JsonObject::class.java -> element is JsonObject
-        else -> false
     }
 }
