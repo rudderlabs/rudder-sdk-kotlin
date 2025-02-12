@@ -80,6 +80,10 @@ class AdjustIntegration : IntegrationPlugin() {
         return payload
     }
 
+    override fun reset() {
+        Adjust.removeGlobalPartnerParameters()
+    }
+
     private fun Event.setSessionParams() {
         Adjust.addGlobalCallbackParameter(ANONYMOUS_ID, anonymousId)
         if (userId.isNotBlank()) {
