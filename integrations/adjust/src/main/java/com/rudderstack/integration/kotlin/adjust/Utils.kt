@@ -27,7 +27,11 @@ private const val ERROR_UNSUPPORTED_TYPE = "Unsupported type"
 internal inline fun <reified T> JsonObject.parseConfig() = LenientJson.decodeFromJsonElement<T>(this)
 
 /**
- * TODO
+ * Extracts a string value from the [JsonObject] and returns it.
+ * If the value is not present or is not a string, it returns null.
+ *
+ * @param key The key to extract the value from.
+ * @return The string value if present, else null.
  */
 internal fun JsonObject.getStringOrNull(key: String): String? = runCatching {
     convertToString(this[key])
@@ -43,6 +47,13 @@ private fun convertToString(value: Any?): String = when (value) {
     else -> throw UnsupportedOperationException("$ERROR_UNSUPPORTED_JSON_ELEMENT: ${value::class}")
 }
 
+/**
+ * Extracts an integer value from the [JsonObject] and returns it.
+ * If the value is not present or is not an integer, it returns null.
+ *
+ * @param key The key to extract the value from.
+ * @return The integer value if present, else null.
+ */
 internal fun JsonObject.getIntOrNull(key: String): Int? = runCatching {
     convertToInt(this[key])
 }.getOrElse {
@@ -63,6 +74,13 @@ private fun convertToInt(value: Any?): Int = when (value) {
     else -> throw IllegalArgumentException("$ERROR_UNSUPPORTED_TYPE: ${value::class}")
 }
 
+/**
+ * Extracts a long value from the [JsonObject] and returns it.
+ * If the value is not present or is not a long, it returns null.
+ *
+ * @param key The key to extract the value from.
+ * @return The long value if present, else null.
+ */
 internal fun JsonObject.getLongOrNull(key: String): Long? = runCatching {
     convertToLong(this[key])
 }.getOrElse {
@@ -83,6 +101,13 @@ private fun convertToLong(value: Any?): Long = when (value) {
     else -> throw IllegalArgumentException("$ERROR_UNSUPPORTED_TYPE: ${value::class}")
 }
 
+/**
+ * Extracts a double value from the [JsonObject] and returns it.
+ * If the value is not present or is not a double, it returns null.
+ *
+ * @param key The key to extract the value from.
+ * @return The double value if present, else null.
+ */
 internal fun JsonObject.getDoubleOrNull(key: String): Double? = runCatching {
     convertToDouble(this[key])
 }.getOrElse {
