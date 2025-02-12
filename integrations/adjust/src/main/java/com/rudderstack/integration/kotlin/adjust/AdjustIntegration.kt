@@ -31,12 +31,12 @@ class AdjustIntegration : IntegrationPlugin() {
     private var adjustInstance: AdjustInstance? = null
 
     // TODO("We need a way to update this value dynamically.")
-    private var adjustConfig: AdjustDestinationConfig? = null
+    private lateinit var customMappings: List<CustomMapping>
 
     override fun create(destinationConfig: JsonObject) {
         adjustInstance ?: run {
             destinationConfig.parseConfig<AdjustDestinationConfig>().let { config ->
-                this.adjustConfig = config
+                customMappings = config.customMappings
                 adjustInstance = initialiseAdjust(
                     application = analytics.application,
                     appToken = config.appToken,
@@ -52,7 +52,7 @@ class AdjustIntegration : IntegrationPlugin() {
 
     override fun track(payload: TrackEvent): Event {
         // check pre-defined event map and find out the token for event
-        adjustConfig?.customMappings?.find { it.from == payload.event }?.takeUnless { it.to.isBlank() }
+        customMappings.find { it.from == payload.event }?.takeUnless { it.to.isBlank() }
             ?.let { customMapping ->
                 val eventToken = customMapping.to
                 setSessionParams(payload)
