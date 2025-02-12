@@ -55,14 +55,14 @@ class AdjustIntegration : IntegrationPlugin() {
     }
 
     override fun track(payload: TrackEvent): Event {
-        // check pre-defined event map and find out the token for event
         eventToTokenMappings.getTokenOrNull(payload.event)?.let { eventToken ->
-            setSessionParams(payload)
+            payload.setSessionParams()
             val adjustEvent = AdjustEvent(eventToken).apply {
                 addCallbackParameter(payload.properties)
                 setRevenue(payload.properties)
                 addCallbackParameter(payload.context.toJsonObject(Constants.TRAITS))
             }
+            Adjust.trackEvent(adjustEvent)
         } ?: run {
             LoggerAnalytics.error(
                 "AdjustIntegration: Either Event to Token mapping is not configured in the dashboard " +
@@ -73,12 +73,10 @@ class AdjustIntegration : IntegrationPlugin() {
         return payload
     }
 
-    private fun setSessionParams(payload: TrackEvent) {
-        with(payload) {
-            Adjust.addGlobalCallbackParameter(ANONYMOUS_ID, anonymousId)
-            userId.takeUnless { it.isBlank() }?.let { userId ->
-                Adjust.addGlobalCallbackParameter(USER_ID, userId)
-            }
+    private fun Event.setSessionParams() {
+        Adjust.addGlobalCallbackParameter(ANONYMOUS_ID, anonymousId)
+        if (userId.isNotBlank()) {
+            Adjust.addGlobalCallbackParameter(USER_ID, userId)
         }
     }
 
