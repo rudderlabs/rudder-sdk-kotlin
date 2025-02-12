@@ -26,12 +26,12 @@ internal inline fun <reified T> JsonObject.parseConfig() = LenientJson.decodeFro
  * TODO
  */
 internal fun JsonObject.getStringOrNull(key: String): String? = runCatching {
-    convertString(this[key])
+    convertToString(this[key])
 }.getOrElse {
     logErrorMessageAndReturnNull(this[key])
 }
 
-private fun convertString(value: Any?): String? = when (value) {
+private fun convertToString(value: Any?): String? = when (value) {
     is JsonPrimitive -> value.content
     is JsonObject -> Json.encodeToString(value)
     is JsonArray -> value.toString()
@@ -39,12 +39,12 @@ private fun convertString(value: Any?): String? = when (value) {
 }
 
 internal fun JsonObject.getIntOrNull(key: String): Int? = runCatching {
-    convertInt(this[key])
+    convertToInt(this[key])
 }.getOrElse {
     logErrorMessageAndReturnNull(this[key])
 }
 
-private fun convertInt(value: Any?): Int? = when (value) {
+private fun convertToInt(value: Any?): Int? = when (value) {
     is JsonPrimitive -> when {
         // We need to explicitly check and convert the value to Int
         value.intOrNull != null -> value.int
@@ -58,12 +58,12 @@ private fun convertInt(value: Any?): Int? = when (value) {
 }
 
 internal fun JsonObject.getLongOrNull(key: String): Long? = runCatching {
-    convertLong(this[key])
+    convertToLong(this[key])
 }.getOrElse {
     logErrorMessageAndReturnNull(this[key])
 }
 
-private fun convertLong(value: Any?): Long? = when (value) {
+private fun convertToLong(value: Any?): Long? = when (value) {
     is JsonPrimitive -> when {
         // We need to explicitly check and convert the value to Long
         value.intOrNull != null -> value.int.toLong()
@@ -77,12 +77,12 @@ private fun convertLong(value: Any?): Long? = when (value) {
 }
 
 internal fun JsonObject.getDoubleOrNull(key: String): Double? = runCatching {
-    convertDouble(this[key])
+    convertToDouble(this[key])
 }.getOrElse {
     logErrorMessageAndReturnNull(this[key])
 }
 
-private fun convertDouble(value: Any?): Double? = when (value) {
+private fun convertToDouble(value: Any?): Double? = when (value) {
     is JsonPrimitive -> when {
         // We need to explicitly check and convert the value to Double
         value.intOrNull != null -> value.int.toDouble()
