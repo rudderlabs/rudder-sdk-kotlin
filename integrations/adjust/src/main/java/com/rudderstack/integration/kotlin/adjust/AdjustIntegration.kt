@@ -28,16 +28,16 @@ class AdjustIntegration : IntegrationPlugin() {
     override val key: String
         get() = "Adjust"
 
-    private val adjustInstance: AdjustInstance? = null
+    private var adjustInstance: AdjustInstance? = null
 
     // TODO("We need a way to update this value dynamically.")
     private var adjustConfig: AdjustDestinationConfig? = null
 
-    override fun create(destinationConfig: JsonObject,) {
-        if (adjustInstance == null) {
+    override fun create(destinationConfig: JsonObject) {
+        adjustInstance ?: run {
             destinationConfig.parseConfig<AdjustDestinationConfig>().let { config ->
                 this.adjustConfig = config
-                initialiseAdjust(
+                adjustInstance = initialiseAdjust(
                     application = analytics.application,
                     appToken = config.appToken,
                     logLevel = Logger.LogLevel.VERBOSE,
@@ -77,11 +77,13 @@ class AdjustIntegration : IntegrationPlugin() {
             }
         }
     }
+
     private fun AdjustEvent.addCallbackParameter(jsonObject: JsonObject) {
         jsonObject.forEach { (key, value) ->
             addCallbackParameter(key, value.toString())
         }
     }
+
     private fun AdjustEvent.setRevenue(jsonObject: JsonObject) {
         if (jsonObject[Constants.REVENUE] != null && jsonObject[jsonObject.getString(Constants.CURRENCY)] != null) {
             setRevenue(jsonObject.getDouble(Constants.REVENUE), jsonObject.getString(Constants.CURRENCY))
@@ -90,7 +92,7 @@ class AdjustIntegration : IntegrationPlugin() {
 }
 
 @VisibleForTesting
-internal fun initialiseAdjust(application: Application, appToken: String, logLevel: Logger.LogLevel,): AdjustInstance {
+internal fun initialiseAdjust(application: Application, appToken: String, logLevel: Logger.LogLevel): AdjustInstance {
     val environment = getEnvironment(logLevel)
     val adjustConfig = AdjustConfig(application, appToken, environment)
         .also {
