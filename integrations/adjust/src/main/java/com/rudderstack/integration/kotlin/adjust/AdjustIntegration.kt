@@ -67,7 +67,7 @@ class AdjustIntegration : IntegrationPlugin() {
             val adjustEvent = AdjustEvent(eventToken).apply {
                 addCallbackParameter(payload.properties)
                 setRevenue(payload.properties)
-                addCallbackParameter(payload.context.toJsonObject(Constants.TRAITS))
+                addCallbackParameter(payload.context.toJsonObject(PropertiesConstants.TRAITS))
             }
             Adjust.trackEvent(adjustEvent)
         } ?: run {
@@ -98,8 +98,8 @@ class AdjustIntegration : IntegrationPlugin() {
     }
 
     private fun AdjustEvent.setRevenue(jsonObject: JsonObject) {
-        jsonObject.getDoubleOrNull(Constants.REVENUE)?.let { revenue ->
-            jsonObject.getStringOrNull(Constants.CURRENCY)?.let { currency ->
+        jsonObject.getDoubleOrNull(PropertiesConstants.REVENUE)?.let { revenue ->
+            jsonObject.getStringOrNull(PropertiesConstants.CURRENCY)?.let { currency ->
                 setRevenue(revenue, currency)
             }
         }

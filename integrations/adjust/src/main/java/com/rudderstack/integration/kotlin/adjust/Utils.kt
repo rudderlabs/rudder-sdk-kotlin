@@ -148,7 +148,7 @@ fun AnalyticsContext.toJsonObject(key: String): JsonObject {
 /**
  * Constants used in the Adjust integration.
  */
-object Constants {
+internal object PropertiesConstants {
 
     /**
      * The Revenue key.
