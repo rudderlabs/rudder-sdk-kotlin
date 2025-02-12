@@ -3,7 +3,6 @@ package com.rudderstack.sampleapp.mainview
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import com.rudderstack.sdk.kotlin.core.internals.models.ExternalId
-import com.rudderstack.sdk.kotlin.core.internals.models.Properties
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
 import com.rudderstack.sampleapp.analytics.RudderAnalyticsUtils
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,7 +22,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             AnalyticsState.TrackMessage -> {
                 RudderAnalyticsUtils.analytics.track(
                     name = "Track at ${Date()}",
-                    properties = Properties(emptyMap()),
+                    properties = getJsonObject(),
                     options = RudderOption()
                 )
                 "Track event sent"
@@ -33,9 +32,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 RudderAnalyticsUtils.analytics.screen(
                     screenName = "Screen at ${Date()}",
                     category = "Main",
-                    properties = buildJsonObject {
-                        put("key-1", "value-1")
-                    }
+                    properties = getJsonObject(),
                 )
                 "Screen event sent"
             }
@@ -43,9 +40,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             AnalyticsState.GroupMessage -> {
                 RudderAnalyticsUtils.analytics.group(
                     groupId = "Group at ${Date()}",
-                    traits = buildJsonObject {
-                        put("key-1", "value-1")
-                    },
+                    traits = getJsonObject(),
                     options = RudderOption()
                 )
                 "Group event sent"
@@ -54,23 +49,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             AnalyticsState.IdentifyMessage -> {
                 RudderAnalyticsUtils.analytics.identify(
                     userId = "User 1",
-                    traits = buildJsonObject {
-                        put("key-1", "value-1")
-                    },
-                    options = RudderOption(
-                        customContext = buildJsonObject {
-                            put("key-1", "value-1")
-                        },
-                        integrations = buildJsonObject {
-                            put("Amplitude", true)
-                            put("INTERCOM", buildJsonObject {
-                                put("lookup", "phone")
-                            })
-                        },
-                        externalIds = listOf(
-                            ExternalId(type = "brazeExternalId", id = "value1234"),
-                        )
-                    )
+                    traits = getJsonObject(),
+                    options = getRudderOption()
                 )
                 "Identify event sent"
             }
@@ -129,4 +109,23 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             )
         }
     }
+
+    private fun getJsonObject() = buildJsonObject {
+        put("key-1", "value-1")
+    }
+
+    private fun getRudderOption() = RudderOption(
+        customContext = buildJsonObject {
+            put("key-1", "value-1")
+        },
+        integrations = buildJsonObject {
+            put("Amplitude", true)
+            put("INTERCOM", buildJsonObject {
+                put("lookup", "phone")
+            })
+        },
+        externalIds = listOf(
+            ExternalId(type = "brazeExternalId", id = "value1234"),
+        )
+    )
 }
