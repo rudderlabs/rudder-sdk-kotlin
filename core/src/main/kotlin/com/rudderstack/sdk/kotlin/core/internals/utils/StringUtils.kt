@@ -83,7 +83,7 @@ internal fun String?.parseFilePaths(): List<String> {
  *
  * @return An empty string.
  */
-// @InternalRudderApi
+@InternalRudderApi
 fun String.Companion.empty(): String = EMPTY_STRING
 
 /**
