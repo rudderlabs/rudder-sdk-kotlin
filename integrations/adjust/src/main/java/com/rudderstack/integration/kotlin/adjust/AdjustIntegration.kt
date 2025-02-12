@@ -61,7 +61,10 @@ class AdjustIntegration : IntegrationPlugin() {
                 Adjust.trackEvent(adjustEvent)
             }
         } ?: run {
-            LoggerAnalytics.debug("AdjustIntegration: Event not found in custom mappings.")
+            LoggerAnalytics.error(
+                "AdjustIntegration: Either Event to Token mapping is not configured in the dashboard " +
+                    "or the corresponding token is empty. Therefore dropping the ${payload.event} event."
+            )
         }
 
         return payload
