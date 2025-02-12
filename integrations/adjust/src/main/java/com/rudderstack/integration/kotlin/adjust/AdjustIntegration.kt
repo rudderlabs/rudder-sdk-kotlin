@@ -40,7 +40,7 @@ class AdjustIntegration : IntegrationPlugin() {
                 adjustInstance = initialiseAdjust(
                     application = analytics.application,
                     appToken = config.appToken,
-                    logLevel = Logger.LogLevel.VERBOSE,
+                    logLevel = analytics.configuration.logLevel,
                 )
             }
         }
