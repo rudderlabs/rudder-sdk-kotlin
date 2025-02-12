@@ -18,6 +18,7 @@ mockk = "1.13.7"
 detekt = "1.23.6"
 navigation = "2.8.4"
 play-services-ads = "23.5.0"
+robolectric = "4.11"
 ui = "1.7.5"
 nexus = "2.0.0"
 
@@ -41,6 +42,7 @@ mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
 mockk-agent = { group = "io.mockk", name = "mockk-agent-jvm", version.ref = "mockk" }
 navigation-runtime = { module = "androidx.navigation:navigation-runtime", version.ref = "navigation" }
 play-services-ads = { module = "com.google.android.gms:play-services-ads", version.ref = "play-services-ads" }
+robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 ui = { module = "androidx.compose.ui:ui", version.ref = "ui" }
 ui-tooling = { module = "androidx.compose.ui:ui-tooling", version.ref = "ui" }
 ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview", version.ref = "ui" }

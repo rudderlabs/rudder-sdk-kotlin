@@ -31,9 +31,12 @@ class FirebaseIntegration : IntegrationPlugin() {
 
     override fun create(destinationConfig: JsonObject) {
         if (firebaseAnalytics == null) {
-            firebaseAnalytics = Firebase.analytics
-//            firebaseAnalytics = FirebaseAnalytics.getInstance(analytics.application)
+            firebaseAnalytics = provideFirebaseAnalyticsInstance()
         }
+    }
+
+    internal fun provideFirebaseAnalyticsInstance(): FirebaseAnalytics {
+        return Firebase.analytics
     }
 
     override fun getDestinationInstance(): Any? {
@@ -49,10 +52,8 @@ class FirebaseIntegration : IntegrationPlugin() {
 
         traits?.keys?.forEach { key ->
             val firebaseKey = getTrimmedKey(key)
-            traits[firebaseKey]?.toString()?.let { trait ->
-                if (!IDENTIFY_RESERVED_KEYWORDS.contains(firebaseKey) && firebaseKey != "userId") {
-                    firebaseAnalytics?.setUserProperty(key, trait)
-                }
+            if (!IDENTIFY_RESERVED_KEYWORDS.contains(firebaseKey) && firebaseKey != "userId") {
+                firebaseAnalytics?.setUserProperty(key, traits.getString(key))
             }
         }
 

@@ -64,5 +64,11 @@ dependencies {
     implementation (platform(libs.firebase.bom))
     implementation (libs.firebase.analytics)
 
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.robolectric)
     testImplementation(libs.junit)
+    testImplementation(libs.mockk)
+    testImplementation(libs.mockk.agent)
+    testImplementation(libs.json.assert)
+    testImplementation(libs.navigation.runtime)
 }

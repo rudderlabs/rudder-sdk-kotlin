@@ -8,6 +8,8 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.detekt) apply false
     alias(libs.plugins.nexus)
+
+    id("com.google.gms.google-services") version "4.4.2" apply false
 }
 
 fun getVersionName(): String {

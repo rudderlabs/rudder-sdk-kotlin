@@ -59,7 +59,7 @@ abstract class IntegrationPlugin : EventPlugin {
      *
      * @param destinationConfig The configuration for the destination.
      */
-    protected abstract fun create(destinationConfig: JsonObject)
+    abstract fun create(destinationConfig: JsonObject)
 
     /**
      * Returns the instance of the destination which was created.
