@@ -123,10 +123,10 @@ private fun convertDouble(value: Any?, defaultValue: Double): Double = when (val
     else -> logErrorMessageAndReturnDefaultValue(value, defaultValue)
 }
 
-private fun <T> logErrorMessageAndReturnDefaultValue(value: Any?, defaultValue: T): T {
+private inline fun <reified T> logErrorMessageAndReturnDefaultValue(value: Any?, defaultValue: T): T {
     // TODO: Remove this println statement
-    println("Error while converting ($value) to the required type. Using default value: $defaultValue.")
-    LoggerAnalytics.error("Error while converting [$value] to the required type. Using default value: $defaultValue.")
+    println("Error while converting ($value) to the ${T::class} type. Using default value: $defaultValue.")
+    LoggerAnalytics.error("Error while converting [$value] to the ${T::class} type. Using default value: $defaultValue.")
     return defaultValue
 }
 
