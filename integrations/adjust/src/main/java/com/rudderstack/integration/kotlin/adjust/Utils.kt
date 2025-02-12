@@ -18,6 +18,10 @@ import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.long
 import kotlinx.serialization.json.longOrNull
 
+private const val ERROR_NULL_VALUE = "Value cannot be null"
+private const val ERROR_UNSUPPORTED_JSON_ELEMENT = "Unsupported JsonElement type"
+private const val ERROR_UNSUPPORTED_TYPE = "Unsupported type"
+
 // TODO("Extract it to a Util module")
 @OptIn(InternalRudderApi::class)
 internal inline fun <reified T> JsonObject.parseConfig() = LenientJson.decodeFromJsonElement<T>(this)
@@ -31,11 +35,12 @@ internal fun JsonObject.getStringOrNull(key: String): String? = runCatching {
     logErrorMessageAndReturnNull(this[key])
 }
 
-private fun convertToString(value: Any?): String? = when (value) {
+private fun convertToString(value: Any?): String = when (value) {
     is JsonPrimitive -> value.content
     is JsonObject -> Json.encodeToString(value)
     is JsonArray -> value.toString()
-    else -> logErrorMessageAndReturnNull(value)
+    null -> throw NullPointerException(ERROR_NULL_VALUE) // NOTE: This will not catch JsonNull
+    else -> throw UnsupportedOperationException("$ERROR_UNSUPPORTED_JSON_ELEMENT: ${value::class}")
 }
 
 internal fun JsonObject.getIntOrNull(key: String): Int? = runCatching {
@@ -44,17 +49,18 @@ internal fun JsonObject.getIntOrNull(key: String): Int? = runCatching {
     logErrorMessageAndReturnNull(this[key])
 }
 
-private fun convertToInt(value: Any?): Int? = when (value) {
+private fun convertToInt(value: Any?): Int = when (value) {
     is JsonPrimitive -> when {
         // We need to explicitly check and convert the value to Int
         value.intOrNull != null -> value.int
         value.longOrNull != null -> value.long.toInt()
         value.doubleOrNull != null -> value.double.toInt()
         value.isString -> value.content.toInt()
-        else -> logErrorMessageAndReturnNull(value)
+        else -> throw IllegalArgumentException("$ERROR_UNSUPPORTED_TYPE: ${value::class}")
     }
 
-    else -> logErrorMessageAndReturnNull(value)
+    null -> throw NullPointerException(ERROR_NULL_VALUE)
+    else -> throw IllegalArgumentException("$ERROR_UNSUPPORTED_TYPE: ${value::class}")
 }
 
 internal fun JsonObject.getLongOrNull(key: String): Long? = runCatching {
@@ -63,17 +69,18 @@ internal fun JsonObject.getLongOrNull(key: String): Long? = runCatching {
     logErrorMessageAndReturnNull(this[key])
 }
 
-private fun convertToLong(value: Any?): Long? = when (value) {
+private fun convertToLong(value: Any?): Long = when (value) {
     is JsonPrimitive -> when {
         // We need to explicitly check and convert the value to Long
         value.intOrNull != null -> value.int.toLong()
         value.longOrNull != null -> value.long
         value.doubleOrNull != null -> value.double.toLong()
         value.isString -> value.content.toLong()
-        else -> logErrorMessageAndReturnNull(value)
+        else -> throw IllegalArgumentException("$ERROR_UNSUPPORTED_TYPE: ${value::class}")
     }
 
-    else -> logErrorMessageAndReturnNull(value)
+    null -> throw NullPointerException(ERROR_NULL_VALUE)
+    else -> throw IllegalArgumentException("$ERROR_UNSUPPORTED_TYPE: ${value::class}")
 }
 
 internal fun JsonObject.getDoubleOrNull(key: String): Double? = runCatching {
@@ -82,22 +89,23 @@ internal fun JsonObject.getDoubleOrNull(key: String): Double? = runCatching {
     logErrorMessageAndReturnNull(this[key])
 }
 
-private fun convertToDouble(value: Any?): Double? = when (value) {
+private fun convertToDouble(value: Any?): Double = when (value) {
     is JsonPrimitive -> when {
         // We need to explicitly check and convert the value to Double
         value.intOrNull != null -> value.int.toDouble()
         value.longOrNull != null -> value.long.toDouble()
         value.doubleOrNull != null -> value.double
-        value.isString -> value.content.toDoubleOrNull() ?: logErrorMessageAndReturnNull(value)
-        else -> logErrorMessageAndReturnNull(value)
+        value.isString -> value.content.toDouble()
+        else -> throw IllegalArgumentException("$ERROR_UNSUPPORTED_TYPE: ${value::class}")
     }
 
-    else -> logErrorMessageAndReturnNull(value)
+    null -> throw NullPointerException(ERROR_NULL_VALUE)
+    else -> throw IllegalArgumentException("$ERROR_UNSUPPORTED_TYPE: ${value::class}")
 }
 
 private inline fun <reified T> logErrorMessageAndReturnNull(value: Any?): T? {
     // TODO: Remove this println statement
-    println("Error while converting ($value) to the ${T::class} type.")
+    println("Integration: Error while converting ($value) to the ${T::class} type.")
     LoggerAnalytics.debug("Integration: Error while converting [$value] to the ${T::class} type.")
     return null
 }
