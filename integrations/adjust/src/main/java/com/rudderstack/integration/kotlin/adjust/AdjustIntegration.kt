@@ -93,8 +93,8 @@ class AdjustIntegration : IntegrationPlugin() {
 
 @VisibleForTesting
 internal fun initialiseAdjust(application: Application, appToken: String, logLevel: Logger.LogLevel): AdjustInstance {
-    val environment = getEnvironment(logLevel)
-    val adjustConfig = AdjustConfig(application, appToken, environment)
+    val adjustEnvironment = getAdjustEnvironment(logLevel)
+    val adjustConfig = AdjustConfig(application, appToken, adjustEnvironment)
         .also {
             it.setLogLevel(logLevel)
             it.setAllListeners()
@@ -105,7 +105,7 @@ internal fun initialiseAdjust(application: Application, appToken: String, logLev
     return Adjust.getDefaultInstance()
 }
 
-private fun getEnvironment(logLevel: Logger.LogLevel): String {
+private fun getAdjustEnvironment(logLevel: Logger.LogLevel): String {
     return if (logLevel >= Logger.LogLevel.DEBUG) {
         AdjustConfig.ENVIRONMENT_SANDBOX
     } else {
