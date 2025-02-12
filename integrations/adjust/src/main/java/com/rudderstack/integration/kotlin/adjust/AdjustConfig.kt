@@ -11,7 +11,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class AdjustConfig(
     val appToken: String,
-    val eventToTokenMappings: List<EventToTokenMapping>,
+    @SerialName("customMappings") val eventToTokenMappings: List<EventToTokenMapping>,
 )
 
 /**
