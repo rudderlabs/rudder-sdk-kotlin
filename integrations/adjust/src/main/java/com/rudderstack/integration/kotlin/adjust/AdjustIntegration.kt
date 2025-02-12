@@ -58,11 +58,10 @@ class AdjustIntegration : IntegrationPlugin() {
         // check pre-defined event map and find out the token for event
         eventToTokenMappings.getTokenOrNull(payload.event)?.let { eventToken ->
             setSessionParams(payload)
-            AdjustEvent(eventToken).let { adjustEvent ->
-                adjustEvent.addCallbackParameter(payload.properties)
-                adjustEvent.setRevenue(payload.properties)
-                adjustEvent.addCallbackParameter(payload.context.toJsonObject(Constants.TRAITS))
-                Adjust.trackEvent(adjustEvent)
+            val adjustEvent = AdjustEvent(eventToken).apply {
+                addCallbackParameter(payload.properties)
+                setRevenue(payload.properties)
+                addCallbackParameter(payload.context.toJsonObject(Constants.TRAITS))
             }
         } ?: run {
             LoggerAnalytics.error(
