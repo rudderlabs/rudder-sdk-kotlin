@@ -3,6 +3,7 @@ package com.rudderstack.integration.kotlin.adjust
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertNull
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
@@ -38,6 +39,7 @@ class UtilTest {
                 17 -> "-Infinity" // -Infinity
                 18 -> Int.MAX_VALUE.toString() // Max value
                 19 -> Int.MIN_VALUE.toString() // Min value
+                20 -> "null" // Explicit null value
                 else -> String.empty() // Handles missing keys
             }
 
@@ -71,6 +73,7 @@ class UtilTest {
                 17 -> Int.MIN_VALUE // -Infinity
                 18 -> Int.MAX_VALUE // Max value
                 19 -> Int.MIN_VALUE // Min value
+                20 -> null // Explicit null value
                 else -> null // Handles missing keys
             }
 
@@ -104,6 +107,7 @@ class UtilTest {
                 17 -> Long.MIN_VALUE // -Infinity
                 18 -> Long.MAX_VALUE // Max value
                 19 -> Long.MIN_VALUE // Min value
+                20 -> null // Explicit null value
                 else -> null // Handles missing keys
             }
 
@@ -137,6 +141,7 @@ class UtilTest {
                 17 -> Double.NEGATIVE_INFINITY // -Infinity
                 18 -> Double.MAX_VALUE // Max value
                 19 -> Double.MIN_VALUE // Min value
+                20 -> null // Explicit null value
                 else -> null // Handles missing keys
             }
 
@@ -183,6 +188,7 @@ class UtilTest {
     }
 }
 
+@OptIn(ExperimentalSerializationApi::class)
 private inline fun <reified T> provideJsonObjectWithAllTypesOfValues() =
     buildJsonObject {
         put("key0", "value1") // String
@@ -218,6 +224,7 @@ private inline fun <reified T> provideJsonObjectWithAllTypesOfValues() =
         put("key17", getNegativeInfinity<T>()) // -Infinity
         put("key18", getMaxValue<T>()) // Max value
         put("key19", getMinValue<T>()) // Min value
+        put("key20", null) // Explicit null value
     }
 
 private inline fun <reified T> getNaN(): Number =
