@@ -1,25 +1,26 @@
 package com.rudderstack.integration.kotlin.adjust
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
  * TODO
  * @param appToken
- * @param customMappings
+ * @param eventToTokenMappings
  */
 @Serializable
 data class AdjustConfig(
     val appToken: String,
-    val customMappings: List<CustomMapping>,
+    val eventToTokenMappings: List<EventToTokenMapping>,
 )
 
 /**
  * TODO
- * @param from
- * @param to
+ * @param event
+ * @param token
  */
 @Serializable
-data class CustomMapping(
-    val from: String,
-    val to: String
+data class EventToTokenMapping(
+    @SerialName("from") val event: String,
+    @SerialName("to") val token: String
 )
