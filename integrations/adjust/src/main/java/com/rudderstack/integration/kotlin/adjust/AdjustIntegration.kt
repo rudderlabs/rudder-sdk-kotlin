@@ -52,17 +52,15 @@ class AdjustIntegration : IntegrationPlugin() {
 
     override fun track(payload: TrackEvent): Event {
         // check pre-defined event map and find out the token for event
-        eventToTokenMappings.find { it.event == payload.event }?.takeUnless { it.token.isBlank() }
-            ?.let { customMapping ->
-                val eventToken = customMapping.token
-                setSessionParams(payload)
-                AdjustEvent(eventToken).let { adjustEvent ->
-                    adjustEvent.addCallbackParameter(payload.properties)
-                    adjustEvent.setRevenue(payload.properties)
-                    adjustEvent.addCallbackParameter(payload.context.toJsonObject(Constants.TRAITS))
-                    Adjust.trackEvent(adjustEvent)
-                }
-            } ?: run {
+        eventToTokenMappings.getTokenOrNull(payload.event)?.let { eventToken ->
+            setSessionParams(payload)
+            AdjustEvent(eventToken).let { adjustEvent ->
+                adjustEvent.addCallbackParameter(payload.properties)
+                adjustEvent.setRevenue(payload.properties)
+                adjustEvent.addCallbackParameter(payload.context.toJsonObject(Constants.TRAITS))
+                Adjust.trackEvent(adjustEvent)
+            }
+        } ?: run {
             LoggerAnalytics.debug("AdjustIntegration: Event not found in custom mappings.")
         }
 

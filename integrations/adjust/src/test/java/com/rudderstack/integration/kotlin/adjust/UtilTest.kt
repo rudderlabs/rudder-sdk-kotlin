@@ -2,6 +2,7 @@ package com.rudderstack.integration.kotlin.adjust
 
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import junit.framework.TestCase.assertEquals
+import junit.framework.TestCase.assertNull
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
@@ -142,6 +143,44 @@ class UtilTest {
             assertEquals(expectedValue, jsonObject.getDoubleOrNull(key))
         }
     }
+
+    @Test
+    fun `given event-to-token mapping contains the event, when retrieving the token, then return the corresponding token`() {
+        val listOfEventToTokenMapping = provideListOfEventToTokenMapping()
+
+        val token1 = listOfEventToTokenMapping.getTokenOrNull("Event-1")
+        val token2 = listOfEventToTokenMapping.getTokenOrNull("Event-2")
+
+        assertEquals("Token-1", token1)
+        assertEquals("Token-2", token2)
+    }
+
+    @Test
+    fun `given event-to-token mapping contains empty token, when retrieving the token, then return null`() {
+        val listOfEventToTokenMapping = provideListOfEventToTokenMapping()
+
+        val token = listOfEventToTokenMapping.getTokenOrNull("Event-3")
+
+        assertNull(token)
+    }
+
+    @Test
+    fun `given event-to-token mapping contains the event, when retrieving the token with case-sensitive event, then return null`() {
+        val listOfEventToTokenMapping = provideListOfEventToTokenMapping()
+
+        val token = listOfEventToTokenMapping.getTokenOrNull("event-4")
+
+        assertNull(token)
+    }
+
+    @Test
+    fun `given event-to-token mapping doesn't contains the event, when retrieving the token, then return null`() {
+        val listOfEventToTokenMapping = provideListOfEventToTokenMapping()
+
+        val token = listOfEventToTokenMapping.getTokenOrNull("Event-5")
+
+        assertNull(token)
+    }
 }
 
 private inline fun <reified T> provideJsonObjectWithAllTypesOfValues() =
@@ -219,3 +258,10 @@ private inline fun <reified T> getMinValue(): Number =
         Double::class -> Double.MIN_VALUE
         else -> Int.MIN_VALUE
     }
+
+private fun provideListOfEventToTokenMapping() = listOf(
+    EventToTokenMapping(event = "Event-1", token = "Token-1"),
+    EventToTokenMapping(event = "Event-2", token = "Token-2"),
+    EventToTokenMapping(event = "Event-3", token = String.empty()),
+    EventToTokenMapping(event = "Event-4", token = "Token-4"),
+)

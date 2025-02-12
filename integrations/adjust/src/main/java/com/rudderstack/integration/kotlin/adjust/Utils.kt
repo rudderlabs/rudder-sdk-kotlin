@@ -132,3 +132,6 @@ object Constants {
      */
     const val TRAITS = "traits"
 }
+
+internal fun List<EventToTokenMapping>.getTokenOrNull(event: String): String? =
+    this.find { it.event == event }?.token?.takeUnless { it.isBlank() }
