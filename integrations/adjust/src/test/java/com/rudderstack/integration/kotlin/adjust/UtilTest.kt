@@ -1,6 +1,5 @@
 package com.rudderstack.integration.kotlin.adjust
 
-import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertNull
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -40,7 +39,7 @@ class UtilTest {
                 18 -> Int.MAX_VALUE.toString() // Max value
                 19 -> Int.MIN_VALUE.toString() // Min value
                 20 -> "null" // Explicit null value
-                else -> "" // Handles missing keys
+                else -> null
             }
 
             assertEquals(expectedValue, jsonObject.getStringOrNull(key))
@@ -74,7 +73,7 @@ class UtilTest {
                 18 -> Int.MAX_VALUE // Max value
                 19 -> Int.MIN_VALUE // Min value
                 20 -> null // Explicit null value
-                else -> null // Handles missing keys
+                else -> null
             }
 
             assertEquals(expectedValue, jsonObject.getIntOrNull(key))
@@ -108,7 +107,7 @@ class UtilTest {
                 18 -> Long.MAX_VALUE // Max value
                 19 -> Long.MIN_VALUE // Min value
                 20 -> null // Explicit null value
-                else -> null // Handles missing keys
+                else -> null
             }
 
             assertEquals(expectedValue, jsonObject.getLongOrNull(key))
@@ -142,11 +141,47 @@ class UtilTest {
                 18 -> Double.MAX_VALUE // Max value
                 19 -> Double.MIN_VALUE // Min value
                 20 -> null // Explicit null value
-                else -> null // Handles missing keys
+                else -> null
             }
 
             assertEquals(expectedValue, jsonObject.getDoubleOrNull(key))
         }
+    }
+
+    @Test
+    fun `given the key is not present in the JsonObject, when attempts are made to cast them into string, then it should return null`() {
+        val jsonObject = provideJsonObjectWithAllTypesOfValues<String>()
+
+        val value = jsonObject.getStringOrNull("key-not-present")
+
+        assertNull(value)
+    }
+
+    @Test
+    fun `given the key is not present in the JsonObject, when attempts are made to cast them into int, then it should return null`() {
+        val jsonObject = provideJsonObjectWithAllTypesOfValues<Int>()
+
+        val value = jsonObject.getIntOrNull("key-not-present")
+
+        assertNull(value)
+    }
+
+    @Test
+    fun `given the key is not present in the JsonObject, when attempts are made to cast them into long, then it should return null`() {
+        val jsonObject = provideJsonObjectWithAllTypesOfValues<Long>()
+
+        val value = jsonObject.getLongOrNull("key-not-present")
+
+        assertNull(value)
+    }
+
+    @Test
+    fun `given the key is not present in the JsonObject, when attempts are made to cast them into double, then it should return null`() {
+        val jsonObject = provideJsonObjectWithAllTypesOfValues<Double>()
+
+        val value = jsonObject.getDoubleOrNull("key-not-present")
+
+        assertNull(value)
     }
 
     @Test
