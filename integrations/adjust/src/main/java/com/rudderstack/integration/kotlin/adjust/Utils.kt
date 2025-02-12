@@ -124,8 +124,9 @@ private fun convertDouble(value: Any?, defaultValue: Double): Double = when (val
 }
 
 private fun <T> logErrorMessageAndReturnDefaultValue(value: Any?, defaultValue: T): T {
-    println("Error while converting ($value) to the required type. Returning default value: $defaultValue.")
-    LoggerAnalytics.error("Error while converting [$value] to the required type. Returning default value: $defaultValue.")
+    // TODO: Remove this println statement
+    println("Error while converting ($value) to the required type. Using default value: $defaultValue.")
+    LoggerAnalytics.error("Error while converting [$value] to the required type. Using default value: $defaultValue.")
     return defaultValue
 }
 
