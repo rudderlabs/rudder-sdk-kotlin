@@ -5,7 +5,6 @@ import com.rudderstack.sdk.kotlin.core.internals.models.AnalyticsContext
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import com.rudderstack.sdk.kotlin.core.internals.utils.LenientJson
-import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -26,108 +25,81 @@ internal inline fun <reified T> JsonObject.parseConfig() = LenientJson.decodeFro
 /**
  * TODO
  */
-// TODO("Util method")
-val DEFAULT_STRING = String.empty()
-
-/**
- * TODO
- */
-const val DEFAULT_INT: Int = 0
-
-/**
- * TODO
- */
-const val DEFAULT_LONG: Long = 0L
-
-/**
- * TODO
- */
-const val DEFAULT_DOUBLE: Double = 0.0
-
-/**
- * TODO
- */
-fun JsonObject.getString(key: String, defaultValue: String = DEFAULT_STRING): String {
-    return runCatching {
-        convertString(this[key], defaultValue)
-    }.getOrElse {
-        logErrorMessageAndReturnDefaultValue(this[key], defaultValue)
-    }
+internal fun JsonObject.getStringOrNull(key: String): String? = runCatching {
+    convertString(this[key])
+}.getOrElse {
+    logErrorMessageAndReturnNull(this[key])
 }
 
-private fun convertString(value: Any?, defaultValue: String) = when (value) {
+private fun convertString(value: Any?): String? = when (value) {
     is JsonPrimitive -> value.content
     is JsonObject -> Json.encodeToString(value)
     is JsonArray -> value.toString()
-    else -> logErrorMessageAndReturnDefaultValue(value, defaultValue)
+    else -> logErrorMessageAndReturnNull(value)
 }
 
-internal fun JsonObject.getInt(key: String, defaultValue: Int = DEFAULT_INT): Int {
-    return runCatching {
-        convertInt(this[key], defaultValue)
-    }.getOrElse {
-        logErrorMessageAndReturnDefaultValue(this[key], defaultValue)
-    }
+internal fun JsonObject.getIntOrNull(key: String): Int? = runCatching {
+    convertInt(this[key])
+}.getOrElse {
+    logErrorMessageAndReturnNull(this[key])
 }
 
-private fun convertInt(value: Any?, defaultValue: Int): Int = when (value) {
+private fun convertInt(value: Any?): Int? = when (value) {
     is JsonPrimitive -> when {
         // We need to explicitly check and convert the value to Int
         value.intOrNull != null -> value.int
         value.longOrNull != null -> value.long.toInt()
         value.doubleOrNull != null -> value.double.toInt()
         value.isString -> value.content.toInt()
-        else -> logErrorMessageAndReturnDefaultValue(value, defaultValue)
+        else -> logErrorMessageAndReturnNull(value)
     }
 
-    else -> logErrorMessageAndReturnDefaultValue(value, defaultValue)
+    else -> logErrorMessageAndReturnNull(value)
 }
 
-internal fun JsonObject.getLong(key: String, defaultValue: Long = DEFAULT_INT.toLong()): Long {
-    return runCatching {
-        convertLong(this[key], defaultValue)
-    }.getOrElse {
-        logErrorMessageAndReturnDefaultValue(this[key], defaultValue)
-    }
+internal fun JsonObject.getLongOrNull(key: String): Long? = runCatching {
+    convertLong(this[key])
+}.getOrElse {
+    logErrorMessageAndReturnNull(this[key])
 }
 
-private fun convertLong(value: Any?, defaultValue: Long): Long = when (value) {
+private fun convertLong(value: Any?): Long? = when (value) {
     is JsonPrimitive -> when {
+        // We need to explicitly check and convert the value to Long
         value.intOrNull != null -> value.int.toLong()
         value.longOrNull != null -> value.long
         value.doubleOrNull != null -> value.double.toLong()
         value.isString -> value.content.toLong()
-        else -> logErrorMessageAndReturnDefaultValue(value, defaultValue)
+        else -> logErrorMessageAndReturnNull(value)
     }
 
-    else -> logErrorMessageAndReturnDefaultValue(value, defaultValue)
+    else -> logErrorMessageAndReturnNull(value)
 }
 
-internal fun JsonObject.getDouble(key: String, defaultValue: Double = DEFAULT_DOUBLE): Double {
-    return runCatching {
-        convertDouble(this[key], defaultValue)
-    }.getOrElse {
-        logErrorMessageAndReturnDefaultValue(this[key], defaultValue)
-    }
+internal fun JsonObject.getDoubleOrNull(key: String): Double? = runCatching {
+    convertDouble(this[key])
+}.getOrElse {
+    logErrorMessageAndReturnNull(this[key])
 }
 
-private fun convertDouble(value: Any?, defaultValue: Double): Double = when (value) {
+private fun convertDouble(value: Any?): Double? = when (value) {
     is JsonPrimitive -> when {
+        // We need to explicitly check and convert the value to Double
         value.intOrNull != null -> value.int.toDouble()
         value.longOrNull != null -> value.long.toDouble()
         value.doubleOrNull != null -> value.double
-        value.isString -> value.content.toDoubleOrNull() ?: logErrorMessageAndReturnDefaultValue(value, defaultValue)
-        else -> logErrorMessageAndReturnDefaultValue(value, defaultValue)
+        value.isString -> value.content.toDoubleOrNull() ?: logErrorMessageAndReturnNull(value)
+        else -> logErrorMessageAndReturnNull(value)
     }
 
-    else -> logErrorMessageAndReturnDefaultValue(value, defaultValue)
+    else -> logErrorMessageAndReturnNull(value)
 }
 
-private inline fun <reified T> logErrorMessageAndReturnDefaultValue(value: Any?, defaultValue: T): T {
+private inline fun <reified T> logErrorMessageAndReturnNull(value: Any?): T? {
     // TODO: Remove this println statement
-    println("Error while converting ($value) to the ${T::class} type. Using default value: $defaultValue.")
-    LoggerAnalytics.error("Error while converting [$value] to the ${T::class} type. Using default value: $defaultValue.")
-    return defaultValue
+    println("Error while converting ($value) to the ${T::class} type.")
+    LoggerAnalytics.error("Error while converting [$value] to the ${T::class} type.")
+    return null
 }
 
 /**

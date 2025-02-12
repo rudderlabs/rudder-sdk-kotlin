@@ -40,7 +40,7 @@ class UtilTest {
                 else -> String.empty() // Handles missing keys
             }
 
-            assertEquals(expectedValue, jsonObject.getString(key))
+            assertEquals(expectedValue, jsonObject.getStringOrNull(key))
         }
     }
 
@@ -50,30 +50,30 @@ class UtilTest {
 
         jsonObject.entries.forEachIndexed { index, (key, _) ->
             val expectedValue = when (index) {
-                0 -> DEFAULT_INT // String
+                0 -> null // String
                 1 -> 20 // Int
-                2 -> DEFAULT_INT // Boolean
+                2 -> null // Boolean
                 3 -> 20 // Double
                 4 -> 20 // Double
                 5 -> 25 // Double
-                6 -> DEFAULT_INT // JsonArray
-                7 -> DEFAULT_INT // Nested JsonObject
-                8 -> DEFAULT_INT // Explicit null value
-                9 -> DEFAULT_INT // Empty JSON Object
-                10 -> DEFAULT_INT // Empty JSON Array
-                11 -> DEFAULT_INT // Empty array inside object
+                6 -> null // JsonArray
+                7 -> null // Nested JsonObject
+                8 -> null // Explicit null value
+                9 -> null // Empty JSON Object
+                10 -> null // Empty JSON Array
+                11 -> null // Empty array inside object
                 12 -> 42 // Number as String
-                13 -> DEFAULT_INT // Boolean as String
-                14 -> DEFAULT_INT // Deeply nested JSON
+                13 -> null // Boolean as String
+                14 -> null // Deeply nested JSON
                 15 -> 0 // NaN
                 16 -> Int.MAX_VALUE // Infinity
                 17 -> Int.MIN_VALUE // -Infinity
                 18 -> Int.MAX_VALUE // Max value
                 19 -> Int.MIN_VALUE // Min value
-                else -> DEFAULT_INT // Handles missing keys
+                else -> null // Handles missing keys
             }
 
-            assertEquals(expectedValue, jsonObject.getInt(key))
+            assertEquals(expectedValue, jsonObject.getIntOrNull(key))
         }
     }
 
@@ -83,30 +83,30 @@ class UtilTest {
 
         jsonObject.entries.forEachIndexed { index, (key, _) ->
             val expectedValue = when (index) {
-                0 -> DEFAULT_LONG // String
+                0 -> null // String
                 1 -> 20L // Int
-                2 -> DEFAULT_LONG // Boolean
+                2 -> null // Boolean
                 3 -> 20L // Double
                 4 -> 20L // Double
                 5 -> 25L // Double
-                6 -> DEFAULT_LONG // JsonArray
-                7 -> DEFAULT_LONG // Nested JsonObject
-                8 -> DEFAULT_LONG // Explicit null value
-                9 -> DEFAULT_LONG // Empty JSON Object
-                10 -> DEFAULT_LONG // Empty JSON Array
-                11 -> DEFAULT_LONG // Empty array inside object
+                6 -> null // JsonArray
+                7 -> null // Nested JsonObject
+                8 -> null // Explicit null value
+                9 -> null // Empty JSON Object
+                10 -> null // Empty JSON Array
+                11 -> null // Empty array inside object
                 12 -> 42L // Number as String
-                13 -> DEFAULT_LONG // Boolean as String
-                14 -> DEFAULT_LONG // Deeply nested JSON
+                13 -> null // Boolean as String
+                14 -> null // Deeply nested JSON
                 15 -> 0 // NaN
                 16 -> Long.MAX_VALUE // Infinity
                 17 -> Long.MIN_VALUE // -Infinity
                 18 -> Long.MAX_VALUE // Max value
                 19 -> Long.MIN_VALUE // Min value
-                else -> DEFAULT_LONG // Handles missing keys
+                else -> null // Handles missing keys
             }
 
-            assertEquals(expectedValue, jsonObject.getLong(key))
+            assertEquals(expectedValue, jsonObject.getLongOrNull(key))
         }
     }
 
@@ -116,30 +116,30 @@ class UtilTest {
 
         jsonObject.entries.forEachIndexed { index, (key, _) ->
             val expectedValue = when (index) {
-                0 -> DEFAULT_DOUBLE // String
+                0 -> null // String
                 1 -> 20.0 // Int
-                2 -> DEFAULT_DOUBLE // Boolean
+                2 -> null // Boolean
                 3 -> 20.0 // Double
                 4 -> 20.045 // Double
                 5 -> 25.945 // Double
-                6 -> DEFAULT_DOUBLE // JsonArray
-                7 -> DEFAULT_DOUBLE // Nested JsonObject
-                8 -> DEFAULT_DOUBLE // Explicit null value
-                9 -> DEFAULT_DOUBLE // Empty JSON Object
-                10 -> DEFAULT_DOUBLE // Empty JSON Array
-                11 -> DEFAULT_DOUBLE // Empty array inside object
+                6 -> null // JsonArray
+                7 -> null // Nested JsonObject
+                8 -> null // Explicit null value
+                9 -> null // Empty JSON Object
+                10 -> null // Empty JSON Array
+                11 -> null // Empty array inside object
                 12 -> 42.0 // Number as String
-                13 -> DEFAULT_DOUBLE // Boolean as String
-                14 -> DEFAULT_DOUBLE // Deeply nested JSON
+                13 -> null // Boolean as String
+                14 -> null // Deeply nested JSON
                 15 -> Double.NaN // NaN
                 16 -> Double.POSITIVE_INFINITY // Infinity
                 17 -> Double.NEGATIVE_INFINITY // -Infinity
                 18 -> Double.MAX_VALUE // Max value
                 19 -> Double.MIN_VALUE // Min value
-                else -> DEFAULT_DOUBLE // Handles missing keys
+                else -> null // Handles missing keys
             }
 
-            assertEquals(expectedValue, jsonObject.getDouble(key))
+            assertEquals(expectedValue, jsonObject.getDoubleOrNull(key))
         }
     }
 }

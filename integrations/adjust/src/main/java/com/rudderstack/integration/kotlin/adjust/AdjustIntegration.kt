@@ -85,8 +85,10 @@ class AdjustIntegration : IntegrationPlugin() {
     }
 
     private fun AdjustEvent.setRevenue(jsonObject: JsonObject) {
-        if (jsonObject[Constants.REVENUE] != null && jsonObject[jsonObject.getString(Constants.CURRENCY)] != null) {
-            setRevenue(jsonObject.getDouble(Constants.REVENUE), jsonObject.getString(Constants.CURRENCY))
+        jsonObject.getDoubleOrNull(Constants.REVENUE)?.let { revenue ->
+            jsonObject.getStringOrNull(Constants.CURRENCY)?.let { currency ->
+                setRevenue(revenue, currency)
+            }
         }
     }
 }
