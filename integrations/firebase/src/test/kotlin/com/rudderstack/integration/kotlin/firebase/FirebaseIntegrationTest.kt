@@ -1,5 +1,6 @@
 package com.rudderstack.integration.kotlin.firebase
 
+import android.os.Bundle
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.core.ecommerce.ECommerceEvents
@@ -229,8 +230,8 @@ class FirebaseIntegrationTest {
             verify(exactly = 1) {
                 mockFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.PURCHASE, match {
                     it.getString(FirebaseAnalytics.Param.TRANSACTION_ID) == "order_123" &&
-                            it.getDouble(FirebaseAnalytics.Param.VALUE) == 99.99 &&
-                            it.getString(FirebaseAnalytics.Param.CURRENCY) == "USD"
+                    it.getDouble(FirebaseAnalytics.Param.VALUE) == 99.99 &&
+                    it.getString(FirebaseAnalytics.Param.CURRENCY) == "USD"
                 })
             }
         }
@@ -298,4 +299,80 @@ class FirebaseIntegrationTest {
             }
         }
 
+    @Test
+    fun `given ecommerce product added event, when track is called, then logEvent is called with correct params`() =
+        runTest {
+            val event = ECommerceEvents.PRODUCT_ADDED
+            val properties = buildJsonObject {
+                put("product_id", "prod_123")
+                put("name", "Test Product")
+                put("price", 49.99)
+                put("currency", "USD")
+            }
+
+            firebaseIntegration.track(TrackEvent(event, properties))
+
+            verify(exactly = 1) {
+                mockFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.ADD_TO_CART, match {
+                    it.getString(FirebaseAnalytics.Param.CURRENCY) == "USD" &&
+                    (it.getParcelableArray(FirebaseAnalytics.Param.ITEMS)?.get(0) as? Bundle)?.getString(
+                        FirebaseAnalytics.Param.ITEM_ID
+                    ) == "prod_123" &&
+                    (it.getParcelableArray(FirebaseAnalytics.Param.ITEMS)?.get(0) as? Bundle)?.getString(
+                        FirebaseAnalytics.Param.ITEM_NAME
+                    ) == "Test Product" &&
+                    (it.getParcelableArray(FirebaseAnalytics.Param.ITEMS)?.get(0) as? Bundle)?.getDouble(
+                        FirebaseAnalytics.Param.PRICE
+                    ) == 49.99
+                })
+            }
+        }
+
+    @Test
+    fun `given ecommerce product removed event, when track is called, then logEvent is called with correct params`() =
+        runTest {
+            val event = ECommerceEvents.PRODUCT_REMOVED
+            val properties = buildJsonObject {
+                put("product_id", "prod_123")
+            }
+
+            firebaseIntegration.track(TrackEvent(event, properties))
+
+            verify(exactly = 1) {
+                mockFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.REMOVE_FROM_CART, match {
+                    (it.getParcelableArray(FirebaseAnalytics.Param.ITEMS)?.get(0) as? Bundle)?.getString(
+                        FirebaseAnalytics.Param.ITEM_ID
+                    ) == "prod_123"
+                })
+            }
+        }
+
+    @Test
+    fun `given ecommerce product viewed event, when track is called, then logEvent is called with correct params`() =
+        runTest {
+            val event = ECommerceEvents.PRODUCT_VIEWED
+            val properties = buildJsonObject {
+                put("product_id", "prod_123")
+                put("name", "Test Product")
+                put("price", 49.99)
+                put("currency", "USD")
+            }
+
+            firebaseIntegration.track(TrackEvent(event, properties))
+
+            verify(exactly = 1) {
+                mockFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.VIEW_ITEM, match {
+                    (it.getParcelableArray(FirebaseAnalytics.Param.ITEMS)?.get(0) as? Bundle)?.getString(
+                        FirebaseAnalytics.Param.ITEM_ID
+                    ) == "prod_123" &&
+                    (it.getParcelableArray(FirebaseAnalytics.Param.ITEMS)?.get(0) as? Bundle)?.getString(
+                        FirebaseAnalytics.Param.ITEM_NAME
+                    ) == "Test Product" &&
+                    (it.getParcelableArray(FirebaseAnalytics.Param.ITEMS)?.get(0) as? Bundle)?.getDouble(
+                        FirebaseAnalytics.Param.PRICE
+                    ) == 49.99 &&
+                    it.getString(FirebaseAnalytics.Param.CURRENCY) == "USD"
+                })
+            }
+        }
 }

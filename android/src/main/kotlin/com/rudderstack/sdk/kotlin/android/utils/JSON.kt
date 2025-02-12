@@ -1,3 +1,5 @@
+@file:Suppress("TooManyFunctions")
+
 package com.rudderstack.sdk.kotlin.android.utils
 
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
@@ -65,6 +67,11 @@ fun JsonObject.getLong(key: String): Long? = this[key]?.safeJsonPrimitive?.longO
 fun JsonObject.getDouble(key: String): Double? = this[key]?.safeJsonPrimitive?.doubleOrNull
 
 /**
+ * Utility function to retrieve a jsonArray from a jsonObject
+ */
+fun JsonObject.getArray(key: String): JsonArray? = this[key] as? JsonArray
+
+/**
  * Utility function to check whether a key has an empty value in a jsonObject
  */
 @InternalRudderApi
@@ -108,3 +115,21 @@ fun JsonObject.isLong(key: String): Boolean = this[key]?.safeJsonPrimitive?.long
  */
 @InternalRudderApi
 fun JsonObject.isDouble(key: String): Boolean = this[key]?.safeJsonPrimitive?.doubleOrNull != null
+
+/**
+ *  Utility function to retrieve a string from a JsonElement
+ */
+@InternalRudderApi
+fun JsonElement.getString(): String? = this.safeJsonPrimitive?.contentOrNull
+
+/**
+ * Utility function to retrieve a long from a JsonElement
+ */
+@InternalRudderApi
+fun JsonElement.getLong(): Long? = this.safeJsonPrimitive?.longOrNull
+
+/**
+ * Utility function to retrieve a double from a JsonElement
+ */
+@InternalRudderApi
+fun JsonElement.getDouble(): Double? = this.safeJsonPrimitive?.doubleOrNull

@@ -18,6 +18,9 @@ import com.rudderstack.sdk.kotlin.core.ecommerce.ECommerceParamNames
 import kotlinx.serialization.json.JsonObject
 import java.util.Locale
 
+private const val MAX_KEY_LENGTH = 40
+private const val MAX_VALUE_LENGTH = 100
+
 internal val IDENTIFY_RESERVED_KEYWORDS = listOf("age", "gender", "interest")
 
 internal val TRACK_RESERVED_KEYWORDS = listOf(
@@ -80,46 +83,36 @@ internal val PRODUCT_PROPERTIES_MAPPING = mapOf(
 )
 
 internal fun getTrimmedKey(key: String): String {
-    return key
-        .lowercase(Locale.getDefault())
+    return key.lowercase(Locale.getDefault())
         .trim()
         .replace(" ", "_")
-        .apply {
-            if (this.length > 40) {
-                this.substring(0, 40)
-            }
-        }
+        .take(MAX_KEY_LENGTH)
 }
 
 internal fun attachAllCustomProperties(params: Bundle, properties: JsonObject?) {
-    if (properties.isNullOrEmpty()) {
-        return
+    properties?.takeIf { it.isNotEmpty() }?.keys?.forEach { key ->
+        val firebaseKey = getTrimmedKey(key)
+        if (!isValidProperty(key, firebaseKey, properties)) return@forEach
+        addPropertyToBundle(params, firebaseKey, key, properties)
     }
-    for (key in properties.keys) {
-        val firebaseKey: String = getTrimmedKey(key)
-        if (TRACK_RESERVED_KEYWORDS.contains(firebaseKey) || properties.isKeyEmpty(key)) {
-            continue
-        }
+}
 
-        when {
-            properties.isString(key) -> {
-                var stringVal = properties.getString(key).orEmpty()
-                if (stringVal.length > 100) {
-                    stringVal = stringVal.substring(0, 100)
-                }
-                params.putString(firebaseKey, stringVal)
-            }
-            properties.isInt(key) -> params.putInt(firebaseKey, properties.getInt(key) ?: 0)
-            properties.isLong(key) -> params.putLong(firebaseKey, properties.getLong(key) ?: 0)
-            properties.isDouble(key) -> params.putDouble(firebaseKey, properties.getDouble(key) ?: 0.0)
-            properties.isBoolean(key) -> params.putBoolean(firebaseKey, properties.getBoolean(key) ?: false)
-            else -> {
-                val stringValue = properties[key].toString()
-                // if length exceeds 100, don't send the property
-                if (stringValue.length <= 100) {
-                    params.putString(firebaseKey, stringValue)
-                }
-            }
+private fun isValidProperty(key: String, firebaseKey: String, properties: JsonObject): Boolean {
+    return !(firebaseKey in TRACK_RESERVED_KEYWORDS || properties.isKeyEmpty(key))
+}
+
+private fun addPropertyToBundle(params: Bundle, firebaseKey: String, key: String, properties: JsonObject) {
+    when {
+        properties.isString(key) -> params.putString(firebaseKey, properties.getString(key).orEmpty().take(MAX_VALUE_LENGTH))
+        properties.isInt(key) -> params.putInt(firebaseKey, properties.getInt(key) ?: 0)
+        properties.isLong(key) -> params.putLong(firebaseKey, properties.getLong(key) ?: 0)
+        properties.isDouble(key) -> params.putDouble(firebaseKey, properties.getDouble(key) ?: 0.0)
+        properties.isBoolean(key) -> params.putBoolean(firebaseKey, properties.getBoolean(key) ?: false)
+        else -> properties[key]?.toString()?.takeIf { it.length <= MAX_VALUE_LENGTH }?.let {
+            params.putString(
+                firebaseKey,
+                it
+            )
         }
     }
 }
