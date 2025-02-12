@@ -185,39 +185,39 @@ class UtilTest {
 
 private inline fun <reified T> provideJsonObjectWithAllTypesOfValues() =
     buildJsonObject {
-        put("key1", "value1") // String
-        put("key2", 20)       // Int
-        put("key3", true)     // Boolean
-        put("key4", 20.0)     // Double
-        put("key5", 20.045)   // Double
-        put("key6", 25.945)   // Double
-        put("key7", buildJsonArray { // JsonArray
+        put("key0", "value1") // String
+        put("key1", 20)       // Int
+        put("key2", true)     // Boolean
+        put("key3", 20.0)     // Double
+        put("key4", 20.045)   // Double
+        put("key5", 25.945)   // Double
+        put("key6", buildJsonArray { // JsonArray
             add(1)
             add(2)
             add(3)
         })
-        put("key8", buildJsonObject { // Nested JsonObject
+        put("key7", buildJsonObject { // Nested JsonObject
             put("nestedKey1", "nestedValue")
             put("nestedKey2", 42)
         })
-        put("key9", JsonNull) // Explicit null value
-        put("key10", buildJsonObject { }) // Empty JSON Object
-        put("key11", buildJsonArray { }) // Empty JSON Array
-        put("key12", buildJsonObject { put("emptyArray", buildJsonArray { }) }) // Empty array inside object
-        put("key13", "42") // Number as String
-        put("key14", "true") // Boolean as String
-        put("key15", buildJsonObject { // Deeply nested JSON
+        put("key8", JsonNull) // Explicit null value
+        put("key9", buildJsonObject { }) // Empty JSON Object
+        put("key10", buildJsonArray { }) // Empty JSON Array
+        put("key11", buildJsonObject { put("emptyArray", buildJsonArray { }) }) // Empty array inside object
+        put("key12", "42") // Number as String
+        put("key13", "true") // Boolean as String
+        put("key14", buildJsonObject { // Deeply nested JSON
             put("level1", buildJsonObject {
                 put("level2", buildJsonObject {
                     put("level3", "deepValue")
                 })
             })
         })
-        put("key16", getNaN<T>()) // NaN (May not serialize correctly)
-        put("key17", getPositiveInfinity<T>()) // Infinity
-        put("key18", getNegativeInfinity<T>()) // -Infinity
-        put("key19", getMaxValue<T>()) // Max value
-        put("key20", getMinValue<T>()) // Min value
+        put("key15", getNaN<T>()) // NaN (May not serialize correctly)
+        put("key16", getPositiveInfinity<T>()) // Infinity
+        put("key17", getNegativeInfinity<T>()) // -Infinity
+        put("key18", getMaxValue<T>()) // Max value
+        put("key19", getMinValue<T>()) // Min value
     }
 
 private inline fun <reified T> getNaN(): Number =
