@@ -110,10 +110,10 @@ class AdjustIntegration : IntegrationPlugin() {
 internal fun initialiseAdjust(application: Application, appToken: String, logLevel: Logger.LogLevel): AdjustInstance {
     val adjustEnvironment = getAdjustEnvironment(logLevel)
     val adjustConfig = AdjustConfig(application, appToken, adjustEnvironment)
-        .also {
-            it.setLogLevel(logLevel)
-            it.setAllListeners()
-            it.enableSendingInBackground()
+        .apply {
+            setLogLevel(logLevel)
+            setAllListeners()
+            enableSendingInBackground()
         }
     Adjust.initSdk(adjustConfig)
     application.registerActivityLifecycleCallbacks()
