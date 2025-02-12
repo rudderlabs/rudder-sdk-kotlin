@@ -20,6 +20,10 @@ import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import kotlinx.serialization.json.JsonObject
 import com.rudderstack.integration.kotlin.adjust.AdjustConfig as AdjustDestinationConfig
 
+private const val ANONYMOUS_ID = "anonymousId"
+
+private const val USER_ID = "userId"
+
 /**
  * AdjustIntegration is a plugin that intercepts the track events and logs them.
  */
@@ -72,9 +76,9 @@ class AdjustIntegration : IntegrationPlugin() {
 
     private fun setSessionParams(payload: TrackEvent) {
         with(payload) {
-            Adjust.addGlobalCallbackParameter("anonymousId", anonymousId)
+            Adjust.addGlobalCallbackParameter(ANONYMOUS_ID, anonymousId)
             userId.takeUnless { it.isBlank() }?.let { userId ->
-                Adjust.addGlobalCallbackParameter("userId", userId)
+                Adjust.addGlobalCallbackParameter(USER_ID, userId)
             }
         }
     }
