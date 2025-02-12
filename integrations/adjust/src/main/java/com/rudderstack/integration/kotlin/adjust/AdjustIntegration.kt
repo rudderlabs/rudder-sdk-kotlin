@@ -92,8 +92,8 @@ class AdjustIntegration : IntegrationPlugin() {
     }
 
     private fun AdjustEvent.addCallbackParameter(jsonObject: JsonObject) {
-        jsonObject.forEach { (key, value) ->
-            addCallbackParameter(key, value.toString())
+        jsonObject.keys.forEach { key ->
+            addCallbackParameter(key, jsonObject.getStringOrNull(key))
         }
     }
 
