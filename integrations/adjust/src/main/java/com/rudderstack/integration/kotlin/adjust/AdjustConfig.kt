@@ -4,9 +4,10 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
- * TODO
- * @param appToken
- * @param eventToTokenMappings
+ * This class represents the configuration for the Adjust Integration.
+ *
+ * @param appToken The app token required for the Adjust SDK.
+ * @param eventToTokenMappings The list of mappings from event to token.
  */
 @Serializable
 data class AdjustConfig(
@@ -15,9 +16,10 @@ data class AdjustConfig(
 )
 
 /**
- * TODO
- * @param event
- * @param token
+ * This class represents the mapping of an event to a token.
+ *
+ * @param event The event name.
+ * @param token The token corresponding to the event.
  */
 @Serializable
 data class EventToTokenMapping(
