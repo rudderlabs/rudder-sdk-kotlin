@@ -140,14 +140,14 @@ private fun AdjustConfig.setLogLevel(logLevel: Logger.LogLevel) {
 }
 
 private fun AdjustConfig.setAllListeners() {
-    setOnAttributionChangedListener({ attribution ->
+    setOnAttributionChangedListener { attribution ->
         Log.d("AdjustFactory", "Attribution callback called!")
         Log.d("AdjustFactory", "Attribution: $attribution")
-    })
-    setOnEventTrackingSucceededListener({ adjustEventSuccess ->
+    }
+    setOnEventTrackingSucceededListener { adjustEventSuccess ->
         Log.d("AdjustFactory", "Event success callback called!")
         Log.d("AdjustFactory", "Event success data: $adjustEventSuccess")
-    })
+    }
     setOnEventTrackingFailedListener { adjustEventFailure ->
         Log.d("AdjustFactory", "Event failure callback called!")
         Log.d("AdjustFactory", "Event failure data: $adjustEventFailure")
