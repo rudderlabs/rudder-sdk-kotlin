@@ -14,7 +14,7 @@ import org.junit.Test
 class UtilTest {
 
     @Test
-    fun `given JsonObject with all types of values, when getString is called, then it should return the string value`() {
+    fun `given JsonObject with all types of values, when attempts are made to cast them into string, then it should return the string value or null`() {
         val jsonObject = provideJsonObjectWithAllTypesOfValues<String>()
 
         jsonObject.entries.forEachIndexed { index, (key, _) ->
@@ -48,7 +48,7 @@ class UtilTest {
     }
 
     @Test
-    fun `given JsonObject with all types of values, when getInt is called, then it should return the int value`() {
+    fun `given JsonObject with all types of values, when attempts are made to cast them into int, then it should return the int value or null`() {
         val jsonObject = provideJsonObjectWithAllTypesOfValues<Int>()
 
         jsonObject.entries.forEachIndexed { index, (key, _) ->
@@ -82,7 +82,7 @@ class UtilTest {
     }
 
     @Test
-    fun `given JsonObject with all types of values, when getLong is called, then it should return the long value`() {
+    fun `given JsonObject with all types of values, when attempts are made to cast them into long, then it should return the long value or null`() {
         val jsonObject = provideJsonObjectWithAllTypesOfValues<Long>()
 
         jsonObject.entries.forEachIndexed { index, (key, _) ->
@@ -116,7 +116,7 @@ class UtilTest {
     }
 
     @Test
-    fun `given JsonObject with all types of values, when getDouble is called, then it should return the double value`() {
+    fun `given JsonObject with all types of values, when attempts are made to cast them into double, then it should return the double value or null`() {
         val jsonObject = provideJsonObjectWithAllTypesOfValues<Double>()
 
         jsonObject.entries.forEachIndexed { index, (key, _) ->
