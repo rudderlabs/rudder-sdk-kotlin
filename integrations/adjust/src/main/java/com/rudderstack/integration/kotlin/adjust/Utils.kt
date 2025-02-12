@@ -98,7 +98,7 @@ private fun convertToDouble(value: Any?): Double? = when (value) {
 private inline fun <reified T> logErrorMessageAndReturnNull(value: Any?): T? {
     // TODO: Remove this println statement
     println("Error while converting ($value) to the ${T::class} type.")
-    LoggerAnalytics.error("Error while converting [$value] to the ${T::class} type.")
+    LoggerAnalytics.debug("Integration: Error while converting [$value] to the ${T::class} type.")
     return null
 }
 
