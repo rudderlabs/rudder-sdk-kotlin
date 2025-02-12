@@ -120,7 +120,7 @@ private fun AdjustConfig.setLogLevel(logLevel: Logger.LogLevel) {
         Logger.LogLevel.INFO -> setLogLevel(LogLevel.INFO)
         Logger.LogLevel.WARN -> setLogLevel(LogLevel.WARN)
         Logger.LogLevel.ERROR -> setLogLevel(LogLevel.ERROR)
-        else -> setLogLevel(LogLevel.SUPPRESS)
+        Logger.LogLevel.NONE -> setLogLevel(LogLevel.SUPPRESS)
     }
 }
 
