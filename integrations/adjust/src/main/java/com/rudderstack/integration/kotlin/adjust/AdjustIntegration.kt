@@ -16,6 +16,7 @@ import com.rudderstack.sdk.kotlin.android.utils.application
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
+import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import kotlinx.serialization.json.JsonObject
 import com.rudderstack.integration.kotlin.adjust.AdjustConfig as AdjustDestinationConfig
@@ -52,6 +53,12 @@ class AdjustIntegration : IntegrationPlugin() {
 
     override fun getDestinationInstance(): Any? {
         return adjustInstance
+    }
+
+    override fun identify(payload: IdentifyEvent): Event {
+        payload.setSessionParams()
+
+        return payload
     }
 
     override fun track(payload: TrackEvent): Event {
