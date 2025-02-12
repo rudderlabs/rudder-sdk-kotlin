@@ -40,7 +40,7 @@ class UtilTest {
                 18 -> Int.MAX_VALUE.toString() // Max value
                 19 -> Int.MIN_VALUE.toString() // Min value
                 20 -> "null" // Explicit null value
-                else -> String.empty() // Handles missing keys
+                else -> "" // Handles missing keys
             }
 
             assertEquals(expectedValue, jsonObject.getStringOrNull(key))
@@ -269,6 +269,6 @@ private inline fun <reified T> getMinValue(): Number =
 private fun provideListOfEventToTokenMapping() = listOf(
     EventToTokenMapping(event = "Event-1", token = "Token-1"),
     EventToTokenMapping(event = "Event-2", token = "Token-2"),
-    EventToTokenMapping(event = "Event-3", token = String.empty()),
+    EventToTokenMapping(event = "Event-3", token = ""),
     EventToTokenMapping(event = "Event-4", token = "Token-4"),
 )
