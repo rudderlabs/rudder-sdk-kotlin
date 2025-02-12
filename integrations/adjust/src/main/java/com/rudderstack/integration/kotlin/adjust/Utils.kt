@@ -22,7 +22,9 @@ private const val ERROR_NULL_VALUE = "Value cannot be null"
 private const val ERROR_UNSUPPORTED_JSON_ELEMENT = "Unsupported JsonElement type"
 private const val ERROR_UNSUPPORTED_TYPE = "Unsupported type"
 
-// TODO("Extract it to a Util module")
+/**
+ * Parses the [JsonObject] to the specified type [T].
+ */
 @OptIn(InternalRudderApi::class)
 internal inline fun <reified T> JsonObject.parseConfig() = LenientJson.decodeFromJsonElement<T>(this)
 
@@ -129,42 +131,46 @@ private fun convertToDouble(value: Any?): Double = when (value) {
 }
 
 private inline fun <reified T> logErrorMessageAndReturnNull(value: Any?): T? {
-    // TODO: Remove this println statement
-    println("Integration: Error while converting ($value) to the ${T::class} type.")
     LoggerAnalytics.debug("Integration: Error while converting [$value] to the ${T::class} type.")
     return null
 }
 
 /**
- * TODO
+ * Converts the [AnalyticsContext] to a [JsonObject] and extracts the value associated with the key.
+ *
+ * @param key The key to extract the value from.
+ * @return The [JsonObject] value if present, else an empty [JsonObject].
  */
 fun AnalyticsContext.toJsonObject(key: String): JsonObject {
-    return this[key]?.let {
-        it as? JsonObject
-    } ?: emptyJsonObject
+    return this[key] as? JsonObject ?: emptyJsonObject
 }
 
 /**
  * Constants used in the Adjust integration.
  */
-// TODO("Move these keys in the core SDK.")
 object Constants {
 
     /**
-     * TODO
+     * The Revenue key.
      */
     const val REVENUE = "revenue"
 
     /**
-     * TODO
+     * The Currency key.
      */
     const val CURRENCY = "currency"
 
     /**
-     * TODO
+     * The Traits key.
      */
     const val TRAITS = "traits"
 }
 
+/**
+ * Extracts the token associated with the event from the list of [EventToTokenMapping].
+ *
+ * @param event The event name.
+ * @return The token if present, else null.
+ */
 internal fun List<EventToTokenMapping>.getTokenOrNull(event: String): String? =
     this.find { it.event == event }?.token?.takeUnless { it.isBlank() }
