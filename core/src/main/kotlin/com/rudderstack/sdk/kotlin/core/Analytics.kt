@@ -336,7 +336,7 @@ open class Analytics protected constructor(
      *
      * @param plugin The plugin to be added to the plugin chain.
      */
-    fun add(plugin: Plugin) {
+    open fun add(plugin: Plugin) {
         if (!isAnalyticsActive()) return
 
         this.pluginChain.add(plugin)

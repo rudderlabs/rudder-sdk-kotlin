@@ -74,6 +74,6 @@ object RudderAnalyticsUtils {
                     LoggerAnalytics.debug("SampleAmplitudePlugin: destination failed to initialise: ${destinationResult.error.message}.")
             }
         }
-        analytics.addIntegration(sampleIntegrationPlugin)
+        analytics.add(sampleIntegrationPlugin)
     }
 }
