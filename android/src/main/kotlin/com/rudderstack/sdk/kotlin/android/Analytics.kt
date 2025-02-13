@@ -233,6 +233,23 @@ class Analytics(
         }
     }
 
+    /**
+     * Removes a plugin from the plugin chain.
+     *
+     * **Note**: This API is also used to remove an [IntegrationPlugin] which represents device mode integrations.
+     *
+     * @param plugin The plugin to be removed from the plugin chain.
+     */
+    override fun remove(plugin: Plugin) {
+        if (!isAnalyticsActive()) return
+
+        if (plugin is IntegrationPlugin) {
+            integrationsManagementPlugin.removeIntegration(plugin)
+        } else {
+            super.remove(plugin)
+        }
+    }
+
     private fun setup() {
         setLogger(logger = AndroidLogger())
         add(AndroidConnectivityObserverPlugin(connectivityState))
