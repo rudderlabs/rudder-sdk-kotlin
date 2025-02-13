@@ -32,9 +32,6 @@ class SampleIntegrationPlugin : IntegrationPlugin() {
     }
 
     override fun track(payload: TrackEvent): Event {
-        // use the destinationConfig to update the way track call is made to destinationSdk
-        LoggerAnalytics.debug("SampleIntegrationPlugin: destinationConfig $destinationConfig")
-
         destinationSdk?.track(payload.event, payload.properties)
         return payload
     }
