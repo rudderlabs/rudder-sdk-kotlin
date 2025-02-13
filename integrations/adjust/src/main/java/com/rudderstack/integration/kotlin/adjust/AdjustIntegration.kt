@@ -47,6 +47,7 @@ class AdjustIntegration : IntegrationPlugin() {
                     appToken = config.appToken,
                     logLevel = analytics.configuration.logLevel,
                 )
+                LoggerAnalytics.verbose("AdjustIntegration: Adjust SDK initialized.")
             }
         }
     }
@@ -70,6 +71,7 @@ class AdjustIntegration : IntegrationPlugin() {
                 addCallbackParameter(payload.context.toJsonObject(PropertiesConstants.TRAITS))
             }
             Adjust.trackEvent(adjustEvent)
+            LoggerAnalytics.verbose("AdjustIntegration: Track event sent to Adjust.")
         } ?: run {
             LoggerAnalytics.error(
                 "AdjustIntegration: Either Event to Token mapping is not configured in the dashboard " +
@@ -82,6 +84,7 @@ class AdjustIntegration : IntegrationPlugin() {
 
     override fun reset() {
         Adjust.removeGlobalPartnerParameters()
+        LoggerAnalytics.verbose("AdjustIntegration: Reset call completed.")
     }
 
     private fun Event.setSessionParams() {
