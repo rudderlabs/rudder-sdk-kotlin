@@ -141,7 +141,7 @@ private inline fun <reified T> logErrorMessageAndReturnNull(value: Any?): T? {
  * @param key The key to extract the value from.
  * @return The [JsonObject] value if present, else an empty [JsonObject].
  */
-fun AnalyticsContext.toJsonObject(key: String): JsonObject {
+internal fun AnalyticsContext.toJsonObject(key: String): JsonObject {
     return this[key] as? JsonObject ?: emptyJsonObject
 }
 
