@@ -21,7 +21,7 @@ tasks.withType<Detekt>().configureEach {
 }
 
 android {
-    namespace = RudderStackBuildConfig.PackageName.Integrations.ADJUST //"com.rudderstack.integration.kotlin.adjust"
+    namespace = RudderStackBuildConfig.PackageName.Integrations.ADJUST
     compileSdk = RudderStackBuildConfig.Android.COMPILE_SDK
 
     defaultConfig {
