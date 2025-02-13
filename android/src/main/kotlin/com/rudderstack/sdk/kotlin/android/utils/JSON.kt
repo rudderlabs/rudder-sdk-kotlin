@@ -69,6 +69,7 @@ fun JsonObject.getDouble(key: String): Double? = this[key]?.safeJsonPrimitive?.d
 /**
  * Utility function to retrieve a jsonArray from a jsonObject
  */
+@InternalRudderApi
 fun JsonObject.getArray(key: String): JsonArray? = this[key] as? JsonArray
 
 /**
