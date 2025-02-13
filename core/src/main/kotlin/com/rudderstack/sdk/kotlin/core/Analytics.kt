@@ -61,7 +61,7 @@ import kotlinx.coroutines.launch
 open class Analytics protected constructor(
     val configuration: Configuration,
     analyticsConfiguration: AnalyticsConfiguration,
-    val userIdentityState: FlowState<UserIdentity> = FlowState(
+    internal val userIdentityState: FlowState<UserIdentity> = FlowState(
         initialState = UserIdentity.initialState(
             analyticsConfiguration.storage
         )
@@ -343,52 +343,6 @@ open class Analytics protected constructor(
     }
 
     /**
-     * Sets or updates the anonymous ID for the current user identity.
-     *
-     * The `setAnonymousId` method is used to update the `anonymousID` value within the `UserIdentityStore`.
-     * This ID is typically generated automatically to track users who have not yet been identified
-     * (e.g., before they log in or sign up). This function dispatches an action to modify the `UserIdentityState`,
-     * ensuring that the new ID is correctly stored and managed.
-     *
-     * @param anonymousId The new anonymous ID to be set for the current user. This ID should be a unique,
-     * non-null string used to represent the user anonymously.
-     */
-    fun setAnonymousId(anonymousId: String) {
-        if (!isAnalyticsActive()) return
-
-        userIdentityState.dispatch(SetAnonymousIdAction(anonymousId))
-        storeAnonymousId()
-    }
-
-    /**
-     * The `getAnonymousId` method always retrieves the current anonymous ID.
-     */
-    fun getAnonymousId(): String? {
-        if (!isAnalyticsActive()) return null
-
-        return userIdentityState.value.anonymousId
-    }
-
-    /**
-     * Get the user traits.
-     *
-     * The `analyticsInstance.traits` is used to get the `traits` value.
-     * This traits is assigned when an identify event is made.
-     *
-     * This can return null if the analytics is shut down.
-     *
-     * Get the traits:
-     * ```kotlin
-     * val traits = analyticsInstance.traits
-     * ```
-     */
-    val traits: RudderTraits?
-        get() {
-            if (!isAnalyticsActive()) return null
-            return userIdentityState.value.traits
-        }
-
-    /**
      * Resets the user identity, clearing the user ID, traits, and external IDs.
      * If clearAnonymousId is true, clears the existing anonymous ID and generate a new one.
      *
@@ -423,11 +377,82 @@ open class Analytics protected constructor(
         }
     }
 
+    override fun getPlatformType(): PlatformType = PlatformType.Server
+
+    /**
+     * Update or get the stored anonymous ID.
+     *
+     * The `analyticsInstance.anonymousId` is used to update and get the `anonymousID` value.
+     * This ID is typically generated automatically to track users who have not yet been identified
+     * (e.g., before they log in or sign up).
+     *
+     * This can return null if the analytics is shut down.
+     *
+     * Set the anonymousId:
+     * ```kotlin
+     * analyticsInstance.anonymousId = "Custom Anonymous ID"
+     * ```
+     *
+     * Get the anonymousId:
+     * ```kotlin
+     * val anonymousId = analyticsInstance.anonymousId
+     * ```
+     */
+    var anonymousId: String?
+        get() {
+            if (!isAnalyticsActive()) return null
+            return userIdentityState.value.anonymousId
+        }
+        set(value) {
+            if (!isAnalyticsActive()) return
+
+            value?.let { anonymousId ->
+                userIdentityState.dispatch(SetAnonymousIdAction(anonymousId))
+                storeAnonymousId()
+            }
+        }
+
+    /**
+     * Get the user ID.
+     *
+     * The `analyticsInstance.userId` is used to get the `userId` value.
+     * This ID is assigned when an identify event is made.
+     *
+     * This can return null if the analytics is shut down.
+     *
+     * Get the userId:
+     * ```kotlin
+     * val userId = analyticsInstance.userId
+     * ```
+     */
+    val userId: String?
+        get() {
+            if (!isAnalyticsActive()) return null
+            return userIdentityState.value.userId
+        }
+
+    /**
+     * Get the user traits.
+     *
+     * The `analyticsInstance.traits` is used to get the `traits` value.
+     * This traits is assigned when an identify event is made.
+     *
+     * This can return null if the analytics is shut down.
+     *
+     * Get the traits:
+     * ```kotlin
+     * val traits = analyticsInstance.traits
+     * ```
+     */
+    val traits: RudderTraits?
+        get() {
+            if (!isAnalyticsActive()) return null
+            return userIdentityState.value.traits
+        }
+
     private fun storeAnonymousId() {
         analyticsScope.launch(storageDispatcher) {
             userIdentityState.value.storeAnonymousId(storage = storage)
         }
     }
-
-    override fun getPlatformType(): PlatformType = PlatformType.Server
 }

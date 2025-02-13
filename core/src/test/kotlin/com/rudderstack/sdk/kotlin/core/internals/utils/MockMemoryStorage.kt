@@ -1,4 +1,4 @@
-package com.rudderstack.sdk.kotlin.android.utils
+package com.rudderstack.sdk.kotlin.core.internals.utils
 
 import com.rudderstack.sdk.kotlin.core.internals.storage.LibraryVersion
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
@@ -78,7 +78,7 @@ internal class MockMemoryStorage : Storage {
 
     override fun getLibraryVersion(): LibraryVersion {
         return object : LibraryVersion {
-            override fun getPackageName(): String = "com.rudderstack.android.sdk"
+            override fun getPackageName(): String = "com.rudderstack.sdk.kotlin.core"
 
             override fun getVersionName() = "1.0.0"
         }
