@@ -46,20 +46,20 @@ abstract class IntegrationPlugin : EventPlugin {
     abstract val key: String
 
     /**
-     * The configuration for the destination.
-     * This variable always holds the latest configuration for the destination from [SourceConfig].
-     */
-    @Volatile
-    var destinationConfig: JsonObject = emptyJsonObject
-        private set
-
-    /**
      * Creates the destination instance. Override this method for the initialisation of destination.
      * This method must return true if the destination was created successfully, false otherwise.
      *
      * @param destinationConfig The configuration for the destination.
      */
     protected abstract fun create(destinationConfig: JsonObject)
+
+    /**
+     * This method will be called when the destination configuration is updated.
+     * The value could be either destination config or empty json object.
+     *
+     * @param destinationConfig The updated configuration for the destination.
+     */
+    open fun update(destinationConfig: JsonObject) {}
 
     /**
      * Returns the instance of the destination which was created.
@@ -203,13 +203,13 @@ abstract class IntegrationPlugin : EventPlugin {
     }
 
     private fun setFailureConfigAndNotifyCallbacks(throwable: Throwable) {
-        this.destinationConfig = emptyJsonObject
+        update(emptyJsonObject)
         this.isDestinationReady = false
         notifyCallbacks(Result.Failure(null, throwable))
     }
 
     private fun setSuccessConfigAndNotifyCallbacks(destinationConfig: JsonObject) {
-        this.destinationConfig = destinationConfig
+        update(destinationConfig)
         this.isDestinationReady = true
         notifyCallbacks(Result.Success(Unit))
     }
