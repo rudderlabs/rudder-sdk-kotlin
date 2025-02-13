@@ -38,7 +38,7 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
 private const val pathToAdjustConfig = "config/adjust_config.json"
-private const val APP_TOKEN = "appToken"
+private const val APP_TOKEN = "someAppToken"
 private const val ADJUST_ENVIRONMENT = AdjustConfig.ENVIRONMENT_SANDBOX
 private const val ANONYMOUS_ID = "anonymousId"
 private const val USER_ID = "userId"
