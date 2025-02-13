@@ -56,7 +56,7 @@ internal val EVENT_WITH_PRODUCTS_ARRAY = listOf(
     FirebaseAnalytics.Event.VIEW_CART
 )
 
-internal val EVENT_WITH_PRODUCTS_AT_ROOT = listOf(
+internal val EVENT_WITH_SINGLE_PRODUCT = listOf(
     FirebaseAnalytics.Event.ADD_TO_CART,
     FirebaseAnalytics.Event.ADD_TO_WISHLIST,
     FirebaseAnalytics.Event.VIEW_ITEM,

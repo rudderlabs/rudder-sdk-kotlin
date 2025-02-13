@@ -49,33 +49,26 @@ class FirebaseIntegration : IntegrationPlugin() {
     }
 
     override fun identify(payload: IdentifyEvent): Event? {
-        if (payload.userId.isNotEmpty()) {
-            firebaseAnalytics?.setUserId(payload.userId)
-        }
+        firebaseAnalytics?.takeIf { payload.userId.isNotEmpty() }?.setUserId(payload.userId)
 
-        val traits = analytics.traits
-
-        traits?.keys?.forEach { key ->
-            val firebaseKey = getTrimmedKey(key)
-            if (!IDENTIFY_RESERVED_KEYWORDS.contains(firebaseKey) && firebaseKey != "userId") {
-                firebaseAnalytics?.setUserProperty(key, traits.getString(key))
+        analytics.traits?.keys
+            ?.map(::getTrimmedKey)
+            ?.filterNot { it in IDENTIFY_RESERVED_KEYWORDS || it == "userId" }
+            ?.forEach { key ->
+                firebaseAnalytics?.setUserProperty(key, analytics.traits?.getString(key))
             }
-        }
 
         return payload
     }
 
     override fun screen(payload: ScreenEvent): Event? {
-        val screenName = payload.screenName
-
-        if (screenName.isEmpty()) {
-            return payload
+        if (payload.screenName.isNotEmpty()) {
+            Bundle().apply {
+                putString(FirebaseAnalytics.Param.SCREEN_NAME, payload.screenName)
+                attachAllCustomProperties(this, payload.properties)
+                firebaseAnalytics?.logEvent(FirebaseAnalytics.Event.SCREEN_VIEW, this)
+            }
         }
-        val params = Bundle()
-        params.putString(FirebaseAnalytics.Param.SCREEN_NAME, screenName)
-        attachAllCustomProperties(params, payload.properties)
-
-        firebaseAnalytics?.logEvent(FirebaseAnalytics.Event.SCREEN_VIEW, params)
         return payload
     }
 
@@ -150,7 +143,7 @@ class FirebaseIntegration : IntegrationPlugin() {
         if (EVENT_WITH_PRODUCTS_ARRAY.contains(firebaseEvent) && !properties.isKeyEmpty(ECommerceParamNames.PRODUCTS)) {
             handleProductsArray(params, properties)
         }
-        if (EVENT_WITH_PRODUCTS_AT_ROOT.contains(firebaseEvent)) {
+        if (EVENT_WITH_SINGLE_PRODUCT.contains(firebaseEvent)) {
             handleSingleProduct(params, properties)
         }
 

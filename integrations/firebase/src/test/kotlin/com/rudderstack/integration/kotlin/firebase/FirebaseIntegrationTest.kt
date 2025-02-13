@@ -147,6 +147,60 @@ class FirebaseIntegrationTest {
         }
 
     @Test
+    fun `given ecommerce payment info entered event, when track called with it, then logEvent method is called with proper fields`() =
+        runTest {
+            val event = ECommerceEvents.PAYMENT_INFO_ENTERED
+            val properties = buildJsonObject {
+                put("payment_method", "credit_card")
+            }
+
+            firebaseIntegration.track(TrackEvent(event, properties))
+
+            verify(exactly = 1) {
+                mockFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.ADD_PAYMENT_INFO, match {
+                    it.getString(FirebaseAnalytics.Param.PAYMENT_TYPE) == "credit_card"
+                })
+            }
+        }
+
+    @Test
+    fun `given ecommerce product added to wishlist event, when track is called with it, then logEvent method is called with proper fields`() =
+        runTest {
+            val event = ECommerceEvents.PRODUCT_ADDED_TO_WISH_LIST
+            val properties = buildJsonObject {
+                put("product_id", "123")
+            }
+
+            firebaseIntegration.track(TrackEvent(event, properties))
+
+            verify(exactly = 1) {
+                mockFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.ADD_TO_WISHLIST, match {
+                    it.getString(FirebaseAnalytics.Param.CURRENCY) == "USD" &&
+                            (it.getParcelableArray(FirebaseAnalytics.Param.ITEMS)?.get(0) as? Bundle)?.getString(
+                                FirebaseAnalytics.Param.ITEM_ID
+                            ) == "123"
+                })
+            }
+        }
+
+    @Test
+    fun `given ecommerce products searched event, when track is called with it, then logEvent method is called with proper fields`() =
+        runTest {
+            val event = ECommerceEvents.PRODUCTS_SEARCHED
+            val properties = buildJsonObject {
+                put("query", "some query")
+            }
+
+            firebaseIntegration.track(TrackEvent(event, properties))
+
+            verify(exactly = 1) {
+                mockFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SEARCH, match {
+                    it.getString(FirebaseAnalytics.Param.SEARCH_TERM) == "some query"
+                })
+            }
+        }
+
+    @Test
     fun `given ecommerce share event with cart id, when track is called with it, then logEvent method is called with proper fields`() =
         runTest {
             val event = ECommerceEvents.CART_SHARED
@@ -230,8 +284,8 @@ class FirebaseIntegrationTest {
             verify(exactly = 1) {
                 mockFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.PURCHASE, match {
                     it.getString(FirebaseAnalytics.Param.TRANSACTION_ID) == "order_123" &&
-                    it.getDouble(FirebaseAnalytics.Param.VALUE) == 99.99 &&
-                    it.getString(FirebaseAnalytics.Param.CURRENCY) == "USD"
+                            it.getDouble(FirebaseAnalytics.Param.VALUE) == 99.99 &&
+                            it.getString(FirebaseAnalytics.Param.CURRENCY) == "USD"
                 })
             }
         }
@@ -315,15 +369,15 @@ class FirebaseIntegrationTest {
             verify(exactly = 1) {
                 mockFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.ADD_TO_CART, match {
                     it.getString(FirebaseAnalytics.Param.CURRENCY) == "USD" &&
-                    (it.getParcelableArray(FirebaseAnalytics.Param.ITEMS)?.get(0) as? Bundle)?.getString(
-                        FirebaseAnalytics.Param.ITEM_ID
-                    ) == "prod_123" &&
-                    (it.getParcelableArray(FirebaseAnalytics.Param.ITEMS)?.get(0) as? Bundle)?.getString(
-                        FirebaseAnalytics.Param.ITEM_NAME
-                    ) == "Test Product" &&
-                    (it.getParcelableArray(FirebaseAnalytics.Param.ITEMS)?.get(0) as? Bundle)?.getDouble(
-                        FirebaseAnalytics.Param.PRICE
-                    ) == 49.99
+                            (it.getParcelableArray(FirebaseAnalytics.Param.ITEMS)?.get(0) as? Bundle)?.getString(
+                                FirebaseAnalytics.Param.ITEM_ID
+                            ) == "prod_123" &&
+                            (it.getParcelableArray(FirebaseAnalytics.Param.ITEMS)?.get(0) as? Bundle)?.getString(
+                                FirebaseAnalytics.Param.ITEM_NAME
+                            ) == "Test Product" &&
+                            (it.getParcelableArray(FirebaseAnalytics.Param.ITEMS)?.get(0) as? Bundle)?.getDouble(
+                                FirebaseAnalytics.Param.PRICE
+                            ) == 49.99
                 })
             }
         }
@@ -365,13 +419,13 @@ class FirebaseIntegrationTest {
                     (it.getParcelableArray(FirebaseAnalytics.Param.ITEMS)?.get(0) as? Bundle)?.getString(
                         FirebaseAnalytics.Param.ITEM_ID
                     ) == "prod_123" &&
-                    (it.getParcelableArray(FirebaseAnalytics.Param.ITEMS)?.get(0) as? Bundle)?.getString(
-                        FirebaseAnalytics.Param.ITEM_NAME
-                    ) == "Test Product" &&
-                    (it.getParcelableArray(FirebaseAnalytics.Param.ITEMS)?.get(0) as? Bundle)?.getDouble(
-                        FirebaseAnalytics.Param.PRICE
-                    ) == 49.99 &&
-                    it.getString(FirebaseAnalytics.Param.CURRENCY) == "USD"
+                            (it.getParcelableArray(FirebaseAnalytics.Param.ITEMS)?.get(0) as? Bundle)?.getString(
+                                FirebaseAnalytics.Param.ITEM_NAME
+                            ) == "Test Product" &&
+                            (it.getParcelableArray(FirebaseAnalytics.Param.ITEMS)?.get(0) as? Bundle)?.getDouble(
+                                FirebaseAnalytics.Param.PRICE
+                            ) == 49.99 &&
+                            it.getString(FirebaseAnalytics.Param.CURRENCY) == "USD"
                 })
             }
         }
