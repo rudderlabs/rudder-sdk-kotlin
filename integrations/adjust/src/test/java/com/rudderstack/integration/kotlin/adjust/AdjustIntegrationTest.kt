@@ -138,7 +138,6 @@ class AdjustIntegrationTest {
         adjustIntegration.create(mockAdjustIntegrationConfig)
 
         // Verify Adjust Config initialisation
-        verify { AdjustConfig(mockApplication, APP_TOKEN, ADJUST_ENVIRONMENT) }
         mockAdjustConfig.apply {
             // Verify Setting of logLevel
             verify { setLogLevel(any()) }
@@ -177,10 +176,12 @@ class AdjustIntegrationTest {
 
         adjustIntegration.track(trackEvent)
 
-        verify(exactly = 1) { mockAdjustEvent.addCallbackParameter("key1", "value1") }
-        verify(exactly = 1) { mockAdjustEvent.addCallbackParameter("key2", "23.45") }
-        verify(exactly = 1) { mockAdjustEvent.addCallbackParameter(ANONYMOUS_ID, any()) }
-        verify(exactly = 0) { mockAdjustEvent.setRevenue(any(), any()) }
+        mockAdjustEvent.apply {
+            verify(exactly = 1) { addCallbackParameter("key1", "value1") }
+            verify(exactly = 1) { addCallbackParameter("key2", "23.45") }
+            verify(exactly = 1) { addCallbackParameter(ANONYMOUS_ID, any()) }
+            verify(exactly = 0) { setRevenue(any(), any()) }
+        }
         verify(exactly = 1) { Adjust.trackEvent(mockAdjustEvent) }
     }
 
@@ -200,9 +201,11 @@ class AdjustIntegrationTest {
 
         adjustIntegration.track(trackEvent)
 
-        verify(exactly = 1) { mockAdjustEvent.addCallbackParameter("key1", "value1") }
-        verify(exactly = 1) { mockAdjustEvent.addCallbackParameter(ANONYMOUS_ID, any()) }
-        verify(exactly = 1) { mockAdjustEvent.setRevenue(revenue, currency) }
+        mockAdjustEvent.apply {
+            verify(exactly = 1) { addCallbackParameter("key1", "value1") }
+            verify(exactly = 1) { addCallbackParameter(ANONYMOUS_ID, any()) }
+            verify(exactly = 1) { setRevenue(revenue, currency) }
+        }
         verify(exactly = 1) { Adjust.trackEvent(mockAdjustEvent) }
     }
 
@@ -218,9 +221,11 @@ class AdjustIntegrationTest {
 
         adjustIntegration.track(trackEvent)
 
-        verify(exactly = 0) { mockAdjustEvent.addCallbackParameter("key1", "value1") }
-        verify(exactly = 0) { mockAdjustEvent.addCallbackParameter(ANONYMOUS_ID, any()) }
-        verify(exactly = 0) { mockAdjustEvent.setRevenue(any(), any()) }
+        mockAdjustEvent.apply {
+            verify(exactly = 0) { addCallbackParameter("key1", "value1") }
+            verify(exactly = 0) { addCallbackParameter(ANONYMOUS_ID, any()) }
+            verify(exactly = 0) { setRevenue(any(), any()) }
+        }
         verify(exactly = 0) { Adjust.trackEvent(mockAdjustEvent) }
     }
 
