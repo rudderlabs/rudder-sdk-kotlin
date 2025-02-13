@@ -343,6 +343,17 @@ open class Analytics protected constructor(
     }
 
     /**
+     * Removes a plugin from the plugin chain.
+     *
+     * @param plugin The plugin to be removed from the plugin chain.
+     */
+    open fun remove(plugin: Plugin) {
+        if (!isAnalyticsActive()) return
+
+        this.pluginChain.remove(plugin)
+    }
+
+    /**
      * Resets the user identity, clearing the user ID, traits, and external IDs.
      * If clearAnonymousId is true, clears the existing anonymous ID and generate a new one.
      *
