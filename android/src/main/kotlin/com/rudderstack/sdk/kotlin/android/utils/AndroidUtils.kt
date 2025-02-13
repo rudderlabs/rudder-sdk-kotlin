@@ -6,6 +6,7 @@ import androidx.annotation.ChecksSdkIntAtLeast
 import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.android.utils.AppSDKVersion.getVersionSDKInt
 import com.rudderstack.sdk.kotlin.core.Analytics
+import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 
 /**
  * Executes the provided lambda function based on the current SDK version.
@@ -49,5 +50,6 @@ internal object AppSDKVersion {
  *
  * @return The [Application] instance tied to the current [Analytics] configuration.
  */
-internal val Analytics.application: Application
+@InternalRudderApi
+val Analytics.application: Application
     get() = (this.configuration as Configuration).application

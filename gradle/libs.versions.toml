@@ -3,6 +3,7 @@
 activity-compose = "1.9.3"
 agp = "8.7.2"
 android-core-ktx = "1.15.0"
+facebook-android-sdk = "18.0.1"
 foundation = "1.7.5"
 json-assert = "1.5.0"
 junit = "4.13.2"
@@ -24,6 +25,7 @@ nexus = "2.0.0"
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activity-compose" }
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle-viewmodel-compose" }
 androidx-material = { module = "androidx.compose.material:material", version.ref = "material-version" }
+facebook-android = { module = "com.facebook.android:facebook-android-sdk", version.ref = "facebook-android-sdk" }
 foundation = { module = "androidx.compose.foundation:foundation", version.ref = "foundation" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines-core" }
