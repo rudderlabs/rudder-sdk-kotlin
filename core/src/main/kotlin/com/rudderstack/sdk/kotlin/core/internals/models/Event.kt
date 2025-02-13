@@ -112,7 +112,7 @@ sealed class Event {
     abstract var options: RudderOption
 
     /**
-     * Updates the event data with the platform type, update the integrations and custom context and add persisted values.
+     * Updates the event data with the platform type, integrations and custom context and add persisted values.
      *
      * @param platform The platform type associated with the event.
      */
