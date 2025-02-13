@@ -41,7 +41,7 @@ internal class EventQueue(
             endPoint = BATCH_ENDPOINT,
             authHeaderString = writeKey.encodeToBase64(),
             isGZIPEnabled = gzipEnabled,
-            anonymousIdHeaderString = analytics.getAnonymousId() ?: String.empty()
+            anonymousIdHeaderString = analytics.anonymousId ?: String.empty()
         )
     }
 ) {

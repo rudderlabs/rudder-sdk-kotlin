@@ -98,6 +98,26 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 RudderAnalyticsUtils.initialize(getApplication())
                 "SDK initialized"
             }
+
+            AnalyticsState.SetAnonymousId -> {
+                RudderAnalyticsUtils.analytics.anonymousId = "Custom Anonymous ID"
+                "Anonymous ID is set as: ${RudderAnalyticsUtils.analytics.anonymousId}"
+            }
+
+            AnalyticsState.GetAnonymousId -> {
+                val anonymousId = RudderAnalyticsUtils.analytics.anonymousId
+                "Anonymous ID: $anonymousId"
+            }
+
+            AnalyticsState.GetUserId -> {
+                val userId = RudderAnalyticsUtils.analytics.userId
+                "User ID: $userId"
+            }
+
+            AnalyticsState.GetTraits -> {
+                val traits = RudderAnalyticsUtils.analytics.traits
+                "Traits: $traits"
+            }
         }
         if (log.isNotEmpty()) addLogData(LogData(Date(), log))
     }
