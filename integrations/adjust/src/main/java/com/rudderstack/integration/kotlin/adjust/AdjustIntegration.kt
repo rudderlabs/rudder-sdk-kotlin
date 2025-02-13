@@ -26,7 +26,7 @@ private const val ANONYMOUS_ID = "anonymousId"
 private const val USER_ID = "userId"
 
 /**
- * AdjustIntegration is a plugin that intercepts the track events and logs them.
+ * AdjustIntegration is a plugin that sends events to the Adjust SDK.
  */
 class AdjustIntegration : IntegrationPlugin() {
 
