@@ -23,6 +23,22 @@ import kotlinx.serialization.json.JsonObject
 
 internal const val FIREBASE_KEY = "Firebase"
 
+private const val USER_ID_KEY = "userId"
+private const val PRODUCT_ID_KEY = "product_id"
+private const val APPLICATION_OPENED = "Application Opened"
+private const val CART_ID_KEY = "cart_id"
+private const val PRODUCT = "product"
+private const val CART = "cart"
+private const val ORDER_ID_KEY = "order_id"
+private const val CURRENCY_KEY = "currency"
+private const val DEFAULT_CURRENCY = "USD"
+private const val NAME_KEY = "name"
+private const val REVENUE_KEY = "revenue"
+private const val VALUE_KEY = "value"
+private const val TOTAL_KEY = "total"
+private const val SHIPPING_KEY = "shipping"
+private const val TAX_KEY = "tax"
+
 /**
  * Firebase Integration Plugin. See [IntegrationPlugin] for more info.
  */
@@ -53,7 +69,7 @@ class FirebaseIntegration : IntegrationPlugin() {
 
         analytics.traits?.keys
             ?.map(::getTrimmedKey)
-            ?.filterNot { it in IDENTIFY_RESERVED_KEYWORDS || it == "userId" }
+            ?.filterNot { it in IDENTIFY_RESERVED_KEYWORDS || it == USER_ID_KEY }
             ?.forEach { key ->
                 firebaseAnalytics?.setUserProperty(key, analytics.traits?.getString(key))
             }
@@ -76,7 +92,7 @@ class FirebaseIntegration : IntegrationPlugin() {
         val eventName = payload.event.takeIf { it.isNotEmpty() } ?: return payload
 
         when (eventName) {
-            "Application Opened" -> handleApplicationOpenedEvent(payload.properties)
+            APPLICATION_OPENED -> handleApplicationOpenedEvent(payload.properties)
             in ECOMMERCE_EVENTS_MAPPING -> handleECommerceEvent(eventName, payload.properties)
             else -> handleCustomEvent(eventName, payload.properties)
         }
@@ -101,16 +117,16 @@ class FirebaseIntegration : IntegrationPlugin() {
         if (firebaseEvent.isNotEmpty() && !properties.isNullOrEmpty()) {
             when (firebaseEvent) {
                 FirebaseAnalytics.Event.SHARE -> {
-                    params.putIfNotEmpty(FirebaseAnalytics.Param.ITEM_ID, properties, "cart_id", "product_id")
+                    params.putIfNotEmpty(FirebaseAnalytics.Param.ITEM_ID, properties, CART_ID_KEY, PRODUCT_ID_KEY)
                 }
 
                 FirebaseAnalytics.Event.VIEW_PROMOTION, FirebaseAnalytics.Event.SELECT_PROMOTION -> {
-                    params.putIfNotEmpty(FirebaseAnalytics.Param.PROMOTION_NAME, properties, "name")
+                    params.putIfNotEmpty(FirebaseAnalytics.Param.PROMOTION_NAME, properties, NAME_KEY)
                 }
 
                 FirebaseAnalytics.Event.SELECT_CONTENT -> {
-                    params.putIfNotEmpty(FirebaseAnalytics.Param.ITEM_ID, properties, "product_id")
-                    params.putString(FirebaseAnalytics.Param.CONTENT_TYPE, "product")
+                    params.putIfNotEmpty(FirebaseAnalytics.Param.ITEM_ID, properties, PRODUCT_ID_KEY)
+                    params.putString(FirebaseAnalytics.Param.CONTENT_TYPE, PRODUCT)
                 }
             }
 
@@ -129,16 +145,16 @@ class FirebaseIntegration : IntegrationPlugin() {
 
     private fun addConstantParamsForECommerceEvent(params: Bundle, eventName: String) {
         if (eventName == ECommerceEvents.PRODUCT_SHARED) {
-            params.putString(FirebaseAnalytics.Param.CONTENT_TYPE, "product")
+            params.putString(FirebaseAnalytics.Param.CONTENT_TYPE, PRODUCT)
         } else if (eventName == ECommerceEvents.CART_SHARED) {
-            params.putString(FirebaseAnalytics.Param.CONTENT_TYPE, "cart")
+            params.putString(FirebaseAnalytics.Param.CONTENT_TYPE, CART)
         }
     }
 
     private fun handleECommerceEventProperties(params: Bundle, properties: JsonObject, firebaseEvent: String) {
-        putDoubleIfValid(params, FirebaseAnalytics.Param.VALUE, properties, listOf("revenue", "value", "total"))
-        putDoubleIfValid(params, FirebaseAnalytics.Param.SHIPPING, properties, listOf("shipping"))
-        putDoubleIfValid(params, FirebaseAnalytics.Param.TAX, properties, listOf("tax"))
+        putDoubleIfValid(params, FirebaseAnalytics.Param.VALUE, properties, listOf(REVENUE_KEY, VALUE_KEY, TOTAL_KEY))
+        putDoubleIfValid(params, FirebaseAnalytics.Param.SHIPPING, properties, listOf(SHIPPING_KEY))
+        putDoubleIfValid(params, FirebaseAnalytics.Param.TAX, properties, listOf(TAX_KEY))
 
         if (EVENT_WITH_PRODUCTS_ARRAY.contains(firebaseEvent) && !properties.isKeyEmpty(ECommerceParamNames.PRODUCTS)) {
             handleProductsArray(params, properties)
@@ -155,12 +171,12 @@ class FirebaseIntegration : IntegrationPlugin() {
 
         params.putString(
             FirebaseAnalytics.Param.CURRENCY,
-            properties.getString("currency")?.takeIf { !properties.isKeyEmpty("currency") } ?: "USD"
+            properties.getString(CURRENCY_KEY)?.takeIf { !properties.isKeyEmpty(CURRENCY_KEY) } ?: DEFAULT_CURRENCY
         )
 
-        properties.getString("order_id")?.takeIf { !properties.isKeyEmpty("order_id") }?.let {
+        properties.getString(ORDER_ID_KEY)?.takeIf { !properties.isKeyEmpty(ORDER_ID_KEY) }?.let {
             params.putString(FirebaseAnalytics.Param.TRANSACTION_ID, it)
-            params.putString("order_id", it) // For backward compatibility
+            params.putString(ORDER_ID_KEY, it) // For backward compatibility
         }
     }
 
