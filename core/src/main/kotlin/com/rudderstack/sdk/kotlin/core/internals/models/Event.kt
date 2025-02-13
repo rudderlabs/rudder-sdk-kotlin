@@ -18,6 +18,7 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import org.jetbrains.annotations.VisibleForTesting
 
 typealias AnalyticsContext = JsonObject
 typealias Properties = JsonObject
@@ -110,7 +111,13 @@ sealed class Event {
     @Transient
     abstract var options: RudderOption
 
-    internal fun updateData(platform: PlatformType) {
+    /**
+     * Updates the event data with the platform type, update the integrations and custom context and add persisted values.
+     *
+     * @param platform The platform type associated with the event.
+     */
+    @VisibleForTesting
+    fun updateData(platform: PlatformType) {
         this.channel = platform
         this.updateIntegrationOptionsAndCustomCustomContext()
         this.addPersistedValues()

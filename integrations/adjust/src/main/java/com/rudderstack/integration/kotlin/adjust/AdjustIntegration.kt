@@ -38,11 +38,11 @@ class AdjustIntegration : IntegrationPlugin() {
     // TODO("We need a way to update this value dynamically.")
     private lateinit var eventToTokenMappings: List<EventToTokenMapping>
 
-    override fun create(destinationConfig: JsonObject) {
+    public override fun create(destinationConfig: JsonObject) {
         adjustInstance ?: run {
             destinationConfig.parseConfig<AdjustDestinationConfig>().let { config ->
                 eventToTokenMappings = config.eventToTokenMappings
-                adjustInstance = initialiseAdjust(
+                adjustInstance = initAdjust(
                     application = analytics.application,
                     appToken = config.appToken,
                     logLevel = analytics.configuration.logLevel,
@@ -64,7 +64,7 @@ class AdjustIntegration : IntegrationPlugin() {
     override fun track(payload: TrackEvent): Event {
         eventToTokenMappings.getTokenOrNull(payload.event)?.let { eventToken ->
             payload.setSessionParams()
-            val adjustEvent = AdjustEvent(eventToken).apply {
+            val adjustEvent = initAdjustEvent(eventToken).apply {
                 addCallbackParameter(payload.properties)
                 setRevenue(payload.properties)
                 addCallbackParameter(payload.context.toJsonObject(PropertiesConstants.TRAITS))
@@ -106,10 +106,9 @@ class AdjustIntegration : IntegrationPlugin() {
     }
 }
 
-@VisibleForTesting
-internal fun initialiseAdjust(application: Application, appToken: String, logLevel: Logger.LogLevel): AdjustInstance {
+private fun initAdjust(application: Application, appToken: String, logLevel: Logger.LogLevel): AdjustInstance {
     val adjustEnvironment = getAdjustEnvironment(logLevel)
-    val adjustConfig = AdjustConfig(application, appToken, adjustEnvironment)
+    val adjustConfig = initAdjustConfig(application, appToken, adjustEnvironment)
         .apply {
             setLogLevel(logLevel)
             setAllListeners()
@@ -127,6 +126,10 @@ private fun getAdjustEnvironment(logLevel: Logger.LogLevel): String {
         AdjustConfig.ENVIRONMENT_PRODUCTION
     }
 }
+
+@VisibleForTesting
+internal fun initAdjustConfig(application: Application, appToken: String, adjustEnvironment: String) =
+    AdjustConfig(application, appToken, adjustEnvironment)
 
 private fun AdjustConfig.setLogLevel(logLevel: Logger.LogLevel) {
     when (logLevel) {
@@ -198,3 +201,6 @@ private fun Application.registerActivityLifecycleCallbacks() {
         }
     })
 }
+
+@VisibleForTesting
+internal fun initAdjustEvent(eventToken: String) = AdjustEvent(eventToken)
