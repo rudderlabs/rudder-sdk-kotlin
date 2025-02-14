@@ -27,7 +27,7 @@ private val EXTERNAL_IDS_2 = listOf(ExternalId("externalIdType2", "externalIdVal
 private val TRAITS_1_OVERLAP = buildJsonObject { put("key-1", "value-2") }
 private val EXTERNAL_IDS_1_OVERLAP = listOf(ExternalId("externalIdType1", "externalIdValue2"))
 
-class SetUserIdTraitsAndExternalIdsActionTest {
+class SetUserIdAndTraitsActionTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
@@ -38,7 +38,7 @@ class SetUserIdTraitsAndExternalIdsActionTest {
         runTest {
             val userIdentityState = provideUserIdentityInitialState()
 
-            val result = SetUserIdTraitsAndExternalIdsAction(USER_1, TRAITS_1, EXTERNAL_IDS_1, mockAnalytics)
+            val result = SetUserIdAndTraitsAction(USER_1, TRAITS_1, EXTERNAL_IDS_1, mockAnalytics)
                 .reduce(userIdentityState)
             testDispatcher.scheduler.advanceUntilIdle()
 
@@ -52,7 +52,7 @@ class SetUserIdTraitsAndExternalIdsActionTest {
         runTest {
             val userIdentityState = provideUserIdentityStateAfterFirstIdentifyEventIsMade()
 
-            val result = SetUserIdTraitsAndExternalIdsAction(USER_1, TRAITS_2, EXTERNAL_IDS_2, mockAnalytics)
+            val result = SetUserIdAndTraitsAction(USER_1, TRAITS_2, EXTERNAL_IDS_2, mockAnalytics)
                 .reduce(userIdentityState)
             testDispatcher.scheduler.advanceUntilIdle()
 
@@ -65,7 +65,7 @@ class SetUserIdTraitsAndExternalIdsActionTest {
         runTest {
             val userIdentityState = provideUserIdentityStateAfterFirstIdentifyEventIsMade()
 
-            val result = SetUserIdTraitsAndExternalIdsAction(USER_1, TRAITS_1_OVERLAP, EXTERNAL_IDS_1_OVERLAP, mockAnalytics)
+            val result = SetUserIdAndTraitsAction(USER_1, TRAITS_1_OVERLAP, EXTERNAL_IDS_1_OVERLAP, mockAnalytics)
                 .reduce(userIdentityState)
             testDispatcher.scheduler.advanceUntilIdle()
 
@@ -78,7 +78,7 @@ class SetUserIdTraitsAndExternalIdsActionTest {
         runTest {
             val userIdentityState = provideUserIdentityStateAfterFirstIdentifyEventIsMade()
 
-            val result = SetUserIdTraitsAndExternalIdsAction(USER_2, TRAITS_2, EXTERNAL_IDS_2, mockAnalytics)
+            val result = SetUserIdAndTraitsAction(USER_2, TRAITS_2, EXTERNAL_IDS_2, mockAnalytics)
                 .reduce(userIdentityState)
             testDispatcher.scheduler.advanceUntilIdle()
 
@@ -91,7 +91,7 @@ class SetUserIdTraitsAndExternalIdsActionTest {
     fun `when values are stored, then those values should be persisted in storage`() = runTest {
         val userIdentityState = provideUserIdentityStateAfterFirstIdentifyEventIsMade()
 
-        userIdentityState.storeUserIdTraitsAndExternalIds(mockAnalytics.storage)
+        userIdentityState.storeUserIdAndTraits(mockAnalytics.storage)
 
         coVerify {
             mockAnalytics.storage.write(StorageKeys.USER_ID, USER_1)

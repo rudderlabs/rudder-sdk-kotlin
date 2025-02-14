@@ -5,10 +5,10 @@ import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.UserIdentit
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.utils.DateTimeUtils
 import com.rudderstack.sdk.kotlin.core.internals.utils.addPersistedValues
+import com.rudderstack.sdk.kotlin.core.internals.utils.addRudderOptionFields
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import com.rudderstack.sdk.kotlin.core.internals.utils.generateUUID
 import com.rudderstack.sdk.kotlin.core.internals.utils.provideEmptyUserIdentityState
-import com.rudderstack.sdk.kotlin.core.internals.utils.updateIntegrationOptionsAndCustomCustomContext
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -112,7 +112,7 @@ sealed class Event {
 
     internal fun updateData(platform: PlatformType) {
         this.channel = platform
-        this.updateIntegrationOptionsAndCustomCustomContext()
+        this.addRudderOptionFields()
         this.addPersistedValues()
     }
 

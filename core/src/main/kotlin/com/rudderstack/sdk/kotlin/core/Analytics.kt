@@ -17,13 +17,13 @@ import com.rudderstack.sdk.kotlin.core.internals.models.connectivity.Connectivit
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.ResetUserIdentityAction
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.SetAnonymousIdAction
+import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.SetUserIdAndTraitsAction
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.SetUserIdForAliasEvent
-import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.SetUserIdTraitsAndExternalIdsAction
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.UserIdentity
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.resetUserIdentity
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.storeAnonymousId
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.storeUserId
-import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.storeUserIdTraitsAndExternalIds
+import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.storeUserIdAndTraits
 import com.rudderstack.sdk.kotlin.core.internals.platform.Platform
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
@@ -225,14 +225,14 @@ open class Analytics protected constructor(
         if (!isAnalyticsActive()) return
 
         userIdentityState.dispatch(
-            SetUserIdTraitsAndExternalIdsAction(
+            SetUserIdAndTraitsAction(
                 newUserId = userId,
                 newTraits = traits,
                 analytics = this
             )
         )
         analyticsScope.launch {
-            userIdentityState.value.storeUserIdTraitsAndExternalIds(
+            userIdentityState.value.storeUserIdAndTraits(
                 storage = storage
             )
         }

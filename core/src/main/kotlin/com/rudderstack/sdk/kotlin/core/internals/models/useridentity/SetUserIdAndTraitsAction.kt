@@ -9,8 +9,7 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.mergeWithHigherPriorityTo
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 
-// TODO("Change it to SetUserIdAndTraitsAction")
-internal class SetUserIdTraitsAndExternalIdsAction(
+internal class SetUserIdAndTraitsAction(
     private val newUserId: String,
     private val newTraits: RudderTraits,
     private val analytics: Analytics,
@@ -40,13 +39,12 @@ internal class SetUserIdTraitsAndExternalIdsAction(
     private fun resetValuesIfUserIdChanged(isUserIdChanged: Boolean) {
         if (isUserIdChanged) {
             analytics.analyticsScope.launch(analytics.storageDispatcher) {
-                resetUserIdTraitsAndExternalIds()
+                resetUserIdAndTraits()
             }
         }
     }
 
-    // TODO("Change it to resetUserIdAndTraitsActions)
-    private suspend fun resetUserIdTraitsAndExternalIds() {
+    private suspend fun resetUserIdAndTraits() {
         analytics.storage.let {
             it.remove(StorageKeys.USER_ID)
             it.remove(StorageKeys.TRAITS)
@@ -61,8 +59,7 @@ private inline fun <T> getUpdatedValues(
     isUserIdChanged: Boolean
 ): T = if (isUserIdChanged) newValue else previousValue.mergeWithPriority(newValue)
 
-// TODO("Change it to .storeUserIdAndTraits)
-internal suspend fun UserIdentity.storeUserIdTraitsAndExternalIds(storage: Storage) {
+internal suspend fun UserIdentity.storeUserIdAndTraits(storage: Storage) {
     storage.write(StorageKeys.USER_ID, userId)
     storage.write(StorageKeys.TRAITS, LenientJson.encodeToString(traits))
 }

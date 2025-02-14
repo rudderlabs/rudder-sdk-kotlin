@@ -31,8 +31,7 @@ private val DEFAULT_INTEGRATIONS = buildJsonObject {
     put("All", true)
 }
 
-// TODO("Change the name to addRudderOptionsFields")
-internal fun Event.updateIntegrationOptionsAndCustomCustomContext() {
+internal fun Event.addRudderOptionFields() {
     this.integrations = DEFAULT_INTEGRATIONS mergeWithHigherPriorityTo options.integrations
     this.context = options.customContext mergeWithHigherPriorityTo context
     this.context = options.externalIds.toJsonObject() mergeWithHigherPriorityTo context
