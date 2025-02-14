@@ -24,6 +24,10 @@ object RudderStackBuildConfig {
     object PackageName {
 
         const val PACKAGE_NAME = "com.rudderstack.sdk.kotlin"
+
+        object Integrations {
+            const val BRAZE = "com.rudderstack.integration.kotlin.braze"
+        }
     }
 
     object Kotlin {

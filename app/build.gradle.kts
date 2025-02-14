@@ -84,6 +84,9 @@ android {
 dependencies {
     implementation(project(":android"))
 
+    // integrations
+    implementation(project(":integrations:braze"))
+
     implementation(libs.material)
     //compose
     implementation(libs.ui)
