@@ -228,7 +228,6 @@ open class Analytics protected constructor(
             SetUserIdTraitsAndExternalIdsAction(
                 newUserId = userId,
                 newTraits = traits,
-                newExternalIds = options.externalIds,
                 analytics = this
             )
         )
