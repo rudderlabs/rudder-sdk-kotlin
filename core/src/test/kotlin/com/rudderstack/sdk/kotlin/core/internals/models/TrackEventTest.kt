@@ -14,6 +14,7 @@ import org.junit.Test
 private const val trackWithDefaultArguments = "message/track/track_with_default_arguments.json"
 private const val trackWithProperties = "message/track/track_with_properties.json"
 private const val trackWithIntegrationsOption = "message/track/track_with_integrations_option.json"
+private const val trackWithExternalIdsOption = "message/track/track_with_external_ids_option.json"
 private const val trackWithCustomContextsOption = "message/track/track_with_custom_contexts_option.json"
 private const val trackWithAllArguments = "message/track/track_with_all_arguments.json"
 private const val trackWithAllArgumentsFromServer = "message/track/track_with_all_arguments_from_server.json"
@@ -100,7 +101,7 @@ class TrackEventTest {
 
     @Test
     fun `given track event with externalIds option, when serialized, then it matches expected JSON`() {
-        val expectedJsonString = readFileTrimmed(trackWithDefaultArguments)
+        val expectedJsonString = readFileTrimmed(trackWithExternalIdsOption)
         val trackEvent = TrackEvent(
             event = EVENT_NAME,
             properties = emptyJsonObject,

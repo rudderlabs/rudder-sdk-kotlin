@@ -1,0 +1,27 @@
+{
+  "event" : "Track event 1",
+  "type" : "track",
+  "messageId" : "<message-id>",
+  "context" : {
+    "externalId": [
+      {
+        "type": "key-1",
+        "id": "value-1"
+      },
+      {
+        "type": "key-2",
+        "id": "value-2"
+      }
+    ],
+    "traits": {
+      "anonymousId": "<anonymous-id>"
+    }
+  },
+  "originalTimestamp" : "<original-timestamp>",
+  "sentAt" : "{{ RSA_DEF_SENT_AT_TS }}",
+  "integrations" : {
+    "All" : true
+  },
+  "anonymousId" : "<anonymous-id>",
+  "channel" : "mobile"
+}
