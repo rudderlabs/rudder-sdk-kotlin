@@ -13,6 +13,7 @@ import org.junit.Test
 
 private const val groupWithDefaultArguments = "message/group/group_with_default_arguments.json"
 private const val groupWithTraits = "message/group/group_with_traits.json"
+private const val groupWithExternalIdsOption = "message/group/group_with_external_ids_option.json"
 private const val groupWithIntegrationsOption = "message/group/group_with_integrations_option.json"
 private const val groupWithCustomContextsOption = "message/group/group_with_custom_contexts_option.json"
 private const val groupWithAllArguments = "message/group/group_with_all_arguments.json"
@@ -98,7 +99,7 @@ class GroupEventTest {
 
     @Test
     fun `given group  event with externalIds option, when serialized, then it matches expected JSON`() {
-        val expectedJsonString = readFileTrimmed(groupWithDefaultArguments)
+        val expectedJsonString = readFileTrimmed(groupWithExternalIdsOption)
         val groupEvent = GroupEvent(
             groupId = GROUP_ID,
             options = RudderOption(
