@@ -48,7 +48,6 @@ private fun provideUserIdentityInitialState(): UserIdentity =
         anonymousId = DEFAULT_ANONYMOUS_ID,
         userId = USER_ID,
         traits = emptyJsonObject,
-        externalIds = emptyList()
     )
 
 private fun provideUserIdentityStateAfterUserIdIsSetForAliasEvent(): UserIdentity =
@@ -56,5 +55,4 @@ private fun provideUserIdentityStateAfterUserIdIsSetForAliasEvent(): UserIdentit
         anonymousId = DEFAULT_ANONYMOUS_ID,
         userId = ALIAS_ID,
         traits = emptyJsonObject,
-        externalIds = emptyList()
     )
