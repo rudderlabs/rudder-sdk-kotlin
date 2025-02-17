@@ -96,11 +96,24 @@ private object CustomEndpointSerializer : KSerializer<String> {
     }
 }
 
+/**
+ * Data class representing the attribution details of an install event.
+ *
+ * @property campaign The campaign details associated with the install. Can be null, if user does not provide any.
+ */
 @Serializable
 internal data class InstallAttributed(
     val campaign: Campaign? = null
 )
 
+/**
+ * Data class representing campaign details for install attribution.
+ *
+ * @property source The source of the campaign.
+ * @property name The name of the campaign.
+ * @property adGroup The ad group name of the campaign. Maps to "ad_group" in JSON.
+ * @property adCreative The ad creative name/ID used in the campaign. Maps to "ad_creative" in JSON.
+ */
 @Serializable
 internal data class Campaign(
     val source: String? = null,
@@ -109,22 +122,44 @@ internal data class Campaign(
     @SerialName("ad_creative") val adCreative: String? = null,
 )
 
-@Serializable
-internal data class StandardProperties(
-    val currency: String = "USD",
-    val products: List<Products> = emptyList(),
-)
-
-@Serializable
-internal data class Products(
-    @SerialName("product_id")val productId: String? = null,
-    val price: Double? = null,
-)
-
+/**
+ * Extension function to parse a JsonObject into StandardProperties.
+ *
+ * @return StandardProperties object parsed from the JsonObject.
+ */
 internal fun JsonObject.getStandardProperties(): StandardProperties {
     return this.parse<StandardProperties>()
 }
 
+/**
+ * Data class representing standard properties for a transaction.
+ *
+ * @property currency The currency code used for the transaction. Defaults to "USD".
+ * @property products List of products included in the transaction. Defaults to empty list.
+ */
+@Serializable
+internal data class StandardProperties(
+    val currency: String = "USD",
+    val products: List<Product> = emptyList(),
+)
+
+/**
+ * Data class representing a product in a transaction.
+ *
+ * @property productId The unique identifier for the product. Maps to "product_id" in JSON.
+ * @property price The price of the product.
+ */
+@Serializable
+internal data class Product(
+    @SerialName("product_id")val productId: String? = null,
+    val price: Double? = null,
+)
+
+/**
+ * Extension function to parse a JsonObject into CustomProperties.
+ *
+ * @return CustomProperties object parsed from the JsonObject.
+ */
 internal fun JsonObject.getCustomProperties(): JsonObject {
     return this.parse<CustomProperties>().let { customProperties ->
         val products = customProperties.products.fold(JsonObject(emptyMap())) { acc, product ->
@@ -135,6 +170,12 @@ internal fun JsonObject.getCustomProperties(): JsonObject {
     }
 }
 
+/**
+ * Data class representing custom properties for an event.
+ *
+ * @property products List of custom properties for products.
+ * @property root The root level custom properties.
+ */
 @Serializable(with = CustomPropertiesSerializer::class)
 internal data class CustomProperties(
     val products: List<CustomProductsProperties> = emptyList(),
@@ -152,6 +193,9 @@ internal data class CustomProperties(
     }
 }
 
+/**
+ * Custom serializer for handling deserialization of CustomProperties.
+ */
 private object CustomPropertiesSerializer : KSerializer<CustomProperties> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("CustomPropertiesSerializer")
 
@@ -173,6 +217,11 @@ private object CustomPropertiesSerializer : KSerializer<CustomProperties> {
     }
 }
 
+/**
+ * Data class representing custom properties for products.
+ *
+ * @property customProperties The custom properties for the product.
+ */
 @Serializable(with = CustomProductsPropertiesSerializer::class)
 internal data class CustomProductsProperties(
     val customProperties: JsonObject = emptyJsonObject,
@@ -190,6 +239,9 @@ internal data class CustomProductsProperties(
     }
 }
 
+/**
+ * Custom serializer for handling deserialization of CustomProperties in Products.
+ */
 private object CustomProductsPropertiesSerializer : KSerializer<CustomProductsProperties> {
 
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("Products")
