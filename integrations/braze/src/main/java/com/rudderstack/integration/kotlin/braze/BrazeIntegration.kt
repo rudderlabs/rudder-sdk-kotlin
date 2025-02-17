@@ -42,6 +42,7 @@ class BrazeIntegration : IntegrationPlugin() {
                 initBraze(analytics.application, config, analytics.configuration.logLevel).also {
                     braze = it
                 }
+                // TODO("Address hybrid mode issue by making Alias call with anonymousId")
                 LoggerAnalytics.verbose("BrazeIntegration: Adjust SDK initialized. $config")
             }
         }
