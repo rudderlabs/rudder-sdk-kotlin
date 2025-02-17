@@ -1,6 +1,15 @@
 package com.rudderstack.integration.kotlin.facebook
 
+import android.os.Bundle
 import com.facebook.appevents.AppEventsConstants
+import com.rudderstack.sdk.kotlin.android.utils.getDouble
+import com.rudderstack.sdk.kotlin.android.utils.getInt
+import com.rudderstack.sdk.kotlin.android.utils.getLong
+import com.rudderstack.sdk.kotlin.android.utils.getString
+import com.rudderstack.sdk.kotlin.android.utils.isDouble
+import com.rudderstack.sdk.kotlin.android.utils.isInt
+import com.rudderstack.sdk.kotlin.android.utils.isLong
+import com.rudderstack.sdk.kotlin.android.utils.isString
 import com.rudderstack.sdk.kotlin.core.ecommerce.ECommerceEvents
 import com.rudderstack.sdk.kotlin.core.internals.utils.LenientJson
 import kotlinx.serialization.SerialName
@@ -28,7 +37,7 @@ internal const val PROMOTION_NAME = "name"
 internal const val DESCRIPTION = "description"
 
 @Serializable
-data class Address(
+internal data class Address(
     val city: String,
     val country: String,
     @SerialName("postalcode") val postalCode: String,
@@ -69,3 +78,32 @@ internal val TRACK_RESERVED_KEYWORDS = setOf(
     PRICE,
     REVENUE
 )
+
+internal fun getCurrency(eventProperties: JsonObject): String? {
+    return eventProperties.getString(CURRENCY) ?: "USD"
+}
+
+internal fun getRevenue(eventProperties: JsonObject): Double? {
+    return eventProperties.getDouble(REVENUE)
+}
+
+internal fun getValueToSum(properties: JsonObject, propertyKey: String?): Double? {
+    return properties.entries
+        .find { it.key.equals(propertyKey, ignoreCase = true) }
+        ?.value?.toString()?.toDoubleOrNull()
+}
+
+internal fun addPropertiesToBundle(properties: JsonObject, params: Bundle, isScreenEvent: Boolean) {
+    for (key in properties.keys) {
+        if (!isScreenEvent && TRACK_RESERVED_KEYWORDS.contains(key)) {
+            continue
+        }
+        when {
+            properties.isString(key) -> params.putString(key, properties.getString(key))
+            properties.isInt(key) -> params.putInt(key, properties.getInt(key) ?: 0)
+            properties.isLong(key) -> params.putLong(key, properties.getLong(key) ?: 0)
+            properties.isDouble(key) -> params.putDouble(key, properties.getDouble(key) ?: 0.0)
+            else -> params.putString(key, properties[key].toString())
+        }
+    }
+}
