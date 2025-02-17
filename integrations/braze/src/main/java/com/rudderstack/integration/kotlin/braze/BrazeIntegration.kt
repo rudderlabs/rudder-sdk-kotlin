@@ -30,7 +30,7 @@ class BrazeIntegration : IntegrationPlugin() {
 
     public override fun create(destinationConfig: JsonObject) {
         braze ?: run {
-            destinationConfig.parseConfig<RudderBrazeConfig>().let { config ->
+            destinationConfig.parse<RudderBrazeConfig>().let { config ->
                 this.brazeConfig = config
                 initBraze(analytics.application, config, analytics.configuration.logLevel).also {
                     braze = it
@@ -83,21 +83,27 @@ private fun Application.registerActivityLifecycleCallbacks(braze: Braze) {
         override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
             // No implementation needed
         }
+
         override fun onActivityStarted(activity: Activity) {
             braze.openSession(activity)
         }
+
         override fun onActivityResumed(activity: Activity) {
             // No implementation needed
         }
+
         override fun onActivityPaused(activity: Activity) {
             // No implementation needed
         }
+
         override fun onActivityStopped(activity: Activity) {
             braze.closeSession(activity)
         }
+
         override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {
             // No implementation needed
         }
+
         override fun onActivityDestroyed(activity: Activity) {
             // No implementation needed
         }

@@ -9,4 +9,5 @@ import kotlinx.serialization.json.decodeFromJsonElement
  * Parses the [JsonObject] to the specified type [T].
  */
 @OptIn(InternalRudderApi::class)
-internal inline fun <reified T> JsonObject.parseConfig() = LenientJson.decodeFromJsonElement<T>(this)
+// TODO("Change the name of this method")
+internal inline fun <reified T> JsonObject.parse() = LenientJson.decodeFromJsonElement<T>(this)

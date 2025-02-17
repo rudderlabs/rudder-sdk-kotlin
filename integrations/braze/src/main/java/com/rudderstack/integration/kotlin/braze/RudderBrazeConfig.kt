@@ -122,11 +122,11 @@ internal data class Products(
 )
 
 internal fun JsonObject.getStandardProperties(): StandardProperties {
-    return this.parseConfig<StandardProperties>()
+    return this.parse<StandardProperties>()
 }
 
 internal fun JsonObject.getCustomProperties(): JsonObject {
-    return this.parseConfig<CustomProperties>().let { customProperties ->
+    return this.parse<CustomProperties>().let { customProperties ->
         val products = customProperties.products.fold(JsonObject(emptyMap())) { acc, product ->
             JsonObject(acc + product.customProperties)
         }
