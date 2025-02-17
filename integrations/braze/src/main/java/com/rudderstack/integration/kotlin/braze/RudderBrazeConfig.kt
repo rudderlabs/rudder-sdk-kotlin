@@ -1,5 +1,6 @@
 package com.rudderstack.integration.kotlin.braze
 
+import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import com.rudderstack.sdk.kotlin.core.internals.utils.LenientJson
 import kotlinx.serialization.KSerializer
@@ -108,24 +109,46 @@ internal data class Campaign(
     @SerialName("ad_creative") val adCreative: String? = null,
 )
 
-internal fun JsonObject.getCustomProperties(): CustomProperties {
-    return this.parseConfig<CustomProperties>()
+@Serializable
+internal data class StandardProperties(
+    val currency: String = "USD",
+    val products: List<Products> = emptyList(),
+)
+
+@Serializable
+internal data class Products(
+    @SerialName("product_id")val productId: String? = null,
+    val price: Double? = null,
+)
+
+internal fun JsonObject.getStandardProperties(): StandardProperties {
+    return this.parseConfig<StandardProperties>()
+}
+
+internal fun JsonObject.getCustomProperties(): JsonObject {
+    return this.parseConfig<CustomProperties>().let { customProperties ->
+        val products = customProperties.products.fold(JsonObject(emptyMap())) { acc, product ->
+            JsonObject(acc + product.customProperties)
+        }
+
+        JsonObject(customProperties.root + products)
+    }
 }
 
 @Serializable(with = CustomPropertiesSerializer::class)
 internal data class CustomProperties(
     val products: List<CustomProductsProperties> = emptyList(),
-    val customProperties: JsonObject = JsonObject(emptyMap())
+    val root: JsonObject = JsonObject(emptyMap())
 ) {
     companion object {
 
         /**
          * Modify it like this:
          * ```
-         * CustomProperties.knownKeys.addAll(listOf("products"))
+         * CustomProperties.filterKeys.addAll(listOf("products"))
          * ```
          */
-        internal var knownKeys: MutableSet<String> = mutableSetOf("products")
+        internal var filterKeys: MutableSet<String> = mutableSetOf("products")
     }
 }
 
@@ -141,7 +164,7 @@ private object CustomPropertiesSerializer : KSerializer<CustomProperties> {
             LenientJson.decodeFromJsonElement(ListSerializer(CustomProductsProperties.serializer()), it)
         } ?: emptyList()
 
-        val customProperties = jsonObject.filterKeys { it !in CustomProperties.knownKeys }
+        val customProperties = jsonObject.filterKeys { it !in CustomProperties.filterKeys }
         return CustomProperties(products, JsonObject(customProperties))
     }
 
@@ -152,7 +175,7 @@ private object CustomPropertiesSerializer : KSerializer<CustomProperties> {
 
 @Serializable(with = CustomProductsPropertiesSerializer::class)
 internal data class CustomProductsProperties(
-    val customProperties: JsonObject? = null,
+    val customProperties: JsonObject = emptyJsonObject,
 ) {
 
     companion object {
@@ -160,10 +183,10 @@ internal data class CustomProductsProperties(
         /**
          * Modify it like this:
          * ```
-         * CustomProductsProperties.knownKeys.addAll(listOf("product_id", "quantity", "price"))
+         * CustomProductsProperties.filterKeys.addAll(listOf("product_id", "price"))
          * ```
          */
-        internal var knownKeys: MutableSet<String> = mutableSetOf("product_id", "quantity", "price")
+        internal var filterKeys: MutableSet<String> = mutableSetOf("product_id", "price")
     }
 }
 
@@ -175,7 +198,7 @@ private object CustomProductsPropertiesSerializer : KSerializer<CustomProductsPr
         val jsonDecoder = decoder as? JsonDecoder ?: error("Expected JsonDecoder")
         val jsonObject = jsonDecoder.decodeJsonElement().jsonObject
 
-        val customProperties = jsonObject.filterKeys { it !in CustomProductsProperties.knownKeys }
+        val customProperties = jsonObject.filterKeys { it !in CustomProductsProperties.filterKeys }
         return CustomProductsProperties(JsonObject(customProperties))
     }
 
