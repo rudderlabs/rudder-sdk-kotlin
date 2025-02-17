@@ -18,7 +18,7 @@ val sampleRudderProperties = Properties().apply {
 android {
     val composeCompilerVersion = RudderStackBuildConfig.Kotlin.COMPILER_EXTENSION_VERSION
     val androidCompileSdkVersion = RudderStackBuildConfig.Android.COMPILE_SDK
-    val androidMinSdkVersion = RudderStackBuildConfig.Android.MIN_SDK
+    val androidMinSdkVersion = 25
     val majorVersion = 0
     val minVersion = 1
     val patchVersion = 0

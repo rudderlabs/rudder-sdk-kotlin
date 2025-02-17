@@ -40,7 +40,7 @@ object RudderAnalyticsUtils {
             )
         )
 
-        analytics.add(BrazeIntegration())
+        analytics.addIntegration(BrazeIntegration())
 
         if (isAdvertisingLibraryAvailable()) {
             analytics.add(AndroidAdvertisingIdPlugin())

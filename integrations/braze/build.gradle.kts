@@ -23,8 +23,14 @@ android {
     namespace = RudderStackBuildConfig.PackageName.Integrations.BRAZE
     compileSdk = RudderStackBuildConfig.Android.COMPILE_SDK
 
+    buildFeatures {
+        buildFeatures {
+            buildConfig = true
+        }
+    }
+
     defaultConfig {
-        minSdk = RudderStackBuildConfig.Android.MIN_SDK
+        minSdk = 25// RudderStackBuildConfig.Android.MIN_SDK
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
@@ -55,6 +61,8 @@ dependencies {
 
     // implementation
     implementation(libs.android.core.ktx)
+    // Braze SDK
+    implementation(libs.android.sdk.ui)
 
     // testImplementation
     testImplementation(libs.junit)
