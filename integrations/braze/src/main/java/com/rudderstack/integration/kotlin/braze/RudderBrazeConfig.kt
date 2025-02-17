@@ -1,5 +1,7 @@
 package com.rudderstack.integration.kotlin.braze
 
+import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
+import com.rudderstack.sdk.kotlin.core.internals.utils.LenientJson
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -10,7 +12,6 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
@@ -131,12 +132,13 @@ internal data class CustomProperties(
 private object CustomPropertiesSerializer : KSerializer<CustomProperties> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("CustomPropertiesSerializer")
 
+    @OptIn(InternalRudderApi::class)
     override fun deserialize(decoder: Decoder): CustomProperties {
         val jsonDecoder = decoder as? JsonDecoder ?: error("Expected JsonDecoder")
         val jsonObject = jsonDecoder.decodeJsonElement().jsonObject
 
         val products = jsonObject["products"]?.let {
-            Json.decodeFromJsonElement(ListSerializer(CustomProductsProperties.serializer()), it)
+            LenientJson.decodeFromJsonElement(ListSerializer(CustomProductsProperties.serializer()), it)
         } ?: emptyList()
 
         val customProperties = jsonObject.filterKeys { it !in CustomProperties.knownKeys }
