@@ -2,7 +2,6 @@ package com.rudderstack.sampleapp.analytics
 
 import android.app.Application
 import com.rudderstack.android.sampleapp.BuildConfig
-import com.rudderstack.integration.kotlin.braze.BrazeIntegration
 import com.rudderstack.sdk.kotlin.android.Analytics
 import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.android.SessionConfiguration
@@ -40,7 +39,7 @@ object RudderAnalyticsUtils {
             )
         )
 
-        analytics.addIntegration(BrazeIntegration())
+//        analytics.addIntegration(BrazeIntegration())
 
         if (isAdvertisingLibraryAvailable()) {
             analytics.add(AndroidAdvertisingIdPlugin())

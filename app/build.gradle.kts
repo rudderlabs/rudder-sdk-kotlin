@@ -18,7 +18,7 @@ val sampleRudderProperties = Properties().apply {
 android {
     val composeCompilerVersion = RudderStackBuildConfig.Kotlin.COMPILER_EXTENSION_VERSION
     val androidCompileSdkVersion = RudderStackBuildConfig.Android.COMPILE_SDK
-    val androidMinSdkVersion = 25
+    val androidMinSdkVersion = RudderStackBuildConfig.Android.MIN_SDK
     val majorVersion = 0
     val minVersion = 1
     val patchVersion = 0
@@ -85,7 +85,7 @@ dependencies {
     implementation(project(":android"))
 
     // integrations
-    implementation(project(":integrations:braze"))
+    // implementation(project(":integrations:braze")) // This requires minimum Sdk version of 25 and above.
 
     implementation(libs.material)
     //compose
