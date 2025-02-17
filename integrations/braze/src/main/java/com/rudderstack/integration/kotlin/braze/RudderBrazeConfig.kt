@@ -92,7 +92,7 @@ private object CustomEndpointSerializer : KSerializer<String> {
     }
 
     override fun serialize(encoder: Encoder, value: String) {
-        encoder.encodeString(value) // Store as the mapped endpoint
+        throw UnsupportedOperationException("Serialization is not supported")
     }
 }
 
