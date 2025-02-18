@@ -108,7 +108,7 @@ class BrazeIntegration : IntegrationPlugin() {
                         "and properties $customProperties."
                 )
             } ?: run {
-                handleCustomEvent(payload)
+                LoggerAnalytics.error("BrazeIntegration: Order Completed event not sent as products are empty.")
             }
         }
     }
