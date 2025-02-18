@@ -25,7 +25,7 @@ tasks.withType<KotlinJvmCompile>().configureEach {
 }
 
 android {
-    namespace = "com.rudderstack.integration.kotlin.firebase"
+    namespace = RudderStackBuildConfig.PackageName.Integrations.FIREBASE
     compileSdk = RudderStackBuildConfig.Android.COMPILE_SDK
 
     defaultConfig {
