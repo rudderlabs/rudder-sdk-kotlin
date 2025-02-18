@@ -84,7 +84,8 @@ android {
 dependencies {
     implementation(project(":android"))
 
-    // integrations
+    // RudderStack Integrations
+    implementation(project(":integrations:adjust"))
     // implementation(project(":integrations:braze")) // This requires minimum Sdk version of 25 and above.
 
     implementation(libs.material)
