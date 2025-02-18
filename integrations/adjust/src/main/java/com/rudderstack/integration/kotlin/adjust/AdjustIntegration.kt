@@ -38,7 +38,6 @@ class AdjustIntegration : IntegrationPlugin(), ActivityLifecycleObserver {
 
     private var adjustInstance: AdjustInstance? = null
 
-    // TODO("We need a way to update this value dynamically.")
     private lateinit var eventToTokenMappings: List<EventToTokenMapping>
 
     public override fun create(destinationConfig: JsonObject) {
@@ -58,6 +57,12 @@ class AdjustIntegration : IntegrationPlugin(), ActivityLifecycleObserver {
 
     override fun getDestinationInstance(): Any? {
         return adjustInstance
+    }
+
+    override fun update(destinationConfig: JsonObject) {
+        destinationConfig.parseConfig<AdjustDestinationConfig>().let { updatedConfig ->
+            this.eventToTokenMappings = updatedConfig.eventToTokenMappings
+        }
     }
 
     override fun identify(payload: IdentifyEvent): Event {

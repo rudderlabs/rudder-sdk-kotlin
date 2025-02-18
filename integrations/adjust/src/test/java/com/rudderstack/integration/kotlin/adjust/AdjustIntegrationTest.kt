@@ -38,16 +38,19 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
 private const val pathToAdjustConfig = "config/adjust_config.json"
+private const val pathToNewAdjustConfig = "config/new_adjust_config.json"
 private const val APP_TOKEN = "someAppToken"
 private const val ADJUST_ENVIRONMENT = AdjustConfig.ENVIRONMENT_SANDBOX
 private const val ANONYMOUS_ID = "anonymousId"
 private const val USER_ID = "userId"
 private const val TRACK_EVENT_ALLOWED = "Track event Android"
 private const val TRACK_EVENT_DENY = "Track event random"
+private const val TRACK_EVENT_ALLOWED_NEW = "Track event new"
 
 class AdjustIntegrationTest {
 
     private val mockAdjustIntegrationConfig: JsonObject = readFileAsJsonObject(pathToAdjustConfig)
+    private val mockNewAdjustIntegrationConfig: JsonObject = readFileAsJsonObject(pathToNewAdjustConfig)
 
     @MockK
     private lateinit var mockAnalytics: Analytics
@@ -243,6 +246,46 @@ class AdjustIntegrationTest {
         every { Adjust.initSdk(any()) } throws IllegalArgumentException("Invalid app token")
 
         adjustIntegration.create(mockAdjustIntegrationConfig)
+    }
+
+    @Test
+    fun `given on dynamic config update the event-to-token mapping is changed, when destination config is updated dynamically, then only new event mapping is allowed`() {
+        // Initialise the integration
+        adjustIntegration.create(mockAdjustIntegrationConfig)
+        val trackEvent = provideTrackEvent(
+            eventName = TRACK_EVENT_ALLOWED,
+            properties = buildJsonObject {
+                put("key1", "value1")
+            },
+        )
+        val newTrackEvent = provideTrackEvent(
+            eventName = TRACK_EVENT_ALLOWED_NEW,
+            properties = buildJsonObject {
+                put("key1", "value1")
+            },
+        )
+
+        // Update the integration with new config
+        adjustIntegration.update(mockNewAdjustIntegrationConfig)
+
+        // Track the event with old event mapping
+        adjustIntegration.track(trackEvent)
+        // Verify that the event is not tracked
+        mockAdjustEvent.apply {
+            verify(exactly = 0) { addCallbackParameter("key1", "value1") }
+            verify(exactly = 0) { addCallbackParameter(ANONYMOUS_ID, any()) }
+            verify(exactly = 0) { setRevenue(any(), any()) }
+        }
+        verify(exactly = 0) { Adjust.trackEvent(mockAdjustEvent) }
+
+        // Track the event with new event mapping
+        adjustIntegration.track(newTrackEvent)
+        // Verify that the event is tracked
+        mockAdjustEvent.apply {
+            verify(exactly = 1) { addCallbackParameter("key1", "value1") }
+            verify(exactly = 1) { addCallbackParameter(ANONYMOUS_ID, any()) }
+        }
+        verify(exactly = 1) { Adjust.trackEvent(mockAdjustEvent) }
     }
 }
 
