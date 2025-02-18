@@ -1,21 +1,13 @@
 package com.rudderstack.integration.kotlin.braze
 
-import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
-import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
-import com.rudderstack.sdk.kotlin.core.internals.utils.LenientJson
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import kotlinx.serialization.json.JsonDecoder
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.jsonObject
 
 /**
  * Data class representing the configuration for Braze Integration.
@@ -123,15 +115,6 @@ internal data class Campaign(
 )
 
 /**
- * Extension function to parse a JsonObject into StandardProperties.
- *
- * @return StandardProperties object parsed from the JsonObject.
- */
-internal fun JsonObject.getStandardProperties(): StandardProperties {
-    return this.parse<StandardProperties>()
-}
-
-/**
  * Data class representing standard properties for a transaction.
  *
  * @property currency The currency code used for the transaction. Defaults to "USD".
@@ -154,107 +137,3 @@ internal data class Product(
     @SerialName("product_id")val productId: String? = null,
     val price: Double? = null,
 )
-
-/**
- * Extension function to parse a JsonObject into CustomProperties.
- *
- * @return CustomProperties object parsed from the JsonObject.
- */
-internal fun JsonObject.getCustomProperties(): JsonObject {
-    return this.parse<CustomProperties>().let { customProperties ->
-        val products = customProperties.products.fold(JsonObject(emptyMap())) { acc, product ->
-            JsonObject(acc + product.customProperties)
-        }
-
-        JsonObject(customProperties.root + products)
-    }
-}
-
-/**
- * Data class representing custom properties for an event.
- *
- * @property products List of custom properties for products.
- * @property root The root level custom properties.
- */
-@Serializable(with = CustomPropertiesSerializer::class)
-internal data class CustomProperties(
-    val products: List<CustomProductsProperties> = emptyList(),
-    val root: JsonObject = JsonObject(emptyMap())
-) {
-    companion object {
-
-        /**
-         * Modify it like this:
-         * ```
-         * CustomProperties.filterKeys.addAll(listOf("products"))
-         * ```
-         */
-        internal var filterKeys: MutableSet<String> = mutableSetOf("products")
-    }
-}
-
-/**
- * Custom serializer for handling deserialization of CustomProperties.
- */
-private object CustomPropertiesSerializer : KSerializer<CustomProperties> {
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("CustomPropertiesSerializer")
-
-    @OptIn(InternalRudderApi::class)
-    override fun deserialize(decoder: Decoder): CustomProperties {
-        val jsonDecoder = decoder as? JsonDecoder ?: error("Expected JsonDecoder")
-        val jsonObject = jsonDecoder.decodeJsonElement().jsonObject
-
-        val products = jsonObject["products"]?.let {
-            LenientJson.decodeFromJsonElement(ListSerializer(CustomProductsProperties.serializer()), it)
-        } ?: emptyList()
-
-        val customProperties = jsonObject.filterKeys { it !in CustomProperties.filterKeys }
-        return CustomProperties(products, JsonObject(customProperties))
-    }
-
-    override fun serialize(encoder: Encoder, value: CustomProperties) {
-        throw UnsupportedOperationException("Serialization is not supported")
-    }
-}
-
-/**
- * Data class representing custom properties for products.
- *
- * @property customProperties The custom properties for the product.
- */
-@Serializable(with = CustomProductsPropertiesSerializer::class)
-internal data class CustomProductsProperties(
-    val customProperties: JsonObject = emptyJsonObject,
-) {
-
-    companion object {
-
-        /**
-         * Modify it like this:
-         * ```
-         * CustomProductsProperties.filterKeys.addAll(listOf("product_id", "price"))
-         * ```
-         */
-        internal var filterKeys: MutableSet<String> = mutableSetOf("product_id", "price")
-    }
-}
-
-/**
- * Custom serializer for handling deserialization of CustomProperties in Products.
- */
-private object CustomProductsPropertiesSerializer : KSerializer<CustomProductsProperties> {
-
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("Products")
-
-    override fun deserialize(decoder: Decoder): CustomProductsProperties {
-        val jsonDecoder = decoder as? JsonDecoder ?: error("Expected JsonDecoder")
-        val jsonObject = jsonDecoder.decodeJsonElement().jsonObject
-
-        val customProperties = jsonObject.filterKeys { it !in CustomProductsProperties.filterKeys }
-        return CustomProductsProperties(JsonObject(customProperties))
-    }
-
-    override fun serialize(encoder: Encoder, value: CustomProductsProperties) {
-        throw UnsupportedOperationException("Serialization is not supported for Products")
-    }
-}
