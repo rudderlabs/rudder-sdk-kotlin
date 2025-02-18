@@ -50,7 +50,7 @@ class FirebaseIntegration : IntegrationPlugin() {
     override val key: String
         get() = FIREBASE_KEY
 
-    override fun create(destinationConfig: JsonObject) {
+    public override fun create(destinationConfig: JsonObject) {
         if (firebaseAnalytics == null) {
             firebaseAnalytics = provideFirebaseAnalyticsInstance()
         }

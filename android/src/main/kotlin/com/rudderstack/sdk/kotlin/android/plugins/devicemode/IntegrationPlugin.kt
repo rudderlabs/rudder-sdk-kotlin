@@ -51,7 +51,7 @@ abstract class IntegrationPlugin : EventPlugin {
      *
      * @param destinationConfig The configuration for the destination.
      */
-    abstract fun create(destinationConfig: JsonObject)
+    protected abstract fun create(destinationConfig: JsonObject)
 
     /**
      * This method will be called when the destination configuration is updated.
