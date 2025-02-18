@@ -36,13 +36,15 @@ internal const val QUERY = "query"
 internal const val PROMOTION_NAME = "name"
 internal const val DESCRIPTION = "description"
 
+private const val EMPTY_STRING = ""
+
 @Serializable
 internal data class Address(
-    val city: String,
-    val country: String,
-    @SerialName("postalcode") val postalCode: String,
-    val state: String,
-    val street: String
+    val city: String = EMPTY_STRING,
+    val country: String = EMPTY_STRING,
+    @SerialName("postalcode") val postalCode: String = EMPTY_STRING,
+    val state: String = EMPTY_STRING,
+    val street: String = EMPTY_STRING
 )
 
 internal inline fun <reified T> JsonObject.parseConfig() = LenientJson.decodeFromJsonElement<T>(this)

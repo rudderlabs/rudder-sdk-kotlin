@@ -26,6 +26,12 @@ import java.util.Currency
 internal const val FACEBOOK_KEY = "Facebook App Events"
 private const val MAX_EVENT_LENGTH = 40
 private const val MAX_REMAINING_SCREEN_EVENT_LENGTH = 26
+private const val EMAIL_KEY = "email"
+private const val FIRST_NAME_KEY = "firstName"
+private const val LAST_NAME_KEY = "lastName"
+private const val PHONE_KEY = "phone"
+private const val DATE_OF_BIRTH_KEY = "dateOfBirth"
+private const val GENDER_KEY = "gender"
 
 /**
  * The Facebook Integration Plugin. This plugin is used to send events to Facebook.
@@ -37,7 +43,7 @@ class FacebookIntegration : IntegrationPlugin() {
     override val key: String
         get() = FACEBOOK_KEY
 
-    override fun create(destinationConfig: JsonObject) {
+    public override fun create(destinationConfig: JsonObject) {
         facebookAppEventsLogger ?: run {
             destinationConfig.parseConfig<FacebookDestinationConfig>()
                 .let { config ->
@@ -98,12 +104,12 @@ class FacebookIntegration : IntegrationPlugin() {
         }
 
         AppEventsLogger.setUserData(
-            email = analytics.traits?.getString("email"),
-            firstName = analytics.traits?.getString("firstName"),
-            lastName = analytics.traits?.getString("lastName"),
-            phone = analytics.traits?.getString("phone"),
-            dateOfBirth = analytics.traits?.getString("dateOfBirth"),
-            gender = analytics.traits?.getString("gender"),
+            email = analytics.traits?.getString(EMAIL_KEY),
+            firstName = analytics.traits?.getString(FIRST_NAME_KEY),
+            lastName = analytics.traits?.getString(LAST_NAME_KEY),
+            phone = analytics.traits?.getString(PHONE_KEY),
+            dateOfBirth = analytics.traits?.getString(DATE_OF_BIRTH_KEY),
+            gender = analytics.traits?.getString(GENDER_KEY),
             city = address?.city,
             state = address?.state,
             zip = address?.postalCode,

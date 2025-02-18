@@ -1,0 +1,13 @@
+{
+  "appID" : "test_id",
+  "limitedDataUse" : false,
+  "dpoCountry" : "0",
+  "dpoState" : "0",
+  "blacklistedEvents" : [ {
+    "eventName" : ""
+  } ],
+  "whitelistedEvents" : [ {
+    "eventName" : ""
+  } ],
+  "eventFilteringOption" : "disable"
+}
