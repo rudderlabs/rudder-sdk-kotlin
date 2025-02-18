@@ -84,6 +84,9 @@ android {
 dependencies {
     implementation(project(":android"))
 
+    // RudderStack Integrations
+    implementation(project(":integrations:adjust"))
+
     implementation(libs.material)
     //compose
     implementation(libs.ui)

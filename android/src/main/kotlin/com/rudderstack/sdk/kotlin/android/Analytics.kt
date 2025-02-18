@@ -28,6 +28,7 @@ import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.platform.Platform
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
+import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.FlowState
 import com.rudderstack.sdk.kotlin.core.internals.utils.isAnalyticsActive
 import com.rudderstack.sdk.kotlin.core.provideAnalyticsConfiguration
@@ -216,28 +217,37 @@ class Analytics(
     }
 
     /**
-     * Adds an [IntegrationPlugin] to the analytics instance.
+     * Adds a plugin to the plugin chain. Plugins can modify, enrich, or process events before they are sent to the server.
      *
-     * An [IntegrationPlugin] is responsible for sending events directly to a 3rd party
-     * destination without sending it to the RudderStack server first.
+     * **Note**: This API is also used to add an [IntegrationPlugin] which represents device mode integrations.
      *
-     * @param plugin The [IntegrationPlugin] to be added.
+     * @param plugin The plugin to be added to the plugin chain.
      */
-    fun addIntegration(plugin: IntegrationPlugin) {
+    override fun add(plugin: Plugin) {
         if (!isAnalyticsActive()) return
 
-        integrationsManagementPlugin.addIntegration(plugin)
+        if (plugin is IntegrationPlugin) {
+            integrationsManagementPlugin.addIntegration(plugin)
+        } else {
+            super.add(plugin)
+        }
     }
 
     /**
-     * Removes an [IntegrationPlugin] from the analytics instance.
+     * Removes a plugin from the plugin chain.
      *
-     * @param plugin The [IntegrationPlugin] to be removed.
+     * **Note**: This API is also used to remove an [IntegrationPlugin] which represents device mode integrations.
+     *
+     * @param plugin The plugin to be removed from the plugin chain.
      */
-    fun removeIntegration(plugin: IntegrationPlugin) {
+    override fun remove(plugin: Plugin) {
         if (!isAnalyticsActive()) return
 
-        integrationsManagementPlugin.removeIntegration(plugin)
+        if (plugin is IntegrationPlugin) {
+            integrationsManagementPlugin.removeIntegration(plugin)
+        } else {
+            super.remove(plugin)
+        }
     }
 
     private fun setup() {
