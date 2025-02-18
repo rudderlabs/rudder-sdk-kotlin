@@ -8,6 +8,7 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import java.math.BigDecimal
 
 /**
  * Data class representing the configuration for Braze Integration.
@@ -135,5 +136,18 @@ internal data class StandardProperties(
 @Serializable
 internal data class Product(
     @SerialName("product_id")val productId: String? = null,
-    val price: Double? = null,
+    @Serializable(with = BigDecimalSerializer::class)
+    val price: BigDecimal? = null,
 )
+
+private object BigDecimalSerializer : KSerializer<BigDecimal> {
+    override val descriptor = PrimitiveSerialDescriptor("BigDecimal", PrimitiveKind.STRING)
+
+    override fun deserialize(decoder: Decoder): BigDecimal {
+        return BigDecimal(decoder.decodeString())
+    }
+
+    override fun serialize(encoder: Encoder, value: BigDecimal) {
+        throw UnsupportedOperationException("Serialization is not supported")
+    }
+}

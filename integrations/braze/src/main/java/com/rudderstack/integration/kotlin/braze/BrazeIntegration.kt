@@ -16,7 +16,6 @@ import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import kotlinx.serialization.json.JsonObject
-import java.math.BigDecimal
 
 private const val INSTALL_ATTRIBUTED = "Install Attributed"
 
@@ -97,16 +96,16 @@ class BrazeIntegration : IntegrationPlugin() {
             val currency = standardProperties.currency
 
             standardProperties.products.takeIf { it.isNotEmpty() }?.forEach {
-                val price = it.price?.let(BigDecimal::valueOf)
                 this.braze?.logPurchase(
                     productId = it.productId,
                     currencyCode = currency,
-                    price = price,
+                    price = it.price,
                     properties = BrazeProperties(customProperties)
                 )
                 LoggerAnalytics.verbose(
                     "BrazeIntegration: Order Completed event sent for " +
-                        "product_id: ${it.productId}, currency: $currency, price: $price and properties $customProperties."
+                        "product_id: ${it.productId}, currency: $currency, price: ${it.price} " +
+                        "and properties $customProperties."
                 )
             } ?: run {
                 handleCustomEvent(payload)
