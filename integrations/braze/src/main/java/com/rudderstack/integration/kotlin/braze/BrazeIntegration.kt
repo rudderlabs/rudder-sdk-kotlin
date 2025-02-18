@@ -2,7 +2,6 @@ package com.rudderstack.integration.kotlin.braze
 
 import android.app.Activity
 import android.app.Application
-import android.os.Bundle
 import android.util.Log
 import com.braze.Braze
 import com.braze.configuration.BrazeConfig
@@ -10,11 +9,13 @@ import com.braze.models.outgoing.AttributionData
 import com.braze.models.outgoing.BrazeProperties
 import com.braze.support.BrazeLogger
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.IntegrationPlugin
+import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleObserver
 import com.rudderstack.sdk.kotlin.android.utils.application
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
+import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import kotlinx.serialization.json.JsonObject
 
 private const val INSTALL_ATTRIBUTED = "Install Attributed"
@@ -24,7 +25,8 @@ private const val ORDER_COMPLETED = "Order Completed"
 /**
  * BrazeIntegration is a plugin that sends events to the Braze SDK.
  */
-class BrazeIntegration : IntegrationPlugin() {
+@OptIn(InternalRudderApi::class)
+class BrazeIntegration : IntegrationPlugin(), ActivityLifecycleObserver {
 
     override val key: String
         get() = "Braze"
@@ -122,6 +124,14 @@ class BrazeIntegration : IntegrationPlugin() {
             LoggerAnalytics.verbose("BrazeIntegration: Custom event ${payload.event} sent.")
         }
     }
+
+    override fun onActivityStarted(activity: Activity) {
+        braze?.openSession(activity)
+    }
+
+    override fun onActivityStopped(activity: Activity) {
+        braze?.closeSession(activity)
+    }
 }
 
 private fun initBraze(application: Application, config: RudderBrazeConfig, logLevel: Logger.LogLevel): Braze {
@@ -132,9 +142,7 @@ private fun initBraze(application: Application, config: RudderBrazeConfig, logLe
                 .setCustomEndpoint(customEndpoint)
         setLogLevel(logLevel)
         Braze.configure(application, builder.build())
-        return Braze.getInstance(application).also { braze ->
-            application.registerActivityLifecycleCallbacks(braze)
-        }
+        return Braze.getInstance(application)
     }
 }
 
@@ -149,36 +157,4 @@ private fun setLogLevel(rudderLogLevel: Logger.LogLevel) {
     }.also {
         BrazeLogger.logLevel = it
     }
-}
-
-private fun Application.registerActivityLifecycleCallbacks(braze: Braze) {
-    this.registerActivityLifecycleCallbacks(object : Application.ActivityLifecycleCallbacks {
-        override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
-            // No implementation needed
-        }
-
-        override fun onActivityStarted(activity: Activity) {
-            braze.openSession(activity)
-        }
-
-        override fun onActivityResumed(activity: Activity) {
-            // No implementation needed
-        }
-
-        override fun onActivityPaused(activity: Activity) {
-            // No implementation needed
-        }
-
-        override fun onActivityStopped(activity: Activity) {
-            braze.closeSession(activity)
-        }
-
-        override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {
-            // No implementation needed
-        }
-
-        override fun onActivityDestroyed(activity: Activity) {
-            // No implementation needed
-        }
-    })
 }
