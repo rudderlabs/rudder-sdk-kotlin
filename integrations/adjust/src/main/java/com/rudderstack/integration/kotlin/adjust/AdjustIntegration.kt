@@ -2,8 +2,6 @@ package com.rudderstack.integration.kotlin.adjust
 
 import android.app.Activity
 import android.app.Application
-import android.app.Application.ActivityLifecycleCallbacks
-import android.os.Bundle
 import android.util.Log
 import androidx.annotation.VisibleForTesting
 import com.adjust.sdk.Adjust
@@ -11,13 +9,17 @@ import com.adjust.sdk.AdjustConfig
 import com.adjust.sdk.AdjustEvent
 import com.adjust.sdk.AdjustInstance
 import com.adjust.sdk.LogLevel
+import com.rudderstack.sdk.kotlin.android.Analytics
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.IntegrationPlugin
+import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleObserver
+import com.rudderstack.sdk.kotlin.android.utils.addLifecycleObserver
 import com.rudderstack.sdk.kotlin.android.utils.application
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
+import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import kotlinx.serialization.json.JsonObject
 import com.rudderstack.integration.kotlin.adjust.AdjustConfig as AdjustDestinationConfig
 
@@ -28,7 +30,8 @@ private const val USER_ID = "userId"
 /**
  * AdjustIntegration is a plugin that sends events to the Adjust SDK.
  */
-class AdjustIntegration : IntegrationPlugin() {
+@OptIn(InternalRudderApi::class)
+class AdjustIntegration : IntegrationPlugin(), ActivityLifecycleObserver {
 
     override val key: String
         get() = "Adjust"
@@ -46,6 +49,7 @@ class AdjustIntegration : IntegrationPlugin() {
                     appToken = config.appToken,
                     logLevel = analytics.configuration.logLevel,
                 )
+                (analytics as? Analytics)?.addLifecycleObserver(this)
                 LoggerAnalytics.verbose("AdjustIntegration: Adjust SDK initialized.")
             }
         }
@@ -112,6 +116,14 @@ class AdjustIntegration : IntegrationPlugin() {
             }
         }
     }
+
+    override fun onActivityResumed(activity: Activity) {
+        Adjust.onResume()
+    }
+
+    override fun onActivityPaused(activity: Activity) {
+        Adjust.onPause()
+    }
 }
 
 private fun initAdjust(application: Application, appToken: String, logLevel: Logger.LogLevel): AdjustInstance {
@@ -123,7 +135,6 @@ private fun initAdjust(application: Application, appToken: String, logLevel: Log
             enableSendingInBackground()
         }
     Adjust.initSdk(adjustConfig)
-    application.registerActivityLifecycleCallbacks()
     return Adjust.getDefaultInstance()
 }
 
@@ -176,38 +187,6 @@ private fun AdjustConfig.setAllListeners() {
         Log.d("AdjustFactory", "Deep link URL: $deeplink")
         true
     }
-}
-
-private fun Application.registerActivityLifecycleCallbacks() {
-    registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
-        override fun onActivityCreated(activity: Activity, bundle: Bundle?) {
-            // Not supported
-        }
-
-        override fun onActivityStarted(activity: Activity) {
-            // Not supported
-        }
-
-        override fun onActivityResumed(activity: Activity) {
-            Adjust.onResume()
-        }
-
-        override fun onActivityPaused(activity: Activity) {
-            Adjust.onPause()
-        }
-
-        override fun onActivityStopped(activity: Activity) {
-            // Not supported
-        }
-
-        override fun onActivitySaveInstanceState(activity: Activity, bundle: Bundle) {
-            // Not supported
-        }
-
-        override fun onActivityDestroyed(activity: Activity) {
-            // Not supported
-        }
-    })
 }
 
 @VisibleForTesting
