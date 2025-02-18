@@ -24,6 +24,10 @@ object RudderStackBuildConfig {
     object PackageName {
 
         const val PACKAGE_NAME = "com.rudderstack.sdk.kotlin"
+
+        object Integrations {
+            const val ADJUST = "com.rudderstack.integration.kotlin.adjust"
+        }
     }
 
     object Kotlin {

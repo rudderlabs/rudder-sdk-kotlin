@@ -49,5 +49,5 @@ internal object AppSDKVersion {
  *
  * @return The [Application] instance tied to the current [Analytics] configuration.
  */
-internal val Analytics.application: Application
+val Analytics.application: Application
     get() = (this.configuration as Configuration).application

@@ -1,0 +1,19 @@
+{
+  "appToken" : "someAppToken",
+  "customMappings" : [ {
+    "from" : "Track event Android",
+    "to" : "1234"
+  }, {
+    "from" : "Track event iOS",
+    "to" : "6789"
+  } ],
+  "delay" : "",
+  "blacklistedEvents" : [ ],
+  "whitelistedEvents" : [ ],
+  "eventFilteringOption" : "disable",
+  "consentManagement" : [ {
+    "provider" : "oneTrust",
+    "resolutionStrategy" : "",
+    "consents" : [ ]
+  } ]
+}
