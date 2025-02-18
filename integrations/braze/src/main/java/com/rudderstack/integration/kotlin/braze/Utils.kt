@@ -1,5 +1,6 @@
 package com.rudderstack.integration.kotlin.braze
 
+import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.ExternalId
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
@@ -197,4 +198,8 @@ internal fun tryDateConversion(value: String): Long? {
     return runCatching {
         iso8601DateFormatter.parse(value)?.time
     }.getOrNull()
+}
+
+internal fun logUnsupportedType(key: String, value: Any) {
+    LoggerAnalytics.error("BrazeIntegration: Unsupported type for custom trait $key: $value")
 }
