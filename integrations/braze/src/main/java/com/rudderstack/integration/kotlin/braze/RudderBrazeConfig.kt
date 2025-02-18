@@ -1,5 +1,6 @@
 package com.rudderstack.integration.kotlin.braze
 
+import com.rudderstack.sdk.kotlin.core.internals.models.ExternalId
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -9,6 +10,9 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import java.math.BigDecimal
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 
 /**
  * Data class representing the configuration for Braze Integration.
@@ -135,12 +139,16 @@ internal data class StandardProperties(
  */
 @Serializable
 internal data class Product(
-    @SerialName("product_id")val productId: String? = null,
+    @SerialName("product_id") val productId: String? = null,
     @Serializable(with = BigDecimalSerializer::class)
     val price: BigDecimal? = null,
 )
 
+/**
+ * Custom serializer for BigDecimal values in JSON serialization.
+ */
 private object BigDecimalSerializer : KSerializer<BigDecimal> {
+
     override val descriptor = PrimitiveSerialDescriptor("BigDecimal", PrimitiveKind.STRING)
 
     override fun deserialize(decoder: Decoder): BigDecimal {
@@ -148,6 +156,98 @@ private object BigDecimalSerializer : KSerializer<BigDecimal> {
     }
 
     override fun serialize(encoder: Encoder, value: BigDecimal) {
+        throw UnsupportedOperationException("Serialization is not supported")
+    }
+}
+
+/**
+ * Data class representing the traits of a user for identification.
+ *
+ * @property userId The unique identifier for the user.
+ * @property context The context associated with the user.
+ */
+internal data class IdentifyTraits(
+    val userId: String? = null,
+    val context: Context = Context(),
+)
+
+/**
+ * Data class representing the context associated with a user.
+ *
+ * @property traits The traits associated with the user.
+ * @property externalId The external identifiers associated with the user.
+ */
+@Serializable
+internal data class Context(
+    val traits: Traits = Traits(),
+    val externalId: List<ExternalId>? = null,
+) {
+
+    /**
+     * Returns the Braze external identifier for the user.
+     */
+    internal val brazeExternalId: String?
+        // TODO: Extract the key to a constant
+        get() = externalId?.firstOrNull { it.type == "brazeExternalId" }?.id
+}
+
+/**
+ * Data class representing the traits associated with a user.
+ *
+ * @property email The email address of the user.
+ * @property firstName The first name of the user.
+ * @property lastName The last name of the
+ * @property gender The gender of the user.
+ * @property phone The phone number of the user.
+ * @property address The address of the user.
+ * @property birthday The birthday of the user.
+ */
+@Serializable
+internal data class Traits(
+    val email: String? = null,
+    val firstName: String? = null,
+    val lastName: String? = null,
+    val gender: String? = null,
+    val phone: String? = null,
+    val address: Address? = null,
+    @Serializable(with = CalendarSerializer::class)
+    val birthday: Calendar? = null,
+)
+
+/**
+ * Data class representing the address of a user.
+ *
+ * @property city The city of the user.
+ * @property country The country of the user.
+ */
+@Serializable
+internal data class Address(
+    val city: String? = null,
+    val country: String? = null,
+)
+
+/**
+ * Custom serializer for Calendar values in JSON serialization.
+ */
+private object CalendarSerializer : KSerializer<Calendar?> {
+
+    private val iso8601CalendarDateFormatter = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+
+    override val descriptor = PrimitiveSerialDescriptor("Calendar", PrimitiveKind.STRING)
+
+    override fun deserialize(decoder: Decoder): Calendar? {
+        return runCatching {
+            decoder.decodeString()
+                .let(iso8601CalendarDateFormatter::parse)
+                ?.let { date ->
+                    Calendar.getInstance(Locale.US).apply {
+                        time = date
+                    }
+                }
+        }.getOrNull()
+    }
+
+    override fun serialize(encoder: Encoder, value: Calendar?) {
         throw UnsupportedOperationException("Serialization is not supported")
     }
 }
