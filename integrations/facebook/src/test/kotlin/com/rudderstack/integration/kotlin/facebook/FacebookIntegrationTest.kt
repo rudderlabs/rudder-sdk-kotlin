@@ -531,6 +531,20 @@ class FacebookIntegrationTest {
             }
         }
 
+    @Test
+    fun `when reset called, then it calls appropriate methods for facebook sdk`() = runTest {
+        every { AppEventsLogger.clearUserID() } just Runs
+        every { AppEventsLogger.clearUserData() } just Runs
+        createFacebookIntegration()
+
+        facebookIntegration.reset()
+
+        verify {
+            AppEventsLogger.clearUserID()
+            AppEventsLogger.clearUserData()
+        }
+    }
+
     private fun createFacebookIntegration() {
         val sourceConfigWithLimitedDataUseDisabled = readJsonObjectFromFile(pathToSourceConfigWithLimitedDataUseDisabled)
         facebookIntegration.create(sourceConfigWithLimitedDataUseDisabled)
