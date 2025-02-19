@@ -26,7 +26,7 @@ tasks.withType<KotlinJvmCompile>().configureEach {
 }
 
 android {
-    namespace = "com.rudderstack.integration.kotlin.facebook"
+    namespace = RudderStackBuildConfig.PackageName.Integrations.FACEBOOK
     compileSdk = RudderStackBuildConfig.Android.COMPILE_SDK
 
     defaultConfig {
