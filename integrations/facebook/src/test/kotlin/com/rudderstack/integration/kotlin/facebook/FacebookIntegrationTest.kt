@@ -2,11 +2,14 @@ package com.rudderstack.integration.kotlin.facebook
 
 import android.app.Application
 import com.facebook.FacebookSdk
+import com.facebook.appevents.AppEventsConstants
 import com.facebook.appevents.AppEventsLogger
 import com.rudderstack.sdk.kotlin.android.Analytics
 import com.rudderstack.sdk.kotlin.android.Configuration
+import com.rudderstack.sdk.kotlin.core.ecommerce.ECommerceEvents
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.ScreenEvent
+import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import io.mockk.Runs
 import io.mockk.every
@@ -15,11 +18,13 @@ import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.mockkStatic
 import io.mockk.spyk
+import io.mockk.unmockkAll
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlinx.serialization.json.buildJsonObject
@@ -29,6 +34,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import kotlinx.serialization.json.put
+import org.junit.After
 import org.robolectric.annotation.Config
 
 private const val pathToSourceConfigWithLimitedDataUseDisabled =
@@ -69,6 +75,12 @@ class FacebookIntegrationTest {
         every { AppEventsLogger.setUserData(any(), any(), any(), any(), any(), any(), any(), any(), any(), any()) } just Runs
 
         facebookIntegration.setup(mockAnalytics)
+    }
+
+    @After
+    fun teardown() {
+        Dispatchers.resetMain()
+        unmockkAll()
     }
 
     @Test
@@ -200,6 +212,300 @@ class FacebookIntegrationTest {
                     state = "state",
                     zip = "12345",
                     country = "country",
+                )
+            }
+        }
+
+    @Test
+    fun `given product searched event, when track called with it, then logEvent gets called with appropriate params`() =
+        runTest {
+            createFacebookIntegration()
+            val trackEvent = TrackEvent(
+                ECommerceEvents.PRODUCTS_SEARCHED,
+                buildJsonObject {
+                    put("query", "shoes")
+                }
+            )
+
+            facebookIntegration.track(trackEvent)
+
+            verify {
+                mockFacebookEventsLogger.logEvent(
+                    eventName = AppEventsConstants.EVENT_NAME_SEARCHED,
+                    parameters = match {
+                        it.getString(AppEventsConstants.EVENT_PARAM_SEARCH_STRING) == "shoes" &&
+                                it.getString(AppEventsConstants.EVENT_PARAM_CURRENCY) == "USD"
+                    }
+                )
+            }
+        }
+
+    @Test
+    fun `given product viewed event, when track called with it, then logEvent gets called with appropriate params`() =
+        runTest {
+            createFacebookIntegration()
+            val trackEvent = TrackEvent(
+                ECommerceEvents.PRODUCT_VIEWED,
+                buildJsonObject {
+                    put("product_id", "123")
+                    put("price", 100)
+                    put("currency", "INR")
+                }
+            )
+
+            facebookIntegration.track(trackEvent)
+
+            verify {
+                mockFacebookEventsLogger.logEvent(
+                    eventName = AppEventsConstants.EVENT_NAME_VIEWED_CONTENT,
+                    valueToSum = 100.0,
+                    parameters = match {
+                        it.getString(AppEventsConstants.EVENT_PARAM_CONTENT_ID) == "123" &&
+                        it.getString(AppEventsConstants.EVENT_PARAM_CURRENCY) == "INR"
+                    }
+                )
+            }
+        }
+
+    @Test
+    fun `given product added event, when track called with it, then logEvent gets called with appropriate params`() =
+        runTest {
+            createFacebookIntegration()
+            val trackEvent = TrackEvent(
+                ECommerceEvents.PRODUCT_ADDED,
+                buildJsonObject {
+                    put("product_id", "123")
+                    put("price", 100)
+                    put("currency", "INR")
+                }
+            )
+
+            facebookIntegration.track(trackEvent)
+
+            verify {
+                mockFacebookEventsLogger.logEvent(
+                    eventName = AppEventsConstants.EVENT_NAME_ADDED_TO_CART,
+                    valueToSum = 100.0,
+                    parameters = match {
+                        it.getString(AppEventsConstants.EVENT_PARAM_CONTENT_ID) == "123" &&
+                        it.getString(AppEventsConstants.EVENT_PARAM_CURRENCY) == "INR"
+                    }
+                )
+            }
+        }
+
+    @Test
+    fun `given product added to wishlist event, when track called with it, then logEvent gets called with appropriate params`() =
+        runTest {
+            createFacebookIntegration()
+            val trackEvent = TrackEvent(
+                ECommerceEvents.PRODUCT_ADDED_TO_WISH_LIST,
+                buildJsonObject {
+                    put("product_id", "123")
+                    put("price", 100)
+                    put("currency", "INR")
+                }
+            )
+
+            facebookIntegration.track(trackEvent)
+
+            verify {
+                mockFacebookEventsLogger.logEvent(
+                    eventName = AppEventsConstants.EVENT_NAME_ADDED_TO_WISHLIST,
+                    valueToSum = 100.0,
+                    parameters = match {
+                        it.getString(AppEventsConstants.EVENT_PARAM_CONTENT_ID) == "123" &&
+                        it.getString(AppEventsConstants.EVENT_PARAM_CURRENCY) == "INR"
+                    }
+                )
+            }
+        }
+
+    @Test
+    fun `given payment info entered event, when track called with it, then logEvent gets called with appropriate params`() =
+        runTest {
+            createFacebookIntegration()
+            val trackEvent = TrackEvent(
+                ECommerceEvents.PAYMENT_INFO_ENTERED,
+                buildJsonObject {
+                    put("value", 100)
+                    put("currency", "INR")
+                }
+            )
+
+            facebookIntegration.track(trackEvent)
+
+            verify {
+                mockFacebookEventsLogger.logEvent(
+                    eventName = AppEventsConstants.EVENT_NAME_ADDED_PAYMENT_INFO,
+                    parameters = match {
+                        it.getString(AppEventsConstants.EVENT_PARAM_CURRENCY) == "INR"
+                    }
+                )
+            }
+        }
+
+    @Test
+    fun `given checkout started event, when track called with it, then logEvent gets called with appropriate params`() =
+        runTest {
+            createFacebookIntegration()
+            val trackEvent = TrackEvent(
+                ECommerceEvents.CHECKOUT_STARTED,
+                buildJsonObject {
+                    put("value", 100)
+                    put("currency", "INR")
+                }
+            )
+
+            facebookIntegration.track(trackEvent)
+
+            verify {
+                mockFacebookEventsLogger.logEvent(
+                    eventName = AppEventsConstants.EVENT_NAME_INITIATED_CHECKOUT,
+                    valueToSum = 100.0,
+                    parameters = match {
+                        it.getString(AppEventsConstants.EVENT_PARAM_CURRENCY) == "INR"
+                    }
+                )
+            }
+        }
+
+    @Test
+    fun `given complete registration event, when track called with it, then logEvent gets called with appropriate params`() =
+        runTest {
+            createFacebookIntegration()
+            val trackEvent = TrackEvent(
+                COMPLETE_REGISTRATION,
+                buildJsonObject {
+                    put("value", 100)
+                    put("currency", "INR")
+                }
+            )
+
+            facebookIntegration.track(trackEvent)
+
+            verify {
+                mockFacebookEventsLogger.logEvent(
+                    eventName = AppEventsConstants.EVENT_NAME_COMPLETED_REGISTRATION,
+                    parameters = match {
+                        it.getString(AppEventsConstants.EVENT_PARAM_CURRENCY) == "INR"
+                    }
+                )
+            }
+        }
+
+    @Test
+    fun `given achieve level event, when track called with it, then logEvent gets called with appropriate params`() =
+        runTest {
+            createFacebookIntegration()
+            val trackEvent = TrackEvent(
+                ACHIEVE_LEVEL,
+                buildJsonObject {
+                    put("level", 10)
+                }
+            )
+
+            facebookIntegration.track(trackEvent)
+
+            verify {
+                mockFacebookEventsLogger.logEvent(
+                    eventName = AppEventsConstants.EVENT_NAME_ACHIEVED_LEVEL,
+                    parameters = match {
+                        it.getInt("level") == 10
+                    }
+                )
+            }
+        }
+
+    @Test
+    fun `given complete tutorial event, when track called with it, then logEvent gets called with appropriate params`() =
+        runTest {
+            createFacebookIntegration()
+            val trackEvent = TrackEvent(
+                COMPLETE_TUTORIAL,
+                buildJsonObject {
+                    put("value", 100)
+                    put("currency", "INR")
+                }
+            )
+
+            facebookIntegration.track(trackEvent)
+
+            verify {
+                mockFacebookEventsLogger.logEvent(
+                    eventName = AppEventsConstants.EVENT_NAME_COMPLETED_TUTORIAL,
+                    parameters = match {
+                        it.getString(AppEventsConstants.EVENT_PARAM_CURRENCY) == "INR"
+                    }
+                )
+            }
+        }
+
+    @Test
+    fun `given unlock achievement event, when track called with it, then logEvent gets called with appropriate params`() =
+        runTest {
+            createFacebookIntegration()
+            val trackEvent = TrackEvent(
+                UNLOCK_ACHIEVEMENT,
+                buildJsonObject {
+                    put(AppEventsConstants.EVENT_PARAM_DESCRIPTION, "123")
+                }
+            )
+
+            facebookIntegration.track(trackEvent)
+
+            verify {
+                mockFacebookEventsLogger.logEvent(
+                    eventName = AppEventsConstants.EVENT_NAME_UNLOCKED_ACHIEVEMENT,
+                    parameters = match {
+                        it.getString(AppEventsConstants.EVENT_PARAM_DESCRIPTION) == "123"
+                    }
+                )
+            }
+        }
+
+    @Test
+    fun `given subscribe event, when track called with it, then logEvent gets called with appropriate params`() =
+        runTest {
+            createFacebookIntegration()
+            val trackEvent = TrackEvent(
+                SUBSCRIBE,
+                buildJsonObject {
+                    put("channel_id", 100)
+                }
+            )
+
+            facebookIntegration.track(trackEvent)
+
+            verify {
+                mockFacebookEventsLogger.logEvent(
+                    eventName = AppEventsConstants.EVENT_NAME_SUBSCRIBE,
+                    parameters = match {
+                        it.getInt("channel_id") == 100
+                    }
+                )
+            }
+        }
+
+    @Test
+    fun `given start trial event, when track called with it, then logEvent gets called with appropriate params`() =
+        runTest {
+            createFacebookIntegration()
+            val trackEvent = TrackEvent(
+                START_TRIAL,
+                buildJsonObject {
+                    put("trial_duration", 10)
+                }
+            )
+
+            facebookIntegration.track(trackEvent)
+
+            verify {
+                mockFacebookEventsLogger.logEvent(
+                    eventName = AppEventsConstants.EVENT_NAME_START_TRIAL,
+                    parameters = match {
+                        it.getInt("trial_duration") == 10
+                    }
                 )
             }
         }

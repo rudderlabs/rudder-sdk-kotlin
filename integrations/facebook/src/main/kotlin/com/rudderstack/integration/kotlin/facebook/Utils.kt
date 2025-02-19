@@ -11,6 +11,7 @@ import com.rudderstack.sdk.kotlin.android.utils.isInt
 import com.rudderstack.sdk.kotlin.android.utils.isLong
 import com.rudderstack.sdk.kotlin.android.utils.isString
 import com.rudderstack.sdk.kotlin.core.ecommerce.ECommerceEvents
+import com.rudderstack.sdk.kotlin.core.ecommerce.ECommerceParamNames
 import com.rudderstack.sdk.kotlin.core.internals.utils.LenientJson
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -25,14 +26,10 @@ internal const val SUBSCRIBE = "Subscribe"
 internal const val START_TRIAL = "Start Trial"
 internal const val SPEND_CREDITS = "Spend Credits"
 
-internal const val PRICE = "price"
-internal const val PRODUCT_ID = "product_id"
 internal const val CURRENCY = "currency"
 internal const val REVENUE = "revenue"
-internal const val ORDER_ID = "order_id"
 internal const val RATING = "rating"
 internal const val VALUE = "value"
-internal const val QUERY = "query"
 internal const val PROMOTION_NAME = "name"
 internal const val DESCRIPTION = "description"
 
@@ -69,19 +66,19 @@ internal val FACEBOOK_EVENTS_MAPPING = mapOf(
 )
 
 internal val TRACK_RESERVED_KEYWORDS = setOf(
-    PRODUCT_ID,
+    ECommerceParamNames.PRODUCT_ID,
     RATING,
     PROMOTION_NAME,
-    ORDER_ID,
-    CURRENCY,
+    ECommerceParamNames.ORDER_ID,
+    ECommerceParamNames.CURRENCY,
     DESCRIPTION,
-    QUERY,
+    ECommerceParamNames.QUERY,
     VALUE,
-    PRICE,
-    REVENUE
+    ECommerceParamNames.PRICE,
+    ECommerceParamNames.REVENUE
 )
 
-internal fun getCurrency(eventProperties: JsonObject): String? {
+internal fun getCurrency(eventProperties: JsonObject): String {
     return eventProperties.getString(CURRENCY) ?: "USD"
 }
 

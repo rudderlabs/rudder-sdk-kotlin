@@ -11,6 +11,7 @@ import com.rudderstack.sdk.kotlin.android.utils.application
 import com.rudderstack.sdk.kotlin.android.utils.getInt
 import com.rudderstack.sdk.kotlin.android.utils.getString
 import com.rudderstack.sdk.kotlin.core.ecommerce.ECommerceEvents
+import com.rudderstack.sdk.kotlin.core.ecommerce.ECommerceParamNames
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
@@ -134,7 +135,7 @@ class FacebookIntegration : IntegrationPlugin() {
                     AppEventsConstants.EVENT_NAME_ADDED_TO_WISHLIST,
                     AppEventsConstants.EVENT_NAME_VIEWED_CONTENT -> {
                         handleStandardTrackProperties(payload.properties, params, eventName)
-                        getValueToSum(payload.properties, PRICE)?.let { price ->
+                        getValueToSum(payload.properties, ECommerceParamNames.PRICE)?.let { price ->
                             facebookAppEventsLogger?.logEvent(eventName, price, params)
                         }
                     }
@@ -193,34 +194,24 @@ class FacebookIntegration : IntegrationPlugin() {
     }
 
     private fun handleStandardTrackProperties(properties: JsonObject, params: Bundle, eventName: String) {
-        properties.getString(PRODUCT_ID)?.let {
-            params.putString(AppEventsConstants.EVENT_PARAM_CONTENT_ID, it)
+        val stringMappings = mapOf(
+            ECommerceParamNames.PRODUCT_ID to AppEventsConstants.EVENT_PARAM_CONTENT_ID,
+            PROMOTION_NAME to AppEventsConstants.EVENT_PARAM_AD_TYPE,
+            ECommerceParamNames.ORDER_ID to AppEventsConstants.EVENT_PARAM_ORDER_ID,
+            DESCRIPTION to AppEventsConstants.EVENT_PARAM_DESCRIPTION,
+            ECommerceParamNames.QUERY to AppEventsConstants.EVENT_PARAM_SEARCH_STRING
+        )
+
+        stringMappings.forEach { (propertyKey, paramKey) ->
+            properties.getString(propertyKey)?.let { params.putString(paramKey, it) }
         }
 
         properties.getInt(RATING)?.let {
             params.putInt(AppEventsConstants.EVENT_PARAM_MAX_RATING_VALUE, it)
         }
 
-        properties.getString(PROMOTION_NAME)?.let {
-            params.putString(AppEventsConstants.EVENT_PARAM_AD_TYPE, it)
-        }
-
-        properties.getString(ORDER_ID)?.let {
-            params.putString(AppEventsConstants.EVENT_PARAM_ORDER_ID, it)
-        }
-
         if (eventName != ECommerceEvents.ORDER_COMPLETED) {
             params.putString(AppEventsConstants.EVENT_PARAM_CURRENCY, getCurrency(properties))
-        }
-
-        val description = properties[DESCRIPTION]
-        if (description != null) {
-            params.putString(AppEventsConstants.EVENT_PARAM_DESCRIPTION, description.toString())
-        }
-
-        val query = properties[QUERY]
-        if (query != null) {
-            params.putString(AppEventsConstants.EVENT_PARAM_SEARCH_STRING, query.toString())
         }
     }
 
