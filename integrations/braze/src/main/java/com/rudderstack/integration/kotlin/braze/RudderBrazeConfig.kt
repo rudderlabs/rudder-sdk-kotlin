@@ -129,7 +129,12 @@ internal data class Campaign(
 internal data class StandardProperties(
     val currency: String = "USD",
     val products: List<Product> = emptyList(),
-)
+) {
+    companion object {
+
+        internal fun getKeysAsList(): List<String> = listOf("currency", "products")
+    }
+}
 
 /**
  * Data class representing a product in a transaction.
@@ -142,7 +147,12 @@ internal data class Product(
     @SerialName("product_id") val productId: String? = null,
     @Serializable(with = BigDecimalSerializer::class)
     val price: BigDecimal? = null,
-)
+) {
+    companion object {
+
+        internal fun getKeysAsList(): List<String> = listOf("product_id", "price")
+    }
+}
 
 /**
  * Custom serializer for BigDecimal values in JSON serialization.

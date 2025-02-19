@@ -41,13 +41,15 @@ internal val IdentifyEvent.traits: JsonObject?
 /**
  * Extension function to get the custom properties from the [JsonObject].
  *
- * @param filteredRootKeys The list of keys to be filtered from the root level. Default is `products`.
- * @param filteredProductKeys The list of keys to be filtered from the products. Default is `product_id` and `price`.
+ * **NOTE**: If there are multiple keys with the same name in the `products` array, only the last one will be considered.
+ *
+ * @param filteredRootKeys The list of keys to be filtered from the root level.
+ * @param filteredProductKeys The list of keys to be filtered from the products.
  * @return CustomProperties object parsed from the JsonObject.
  */
 internal fun JsonObject.getCustomProperties(
-    filteredRootKeys: Set<String> = setOf("products"),
-    filteredProductKeys: Set<String> = setOf("product_id", "price")
+    filteredRootKeys: List<String> = StandardProperties.getKeysAsList(),
+    filteredProductKeys: List<String> = Product.getKeysAsList(),
 ): JsonObject {
     val filteredRootProperties: JsonObject = this.filterKeys(filteredRootKeys)
     val filteredProductProperties: JsonObject =
@@ -69,6 +71,8 @@ internal fun <T : Iterable<*>> JsonObject.filterKeys(filterKeys: T): JsonObject 
 
 /**
  * Extension function to filter the keys from the [JsonArray].
+ *
+ * **NOTE**: If there are multiple keys with the same name in the array, only the last one will be considered.
  *
  * @param filterKeys The list of keys to be filtered.
  * @return JsonObject with the filtered keys.
