@@ -53,20 +53,7 @@ class FacebookIntegration : IntegrationPlugin() {
                         FacebookSdk.addLoggingBehavior(LoggingBehavior.APP_EVENTS)
                     }
 
-                    if (config.limitedDataUse) {
-                        FacebookSdk.setDataProcessingOptions(
-                            arrayOf("LDU"),
-                            config.country,
-                            config.state
-                        )
-                        LoggerAnalytics.debug(
-                            "FacebookIntegration: Data Processing Options set " +
-                                "to LDU with country: ${config.country} and state: ${config.state}"
-                        )
-                    } else {
-                        FacebookSdk.setDataProcessingOptions(arrayOf())
-                        LoggerAnalytics.debug("FacebookIntegration: Data Processing Options cleared")
-                    }
+                    setDataProcessingOptions(config)
                     AppEventsLogger.activateApp(analytics.application, config.appId)
                     facebookAppEventsLogger = provideAppEventsLogger()
                 }
@@ -76,6 +63,12 @@ class FacebookIntegration : IntegrationPlugin() {
     @VisibleForTesting
     internal fun provideAppEventsLogger(): AppEventsLogger {
         return AppEventsLogger.newLogger(analytics.application)
+    }
+
+    override fun update(destinationConfig: JsonObject) {
+        facebookAppEventsLogger?.let {
+            setDataProcessingOptions(destinationConfig.parseConfig<FacebookDestinationConfig>())
+        }
     }
 
     override fun screen(payload: ScreenEvent): Event? {
@@ -191,6 +184,23 @@ class FacebookIntegration : IntegrationPlugin() {
 
     override fun getDestinationInstance(): Any? {
         return facebookAppEventsLogger
+    }
+
+    private fun setDataProcessingOptions(config: FacebookDestinationConfig) {
+        if (config.limitedDataUse) {
+            FacebookSdk.setDataProcessingOptions(
+                arrayOf("LDU"),
+                config.country,
+                config.state
+            )
+            LoggerAnalytics.debug(
+                "FacebookIntegration: Data Processing Options set " +
+                    "to LDU with country: ${config.country} and state: ${config.state}"
+            )
+        } else {
+            FacebookSdk.setDataProcessingOptions(arrayOf())
+            LoggerAnalytics.debug("FacebookIntegration: Data Processing Options cleared")
+        }
     }
 
     private fun handleStandardTrackProperties(properties: JsonObject, params: Bundle, eventName: String) {
