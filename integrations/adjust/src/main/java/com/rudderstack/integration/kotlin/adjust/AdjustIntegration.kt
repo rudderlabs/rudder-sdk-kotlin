@@ -97,9 +97,9 @@ class AdjustIntegration : IntegrationPlugin(), ActivityLifecycleObserver {
     }
 
     private fun Event.setSessionParams() {
-        Adjust.addGlobalCallbackParameter(ANONYMOUS_ID, anonymousId)
+        Adjust.addGlobalPartnerParameter(ANONYMOUS_ID, anonymousId)
         if (userId.isNotBlank()) {
-            Adjust.addGlobalCallbackParameter(USER_ID, userId)
+            Adjust.addGlobalPartnerParameter(USER_ID, userId)
         }
     }
 
