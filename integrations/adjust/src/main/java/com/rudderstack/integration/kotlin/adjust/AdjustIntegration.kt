@@ -139,7 +139,7 @@ private fun initAdjust(application: Application, appToken: String, logLevel: Log
 }
 
 private fun getAdjustEnvironment(logLevel: Logger.LogLevel): String {
-    return if (logLevel >= Logger.LogLevel.DEBUG) {
+    return if (logLevel != Logger.LogLevel.NONE) {
         AdjustConfig.ENVIRONMENT_SANDBOX
     } else {
         AdjustConfig.ENVIRONMENT_PRODUCTION
