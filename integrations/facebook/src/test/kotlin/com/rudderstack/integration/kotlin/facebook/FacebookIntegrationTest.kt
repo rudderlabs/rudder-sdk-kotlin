@@ -122,6 +122,27 @@ class FacebookIntegrationTest {
     }
 
     @Test
+    fun `when facebook integration is updated, then data processing options gets updated for facebook sdk`() = runTest {
+        val sourceConfigWithLimitedDataUseDisabled = readJsonObjectFromFile(pathToSourceConfigWithLimitedDataUseDisabled)
+
+        facebookIntegration.create(sourceConfigWithLimitedDataUseDisabled)
+
+        verify {
+            FacebookSdk.setDataProcessingOptions(arrayOf())
+        }
+        val sourceConfigWithDataUseEnabled = readJsonObjectFromFile(pathToSourceConfigWithLimitedDataUseEnabled)
+
+        facebookIntegration.update(sourceConfigWithDataUseEnabled)
+        verify {
+            FacebookSdk.setDataProcessingOptions(
+                arrayOf("LDU"),
+                0,
+                0
+            )
+        }
+    }
+
+    @Test
     fun `given screen event with some screen name and empty properties, when screen is called, then logEvent is called with appropriate params`() =
         runTest {
             createFacebookIntegration()
