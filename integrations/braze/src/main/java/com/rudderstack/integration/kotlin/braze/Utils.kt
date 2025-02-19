@@ -21,15 +21,6 @@ import java.util.Locale
 internal inline fun <reified T> JsonObject.parse() = LenientJson.decodeFromJsonElement<T>(this)
 
 /**
- * Extension function to parse a JsonObject into StandardProperties.
- *
- * @return StandardProperties object parsed from the JsonObject.
- */
-internal fun JsonObject.getStandardProperties(): StandardProperties {
-    return this.parse<StandardProperties>()
-}
-
-/**
  * Extension property that safely accesses the traits JsonObject from an IdentifyEvent.
  * Retrieves the "traits" object from the event's context and converts it to a JsonObject.
  *
@@ -37,6 +28,15 @@ internal fun JsonObject.getStandardProperties(): StandardProperties {
  */
 internal val IdentifyEvent.traits: JsonObject?
     get() = this.context["traits"]?.jsonObject
+
+/**
+ * Extension function to parse a JsonObject into StandardProperties.
+ *
+ * @return StandardProperties object parsed from the JsonObject.
+ */
+internal fun JsonObject.getStandardProperties(): StandardProperties {
+    return this.parse<StandardProperties>()
+}
 
 /**
  * Extension function to get the custom properties from the [JsonObject].
