@@ -2,11 +2,13 @@ package com.rudderstack.integration.kotlin.facebook
 
 import android.app.Application
 import com.facebook.FacebookSdk
+import com.facebook.LoggingBehavior
 import com.facebook.appevents.AppEventsConstants
 import com.facebook.appevents.AppEventsLogger
 import com.rudderstack.sdk.kotlin.android.Analytics
 import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.core.ecommerce.ECommerceEvents
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.ScreenEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
@@ -70,6 +72,11 @@ class FacebookIntegrationTest {
 
         every { FacebookSdk.setDataProcessingOptions(any<Array<String>>()) } just Runs
         every { FacebookSdk.setDataProcessingOptions(any<Array<String>>(), any(), any()) } just Runs
+
+        every {
+            FacebookSdk.setIsDebugEnabled(any())
+            FacebookSdk.addLoggingBehavior(any())
+        } just Runs
 
         every { AppEventsLogger.setUserID(any()) } just Runs
         every { AppEventsLogger.setUserData(any(), any(), any(), any(), any(), any(), any(), any(), any(), any()) } just Runs
@@ -282,7 +289,7 @@ class FacebookIntegrationTest {
                     valueToSum = 100.0,
                     parameters = match {
                         it.getString(AppEventsConstants.EVENT_PARAM_CONTENT_ID) == "123" &&
-                        it.getString(AppEventsConstants.EVENT_PARAM_CURRENCY) == "INR"
+                                it.getString(AppEventsConstants.EVENT_PARAM_CURRENCY) == "INR"
                     }
                 )
             }
@@ -309,7 +316,7 @@ class FacebookIntegrationTest {
                     valueToSum = 100.0,
                     parameters = match {
                         it.getString(AppEventsConstants.EVENT_PARAM_CONTENT_ID) == "123" &&
-                        it.getString(AppEventsConstants.EVENT_PARAM_CURRENCY) == "INR"
+                                it.getString(AppEventsConstants.EVENT_PARAM_CURRENCY) == "INR"
                     }
                 )
             }
@@ -336,7 +343,7 @@ class FacebookIntegrationTest {
                     valueToSum = 100.0,
                     parameters = match {
                         it.getString(AppEventsConstants.EVENT_PARAM_CONTENT_ID) == "123" &&
-                        it.getString(AppEventsConstants.EVENT_PARAM_CURRENCY) == "INR"
+                                it.getString(AppEventsConstants.EVENT_PARAM_CURRENCY) == "INR"
                     }
                 )
             }
@@ -542,6 +549,48 @@ class FacebookIntegrationTest {
         verify {
             AppEventsLogger.clearUserID()
             AppEventsLogger.clearUserData()
+        }
+    }
+
+    @Test
+    fun `when logLevel in configuration is debug, then logging is enabled for facebook sdk`() = runTest {
+        every { mockAnalytics.configuration } returns mockk<Configuration>(relaxed = true) {
+            every { logLevel } returns Logger.LogLevel.DEBUG
+        }
+
+        createFacebookIntegration()
+
+        verify {
+            FacebookSdk.setIsDebugEnabled(true)
+            FacebookSdk.addLoggingBehavior(LoggingBehavior.APP_EVENTS)
+        }
+    }
+
+    @Test
+    fun `when logLevel in configuration is verbose, then logging is enabled for facebook sdk`() = runTest {
+        every { mockAnalytics.configuration } returns mockk<Configuration>(relaxed = true) {
+            every { logLevel } returns Logger.LogLevel.VERBOSE
+        }
+
+        createFacebookIntegration()
+
+        verify {
+            FacebookSdk.setIsDebugEnabled(true)
+            FacebookSdk.addLoggingBehavior(LoggingBehavior.APP_EVENTS)
+        }
+    }
+
+    @Test
+    fun `when logLevel in configuration is info, then logging is not enabled for facebook sdk`() = runTest {
+        every { mockAnalytics.configuration } returns mockk<Configuration>(relaxed = true) {
+            every { logLevel } returns Logger.LogLevel.INFO
+        }
+
+        createFacebookIntegration()
+
+        verify(exactly = 0) {
+            FacebookSdk.setIsDebugEnabled(true)
+            FacebookSdk.addLoggingBehavior(LoggingBehavior.APP_EVENTS)
         }
     }
 
