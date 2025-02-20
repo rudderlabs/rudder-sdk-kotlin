@@ -83,7 +83,7 @@ private fun <T : Iterable<*>> JsonArray.filterKeys(keys: T): JsonObject = this.m
 /**
  * Extension function to get the `brazeExternalId` if it exists, otherwise the userId.
  */
-internal fun IdentifyTraits.getExternalIdOrUserId() = context.brazeExternalId?.ifEmpty { userId }
+internal fun IdentifyTraits.getExternalIdOrUserId() = context.brazeExternalId?.takeIf { it.isNotEmpty() } ?: userId
 
 /**
  * Extension function to get the [IdentifyTraits] object from the [IdentifyEvent].
