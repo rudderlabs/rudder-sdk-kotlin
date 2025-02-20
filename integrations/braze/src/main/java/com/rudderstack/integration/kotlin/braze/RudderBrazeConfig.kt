@@ -130,6 +130,7 @@ internal data class StandardProperties(
     val currency: String = "USD",
     val products: List<Product> = listOf(Product()),
 ) {
+
     companion object {
 
         internal fun getKeysAsList(): List<String> = listOf("currency", "products")
@@ -148,6 +149,7 @@ internal data class Product(
     @Serializable(with = BigDecimalSerializer::class)
     val price: BigDecimal? = null,
 ) {
+
     companion object {
 
         internal fun getKeysAsList(): List<String> = listOf("product_id", "price")
@@ -222,7 +224,21 @@ internal data class Traits(
     val address: Address? = null,
     @Serializable(with = CalendarSerializer::class)
     val birthday: Calendar? = null,
-)
+) {
+
+    companion object {
+
+        internal fun getKeysAsList(): List<String> = listOf(
+            "email",
+            "firstName",
+            "lastName",
+            "gender",
+            "phone",
+            "address",
+            "birthday",
+        )
+    }
+}
 
 /**
  * Data class representing the address of a user.

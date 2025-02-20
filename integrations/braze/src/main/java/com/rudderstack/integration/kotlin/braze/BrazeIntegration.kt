@@ -147,10 +147,10 @@ class BrazeIntegration : IntegrationPlugin(), ActivityLifecycleObserver {
     }
 
     override fun identify(payload: IdentifyEvent): Event {
-        payload.getIdentifyTraits().let { currentTraits ->
+        payload.toIdentifyTraits().let { currentIdentifyTraits ->
             val deDupedTraits = this.brazeConfig.takeIf { it.supportDedup }?.let {
-                getDeDupedIdentifyTraits(currentTraits = currentTraits, previousTraits = previousIdentifyTraits)
-            } ?: currentTraits
+                currentIdentifyTraits deDupe previousIdentifyTraits
+            } ?: currentIdentifyTraits
 
             // TODO: Check if their API accepts null or not!
             this.braze?.changeUser(deDupedTraits.getExternalIdOrUserId())
@@ -164,13 +164,11 @@ class BrazeIntegration : IntegrationPlugin(), ActivityLifecycleObserver {
                 setAddress(deDupedTraits.context.traits.address)
 
                 setCustomTraits(
-                    payload.traits?.filter(
-                        rootKeys = TraitsMatcher.standardTraitKeys,
-                    )
+                    payload.traits?.filter(rootKeys = Traits.getKeysAsList())
                 )
             }
 
-            previousIdentifyTraits = currentTraits
+            previousIdentifyTraits = currentIdentifyTraits
         }.also { LoggerAnalytics.verbose("BrazeIntegration: Identify event sent.") }
         return payload
     }

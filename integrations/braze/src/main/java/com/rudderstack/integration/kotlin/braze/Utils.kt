@@ -1,7 +1,6 @@
 package com.rudderstack.integration.kotlin.braze
 
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
-import com.rudderstack.sdk.kotlin.core.internals.models.ExternalId
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import com.rudderstack.sdk.kotlin.core.internals.utils.LenientJson
@@ -11,7 +10,6 @@ import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import java.text.SimpleDateFormat
-import java.util.Calendar
 import java.util.Locale
 
 /**
@@ -90,7 +88,7 @@ internal fun IdentifyTraits.getExternalIdOrUserId() = context.brazeExternalId?.t
  *
  * @return The [IdentifyTraits] object parsed from the [IdentifyEvent].
  */
-internal fun IdentifyEvent.getIdentifyTraits(): IdentifyTraits {
+internal fun IdentifyEvent.toIdentifyTraits(): IdentifyTraits {
     val context = this.context.parse<Context>()
     return IdentifyTraits(
         context = context,
@@ -99,93 +97,35 @@ internal fun IdentifyEvent.getIdentifyTraits(): IdentifyTraits {
 }
 
 /**
- * Returns a new [IdentifyTraits] object with only the traits that have changed between the current and previous traits.
+ * Returns a new [IdentifyTraits] object with updated traits or null if no they are the same.
  *
- * @param currentTraits The current traits to compare against
  * @param previousTraits The previous traits to compare against
- * @return The new traits object with only the changed traits
+ * @return The new traits object with de-duped values
  */
-internal fun getDeDupedIdentifyTraits(currentTraits: IdentifyTraits, previousTraits: IdentifyTraits?): IdentifyTraits {
+internal infix fun IdentifyTraits.deDupe(previousTraits: IdentifyTraits?): IdentifyTraits {
+    val currentTraits = this
     if (previousTraits == null) return currentTraits
 
     return IdentifyTraits(
-        userId = TraitsMatcher.UserId.getNewTraitsIfUpdatedOrNull(currentTraits, previousTraits),
+        userId = currentTraits.userId diffOr previousTraits.userId,
         context = Context(
-            traits = Traits(
-                email = TraitsMatcher.Email.getNewTraitsIfUpdatedOrNull(currentTraits, previousTraits),
-                firstName = TraitsMatcher.FirstName.getNewTraitsIfUpdatedOrNull(currentTraits, previousTraits),
-                lastName = TraitsMatcher.LastName.getNewTraitsIfUpdatedOrNull(currentTraits, previousTraits),
-                gender = TraitsMatcher.LastName.getNewTraitsIfUpdatedOrNull(currentTraits, previousTraits),
-                phone = TraitsMatcher.LastName.getNewTraitsIfUpdatedOrNull(currentTraits, previousTraits),
-                address = TraitsMatcher.Address.getNewTraitsIfUpdatedOrNull(currentTraits, previousTraits),
-                birthday = TraitsMatcher.Birthday.getNewTraitsIfUpdatedOrNull(currentTraits, previousTraits),
-            ),
-            externalId = TraitsMatcher.ListOfExternalId.getNewTraitsIfUpdatedOrNull(currentTraits, previousTraits),
+            traits = with(currentTraits.context.traits) {
+                Traits(
+                    email = email diffOr previousTraits.context.traits.email,
+                    firstName = firstName diffOr previousTraits.context.traits.firstName,
+                    lastName = lastName diffOr previousTraits.context.traits.lastName,
+                    gender = gender diffOr previousTraits.context.traits.gender,
+                    phone = phone diffOr previousTraits.context.traits.phone,
+                    address = address diffOr previousTraits.context.traits.address,
+                    birthday = birthday diffOr previousTraits.context.traits.birthday
+                )
+            },
+            externalId = context.externalId diffOr previousTraits.context.externalId
         )
     )
 }
 
-/**
- * A sealed class representing different trait matchers for identifying changes in user traits.
- *
- * @param T The type of the trait value being matched
- * @param extractor A function that extracts the trait value from [IdentifyTraits]
- * @param key The string key identifying this trait matcher
- */
-internal sealed class TraitsMatcher<T>(
-    private val extractor: (IdentifyTraits) -> T?,
-    val key: String,
-) {
-
-    /**
-     * Compares trait values between new and old traits, returning the new traits only if it has changed.
-     *
-     * @param newTraits The new traits to check
-     * @param oldTraits The previous traits to compare against
-     * @return The new trait if it differs from the old traits, null otherwise
-     */
-    internal fun getNewTraitsIfUpdatedOrNull(newTraits: IdentifyTraits, oldTraits: IdentifyTraits): T? {
-        val newValue = extractor(newTraits)
-        val oldValue = extractor(oldTraits)
-
-        return when (newValue == oldValue) {
-            true -> null
-            false -> newValue
-        }
-    }
-
-    data object UserId : TraitsMatcher<String>({ it.userId }, "userId")
-    data object Email : TraitsMatcher<String>({ it.context.traits.email }, "email")
-    data object FirstName : TraitsMatcher<String>({ it.context.traits.firstName }, "firstName")
-    data object LastName : TraitsMatcher<String>({ it.context.traits.lastName }, "lastName")
-    data object Gender : TraitsMatcher<String>({ it.context.traits.gender }, "gender")
-    data object Phone : TraitsMatcher<String>({ it.context.traits.phone }, "phone")
-    data object Address :
-        TraitsMatcher<com.rudderstack.integration.kotlin.braze.Address>({ it.context.traits.address }, "address")
-
-    data object Birthday : TraitsMatcher<Calendar>({ it.context.traits.birthday }, "birthday")
-    data object ListOfExternalId : TraitsMatcher<List<ExternalId>>({ it.context.externalId }, "externalId")
-
-    companion object {
-
-        private val standardTraits = setOf(
-            UserId,
-            Email,
-            FirstName,
-            LastName,
-            Gender,
-            Phone,
-            Address,
-            Birthday,
-            ListOfExternalId,
-        )
-
-        /**
-         * The standard trait keys.
-         */
-        val standardTraitKeys = standardTraits.map { it.key }.toList()
-    }
-}
+private infix fun <T> T.diffOr(old: T): T? = this.takeIf { this != old }
 
 private val iso8601DateFormatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
 
