@@ -128,7 +128,7 @@ internal data class Campaign(
 @Serializable
 internal data class StandardProperties(
     val currency: String = "USD",
-    val products: List<Product> = emptyList(),
+    val products: List<Product> = listOf(Product()),
 ) {
     companion object {
 

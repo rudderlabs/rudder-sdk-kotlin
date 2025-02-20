@@ -110,7 +110,10 @@ class BrazeIntegration : IntegrationPlugin(), ActivityLifecycleObserver {
 
     private fun handleOrderCompletedEvent(payload: TrackEvent) {
         // Get custom (or non-standard) properties present at the root and product level
-        val customProperties: JsonObject = payload.properties.getCustomProperties()
+        val customProperties: JsonObject = payload.properties.filter(
+            rootKeys = StandardProperties.getKeysAsList(),
+            productKeys = Product.getKeysAsList(),
+        )
 
         payload.properties.getStandardProperties().let { standardProperties ->
             val currency = standardProperties.currency
@@ -160,7 +163,11 @@ class BrazeIntegration : IntegrationPlugin(), ActivityLifecycleObserver {
                 setPhoneNumber(deDupedTraits.context.traits.phone)
                 setAddress(deDupedTraits.context.traits.address)
 
-                setCustomTraits(payload.traits?.filterKeys(filterKeys = TraitsMatcher.standardTraitKeys))
+                setCustomTraits(
+                    payload.traits?.filter(
+                        rootKeys = TraitsMatcher.standardTraitKeys,
+                    )
+                )
             }
 
             previousIdentifyTraits = currentTraits

@@ -39,22 +39,19 @@ internal fun JsonObject.getStandardProperties(): StandardProperties {
 }
 
 /**
- * Extension function to get the custom properties from the [JsonObject].
+ * Extension function to filter the standard properties from the [JsonObject].
  *
  * **NOTE**: If there are multiple keys with the same name in the `products` array, only the last one will be considered.
  *
- * @param filteredRootKeys The list of keys to be filtered from the root level.
- * @param filteredProductKeys The list of keys to be filtered from the products.
- * @return CustomProperties object parsed from the JsonObject.
+ * @param rootKeys The list of keys to be filtered from the root level.
+ * @param productKeys The list of keys to be filtered from the products array.
+ * @return JsonObject with the filtered values.
  */
-internal fun JsonObject.getCustomProperties(
-    filteredRootKeys: List<String> = StandardProperties.getKeysAsList(),
-    filteredProductKeys: List<String> = Product.getKeysAsList(),
-): JsonObject {
-    val filteredRootProperties: JsonObject = this.filterKeys(filteredRootKeys)
+internal fun JsonObject.filter(rootKeys: List<String>, productKeys: List<String> = emptyList(),): JsonObject {
+    val filteredRootProperties: JsonObject = this.filterKeys(rootKeys)
     val filteredProductProperties: JsonObject =
         this["products"]?.jsonArray
-            ?.filterKeys(filteredProductKeys)
+            ?.filterKeys(productKeys)
             ?: JsonObject(emptyMap())
 
     return JsonObject(filteredRootProperties + filteredProductProperties)
@@ -63,10 +60,10 @@ internal fun JsonObject.getCustomProperties(
 /**
  * Extension function to filter the keys from the [JsonObject].
  *
- * @param filterKeys The list of keys to be filtered.
+ * @param keys The list of keys to be filtered.
  * @return JsonObject with the filtered keys.
  */
-internal fun <T : Iterable<*>> JsonObject.filterKeys(filterKeys: T): JsonObject = this.filter { it.key !in filterKeys }
+private fun <T : Iterable<*>> JsonObject.filterKeys(keys: T): JsonObject = this.filter { it.key !in keys }
     .let(::JsonObject)
 
 /**
@@ -74,12 +71,12 @@ internal fun <T : Iterable<*>> JsonObject.filterKeys(filterKeys: T): JsonObject 
  *
  * **NOTE**: If there are multiple keys with the same name in the array, only the last one will be considered.
  *
- * @param filterKeys The list of keys to be filtered.
+ * @param keys The list of keys to be filtered.
  * @return JsonObject with the filtered keys.
  */
-internal fun <T : Iterable<*>> JsonArray.filterKeys(filterKeys: T): JsonObject = this.mapNotNull { it.jsonObject }
+private fun <T : Iterable<*>> JsonArray.filterKeys(keys: T): JsonObject = this.mapNotNull { it.jsonObject }
     .flatMap { it.entries }
-    .filterNot { it.key in filterKeys }
+    .filterNot { it.key in keys }
     .associate { it.key to it.value }
     .let(::JsonObject)
 
@@ -186,7 +183,7 @@ internal sealed class TraitsMatcher<T>(
         /**
          * The standard trait keys.
          */
-        val standardTraitKeys = standardTraits.map { it.key }.toSet()
+        val standardTraitKeys = standardTraits.map { it.key }.toList()
     }
 }
 
