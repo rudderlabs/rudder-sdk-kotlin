@@ -164,7 +164,7 @@ class BrazeIntegration : IntegrationPlugin(), ActivityLifecycleObserver {
             // TODO: Check if their API accepts null or not!
             this.braze?.changeUser(deDupedTraits.getExternalIdOrUserId())
             this.braze?.currentUser?.apply {
-                setDate(deDupedTraits.context.traits.birthday)
+                setDateOfBirth(deDupedTraits.context.traits.birthday)
                 setEmail(deDupedTraits.context.traits.email)
                 setFirstName(deDupedTraits.context.traits.firstName)
                 setLastName(deDupedTraits.context.traits.lastName)
@@ -225,7 +225,7 @@ private fun setLogLevel(rudderLogLevel: Logger.LogLevel) {
     }
 }
 
-private fun BrazeUser.setDate(date: Calendar?) {
+private fun BrazeUser.setDateOfBirth(date: Calendar?) {
     date?.also {
         setDateOfBirth(
             year = it[Calendar.YEAR],
