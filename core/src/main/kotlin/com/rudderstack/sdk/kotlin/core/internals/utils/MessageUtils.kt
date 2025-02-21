@@ -1,12 +1,7 @@
 package com.rudderstack.sdk.kotlin.core.internals.utils
 
-import com.rudderstack.sdk.kotlin.core.internals.models.AliasEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
-import com.rudderstack.sdk.kotlin.core.internals.models.GroupEvent
-import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderTraits
-import com.rudderstack.sdk.kotlin.core.internals.models.ScreenEvent
-import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.UserIdentity
 import kotlinx.serialization.json.JsonObject
@@ -36,20 +31,16 @@ private val DEFAULT_INTEGRATIONS = buildJsonObject {
     put("All", true)
 }
 
-internal fun Event.updateIntegrationOptionsAndCustomCustomContext() {
-    when (this) {
-        is TrackEvent, is ScreenEvent, is GroupEvent, is IdentifyEvent, is AliasEvent -> {
-            this.integrations = DEFAULT_INTEGRATIONS mergeWithHigherPriorityTo options.integrations
-            this.context = options.customContext mergeWithHigherPriorityTo context
-        }
-    }
+internal fun Event.addRudderOptionFields() {
+    this.integrations = DEFAULT_INTEGRATIONS mergeWithHigherPriorityTo options.integrations
+    this.context = options.customContext mergeWithHigherPriorityTo context
+    this.context = options.externalIds.toJsonObject() mergeWithHigherPriorityTo context
 }
 
 internal fun Event.addPersistedValues() {
     this.setAnonymousId()
     this.setUserId()
     this.setTraitsInContext { this.buildTraits() }
-    this.setExternalIdInContext()
 }
 
 private fun Event.setAnonymousId() {
@@ -82,11 +73,4 @@ private fun getDefaultTraits(anonymousId: String): RudderTraits = buildJsonObjec
     put(ANONYMOUS_ID, anonymousId)
 }
 
-private fun Event.setExternalIdInContext() {
-    val externalIds = userIdentityState.externalIds.toJsonObject()
-    if (externalIds.isNotEmpty()) {
-        this.context = this.context mergeWithHigherPriorityTo externalIds
-    }
-}
-
-internal fun provideEmptyUserIdentityState() = UserIdentity(String.empty(), String.empty(), emptyJsonObject, emptyList())
+internal fun provideEmptyUserIdentityState() = UserIdentity(String.empty(), String.empty(), emptyJsonObject)

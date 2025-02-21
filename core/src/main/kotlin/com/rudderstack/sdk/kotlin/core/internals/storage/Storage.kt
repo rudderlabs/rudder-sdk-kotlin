@@ -178,11 +178,6 @@ enum class StorageKeys(val key: String) {
     TRAITS("traits"),
 
     /**
-     * Key for storing the external ids.
-     */
-    EXTERNAL_IDS("external_ids"),
-
-    /**
      * Key for storing the session id of the client.
      */
     SESSION_ID("session_id"),

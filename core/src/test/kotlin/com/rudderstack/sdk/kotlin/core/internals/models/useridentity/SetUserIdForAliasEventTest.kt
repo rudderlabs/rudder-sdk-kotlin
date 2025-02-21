@@ -35,7 +35,7 @@ class SetUserIdForAliasEventTest {
     fun `when user id is stored, then those values should be persisted in storage`() = runTest {
         val userIdentityState = provideUserIdentityStateAfterUserIdIsSetForAliasEvent()
 
-        userIdentityState.storeUserIdTraitsAndExternalIds(mockAnalytics.storage)
+        userIdentityState.storeUserIdAndTraits(mockAnalytics.storage)
 
         coVerify {
             mockAnalytics.storage.write(StorageKeys.USER_ID, ALIAS_ID)
@@ -48,7 +48,6 @@ private fun provideUserIdentityInitialState(): UserIdentity =
         anonymousId = DEFAULT_ANONYMOUS_ID,
         userId = USER_ID,
         traits = emptyJsonObject,
-        externalIds = emptyList()
     )
 
 private fun provideUserIdentityStateAfterUserIdIsSetForAliasEvent(): UserIdentity =
@@ -56,5 +55,4 @@ private fun provideUserIdentityStateAfterUserIdIsSetForAliasEvent(): UserIdentit
         anonymousId = DEFAULT_ANONYMOUS_ID,
         userId = ALIAS_ID,
         traits = emptyJsonObject,
-        externalIds = emptyList()
     )

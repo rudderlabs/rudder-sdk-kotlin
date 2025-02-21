@@ -1,6 +1,5 @@
 package com.rudderstack.sdk.kotlin.core.internals.utils
 
-import com.rudderstack.sdk.kotlin.core.internals.models.ExternalId
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderTraits
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
@@ -43,26 +42,6 @@ class StorageUtilsTest {
         val expected = emptyJsonObject
         assertEquals(expected, result)
     }
-
-    @Test
-    fun `given value is of List of ExternalIds type, when externalIds are read from storage, then return List of ExternalIds object`() {
-        every { mockStorage.readString(any(), any()) } returns getListOfExternalIdsString()
-
-        val result = mockStorage.readValuesOrDefault<List<ExternalId>>(key = StorageKeys.EXTERNAL_IDS, defaultValue = emptyList())
-
-        val expected = getListOfExternalIds()
-        assertEquals(expected, result)
-    }
-
-    @Test
-    fun `given value is of List of ExternalIds type, when empty externalIds are read from storage, then return default value`() {
-        every { mockStorage.readString(any(), any()) } returns "[]"
-
-        val result = mockStorage.readValuesOrDefault<List<ExternalId>>(key = StorageKeys.EXTERNAL_IDS, defaultValue = emptyList())
-
-        val expected = emptyList<ExternalId>()
-        assertEquals(expected, result)
-    }
 }
 
 private fun getTraitsString() =
@@ -78,23 +57,3 @@ private fun getTraitsJson() =
         put("key-1", "value-1")
         put("anonymousId", "<anonymousId>")
     }
-
-private fun getListOfExternalIdsString() =
-    """
-        [
-          {
-            "id": "id 1",
-            "type": "brazeExternalId"
-          },
-          {
-            "id": "id 2",
-            "type": "ga4"
-          }
-        ]
-    """.trimIndent()
-
-private fun getListOfExternalIds() =
-    listOf(
-        ExternalId(type = "brazeExternalId", id = "id 1"),
-        ExternalId(type = "ga4", id = "id 2"),
-    )

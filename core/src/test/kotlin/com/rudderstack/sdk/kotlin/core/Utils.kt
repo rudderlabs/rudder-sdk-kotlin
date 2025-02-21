@@ -37,7 +37,6 @@ internal fun provideOnlyAnonymousIdState(): UserIdentity {
         anonymousId = ANONYMOUS_ID,
         userId = String.empty(),
         traits = emptyJsonObject,
-        externalIds = emptyList()
     )
 }
 

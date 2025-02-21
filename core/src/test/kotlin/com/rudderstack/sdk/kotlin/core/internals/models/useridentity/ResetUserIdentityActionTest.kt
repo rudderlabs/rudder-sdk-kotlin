@@ -2,7 +2,6 @@ package com.rudderstack.sdk.kotlin.core.internals.models.useridentity
 
 import com.rudderstack.sdk.kotlin.core.ANONYMOUS_ID
 import com.rudderstack.sdk.kotlin.core.Analytics
-import com.rudderstack.sdk.kotlin.core.internals.models.ExternalId
 import com.rudderstack.sdk.kotlin.core.internals.models.provider.provideUserIdentityState
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.generateUUID
@@ -21,7 +20,6 @@ import org.junit.Test
 private const val NEW_ANONYMOUS_ID = "newAnonymousId"
 private const val USER_ID = "user1"
 private val TRAITS = buildJsonObject { put("key-1", "value-1") }
-private val EXTERNAL_IDS = listOf(ExternalId("externalIdType1", "externalIdValue1"))
 
 class ResetUserIdentityActionTest {
 
@@ -81,7 +79,6 @@ class ResetUserIdentityActionTest {
                     write(StorageKeys.ANONYMOUS_ID, NEW_ANONYMOUS_ID)
                     remove(StorageKeys.USER_ID)
                     remove(StorageKeys.TRAITS)
-                    remove(StorageKeys.EXTERNAL_IDS)
                 }
             }
         }
@@ -102,7 +99,6 @@ class ResetUserIdentityActionTest {
                 storage.apply {
                     remove(StorageKeys.USER_ID)
                     remove(StorageKeys.TRAITS)
-                    remove(StorageKeys.EXTERNAL_IDS)
                 }
             }
         }
@@ -113,5 +109,4 @@ private fun provideUserIdentityStateAfterFirstIdentifyEventIsMade(): UserIdentit
         anonymousId = ANONYMOUS_ID,
         userId = USER_ID,
         traits = TRAITS,
-        externalIds = EXTERNAL_IDS
     )
