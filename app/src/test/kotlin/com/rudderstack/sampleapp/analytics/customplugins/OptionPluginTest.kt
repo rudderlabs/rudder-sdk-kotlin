@@ -7,7 +7,7 @@ import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import org.junit.Test
+import org.junit.jupiter.api.Test
 import org.skyscreamer.jsonassert.JSONAssert
 
 private const val KEY_1 = "key1"

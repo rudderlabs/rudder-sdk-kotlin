@@ -2,9 +2,9 @@ package com.rudderstack.sdk.kotlin.core.internals.utils
 
 import com.rudderstack.sdk.kotlin.core.internals.utils.Base64.decodeFromBase64
 import com.rudderstack.sdk.kotlin.core.internals.utils.Base64.encodeToBase64
-import org.junit.Assert.assertArrayEquals
-import org.junit.Assert.assertEquals
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertArrayEquals
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
 import kotlin.random.Random.Default.nextBytes
 
 class Base64Test {

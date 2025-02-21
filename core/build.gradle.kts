@@ -20,6 +20,13 @@ tasks.withType<KotlinJvmCompile>().configureEach {
     compilerOptions.freeCompilerArgs.add("-opt-in=com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi")
 }
 
+tasks.withType<Test> {
+    useJUnitPlatform()
+    testLogging {
+        events("failed")
+    }
+}
+
 // For generating SourcesJar and JavadocJar
 tasks {
     val sourcesJar by creating(Jar::class) {
@@ -91,11 +98,15 @@ dependencies {
     // detekt plugins
     detektPlugins(libs.detekt.formatting)
 
+
     //testImplementation
-    testImplementation(libs.junit)
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockk)
     testImplementation(libs.json.assert)
     testImplementation(libs.kotlinx.coroutines.test)
+
+    testRuntimeOnly(libs.junit.jupiter.engine)
 }
 
 apply(from = rootProject.file("gradle/publishing/publishing.gradle.kts"))

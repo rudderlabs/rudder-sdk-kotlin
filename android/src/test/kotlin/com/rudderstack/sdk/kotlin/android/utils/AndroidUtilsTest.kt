@@ -4,8 +4,8 @@ import android.os.Build
 import io.mockk.every
 import io.mockk.mockkObject
 import io.mockk.verify
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 private const val MIN_SUPPORTED_VERSION = Build.VERSION_CODES.N // 24
 class AndroidUtilsTest {
@@ -13,7 +13,7 @@ class AndroidUtilsTest {
     private lateinit var compatibleBlock: Block
     private lateinit var legacyBlock: Block
 
-    @Before
+    @BeforeEach
     fun setup() {
         mockkObject(AppSDKVersion)
 

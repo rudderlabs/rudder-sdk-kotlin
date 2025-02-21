@@ -5,8 +5,8 @@ import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import io.mockk.coVerify
 import io.mockk.spyk
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertEquals
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
 
 class SessionStateTest {
 

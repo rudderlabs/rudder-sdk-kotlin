@@ -5,7 +5,7 @@ import io.mockk.coVerify
 import kotlinx.coroutines.test.StandardTestDispatcher
 import com.rudderstack.sdk.kotlin.core.mockAnalytics
 import kotlinx.coroutines.test.TestScope
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 class FrequencyFlushPolicyTest {
 

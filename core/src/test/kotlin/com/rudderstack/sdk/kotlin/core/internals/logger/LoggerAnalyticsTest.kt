@@ -3,7 +3,7 @@ package com.rudderstack.sdk.kotlin.core.internals.logger
 import io.mockk.spyk
 import io.mockk.verify
 import io.mockk.verifyOrder
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 class LoggerAnalyticsTest {
 

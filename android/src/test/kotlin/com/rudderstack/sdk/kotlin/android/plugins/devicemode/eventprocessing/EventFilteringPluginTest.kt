@@ -15,11 +15,11 @@ import io.mockk.every
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 private const val pathToSourceConfigWithWhiteListEvents =
     "eventfilteringsourceconfig/source_config_with_white_list_event.json"
@@ -55,7 +55,7 @@ class EventFilteringPluginTest {
         readFileAsString(pathToSourceConfigWithEventFilteringDisabled)
     )
 
-    @Before
+    @BeforeEach
     fun setup() {
         eventFilteringPlugin = EventFilteringPlugin("MockDestination")
 

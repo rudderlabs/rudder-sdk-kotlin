@@ -8,8 +8,8 @@ import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.utils.encodeToString
 import com.rudderstack.sdk.kotlin.core.provideOnlyAnonymousIdState
 import com.rudderstack.sdk.kotlin.core.readFileTrimmed
-import org.junit.Assert.assertEquals
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
 
 private const val trackWithDefaultArguments = "message/track/track_with_default_arguments.json"
 private const val trackWithProperties = "message/track/track_with_properties.json"

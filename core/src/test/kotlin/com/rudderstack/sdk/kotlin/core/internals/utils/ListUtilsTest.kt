@@ -1,7 +1,7 @@
 package com.rudderstack.sdk.kotlin.core.internals.utils
 
 import com.rudderstack.sdk.kotlin.core.internals.models.ExternalId
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 class ListUtilsTest {
 

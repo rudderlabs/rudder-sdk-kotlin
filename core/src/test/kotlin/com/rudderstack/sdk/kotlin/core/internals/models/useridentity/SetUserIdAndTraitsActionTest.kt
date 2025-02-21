@@ -14,7 +14,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 private const val DEFAULT_ANONYMOUS_ID = "anonymousId"
 private const val USER_1 = "user1"

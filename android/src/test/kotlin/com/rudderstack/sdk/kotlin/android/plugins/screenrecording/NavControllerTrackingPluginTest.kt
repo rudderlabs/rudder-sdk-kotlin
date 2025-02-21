@@ -24,9 +24,9 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import com.rudderstack.sdk.kotlin.android.Configuration as AndroidConfiguration
-import org.junit.After
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class NavControllerTrackingPluginTest {
@@ -40,7 +40,7 @@ class NavControllerTrackingPluginTest {
 
     private lateinit var mockNavContextState: FlowState<Set<NavContext>>
 
-    @Before
+    @BeforeEach
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
 
@@ -52,7 +52,7 @@ class NavControllerTrackingPluginTest {
         every { mockAnalytics.configuration } returns configuration
     }
 
-    @After
+    @AfterEach
     fun tearDown() {
         Dispatchers.resetMain()
         unmockkAll()

@@ -8,7 +8,7 @@ import io.mockk.coVerify
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 private const val DEFAULT_ANONYMOUS_ID = "anonymousId"
 private const val USER_ID = "userId"

@@ -1,15 +1,15 @@
 package com.rudderstack.sdk.kotlin.core.internals.statemanagement
 
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertEquals
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 class FlowStateTest {
 
     private lateinit var flowState: FlowState<Int>
 
-    @Before
+    @BeforeEach
     fun setUp() {
         flowState = FlowState(0)
     }

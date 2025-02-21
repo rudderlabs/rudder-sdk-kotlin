@@ -31,10 +31,10 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import com.rudderstack.sdk.kotlin.android.Analytics as AndroidAnalytics
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -48,7 +48,7 @@ class SessionTrackingPluginTest {
 
     private lateinit var mockStorage: Storage
 
-    @Before
+    @BeforeEach
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
 
@@ -60,7 +60,7 @@ class SessionTrackingPluginTest {
         mockStorage = MockMemoryStorage()
     }
 
-    @After
+    @AfterEach
     fun tearDown() {
         Dispatchers.resetMain()
         unmockkAll()

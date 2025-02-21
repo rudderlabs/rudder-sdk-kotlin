@@ -1,14 +1,14 @@
 package com.rudderstack.sdk.kotlin.core.internals.storage
 
 import com.rudderstack.sdk.kotlin.core.internals.models.DEFAULT_SENT_AT_TIMESTAMP
-import junit.framework.TestCase.assertEquals
-import junit.framework.TestCase.assertFalse
-import junit.framework.TestCase.assertNotNull
-import junit.framework.TestCase.assertTrue
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import kotlinx.coroutines.runBlocking
-import org.junit.After
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import java.io.File
 
 private const val TEST_WRITE_KEY = "asdf"
@@ -23,12 +23,12 @@ class EventBatchFileManagerTest {
 
     private lateinit var eventBatchFileManager: EventBatchFileManager
 
-    @Before
+    @BeforeEach
     fun setup() {
         eventBatchFileManager = EventBatchFileManager(directory, writeKey, keyValueStorage)
     }
 
-    @After
+    @AfterEach
     fun tearDown() {
         directory.deleteRecursively()
     }

@@ -7,14 +7,14 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.MockMemoryStorage
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import io.mockk.every
 import io.mockk.mockkStatic
-import junit.framework.TestCase.assertEquals
-import junit.framework.TestCase.assertNull
-import junit.framework.TestCase.assertTrue
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 private const val CUSTOM_ANONYMOUS_ID = "custom-anonymous-id"
 private const val USER_ID = "user-id"
@@ -27,7 +27,7 @@ class AnalyticsTest {
     private lateinit var analytics: Analytics
     private lateinit var mockStorage: Storage
 
-    @Before
+    @BeforeEach
     fun setup() {
         mockStorage = MockMemoryStorage()
 
