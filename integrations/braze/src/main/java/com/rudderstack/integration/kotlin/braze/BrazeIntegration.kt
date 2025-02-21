@@ -3,6 +3,7 @@ package com.rudderstack.integration.kotlin.braze
 import android.app.Activity
 import android.app.Application
 import android.util.Log
+import androidx.annotation.VisibleForTesting
 import com.braze.Braze
 import com.braze.BrazeUser
 import com.braze.configuration.BrazeConfig
@@ -232,7 +233,7 @@ class BrazeIntegration : IntegrationPlugin(), ActivityLifecycleObserver {
 private fun initBraze(application: Application, config: RudderBrazeConfig, logLevel: Logger.LogLevel): Braze {
     with(config) {
         val builder: BrazeConfig.Builder =
-            BrazeConfig.Builder()
+            initBrazeConfig()
                 .setApiKey(apiKey)
                 .setCustomEndpoint(customEndpoint)
         setLogLevel(logLevel)
@@ -241,6 +242,10 @@ private fun initBraze(application: Application, config: RudderBrazeConfig, logLe
     }
 }
 
+@VisibleForTesting
+internal fun initBrazeConfig() = BrazeConfig.Builder()
+
+// TODO: Test this manually
 private fun setLogLevel(rudderLogLevel: Logger.LogLevel) {
     when (rudderLogLevel) {
         Logger.LogLevel.VERBOSE -> Log.VERBOSE
