@@ -4,11 +4,11 @@ import android.app.Application
 import com.braze.Braze
 import com.braze.configuration.BrazeConfig
 import com.braze.models.outgoing.BrazeProperties
-import com.rudderstack.integration.kotlin.braze.Helper.getCampaignObject
-import com.rudderstack.integration.kotlin.braze.Helper.getCustomProperties
-import com.rudderstack.integration.kotlin.braze.Helper.getOrderCompletedProperties
-import com.rudderstack.integration.kotlin.braze.Helper.provideTrackEvent
-import com.rudderstack.integration.kotlin.braze.Helper.readFileAsJsonObject
+import com.rudderstack.integration.kotlin.braze.Utility.getCampaignObject
+import com.rudderstack.integration.kotlin.braze.Utility.getCustomProperties
+import com.rudderstack.integration.kotlin.braze.Utility.getOrderCompletedProperties
+import com.rudderstack.integration.kotlin.braze.Utility.provideTrackEvent
+import com.rudderstack.integration.kotlin.braze.Utility.readFileAsJsonObject
 import com.rudderstack.sdk.kotlin.android.utils.application
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger

@@ -22,7 +22,7 @@ import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 
-internal object Helper {
+internal object Utility {
 
     internal fun Any.readFileAsJsonObject(fileName: String): JsonObject {
         this::class.java.classLoader?.getResourceAsStream(fileName).let { inputStream ->
