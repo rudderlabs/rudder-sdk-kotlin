@@ -15,8 +15,6 @@ import kotlinx.serialization.json.put
 import org.junit.Test
 import java.util.Calendar
 
-private const val USER_ID = "<userId>"
-
 private const val EXTERNAL_ID = "<externalId>"
 
 class UtilsTest {

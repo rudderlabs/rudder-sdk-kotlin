@@ -31,6 +31,7 @@ internal val GENDER = Gender.MALE
 internal const val PHONE_NUMBER = "0123456789"
 internal const val CITY = "Palo Alto"
 internal const val COUNTRY = "USA"
+internal const val USER_ID = "<userId>"
 
 internal object Utility {
 
@@ -118,7 +119,7 @@ internal object Utility {
 
     private fun provideUserIdentity(
         anonymousId: String = "<anonymousId>",
-        userId: String = "<userId>",
+        userId: String = USER_ID,
         traits: RudderTraits = getStandardAndCustomTraits(),
     ) = UserIdentity(
         anonymousId = anonymousId,
