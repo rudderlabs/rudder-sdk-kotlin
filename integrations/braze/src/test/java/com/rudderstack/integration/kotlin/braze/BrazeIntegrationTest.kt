@@ -169,6 +169,42 @@ class BrazeIntegrationTest {
 
         verify { mockBrazeInstance.logCustomEvent(CUSTOM_TRACK_EVENT, any<BrazeProperties>()) }
     }
+
+    @Test
+    fun `given the event is Order Completed and with products, when it is made, then it is logged as a custom event with products`() {
+        brazeIntegration.create(mockBrazeIntegrationConfig)
+        val trackEvent = provideTrackEvent(
+            eventName = ORDER_COMPLETED,
+            properties = getOrderCompletedProperties(),
+        )
+        mockkStatic(::toBrazeProperties)
+        val customPropertiesSlot = slot<JsonObject>()
+        every { toBrazeProperties(capture(customPropertiesSlot)) } returns BrazeProperties()
+
+        brazeIntegration.track(trackEvent)
+
+        verify(exactly = 1) {
+            mockBrazeInstance.logPurchase(productId = "10011", currencyCode = "USD", price = BigDecimal("100.11"), properties = any<BrazeProperties>())
+            mockBrazeInstance.logPurchase(productId = "20022", currencyCode = "USD", price = BigDecimal("200.22"), properties = any<BrazeProperties>())
+        }
+        // We are unable to make a proper assertion on BrazeProperties() object. Therefore, we used the following workaround
+        assertEquals(getCustomProperties(), customPropertiesSlot.captured)
+    }
+
+    @Test
+    fun `given the event is Order Completed and without products, when it is made, then no event is logged`() {
+        brazeIntegration.create(mockBrazeIntegrationConfig)
+        val trackEvent = provideTrackEvent(
+            eventName = ORDER_COMPLETED,
+            properties = getCustomProperties(),
+        )
+
+        brazeIntegration.track(trackEvent)
+
+        verify(exactly = 0) {
+            mockBrazeInstance.logPurchase(productId = any(), currencyCode = any(), price = any(), properties = any<BrazeProperties>())
+        }
+    }
 }
 
 private fun Any.readFileAsJsonObject(fileName: String): JsonObject {
