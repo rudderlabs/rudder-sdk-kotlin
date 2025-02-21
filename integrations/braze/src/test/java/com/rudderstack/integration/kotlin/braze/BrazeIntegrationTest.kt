@@ -3,16 +3,19 @@ package com.rudderstack.integration.kotlin.braze
 import android.app.Application
 import com.braze.Braze
 import com.braze.configuration.BrazeConfig
+import com.braze.enums.Month
 import com.braze.models.outgoing.BrazeProperties
 import com.rudderstack.integration.kotlin.braze.Utility.getCampaignObject
 import com.rudderstack.integration.kotlin.braze.Utility.getCustomProperties
 import com.rudderstack.integration.kotlin.braze.Utility.getOrderCompletedProperties
+import com.rudderstack.integration.kotlin.braze.Utility.provideIdentifyEvent
 import com.rudderstack.integration.kotlin.braze.Utility.provideTrackEvent
 import com.rudderstack.integration.kotlin.braze.Utility.readFileAsJsonObject
 import com.rudderstack.sdk.kotlin.android.utils.application
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import io.mockk.MockKAnnotations
+import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.mockk
@@ -28,7 +31,8 @@ import org.junit.Test
 import java.math.BigDecimal
 
 private const val pathToBrazeConfig = "config/braze_config.json"
-//private const val pathToNewBrazeConfig = "config/new_braze_config.json"
+private const val pathToBrazeConfigWithDeDupeDisabled = "config/braze_config_with_deDupe_disabled.json"
+private const val pathToNewBrazeConfig = "config/new_braze_config.json"
 
 private const val INSTALL_ATTRIBUTED = "Install Attributed"
 
@@ -39,6 +43,8 @@ private const val ORDER_COMPLETED = "Order Completed"
 class BrazeIntegrationTest {
 
     private val mockBrazeIntegrationConfig: JsonObject = readFileAsJsonObject(pathToBrazeConfig)
+    private val mockBrazeIntegrationConfigWithDeDupeDisabled: JsonObject = readFileAsJsonObject(pathToBrazeConfigWithDeDupeDisabled)
+    private val mockNewBrazeIntegrationConfig: JsonObject = readFileAsJsonObject(pathToNewBrazeConfig)
 
     @MockK
     private lateinit var mockAnalytics: Analytics
@@ -211,6 +217,103 @@ class BrazeIntegrationTest {
                 price = any(),
                 properties = any<BrazeProperties>()
             )
+        }
+    }
+
+    @Test
+    fun `given the event is identify and it contain all the traits, when the event is made, then preferred ID and all traits should be set`() {
+        brazeIntegration.create(mockBrazeIntegrationConfig)
+        val identifyEvent = provideIdentifyEvent()
+
+        brazeIntegration.identify(identifyEvent)
+
+        verifyTraits()
+    }
+
+    @Test
+    fun `given deDupe is enabled and previously an Identify event has been made, when a new Identify event is made with exactly same trait, then nothing should be set after the second identify event`() {
+        // mockBrazeIntegrationConfig has deDupe enabled.
+        brazeIntegration.create(mockBrazeIntegrationConfig)
+        val identifyEvent = provideIdentifyEvent()
+        // Making first identify event. It should set all the traits.
+        brazeIntegration.identify(identifyEvent)
+        // Clearing the mocks to reset the state.
+        clearMocks(mockBrazeInstance)
+
+        // Making second identify event with exactly same traits. It should not set any trait.
+        brazeIntegration.identify(identifyEvent)
+
+        // No trait should be set.
+        verifyDeDupedTraits()
+    }
+
+    @Test
+    fun `given deDupe is disabled and previously an Identify event has been made, when a new Identify event is made with exactly same trait, then again all traits should be set after the second identify event`() {
+        // mockBrazeIntegrationConfig has deDupe disabled.
+        brazeIntegration.create(mockBrazeIntegrationConfigWithDeDupeDisabled)
+        val identifyEvent = provideIdentifyEvent()
+        // Making first identify event. It should set all the traits.
+        brazeIntegration.identify(identifyEvent)
+        // Clearing the mocks to reset the state.
+        clearMocks(mockBrazeInstance)
+
+        // Making second identify event with exactly same traits. It should not set any trait.
+        brazeIntegration.identify(identifyEvent)
+
+        // All traits should be set again.
+        verifyTraits()
+    }
+
+    private fun verifyTraits() {
+        mockBrazeInstance.currentUser?.apply {
+            verify(exactly = 1) {
+                mockBrazeInstance.changeUser(BRAZE_EXTERNAL_ID)
+                setDateOfBirth(
+                    year = 1990,
+                    month = Month.JANUARY,
+                    day = 1,
+                )
+                setEmail(EMAIL)
+                setFirstName(FIRST_NAME)
+                setLastName(LAST_NAME)
+                setGender(GENDER)
+                setPhoneNumber(PHONE_NUMBER)
+                // Address
+                setHomeCity(CITY)
+                setCountry(COUNTRY)
+                // Custom Attributes
+                setCustomUserAttribute("key-1", true)
+                setCustomUserAttribute("key-2", 1234L)
+                setCustomUserAttribute("key-3", 678.45)
+                setCustomUserAttribute("key-4", "value-4")
+                setCustomUserAttributeToSecondsFromEpoch("key-5", 631152671000)
+            }
+        }
+    }
+
+    private fun verifyDeDupedTraits() {
+        mockBrazeInstance.currentUser?.apply {
+            verify(exactly = 1) {
+                mockBrazeInstance.changeUser(null)
+                setEmail(null)
+                setFirstName(null)
+                setLastName(null)
+                setPhoneNumber(null)
+                // Address
+                setHomeCity(null)
+                setCountry(null)
+                // Custom Attributes
+                setCustomUserAttribute(any<String>(), any<Boolean>())
+                setCustomUserAttribute(any<String>(), any<Long>())
+                setCustomUserAttribute(any<String>(), any<Double>())
+                // Currently, anonymousId is being also set. Therefore, we are unable to make a proper assertion.
+//                setCustomUserAttribute(any<String>(), any<String>())
+                setCustomUserAttributeToSecondsFromEpoch(any<String>(), any())
+            }
+            verify(exactly = 0) {
+                setDateOfBirth(any(), any(), any())
+                setGender(any())
+            }
         }
     }
 }
