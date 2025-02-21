@@ -56,7 +56,7 @@ object RudderAnalyticsUtils {
             )
         ))
 
-        analytics.addIntegration(AdjustIntegration())
+        analytics.add(AdjustIntegration())
 
         val sampleIntegrationPlugin = SampleIntegrationPlugin()
         sampleIntegrationPlugin.add(object : Plugin {
@@ -80,6 +80,6 @@ object RudderAnalyticsUtils {
                     LoggerAnalytics.debug("SampleAmplitudePlugin: destination failed to initialise: ${destinationResult.error.message}.")
             }
         }
-        analytics.addIntegration(sampleIntegrationPlugin)
+        analytics.add(sampleIntegrationPlugin)
     }
 }

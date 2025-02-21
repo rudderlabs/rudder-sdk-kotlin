@@ -1,7 +1,6 @@
 package com.rudderstack.sdk.kotlin.core.internals.models.useridentity
 
 import com.rudderstack.sdk.kotlin.core.Analytics
-import com.rudderstack.sdk.kotlin.core.internals.models.ExternalId
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.LenientJson
@@ -22,23 +21,20 @@ private const val USER_1 = "user1"
 private const val USER_2 = "user2"
 private val TRAITS_1 = buildJsonObject { put("key-1", "value-1") }
 private val TRAITS_2 = buildJsonObject { put("key-2", "value-2") }
-private val EXTERNAL_IDS_1 = listOf(ExternalId("externalIdType1", "externalIdValue1"))
-private val EXTERNAL_IDS_2 = listOf(ExternalId("externalIdType2", "externalIdValue2"))
 private val TRAITS_1_OVERLAP = buildJsonObject { put("key-1", "value-2") }
-private val EXTERNAL_IDS_1_OVERLAP = listOf(ExternalId("externalIdType1", "externalIdValue2"))
 
-class SetUserIdTraitsAndExternalIdsActionTest {
+class SetUserIdAndTraitsActionTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
     private val mockAnalytics: Analytics = mockAnalytics(testScope, testDispatcher)
 
     @Test
-    fun `given identify event is made for the first time, when identify event is made, then it should update the user id, traits and external ids`() =
+    fun `given identify event is made for the first time, when identify event is made, then it should update all the values`() =
         runTest {
             val userIdentityState = provideUserIdentityInitialState()
 
-            val result = SetUserIdTraitsAndExternalIdsAction(USER_1, TRAITS_1, EXTERNAL_IDS_1, mockAnalytics)
+            val result = SetUserIdAndTraitsAction(USER_1, TRAITS_1, mockAnalytics)
                 .reduce(userIdentityState)
             testDispatcher.scheduler.advanceUntilIdle()
 
@@ -52,7 +48,7 @@ class SetUserIdTraitsAndExternalIdsActionTest {
         runTest {
             val userIdentityState = provideUserIdentityStateAfterFirstIdentifyEventIsMade()
 
-            val result = SetUserIdTraitsAndExternalIdsAction(USER_1, TRAITS_2, EXTERNAL_IDS_2, mockAnalytics)
+            val result = SetUserIdAndTraitsAction(USER_1, TRAITS_2, mockAnalytics)
                 .reduce(userIdentityState)
             testDispatcher.scheduler.advanceUntilIdle()
 
@@ -65,7 +61,7 @@ class SetUserIdTraitsAndExternalIdsActionTest {
         runTest {
             val userIdentityState = provideUserIdentityStateAfterFirstIdentifyEventIsMade()
 
-            val result = SetUserIdTraitsAndExternalIdsAction(USER_1, TRAITS_1_OVERLAP, EXTERNAL_IDS_1_OVERLAP, mockAnalytics)
+            val result = SetUserIdAndTraitsAction(USER_1, TRAITS_1_OVERLAP, mockAnalytics)
                 .reduce(userIdentityState)
             testDispatcher.scheduler.advanceUntilIdle()
 
@@ -74,11 +70,11 @@ class SetUserIdTraitsAndExternalIdsActionTest {
         }
 
     @Test
-    fun `given two identify events with different user id is made, when identify event is made, then it should update the user id, traits and external ids`() =
+    fun `given two identify events with different user id is made, when identify event is made, then it should update all the values`() =
         runTest {
             val userIdentityState = provideUserIdentityStateAfterFirstIdentifyEventIsMade()
 
-            val result = SetUserIdTraitsAndExternalIdsAction(USER_2, TRAITS_2, EXTERNAL_IDS_2, mockAnalytics)
+            val result = SetUserIdAndTraitsAction(USER_2, TRAITS_2, mockAnalytics)
                 .reduce(userIdentityState)
             testDispatcher.scheduler.advanceUntilIdle()
 
@@ -88,22 +84,20 @@ class SetUserIdTraitsAndExternalIdsActionTest {
         }
 
     @Test
-    fun `when values are stored, then those values should be persisted in storage`() = runTest {
+    fun `when values are stored, then it should be persisted in storage`() = runTest {
         val userIdentityState = provideUserIdentityStateAfterFirstIdentifyEventIsMade()
 
-        userIdentityState.storeUserIdTraitsAndExternalIds(mockAnalytics.storage)
+        userIdentityState.storeUserIdAndTraits(mockAnalytics.storage)
 
         coVerify {
             mockAnalytics.storage.write(StorageKeys.USER_ID, USER_1)
             mockAnalytics.storage.write(StorageKeys.TRAITS, LenientJson.encodeToString(TRAITS_1))
-            mockAnalytics.storage.write(StorageKeys.EXTERNAL_IDS, LenientJson.encodeToString(EXTERNAL_IDS_1))
         }
     }
 
     private fun verifyUserIdChangedBehaviour() {
         coVerify { mockAnalytics.storage.remove(StorageKeys.USER_ID) }
         coVerify { mockAnalytics.storage.remove(StorageKeys.TRAITS) }
-        coVerify { mockAnalytics.storage.remove(StorageKeys.EXTERNAL_IDS) }
     }
 }
 
@@ -112,7 +106,6 @@ private fun provideUserIdentityInitialState(): UserIdentity =
         anonymousId = DEFAULT_ANONYMOUS_ID,
         userId = String.empty(),
         traits = emptyJsonObject,
-        externalIds = emptyList()
     )
 
 private fun provideUserIdentityStateAfterFirstIdentifyEventIsMade(): UserIdentity =
@@ -120,21 +113,18 @@ private fun provideUserIdentityStateAfterFirstIdentifyEventIsMade(): UserIdentit
         anonymousId = DEFAULT_ANONYMOUS_ID,
         userId = USER_1,
         traits = TRAITS_1,
-        externalIds = EXTERNAL_IDS_1
     )
 
 private fun provideUserIdentityWithMergedTraitsAndExternalIds(): UserIdentity = UserIdentity(
     anonymousId = DEFAULT_ANONYMOUS_ID,
     userId = USER_1,
     traits = TRAITS_1 mergeWithHigherPriorityTo TRAITS_2,
-    externalIds = EXTERNAL_IDS_1 mergeWithHigherPriorityTo EXTERNAL_IDS_2,
 )
 
 private fun provideUserIdentityWithOverriddenTraitsAndExternalIds(): UserIdentity = UserIdentity(
     anonymousId = DEFAULT_ANONYMOUS_ID,
     userId = USER_1,
     traits = TRAITS_1_OVERLAP,
-    externalIds = EXTERNAL_IDS_1_OVERLAP
 )
 
 private fun provideUserIdentityAfterSecondIdentifyEventIsMade(): UserIdentity =
@@ -142,5 +132,4 @@ private fun provideUserIdentityAfterSecondIdentifyEventIsMade(): UserIdentity =
         anonymousId = DEFAULT_ANONYMOUS_ID,
         userId = USER_2,
         traits = TRAITS_2,
-        externalIds = EXTERNAL_IDS_2
 )

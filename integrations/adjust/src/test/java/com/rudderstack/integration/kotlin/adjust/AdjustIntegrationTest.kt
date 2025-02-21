@@ -92,6 +92,7 @@ class AdjustIntegrationTest {
         every { initAdjustEvent(any()) } returns mockAdjustEvent
         every { mockAdjustEvent.addCallbackParameter(any(), any()) } just Runs
         every { mockAdjustEvent.setRevenue(any(), any()) } just Runs
+        every { Adjust.addGlobalPartnerParameter(any(), any()) } just Runs
         every { Adjust.trackEvent(any()) } just Runs
 
         // Mock Analytics
@@ -162,8 +163,8 @@ class AdjustIntegrationTest {
 
         adjustIntegration.identify(identifyEvent)
 
-        verify { Adjust.addGlobalCallbackParameter(ANONYMOUS_ID, any()) }
-        verify { Adjust.addGlobalCallbackParameter(USER_ID, any()) }
+        verify { Adjust.addGlobalPartnerParameter(ANONYMOUS_ID, any()) }
+        verify { Adjust.addGlobalPartnerParameter(USER_ID, any()) }
     }
 
     @Test
@@ -182,7 +183,7 @@ class AdjustIntegrationTest {
         mockAdjustEvent.apply {
             verify(exactly = 1) { addCallbackParameter("key1", "value1") }
             verify(exactly = 1) { addCallbackParameter("key2", "23.45") }
-            verify(exactly = 1) { addCallbackParameter(ANONYMOUS_ID, any()) }
+            verify(exactly = 1) { Adjust.addGlobalPartnerParameter(ANONYMOUS_ID, any()) }
             verify(exactly = 0) { setRevenue(any(), any()) }
         }
         verify(exactly = 1) { Adjust.trackEvent(mockAdjustEvent) }
@@ -206,7 +207,7 @@ class AdjustIntegrationTest {
 
         mockAdjustEvent.apply {
             verify(exactly = 1) { addCallbackParameter("key1", "value1") }
-            verify(exactly = 1) { addCallbackParameter(ANONYMOUS_ID, any()) }
+            verify(exactly = 1) { Adjust.addGlobalPartnerParameter(ANONYMOUS_ID, any()) }
             verify(exactly = 1) { setRevenue(revenue, currency) }
         }
         verify(exactly = 1) { Adjust.trackEvent(mockAdjustEvent) }
@@ -226,7 +227,7 @@ class AdjustIntegrationTest {
 
         mockAdjustEvent.apply {
             verify(exactly = 0) { addCallbackParameter("key1", "value1") }
-            verify(exactly = 0) { addCallbackParameter(ANONYMOUS_ID, any()) }
+            verify(exactly = 0) { Adjust.addGlobalPartnerParameter(ANONYMOUS_ID, any()) }
             verify(exactly = 0) { setRevenue(any(), any()) }
         }
         verify(exactly = 0) { Adjust.trackEvent(mockAdjustEvent) }
@@ -273,7 +274,7 @@ class AdjustIntegrationTest {
         // Verify that the event is not tracked
         mockAdjustEvent.apply {
             verify(exactly = 0) { addCallbackParameter("key1", "value1") }
-            verify(exactly = 0) { addCallbackParameter(ANONYMOUS_ID, any()) }
+            verify(exactly = 0) { Adjust.addGlobalPartnerParameter(ANONYMOUS_ID, any()) }
             verify(exactly = 0) { setRevenue(any(), any()) }
         }
         verify(exactly = 0) { Adjust.trackEvent(mockAdjustEvent) }
@@ -283,7 +284,7 @@ class AdjustIntegrationTest {
         // Verify that the event is tracked
         mockAdjustEvent.apply {
             verify(exactly = 1) { addCallbackParameter("key1", "value1") }
-            verify(exactly = 1) { addCallbackParameter(ANONYMOUS_ID, any()) }
+            verify(exactly = 1) { Adjust.addGlobalPartnerParameter(ANONYMOUS_ID, any()) }
         }
         verify(exactly = 1) { Adjust.trackEvent(mockAdjustEvent) }
     }

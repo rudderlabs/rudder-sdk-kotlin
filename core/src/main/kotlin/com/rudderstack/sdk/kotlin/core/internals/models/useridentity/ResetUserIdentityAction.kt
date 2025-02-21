@@ -16,7 +16,6 @@ internal class ResetUserIdentityAction(
             anonymousId = anonymousId,
             userId = String.empty(),
             traits = emptyJsonObject,
-            externalIds = emptyList(),
         )
     }
 
@@ -32,6 +31,5 @@ internal suspend fun UserIdentity.resetUserIdentity(clearAnonymousId: Boolean, s
     storage.apply {
         remove(StorageKeys.USER_ID)
         remove(StorageKeys.TRAITS)
-        remove(StorageKeys.EXTERNAL_IDS)
     }
 }
