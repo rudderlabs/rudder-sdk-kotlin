@@ -68,6 +68,10 @@ class BrazeIntegration : IntegrationPlugin(), ActivityLifecycleObserver {
         }
     }
 
+    override fun update(destinationConfig: JsonObject) {
+        this.brazeConfig = destinationConfig.parse<RudderBrazeConfig>()
+    }
+
     override fun getDestinationInstance(): Any? {
         return braze
     }
