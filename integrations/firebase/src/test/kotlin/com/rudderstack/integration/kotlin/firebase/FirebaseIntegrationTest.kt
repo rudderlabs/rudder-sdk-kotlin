@@ -31,7 +31,7 @@ class FirebaseIntegrationTest {
     private val testDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
 
-    private val mockAnalytics: Analytics = mockAnalytics(testScope, testDispatcher)
+    private lateinit var mockAnalytics: Analytics
 
     @MockK
     private lateinit var mockFirebaseAnalytics: FirebaseAnalytics
@@ -44,6 +44,7 @@ class FirebaseIntegrationTest {
     @Before
     fun setup() {
         MockKAnnotations.init(this, relaxed = true)
+        mockAnalytics = mockAnalytics(testScope, testDispatcher)
         firebaseIntegration = spyk(FirebaseIntegration())
         every { mockAnalytics.configuration } returns mockk<Configuration>(relaxed = true)
 
