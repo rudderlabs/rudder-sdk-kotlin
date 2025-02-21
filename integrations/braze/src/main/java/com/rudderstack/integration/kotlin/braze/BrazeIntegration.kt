@@ -89,7 +89,6 @@ class BrazeIntegration : IntegrationPlugin(), ActivityLifecycleObserver {
                 handleOrderCompletedEvent(payload)
             }
 
-            // Custom event
             else -> {
                 handleCustomEvent(payload)
             }
