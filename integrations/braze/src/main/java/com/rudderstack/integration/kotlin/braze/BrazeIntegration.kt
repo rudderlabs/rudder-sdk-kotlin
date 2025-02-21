@@ -125,21 +125,21 @@ class BrazeIntegration : IntegrationPlugin(), ActivityLifecycleObserver {
         payload.properties.getStandardProperties().let { standardProperties ->
             val currency = standardProperties.currency
 
-            standardProperties.products.takeIf { it.isNotEmpty() }?.forEach {
-                this.braze?.logPurchase(
-                    productId = it.productId,
-                    currencyCode = currency,
-                    price = it.price,
-                    properties = toBrazeProperties(customProperties),
-                )
-                LoggerAnalytics.verbose(
-                    "BrazeIntegration: Order Completed event sent for " +
-                        "product_id: ${it.productId}, currency: $currency, price: ${it.price} " +
-                        "and properties $customProperties."
-                )
-            } ?: run {
-                LoggerAnalytics.error("BrazeIntegration: Order Completed event not sent as products are empty.")
-            }
+            standardProperties.products
+                .filter { it.isNotEmpty() }
+                .forEach {
+                    this.braze?.logPurchase(
+                        productId = it.productId,
+                        currencyCode = currency,
+                        price = it.price,
+                        properties = toBrazeProperties(customProperties),
+                    )
+                    LoggerAnalytics.verbose(
+                        "BrazeIntegration: Order Completed event sent for " +
+                            "product_id: ${it.productId}, currency: $currency, price: ${it.price} " +
+                            "and properties $customProperties."
+                    )
+                }
         }
     }
 

@@ -163,6 +163,10 @@ internal data class Product(
 
         internal fun getKeysAsList(): List<String> = listOf("product_id", "price")
     }
+
+    internal fun isNotEmpty(): Boolean {
+        return productId != null || price != null
+    }
 }
 
 /**
