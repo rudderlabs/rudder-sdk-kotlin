@@ -2,6 +2,7 @@ package com.rudderstack.integration.kotlin.braze
 
 import com.rudderstack.sdk.kotlin.core.internals.models.ExternalId
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
+import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.UserIdentity
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
@@ -240,15 +241,13 @@ private fun provideIdentifyEvent(
     userId: String = USER_ID,
     traits: JsonObject = provideStandardTraitsInJsonFormat(),
 ) = IdentifyEvent(
-    // TODO: Uncomment this after ExternalId PR gets merged
-//    options = RudderOption(
-//        externalIds = provideListOfExternalId()
-//    ),
+    options = RudderOption(
+        externalIds = provideListOfExternalId()
+    ),
     userIdentityState = UserIdentity(
         anonymousId = anonymousId,
         userId = userId,
         traits = traits,
-        externalIds = provideListOfExternalId() // TODO: Remove this line after ExternalId PR gets merged
     )
 ).also { it.updateData(PlatformType.Mobile) }
 
