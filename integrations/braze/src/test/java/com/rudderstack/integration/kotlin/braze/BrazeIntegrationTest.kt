@@ -74,7 +74,7 @@ class BrazeIntegrationTest {
     }
 
     @Test
-    fun `given integration is initialised, when instance is requested, then adjust instance is returned`() {
+    fun `given integration is initialised, when instance is requested, then instance is returned`() {
         brazeIntegration.create(mockBrazeIntegrationConfig)
 
         val actualBrazeInstance = brazeIntegration.getDestinationInstance()
