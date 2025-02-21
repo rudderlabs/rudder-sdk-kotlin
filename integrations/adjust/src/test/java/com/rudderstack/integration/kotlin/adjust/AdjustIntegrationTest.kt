@@ -23,7 +23,6 @@ import java.io.BufferedReader
 import com.adjust.sdk.AdjustConfig
 import com.adjust.sdk.AdjustEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
-import com.rudderstack.sdk.kotlin.core.internals.models.ExternalId
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderTraits
@@ -323,12 +322,10 @@ private fun provideUserIdentityState(
     anonymousId: String = ANONYMOUS_ID,
     userId: String = USER_ID,
     traits: RudderTraits = emptyJsonObject,
-    externalIds: List<ExternalId> = emptyList(),
 ) = UserIdentity(
     anonymousId = anonymousId,
     userId = userId,
     traits = traits,
-    externalIds = externalIds,
 )
 
 private fun Event.applyMockedValues() {
