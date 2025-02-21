@@ -74,6 +74,8 @@ class BrazeIntegration : IntegrationPlugin(), ActivityLifecycleObserver {
 
     override fun track(payload: TrackEvent): Event {
         // TODO("Handle hybrid mode")
+        if (brazeConfig.isHybridMode()) return payload
+
         when (payload.event) {
             INSTALL_ATTRIBUTED -> {
                 handleInstallAttributedEvent(payload)
@@ -148,6 +150,8 @@ class BrazeIntegration : IntegrationPlugin(), ActivityLifecycleObserver {
     }
 
     override fun identify(payload: IdentifyEvent): Event {
+        if (brazeConfig.isHybridMode()) return payload
+
         payload.toIdentifyTraits().let { currentIdentifyTraits ->
             val deDupedTraits = this.brazeConfig.takeIf { it.supportDedup }?.let {
                 currentIdentifyTraits deDupe previousIdentifyTraits

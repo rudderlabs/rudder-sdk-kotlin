@@ -1,5 +1,6 @@
 package com.rudderstack.integration.kotlin.braze
 
+import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.ExternalId
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
@@ -38,6 +39,14 @@ internal data class RudderBrazeConfig(
     init {
         require(apiKey.isNotBlank()) { "appKey cannot be empty or blank" }
         require(customEndpoint.isNotBlank()) { "dataCenter cannot be empty or blank" }
+    }
+
+    internal fun isHybridMode(): Boolean {
+        if (connectionMode == ConnectionMode.HYBRID) {
+            LoggerAnalytics.verbose("BrazeIntegration: As connection mode is set to hybrid, dropping event request.")
+            return true
+        }
+        return false
     }
 }
 
