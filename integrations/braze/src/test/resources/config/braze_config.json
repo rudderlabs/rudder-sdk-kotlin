@@ -5,7 +5,7 @@
   "trackAnonymousUser": false,
   "enableSubscriptionGroupInGroupCall": false,
   "enableNestedArrayOperations": false,
-  "supportDedup": false,
+  "supportDedup": true,
   "blacklistedEvents" : [ ],
   "whitelistedEvents" : [ ],
   "eventFilteringOption" : "disable",
