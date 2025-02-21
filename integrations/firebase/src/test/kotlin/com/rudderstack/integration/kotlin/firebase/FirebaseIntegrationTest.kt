@@ -21,10 +21,10 @@ import io.mockk.verify
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.serialization.json.buildJsonObject
-import org.junit.Before
-import org.junit.Test
 import kotlinx.serialization.json.put
-import org.junit.After
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 class FirebaseIntegrationTest {
 
@@ -41,7 +41,7 @@ class FirebaseIntegrationTest {
 
     private lateinit var firebaseIntegration: FirebaseIntegration
 
-    @Before
+    @BeforeEach
     fun setup() {
         MockKAnnotations.init(this, relaxed = true)
         mockAnalytics = mockAnalytics(testScope, testDispatcher)
@@ -58,7 +58,7 @@ class FirebaseIntegrationTest {
         firebaseIntegration.create(emptyJsonObject)
     }
 
-    @After
+    @AfterEach
     fun tearDown() {
         unmockkAll()
     }

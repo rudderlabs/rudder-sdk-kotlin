@@ -28,11 +28,11 @@ import io.mockk.verify
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.serialization.json.buildJsonObject
-import org.junit.Assert.assertEquals
-import org.junit.Before
-import org.junit.Test
 import kotlinx.serialization.json.put
-import org.junit.After
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 private const val pathToSourceConfigWithLimitedDataUseDisabled =
     "facebookconfig/facebook_config_with_limited_data_use_disabled.json"
@@ -54,7 +54,7 @@ class FacebookIntegrationTest {
 
     private lateinit var facebookIntegration: FacebookIntegration
 
-    @Before
+    @BeforeEach
     fun setup() {
         MockKAnnotations.init(this, relaxed = true)
         mockAnalytics = mockAnalytics(testScope, testDispatcher)
@@ -86,7 +86,7 @@ class FacebookIntegrationTest {
         facebookIntegration.setup(mockAnalytics)
     }
 
-    @After
+    @AfterEach
     fun teardown() {
         unmockkAll()
     }
