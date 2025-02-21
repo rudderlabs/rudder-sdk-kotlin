@@ -6,6 +6,12 @@ import com.braze.configuration.BrazeConfig
 import com.rudderstack.sdk.kotlin.android.utils.application
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
+import com.rudderstack.sdk.kotlin.core.internals.models.Event
+import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
+import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
+import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
+import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
+import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
@@ -17,12 +23,17 @@ import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertNull
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.put
 import org.junit.Before
 import org.junit.Test
 import java.io.BufferedReader
 
 private const val pathToBrazeConfig = "config/braze_config.json"
+//private const val pathToNewBrazeConfig = "config/new_braze_config.json"
+
+private const val INSTALL_ATTRIBUTED = "Install Attributed"
 
 class BrazeIntegrationTest {
 
@@ -105,6 +116,28 @@ class BrazeIntegrationTest {
         assertEquals(mockBrazeInstance, newBrazeInstance)
     }
 
+    @Test
+    fun `given the event is Install Attributed and campaign object is present, when it is made, then the attribution data is tracked`() {
+        brazeIntegration.create(mockBrazeIntegrationConfig)
+        val trackEvent = provideTrackEvent(
+            eventName = INSTALL_ATTRIBUTED,
+            properties = getCampaignObject(),
+        )
+
+        brazeIntegration.track(trackEvent)
+
+        verify { mockBrazeInstance.currentUser?.setAttributionData(any()) }
+    }
+
+    @Test
+    fun `given the event is Install Attributed and campaign object is not present, when it is made, then it is logged as a custom event`() {
+        brazeIntegration.create(mockBrazeIntegrationConfig)
+        val trackEvent = provideTrackEvent(eventName = INSTALL_ATTRIBUTED)
+
+        brazeIntegration.track(trackEvent)
+
+        verify { mockBrazeInstance.logCustomEvent(INSTALL_ATTRIBUTED) }
+    }
 }
 
 private fun Any.readFileAsJsonObject(fileName: String): JsonObject {
@@ -113,4 +146,32 @@ private fun Any.readFileAsJsonObject(fileName: String): JsonObject {
     }.let { fileAsString ->
         return Json.parseToJsonElement(fileAsString).jsonObject
     }
+}
+
+@OptIn(InternalRudderApi::class)
+private fun provideTrackEvent(
+    eventName: String,
+    properties: JsonObject = JsonObject(emptyMap()),
+) = TrackEvent(
+    event = eventName,
+    properties = properties,
+    options = RudderOption(),
+).also {
+    it.applyMockedValues()
+    it.updateData(PlatformType.Mobile)
+}
+
+private fun Event.applyMockedValues() {
+    this.originalTimestamp = "<original-timestamp>"
+    this.context = emptyJsonObject
+    this.messageId = "<message-id>"
+}
+
+private fun getCampaignObject(): JsonObject = buildJsonObject {
+    put("campaign", buildJsonObject {
+        put("source", "Source value")
+        put("name", "Name value")
+        put("ad_group", "ad_group value")
+        put("ad_creative", "ad_creative value")
+    })
 }
