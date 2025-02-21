@@ -3,6 +3,7 @@ package com.rudderstack.integration.kotlin.braze
 import android.app.Application
 import com.braze.Braze
 import com.braze.configuration.BrazeConfig
+import com.braze.models.outgoing.BrazeProperties
 import com.rudderstack.sdk.kotlin.android.utils.application
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
@@ -18,22 +19,29 @@ import io.mockk.impl.annotations.MockK
 import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.mockkStatic
+import io.mockk.slot
 import io.mockk.verify
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertNull
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.put
 import org.junit.Before
 import org.junit.Test
 import java.io.BufferedReader
+import java.math.BigDecimal
 
 private const val pathToBrazeConfig = "config/braze_config.json"
 //private const val pathToNewBrazeConfig = "config/new_braze_config.json"
 
 private const val INSTALL_ATTRIBUTED = "Install Attributed"
+
+private const val CUSTOM_TRACK_EVENT = "Custom Track Event"
+
+private const val ORDER_COMPLETED = "Order Completed"
 
 class BrazeIntegrationTest {
 
@@ -138,6 +146,29 @@ class BrazeIntegrationTest {
 
         verify { mockBrazeInstance.logCustomEvent(INSTALL_ATTRIBUTED) }
     }
+
+    @Test
+    fun `given the event is custom event without properties, when it is made, then it is logged as a custom event`() {
+        brazeIntegration.create(mockBrazeIntegrationConfig)
+        val trackEvent = provideTrackEvent(eventName = CUSTOM_TRACK_EVENT)
+
+        brazeIntegration.track(trackEvent)
+
+        verify { mockBrazeInstance.logCustomEvent(CUSTOM_TRACK_EVENT) }
+    }
+
+    @Test
+    fun `given the event is custom event with properties, when it is made, then it is logged as a custom event with properties`() {
+        brazeIntegration.create(mockBrazeIntegrationConfig)
+        val trackEvent = provideTrackEvent(
+            eventName = CUSTOM_TRACK_EVENT,
+            properties = getCustomProperties(),
+        )
+
+        brazeIntegration.track(trackEvent)
+
+        verify { mockBrazeInstance.logCustomEvent(CUSTOM_TRACK_EVENT, any<BrazeProperties>()) }
+    }
 }
 
 private fun Any.readFileAsJsonObject(fileName: String): JsonObject {
@@ -174,4 +205,30 @@ private fun getCampaignObject(): JsonObject = buildJsonObject {
         put("ad_group", "ad_group value")
         put("ad_creative", "ad_creative value")
     })
+}
+
+private fun getCustomProperties(): JsonObject = buildJsonObject {
+    put("key1", "value1")
+    put("key2", "value2")
+    put("Product-Key-1", "Product-Value-1")
+    put("Product-Key-2", "Product-Value-2")
+}
+
+private fun getOrderCompletedProperties(): JsonObject = buildJsonObject {
+    put("key1", "value1")
+    put("key2", "value2")
+    put(
+        "products", buildJsonArray {
+            add(buildJsonObject {
+                put("product_id", "10011")
+                put("price", 100.11)
+                put("Product-Key-1", "Product-Value-1")
+            })
+            add(buildJsonObject {
+                put("product_id", "20022")
+                put("price", 200.22)
+                put("Product-Key-2", "Product-Value-2")
+            })
+        }
+    )
 }
