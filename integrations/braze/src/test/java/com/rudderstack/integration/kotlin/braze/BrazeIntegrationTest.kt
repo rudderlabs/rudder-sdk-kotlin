@@ -14,6 +14,7 @@ import com.rudderstack.integration.kotlin.braze.Utility.readFileAsJsonObject
 import com.rudderstack.sdk.kotlin.android.utils.application
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
+import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
 import io.mockk.MockKAnnotations
 import io.mockk.clearMocks
 import io.mockk.every
@@ -244,7 +245,7 @@ class BrazeIntegrationTest {
         brazeIntegration.identify(identifyEvent)
 
         // No trait should be set.
-        verifyDeDupedTraits()
+        verifyNullTraitsSet(exactly = 1)
     }
 
     @Test
@@ -262,6 +263,76 @@ class BrazeIntegrationTest {
 
         // All traits should be set again.
         verifyTraits()
+    }
+
+    @Test
+    fun `given identify event doesn't contain externalId, when the event is made, then userId is set as the preferred Id`() {
+        brazeIntegration.create(mockBrazeIntegrationConfig)
+        val identifyEvent = provideIdentifyEvent(options = RudderOption())
+
+        brazeIntegration.identify(identifyEvent)
+
+        verify(exactly = 1) {
+            mockBrazeInstance.changeUser(USER_ID)
+        }
+    }
+
+    @Test
+    fun `given hybrid mode is enabled, when identify event is made, then no traits is set`() {
+        brazeIntegration.create(mockNewBrazeIntegrationConfig)
+        val identifyEvent = provideIdentifyEvent()
+
+        brazeIntegration.identify(identifyEvent)
+
+        verifyNullTraitsSet(exactly = 0)
+    }
+
+    @Test
+    fun `given hybrid mode is enabled, when a custom track event is made, then no event is logged`() {
+        brazeIntegration.create(mockNewBrazeIntegrationConfig)
+        val trackEvent = provideTrackEvent(eventName = CUSTOM_TRACK_EVENT)
+
+        brazeIntegration.track(trackEvent)
+
+        verify(exactly = 0) {
+            mockBrazeInstance.logCustomEvent(any())
+            mockBrazeInstance.logCustomEvent(any(), any())
+        }
+    }
+
+    @Test
+    fun `given hybrid mode is enabled, when an order completed event is made, then no event is logged`() {
+        brazeIntegration.create(mockNewBrazeIntegrationConfig)
+        val trackEvent = provideTrackEvent(
+            eventName = ORDER_COMPLETED,
+            properties = getOrderCompletedProperties(),
+        )
+
+        brazeIntegration.track(trackEvent)
+
+        verify(exactly = 0) {
+            mockBrazeInstance.logPurchase(
+                productId = any(),
+                currencyCode = any(),
+                price = any(),
+                properties = any<BrazeProperties>()
+            )
+        }
+    }
+
+    @Test
+    fun `given hybrid mode is enabled, when an install attributed event is made, then no event is logged`() {
+        brazeIntegration.create(mockNewBrazeIntegrationConfig)
+        val trackEvent = provideTrackEvent(
+            eventName = INSTALL_ATTRIBUTED,
+            properties = getCampaignObject(),
+        )
+
+        brazeIntegration.track(trackEvent)
+
+        verify(exactly = 0) {
+            mockBrazeInstance.currentUser?.setAttributionData(any())
+        }
     }
 
     private fun verifyTraits() {
@@ -291,9 +362,13 @@ class BrazeIntegrationTest {
         }
     }
 
-    private fun verifyDeDupedTraits() {
+    /**
+     * Set exactly to 1 to verify that all the traits are set to null.
+     * Set exactly to 0 to verify that no trait is set.
+     */
+    private fun verifyNullTraitsSet(exactly: Int) {
         mockBrazeInstance.currentUser?.apply {
-            verify(exactly = 1) {
+            verify(exactly = exactly) {
                 mockBrazeInstance.changeUser(null)
                 setEmail(null)
                 setFirstName(null)
