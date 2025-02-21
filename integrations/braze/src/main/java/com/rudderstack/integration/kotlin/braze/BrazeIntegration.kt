@@ -225,6 +225,11 @@ class BrazeIntegration : IntegrationPlugin(), ActivityLifecycleObserver {
         } ?: setCustomUserAttribute(key, content)
     }
 
+    override fun flush() {
+        this.braze?.requestImmediateDataFlush()
+        LoggerAnalytics.verbose("BrazeIntegration: Flush call completed")
+    }
+
     override fun onActivityStarted(activity: Activity) {
         braze?.openSession(activity)
     }
