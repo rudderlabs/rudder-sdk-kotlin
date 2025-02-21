@@ -130,7 +130,7 @@ class BrazeIntegration : IntegrationPlugin(), ActivityLifecycleObserver {
                     productId = it.productId,
                     currencyCode = currency,
                     price = it.price,
-                    properties = BrazeProperties(customProperties)
+                    properties = toBrazeProperties(customProperties),
                 )
                 LoggerAnalytics.verbose(
                     "BrazeIntegration: Order Completed event sent for " +
@@ -271,3 +271,6 @@ private fun BrazeUser.handleStringValue(key: String, content: String) {
         setCustomUserAttributeToSecondsFromEpoch(key, seconds)
     } ?: setCustomUserAttribute(key, content)
 }
+
+@VisibleForTesting
+internal fun toBrazeProperties(properties: JsonObject): BrazeProperties = BrazeProperties(properties)
