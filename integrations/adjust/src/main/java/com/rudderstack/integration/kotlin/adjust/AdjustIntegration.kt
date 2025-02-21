@@ -97,9 +97,9 @@ class AdjustIntegration : IntegrationPlugin(), ActivityLifecycleObserver {
     }
 
     private fun Event.setSessionParams() {
-        Adjust.addGlobalCallbackParameter(ANONYMOUS_ID, anonymousId)
+        Adjust.addGlobalPartnerParameter(ANONYMOUS_ID, anonymousId)
         if (userId.isNotBlank()) {
-            Adjust.addGlobalCallbackParameter(USER_ID, userId)
+            Adjust.addGlobalPartnerParameter(USER_ID, userId)
         }
     }
 
@@ -139,7 +139,7 @@ private fun initAdjust(application: Application, appToken: String, logLevel: Log
 }
 
 private fun getAdjustEnvironment(logLevel: Logger.LogLevel): String {
-    return if (logLevel >= Logger.LogLevel.DEBUG) {
+    return if (logLevel != Logger.LogLevel.NONE) {
         AdjustConfig.ENVIRONMENT_SANDBOX
     } else {
         AdjustConfig.ENVIRONMENT_PRODUCTION
