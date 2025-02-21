@@ -1,5 +1,6 @@
 package com.rudderstack.integration.kotlin.braze
 
+import com.braze.enums.Gender
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.ExternalId
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
@@ -21,6 +22,15 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
+
+internal const val BRAZE_EXTERNAL_ID = "2d31d085-4d93-4126-b2b3-94e651810673"
+internal const val EMAIL = "test@gmail.com"
+internal const val FIRST_NAME = "First Name"
+internal const val LAST_NAME = "Last Name"
+internal val GENDER = Gender.MALE
+internal const val PHONE_NUMBER = "0123456789"
+internal const val CITY = "Palo Alto"
+internal const val COUNTRY = "USA"
 
 internal object Utility {
 
@@ -86,17 +96,21 @@ internal object Utility {
         )
     }
 
+    @OptIn(InternalRudderApi::class)
     internal fun provideIdentifyEvent(
         options: RudderOption = provideRudderOptionWithExternalId(),
         userIdentityState: UserIdentity = provideUserIdentity(),
     ) = IdentifyEvent(
         options = options,
         userIdentityState = userIdentityState,
-    )
+    ).also {
+        it.applyMockedValues()
+        it.updateData(PlatformType.Mobile)
+    }
 
     private fun provideRudderOptionWithExternalId(
         externalIds: List<ExternalId> = listOf(
-            ExternalId(type = "brazeExternalId", id = "2d31d085-4d93-4126-b2b3-94e651810673"),
+            ExternalId(type = "brazeExternalId", id = BRAZE_EXTERNAL_ID),
         )
     ) = RudderOption(
         externalIds = externalIds
@@ -116,19 +130,21 @@ internal object Utility {
         // Standard traits
         put("birthday", Date(631172471000).toISOString())
         put("address", buildJsonObject {
-            put("city", "Palo Alto")
-            put("country", "USA")
+            put("city", CITY)
+            put("country", COUNTRY)
         })
-        put("firstName", "First Name")
-        put("lastName", "Last Name")
+        put("firstName", FIRST_NAME)
+        put("lastName", LAST_NAME)
         put("gender", "Male")
-        put("phone", "0123456789")
-        put("email", "test@gmail.com")
+        put("phone", PHONE_NUMBER)
+        put("email", EMAIL)
 
         // Custom Traits
-        put("key-1", "value-1")
+        put("key-1", true)
         put("key-2", 1234)
-        put("key-3", Date(631172471000).toISOString())
+        put("key-3", 678.45)
+        put("key-4", "value-4")
+        put("key-5", Date(631172471000).toISOString())
     }
 
     private fun Date.toISOString(): String {
