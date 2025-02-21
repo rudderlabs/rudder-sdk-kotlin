@@ -27,10 +27,6 @@ import kotlinx.serialization.json.boolean
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.double
 import kotlinx.serialization.json.doubleOrNull
-import kotlinx.serialization.json.float
-import kotlinx.serialization.json.floatOrNull
-import kotlinx.serialization.json.int
-import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.long
 import kotlinx.serialization.json.longOrNull
 import java.util.Calendar
@@ -255,10 +251,8 @@ private fun BrazeUser.setCustomTraits(traits: JsonObject?) {
         when {
             value !is JsonPrimitive -> logUnsupportedType(key, value)
             value.booleanOrNull != null -> setCustomUserAttribute(key, value.boolean)
-            value.intOrNull != null -> setCustomUserAttribute(key, value.int)
-            value.doubleOrNull != null -> setCustomUserAttribute(key, value.double)
-            value.floatOrNull != null -> setCustomUserAttribute(key, value.float)
             value.longOrNull != null -> setCustomUserAttribute(key, value.long)
+            value.doubleOrNull != null -> setCustomUserAttribute(key, value.double)
             value.isString -> handleStringValue(key, value.content)
             else -> logUnsupportedType(key, value)
         }
