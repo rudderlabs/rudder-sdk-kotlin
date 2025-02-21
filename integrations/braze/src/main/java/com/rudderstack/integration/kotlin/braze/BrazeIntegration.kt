@@ -178,53 +178,6 @@ class BrazeIntegration : IntegrationPlugin(), ActivityLifecycleObserver {
         return payload
     }
 
-    private fun BrazeUser.setDate(date: Calendar?) {
-        date?.also {
-            setDateOfBirth(
-                year = it[Calendar.YEAR],
-                month = Month.entries[it[Calendar.MONTH]],
-                day = it[Calendar.DAY_OF_MONTH],
-            )
-        }
-    }
-
-    private fun BrazeUser.setGender(gender: String?) {
-        when (gender?.uppercase()) {
-            "M", "MALE" -> setGender(Gender.MALE)
-            "F", "FEMALE" -> setGender(Gender.FEMALE)
-
-            else -> {
-                LoggerAnalytics.error("BrazeIntegration: Unsupported gender: $gender")
-            }
-        }
-    }
-
-    private fun BrazeUser.setAddress(address: Address?) {
-        setHomeCity(address?.city)
-        setCountry(address?.country)
-    }
-
-    private fun BrazeUser.setCustomTraits(traits: JsonObject?) {
-        traits?.forEach { (key, value) ->
-            when {
-                value !is JsonPrimitive -> logUnsupportedType(key, value)
-                value.booleanOrNull != null -> setCustomUserAttribute(key, value.boolean)
-                value.intOrNull != null -> setCustomUserAttribute(key, value.int)
-                value.doubleOrNull != null -> setCustomUserAttribute(key, value.double)
-                value.floatOrNull != null -> setCustomUserAttribute(key, value.float)
-                value.longOrNull != null -> setCustomUserAttribute(key, value.long)
-                value.isString -> handleStringValue(key, value.content)
-                else -> logUnsupportedType(key, value)
-            }
-        }
-    }
-
-    private fun BrazeUser.handleStringValue(key: String, content: String) {
-        tryDateConversion(content)?.let { seconds ->
-            setCustomUserAttributeToSecondsFromEpoch(key, seconds)
-        } ?: setCustomUserAttribute(key, content)
-    }
-
     override fun flush() {
         this.braze?.requestImmediateDataFlush()
         LoggerAnalytics.verbose("BrazeIntegration: Flush call completed")
@@ -266,4 +219,51 @@ private fun setLogLevel(rudderLogLevel: Logger.LogLevel) {
     }.also {
         BrazeLogger.logLevel = it
     }
+}
+
+private fun BrazeUser.setDate(date: Calendar?) {
+    date?.also {
+        setDateOfBirth(
+            year = it[Calendar.YEAR],
+            month = Month.entries[it[Calendar.MONTH]],
+            day = it[Calendar.DAY_OF_MONTH],
+        )
+    }
+}
+
+private fun BrazeUser.setGender(gender: String?) {
+    when (gender?.uppercase()) {
+        "M", "MALE" -> setGender(Gender.MALE)
+        "F", "FEMALE" -> setGender(Gender.FEMALE)
+
+        else -> {
+            LoggerAnalytics.error("BrazeIntegration: Unsupported gender: $gender")
+        }
+    }
+}
+
+private fun BrazeUser.setAddress(address: Address?) {
+    setHomeCity(address?.city)
+    setCountry(address?.country)
+}
+
+private fun BrazeUser.setCustomTraits(traits: JsonObject?) {
+    traits?.forEach { (key, value) ->
+        when {
+            value !is JsonPrimitive -> logUnsupportedType(key, value)
+            value.booleanOrNull != null -> setCustomUserAttribute(key, value.boolean)
+            value.intOrNull != null -> setCustomUserAttribute(key, value.int)
+            value.doubleOrNull != null -> setCustomUserAttribute(key, value.double)
+            value.floatOrNull != null -> setCustomUserAttribute(key, value.float)
+            value.longOrNull != null -> setCustomUserAttribute(key, value.long)
+            value.isString -> handleStringValue(key, value.content)
+            else -> logUnsupportedType(key, value)
+        }
+    }
+}
+
+private fun BrazeUser.handleStringValue(key: String, content: String) {
+    tryDateConversion(content)?.let { seconds ->
+        setCustomUserAttributeToSecondsFromEpoch(key, seconds)
+    } ?: setCustomUserAttribute(key, content)
 }
