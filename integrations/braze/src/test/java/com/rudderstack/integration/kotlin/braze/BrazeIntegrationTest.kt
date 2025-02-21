@@ -4,15 +4,14 @@ import android.app.Application
 import com.braze.Braze
 import com.braze.configuration.BrazeConfig
 import com.braze.models.outgoing.BrazeProperties
+import com.rudderstack.integration.kotlin.braze.Helper.getCampaignObject
+import com.rudderstack.integration.kotlin.braze.Helper.getCustomProperties
+import com.rudderstack.integration.kotlin.braze.Helper.getOrderCompletedProperties
+import com.rudderstack.integration.kotlin.braze.Helper.provideTrackEvent
+import com.rudderstack.integration.kotlin.braze.Helper.readFileAsJsonObject
 import com.rudderstack.sdk.kotlin.android.utils.application
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
-import com.rudderstack.sdk.kotlin.core.internals.models.Event
-import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
-import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
-import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
-import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
-import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
@@ -23,15 +22,9 @@ import io.mockk.slot
 import io.mockk.verify
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertNull
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.buildJsonArray
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.put
 import org.junit.Before
 import org.junit.Test
-import java.io.BufferedReader
 import java.math.BigDecimal
 
 private const val pathToBrazeConfig = "config/braze_config.json"
@@ -184,8 +177,18 @@ class BrazeIntegrationTest {
         brazeIntegration.track(trackEvent)
 
         verify(exactly = 1) {
-            mockBrazeInstance.logPurchase(productId = "10011", currencyCode = "USD", price = BigDecimal("100.11"), properties = any<BrazeProperties>())
-            mockBrazeInstance.logPurchase(productId = "20022", currencyCode = "USD", price = BigDecimal("200.22"), properties = any<BrazeProperties>())
+            mockBrazeInstance.logPurchase(
+                productId = "10011",
+                currencyCode = "USD",
+                price = BigDecimal("100.11"),
+                properties = any<BrazeProperties>()
+            )
+            mockBrazeInstance.logPurchase(
+                productId = "20022",
+                currencyCode = "USD",
+                price = BigDecimal("200.22"),
+                properties = any<BrazeProperties>()
+            )
         }
         // We are unable to make a proper assertion on BrazeProperties() object. Therefore, we used the following workaround
         assertEquals(getCustomProperties(), customPropertiesSlot.captured)
@@ -202,69 +205,12 @@ class BrazeIntegrationTest {
         brazeIntegration.track(trackEvent)
 
         verify(exactly = 0) {
-            mockBrazeInstance.logPurchase(productId = any(), currencyCode = any(), price = any(), properties = any<BrazeProperties>())
+            mockBrazeInstance.logPurchase(
+                productId = any(),
+                currencyCode = any(),
+                price = any(),
+                properties = any<BrazeProperties>()
+            )
         }
     }
-}
-
-private fun Any.readFileAsJsonObject(fileName: String): JsonObject {
-    this::class.java.classLoader?.getResourceAsStream(fileName).let { inputStream ->
-        inputStream?.bufferedReader()?.use(BufferedReader::readText) ?: ""
-    }.let { fileAsString ->
-        return Json.parseToJsonElement(fileAsString).jsonObject
-    }
-}
-
-@OptIn(InternalRudderApi::class)
-private fun provideTrackEvent(
-    eventName: String,
-    properties: JsonObject = JsonObject(emptyMap()),
-) = TrackEvent(
-    event = eventName,
-    properties = properties,
-    options = RudderOption(),
-).also {
-    it.applyMockedValues()
-    it.updateData(PlatformType.Mobile)
-}
-
-private fun Event.applyMockedValues() {
-    this.originalTimestamp = "<original-timestamp>"
-    this.context = emptyJsonObject
-    this.messageId = "<message-id>"
-}
-
-private fun getCampaignObject(): JsonObject = buildJsonObject {
-    put("campaign", buildJsonObject {
-        put("source", "Source value")
-        put("name", "Name value")
-        put("ad_group", "ad_group value")
-        put("ad_creative", "ad_creative value")
-    })
-}
-
-private fun getCustomProperties(): JsonObject = buildJsonObject {
-    put("key1", "value1")
-    put("key2", "value2")
-    put("Product-Key-1", "Product-Value-1")
-    put("Product-Key-2", "Product-Value-2")
-}
-
-private fun getOrderCompletedProperties(): JsonObject = buildJsonObject {
-    put("key1", "value1")
-    put("key2", "value2")
-    put(
-        "products", buildJsonArray {
-            add(buildJsonObject {
-                put("product_id", "10011")
-                put("price", 100.11)
-                put("Product-Key-1", "Product-Value-1")
-            })
-            add(buildJsonObject {
-                put("product_id", "20022")
-                put("price", 200.22)
-                put("Product-Key-2", "Product-Value-2")
-            })
-        }
-    )
 }
