@@ -1,7 +1,6 @@
 package com.rudderstack.integration.kotlin.firebase
 
 import android.os.Bundle
-import android.os.Parcelable
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.core.ecommerce.ECommerceEvents
@@ -20,11 +19,16 @@ import io.mockk.unmockkAll
 import io.mockk.verify
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.Arguments
+import org.junit.jupiter.params.provider.MethodSource
 
 class FirebaseIntegrationTest {
 
@@ -73,7 +77,7 @@ class FirebaseIntegrationTest {
         verify(exactly = 1) {
             mockFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SCREEN_VIEW, mockBundle)
         }
-        verifyParamsInBundle(mockBundle, FirebaseAnalytics.Param.SCREEN_NAME to screenName)
+        verifyParamsInBundle( FirebaseAnalytics.Param.SCREEN_NAME to screenName)
     }
 
     @Test
@@ -111,7 +115,7 @@ class FirebaseIntegrationTest {
         firebaseIntegration.track(TrackEvent(event, properties))
 
         verify(exactly = 1) { mockFirebaseAnalytics.logEvent("test_event", mockBundle) }
-        verifyBundleIsEmpty(mockBundle)
+        verifyBundleIsEmpty()
     }
 
     @Test
@@ -130,7 +134,6 @@ class FirebaseIntegrationTest {
             mockFirebaseAnalytics.logEvent("test_event", mockBundle)
         }
         verifyParamsInBundle(
-            mockBundle,
             "key1" to "value1",
             "key2" to 2,
             "key3" to 3.0,
@@ -146,295 +149,401 @@ class FirebaseIntegrationTest {
         firebaseIntegration.track(TrackEvent(event, properties))
 
         verify(exactly = 1) { mockFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.APP_OPEN, mockBundle) }
-        verifyBundleIsEmpty(mockBundle)
+        verifyBundleIsEmpty()
     }
 
-    @Test
-    fun `given ecommerce payment info entered event, when track called with it, then logEvent method is called with proper fields`() {
-        val event = ECommerceEvents.PAYMENT_INFO_ENTERED
-        val properties = buildJsonObject {
-            put("payment_method", "credit_card")
-        }
-
+    @ParameterizedTest
+    @MethodSource("provideECommerceEvents")
+    fun `given ecommerce event, when track is called with it, then logEvent is called with correct params`(
+        event: String,
+        properties: JsonObject,
+        expectedEvent: String,
+        expectedParams: List<Pair<String, Any>>,
+    ) {
         firebaseIntegration.track(TrackEvent(event, properties))
 
+        verify(exactly = 1) { mockFirebaseAnalytics.logEvent(expectedEvent, mockBundle) }
+        verifyParamsInBundle(*expectedParams.toTypedArray())
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideSingleProductECommerceEvents")
+    fun `given single product type ecommerce event, when track is called with it, then logEvent is called with correct params`(
+        event: String,
+        properties: JsonObject,
+        expectedEvent: String,
+        expectedParams: List<Pair<String, Any>>
+    ) {
+        firebaseIntegration.track(TrackEvent(event, properties))
+
+        verify(exactly = 1) { mockFirebaseAnalytics.logEvent(expectedEvent, mockBundle) }
+        verifyParamsInBundle(*expectedParams.toTypedArray())
         verify(exactly = 1) {
-            mockFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.ADD_PAYMENT_INFO, mockBundle)
+            mockBundle.putParcelableArray(FirebaseAnalytics.Param.ITEMS, arrayOf(mockBundle))
         }
-        verifyParamsInBundle(mockBundle, FirebaseAnalytics.Param.PAYMENT_TYPE to "credit_card")
     }
 
-    @Test
-    fun `given ecommerce product added to wishlist event, when track is called with it, then logEvent method is called with proper fields`() {
-        val event = ECommerceEvents.PRODUCT_ADDED_TO_WISH_LIST
-        val properties = buildJsonObject {
-            put("product_id", "123")
-        }
-
+    @ParameterizedTest
+    @MethodSource("provideProductArrayECommerceEvents")
+    fun `given product array type ecommerce event, when track is called with it, then logEvent is called with correct params`(
+        event: String,
+        properties: JsonObject,
+        numberOfProducts: Int,
+        expectedEvent: String,
+        expectedParams: List<Pair<String, Any>>
+    ) {
         firebaseIntegration.track(TrackEvent(event, properties))
 
+        verify(exactly = 1) { mockFirebaseAnalytics.logEvent(expectedEvent, mockBundle) }
+        verifyParamsInBundle(*expectedParams.toTypedArray())
         verify(exactly = 1) {
-            mockFirebaseAnalytics.logEvent(
-                FirebaseAnalytics.Event.ADD_TO_WISHLIST,
-                mockBundle
-            )
+            mockBundle.putParcelableArrayList(FirebaseAnalytics.Param.ITEMS, ArrayList(List(numberOfProducts) { mockBundle }))
         }
-        verifyParamsInBundle(
-            mockBundle,
-            FirebaseAnalytics.Param.CURRENCY to "USD",
-            FirebaseAnalytics.Param.ITEMS to arrayOf(mockBundle),
-            FirebaseAnalytics.Param.ITEM_ID to "123"
-        )
     }
 
-    @Test
-    fun `given ecommerce products searched event, when track is called with it, then logEvent method is called with proper fields`() {
-        val event = ECommerceEvents.PRODUCTS_SEARCHED
-        val properties = buildJsonObject {
-            put("query", "some query")
-        }
-
-        firebaseIntegration.track(TrackEvent(event, properties))
-
-        verify(exactly = 1) { mockFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SEARCH, mockBundle) }
-        verifyParamsInBundle(mockBundle, FirebaseAnalytics.Param.SEARCH_TERM to "some query")
-    }
-
-    @Test
-    fun `given ecommerce share event with cart id, when track is called with it, then logEvent method is called with proper fields`() {
-        val event = ECommerceEvents.CART_SHARED
-        val properties = buildJsonObject {
-            put("cart_id", "123")
-        }
-
-        firebaseIntegration.track(TrackEvent(event, properties))
-
-        verify(exactly = 1) { mockFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SHARE, mockBundle) }
-        verifyParamsInBundle(mockBundle, FirebaseAnalytics.Param.ITEM_ID to "123")
-    }
-
-    @Test
-    fun `given ecommerce share event with product id, when track is called with it, then logEvent method is called with proper fields`() {
-        val event = ECommerceEvents.CART_SHARED
-        val properties = buildJsonObject {
-            put("product_id", "123")
-        }
-
-        firebaseIntegration.track(TrackEvent(event, properties))
-
-        verify(exactly = 1) {
-            mockFirebaseAnalytics.logEvent(
-                FirebaseAnalytics.Event.SHARE,
-                mockBundle
-            )
-        }
-        verifyParamsInBundle(mockBundle, FirebaseAnalytics.Param.ITEM_ID to "123")
-    }
-
-    @Test
-    fun `given ecommerce promotion viewed event with name, when track is called with it, then logEvent method is called with proper fields`() {
-        val event = ECommerceEvents.PROMOTION_VIEWED
-        val properties = buildJsonObject {
-            put("name", "someName")
-        }
-
-        firebaseIntegration.track(TrackEvent(event, properties))
-
-        verify(exactly = 1) { mockFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.VIEW_PROMOTION, mockBundle) }
-        verifyParamsInBundle(mockBundle, FirebaseAnalytics.Param.PROMOTION_NAME to "someName")
-    }
-
-    @Test
-    fun `given product clicked event with product id, when track is called with it, then logEvent method is called with proper fields`() {
-        val event = ECommerceEvents.PRODUCT_CLICKED
-        val properties = buildJsonObject {
-            put("product_id", "123")
-        }
-
-        firebaseIntegration.track(TrackEvent(event, properties))
-
-        verify(exactly = 1) { mockFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SELECT_CONTENT, mockBundle) }
-        verifyParamsInBundle(
-            mockBundle,
-            FirebaseAnalytics.Param.ITEM_ID to "123",
-            FirebaseAnalytics.Param.CONTENT_TYPE to "product"
-        )
-    }
-
-    @Test
-    fun `given ecommerce purchase event, when track is called with it, then logEvent method is called with proper fields`() {
-        val event = ECommerceEvents.ORDER_COMPLETED
-        val properties = buildJsonObject {
-            put("order_id", "order_123")
-            put("value", 99.99)
-            put("currency", "USD")
-        }
-
-        firebaseIntegration.track(TrackEvent(event, properties))
-
-        verify(exactly = 1) { mockFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.PURCHASE, mockBundle) }
-        verifyParamsInBundle(
-            mockBundle,
-            FirebaseAnalytics.Param.TRANSACTION_ID to "order_123",
-            FirebaseAnalytics.Param.VALUE to 99.99,
-            FirebaseAnalytics.Param.CURRENCY to "USD"
-        )
-    }
-
-    @Test
-    fun `given ecommerce checkout event, when track is called, then logEvent is called with correct params`() {
-        val event = ECommerceEvents.CHECKOUT_STARTED
-        val properties = buildJsonObject {
-            put("order_id", "order123")
-            put("total", 150.50)
-            put("currency", "USD")
-        }
-
-        firebaseIntegration.track(TrackEvent(event, properties))
-
-        verify(exactly = 1) { mockFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.BEGIN_CHECKOUT, mockBundle) }
-        verifyParamsInBundle(
-            mockBundle,
-            FirebaseAnalytics.Param.TRANSACTION_ID to "order123",
-            FirebaseAnalytics.Param.VALUE to 150.50,
-            FirebaseAnalytics.Param.CURRENCY to "USD"
-        )
-    }
-
-    @Test
-    fun `given ecommerce order completed event, when track is called, then logEvent is called with correct params`() {
-        val event = ECommerceEvents.ORDER_COMPLETED
-        val properties = buildJsonObject {
-            put("order_id", "order456")
-            put("revenue", 200.00)
-            put("currency", "USD")
-            put("tax", 10.00)
-            put("shipping", 5.00)
-        }
-
-        firebaseIntegration.track(TrackEvent(event, properties))
-
-        verify(exactly = 1) { mockFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.PURCHASE, mockBundle) }
-        verifyParamsInBundle(
-            mockBundle,
-            FirebaseAnalytics.Param.TRANSACTION_ID to "order456",
-            FirebaseAnalytics.Param.VALUE to 200.00,
-            FirebaseAnalytics.Param.CURRENCY to "USD",
-            FirebaseAnalytics.Param.TAX to 10.00,
-            FirebaseAnalytics.Param.SHIPPING to 5.00
-        )
-    }
-
-    @Test
-    fun `given refund event, when track is called with it, then logEvent method is called with proper fields`() {
-        val event = ECommerceEvents.ORDER_REFUNDED
-        val properties = buildJsonObject {
-            put("order_id", "order_123")
-        }
-
-        firebaseIntegration.track(TrackEvent(event, properties))
-
-        verify(exactly = 1) { mockFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.REFUND, mockBundle) }
-        verifyParamsInBundle(
-            mockBundle,
-            FirebaseAnalytics.Param.TRANSACTION_ID to "order_123"
-        )
-    }
-
-    @Test
-    fun `given ecommerce product added event, when track is called, then logEvent is called with correct params`() {
-        val event = ECommerceEvents.PRODUCT_ADDED
-        val properties = buildJsonObject {
-            put("product_id", "prod_123")
-            put("name", "Test Product")
-            put("price", 49.99)
-            put("currency", "USD")
-        }
-
-        firebaseIntegration.track(TrackEvent(event, properties))
-
-        verify(exactly = 1) { mockFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.ADD_TO_CART, mockBundle) }
-        verifyParamsInBundle(
-            mockBundle,
-            FirebaseAnalytics.Param.CURRENCY to "USD",
-            FirebaseAnalytics.Param.ITEMS to arrayOf(mockBundle),
-            FirebaseAnalytics.Param.ITEM_ID to "prod_123",
-            FirebaseAnalytics.Param.ITEM_NAME to "Test Product",
-            FirebaseAnalytics.Param.PRICE to 49.99
-        )
-    }
-
-    @Test
-    fun `given ecommerce product removed event, when track is called, then logEvent is called with correct params`() {
-        val event = ECommerceEvents.PRODUCT_REMOVED
-        val properties = buildJsonObject {
-            put("product_id", "prod_123")
-        }
-
-        firebaseIntegration.track(TrackEvent(event, properties))
-
-        verify(exactly = 1) { mockFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.REMOVE_FROM_CART, mockBundle) }
-        verifyParamsInBundle(
-            mockBundle,
-            FirebaseAnalytics.Param.ITEMS to arrayOf(mockBundle),
-            FirebaseAnalytics.Param.ITEM_ID to "prod_123"
-        )
-    }
-
-    @Test
-    fun `given ecommerce product viewed event, when track is called, then logEvent is called with correct params`() {
-        val event = ECommerceEvents.PRODUCT_VIEWED
-        val properties = buildJsonObject {
-            put("product_id", "prod_123")
-            put("name", "Test Product")
-            put("price", 49.99)
-            put("currency", "USD")
-        }
-
-        firebaseIntegration.track(TrackEvent(event, properties))
-
-        verify(exactly = 1) { mockFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.VIEW_ITEM, mockBundle) }
-        verifyParamsInBundle(
-            mockBundle,
-            FirebaseAnalytics.Param.CURRENCY to "USD",
-            FirebaseAnalytics.Param.ITEMS to arrayOf(mockBundle),
-            FirebaseAnalytics.Param.ITEM_ID to "prod_123",
-            FirebaseAnalytics.Param.ITEM_NAME to "Test Product",
-            FirebaseAnalytics.Param.PRICE to 49.99
-        )
-    }
-
-    private fun verifyParamsInBundle(bundle: Bundle, vararg values: Pair<String, Any>) {
+    private fun verifyParamsInBundle(
+        vararg values: Pair<String, Any>
+    ) {
         values.forEach { (key, value) ->
             when (value) {
-                is String -> verify(exactly = 1) { bundle.putString(key, value) }
-                is Int -> verify(exactly = 1) { bundle.putInt(key, value) }
-                is Double -> verify(exactly = 1) { bundle.putDouble(key, value) }
-                is Boolean -> verify(exactly = 1) { bundle.putBoolean(key, value) }
-
-                is Array<*> -> {
-                    verify(exactly = 1) {
-                        bundle.putParcelableArray(key, value as Array<Parcelable>)
-                    }
-                }
-
-                is ArrayList<*> -> {
-                    verify(exactly = 1) {
-                        bundle.putParcelableArrayList(key, value as ArrayList<Parcelable>)
-                    }
-                }
+                is String -> verify(exactly = 1) { mockBundle.putString(key, value) }
+                is Int -> verify(exactly = 1) { mockBundle.putInt(key, value) }
+                is Double -> verify(exactly = 1) { mockBundle.putDouble(key, value) }
+                is Boolean -> verify(exactly = 1) { mockBundle.putBoolean(key, value) }
             }
         }
     }
 
-    private fun verifyBundleIsEmpty(bundle: Bundle) {
+    private fun verifyBundleIsEmpty() {
         verify(exactly = 0) {
-            bundle.putString(any(), any())
-            bundle.putInt(any(), any())
-            bundle.putDouble(any(), any())
-            bundle.putBoolean(any(), any())
-            bundle.putParcelableArray(any(), any())
-            bundle.putParcelableArrayList(any(), any())
+            mockBundle.putString(any(), any())
+            mockBundle.putInt(any(), any())
+            mockBundle.putDouble(any(), any())
+            mockBundle.putBoolean(any(), any())
+            mockBundle.putParcelableArray(any(), any())
+            mockBundle.putParcelableArrayList(any(), any())
         }
+    }
+
+    companion object {
+
+        @JvmStatic
+        fun provideECommerceEvents() = listOf(
+            Arguments.of(
+                ECommerceEvents.PAYMENT_INFO_ENTERED,
+                buildJsonObject { put("payment_method", "credit_card") },
+                FirebaseAnalytics.Event.ADD_PAYMENT_INFO,
+                listOf(FirebaseAnalytics.Param.PAYMENT_TYPE to "credit_card"),
+            ),
+            Arguments.of(
+                ECommerceEvents.PRODUCTS_SEARCHED,
+                buildJsonObject { put("query", "some query") },
+                FirebaseAnalytics.Event.SEARCH,
+                listOf(FirebaseAnalytics.Param.SEARCH_TERM to "some query"),
+            ),
+            Arguments.of(
+                ECommerceEvents.CART_SHARED,
+                buildJsonObject { put("cart_id", "123") },
+                FirebaseAnalytics.Event.SHARE,
+                listOf(FirebaseAnalytics.Param.ITEM_ID to "123"),
+            ),
+            Arguments.of(
+                ECommerceEvents.CART_SHARED,
+                buildJsonObject { put("product_id", "123") },
+                FirebaseAnalytics.Event.SHARE,
+                listOf(FirebaseAnalytics.Param.ITEM_ID to "123"),
+            ),
+            Arguments.of(
+                ECommerceEvents.PROMOTION_VIEWED,
+                buildJsonObject { put("name", "someName") },
+                FirebaseAnalytics.Event.VIEW_PROMOTION,
+                listOf(FirebaseAnalytics.Param.PROMOTION_NAME to "someName"),
+            ),
+            Arguments.of(
+                ECommerceEvents.PRODUCT_CLICKED,
+                buildJsonObject { put("product_id", "123") },
+                FirebaseAnalytics.Event.SELECT_CONTENT,
+                listOf(
+                    FirebaseAnalytics.Param.ITEM_ID to "123",
+                    FirebaseAnalytics.Param.CONTENT_TYPE to "product"
+                ),
+            ),
+            Arguments.of(
+                ECommerceEvents.ORDER_COMPLETED,
+                buildJsonObject {
+                    put("order_id", "order456")
+                    put("revenue", 200.00)
+                    put("currency", "USD")
+                    put("tax", 10.00)
+                    put("shipping", 5.00)
+                },
+                FirebaseAnalytics.Event.PURCHASE,
+                listOf(
+                    FirebaseAnalytics.Param.TRANSACTION_ID to "order456",
+                    FirebaseAnalytics.Param.VALUE to 200.00,
+                    FirebaseAnalytics.Param.CURRENCY to "USD",
+                    FirebaseAnalytics.Param.TAX to 10.00,
+                    FirebaseAnalytics.Param.SHIPPING to 5.00
+                ),
+            ),
+            Arguments.of(
+                ECommerceEvents.PRODUCT_SHARED,
+                buildJsonObject {
+                    put("product_id", "prod_123")
+                    put("name", "Test Product")
+                    put("price", 49.99)
+                    put("currency", "USD")
+                },
+                FirebaseAnalytics.Event.SHARE,
+                listOf(
+                    FirebaseAnalytics.Param.CONTENT_TYPE to "product",
+                    FirebaseAnalytics.Param.CURRENCY to "USD",
+                    FirebaseAnalytics.Param.ITEM_ID to "prod_123",
+                ),
+            ),
+
+            Arguments.of(
+                ECommerceEvents.PROMOTION_CLICKED,
+                buildJsonObject {
+                    put("promotion_id", "promo_123")
+                    put("creative", "creative_123")
+                    put("name", "Promotion Name")
+                },
+                FirebaseAnalytics.Event.SELECT_PROMOTION,
+                listOf(
+                    FirebaseAnalytics.Param.PROMOTION_ID to "promo_123",
+                    FirebaseAnalytics.Param.CREATIVE_NAME to "creative_123",
+                    FirebaseAnalytics.Param.PROMOTION_NAME to "Promotion Name"
+                ),
+            ),
+        )
+
+        @JvmStatic
+        fun provideSingleProductECommerceEvents() = listOf(
+            Arguments.of(
+                ECommerceEvents.PRODUCT_ADDED,
+                buildJsonObject {
+                    put("product_id", "prod_123")
+                    put("name", "Test Product")
+                    put("price", 49.99)
+                },
+                FirebaseAnalytics.Event.ADD_TO_CART,
+                listOf(
+                    FirebaseAnalytics.Param.CURRENCY to "USD",
+                    FirebaseAnalytics.Param.ITEM_ID to "prod_123",
+                    FirebaseAnalytics.Param.ITEM_NAME to "Test Product",
+                    FirebaseAnalytics.Param.PRICE to 49.99
+                )
+            ),
+            Arguments.of(
+                ECommerceEvents.PRODUCT_ADDED_TO_WISH_LIST,
+                buildJsonObject {
+                    put("product_id", "prod_123")
+                    put("name", "Test Product")
+                    put("price", 49.99)
+                    put("currency", "INR")
+                },
+                FirebaseAnalytics.Event.ADD_TO_WISHLIST,
+                listOf(
+                    FirebaseAnalytics.Param.CURRENCY to "INR",
+                    FirebaseAnalytics.Param.ITEM_ID to "prod_123",
+                    FirebaseAnalytics.Param.ITEM_NAME to "Test Product",
+                    FirebaseAnalytics.Param.PRICE to 49.99
+                )
+            ),
+            Arguments.of(
+                ECommerceEvents.PRODUCT_VIEWED,
+                buildJsonObject {
+                    put("product_id", "prod_123")
+                    put("name", "Test Product")
+                    put("price", 49.99)
+                    put("currency", "USD")
+                },
+                FirebaseAnalytics.Event.VIEW_ITEM,
+                listOf(
+                    FirebaseAnalytics.Param.CURRENCY to "USD",
+                    FirebaseAnalytics.Param.ITEM_ID to "prod_123",
+                    FirebaseAnalytics.Param.ITEM_NAME to "Test Product",
+                    FirebaseAnalytics.Param.PRICE to 49.99
+                )
+            ),
+            Arguments.of(
+                ECommerceEvents.PRODUCT_REMOVED,
+                buildJsonObject {
+                    put("product_id", "prod_123")
+                },
+                FirebaseAnalytics.Event.REMOVE_FROM_CART,
+                listOf(
+                    FirebaseAnalytics.Param.ITEM_ID to "prod_123"
+                )
+            )
+        )
+
+        @JvmStatic
+        fun provideProductArrayECommerceEvents() = listOf(
+            Arguments.of(
+                ECommerceEvents.CHECKOUT_STARTED,
+                buildJsonObject {
+                    put("order_id", "order123")
+                    put("total", 150.50)
+                    put("currency", "USD")
+                    put("products", buildJsonArray {
+                        add(
+                            buildJsonObject {
+                                put("product_id", "prod_123")
+                                put("name", "Test Product")
+                                put("price", 49.00)
+                                put("currency", "USD")
+                            }
+                        )
+                        add(
+                            buildJsonObject {
+                                put("product_id", "prod_456")
+                                put("name", "Test Product 2")
+                                put("price", 101.50)
+                                put("currency", "USD")
+                            }
+                        )
+                    })
+                },
+                2,
+                FirebaseAnalytics.Event.BEGIN_CHECKOUT,
+                listOf(
+                    FirebaseAnalytics.Param.TRANSACTION_ID to "order123",
+                    FirebaseAnalytics.Param.VALUE to 150.50,
+                    FirebaseAnalytics.Param.CURRENCY to "USD",
+                    FirebaseAnalytics.Param.ITEM_ID to "prod_123",
+                    FirebaseAnalytics.Param.ITEM_NAME to "Test Product",
+                    FirebaseAnalytics.Param.PRICE to 49.00,
+                    FirebaseAnalytics.Param.ITEM_ID to "prod_456",
+                    FirebaseAnalytics.Param.ITEM_NAME to "Test Product 2",
+                    FirebaseAnalytics.Param.PRICE to 101.50
+                )
+            ),
+            Arguments.of(
+                ECommerceEvents.ORDER_COMPLETED,
+                buildJsonObject {
+                    put("order_id", "order_123")
+                    put("value", 99.99)
+                    put("currency", "USD")
+                    put("products", buildJsonArray {
+                        add(
+                            buildJsonObject {
+                                put("product_id", "prod_123")
+                                put("name", "Test Product")
+                                put("price", 49.00)
+                                put("currency", "USD")
+                            }
+                        )
+                        add(
+                            buildJsonObject {
+                                put("product_id", "prod_456")
+                                put("name", "Test Product 2")
+                                put("price", 50.99)
+                                put("currency", "USD")
+                            }
+                        )
+                    })
+                },
+                2,
+                FirebaseAnalytics.Event.PURCHASE,
+                listOf(
+                    FirebaseAnalytics.Param.TRANSACTION_ID to "order_123",
+                    FirebaseAnalytics.Param.VALUE to 99.99,
+                    FirebaseAnalytics.Param.CURRENCY to "USD",
+                    FirebaseAnalytics.Param.ITEM_ID to "prod_123",
+                    FirebaseAnalytics.Param.ITEM_NAME to "Test Product",
+                    FirebaseAnalytics.Param.PRICE to 49.00,
+                    FirebaseAnalytics.Param.ITEM_ID to "prod_456",
+                    FirebaseAnalytics.Param.ITEM_NAME to "Test Product 2",
+                    FirebaseAnalytics.Param.PRICE to 50.99
+                ),
+            ),
+            Arguments.of(
+                ECommerceEvents.ORDER_REFUNDED,
+                buildJsonObject {
+                    put("order_id", "order_123")
+                    put("products", buildJsonArray {
+                        add(
+                            buildJsonObject {
+                                put("product_id", "prod_123")
+                                put("name", "Test Product")
+                                put("price", 49.00)
+                                put("currency", "USD")
+                            }
+                        )
+                        add(
+                            buildJsonObject {
+                                put("product_id", "prod_456")
+                                put("name", "Test Product 2")
+                                put("price", 50.99)
+                                put("currency", "USD")
+                            }
+                        )
+                    })
+                },
+                2,
+                FirebaseAnalytics.Event.REFUND,
+                listOf(
+                    FirebaseAnalytics.Param.TRANSACTION_ID to "order_123",
+                    FirebaseAnalytics.Param.ITEM_ID to "prod_123",
+                    FirebaseAnalytics.Param.ITEM_NAME to "Test Product",
+                    FirebaseAnalytics.Param.PRICE to 49.00,
+                    FirebaseAnalytics.Param.ITEM_ID to "prod_456",
+                    FirebaseAnalytics.Param.ITEM_NAME to "Test Product 2",
+                    FirebaseAnalytics.Param.PRICE to 50.99
+                ),
+            ),
+            Arguments.of(
+                ECommerceEvents.PRODUCT_LIST_VIEWED,
+                buildJsonObject {
+                    put("list_id", "list_123")
+                    put("products", buildJsonArray {
+                        add(
+                            buildJsonObject {
+                                put("product_id", "prod_123")
+                                put("name", "Test Product")
+                                put("price", 49.99)
+                                put("currency", "USD")
+                            }
+                        )
+                    })
+                },
+                1,
+                FirebaseAnalytics.Event.VIEW_ITEM_LIST,
+                listOf(
+                    FirebaseAnalytics.Param.ITEM_LIST_ID to "list_123",
+                    FirebaseAnalytics.Param.ITEM_ID to "prod_123",
+                    FirebaseAnalytics.Param.ITEM_NAME to "Test Product",
+                    FirebaseAnalytics.Param.PRICE to 49.99,
+                    FirebaseAnalytics.Param.CURRENCY to "USD"
+                ),
+            ),
+            Arguments.of(
+                ECommerceEvents.CART_VIEWED,
+                buildJsonObject {
+                    put("cart_id", "cart_123")
+                    put("products", buildJsonArray {
+                        add(
+                            buildJsonObject {
+                                put("product_id", "prod_123")
+                                put("name", "Test Product")
+                                put("price", 49.99)
+                                put("currency", "USD")
+                            }
+                        )
+                    })
+                },
+                1,
+                FirebaseAnalytics.Event.VIEW_CART,
+                listOf(
+                    FirebaseAnalytics.Param.ITEM_ID to "prod_123",
+                    FirebaseAnalytics.Param.CURRENCY to "USD",
+                    FirebaseAnalytics.Param.ITEM_ID to "prod_123",
+                    FirebaseAnalytics.Param.ITEM_NAME to "Test Product",
+                    FirebaseAnalytics.Param.PRICE to 49.99
+                ),
+            )
+        )
     }
 }
