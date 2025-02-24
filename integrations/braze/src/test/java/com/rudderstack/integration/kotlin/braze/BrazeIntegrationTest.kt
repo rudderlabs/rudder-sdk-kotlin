@@ -232,6 +232,16 @@ class BrazeIntegrationTest {
     }
 
     @Test
+    fun `when the flush event is made, then the data is flushed`() {
+        brazeIntegration.create(mockBrazeIntegrationConfig)
+        brazeIntegration.flush()
+
+        verify(exactly = 1) {
+            mockBrazeInstance.requestImmediateDataFlush()
+        }
+    }
+
+    @Test
     fun `given deDupe is enabled and previously an Identify event has been made, when a new Identify event is made with exactly same trait, then nothing should be set after the second identify event`() {
         // mockBrazeIntegrationConfig has deDupe enabled.
         brazeIntegration.create(mockBrazeIntegrationConfig)
@@ -332,6 +342,17 @@ class BrazeIntegrationTest {
 
         verify(exactly = 0) {
             mockBrazeInstance.currentUser?.setAttributionData(any())
+        }
+    }
+
+    @Test
+    fun `given hybrid mode is enabled, when a flush event is made, then the data is flushed`() {
+        brazeIntegration.create(mockNewBrazeIntegrationConfig)
+
+        brazeIntegration.flush()
+
+        verify(exactly = 1) {
+            mockBrazeInstance.requestImmediateDataFlush()
         }
     }
 
