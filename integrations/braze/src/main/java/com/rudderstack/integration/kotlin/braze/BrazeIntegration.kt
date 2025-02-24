@@ -35,6 +35,8 @@ private const val INSTALL_ATTRIBUTED = "Install Attributed"
 
 private const val ORDER_COMPLETED = "Order Completed"
 
+private const val ALIAS_LABEL = "rudder_id"
+
 /**
  * BrazeIntegration is a plugin that sends events to the Braze SDK.
  */
@@ -48,7 +50,6 @@ class BrazeIntegration : IntegrationPlugin(), ActivityLifecycleObserver {
 
     private var previousIdentifyTraits: IdentifyTraits? = null
 
-    // TODO("Add the way to update this value dynamically through `update` method.")
     private lateinit var brazeConfig: RudderBrazeConfig
 
     public override fun create(destinationConfig: JsonObject) {
@@ -57,10 +58,18 @@ class BrazeIntegration : IntegrationPlugin(), ActivityLifecycleObserver {
                 this.brazeConfig = config
                 initBraze(analytics.application, config, analytics.configuration.logLevel).also {
                     braze = it
+                    setUserAlias()
                 }
                 // TODO("Address hybrid mode issue by making Alias call with anonymousId")
                 LoggerAnalytics.verbose("BrazeIntegration: Adjust SDK initialized. $config")
             }
+        }
+    }
+
+    private fun setUserAlias() {
+        analytics.anonymousId?.let {
+            this.braze?.currentUser?.addAlias(it, ALIAS_LABEL)
+            LoggerAnalytics.verbose("BrazeIntegration: Alias call made with anonymousId: $it")
         }
     }
 
