@@ -42,11 +42,13 @@ internal data class RudderBrazeConfig(
     }
 
     internal fun isHybridMode(): Boolean {
-        if (connectionMode == ConnectionMode.HYBRID) {
-            LoggerAnalytics.verbose("BrazeIntegration: As connection mode is set to hybrid, dropping event request.")
-            return true
+        return when (connectionMode) {
+            ConnectionMode.HYBRID -> {
+                LoggerAnalytics.verbose("BrazeIntegration: As connection mode is set to hybrid, dropping event request.")
+                true
+            }
+            ConnectionMode.DEVICE -> return false
         }
-        return false
     }
 }
 
