@@ -33,6 +33,9 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.Arguments
+import org.junit.jupiter.params.provider.MethodSource
 
 private const val pathToSourceConfigWithLimitedDataUseDisabled =
     "facebookconfig/facebook_config_with_limited_data_use_disabled.json"
@@ -220,310 +223,33 @@ class FacebookIntegrationTest {
         }
     }
 
-    @Test
-    fun `given product searched event, when track called with it, then logEvent gets called with appropriate params`() {
+    @ParameterizedTest
+    @MethodSource("trackEventProvider")
+    fun `given e-commerce event, when track called, then logEvent gets called with appropriate params`(
+        trackEvent: TrackEvent,
+        expectedEventName: String,
+        expectedValueToSum: Double?,
+        expectedParams: List<Pair<String, Any>>
+    ) {
         createFacebookIntegration()
-        val trackEvent = TrackEvent(
-            ECommerceEvents.PRODUCTS_SEARCHED,
-            buildJsonObject {
-                put("query", "shoes")
-            }
-        )
 
         facebookIntegration.track(trackEvent)
 
         verify(exactly = 1) {
-            mockFacebookEventsLogger.logEvent(
-                eventName = AppEventsConstants.EVENT_NAME_SEARCHED,
-                parameters = mockBundle
-            )
-        }
-        verifyParamsInBundle(
-            mockBundle,
-            AppEventsConstants.EVENT_PARAM_SEARCH_STRING to "shoes",
-            AppEventsConstants.EVENT_PARAM_CURRENCY to "USD"
-        )
-    }
-
-    @Test
-    fun `given product viewed event, when track called with it, then logEvent gets called with appropriate params`() {
-        createFacebookIntegration()
-        val trackEvent = TrackEvent(
-            ECommerceEvents.PRODUCT_VIEWED,
-            buildJsonObject {
-                put("product_id", "123")
-                put("price", 100)
-                put("currency", "INR")
+            if (expectedValueToSum != null) {
+                mockFacebookEventsLogger.logEvent(
+                    eventName = expectedEventName,
+                    valueToSum = expectedValueToSum,
+                    parameters = mockBundle
+                )
+            } else {
+                mockFacebookEventsLogger.logEvent(
+                    eventName = expectedEventName,
+                    parameters = mockBundle
+                )
             }
-        )
-
-        facebookIntegration.track(trackEvent)
-
-        verify(exactly = 1) {
-            mockFacebookEventsLogger.logEvent(
-                eventName = AppEventsConstants.EVENT_NAME_VIEWED_CONTENT,
-                valueToSum = 100.0,
-                parameters = mockBundle
-            )
         }
-        verifyParamsInBundle(
-            mockBundle,
-            AppEventsConstants.EVENT_PARAM_CONTENT_ID to "123",
-            AppEventsConstants.EVENT_PARAM_CURRENCY to "INR"
-        )
-    }
-
-    @Test
-    fun `given product added event, when track called with it, then logEvent gets called with appropriate params`() {
-        createFacebookIntegration()
-        val trackEvent = TrackEvent(
-            ECommerceEvents.PRODUCT_ADDED,
-            buildJsonObject {
-                put("product_id", "123")
-                put("price", 100)
-                put("currency", "INR")
-            }
-        )
-
-        facebookIntegration.track(trackEvent)
-
-        verify(exactly = 1) {
-            mockFacebookEventsLogger.logEvent(
-                eventName = AppEventsConstants.EVENT_NAME_ADDED_TO_CART,
-                valueToSum = 100.0,
-                parameters = mockBundle
-            )
-        }
-        verifyParamsInBundle(
-            mockBundle,
-            AppEventsConstants.EVENT_PARAM_CONTENT_ID to "123",
-            AppEventsConstants.EVENT_PARAM_CURRENCY to "INR"
-        )
-    }
-
-    @Test
-    fun `given product added to wishlist event, when track called with it, then logEvent gets called with appropriate params`() {
-        createFacebookIntegration()
-        val trackEvent = TrackEvent(
-            ECommerceEvents.PRODUCT_ADDED_TO_WISH_LIST,
-            buildJsonObject {
-                put("product_id", "123")
-                put("price", 100)
-                put("currency", "INR")
-            }
-        )
-
-        facebookIntegration.track(trackEvent)
-
-        verify(exactly = 1) {
-            mockFacebookEventsLogger.logEvent(
-                eventName = AppEventsConstants.EVENT_NAME_ADDED_TO_WISHLIST,
-                valueToSum = 100.0,
-                parameters = mockBundle
-            )
-        }
-        verifyParamsInBundle(
-            mockBundle,
-            AppEventsConstants.EVENT_PARAM_CONTENT_ID to "123",
-            AppEventsConstants.EVENT_PARAM_CURRENCY to "INR"
-        )
-    }
-
-    @Test
-    fun `given payment info entered event, when track called with it, then logEvent gets called with appropriate params`() {
-        createFacebookIntegration()
-        val trackEvent = TrackEvent(
-            ECommerceEvents.PAYMENT_INFO_ENTERED,
-            buildJsonObject {
-                put("value", 100)
-                put("currency", "INR")
-            }
-        )
-
-        facebookIntegration.track(trackEvent)
-
-        verify(exactly = 1) {
-            mockFacebookEventsLogger.logEvent(
-                eventName = AppEventsConstants.EVENT_NAME_ADDED_PAYMENT_INFO,
-                parameters = mockBundle
-            )
-        }
-        verifyParamsInBundle(
-            mockBundle,
-            AppEventsConstants.EVENT_PARAM_CURRENCY to "INR"
-        )
-    }
-
-    @Test
-    fun `given checkout started event, when track called with it, then logEvent gets called with appropriate params`() {
-        createFacebookIntegration()
-        val trackEvent = TrackEvent(
-            ECommerceEvents.CHECKOUT_STARTED,
-            buildJsonObject {
-                put("value", 100)
-                put("currency", "INR")
-            }
-        )
-
-        facebookIntegration.track(trackEvent)
-
-        verify(exactly = 1) {
-            mockFacebookEventsLogger.logEvent(
-                eventName = AppEventsConstants.EVENT_NAME_INITIATED_CHECKOUT,
-                valueToSum = 100.0,
-                parameters = mockBundle
-            )
-        }
-        verifyParamsInBundle(
-            mockBundle,
-            AppEventsConstants.EVENT_PARAM_CURRENCY to "INR"
-        )
-    }
-
-    @Test
-    fun `given complete registration event, when track called with it, then logEvent gets called with appropriate params`() {
-        createFacebookIntegration()
-        val trackEvent = TrackEvent(
-            COMPLETE_REGISTRATION,
-            buildJsonObject {
-                put("value", 100)
-                put("currency", "INR")
-            }
-        )
-
-        facebookIntegration.track(trackEvent)
-
-        verify(exactly = 1) {
-            mockFacebookEventsLogger.logEvent(
-                eventName = AppEventsConstants.EVENT_NAME_COMPLETED_REGISTRATION,
-                parameters = mockBundle
-            )
-        }
-        verifyParamsInBundle(
-            mockBundle,
-            AppEventsConstants.EVENT_PARAM_CURRENCY to "INR"
-        )
-    }
-
-    @Test
-    fun `given achieve level event, when track called with it, then logEvent gets called with appropriate params`() {
-        createFacebookIntegration()
-        val trackEvent = TrackEvent(
-            ACHIEVE_LEVEL,
-            buildJsonObject {
-                put("level", 10)
-            }
-        )
-
-        facebookIntegration.track(trackEvent)
-
-        verify(exactly = 1) {
-            mockFacebookEventsLogger.logEvent(
-                eventName = AppEventsConstants.EVENT_NAME_ACHIEVED_LEVEL,
-                parameters = mockBundle
-            )
-        }
-        verifyParamsInBundle(
-            mockBundle,
-            "level" to 10
-        )
-    }
-
-    @Test
-    fun `given complete tutorial event, when track called with it, then logEvent gets called with appropriate params`() {
-        createFacebookIntegration()
-        val trackEvent = TrackEvent(
-            COMPLETE_TUTORIAL,
-            buildJsonObject {
-                put("value", 100)
-                put("currency", "INR")
-            }
-        )
-
-        facebookIntegration.track(trackEvent)
-
-        verify(exactly = 1) {
-            mockFacebookEventsLogger.logEvent(
-                eventName = AppEventsConstants.EVENT_NAME_COMPLETED_TUTORIAL,
-                parameters = mockBundle
-            )
-        }
-        verifyParamsInBundle(
-            mockBundle,
-            AppEventsConstants.EVENT_PARAM_CURRENCY to "INR"
-        )
-    }
-
-    @Test
-    fun `given unlock achievement event, when track called with it, then logEvent gets called with appropriate params`() {
-        createFacebookIntegration()
-        val trackEvent = TrackEvent(
-            UNLOCK_ACHIEVEMENT,
-            buildJsonObject {
-                put(AppEventsConstants.EVENT_PARAM_DESCRIPTION, "123")
-            }
-        )
-
-        facebookIntegration.track(trackEvent)
-
-        verify(exactly = 1) {
-            mockFacebookEventsLogger.logEvent(
-                eventName = AppEventsConstants.EVENT_NAME_UNLOCKED_ACHIEVEMENT,
-                parameters = mockBundle
-            )
-        }
-        verifyParamsInBundle(
-            mockBundle,
-            AppEventsConstants.EVENT_PARAM_DESCRIPTION to "123"
-        )
-    }
-
-    @Test
-    fun `given subscribe event, when track called with it, then logEvent gets called with appropriate params`() {
-        createFacebookIntegration()
-        val trackEvent = TrackEvent(
-            SUBSCRIBE,
-            buildJsonObject {
-                put("channel_id", 100)
-            }
-        )
-
-        facebookIntegration.track(trackEvent)
-
-        verify(exactly = 1) {
-            mockFacebookEventsLogger.logEvent(
-                eventName = AppEventsConstants.EVENT_NAME_SUBSCRIBE,
-                parameters = mockBundle
-            )
-        }
-        verifyParamsInBundle(
-            mockBundle,
-            "channel_id" to 100
-        )
-    }
-
-    @Test
-    fun `given start trial event, when track called with it, then logEvent gets called with appropriate params`() {
-        createFacebookIntegration()
-        val trackEvent = TrackEvent(
-            START_TRIAL,
-            buildJsonObject {
-                put("trial_duration", 10)
-            }
-        )
-
-        facebookIntegration.track(trackEvent)
-
-        verify(exactly = 1) {
-            mockFacebookEventsLogger.logEvent(
-                eventName = AppEventsConstants.EVENT_NAME_START_TRIAL,
-                parameters = mockBundle
-            )
-        }
-        verifyParamsInBundle(
-            mockBundle,
-            "trial_duration" to 10
-        )
+        verifyParamsInBundle(mockBundle, *expectedParams.toTypedArray())
     }
 
     @Test
@@ -595,5 +321,158 @@ class FacebookIntegrationTest {
                 is Double -> verify(exactly = 1) { bundle.putDouble(key, value) }
             }
         }
+    }
+
+    companion object {
+
+        @JvmStatic
+        fun trackEventProvider() = listOf(
+            Arguments.of(
+                TrackEvent(ECommerceEvents.PRODUCTS_SEARCHED, buildJsonObject {
+                    put("query", "shoes")
+                }),
+                AppEventsConstants.EVENT_NAME_SEARCHED,
+                null,
+                listOf(
+                    AppEventsConstants.EVENT_PARAM_SEARCH_STRING to "shoes",
+                    AppEventsConstants.EVENT_PARAM_CURRENCY to "USD"
+                )
+            ),
+            Arguments.of(
+                TrackEvent(ECommerceEvents.PRODUCT_VIEWED, buildJsonObject {
+                    put("product_id", "123")
+                    put("price", 100)
+                    put("currency", "INR")
+                }),
+                AppEventsConstants.EVENT_NAME_VIEWED_CONTENT,
+                100.0,
+                listOf(AppEventsConstants.EVENT_PARAM_CONTENT_ID to "123", AppEventsConstants.EVENT_PARAM_CURRENCY to "INR")
+            ),
+            Arguments.of(
+                TrackEvent(ECommerceEvents.PRODUCT_ADDED, buildJsonObject {
+                    put("product_id", "123")
+                    put("price", 100)
+                    put("currency", "INR")
+                }),
+                AppEventsConstants.EVENT_NAME_ADDED_TO_CART,
+                100.0,
+                listOf(AppEventsConstants.EVENT_PARAM_CONTENT_ID to "123", AppEventsConstants.EVENT_PARAM_CURRENCY to "INR")
+            ),
+            Arguments.of(
+                TrackEvent(ECommerceEvents.PRODUCT_ADDED_TO_WISH_LIST, buildJsonObject {
+                    put("product_id", "123")
+                    put("price", 100)
+                    put("currency", "INR")
+                }),
+                AppEventsConstants.EVENT_NAME_ADDED_TO_WISHLIST,
+                100.0,
+                listOf(AppEventsConstants.EVENT_PARAM_CONTENT_ID to "123", AppEventsConstants.EVENT_PARAM_CURRENCY to "INR")
+            ),
+            Arguments.of(
+                TrackEvent(ECommerceEvents.PAYMENT_INFO_ENTERED, buildJsonObject {
+                    put("value", 100)
+                    put("currency", "INR")
+                }),
+                AppEventsConstants.EVENT_NAME_ADDED_PAYMENT_INFO,
+                null,
+                listOf(AppEventsConstants.EVENT_PARAM_CURRENCY to "INR")
+            ),
+            Arguments.of(
+                TrackEvent(ECommerceEvents.CHECKOUT_STARTED, buildJsonObject {
+                    put("value", 100)
+                    put("currency", "INR")
+                }),
+                AppEventsConstants.EVENT_NAME_INITIATED_CHECKOUT,
+                100.0,
+                listOf(AppEventsConstants.EVENT_PARAM_CURRENCY to "INR")
+            ),
+            Arguments.of(
+                TrackEvent(COMPLETE_REGISTRATION, buildJsonObject {
+                    put("value", 100)
+                    put("currency", "INR")
+                }),
+                AppEventsConstants.EVENT_NAME_COMPLETED_REGISTRATION,
+                null,
+                listOf(AppEventsConstants.EVENT_PARAM_CURRENCY to "INR")
+            ),
+            Arguments.of(
+                TrackEvent(ACHIEVE_LEVEL, buildJsonObject {
+                    put("level", 10)
+                }),
+                AppEventsConstants.EVENT_NAME_ACHIEVED_LEVEL,
+                null,
+                listOf("level" to 10)
+            ),
+            Arguments.of(
+                TrackEvent(COMPLETE_TUTORIAL, buildJsonObject {
+                    put("value", 100)
+                    put("currency", "INR")
+                }),
+                AppEventsConstants.EVENT_NAME_COMPLETED_TUTORIAL,
+                null,
+                listOf(AppEventsConstants.EVENT_PARAM_CURRENCY to "INR")
+            ),
+            Arguments.of(
+                TrackEvent(UNLOCK_ACHIEVEMENT, buildJsonObject {
+                    put(AppEventsConstants.EVENT_PARAM_DESCRIPTION, "123")
+                }),
+                AppEventsConstants.EVENT_NAME_UNLOCKED_ACHIEVEMENT,
+                null,
+                listOf(AppEventsConstants.EVENT_PARAM_DESCRIPTION to "123")
+            ),
+            Arguments.of(
+                TrackEvent(SUBSCRIBE, buildJsonObject {
+                    put("channel_id", 100)
+                }),
+                AppEventsConstants.EVENT_NAME_SUBSCRIBE,
+                null,
+                listOf("channel_id" to 100)
+            ),
+            Arguments.of(
+                TrackEvent(START_TRIAL, buildJsonObject {
+                    put("trial_duration", 10)
+                }),
+                AppEventsConstants.EVENT_NAME_START_TRIAL,
+                null,
+                listOf("trial_duration" to 10)
+            ),
+            Arguments.of(
+                TrackEvent(ECommerceEvents.PROMOTION_CLICKED, buildJsonObject {
+                    put("promotion_id", "123")
+                }),
+                AppEventsConstants.EVENT_NAME_AD_CLICK,
+                null,
+                listOf("promotion_id" to "123")
+            ),
+            Arguments.of(
+                TrackEvent(ECommerceEvents.PROMOTION_VIEWED, buildJsonObject {
+                    put("promotion_id", "123")
+                }),
+                AppEventsConstants.EVENT_NAME_AD_IMPRESSION,
+                null,
+                listOf("promotion_id" to "123", AppEventsConstants.EVENT_PARAM_CURRENCY to "USD")
+            ),
+            Arguments.of(
+                TrackEvent(SPEND_CREDITS, buildJsonObject {
+                    put("value", 100)
+                    put("currency", "INR")
+                }),
+                AppEventsConstants.EVENT_NAME_SPENT_CREDITS,
+                100.0,
+                listOf(AppEventsConstants.EVENT_PARAM_CURRENCY to "INR")
+            ),
+            Arguments.of(
+                TrackEvent(ECommerceEvents.PRODUCT_REVIEWED, buildJsonObject {
+                    put("product_id", "123")
+                    put("rating", 5)
+                }),
+                AppEventsConstants.EVENT_NAME_RATED,
+                null,
+                listOf(
+                    AppEventsConstants.EVENT_PARAM_CONTENT_ID to "123",
+                    AppEventsConstants.EVENT_PARAM_MAX_RATING_VALUE to 5
+                )
+            )
+        )
     }
 }
