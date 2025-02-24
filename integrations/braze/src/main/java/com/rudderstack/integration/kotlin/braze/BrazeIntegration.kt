@@ -60,7 +60,6 @@ class BrazeIntegration : IntegrationPlugin(), ActivityLifecycleObserver {
                     braze = it
                     setUserAlias()
                 }
-                // TODO("Address hybrid mode issue by making Alias call with anonymousId")
                 LoggerAnalytics.verbose("BrazeIntegration: Adjust SDK initialized. $config")
             }
         }
@@ -82,7 +81,6 @@ class BrazeIntegration : IntegrationPlugin(), ActivityLifecycleObserver {
     }
 
     override fun track(payload: TrackEvent): Event {
-        // TODO("Handle hybrid mode")
         if (brazeConfig.isHybridMode()) return payload
 
         when (payload.event) {
