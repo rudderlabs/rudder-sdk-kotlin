@@ -356,6 +356,24 @@ class BrazeIntegrationTest {
         }
     }
 
+    @Test
+    fun `given on dynamic config update the deDupe is enabled, when the config is updated, then deDup is enabled`() {
+        brazeIntegration.create(mockBrazeIntegrationConfigWithDeDupeDisabled)
+        val identifyEvent = provideIdentifyEvent()
+        // Making first identify event. It should set all the traits.
+        brazeIntegration.identify(identifyEvent)
+        // Clearing the mocks to reset the state.
+        clearMocks(mockBrazeInstance)
+
+        // Update the config with deDup enabled
+        brazeIntegration.update(mockBrazeIntegrationConfig)
+        // Making second identify event with exactly same traits. It should not set any trait, as config with deDup enabled was updated.
+        brazeIntegration.identify(identifyEvent)
+
+        // No trait should be set.
+        verifyNullTraitsSet(exactly = 1)
+    }
+
     private fun verifyTraits() {
         mockBrazeInstance.currentUser?.apply {
             verify(exactly = 1) {
