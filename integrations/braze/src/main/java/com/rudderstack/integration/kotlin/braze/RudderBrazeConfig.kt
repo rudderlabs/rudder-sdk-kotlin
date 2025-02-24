@@ -15,6 +15,8 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 
+private const val BRAZE_EXTERNAL_ID = "brazeExternalId"
+
 /**
  * Data class representing the configuration for Braze Integration.
  *
@@ -197,8 +199,6 @@ internal data class IdentifyTraits(
     val userId: String? = null,
     val context: Context = Context(),
 )
-
-private const val BRAZE_EXTERNAL_ID = "brazeExternalId"
 
 /**
  * Data class representing the context associated with a user.
