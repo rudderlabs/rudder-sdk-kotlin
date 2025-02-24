@@ -54,7 +54,7 @@ class BrazeIntegration : IntegrationPlugin(), ActivityLifecycleObserver {
 
     public override fun create(destinationConfig: JsonObject) {
         braze ?: run {
-            destinationConfig.parse<RudderBrazeConfig>().let { config ->
+            destinationConfig.parse<RudderBrazeConfig>()?.let { config ->
                 this.brazeConfig = config
                 initBraze(analytics.application, config, analytics.configuration.logLevel).also {
                     braze = it
@@ -77,7 +77,9 @@ class BrazeIntegration : IntegrationPlugin(), ActivityLifecycleObserver {
     }
 
     override fun update(destinationConfig: JsonObject) {
-        this.brazeConfig = destinationConfig.parse<RudderBrazeConfig>()
+        destinationConfig.parse<RudderBrazeConfig>()?.let { updatedConfig ->
+            this.brazeConfig = updatedConfig
+        }
     }
 
     override fun getDestinationInstance(): Any? {
@@ -105,7 +107,7 @@ class BrazeIntegration : IntegrationPlugin(), ActivityLifecycleObserver {
 
     private fun handleInstallAttributedEvent(payload: TrackEvent) {
         payload.properties.parse<InstallAttributed>()
-            .takeIf { it.campaign != null }
+            .takeIf { it?.campaign != null }
             ?.let { campaign ->
                 this.braze?.currentUser?.setAttributionData(
                     AttributionData(

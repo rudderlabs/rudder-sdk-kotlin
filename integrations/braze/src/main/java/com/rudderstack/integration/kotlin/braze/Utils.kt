@@ -16,7 +16,14 @@ import java.util.Locale
  * Parses the [JsonObject] to the specified type [T].
  */
 @OptIn(InternalRudderApi::class)
-internal inline fun <reified T> JsonObject.parse() = LenientJson.decodeFromJsonElement<T>(this)
+internal inline fun <reified T> JsonObject.parse(): T? {
+    return this.takeIf { it.isNotEmpty() }?.let {
+        LenientJson.decodeFromJsonElement<T>(this)
+    } ?: run {
+        LoggerAnalytics.debug("AdjustIntegration: The configuration is empty.")
+        null
+    }
+}
 
 /**
  * Extension property that safely accesses the traits JsonObject from an IdentifyEvent.
@@ -33,7 +40,7 @@ internal val IdentifyEvent.traits: JsonObject?
  * @return StandardProperties object parsed from the JsonObject.
  */
 internal fun JsonObject.getStandardProperties(): StandardProperties {
-    return this.parse<StandardProperties>()
+    return this.parse<StandardProperties>() ?: StandardProperties()
 }
 
 /**
@@ -89,7 +96,7 @@ internal fun IdentifyTraits.getExternalIdOrUserId() = this.context.brazeExternal
  * @return The [IdentifyTraits] object parsed from the [IdentifyEvent].
  */
 internal fun IdentifyEvent.toIdentifyTraits(): IdentifyTraits {
-    val context = this.context.parse<Context>()
+    val context = this.context.parse<Context>() ?: Context()
     return IdentifyTraits(
         context = context,
         userId = this.userId
