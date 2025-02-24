@@ -152,9 +152,12 @@ private val iso8601DateFormatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z
  */
 internal fun tryDateConversion(value: String): Long? {
     return runCatching {
-        iso8601DateFormatter.parse(value)?.time
+        iso8601DateFormatter.parse(value)?.time?.toSeconds()
     }.getOrNull()
 }
+
+private const val MILLIS_TO_SECONDS_DIVISOR = 1000
+private fun Long.toSeconds() = this / MILLIS_TO_SECONDS_DIVISOR
 
 internal fun logUnsupportedType(key: String, value: Any) {
     LoggerAnalytics.error("BrazeIntegration: Unsupported type for custom trait $key: $value")

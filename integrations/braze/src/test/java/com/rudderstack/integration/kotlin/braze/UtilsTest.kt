@@ -156,7 +156,7 @@ class UtilsTest {
 
         val date = tryDateConversion(value)
 
-        assertEquals(1630434600000, date)
+        assertEquals(1630434600L, date)
     }
 
     @Test
