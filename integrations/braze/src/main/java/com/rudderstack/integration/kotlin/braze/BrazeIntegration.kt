@@ -65,6 +65,10 @@ class BrazeIntegration : IntegrationPlugin(), ActivityLifecycleObserver {
         }
     }
 
+    /**
+     * Sets the alias Id.
+     * This is mainly needed for the hybrid mode in order to link the anonymous user activity.
+     */
     private fun setUserAlias() {
         analytics.anonymousId?.let {
             this.braze?.currentUser?.addAlias(it, ALIAS_LABEL)
