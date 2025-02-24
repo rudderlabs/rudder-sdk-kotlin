@@ -140,7 +140,7 @@ class BrazeIntegration : IntegrationPlugin(), ActivityLifecycleObserver {
                         productId = it.productId,
                         currencyCode = currency,
                         price = it.price,
-                        properties = toBrazeProperties(customProperties),
+                        properties = initBrazeProperties(customProperties),
                     )
                     LoggerAnalytics.verbose(
                         "BrazeIntegration: Order Completed event sent for " +
@@ -153,8 +153,7 @@ class BrazeIntegration : IntegrationPlugin(), ActivityLifecycleObserver {
 
     private fun handleCustomEvent(payload: TrackEvent) {
         payload.properties.takeIf { it.isNotEmpty() }?.let { properties ->
-            val brazeProperties = BrazeProperties(properties.toJSONObject())
-            this.braze?.logCustomEvent(payload.event, brazeProperties)
+            this.braze?.logCustomEvent(payload.event, initBrazeProperties(properties))
             LoggerAnalytics.verbose("BrazeIntegration: Custom event ${payload.event} and properties $properties sent.")
         } ?: run {
             this.braze?.logCustomEvent(payload.event)
@@ -290,4 +289,4 @@ private fun BrazeUser.handleStringValue(key: String, content: String) {
 }
 
 @VisibleForTesting
-internal fun toBrazeProperties(properties: JsonObject): BrazeProperties = BrazeProperties(properties)
+internal fun initBrazeProperties(properties: JsonObject): BrazeProperties = BrazeProperties(properties.toJSONObject())

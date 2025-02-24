@@ -189,9 +189,9 @@ class BrazeIntegrationTest {
             eventName = ORDER_COMPLETED,
             properties = getOrderCompletedProperties(),
         )
-        mockkStatic(::toBrazeProperties)
+        mockkStatic(::initBrazeProperties)
         val customPropertiesSlot = slot<JsonObject>()
-        every { toBrazeProperties(capture(customPropertiesSlot)) } returns BrazeProperties()
+        every { initBrazeProperties(capture(customPropertiesSlot)) } returns BrazeProperties(getCustomProperties().toJSONObject())
 
         brazeIntegration.track(trackEvent)
 
