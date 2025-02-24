@@ -26,7 +26,14 @@ private const val ERROR_UNSUPPORTED_TYPE = "Unsupported type"
  * Parses the [JsonObject] to the specified type [T].
  */
 @OptIn(InternalRudderApi::class)
-internal inline fun <reified T> JsonObject.parseConfig() = LenientJson.decodeFromJsonElement<T>(this)
+internal inline fun <reified T> JsonObject.parseConfig(): T? {
+    return this.takeIf { it.isNotEmpty() }?.let {
+        LenientJson.decodeFromJsonElement<T>(this)
+    } ?: run {
+        LoggerAnalytics.debug("AdjustIntegration: The configuration is empty.")
+        null
+    }
+}
 
 /**
  * Extracts a string value from the [JsonObject] and returns it.
