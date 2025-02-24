@@ -179,7 +179,7 @@ class BrazeIntegration : IntegrationPlugin(), ActivityLifecycleObserver {
                 setAddress(deDupedTraits.context.traits.address)
 
                 setCustomTraits(
-                    payload.traits?.filter(rootKeys = Traits.getKeysAsList())
+                    customTraits = payload.traits?.filter(rootKeys = Traits.getKeysAsList())
                 )
             }
 
@@ -257,8 +257,8 @@ private fun BrazeUser.setAddress(address: Address?) {
     setCountry(address?.country)
 }
 
-private fun BrazeUser.setCustomTraits(traits: JsonObject?) {
-    traits?.forEach { (key, value) ->
+private fun BrazeUser.setCustomTraits(customTraits: JsonObject?) {
+    customTraits?.forEach { (key, value) ->
         when {
             value !is JsonPrimitive -> logUnsupportedType(key, value)
             value.booleanOrNull != null -> setCustomUserAttribute(key, value.boolean)
