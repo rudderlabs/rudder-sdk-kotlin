@@ -178,9 +178,8 @@ class BrazeIntegration : IntegrationPlugin(), ActivityLifecycleObserver {
                 setPhoneNumber(deDupedTraits.context.traits.phone)
                 setAddress(deDupedTraits.context.traits.address)
 
-                setCustomTraits(
-                    customTraits = payload.traits?.filter(rootKeys = Traits.getKeysAsList())
-                )
+                val customTraits = payload.traits?.filter(rootKeys = Traits.getKeysAsList())
+                setCustomTraits(customTraits)
             }
 
             previousIdentifyTraits = currentIdentifyTraits
