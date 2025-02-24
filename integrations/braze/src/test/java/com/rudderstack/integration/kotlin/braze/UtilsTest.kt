@@ -137,7 +137,7 @@ class UtilsTest {
     }
 
     @Test
-    fun `given value is string, when tryDateConversion is called, then return null`() {
+    fun `given value is not date, when string is converted into date, then return null`() {
         val value = "value"
 
         val date = tryDateConversion(value)
@@ -146,7 +146,7 @@ class UtilsTest {
     }
 
     @Test
-    fun `given value is valid date, when tryDateConversion is called, then return date in milliseconds`() {
+    fun `given value is valid date, when string is converted into date, then return date in milliseconds`() {
         val value = "2021-09-01T00:00:00.000Z"
 
         val date = tryDateConversion(value)
