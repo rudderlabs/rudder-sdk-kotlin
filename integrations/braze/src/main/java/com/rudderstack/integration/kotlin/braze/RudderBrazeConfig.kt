@@ -212,7 +212,6 @@ internal data class Context(
      * Returns the Braze external identifier for the user.
      */
     internal val brazeExternalId: String?
-        // TODO: Extract the key to a constant
         get() = externalId?.firstOrNull { it.type == "brazeExternalId" }?.id
 }
 
