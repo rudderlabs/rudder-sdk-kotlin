@@ -169,20 +169,17 @@ class BrazeIntegration : IntegrationPlugin(), ActivityLifecycleObserver {
                 currentIdentifyTraits deDupe previousIdentifyTraits
             } ?: currentIdentifyTraits
 
-            // TODO: Check if their API accepts null or not!
-            this.braze?.changeUser(deDupedTraits.getExternalIdOrUserId())
-            this.braze?.currentUser?.apply {
-                setDateOfBirth(deDupedTraits.context.traits.birthday)
-                setEmail(deDupedTraits.context.traits.email)
-                setFirstName(deDupedTraits.context.traits.firstName)
-                setLastName(deDupedTraits.context.traits.lastName)
-                setGender(deDupedTraits.context.traits.gender)
-                setPhoneNumber(deDupedTraits.context.traits.phone)
-                setAddress(deDupedTraits.context.traits.address)
+            deDupedTraits.getExternalIdOrUserId()?.let { this.braze?.changeUser(it) }
+            val customTraits = getDeDupedCustomTraits(
+                deDupeEnabled = this.brazeConfig.supportDedup,
+                newCustomTraits = deDupedTraits.customTraits,
+                oldCustomTraits = previousIdentifyTraits?.customTraits
+            )
 
-                val customTraits = payload.traits?.filter(rootKeys = Traits.getKeysAsList())
-                setCustomTraits(customTraits)
-            }
+            this.braze?.currentUser?.setTraits(
+                deDupedTraits = deDupedTraits,
+                customTraits = customTraits,
+            )
 
             previousIdentifyTraits = currentIdentifyTraits
         }.also { LoggerAnalytics.verbose("BrazeIntegration: Identify event sent.") }
@@ -232,6 +229,20 @@ private fun setLogLevel(rudderLogLevel: Logger.LogLevel) {
     }
 }
 
+private fun BrazeUser.setTraits(deDupedTraits: IdentifyTraits, customTraits: JsonObject) {
+    with(deDupedTraits.context.traits) {
+        birthday?.let { setDateOfBirth(it) }
+        email?.let { setEmail(it) }
+        firstName?.let { setFirstName(it) }
+        lastName?.let { setLastName(it) }
+        gender?.let { setGender(it) }
+        phone?.let { setPhoneNumber(it) }
+        address?.let { setAddress(it) }
+
+        setCustomTraits(customTraits)
+    }
+}
+
 private fun BrazeUser.setDateOfBirth(date: Calendar?) {
     date?.also {
         setDateOfBirth(
@@ -258,8 +269,8 @@ private fun BrazeUser.setAddress(address: Address?) {
     setCountry(address?.country)
 }
 
-private fun BrazeUser.setCustomTraits(customTraits: JsonObject?) {
-    customTraits?.forEach { (key, value) ->
+private fun BrazeUser.setCustomTraits(customTraits: JsonObject) {
+    customTraits.forEach { (key, value) ->
         when {
             value !is JsonPrimitive -> logUnsupportedType(key, value)
             value.booleanOrNull != null -> setCustomUserAttribute(key, value.boolean)

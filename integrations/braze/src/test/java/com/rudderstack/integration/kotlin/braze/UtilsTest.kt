@@ -9,6 +9,7 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertNotNull
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -108,7 +109,11 @@ class UtilsTest {
             context = Context(
                 traits = provideStandardTraits(),
                 externalId = provideListOfExternalId()
-            )
+            ),
+            // This needs to be removed in future. Replace it with "customTraits = JsonObject(emptyMap())"
+            customTraits = buildJsonObject {
+                put("anonymousId", "<anonymousId>")
+            }
         )
         assertEquals(expectedIdentityTraits, identityTraits)
     }
@@ -152,6 +157,86 @@ class UtilsTest {
         val date = tryDateConversion(value)
 
         assertEquals(1630434600000, date)
+    }
+
+    @Test
+    fun `given two JsonObject with same custom traits, when deDupe is enabled, then return an empty Json object`() {
+        val customTraits = buildJsonObject {
+            put("key-1", "value-1")
+            put("key-2", buildJsonArray {
+                add(1)
+                add(2)
+            })
+        }
+
+        val deDupedJsonObject = getDeDupedCustomTraits(
+            deDupeEnabled = true,
+            newCustomTraits = customTraits,
+            oldCustomTraits = customTraits,
+        )
+
+        assertEquals(JsonObject(emptyMap()), deDupedJsonObject)
+    }
+
+    @Test
+    fun `given two JsonObject with different custom traits, when deDupe is enabled, then return only new custom traits`() {
+        // Here new and old custom traits are different. So, the new custom traits should be returned.
+        val newCustomTraits = buildJsonObject {
+            put("key-1", "value-1")
+        }
+        val oldCustomTraits = buildJsonObject {
+            put("key-2", "value-2")
+            put("key-3", 5678)
+        }
+
+        val deDupedJsonObject = getDeDupedCustomTraits(
+            deDupeEnabled = true,
+            newCustomTraits = newCustomTraits,
+            oldCustomTraits = oldCustomTraits
+        )
+
+        assertEquals(newCustomTraits, deDupedJsonObject)
+    }
+
+    @Test
+    fun `given two JsonObject with same and different traits, when deDupe is enabled, then return only new custom traits which are different`() {
+        val newCustomTraits = buildJsonObject {
+            put("key-1", "value-1") // This should be deDuped
+            put("key-2", "value-2") // This should be returned
+        }
+        val oldCustomTraits = buildJsonObject {
+            put("key-1", "value-1")
+            put("key-3", 5678)
+        }
+
+        val deDupedJsonObject = getDeDupedCustomTraits(
+            deDupeEnabled = true,
+            newCustomTraits = newCustomTraits,
+            oldCustomTraits = oldCustomTraits
+        )
+
+        assertEquals(buildJsonObject {
+            put("key-2", "value-2")
+        }, deDupedJsonObject)
+    }
+
+    @Test
+    fun `given two JsonObject with same traits, when deDupe is disabled, then return new custom traits`() {
+        val customTraits = buildJsonObject {
+            put("key-1", "value-1")
+            put("key-2", buildJsonArray {
+                add(1)
+                add(2)
+            })
+        }
+
+        val deDupedJsonObject = getDeDupedCustomTraits(
+            deDupeEnabled = false,
+            newCustomTraits = customTraits,
+            oldCustomTraits = customTraits,
+        )
+
+        assertEquals(customTraits, deDupedJsonObject)
     }
 }
 

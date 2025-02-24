@@ -6,6 +6,7 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import com.rudderstack.sdk.kotlin.core.internals.utils.LenientJson
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -24,15 +25,6 @@ internal inline fun <reified T> JsonObject.parse(): T? {
         null
     }
 }
-
-/**
- * Extension property that safely accesses the traits JsonObject from an IdentifyEvent.
- * Retrieves the "traits" object from the event's context and converts it to a JsonObject.
- *
- * @return JsonObject containing the traits if present in context, null otherwise
- */
-internal val IdentifyEvent.traits: JsonObject?
-    get() = this.context["traits"]?.jsonObject
 
 /**
  * Extension function to parse a JsonObject into StandardProperties.
@@ -97,11 +89,23 @@ internal fun IdentifyTraits.getExternalIdOrUserId() = this.context.brazeExternal
  */
 internal fun IdentifyEvent.toIdentifyTraits(): IdentifyTraits {
     val context = this.context.parse<Context>() ?: Context()
+
+    val customTraits = this.traits?.filter(rootKeys = Traits.getKeysAsList())
     return IdentifyTraits(
         context = context,
-        userId = this.userId
+        userId = this.userId,
+        customTraits = customTraits,
     )
 }
+
+/**
+ * Extension property that safely accesses the traits JsonObject from an IdentifyEvent.
+ * Retrieves the "traits" object from the event's context and converts it to a JsonObject.
+ *
+ * @return JsonObject containing the traits if present in context, null otherwise
+ */
+internal val IdentifyEvent.traits: JsonObject?
+    get() = this.context["traits"]?.jsonObject
 
 /**
  * Returns a new [IdentifyTraits] object with updated traits or null if no they are the same.
@@ -153,4 +157,22 @@ internal fun tryDateConversion(value: String): Long? {
 
 internal fun logUnsupportedType(key: String, value: Any) {
     LoggerAnalytics.error("BrazeIntegration: Unsupported type for custom trait $key: $value")
+}
+
+internal fun getDeDupedCustomTraits(
+    deDupeEnabled: Boolean,
+    newCustomTraits: JsonObject?,
+    oldCustomTraits: JsonObject?
+): JsonObject {
+    if (newCustomTraits == null) return JsonObject(emptyMap())
+    if (oldCustomTraits == null) return newCustomTraits
+    if (!deDupeEnabled) return newCustomTraits
+    return buildJsonObject {
+        newCustomTraits.forEach { (key, value) ->
+            val oldValue = oldCustomTraits[key]
+            if (oldValue != value) {
+                put(key, value)
+            }
+        }
+    }
 }

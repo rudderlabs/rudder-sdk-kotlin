@@ -10,6 +10,7 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.JsonObject
 import java.math.BigDecimal
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -194,10 +195,12 @@ private object BigDecimalSerializer : KSerializer<BigDecimal> {
  *
  * @property userId The unique identifier for the user.
  * @property context The context associated with the user.
+ * @property customTraits The custom traits associated with the user.
  */
 internal data class IdentifyTraits(
     val userId: String? = null,
     val context: Context = Context(),
+    val customTraits: JsonObject? = JsonObject(emptyMap()),
 )
 
 /**

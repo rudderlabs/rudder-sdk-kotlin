@@ -267,7 +267,7 @@ class BrazeIntegrationTest {
         brazeIntegration.identify(identifyEvent)
 
         // No trait should be set.
-        verifyNullTraitsSet(exactly = 1)
+        verifyNullTraitsSet()
     }
 
     @Test
@@ -306,7 +306,7 @@ class BrazeIntegrationTest {
 
         brazeIntegration.identify(identifyEvent)
 
-        verifyNullTraitsSet(exactly = 0)
+        verifyNullTraitsSet()
     }
 
     @Test
@@ -371,7 +371,7 @@ class BrazeIntegrationTest {
     }
 
     @Test
-    fun `given on dynamic config update the deDupe is enabled, when the config is updated, then deDup is enabled`() {
+    fun `given on dynamic config update the deDupe is enabled, when the config is updated and identify event is made, then no trait should be set`() {
         brazeIntegration.create(mockBrazeIntegrationConfigWithDeDupeDisabled)
         val identifyEvent = provideIdentifyEvent()
         // Making first identify event. It should set all the traits.
@@ -385,7 +385,7 @@ class BrazeIntegrationTest {
         brazeIntegration.identify(identifyEvent)
 
         // No trait should be set.
-        verifyNullTraitsSet(exactly = 1)
+        verifyNullTraitsSet()
     }
 
     @Test
@@ -426,21 +426,19 @@ class BrazeIntegrationTest {
         }
     }
 
-    /**
-     * Set exactly to 1 to verify that all the traits are set to null.
-     * Set exactly to 0 to verify that no trait is set.
-     */
-    private fun verifyNullTraitsSet(exactly: Int) {
+    private fun verifyNullTraitsSet() {
         mockBrazeInstance.currentUser?.apply {
-            verify(exactly = exactly) {
-                mockBrazeInstance.changeUser(null)
-                setEmail(null)
-                setFirstName(null)
-                setLastName(null)
-                setPhoneNumber(null)
+            verify(exactly = 0) {
+                mockBrazeInstance.changeUser(any())
+                setDateOfBirth(any(), any(), any())
+                setEmail(any())
+                setFirstName(any())
+                setLastName(any())
+                setGender(any())
+                setPhoneNumber(any())
                 // Address
-                setHomeCity(null)
-                setCountry(null)
+                setHomeCity(any())
+                setCountry(any())
                 // Custom Attributes
                 setCustomUserAttribute(any<String>(), any<Boolean>())
                 setCustomUserAttribute(any<String>(), any<Long>())
@@ -448,10 +446,6 @@ class BrazeIntegrationTest {
                 // Currently, anonymousId is being also set. Therefore, we are unable to make a proper assertion.
 //                setCustomUserAttribute(any<String>(), any<String>())
                 setCustomUserAttributeToSecondsFromEpoch(any<String>(), any())
-            }
-            verify(exactly = 0) {
-                setDateOfBirth(any(), any(), any())
-                setGender(any())
             }
         }
     }
