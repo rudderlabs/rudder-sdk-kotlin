@@ -10,6 +10,7 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
+import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -175,4 +176,8 @@ internal fun getDeDupedCustomTraits(
             }
         }
     }
+}
+
+internal fun JsonObject.toJSONObject(): JSONObject {
+    return JSONObject(this.toString())
 }

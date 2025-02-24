@@ -209,7 +209,6 @@ class BrazeIntegrationTest {
                 properties = any<BrazeProperties>()
             )
         }
-        // We are unable to make a proper assertion on BrazeProperties() object. Therefore, we used the following workaround
         assertEquals(getCustomProperties(), customPropertiesSlot.captured)
     }
 

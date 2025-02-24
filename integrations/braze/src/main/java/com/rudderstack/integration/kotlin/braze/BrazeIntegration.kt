@@ -153,7 +153,8 @@ class BrazeIntegration : IntegrationPlugin(), ActivityLifecycleObserver {
 
     private fun handleCustomEvent(payload: TrackEvent) {
         payload.properties.takeIf { it.isNotEmpty() }?.let { properties ->
-            this.braze?.logCustomEvent(payload.event, BrazeProperties(properties))
+            val brazeProperties = BrazeProperties(properties.toJSONObject())
+            this.braze?.logCustomEvent(payload.event, brazeProperties)
             LoggerAnalytics.verbose("BrazeIntegration: Custom event ${payload.event} and properties $properties sent.")
         } ?: run {
             this.braze?.logCustomEvent(payload.event)
