@@ -198,6 +198,8 @@ internal data class IdentifyTraits(
     val context: Context = Context(),
 )
 
+private const val BRAZE_EXTERNAL_ID = "brazeExternalId"
+
 /**
  * Data class representing the context associated with a user.
  *
@@ -214,7 +216,7 @@ internal data class Context(
      * Returns the Braze external identifier for the user.
      */
     internal val brazeExternalId: String?
-        get() = externalId?.firstOrNull { it.type == "brazeExternalId" }?.id
+        get() = externalId?.firstOrNull { it.type == BRAZE_EXTERNAL_ID }?.id
 }
 
 /**
