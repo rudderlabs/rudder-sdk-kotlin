@@ -388,6 +388,17 @@ class BrazeIntegrationTest {
         verifyNullTraitsSet(exactly = 1)
     }
 
+    @Test
+    fun `given an empty integration config, when either SDK is initialised or config is updated, then no error should be thrown`() {
+        val emptyJsonObject = JsonObject(emptyMap())
+
+        // No exception should be thrown
+        brazeIntegration.create(emptyJsonObject)
+
+        // No exception should be thrown
+        brazeIntegration.update(emptyJsonObject)
+    }
+
     private fun verifyTraits() {
         mockBrazeInstance.currentUser?.apply {
             verify(exactly = 1) {
