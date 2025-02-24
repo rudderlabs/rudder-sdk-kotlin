@@ -287,6 +287,15 @@ class AdjustIntegrationTest {
         }
         verify(exactly = 1) { Adjust.trackEvent(mockAdjustEvent) }
     }
+
+    @Test
+    fun `given an empty integration config, when either SDK is initialised or config is updated, then no error should be thrown`() {
+        // No exception should be thrown
+        adjustIntegration.create(emptyJsonObject)
+
+        // No exception should be thrown
+        adjustIntegration.update(JsonObject(emptyMap()))
+    }
 }
 
 private fun Any.readFileAsJsonObject(fileName: String): JsonObject {
