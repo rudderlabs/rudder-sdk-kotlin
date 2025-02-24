@@ -215,7 +215,6 @@ private fun initBraze(application: Application, config: RudderBrazeConfig, logLe
 @VisibleForTesting
 internal fun initBrazeConfig() = BrazeConfig.Builder()
 
-// TODO: Test this manually
 private fun setLogLevel(rudderLogLevel: Logger.LogLevel) {
     when (rudderLogLevel) {
         Logger.LogLevel.VERBOSE -> Log.VERBOSE
