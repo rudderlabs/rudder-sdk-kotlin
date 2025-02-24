@@ -107,25 +107,28 @@ internal infix fun IdentifyTraits.deDupe(previousTraits: IdentifyTraits?): Ident
     if (previousTraits == null) return currentTraits
 
     return IdentifyTraits(
-        userId = currentTraits.userId diffOr previousTraits.userId,
+        userId = currentTraits.userId takeIfDifferent previousTraits.userId,
         context = Context(
             traits = with(currentTraits.context.traits) {
                 Traits(
-                    email = email diffOr previousTraits.context.traits.email,
-                    firstName = firstName diffOr previousTraits.context.traits.firstName,
-                    lastName = lastName diffOr previousTraits.context.traits.lastName,
-                    gender = gender diffOr previousTraits.context.traits.gender,
-                    phone = phone diffOr previousTraits.context.traits.phone,
-                    address = address diffOr previousTraits.context.traits.address,
-                    birthday = birthday diffOr previousTraits.context.traits.birthday
+                    email = email takeIfDifferent previousTraits.context.traits.email,
+                    firstName = firstName takeIfDifferent previousTraits.context.traits.firstName,
+                    lastName = lastName takeIfDifferent previousTraits.context.traits.lastName,
+                    gender = gender takeIfDifferent previousTraits.context.traits.gender,
+                    phone = phone takeIfDifferent previousTraits.context.traits.phone,
+                    address = address takeIfDifferent previousTraits.context.traits.address,
+                    birthday = birthday takeIfDifferent previousTraits.context.traits.birthday
                 )
             },
-            externalId = context.externalId diffOr previousTraits.context.externalId
+            externalId = context.externalId takeIfDifferent previousTraits.context.externalId
         )
     )
 }
 
-private infix fun <T> T.diffOr(old: T): T? = this.takeIf { this != old }
+/**
+ * Returns the new value if it is different from the old value, otherwise null.
+ */
+private infix fun <T> T.takeIfDifferent(old: T): T? = this.takeIf { this != old }
 
 private val iso8601DateFormatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
 
