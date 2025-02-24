@@ -45,7 +45,7 @@ internal fun JsonObject.getStandardProperties(): StandardProperties {
  * @param productKeys The list of keys to be filtered from the products array.
  * @return JsonObject with the filtered values.
  */
-internal fun JsonObject.filter(rootKeys: List<String>, productKeys: List<String> = emptyList(),): JsonObject {
+internal fun JsonObject.filter(rootKeys: List<String>, productKeys: List<String> = emptyList()): JsonObject {
     val filteredRootProperties: JsonObject = this.filterKeys(rootKeys)
     val filteredProductProperties: JsonObject =
         this["products"]?.jsonArray
