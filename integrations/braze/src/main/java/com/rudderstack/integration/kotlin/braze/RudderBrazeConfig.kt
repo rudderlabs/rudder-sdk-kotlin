@@ -98,7 +98,7 @@ private object CustomEndpointSerializer : KSerializer<String> {
     }
 
     override fun serialize(encoder: Encoder, value: String) {
-        throw UnsupportedOperationException("Serialization is not supported")
+        throwUnsupportedOperationException()
     }
 }
 
@@ -181,7 +181,7 @@ private object BigDecimalSerializer : KSerializer<BigDecimal> {
     }
 
     override fun serialize(encoder: Encoder, value: BigDecimal) {
-        throw UnsupportedOperationException("Serialization is not supported")
+        throwUnsupportedOperationException()
     }
 }
 
@@ -287,6 +287,10 @@ private object CalendarSerializer : KSerializer<Calendar?> {
     }
 
     override fun serialize(encoder: Encoder, value: Calendar?) {
-        throw UnsupportedOperationException("Serialization is not supported")
+        throwUnsupportedOperationException()
     }
+}
+
+private fun throwUnsupportedOperationException() {
+    throw UnsupportedOperationException("Serialization is not supported")
 }
