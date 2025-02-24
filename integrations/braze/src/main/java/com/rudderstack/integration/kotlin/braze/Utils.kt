@@ -61,7 +61,7 @@ internal fun JsonObject.filter(rootKeys: List<String>, productKeys: List<String>
  * @param keys The list of keys to be filtered.
  * @return JsonObject with the filtered keys.
  */
-private fun <T : Iterable<*>> JsonObject.filterKeys(keys: T): JsonObject = this.filter { it.key !in keys }
+private fun <T : Iterable<*>> JsonObject.filterKeys(keys: T): JsonObject = this.filterNot { it.key in keys }
     .let(::JsonObject)
 
 /**
