@@ -183,7 +183,7 @@ class BrazeIntegrationTest {
     }
 
     @Test
-    fun `given the event is Order Completed and with products, when it is made, then it is logged as a custom event with products`() {
+    fun `given the event is Order Completed and with products, when it is made, then multiple purchase events are made`() {
         brazeIntegration.create(mockBrazeIntegrationConfig)
         val trackEvent = provideTrackEvent(
             eventName = ORDER_COMPLETED,
