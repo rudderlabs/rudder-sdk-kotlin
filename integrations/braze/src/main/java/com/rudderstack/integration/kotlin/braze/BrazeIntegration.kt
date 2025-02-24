@@ -282,10 +282,10 @@ private fun BrazeUser.setCustomTraits(customTraits: JsonObject) {
     }
 }
 
-private fun BrazeUser.handleStringValue(key: String, content: String) {
-    tryDateConversion(content)?.let { seconds ->
+private fun BrazeUser.handleStringValue(key: String, value: String) {
+    tryDateConversion(value)?.let { seconds ->
         setCustomUserAttributeToSecondsFromEpoch(key, seconds)
-    } ?: setCustomUserAttribute(key, content)
+    } ?: setCustomUserAttribute(key, value)
 }
 
 @VisibleForTesting
