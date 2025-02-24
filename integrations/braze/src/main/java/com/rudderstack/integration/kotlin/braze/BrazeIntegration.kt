@@ -35,7 +35,7 @@ private const val INSTALL_ATTRIBUTED = "Install Attributed"
 
 private const val ORDER_COMPLETED = "Order Completed"
 
-private const val ALIAS_LABEL = "rudder_id"
+internal const val ALIAS_LABEL = "rudder_id"
 
 /**
  * BrazeIntegration is a plugin that sends events to the Braze SDK.

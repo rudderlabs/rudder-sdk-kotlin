@@ -44,7 +44,8 @@ private const val ORDER_COMPLETED = "Order Completed"
 class BrazeIntegrationTest {
 
     private val mockBrazeIntegrationConfig: JsonObject = readFileAsJsonObject(pathToBrazeConfig)
-    private val mockBrazeIntegrationConfigWithDeDupeDisabled: JsonObject = readFileAsJsonObject(pathToBrazeConfigWithDeDupeDisabled)
+    private val mockBrazeIntegrationConfigWithDeDupeDisabled: JsonObject =
+        readFileAsJsonObject(pathToBrazeConfigWithDeDupeDisabled)
     private val mockNewBrazeIntegrationConfig: JsonObject = readFileAsJsonObject(pathToNewBrazeConfig)
 
     @MockK
@@ -122,6 +123,17 @@ class BrazeIntegrationTest {
 
         assertEquals(mockBrazeInstance, oldBrazeInstance)
         assertEquals(mockBrazeInstance, newBrazeInstance)
+    }
+
+    @Test
+    fun `when integration is initialised, then alias id is set`() {
+        brazeIntegration.create(mockBrazeIntegrationConfig)
+
+        mockBrazeInstance.currentUser?.apply {
+            verify(exactly = 1) {
+                addAlias(any(), ALIAS_LABEL)
+            }
+        }
     }
 
     @Test
@@ -340,8 +352,10 @@ class BrazeIntegrationTest {
 
         brazeIntegration.track(trackEvent)
 
-        verify(exactly = 0) {
-            mockBrazeInstance.currentUser?.setAttributionData(any())
+        mockBrazeInstance.currentUser?.apply {
+            verify(exactly = 0) {
+                setAttributionData(any())
+            }
         }
     }
 
