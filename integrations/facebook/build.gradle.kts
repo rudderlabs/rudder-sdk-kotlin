@@ -25,6 +25,13 @@ tasks.withType<KotlinJvmCompile>().configureEach {
     compilerOptions.freeCompilerArgs.add("-opt-in=com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi")
 }
 
+tasks.withType<Test> {
+    useJUnitPlatform()
+    testLogging {
+        events("failed")
+    }
+}
+
 android {
     namespace = RudderStackBuildConfig.PackageName.Integrations.FACEBOOK
     compileSdk = RudderStackBuildConfig.Android.COMPILE_SDK
@@ -64,11 +71,14 @@ dependencies {
 
     implementation (libs.facebook.android)
 
+    testImplementation(platform(libs.junit.bom))
+
     testImplementation(libs.kotlinx.coroutines.test)
-    testImplementation(libs.robolectric)
-    testImplementation(libs.junit)
+    testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockk)
     testImplementation(libs.mockk.agent)
     testImplementation(libs.json.assert)
     testImplementation(libs.navigation.runtime)
+
+    testRuntimeOnly(libs.junit.jupiter.engine)
 }

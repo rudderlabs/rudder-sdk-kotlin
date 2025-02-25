@@ -7,22 +7,22 @@ import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.unmockkAll
 import io.mockk.verify
-import org.junit.After
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 class SessionTrackingObserverTest {
 
     private lateinit var observer: SessionTrackingObserver
     private lateinit var mockPlugin: SessionTrackingPlugin
 
-    @Before
+    @BeforeEach
     fun setUp() {
         mockPlugin = mockk(relaxed = true)
         observer = SessionTrackingObserver(mockPlugin)
     }
 
-    @After
+    @AfterEach
     fun tearDown() {
         unmockkAll()
     }

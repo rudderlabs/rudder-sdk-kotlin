@@ -33,10 +33,10 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import java.io.FileNotFoundException
 import java.io.IOException
 
@@ -61,7 +61,7 @@ class EventQueueTest {
 
     private lateinit var eventQueue: EventQueue
 
-    @Before
+    @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this, relaxed = true)
         Dispatchers.setMain(testDispatcher)
@@ -82,7 +82,7 @@ class EventQueueTest {
         )
     }
 
-    @After
+    @AfterEach
     fun tearDown() {
         Dispatchers.resetMain()
         unmockkAll()

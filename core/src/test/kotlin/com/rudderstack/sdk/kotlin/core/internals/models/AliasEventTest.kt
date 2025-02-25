@@ -9,7 +9,7 @@ import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.UserIdentit
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.utils.encodeToString
 import com.rudderstack.sdk.kotlin.core.readFileTrimmed
-import org.junit.Test
+import org.junit.jupiter.api.Test
 import org.skyscreamer.jsonassert.JSONAssert
 
 private const val aliasEventsWithOnlyUserId = "message/alias/alias_events_with_only_user_id.json"

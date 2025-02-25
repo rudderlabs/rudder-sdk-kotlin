@@ -12,13 +12,13 @@ import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.spyk
 import io.mockk.verify
-import junit.framework.TestCase.assertEquals
-import junit.framework.TestCase.assertNull
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import java.io.BufferedReader
 import com.adjust.sdk.AdjustConfig
 import com.adjust.sdk.AdjustEvent
@@ -35,6 +35,7 @@ import io.mockk.Runs
 import io.mockk.just
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import org.junit.jupiter.api.assertThrows
 
 private const val pathToAdjustConfig = "config/adjust_config.json"
 private const val pathToNewAdjustConfig = "config/new_adjust_config.json"
@@ -64,7 +65,7 @@ class AdjustIntegrationTest {
 
     private lateinit var adjustIntegration: AdjustIntegration
 
-    @Before
+    @BeforeEach
     fun setup() {
         MockKAnnotations.init(this, relaxed = true)
 
@@ -241,11 +242,11 @@ class AdjustIntegrationTest {
         verify { Adjust.removeGlobalPartnerParameters() }
     }
 
-    @Test(expected = IllegalArgumentException::class)
+    @Test
     fun `given there's some issue with the app token, when integration is initialised, then exception is thrown`() {
         every { Adjust.initSdk(any()) } throws IllegalArgumentException("Invalid app token")
 
-        adjustIntegration.create(mockAdjustIntegrationConfig)
+        assertThrows<IllegalArgumentException>{ adjustIntegration.create(mockAdjustIntegrationConfig) }
     }
 
     @Test

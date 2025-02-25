@@ -10,10 +10,10 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 private const val MOCK_DESTINATION_KEY = "MockDestination"
 
@@ -25,7 +25,7 @@ class IntegrationOptionsPluginTest {
     private lateinit var integrationOptionsPlugin: IntegrationOptionsPlugin
     private val mockAnalytics = mockAnalytics(testScope, testDispatcher)
 
-    @Before
+    @BeforeEach
     fun setup() {
         integrationOptionsPlugin = IntegrationOptionsPlugin(MOCK_DESTINATION_KEY)
         integrationOptionsPlugin.setup(mockAnalytics)

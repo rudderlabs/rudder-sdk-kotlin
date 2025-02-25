@@ -14,8 +14,8 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 private const val NEW_ANONYMOUS_ID = "newAnonymousId"
 private const val USER_ID = "user1"
@@ -27,7 +27,7 @@ class ResetUserIdentityActionTest {
     private val testScope = TestScope(testDispatcher)
     private val mockAnalytics: Analytics = mockAnalytics(testScope, testDispatcher)
 
-    @Before
+    @BeforeEach
     fun setup() {
         mockkStatic(::generateUUID)
         every { generateUUID() } returns NEW_ANONYMOUS_ID

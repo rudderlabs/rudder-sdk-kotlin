@@ -1,8 +1,8 @@
 package com.rudderstack.sdk.kotlin.core.internals.storage
 
-import junit.framework.TestCase.assertEquals
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import java.io.File
 
 class PropertiesFileTest {
@@ -10,7 +10,7 @@ class PropertiesFileTest {
     private val directory = File("/tmp/rudderstack-analytics/123")
     private val propertiesFile = PropertiesFile(directory, "123")
 
-    @Before
+    @BeforeEach
     fun setUp() {
         directory.deleteRecursively()
         propertiesFile.load()

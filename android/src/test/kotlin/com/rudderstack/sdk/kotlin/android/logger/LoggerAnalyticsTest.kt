@@ -9,12 +9,12 @@ import io.mockk.mockkStatic
 import io.mockk.spyk
 import io.mockk.verify
 import io.mockk.verifyOrder
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 class LoggerAnalyticsTest {
 
-    @Before
+    @BeforeEach
     fun setup() {
         mockkStatic(Log::class)
         every { Log.v(any(), any<String>()) } returns 0

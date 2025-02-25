@@ -32,9 +32,9 @@ import kotlinx.coroutines.test.setMain
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import org.junit.After
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import com.rudderstack.sdk.kotlin.android.Analytics as AndroidAnalytics
 
 class AndroidLifecyclePluginTest {
@@ -55,7 +55,7 @@ class AndroidLifecyclePluginTest {
     private lateinit var mockApplication: Application
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    @Before
+    @BeforeEach
     fun setup() {
         MockKAnnotations.init(this, relaxed = true)
         Dispatchers.setMain(testDispatcher)
@@ -67,7 +67,7 @@ class AndroidLifecyclePluginTest {
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    @After
+    @AfterEach
     fun tearDown() {
         Dispatchers.resetMain()
     }

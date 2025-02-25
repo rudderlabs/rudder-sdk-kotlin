@@ -2,7 +2,7 @@ package com.rudderstack.sdk.kotlin.core.internals.utils
 
 import com.rudderstack.sdk.kotlin.core.internals.models.ExternalId
 import kotlinx.serialization.encodeToString
-import org.junit.Test
+import org.junit.jupiter.api.Test
 import org.skyscreamer.jsonassert.JSONAssert
 
 class JSONUtilsTest {

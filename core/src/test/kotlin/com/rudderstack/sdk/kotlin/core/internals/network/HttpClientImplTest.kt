@@ -9,12 +9,13 @@ import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.mockkStatic
 import io.mockk.verify
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotEquals
-import org.junit.Assert.assertThrows
-import org.junit.Assert.assertTrue
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotEquals
+import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.MalformedURLException
@@ -36,8 +37,7 @@ class HttpClientImplTest {
     private lateinit var getHttpClient: HttpClientImpl
     private lateinit var postHttpClient: HttpClientImpl
 
-
-    @Before
+    @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this, relaxed = true)
 
@@ -145,13 +145,15 @@ class HttpClientImplTest {
         )
     }
 
-    @Test(expected = MalformedURLException::class)
+    @Test
     fun `given wrong url, when getData is called, then throw MalformedURLException`() {
-        getHttpClient = provideHttpClientImplForGetRequest(
-            connectionFactory = mockConnectionFactory,
-            baseUrl = WRONG_BASE_URL,
-        )
-        getHttpClient.getData()
+        assertThrows<MalformedURLException> {
+            getHttpClient = provideHttpClientImplForGetRequest(
+                connectionFactory = mockConnectionFactory,
+                baseUrl = WRONG_BASE_URL,
+            )
+            getHttpClient.getData()
+        }
     }
 
     @Test
@@ -260,13 +262,15 @@ class HttpClientImplTest {
         )
     }
 
-    @Test(expected = MalformedURLException::class)
+    @Test
     fun `given wrong url, when sendData is called, then throw MalformedURLException`() {
-        postHttpClient = provideHttpClientImplForGetRequest(
-            connectionFactory = mockConnectionFactory,
-            baseUrl = WRONG_BASE_URL,
-        )
-        postHttpClient.sendData(REQUEST_BODY)
+        assertThrows<MalformedURLException> {
+            postHttpClient = provideHttpClientImplForGetRequest(
+                connectionFactory = mockConnectionFactory,
+                baseUrl = WRONG_BASE_URL,
+            )
+            postHttpClient.sendData(REQUEST_BODY)
+        }
     }
 
     @Test

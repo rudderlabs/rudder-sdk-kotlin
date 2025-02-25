@@ -33,14 +33,14 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
-import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotEquals
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertTrue
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import kotlinx.serialization.json.put
 
 internal const val pathToSourceConfigWithCorrectApiKey = "mockdestinationconfig/source_config_with_correct_api_key.json"
@@ -70,7 +70,7 @@ class IntegrationPluginTest {
 
     private lateinit var plugin: MockDestinationIntegrationPlugin
 
-    @Before
+    @BeforeEach
     fun setup() {
         Dispatchers.setMain(testDispatcher)
 
@@ -80,7 +80,7 @@ class IntegrationPluginTest {
         plugin.setup(mockAnalytics)
     }
 
-    @After
+    @AfterEach
     fun teardown() {
         Dispatchers.resetMain()
         unmockkAll()

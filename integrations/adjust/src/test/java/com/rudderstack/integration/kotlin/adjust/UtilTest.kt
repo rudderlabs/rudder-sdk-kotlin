@@ -1,14 +1,14 @@
 package com.rudderstack.integration.kotlin.adjust
 
-import junit.framework.TestCase.assertEquals
-import junit.framework.TestCase.assertNull
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 class UtilTest {
 

@@ -78,7 +78,7 @@ class FacebookIntegration : IntegrationPlugin() {
                 it.isNotEmpty()
             }?.let {
                 if (payload.properties.isNotEmpty()) {
-                    val params = Bundle()
+                    val params = getBundle()
                     handleCustomScreenProperties(payload.properties, params)
                     facebookAppEventsLogger?.logEvent("Viewed $it Screen", params)
                 } else {
@@ -120,7 +120,7 @@ class FacebookIntegration : IntegrationPlugin() {
                 FACEBOOK_EVENTS_MAPPING[it] ?: it
             }
             .let { eventName ->
-                val params = Bundle()
+                val params = getBundle()
                 handleCustomTrackProperties(payload.properties, params)
                 when (eventName) {
                     // Standard events
