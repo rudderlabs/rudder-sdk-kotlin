@@ -20,9 +20,9 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import org.junit.After
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ProcessLifecycleManagementPluginTest {
@@ -42,7 +42,7 @@ class ProcessLifecycleManagementPluginTest {
     @MockK
     private lateinit var mockLifecycleOwner: LifecycleOwner
 
-    @Before
+    @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this, relaxed = true)
         Dispatchers.setMain(testDispatcher)
@@ -57,7 +57,7 @@ class ProcessLifecycleManagementPluginTest {
         plugin.setup(mockAnalytics)
     }
 
-    @After
+    @AfterEach
     fun tearDown() {
         Dispatchers.resetMain()
         unmockkAll()

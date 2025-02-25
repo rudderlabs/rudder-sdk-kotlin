@@ -15,6 +15,13 @@ val sampleRudderProperties = Properties().apply {
     }
 }
 
+tasks.withType<Test> {
+    useJUnitPlatform()
+    testLogging {
+        events("failed")
+    }
+}
+
 android {
     val composeCompilerVersion = RudderStackBuildConfig.Kotlin.COMPILER_EXTENSION_VERSION
     val androidCompileSdkVersion = RudderStackBuildConfig.Android.COMPILE_SDK
@@ -103,11 +110,14 @@ dependencies {
     // adding play services to generate advertising id
     implementation(libs.play.services.ads)
 
+    testImplementation(platform(libs.junit.bom))
     testImplementation(libs.kotlinx.coroutines.test)
-    testImplementation(libs.junit)
+    testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockk)
     testImplementation(libs.json.assert)
     testImplementation(libs.navigation.runtime)
+
+    testRuntimeOnly(libs.junit.jupiter.engine)
 }
 
 tasks.named("preBuild").configure {

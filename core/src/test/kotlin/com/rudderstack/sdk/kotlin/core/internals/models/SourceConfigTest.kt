@@ -13,10 +13,10 @@ import io.mockk.impl.annotations.MockK
 import io.mockk.unmockkAll
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
-import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 private const val ID = "<SOURCE_ID>"
 private const val NAME = "Android"
@@ -38,12 +38,12 @@ class SourceConfigTest {
     @MockK
     private lateinit var mockStorage: Storage
 
-    @Before
+    @BeforeEach
     fun setup() {
         MockKAnnotations.init(this, relaxed = true)
     }
 
-    @After
+    @AfterEach
     fun teardown() {
         unmockkAll()
     }

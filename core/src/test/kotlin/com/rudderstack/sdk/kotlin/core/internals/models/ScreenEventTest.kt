@@ -10,8 +10,8 @@ import com.rudderstack.sdk.kotlin.core.provideOnlyAnonymousIdState
 import com.rudderstack.sdk.kotlin.core.readFileTrimmed
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import org.junit.Assert.assertEquals
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
 
 private const val screenWithDefaultArguments = "message/screen/screen_with_default_arguments.json"
 private const val screenWithCategoryProperty = "message/screen/screen_with_category_property.json"

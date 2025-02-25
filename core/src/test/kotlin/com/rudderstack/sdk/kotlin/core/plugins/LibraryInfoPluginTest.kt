@@ -14,8 +14,8 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import org.skyscreamer.jsonassert.JSONAssert
 
 private const val LIBRARY_KEY = "library"
@@ -35,7 +35,7 @@ class LibraryInfoPluginTest {
     @MockK
     private lateinit var mockAnalytics: Analytics
 
-    @Before
+    @BeforeEach
     fun setup() {
         MockKAnnotations.init(this, relaxed = true)
     }

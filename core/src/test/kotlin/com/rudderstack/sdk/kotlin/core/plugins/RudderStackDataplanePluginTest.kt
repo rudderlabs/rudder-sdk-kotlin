@@ -18,10 +18,10 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 private const val ANONYMOUS_ID = "anonymousId"
 
@@ -35,7 +35,7 @@ class RudderStackDataplanePluginTest {
     private lateinit var mockEventQueue: EventQueue
     private lateinit var plugin: RudderStackDataplanePlugin
 
-    @Before
+    @BeforeEach
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         mockAnalytics = mockAnalytics(testScope, testDispatcher)
@@ -48,7 +48,7 @@ class RudderStackDataplanePluginTest {
         plugin.eventQueue = mockEventQueue
     }
 
-    @After
+    @AfterEach
     fun tearDown() {
         Dispatchers.resetMain()
         unmockkAll()

@@ -9,9 +9,9 @@ import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertEquals
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.reflect.KClass
 
@@ -20,7 +20,7 @@ class PluginInteractorTest {
     private lateinit var pluginInteractor: PluginInteractor
     private val pluginList: CopyOnWriteArrayList<Plugin> = CopyOnWriteArrayList()
 
-    @Before
+    @BeforeEach
     fun setup() {
         pluginInteractor = PluginInteractor(pluginList)
     }

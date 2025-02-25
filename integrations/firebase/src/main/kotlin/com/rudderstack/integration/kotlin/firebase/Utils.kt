@@ -116,3 +116,7 @@ private fun addPropertyToBundle(params: Bundle, firebaseKey: String, key: String
         }
     }
 }
+
+internal fun getBundle(): Bundle {
+    return Bundle()
+}

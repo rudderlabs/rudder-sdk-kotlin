@@ -5,9 +5,9 @@ import android.content.SharedPreferences
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import org.junit.Assert.assertEquals
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 class SharedPrefsStoreTest {
 
@@ -19,7 +19,7 @@ class SharedPrefsStoreTest {
     private lateinit var sharedPrefsStore: SharedPrefsStore
     private lateinit var mockCheckBuildVersionUseCase: CheckBuildVersionUseCase
 
-    @Before
+    @BeforeEach
     fun setUp() {
         mockContext = mockk<Context>(relaxed = true)
         mockSharedPreferences = mockk()

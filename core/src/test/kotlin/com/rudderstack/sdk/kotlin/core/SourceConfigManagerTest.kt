@@ -25,8 +25,8 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 private const val downloadedSourceConfig = "config/source_config_with_single_destination.json"
 
@@ -45,7 +45,7 @@ class SourceConfigManagerTest {
 
     private lateinit var flowCollectorSlot: CapturingSlot<FlowCollector<Boolean>>
 
-    @Before
+    @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this, relaxed = true)
 

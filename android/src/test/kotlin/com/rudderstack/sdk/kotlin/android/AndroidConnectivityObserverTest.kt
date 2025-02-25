@@ -21,10 +21,10 @@ import io.mockk.mockkStatic
 import io.mockk.slot
 import io.mockk.unmockkStatic
 import io.mockk.verify
-import junit.framework.TestCase.assertTrue
-import org.junit.After
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 private const val COMPATIBLE_SDK_VERSION = Build.VERSION_CODES.N // 24
 private const val LEGACY_SDK_VERSION = Build.VERSION_CODES.LOLLIPOP // 21
@@ -51,7 +51,7 @@ class AndroidConnectivityObserverTest {
 
     private lateinit var connectivityStateSlot: CapturingSlot<FlowState<Boolean>>
 
-    @Before
+    @BeforeEach
     fun setup() {
         MockKAnnotations.init(this, relaxed = true)
 
@@ -74,7 +74,7 @@ class AndroidConnectivityObserverTest {
         mockkObject(AppSDKVersion)
     }
 
-    @After
+    @AfterEach
     fun tearDown() {
         unmockkStatic(::createNetworkCallback, ::createBroadcastReceiver)
     }
