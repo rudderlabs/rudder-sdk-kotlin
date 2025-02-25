@@ -66,7 +66,8 @@ dependencies {
     implementation(libs.android.sdk.ui)
 
     // testImplementation
-    testImplementation(libs.junit)
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockk)
     testImplementation(libs.mockk.agent)
     testImplementation(libs.json.assert)
