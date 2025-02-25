@@ -42,7 +42,7 @@ class AdjustIntegration : IntegrationPlugin(), ActivityLifecycleObserver {
 
     public override fun create(destinationConfig: JsonObject) {
         adjustInstance ?: run {
-            destinationConfig.parseConfig<AdjustDestinationConfig>().let { config ->
+            destinationConfig.parseConfig<AdjustDestinationConfig>()?.let { config ->
                 eventToTokenMappings = config.eventToTokenMappings
                 adjustInstance = initAdjust(
                     application = analytics.application,
@@ -60,7 +60,7 @@ class AdjustIntegration : IntegrationPlugin(), ActivityLifecycleObserver {
     }
 
     override fun update(destinationConfig: JsonObject) {
-        destinationConfig.parseConfig<AdjustDestinationConfig>().let { updatedConfig ->
+        destinationConfig.parseConfig<AdjustDestinationConfig>()?.let { updatedConfig ->
             this.eventToTokenMappings = updatedConfig.eventToTokenMappings
         }
     }
