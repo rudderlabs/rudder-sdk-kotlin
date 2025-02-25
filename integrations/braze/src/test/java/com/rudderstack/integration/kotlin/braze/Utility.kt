@@ -27,7 +27,8 @@ internal const val BRAZE_EXTERNAL_ID = "2d31d085-4d93-4126-b2b3-94e651810673"
 internal const val EMAIL = "test@gmail.com"
 internal const val FIRST_NAME = "First Name"
 internal const val LAST_NAME = "Last Name"
-internal val GENDER = Gender.MALE
+internal val GENDER_MALE = Gender.MALE
+internal val GENDER_FEMALE = Gender.FEMALE
 internal const val PHONE_NUMBER = "0123456789"
 internal const val CITY = "Palo Alto"
 internal const val COUNTRY = "USA"
@@ -117,7 +118,7 @@ internal object Utility {
         externalIds = externalIds
     )
 
-    private fun provideUserIdentity(
+    internal fun provideUserIdentity(
         anonymousId: String = "<anonymousId>",
         userId: String = USER_ID,
         traits: RudderTraits = getStandardAndCustomTraits(),
@@ -145,6 +146,27 @@ internal object Utility {
         put("key-2", 1234)
         put("key-3", 678.45)
         put("key-4", "value-4")
+        put("key-5", Date(631172471000).toISOString())
+    }
+
+    internal fun getSlightDifferentStandardAndCustomTraits(): JsonObject = buildJsonObject {
+        // Standard traits
+        put("birthday", Date(631172471000).toISOString())
+        put("address", buildJsonObject {
+            put("city", CITY)
+            put("country", COUNTRY)
+        })
+        put("firstName", FIRST_NAME)
+        put("lastName", LAST_NAME)
+        put("gender", "FeMale") // Different
+        put("phone", PHONE_NUMBER)
+        put("email", EMAIL)
+
+        // Custom Traits
+        put("key-1", true)
+        put("key-2", 1234)
+        put("key-3", 678.45)
+        put("key-4", "value-43") // Different
         put("key-5", Date(631172471000).toISOString())
     }
 

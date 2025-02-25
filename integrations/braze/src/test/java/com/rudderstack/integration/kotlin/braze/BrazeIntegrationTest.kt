@@ -8,8 +8,10 @@ import com.braze.models.outgoing.BrazeProperties
 import com.rudderstack.integration.kotlin.braze.Utility.getCampaignObject
 import com.rudderstack.integration.kotlin.braze.Utility.getCustomProperties
 import com.rudderstack.integration.kotlin.braze.Utility.getOrderCompletedProperties
+import com.rudderstack.integration.kotlin.braze.Utility.getSlightDifferentStandardAndCustomTraits
 import com.rudderstack.integration.kotlin.braze.Utility.provideIdentifyEvent
 import com.rudderstack.integration.kotlin.braze.Utility.provideTrackEvent
+import com.rudderstack.integration.kotlin.braze.Utility.provideUserIdentity
 import com.rudderstack.integration.kotlin.braze.Utility.readFileAsJsonObject
 import com.rudderstack.sdk.kotlin.android.utils.application
 import com.rudderstack.sdk.kotlin.core.Analytics
@@ -270,6 +272,52 @@ class BrazeIntegrationTest {
     }
 
     @Test
+    fun `given deDupe is enabled and previously an Identify event has been made, when a new Identify event is made with slight different traits, then only different traits should be set after the second identify event`() {
+        // mockBrazeIntegrationConfig has deDupe enabled.
+        brazeIntegration.create(mockBrazeIntegrationConfig)
+        val identifyEvent = provideIdentifyEvent()
+        // Making first identify event. It should set all the traits.
+        brazeIntegration.identify(identifyEvent)
+        // Clearing the mocks to reset the state.
+        clearMocks(mockBrazeInstance)
+
+        val identifyEventWitDifferentTraits = provideIdentifyEvent(
+            userIdentityState = provideUserIdentity(
+                traits = getSlightDifferentStandardAndCustomTraits(),
+            ),
+        )
+        // Making second identify event with exactly same traits. It should not set any trait.
+        brazeIntegration.identify(identifyEventWitDifferentTraits)
+
+        // No trait should be set.
+        mockBrazeInstance.currentUser?.apply {
+            verify(exactly = 1) {
+                setGender(GENDER_FEMALE)
+                setCustomUserAttribute("key-4", "value-43")
+            }
+        }
+
+        mockBrazeInstance.currentUser?.apply {
+            verify(exactly = 0) {
+                mockBrazeInstance.changeUser(any())
+                setDateOfBirth(any(), any(), any())
+                setEmail(any())
+                setFirstName(any())
+                setLastName(any())
+                setPhoneNumber(any())
+                // Address
+                setHomeCity(any())
+                setCountry(any())
+                // Custom Attributes
+                setCustomUserAttribute(any<String>(), any<Boolean>())
+                setCustomUserAttribute(any<String>(), any<Long>())
+                setCustomUserAttribute(any<String>(), any<Double>())
+                setCustomUserAttributeToSecondsFromEpoch(any<String>(), any())
+            }
+        }
+    }
+
+    @Test
     fun `given deDupe is disabled and previously an Identify event has been made, when a new Identify event is made with exactly same trait, then again all traits should be set after the second identify event`() {
         // mockBrazeIntegrationConfig has deDupe disabled.
         brazeIntegration.create(mockBrazeIntegrationConfigWithDeDupeDisabled)
@@ -410,7 +458,7 @@ class BrazeIntegrationTest {
                 setEmail(EMAIL)
                 setFirstName(FIRST_NAME)
                 setLastName(LAST_NAME)
-                setGender(GENDER)
+                setGender(GENDER_MALE)
                 setPhoneNumber(PHONE_NUMBER)
                 // Address
                 setHomeCity(CITY)
