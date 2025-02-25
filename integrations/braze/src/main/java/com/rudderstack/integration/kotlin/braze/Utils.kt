@@ -1,5 +1,6 @@
 package com.rudderstack.integration.kotlin.braze
 
+import androidx.annotation.VisibleForTesting
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
@@ -91,7 +92,7 @@ internal fun IdentifyTraits.getExternalIdOrUserId() = this.context.brazeExternal
 internal fun IdentifyEvent.toIdentifyTraits(): IdentifyTraits {
     val context = this.context.parse<Context>() ?: Context()
 
-    val customTraits = this.traits?.filter(rootKeys = Traits.getKeysAsList())
+    val customTraits = this.traits?.filter(rootKeys = Traits.getKeysAsList()) ?: JsonObject(emptyMap())
     return IdentifyTraits(
         context = context,
         userId = this.userId,
@@ -133,7 +134,12 @@ internal infix fun IdentifyTraits.deDupe(previousTraits: IdentifyTraits?): Ident
                 )
             },
             externalId = context.externalId takeIfDifferent previousTraits.context.externalId
-        )
+        ),
+        customTraits = getDeDupedCustomTraits(
+            deDupeEnabled = true,
+            newCustomTraits = currentTraits.customTraits,
+            oldCustomTraits = previousTraits.customTraits,
+        ),
     )
 }
 
@@ -141,6 +147,25 @@ internal infix fun IdentifyTraits.deDupe(previousTraits: IdentifyTraits?): Ident
  * Returns the new value if it is different from the old value, otherwise null.
  */
 private infix fun <T> T.takeIfDifferent(old: T): T? = this.takeIf { this != old }
+
+@VisibleForTesting
+internal fun getDeDupedCustomTraits(
+    deDupeEnabled: Boolean,
+    newCustomTraits: JsonObject?,
+    oldCustomTraits: JsonObject?
+): JsonObject {
+    if (newCustomTraits == null) return JsonObject(emptyMap())
+    if (oldCustomTraits == null) return newCustomTraits
+    if (!deDupeEnabled) return newCustomTraits
+    return buildJsonObject {
+        newCustomTraits.forEach { (key, value) ->
+            val oldValue = oldCustomTraits[key]
+            if (oldValue != value) {
+                put(key, value)
+            }
+        }
+    }
+}
 
 private val iso8601DateFormatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
 
@@ -161,24 +186,6 @@ private fun Long.toSeconds() = this / MILLIS_TO_SECONDS_DIVISOR
 
 internal fun logUnsupportedType(key: String, value: Any) {
     LoggerAnalytics.error("BrazeIntegration: Unsupported type for custom trait $key: $value")
-}
-
-internal fun getDeDupedCustomTraits(
-    deDupeEnabled: Boolean,
-    newCustomTraits: JsonObject?,
-    oldCustomTraits: JsonObject?
-): JsonObject {
-    if (newCustomTraits == null) return JsonObject(emptyMap())
-    if (oldCustomTraits == null) return newCustomTraits
-    if (!deDupeEnabled) return newCustomTraits
-    return buildJsonObject {
-        newCustomTraits.forEach { (key, value) ->
-            val oldValue = oldCustomTraits[key]
-            if (oldValue != value) {
-                put(key, value)
-            }
-        }
-    }
 }
 
 internal fun JsonObject.toJSONObject(): JSONObject {

@@ -200,7 +200,7 @@ private object BigDecimalSerializer : KSerializer<BigDecimal> {
 internal data class IdentifyTraits(
     val userId: String? = null,
     val context: Context = Context(),
-    val customTraits: JsonObject? = JsonObject(emptyMap()),
+    val customTraits: JsonObject = JsonObject(emptyMap()),
 )
 
 /**

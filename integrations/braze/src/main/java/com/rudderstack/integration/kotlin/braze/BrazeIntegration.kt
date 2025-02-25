@@ -170,16 +170,7 @@ class BrazeIntegration : IntegrationPlugin(), ActivityLifecycleObserver {
             } ?: currentIdentifyTraits
 
             deDupedTraits.getExternalIdOrUserId()?.let { this.braze?.changeUser(it) }
-            val customTraits = getDeDupedCustomTraits(
-                deDupeEnabled = this.brazeConfig.supportDedup,
-                newCustomTraits = deDupedTraits.customTraits,
-                oldCustomTraits = previousIdentifyTraits?.customTraits
-            )
-
-            this.braze?.currentUser?.setTraits(
-                deDupedTraits = deDupedTraits,
-                customTraits = customTraits,
-            )
+            this.braze?.currentUser?.setTraits(deDupedTraits = deDupedTraits)
 
             previousIdentifyTraits = currentIdentifyTraits
         }.also { LoggerAnalytics.verbose("BrazeIntegration: Identify event sent.") }
@@ -228,7 +219,7 @@ private fun setLogLevel(rudderLogLevel: Logger.LogLevel) {
     }
 }
 
-private fun BrazeUser.setTraits(deDupedTraits: IdentifyTraits, customTraits: JsonObject) {
+private fun BrazeUser.setTraits(deDupedTraits: IdentifyTraits) {
     with(deDupedTraits.context.traits) {
         birthday?.let { setDateOfBirth(it) }
         email?.let { setEmail(it) }
@@ -237,9 +228,8 @@ private fun BrazeUser.setTraits(deDupedTraits: IdentifyTraits, customTraits: Jso
         gender?.let { setGender(it) }
         phone?.let { setPhoneNumber(it) }
         address?.let { setAddress(it) }
-
-        setCustomTraits(customTraits)
     }
+    setCustomTraits(deDupedTraits.customTraits)
 }
 
 private fun BrazeUser.setDateOfBirth(date: Calendar?) {
