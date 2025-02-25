@@ -106,3 +106,7 @@ internal fun addPropertiesToBundle(properties: JsonObject, params: Bundle, isScr
         }
     }
 }
+
+internal fun getBundle(): Bundle {
+    return Bundle()
+}

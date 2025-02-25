@@ -11,8 +11,8 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.test.runTest
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 class PluginChainTest {
 
@@ -27,7 +27,7 @@ class PluginChainTest {
         Plugin.PluginType.Destination to destinationInteractor
     )
 
-    @Before
+    @BeforeEach
     fun setup() {
         pluginChain = PluginChain(pluginList)
         pluginChain.analytics = analytics

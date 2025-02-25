@@ -28,9 +28,9 @@ import kotlinx.coroutines.test.setMain
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import org.junit.After
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import com.rudderstack.sdk.kotlin.android.Analytics as AndroidAnalytics
 
 class DeeplinkPluginTest {
@@ -52,7 +52,7 @@ class DeeplinkPluginTest {
     private lateinit var plugin: DeeplinkPlugin
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    @Before
+    @BeforeEach
     fun setup() {
         MockKAnnotations.init(this, relaxed = true)
         Dispatchers.setMain(testDispatcher)
@@ -71,7 +71,7 @@ class DeeplinkPluginTest {
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    @After
+    @AfterEach
     fun teardown() {
         Dispatchers.resetMain()
     }

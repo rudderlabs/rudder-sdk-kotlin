@@ -17,10 +17,10 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 private const val DEVICE = "device"
 private const val ID = "id"
@@ -43,7 +43,7 @@ class DeviceInfoPluginTest {
 
     private val mockApplication: Application = mockk()
 
-    @Before
+    @BeforeEach
     fun setup() {
         plugin = spyk(DeviceInfoPlugin())
         mockAnalytics = mockk(relaxed = true)
@@ -59,7 +59,7 @@ class DeviceInfoPluginTest {
         every { mockAnalytics.storage } returns mockStorage
     }
 
-    @After
+    @AfterEach
     fun tearDown() {
         unmockkAll()
     }

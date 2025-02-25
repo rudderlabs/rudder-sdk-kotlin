@@ -3,9 +3,9 @@ package com.rudderstack.sdk.kotlin.core.internals.utils
 import com.rudderstack.sdk.kotlin.core.internals.models.DEFAULT_SENT_AT_TIMESTAMP
 import io.mockk.every
 import io.mockk.mockkObject
-import org.junit.Assert.assertEquals
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import java.util.Date
 
 class JsonSentAtUpdaterTest {
@@ -14,7 +14,7 @@ class JsonSentAtUpdaterTest {
 
     private val mockCurrentTime = Date(0).toInstant().toString()
 
-    @Before
+    @BeforeEach
     fun setup() {
         mockkObject(DateTimeUtils)
         every { DateTimeUtils.now() } returns mockCurrentTime

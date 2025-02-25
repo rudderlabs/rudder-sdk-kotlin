@@ -13,22 +13,22 @@ import io.mockk.impl.annotations.MockK
 import io.mockk.unmockkAll
 import io.mockk.verify
 import kotlinx.coroutines.test.runTest
-import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 class UserIdentityTest {
 
     @MockK
     private lateinit var mockStorage: Storage
 
-    @Before
+    @BeforeEach
     fun setup() {
         MockKAnnotations.init(this, relaxed = true)
     }
 
-    @After
+    @AfterEach
     fun teardown() {
         unmockkAll()
     }

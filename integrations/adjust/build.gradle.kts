@@ -20,6 +20,13 @@ tasks.withType<Detekt>().configureEach {
     }
 }
 
+tasks.withType<Test> {
+    useJUnitPlatform()
+    testLogging {
+        events("failed")
+    }
+}
+
 android {
     namespace = RudderStackBuildConfig.PackageName.Integrations.ADJUST
     compileSdk = RudderStackBuildConfig.Android.COMPILE_SDK
@@ -63,8 +70,11 @@ dependencies {
     implementation(libs.android.core.ktx)
 
     // testImplementation
-    testImplementation(libs.junit)
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockk)
     testImplementation(libs.mockk.agent)
     testImplementation(libs.json.assert)
+
+    testRuntimeOnly(libs.junit.jupiter.engine)
 }

@@ -79,7 +79,7 @@ class FirebaseIntegration : IntegrationPlugin() {
 
     override fun screen(payload: ScreenEvent): Event? {
         if (payload.screenName.isNotEmpty()) {
-            Bundle().apply {
+            getBundle().apply {
                 putString(FirebaseAnalytics.Param.SCREEN_NAME, payload.screenName)
                 attachAllCustomProperties(this, payload.properties)
                 firebaseAnalytics?.logEvent(FirebaseAnalytics.Event.SCREEN_VIEW, this)
@@ -106,14 +106,14 @@ class FirebaseIntegration : IntegrationPlugin() {
 
     private fun handleApplicationOpenedEvent(properties: JsonObject?) {
         val firebaseEvent = FirebaseAnalytics.Event.APP_OPEN
-        val params = Bundle()
+        val params = getBundle()
         makeFirebaseEvent(firebaseEvent, params, properties)
     }
 
     private fun handleECommerceEvent(eventName: String, properties: JsonObject?) {
         val firebaseEvent = ECOMMERCE_EVENTS_MAPPING[eventName] ?: return
 
-        val params = Bundle()
+        val params = getBundle()
         if (firebaseEvent.isNotEmpty() && !properties.isNullOrEmpty()) {
             when (firebaseEvent) {
                 FirebaseAnalytics.Event.SHARE -> {
@@ -138,7 +138,7 @@ class FirebaseIntegration : IntegrationPlugin() {
     }
 
     private fun handleCustomEvent(eventName: String, properties: JsonObject?) {
-        val params = Bundle()
+        val params = getBundle()
         val firebaseEvent: String = getTrimmedKey(eventName)
         makeFirebaseEvent(firebaseEvent, params, properties)
     }
@@ -201,7 +201,7 @@ class FirebaseIntegration : IntegrationPlugin() {
     }
 
     private fun mapProductProperties(properties: JsonObject): Bundle {
-        val bundle = Bundle()
+        val bundle = getBundle()
         PRODUCT_PROPERTIES_MAPPING.forEach { (key, firebaseKey) ->
             properties[key]?.takeIf { !properties.isKeyEmpty(key) }?.let {
                 putProductValue(bundle, firebaseKey, it)
