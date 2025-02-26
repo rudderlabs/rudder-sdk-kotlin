@@ -60,7 +60,7 @@ class BrazeIntegration : IntegrationPlugin(), ActivityLifecycleObserver {
                     braze = it
                     setUserAlias()
                 }
-                LoggerAnalytics.verbose("BrazeIntegration: Adjust SDK initialized")
+                LoggerAnalytics.verbose("BrazeIntegration: Braze SDK initialized")
             }
         }
     }
