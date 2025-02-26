@@ -20,6 +20,13 @@ tasks.withType<Detekt>().configureEach {
     }
 }
 
+tasks.withType<Test> {
+    useJUnitPlatform()
+    testLogging {
+        events("failed")
+    }
+}
+
 android {
     namespace = RudderStackBuildConfig.PackageName.Integrations.BRAZE
     compileSdk = RudderStackBuildConfig.Android.COMPILE_SDK
