@@ -224,6 +224,10 @@ open class Analytics protected constructor(
     ) {
         if (!isAnalyticsActive()) return
 
+        if (!this.userId.isNullOrEmpty() && this.userId != userId) {
+            reset(clearAnonymousId = true)
+        }
+
         userIdentityState.dispatch(
             SetUserIdAndTraitsAction(
                 newUserId = userId,
