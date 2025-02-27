@@ -37,7 +37,7 @@ class ResetUserIdentityActionTest {
     fun `given some value is present in the user identity and clearAnonymousId is true, when reset user identity action is performed, then it should reset all values`() {
         val userIdentityState = provideUserIdentityStateAfterFirstIdentifyEventIsMade()
 
-        val result = ResetUserIdentityAction(clearAnonymousId = true)
+        val result = ResetUserIdentityAction
             .reduce(userIdentityState)
 
         val expected = provideUserIdentityState(anonymousId = NEW_ANONYMOUS_ID)
@@ -48,7 +48,7 @@ class ResetUserIdentityActionTest {
     fun `given some value is present in the user identity and clearAnonymousId is false, when reset user identity action is performed, then it should reset all values except anonymous ID`() {
         val userIdentityState = provideUserIdentityStateAfterFirstIdentifyEventIsMade()
 
-        val result = ResetUserIdentityAction(clearAnonymousId = false)
+        val result = ResetUserIdentityAction
             .reduce(userIdentityState)
 
         val expected = provideUserIdentityState(anonymousId = ANONYMOUS_ID)
@@ -59,7 +59,7 @@ class ResetUserIdentityActionTest {
     fun `given empty user identity and clearAnonymousId is true, when reset user identity action is performed, then it should reset only anonymous ID`() {
         val userIdentityState = provideUserIdentityState()
 
-        val result = ResetUserIdentityAction(clearAnonymousId = true)
+        val result = ResetUserIdentityAction
             .reduce(userIdentityState)
 
         val expected = provideUserIdentityState(anonymousId = NEW_ANONYMOUS_ID)

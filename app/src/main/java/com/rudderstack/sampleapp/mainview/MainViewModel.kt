@@ -75,7 +75,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
 
             AnalyticsState.Reset -> {
-                RudderAnalyticsUtils.analytics.reset(clearAnonymousId = false)
+                RudderAnalyticsUtils.analytics.reset()
                 "Resetting the userId, traits, and externalIds"
             }
 

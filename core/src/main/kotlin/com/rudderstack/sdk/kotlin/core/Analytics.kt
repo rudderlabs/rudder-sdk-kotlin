@@ -353,19 +353,15 @@ open class Analytics protected constructor(
     }
 
     /**
-     * Resets the user identity, clearing the user ID, traits, and external IDs.
-     * If clearAnonymousId is true, clears the existing anonymous ID and generate a new one.
-     *
-     * @param clearAnonymousId A boolean flag to determine whether to clear the anonymous ID. Defaults to false.
+     * Resets the user identity, clears the existing anonymous ID and
+     * generate a new one, also clears the user ID and traits.
      */
-    @JvmOverloads
-    open fun reset(clearAnonymousId: Boolean = false) {
+    open fun reset() {
         if (!isAnalyticsActive()) return
 
-        userIdentityState.dispatch(ResetUserIdentityAction(clearAnonymousId))
+        userIdentityState.dispatch(ResetUserIdentityAction)
         analyticsScope.launch {
             userIdentityState.value.resetUserIdentity(
-                clearAnonymousId = clearAnonymousId,
                 storage = storage,
             )
         }
