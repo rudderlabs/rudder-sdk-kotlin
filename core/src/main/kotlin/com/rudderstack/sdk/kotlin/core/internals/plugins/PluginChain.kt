@@ -14,7 +14,7 @@ class PluginChain(
         Plugin.PluginType.PreProcess to PluginInteractor(),
         Plugin.PluginType.OnProcess to PluginInteractor(),
         Plugin.PluginType.Terminal to PluginInteractor(),
-        Plugin.PluginType.Manual to PluginInteractor(),
+        Plugin.PluginType.Utility to PluginInteractor(),
     )
 ) {
 

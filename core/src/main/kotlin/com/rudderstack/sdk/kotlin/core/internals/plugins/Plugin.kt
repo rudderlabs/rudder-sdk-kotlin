@@ -87,6 +87,6 @@ interface Plugin {
          * Plugins of this type are executed only when called manually.
          * For example, session-based plugins that trigger on specific user actions.
          */
-        Manual
+        Utility
     }
 }

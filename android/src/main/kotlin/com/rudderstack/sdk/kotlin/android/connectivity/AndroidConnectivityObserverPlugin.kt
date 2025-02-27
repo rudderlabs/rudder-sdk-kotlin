@@ -34,7 +34,7 @@ internal class AndroidConnectivityObserverPlugin(
     private val connectivityState: FlowState<Boolean>
 ) : Plugin {
 
-    override val pluginType: Plugin.PluginType = Plugin.PluginType.Manual
+    override val pluginType: Plugin.PluginType = Plugin.PluginType.Utility
     override lateinit var analytics: Analytics
 
     private var connectivityManager: ConnectivityManager? = null
