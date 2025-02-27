@@ -84,12 +84,6 @@ interface Plugin {
         Destination,
 
         /**
-         * Plugins of this type are executed after all event processing is completed.
-         * Useful for cleanup operations or finalizing tasks.
-         */
-        After,
-
-        /**
          * Plugins of this type are executed only when called manually.
          * For example, session-based plugins that trigger on specific user actions.
          */
