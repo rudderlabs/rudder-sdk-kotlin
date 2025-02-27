@@ -25,7 +25,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 @Suppress("TooManyFunctions")
 abstract class IntegrationPlugin : EventPlugin {
 
-    final override val pluginType: Plugin.PluginType = Plugin.PluginType.Destination
+    final override val pluginType: Plugin.PluginType = Plugin.PluginType.Terminal
 
     final override lateinit var analytics: Analytics
 

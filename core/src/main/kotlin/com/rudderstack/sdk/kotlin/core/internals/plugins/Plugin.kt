@@ -78,10 +78,10 @@ interface Plugin {
         OnProcess,
 
         /**
-         * Plugins of this type are executed when events are about to be passed off to their destinations.
+         * Plugins of this type are executed at the end when events are about to be passed off to their destinations.
          * Typically used for modifying events specifically for certain destinations.
          */
-        Destination,
+        Terminal,
 
         /**
          * Plugins of this type are executed only when called manually.

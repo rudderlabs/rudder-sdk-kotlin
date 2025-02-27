@@ -20,7 +20,7 @@ internal const val FIRST_INDEX = 0
  */
 internal class IntegrationsManagementPlugin : Plugin {
 
-    override val pluginType: Plugin.PluginType = Plugin.PluginType.Destination
+    override val pluginType: Plugin.PluginType = Plugin.PluginType.Terminal
 
     override lateinit var analytics: Analytics
 
