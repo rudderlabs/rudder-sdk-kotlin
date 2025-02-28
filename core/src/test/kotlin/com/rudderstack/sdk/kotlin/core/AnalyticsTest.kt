@@ -7,6 +7,8 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.MockMemoryStorage
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import io.mockk.every
 import io.mockk.mockkStatic
+import io.mockk.spyk
+import io.mockk.verify
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -33,7 +35,7 @@ class AnalyticsTest {
         mockkStatic(::provideBasicStorage)
         every { provideBasicStorage(any()) } returns mockStorage
 
-        analytics = Analytics(configuration = configuration)
+        analytics = spyk(Analytics(configuration = configuration))
     }
 
     @Test
@@ -64,6 +66,29 @@ class AnalyticsTest {
 
         assertEquals(USER_ID, userId)
         assertEquals(TRAITS, traits)
+    }
+
+    @Test
+    fun `when identify is called on an anonymous user, then reset is not called`() {
+        analytics.identify(userId = USER_ID, traits = TRAITS)
+
+        verify(exactly = 0) { analytics.reset() }
+    }
+
+    @Test
+    fun `when identify is called with same userId on an identified user, then reset is not called`() {
+        analytics.identify(userId = USER_ID, traits = TRAITS)
+        analytics.identify(userId = USER_ID, traits = TRAITS)
+
+        verify(exactly = 0) { analytics.reset() }
+    }
+
+    @Test
+    fun `when identify is called with different userId on an identified user, then reset is called`() {
+        analytics.identify(userId = USER_ID, traits = TRAITS)
+        analytics.identify(userId = "new-user-id", traits = TRAITS)
+
+        verify(exactly = 1) { analytics.reset() }
     }
 
     @Test
