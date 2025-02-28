@@ -41,5 +41,9 @@ data class UserIdentity(
         )
     }
 
+    internal suspend fun storeAnonymousId(storage: Storage) {
+        storage.write(StorageKeys.ANONYMOUS_ID, anonymousId)
+    }
+
     internal sealed interface UserIdentityAction : FlowAction<UserIdentity>
 }
