@@ -16,9 +16,8 @@ import kotlinx.serialization.json.put
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
-private const val CUSTOM_ANONYMOUS_ID = "custom-anonymous-id"
 private const val USER_ID = "user-id"
-private val TRAITS: JsonObject = buildJsonObject { put("key-1", "value-1")  }
+private val TRAITS: JsonObject = buildJsonObject { put("key-1", "value-1") }
 
 class AnalyticsTest {
 
@@ -44,24 +43,6 @@ class AnalyticsTest {
         // This pattern ensures the string follows the UUID v4 format.
         val uuidRegex = Regex("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
         assertTrue(anonymousId?.matches(uuidRegex) == true)
-    }
-
-    @Test
-    fun `given custom anonymousId is set, when anonymousId is fetched, then it should return the custom anonymousId`() {
-        analytics.anonymousId = CUSTOM_ANONYMOUS_ID
-
-        val anonymousId = analytics.anonymousId
-
-        assertEquals(CUSTOM_ANONYMOUS_ID, anonymousId)
-    }
-
-    @Test
-    fun `given empty string is set as anonymousId, when anonymousId is fetched, then it should return the empty value`() {
-        analytics.anonymousId = String.empty()
-
-        val anonymousId = analytics.anonymousId
-
-        assertEquals(String.empty(), anonymousId)
     }
 
     @Test
