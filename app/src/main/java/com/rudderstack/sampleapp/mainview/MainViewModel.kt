@@ -99,11 +99,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 "SDK initialized"
             }
 
-            AnalyticsState.SetAnonymousId -> {
-                RudderAnalyticsUtils.analytics.anonymousId = "Custom Anonymous ID"
-                "Anonymous ID is set as: ${RudderAnalyticsUtils.analytics.anonymousId}"
-            }
-
             AnalyticsState.GetAnonymousId -> {
                 val anonymousId = RudderAnalyticsUtils.analytics.anonymousId
                 "Anonymous ID: $anonymousId"

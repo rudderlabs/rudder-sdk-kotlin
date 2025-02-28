@@ -22,7 +22,6 @@ sealed class AnalyticsState(val eventName: String) {
     object StartSession: AnalyticsState("Start Session")
     object StartSessionWithCustomId: AnalyticsState("Start Session with custom id")
     object EndSession: AnalyticsState("End Session")
-    object SetAnonymousId: AnalyticsState("Set Anonymous Id")
     object GetAnonymousId: AnalyticsState("Get Anonymous Id")
     object GetUserId: AnalyticsState("Get User Id")
     object GetTraits: AnalyticsState("Get Traits")
