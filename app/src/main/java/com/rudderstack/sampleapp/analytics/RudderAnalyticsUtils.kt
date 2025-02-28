@@ -39,6 +39,9 @@ object RudderAnalyticsUtils {
                 logLevel = Logger.LogLevel.VERBOSE,
             )
         )
+
+//        analytics.addIntegration(BrazeIntegration())
+
         if (isAdvertisingLibraryAvailable()) {
             analytics.add(AndroidAdvertisingIdPlugin())
         }

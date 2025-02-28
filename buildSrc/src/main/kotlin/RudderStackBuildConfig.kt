@@ -26,6 +26,8 @@ object RudderStackBuildConfig {
         const val PACKAGE_NAME = "com.rudderstack.sdk.kotlin"
 
         object Integrations {
+
+            const val BRAZE = "com.rudderstack.integration.kotlin.braze"
             const val ADJUST = "com.rudderstack.integration.kotlin.adjust"
             const val FIREBASE = "com.rudderstack.integration.kotlin.firebase"
             const val FACEBOOK = "com.rudderstack.integration.kotlin.facebook"
