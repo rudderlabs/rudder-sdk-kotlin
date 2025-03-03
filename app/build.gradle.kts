@@ -95,7 +95,6 @@ dependencies {
     implementation(project(":integrations:adjust"))
     // implementation(project(":integrations:braze")) // This requires minimum Sdk version of 25 and above.
 
-    implementation(libs.material)
     //compose
     implementation(libs.ui)
     implementation(libs.ui.tooling.preview)
@@ -109,6 +108,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     // adding play services to generate advertising id
     implementation(libs.play.services.ads)
+    implementation(libs.androidx.material3.android)
 
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.kotlinx.coroutines.test)

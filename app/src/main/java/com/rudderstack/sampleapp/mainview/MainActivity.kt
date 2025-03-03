@@ -1,6 +1,5 @@
 package com.rudderstack.sampleapp.mainview
 
-import android.app.Application
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -16,21 +15,37 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.Button
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TopAppBarScrollBehavior
+import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.rudderstack.android.sampleapp.R
+import com.rudderstack.sampleapp.ui.theme.Black
+import com.rudderstack.sampleapp.ui.theme.Blue
 import com.rudderstack.sampleapp.ui.theme.RudderAndroidLibsTheme
+import com.rudderstack.sampleapp.ui.theme.White
 
+@OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
 
     private val viewModel by viewModels<MainViewModel>()
@@ -39,23 +54,142 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             RudderAndroidLibsTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colors.background
-                ) {
-                    CreateButtonsTemplate(viewModel)
+                val scrollBehavior =
+                    TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
+
+                Scaffold(
+                    modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+                    topBar = { AppTopBar(viewModel, scrollBehavior) }
+                ) { innerPadding ->
+                    ButtonsTemplate(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(innerPadding),
+                        viewModel = viewModel
+                    )
                 }
             }
         }
     }
 
     @Composable
-    fun CreateRowData(logData: LogData) {
-        Text(color = Color.Blue, text = "${logData.time} - ${logData.log}")
+    fun AppTopBar(viewModel: MainViewModel, scrollBehavior: TopAppBarScrollBehavior) {
+        CenterAlignedTopAppBar(
+            colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                containerColor = White,
+                titleContentColor = Black,
+            ),
+            title = {
+                Text(
+                    text = getString(R.string.title_activity_main),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            },
+            navigationIcon = {
+                IconButton(onClick = { viewModel.onBackClicked() }) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = Blue,
+                    )
+                }
+            },
+            scrollBehavior = scrollBehavior,
+        )
     }
 
     @Composable
-    fun ColumnScope.CreateLogcat(logCatList: List<LogData>) {
+    fun ButtonsTemplate(modifier: Modifier, viewModel: MainViewModel) {
+        val state by viewModel.state.collectAsState()
+
+        Column(
+            modifier = modifier
+                .fillMaxWidth()
+                .wrapContentHeight()
+                .padding(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "Features",
+                style = MaterialTheme.typography.titleSmall,
+                modifier = Modifier.align(Alignment.Start),
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            val buttonRows = listOf(
+                listOf(
+                    MainViewModelState.AnalyticsState.TrackMessage,
+                    MainViewModelState.AnalyticsState.ScreenMessage
+                ),
+                listOf(
+                    MainViewModelState.AnalyticsState.GroupMessage,
+                    MainViewModelState.AnalyticsState.IdentifyMessage
+                ),
+                listOf(
+                    MainViewModelState.AnalyticsState.AliasMessage,
+                    MainViewModelState.AnalyticsState.ForceFlush
+                ),
+                listOf(
+                    MainViewModelState.AnalyticsState.StartSession,
+                    MainViewModelState.AnalyticsState.StartSessionWithCustomId
+                ),
+                listOf(
+                    MainViewModelState.AnalyticsState.EndSession,
+                    MainViewModelState.AnalyticsState.Reset
+                )
+            )
+
+            buttonRows.forEach { row ->
+                ButtonRow(names = row, viewModel = viewModel)
+            }
+
+            CreateLogcat(state.logDataList)
+        }
+    }
+
+    @Composable
+    fun ButtonRow(names: List<MainViewModelState.AnalyticsState>, viewModel: MainViewModel) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentHeight(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            names.forEach {
+                ActionButton(
+                    modifier = Modifier.weight(0.5f),
+                    onClick = { viewModel.onMessageClicked(it) },
+                    eventName = it.eventName,
+                )
+            }
+        }
+    }
+
+    @Composable
+    fun ActionButton(modifier: Modifier, onClick: () -> Unit, eventName: String) {
+        Button(
+            modifier = modifier,
+            colors = ButtonDefaults.buttonColors(),
+            shape = RoundedCornerShape(12.dp),
+            onClick = onClick,
+        ) {
+            Text(
+                text = eventName,
+                style = MaterialTheme.typography.titleSmall,
+                color = Color.White
+            )
+        }
+    }
+
+    @Composable
+    fun CreateRowData(logData: MainViewModelState.LogData) {
+        Text(color = Blue, text = "${logData.time} - ${logData.log}")
+    }
+
+    @Composable
+    fun ColumnScope.CreateLogcat(logCatList: List<MainViewModelState.LogData>) {
         LazyColumn(
             userScrollEnabled = true,
             modifier = Modifier
@@ -67,103 +201,5 @@ class MainActivity : ComponentActivity() {
                 CreateRowData(logData = logCatList[index])
             }
         }
-    }
-
-    //state hoisting?
-    @Composable
-    fun CreateRowOfApis(
-        vararg names: AnalyticsState,
-        weight: Float,
-        viewModel: MainViewModel
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentHeight(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            names.forEach {
-                Button(modifier = Modifier.weight(weight = weight, fill = true), onClick = {
-                    viewModel.onMessageClicked(it)
-                }) {
-                    Text(text = it.eventName)
-                }
-            }
-        }
-    }
-
-    @Composable
-    fun CreateButtonsTemplate(viewModel: MainViewModel) {
-        val state by viewModel.state.collectAsState()
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentHeight()
-                .padding(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "Rudderstack Analytics",
-                modifier = Modifier
-                    .padding(2.dp)
-                    .align(Alignment.CenterHorizontally),
-            )
-
-            CreateRowOfApis(
-                names = arrayOf(
-                    AnalyticsState.TrackMessage,
-                    AnalyticsState.ScreenMessage,
-                    AnalyticsState.GroupMessage,
-                ),
-                weight = .3f,
-                viewModel = viewModel
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            CreateRowOfApis(
-                names = arrayOf(
-                    AnalyticsState.IdentifyMessage,
-                    AnalyticsState.AliasMessage,
-                    AnalyticsState.ForceFlush,
-                ),
-                weight = .5f,
-                viewModel = viewModel
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            CreateRowOfApis(
-                names = arrayOf(
-                    AnalyticsState.Shutdown, AnalyticsState.Initialize, AnalyticsState.Reset,
-                ),
-                weight = .5f,
-                viewModel = viewModel
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            CreateRowOfApis(
-                names = arrayOf(
-                    AnalyticsState.StartSession,
-                    AnalyticsState.StartSessionWithCustomId,
-                    AnalyticsState.EndSession
-                ),
-                weight = .5f,
-                viewModel = viewModel
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            CreateRowOfApis(
-                names = arrayOf(
-                    AnalyticsState.SetAnonymousId,
-                    AnalyticsState.GetAnonymousId,
-                    AnalyticsState.GetUserId,
-                    AnalyticsState.GetTraits,
-                ),
-                weight = .5f,
-                viewModel = viewModel
-            )
-            CreateLogcat(state.logDataList)
-        }
-    }
-
-    @Preview(showBackground = true)
-    @Composable
-    fun DefaultPreview() {
-        CreateButtonsTemplate(MainViewModel(LocalContext.current.applicationContext as Application))
     }
 }
