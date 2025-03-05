@@ -50,10 +50,7 @@
       true,
       123.456
     ],
-    "key-11": {},
-    "traits": {
-      "anonymousId": "<anonymous-id>"
-    }
+    "key-11": {}
   },
   "originalTimestamp": "<original-timestamp>",
   "sentAt": "{{ RSA_DEF_SENT_AT_TS }}",
