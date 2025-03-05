@@ -25,7 +25,7 @@ internal class DeeplinkPlugin(
     private val checkBuildVersionUseCase: CheckBuildVersionUseCase = CheckBuildVersionUseCase()
 ) : Plugin, ActivityLifecycleObserver {
 
-    override val pluginType: Plugin.PluginType = Plugin.PluginType.Manual
+    override val pluginType: Plugin.PluginType = Plugin.PluginType.Utility
 
     override lateinit var analytics: Analytics
 

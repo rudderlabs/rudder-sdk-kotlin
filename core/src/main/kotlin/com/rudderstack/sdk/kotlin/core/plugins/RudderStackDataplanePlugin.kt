@@ -14,7 +14,7 @@ import org.jetbrains.annotations.VisibleForTesting
 
 internal class RudderStackDataplanePlugin : EventPlugin {
 
-    override val pluginType: Plugin.PluginType = Plugin.PluginType.Destination
+    override val pluginType: Plugin.PluginType = Plugin.PluginType.Terminal
     override lateinit var analytics: Analytics
 
     @VisibleForTesting

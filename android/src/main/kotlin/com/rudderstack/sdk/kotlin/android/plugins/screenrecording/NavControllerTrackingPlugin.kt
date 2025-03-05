@@ -22,7 +22,7 @@ internal class NavControllerTrackingPlugin(
     internal val navContextState: FlowState<Set<NavContext>>
 ) : Plugin, NavController.OnDestinationChangedListener {
 
-    override val pluginType: Plugin.PluginType = Plugin.PluginType.Manual
+    override val pluginType: Plugin.PluginType = Plugin.PluginType.Utility
 
     override lateinit var analytics: Analytics
 

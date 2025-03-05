@@ -78,21 +78,15 @@ interface Plugin {
         OnProcess,
 
         /**
-         * Plugins of this type are executed when events are about to be passed off to their destinations.
+         * Plugins of this type are executed at the end when events are about to be passed off to their destinations.
          * Typically used for modifying events specifically for certain destinations.
          */
-        Destination,
-
-        /**
-         * Plugins of this type are executed after all event processing is completed.
-         * Useful for cleanup operations or finalizing tasks.
-         */
-        After,
+        Terminal,
 
         /**
          * Plugins of this type are executed only when called manually.
          * For example, session-based plugins that trigger on specific user actions.
          */
-        Manual
+        Utility
     }
 }
