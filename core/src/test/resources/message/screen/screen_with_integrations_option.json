@@ -5,11 +5,7 @@
   },
   "type": "screen",
   "messageId": "<message-id>",
-  "context": {
-    "traits": {
-      "anonymousId": "<anonymous-id>"
-    }
-  },
+  "context": {},
   "originalTimestamp": "<original-timestamp>",
   "sentAt": "{{ RSA_DEF_SENT_AT_TS }}",
   "integrations": {

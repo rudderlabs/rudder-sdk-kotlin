@@ -149,7 +149,6 @@ class MainActivity : ComponentActivity() {
             Spacer(modifier = Modifier.height(2.dp))
             CreateRowOfApis(
                 names = arrayOf(
-                    AnalyticsState.SetAnonymousId,
                     AnalyticsState.GetAnonymousId,
                     AnalyticsState.GetUserId,
                     AnalyticsState.GetTraits,

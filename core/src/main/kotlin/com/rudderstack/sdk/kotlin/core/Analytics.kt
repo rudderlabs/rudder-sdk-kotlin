@@ -16,12 +16,10 @@ import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.connectivity.ConnectivityState
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.ResetUserIdentityAction
-import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.SetAnonymousIdAction
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.SetUserIdAndTraitsAction
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.SetUserIdForAliasEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.UserIdentity
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.resetUserIdentity
-import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.storeAnonymousId
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.storeUserId
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.storeUserIdAndTraits
 import com.rudderstack.sdk.kotlin.core.internals.platform.Platform
@@ -224,6 +222,10 @@ open class Analytics protected constructor(
     ) {
         if (!isAnalyticsActive()) return
 
+        if (!this.userId.isNullOrEmpty() && this.userId != userId) {
+            reset()
+        }
+
         userIdentityState.dispatch(
             SetUserIdAndTraitsAction(
                 newUserId = userId,
@@ -353,19 +355,15 @@ open class Analytics protected constructor(
     }
 
     /**
-     * Resets the user identity, clearing the user ID, traits, and external IDs.
-     * If clearAnonymousId is true, clears the existing anonymous ID and generate a new one.
-     *
-     * @param clearAnonymousId A boolean flag to determine whether to clear the anonymous ID. Defaults to false.
+     * Resets the user identity, clears the existing anonymous ID and
+     * generate a new one, also clears the user ID and traits.
      */
-    @JvmOverloads
-    open fun reset(clearAnonymousId: Boolean = false) {
+    open fun reset() {
         if (!isAnalyticsActive()) return
 
-        userIdentityState.dispatch(ResetUserIdentityAction(clearAnonymousId))
+        userIdentityState.dispatch(ResetUserIdentityAction)
         analyticsScope.launch {
             userIdentityState.value.resetUserIdentity(
-                clearAnonymousId = clearAnonymousId,
                 storage = storage,
             )
         }
@@ -390,36 +388,23 @@ open class Analytics protected constructor(
     override fun getPlatformType(): PlatformType = PlatformType.Server
 
     /**
-     * Update or get the stored anonymous ID.
+     * Get the stored anonymous ID.
      *
      * The `analyticsInstance.anonymousId` is used to update and get the `anonymousID` value.
      * This ID is typically generated automatically to track users who have not yet been identified
      * (e.g., before they log in or sign up).
      *
-     * This can return null if the analytics is shut down.
-     *
-     * Set the anonymousId:
-     * ```kotlin
-     * analyticsInstance.anonymousId = "Custom Anonymous ID"
-     * ```
+     * **Note**: This will return null if the [Analytics] instance is shut down.
      *
      * Get the anonymousId:
      * ```kotlin
      * val anonymousId = analyticsInstance.anonymousId
      * ```
      */
-    var anonymousId: String?
+    val anonymousId: String?
         get() {
             if (!isAnalyticsActive()) return null
             return userIdentityState.value.anonymousId
-        }
-        set(value) {
-            if (!isAnalyticsActive()) return
-
-            value?.let { anonymousId ->
-                userIdentityState.dispatch(SetAnonymousIdAction(anonymousId))
-                storeAnonymousId()
-            }
         }
 
     /**

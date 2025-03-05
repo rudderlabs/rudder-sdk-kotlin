@@ -75,7 +75,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
 
             AnalyticsState.Reset -> {
-                RudderAnalyticsUtils.analytics.reset(clearAnonymousId = false)
+                RudderAnalyticsUtils.analytics.reset()
                 "Resetting the userId, traits, and externalIds"
             }
 
@@ -97,11 +97,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             AnalyticsState.Initialize -> {
                 RudderAnalyticsUtils.initialize(getApplication())
                 "SDK initialized"
-            }
-
-            AnalyticsState.SetAnonymousId -> {
-                RudderAnalyticsUtils.analytics.anonymousId = "Custom Anonymous ID"
-                "Anonymous ID is set as: ${RudderAnalyticsUtils.analytics.anonymousId}"
             }
 
             AnalyticsState.GetAnonymousId -> {
