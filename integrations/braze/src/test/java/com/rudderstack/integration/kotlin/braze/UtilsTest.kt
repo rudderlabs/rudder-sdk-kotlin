@@ -110,10 +110,7 @@ class UtilsTest {
                 traits = provideStandardTraits(),
                 externalId = provideListOfExternalId()
             ),
-            // This needs to be removed in future. Replace it with "customTraits = JsonObject(emptyMap())"
-            customTraits = buildJsonObject {
-                put("anonymousId", "<anonymousId>")
-            }
+            customTraits = JsonObject(emptyMap())
         )
         assertEquals(expectedIdentityTraits, identityTraits)
     }
