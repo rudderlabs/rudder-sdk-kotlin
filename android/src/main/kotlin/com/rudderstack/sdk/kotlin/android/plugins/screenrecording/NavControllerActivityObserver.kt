@@ -39,7 +39,7 @@ internal class NavControllerActivityObserver(
     }
 
     override fun onDestroy(owner: LifecycleOwner) {
-        plugin.navContextState.dispatch(NavContext.RemoveNavContextAction(navContext))
+        plugin.removeContextAndObserver(navContext)
     }
 
     internal fun removeObserver() {

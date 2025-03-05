@@ -7,40 +7,21 @@ import com.rudderstack.sdk.kotlin.android.state.NavContext
 import com.rudderstack.sdk.kotlin.android.utils.automaticProperty
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
-import com.rudderstack.sdk.kotlin.core.internals.statemanagement.FlowState
-import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.withContext
-import com.rudderstack.sdk.kotlin.android.Configuration as AndroidConfiguration
 
 internal const val FRAGMENT_NAVIGATOR_NAME = "fragment"
 internal const val COMPOSE_NAVIGATOR_NAME = "composable"
 
-// plugin for automatically tracking navControllers
-internal class NavControllerTrackingPlugin(
-    internal val navContextState: FlowState<Set<NavContext>>
-) : Plugin, NavController.OnDestinationChangedListener {
+internal class NavControllerTrackingPlugin : Plugin, NavController.OnDestinationChangedListener {
 
     override val pluginType: Plugin.PluginType = Plugin.PluginType.Utility
 
     override lateinit var analytics: Analytics
 
     private val currentNavContexts: MutableSet<NavContext> = mutableSetOf()
-
     private val activityObservers: MutableList<NavControllerActivityObserver> = mutableListOf()
 
-    override fun setup(analytics: Analytics) {
-        super.setup(analytics)
-        (analytics.configuration as? AndroidConfiguration)?.let {
-            navContextState.onEach { currentState ->
-                withContext(NonCancellable) { updateNavContexts(currentState) }
-            }.launchIn(analytics.analyticsScope)
-        }
-    }
-
     override fun teardown() {
-        navContextState.dispatch(NavContext.RemoveAllNavContextsAction)
+        removeAllContextsAndObservers()
     }
 
     override fun onDestinationChanged(controller: NavController, destination: NavDestination, arguments: Bundle?) {
@@ -50,48 +31,39 @@ internal class NavControllerTrackingPlugin(
         }
     }
 
-    private fun updateNavContexts(updatedNavContexts: Set<NavContext>) {
+    fun addContextAndObserver(navContext: NavContext) {
         synchronized(this) {
-            removeDeletedNavContexts(updatedNavContexts)
-            setupAddedNavContexts(updatedNavContexts)
+            // adding navContext
+            navContext.navController.addOnDestinationChangedListener(this)
+            currentNavContexts.add(navContext)
+
+            // adding activity observer
+            val activityObserver = provideNavControllerActivityObserver(
+                plugin = this,
+                navContext = navContext
+            )
+            activityObserver.addObserver()
+            activityObservers.add(activityObserver)
         }
     }
 
-    private fun removeDeletedNavContexts(updatedNavContexts: Set<NavContext>) {
-        val deletedNavContexts = currentNavContexts.minus(updatedNavContexts)
-        deletedNavContexts.forEach { navContext ->
-            removeContextAndObserver(navContext)
+    private fun removeAllContextsAndObservers() {
+        currentNavContexts
+            .toList()
+            .forEach { removeContextAndObserver(it) }
+    }
+
+    fun removeContextAndObserver(navContext: NavContext) {
+        synchronized(this) {
+            // removing navContext
+            navContext.navController.removeOnDestinationChangedListener(this)
+            currentNavContexts.remove(navContext)
+
+            // removing activity observer
+            val activityObserver = activityObservers.find { it.find(navContext) }
+            activityObserver?.removeObserver()
+            activityObservers.remove(activityObserver)
         }
-    }
-
-    private fun setupAddedNavContexts(updatedNavContexts: Set<NavContext>) {
-        val addedNavContexts = updatedNavContexts.minus(currentNavContexts)
-        addedNavContexts.forEach { navContext ->
-            addContextAndObserver(navContext)
-        }
-    }
-
-    private fun removeContextAndObserver(navContext: NavContext) {
-        navContext.navController.removeOnDestinationChangedListener(this)
-        currentNavContexts.remove(navContext)
-
-        val observerToBeRemoved = activityObservers.firstOrNull { it.find(navContext) }
-        observerToBeRemoved?.removeObserver()
-        observerToBeRemoved?.let { activityObservers.remove(it) }
-    }
-
-    private fun addContextAndObserver(navContext: NavContext) {
-        // adding navContext
-        navContext.navController.addOnDestinationChangedListener(this)
-        currentNavContexts.add(navContext)
-
-        // adding activity observer
-        val observerToBeAdded = provideNavControllerActivityObserver(
-            plugin = this,
-            navContext = navContext
-        )
-        observerToBeAdded.addObserver()
-        activityObservers.add(observerToBeAdded)
     }
 
     private fun trackFragmentScreen(destination: NavDestination) {
