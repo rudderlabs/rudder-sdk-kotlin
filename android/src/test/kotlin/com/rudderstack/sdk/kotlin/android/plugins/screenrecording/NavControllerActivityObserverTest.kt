@@ -58,7 +58,6 @@ class NavControllerActivityObserverTest {
         every { mockNavContext.callingActivity } returns mockActivity
         every { mockActivity.lifecycle } returns mockk(relaxed = true)
         every { mockActivity.lifecycle.addObserver(any()) } just Runs
-        every { mockPlugin.navContextState } returns mockNavContextState
         every { mockPlugin.analytics } returns mockAnalytics
         every { mockNavContextState.dispatch(any()) } just Runs
 
@@ -111,13 +110,11 @@ class NavControllerActivityObserverTest {
     }
 
     @Test
-    fun `given observer, when onDestroyed called, then RemoveNavContextAction dispatched`() {
+    fun `given observer, when onDestroyed called, then context and observer removed from plugin`() {
         observer.onDestroy(mockActivity)
 
         verify {
-            mockNavContextState.dispatch(
-                match { it is NavContext.RemoveNavContextAction && it.navContext == mockNavContext }
-            )
+            mockPlugin.removeContextAndObserver(mockNavContext)
         }
     }
 }
