@@ -3,7 +3,6 @@ package com.rudderstack.sdk.kotlin.android.plugins.devicemode.utils
 import androidx.annotation.VisibleForTesting
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.IntegrationPlugin
 import com.rudderstack.sdk.kotlin.core.internals.models.AliasEvent
-import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.GroupEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.ScreenEvent
@@ -46,34 +45,29 @@ class MockDestinationIntegrationPlugin : IntegrationPlugin() {
         return mockDestinationSdk
     }
 
-    override fun track(payload: TrackEvent): Event {
+    override fun track(payload: TrackEvent) {
         val destination = mockDestinationSdk
         destination?.trackEvent(payload.event)
-        return payload
     }
 
-    override fun screen(payload: ScreenEvent): Event {
+    override fun screen(payload: ScreenEvent) {
         val destination = mockDestinationSdk
         destination?.screenEvent(payload.screenName)
-        return payload
     }
 
-    override fun group(payload: GroupEvent): Event {
+    override fun group(payload: GroupEvent) {
         val destination = mockDestinationSdk
         destination?.groupEvent(payload.groupId)
-        return payload
     }
 
-    override fun identify(payload: IdentifyEvent): Event {
+    override fun identify(payload: IdentifyEvent) {
         val destination = mockDestinationSdk
         destination?.identifyUser(payload.userId)
-        return payload
     }
 
-    override fun alias(payload: AliasEvent): Event {
+    override fun alias(payload: AliasEvent) {
         val destination = mockDestinationSdk
         destination?.aliasUser(payload.userId, payload.previousId)
-        return payload
     }
 
     override fun reset() {
