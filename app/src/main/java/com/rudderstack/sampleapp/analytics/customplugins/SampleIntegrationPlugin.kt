@@ -2,7 +2,6 @@ package com.rudderstack.sampleapp.analytics.customplugins
 
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.IntegrationPlugin
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
-import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -31,9 +30,8 @@ class SampleIntegrationPlugin : IntegrationPlugin() {
         return destinationSdk
     }
 
-    override fun track(payload: TrackEvent): Event {
+    override fun track(payload: TrackEvent) {
         destinationSdk?.track(payload.event, payload.properties)
-        return payload
     }
 
     override fun flush() {

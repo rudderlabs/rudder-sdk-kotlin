@@ -20,29 +20,24 @@ internal class RudderStackDataplanePlugin : EventPlugin {
     @VisibleForTesting
     internal var eventQueue: EventQueue? = null
 
-    override fun track(payload: TrackEvent): Event {
+    override fun track(payload: TrackEvent) {
         enqueue(payload)
-        return payload
     }
 
-    override fun screen(payload: ScreenEvent): Event {
+    override fun screen(payload: ScreenEvent) {
         enqueue(payload)
-        return payload
     }
 
-    override fun group(payload: GroupEvent): Event? {
+    override fun group(payload: GroupEvent) {
         enqueue(payload)
-        return payload
     }
 
-    override fun identify(payload: IdentifyEvent): Event {
+    override fun identify(payload: IdentifyEvent) {
         enqueue(payload)
-        return payload
     }
 
-    override fun alias(payload: AliasEvent): Event {
+    override fun alias(payload: AliasEvent) {
         enqueue(payload)
-        return payload
     }
 
     override fun setup(analytics: Analytics) {
