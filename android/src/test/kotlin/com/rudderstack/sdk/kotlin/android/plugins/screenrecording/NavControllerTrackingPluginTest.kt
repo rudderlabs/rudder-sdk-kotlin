@@ -7,7 +7,7 @@ import com.rudderstack.sdk.kotlin.android.state.NavContext
 import com.rudderstack.sdk.kotlin.android.utils.automaticProperty
 import com.rudderstack.sdk.kotlin.android.utils.mockAnalytics
 import com.rudderstack.sdk.kotlin.android.utils.mockNavContext
-import com.rudderstack.sdk.kotlin.core.internals.statemanagement.FlowState
+import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
@@ -38,13 +38,13 @@ class NavControllerTrackingPluginTest {
 
     private val mockAnalytics = mockAnalytics(testScope, testDispatcher)
 
-    private lateinit var mockNavContextState: FlowState<Set<NavContext>>
+    private lateinit var mockNavContextState: State<Set<NavContext>>
 
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
 
-        mockNavContextState = spyk(FlowState(emptySet()))
+        mockNavContextState = spyk(State(emptySet()))
         plugin = NavControllerTrackingPlugin(mockNavContextState)
         plugin.analytics = mockAnalytics
 

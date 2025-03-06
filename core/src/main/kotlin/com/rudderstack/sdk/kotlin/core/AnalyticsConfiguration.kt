@@ -2,7 +2,7 @@ package com.rudderstack.sdk.kotlin.core
 
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.connectivity.ConnectivityState
-import com.rudderstack.sdk.kotlin.core.internals.statemanagement.FlowState
+import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import kotlinx.coroutines.CoroutineDispatcher
@@ -57,7 +57,7 @@ interface AnalyticsConfiguration {
     /**
      * State for connectivity.
      */
-    val connectivityState: FlowState<Boolean>
+    val connectivityState: State<Boolean>
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -77,7 +77,7 @@ private class AnalyticsConfigurationImpl(
     override val networkDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(1)
     override val integrationsDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(1)
 
-    override val connectivityState: FlowState<Boolean> = FlowState(initialState = ConnectivityState.INITIAL_STATE)
+    override val connectivityState: State<Boolean> = State(initialState = ConnectivityState.INITIAL_STATE)
 }
 
 /**

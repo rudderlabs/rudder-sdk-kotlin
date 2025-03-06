@@ -5,11 +5,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 
 /**
- * A [FlowState] is a wrapper around [MutableStateFlow] that can be updated using [FlowAction]s.
+ * A [State] is a wrapper around [MutableStateFlow] that can be updated using [FlowAction]s.
  *
  * It provides a [dispatch] method to update the state based on the given [FlowAction].
  */
-interface FlowState<T> : MutableStateFlow<T> {
+interface State<T> : MutableStateFlow<T> {
 
     /**
      * Dispatches the given [action] to update the state.
@@ -17,7 +17,7 @@ interface FlowState<T> : MutableStateFlow<T> {
     fun dispatch(action: FlowAction<T>)
 }
 
-private class FlowStateImpl<T>(initialState: T) : FlowState<T>, MutableStateFlow<T> by MutableStateFlow(initialState) {
+private class StateImpl<T>(initialState: T) : State<T>, MutableStateFlow<T> by MutableStateFlow(initialState) {
 
     override fun dispatch(action: FlowAction<T>) {
         this.update { currentValue ->
@@ -27,9 +27,9 @@ private class FlowStateImpl<T>(initialState: T) : FlowState<T>, MutableStateFlow
 }
 
 /**
- * Creates a [FlowState] with the given initial [initialState].
+ * Creates a [State] with the given initial [initialState].
  */
 @InternalRudderApi
-fun <T> FlowState(initialState: T): FlowState<T> {
-    return FlowStateImpl(initialState)
+fun <T> State(initialState: T): State<T> {
+    return StateImpl(initialState)
 }

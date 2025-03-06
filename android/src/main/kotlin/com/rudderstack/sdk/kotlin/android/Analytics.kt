@@ -29,7 +29,7 @@ import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.platform.Platform
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
-import com.rudderstack.sdk.kotlin.core.internals.statemanagement.FlowState
+import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.utils.isAnalyticsActive
 import com.rudderstack.sdk.kotlin.core.provideAnalyticsConfiguration
 import org.jetbrains.annotations.ApiStatus.Experimental
@@ -75,7 +75,7 @@ class Analytics(
     private var navControllerTrackingPlugin: NavControllerTrackingPlugin? = null
 
     private val navContextState by lazy {
-        FlowState(NavContext.initialState())
+        State(NavContext.initialState())
     }
 
     internal val activityLifecycleManagementPlugin = ActivityLifecycleManagementPlugin()
