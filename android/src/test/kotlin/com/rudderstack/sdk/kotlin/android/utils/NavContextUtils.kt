@@ -1,7 +1,7 @@
 package com.rudderstack.sdk.kotlin.android.utils
 
 import androidx.activity.ComponentActivity
-import com.rudderstack.sdk.kotlin.android.state.NavContext
+import com.rudderstack.sdk.kotlin.android.plugins.screenrecording.NavContext
 import io.mockk.mockk
 
 internal fun mockNavContext() = NavContext(

@@ -3,7 +3,6 @@ package com.rudderstack.sdk.kotlin.android.plugins.screenrecording
 import androidx.activity.ComponentActivity
 import androidx.navigation.NavDestination
 import com.rudderstack.sdk.kotlin.core.Analytics
-import com.rudderstack.sdk.kotlin.android.state.NavContext
 import com.rudderstack.sdk.kotlin.android.utils.mockAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.FlowState
 import io.mockk.MockKAnnotations

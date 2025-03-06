@@ -1,4 +1,4 @@
-package com.rudderstack.sdk.kotlin.android.state
+package com.rudderstack.sdk.kotlin.android.plugins.screenrecording
 
 import android.app.Activity
 import androidx.navigation.NavController

@@ -3,7 +3,6 @@ package com.rudderstack.sdk.kotlin.android.plugins.screenrecording
 import android.os.Bundle
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination
-import com.rudderstack.sdk.kotlin.android.state.NavContext
 import com.rudderstack.sdk.kotlin.android.utils.automaticProperty
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
