@@ -53,7 +53,7 @@ class NavControllerTrackingPluginTest {
     }
 
     @Test
-    fun `when teardown called, then it should remove all activity activity observer and destination changed listener`() = runTest {
+    fun `when teardown called, then it should remove all activity observers and destination changed listeners`() = runTest {
         val navContext1 = mockNavContext()
         val navContext2 = mockNavContext()
         mockkStatic(::provideNavControllerActivityObserver)
@@ -130,7 +130,7 @@ class NavControllerTrackingPluginTest {
 
         plugin.onDestinationChanged(navController, destination, bundle)
 
-        verify { mockAnalytics.screen(testDestinationLabel, properties = automaticProperty()) }
+        verify(exactly = 1) { mockAnalytics.screen(testDestinationLabel, properties = automaticProperty()) }
     }
 
     @Test
@@ -145,7 +145,7 @@ class NavControllerTrackingPluginTest {
 
         plugin.onDestinationChanged(navController, destination, bundle)
 
-        verify { mockAnalytics.screen(testRoute, properties = automaticProperty()) }
+        verify(exactly = 1) { mockAnalytics.screen(testRoute, properties = automaticProperty()) }
     }
 
     @Test
@@ -165,7 +165,7 @@ class NavControllerTrackingPluginTest {
 
         plugin.onDestinationChanged(navController, destination, bundle)
 
-        verify { mockAnalytics.screen(testRouteWithoutArgs, properties = automaticProperty()) }
+        verify(exactly = 1) { mockAnalytics.screen(testRouteWithoutArgs, properties = automaticProperty()) }
     }
 
     private fun provideMockActivityObserver(navContext: NavContext): NavControllerActivityObserver {

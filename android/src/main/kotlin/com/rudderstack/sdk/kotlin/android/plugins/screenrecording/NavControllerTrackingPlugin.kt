@@ -25,13 +25,17 @@ internal class NavControllerTrackingPlugin : Plugin, NavController.OnDestination
     }
 
     override fun onDestinationChanged(controller: NavController, destination: NavDestination, arguments: Bundle?) {
+        makeAutomaticScreenEvent(destination)
+    }
+
+    internal fun makeAutomaticScreenEvent(destination: NavDestination) {
         when (destination.navigatorName) {
             FRAGMENT_NAVIGATOR_NAME -> trackFragmentScreen(destination)
             COMPOSE_NAVIGATOR_NAME -> trackComposeScreen(destination)
         }
     }
 
-    fun addContextAndObserver(navContext: NavContext) {
+    internal fun addContextAndObserver(navContext: NavContext) {
         synchronized(this) {
             // adding navContext
             navContext.navController.addOnDestinationChangedListener(this)
@@ -53,7 +57,7 @@ internal class NavControllerTrackingPlugin : Plugin, NavController.OnDestination
             .forEach { removeContextAndObserver(it) }
     }
 
-    fun removeContextAndObserver(navContext: NavContext) {
+    internal fun removeContextAndObserver(navContext: NavContext) {
         synchronized(this) {
             // removing navContext
             navContext.navController.removeOnDestinationChangedListener(this)

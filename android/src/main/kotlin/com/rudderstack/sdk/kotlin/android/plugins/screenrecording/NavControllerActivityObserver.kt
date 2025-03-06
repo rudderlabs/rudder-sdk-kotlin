@@ -26,14 +26,9 @@ internal class NavControllerActivityObserver(
 
     override fun onStart(owner: LifecycleOwner) {
         if (!isActivityGettingCreated.getAndSet(false)) {
-            val currentController = navContext.navController
-            val currentDestination = currentController.currentDestination
+            val currentDestination = navContext.navController.currentDestination
             if (currentDestination != null) {
-                plugin.onDestinationChanged(
-                    controller = currentController,
-                    destination = currentDestination,
-                    arguments = null
-                )
+                plugin.makeAutomaticScreenEvent(currentDestination)
             }
         }
     }
