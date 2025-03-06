@@ -21,7 +21,7 @@ class StateTest {
 
     @Test
     fun `given a flow action, when dispatch called, then it should update state based on action`() = runTest {
-        val incrementAction = FlowAction<Int> { currentState -> currentState + 5 }
+        val incrementAction = StateAction<Int> { currentState -> currentState + 5 }
 
         state.dispatch(incrementAction)
 
@@ -30,8 +30,8 @@ class StateTest {
 
     @Test
     fun `given multiple actions, when dispatch multiple actions, then they should update state correctly and synchronously`() = runTest {
-        val incrementAction = FlowAction<Int> { currentState -> currentState + 2 }
-        val multiplyAction = FlowAction<Int> { currentState -> currentState * 3 }
+        val incrementAction = StateAction<Int> { currentState -> currentState + 2 }
+        val multiplyAction = StateAction<Int> { currentState -> currentState * 3 }
 
         state.dispatch(incrementAction)
         val afterIncrement = state.value

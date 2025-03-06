@@ -1,6 +1,6 @@
 package com.rudderstack.sdk.kotlin.core.internals.models
 
-import com.rudderstack.sdk.kotlin.core.internals.statemanagement.FlowAction
+import com.rudderstack.sdk.kotlin.core.internals.statemanagement.StateAction
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
@@ -48,7 +48,7 @@ data class SourceConfig(
      */
     class UpdateAction(
         @VisibleForTesting internal val updatedSourceConfig: SourceConfig
-    ) : FlowAction<SourceConfig> {
+    ) : StateAction<SourceConfig> {
 
         override fun reduce(currentState: SourceConfig): SourceConfig {
             return updatedSourceConfig
