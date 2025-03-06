@@ -70,13 +70,13 @@ class NavControllerActivityObserverTest {
     }
 
     @Test
-    fun `given observer is just created, when onStart called, then OnDestinationChanged is not called`() {
+    fun `given observer is just created, when onStart called, then no automatic screen event is made`() {
         val mockDestination = mockk<NavDestination>(relaxed = true)
         every { mockNavContext.navController.currentDestination } returns mockDestination
 
         observer.onStart(mockActivity)
 
-        verify(exactly = 0) { mockPlugin.onDestinationChanged(mockNavContext.navController, mockDestination, any()) }
+        verify(exactly = 0) { mockPlugin.makeAutomaticScreenEvent(mockDestination) }
     }
 
     @Test
@@ -98,22 +98,20 @@ class NavControllerActivityObserverTest {
     }
 
     @Test
-    fun `given observer already created, when onStart called again, then OnDestinationChanged is not called again`() {
+    fun `given observer already created, when onStart called again, then automatic screen is made once`() {
         val mockDestination = mockk<NavDestination>(relaxed = true)
         every { mockNavContext.navController.currentDestination } returns mockDestination
 
         observer.onStart(mockActivity)
         observer.onStart(mockActivity)
 
-        verify(exactly = 1) { mockPlugin.onDestinationChanged(mockNavContext.navController, mockDestination, any()) }
+        verify(exactly = 1) { mockPlugin.makeAutomaticScreenEvent(mockDestination) }
     }
 
     @Test
     fun `given observer, when onDestroyed called, then context and observer removed from plugin`() {
         observer.onDestroy(mockActivity)
 
-        verify {
-            mockPlugin.removeContextAndObserver(mockNavContext)
-        }
+        verify(exactly = 1) { mockPlugin.removeContextAndObserver(mockNavContext) }
     }
 }
