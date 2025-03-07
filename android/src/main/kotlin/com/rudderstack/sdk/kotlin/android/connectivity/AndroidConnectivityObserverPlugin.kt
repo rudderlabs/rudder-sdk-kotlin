@@ -13,7 +13,7 @@ import com.rudderstack.sdk.kotlin.android.utils.runBasedOnSDK
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.connectivity.ConnectivityState
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
-import com.rudderstack.sdk.kotlin.core.internals.statemanagement.FlowState
+import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.utils.defaultExceptionHandler
 import com.rudderstack.sdk.kotlin.core.internals.utils.safelyExecute
 
@@ -31,7 +31,7 @@ private const val MIN_SUPPORTED_VERSION = Build.VERSION_CODES.N
  */
 @Suppress("MaximumLineLength")
 internal class AndroidConnectivityObserverPlugin(
-    private val connectivityState: FlowState<Boolean>
+    private val connectivityState: State<Boolean>
 ) : Plugin {
 
     override val pluginType: Plugin.PluginType = Plugin.PluginType.Utility
@@ -89,7 +89,7 @@ internal class AndroidConnectivityObserverPlugin(
 }
 
 @VisibleForTesting
-internal fun createNetworkCallback(connectivityState: FlowState<Boolean>) = object : ConnectivityManager.NetworkCallback() {
+internal fun createNetworkCallback(connectivityState: State<Boolean>) = object : ConnectivityManager.NetworkCallback() {
     override fun onAvailable(network: Network) {
         super.onAvailable(network)
         connectivityState.dispatch(ConnectivityState.EnableConnectivityAction())
@@ -104,7 +104,7 @@ internal fun createNetworkCallback(connectivityState: FlowState<Boolean>) = obje
 @VisibleForTesting
 // Suppressing deprecation warning as we need to support lower API levels.
 @Suppress("DEPRECATION")
-internal fun createBroadcastReceiver(connectivityState: FlowState<Boolean>) = object : BroadcastReceiver() {
+internal fun createBroadcastReceiver(connectivityState: State<Boolean>) = object : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
         (context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).activeNetworkInfo?.let {
             when (it.isConnected) {

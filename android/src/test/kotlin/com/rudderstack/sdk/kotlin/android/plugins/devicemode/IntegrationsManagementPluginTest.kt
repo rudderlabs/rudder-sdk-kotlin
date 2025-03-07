@@ -7,7 +7,7 @@ import com.rudderstack.sdk.kotlin.android.utils.readFileAsString
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
-import com.rudderstack.sdk.kotlin.core.internals.statemanagement.FlowState
+import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.utils.LenientJson
 import io.mockk.coVerify
 import io.mockk.every
@@ -51,7 +51,7 @@ class IntegrationsManagementPluginTest {
         Dispatchers.setMain(testDispatcher)
 
         every { mockAnalytics.configuration } returns mockk<Configuration>(relaxed = true)
-        every { mockAnalytics.sourceConfigState } returns FlowState(initialState = SourceConfig.initialState())
+        every { mockAnalytics.sourceConfigState } returns State(initialState = SourceConfig.initialState())
     }
 
     @AfterEach

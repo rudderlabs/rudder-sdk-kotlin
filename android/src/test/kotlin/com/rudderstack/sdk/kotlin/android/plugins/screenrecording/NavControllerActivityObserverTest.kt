@@ -4,7 +4,7 @@ import androidx.activity.ComponentActivity
 import androidx.navigation.NavDestination
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.android.utils.mockAnalytics
-import com.rudderstack.sdk.kotlin.core.internals.statemanagement.FlowState
+import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import io.mockk.MockKAnnotations
 import io.mockk.Runs
 import io.mockk.every
@@ -41,7 +41,7 @@ class NavControllerActivityObserverTest {
     private lateinit var mockActivity: ComponentActivity
 
     @MockK
-    private lateinit var mockNavContextState: FlowState<Set<NavContext>>
+    private lateinit var mockNavContextState: State<Set<NavContext>>
 
     private lateinit var mockAnalytics: Analytics
 

@@ -19,7 +19,6 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -55,12 +54,11 @@ class RudderStackDataplanePluginTest {
     }
 
     @Test
-    fun `given a track event, when track is called, then the event is enqueued and returned correctly`() {
+    fun `given a track event, when track is called, then the event is enqueued correctly`() {
         val trackMessage = mockk<TrackEvent>(relaxed = true)
 
-        val result = plugin.track(trackMessage)
+        plugin.track(trackMessage)
 
-        assertEquals(trackMessage, result)
         verify { mockEventQueue.put(trackMessage) }
     }
 

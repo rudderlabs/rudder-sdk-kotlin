@@ -26,7 +26,7 @@ import com.rudderstack.sdk.kotlin.core.internals.platform.Platform
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.PluginChain
-import com.rudderstack.sdk.kotlin.core.internals.statemanagement.FlowState
+import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.storage.provideBasicStorage
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import com.rudderstack.sdk.kotlin.core.internals.utils.addNameAndCategoryToProperties
@@ -53,13 +53,13 @@ import kotlinx.coroutines.launch
  * @constructor Primary constructor for creating an `Analytics` instance with a custom coroutine configuration.
  * @param configuration The configuration object that defines settings such as write key, data plane URL, logger, etc.
  * @param analyticsConfiguration The analytics configuration object that defines coroutine settings and some other variables.
- * @param userIdentityState The state flow for user identity management. Defaults to a new `FlowState` with the initial state.
+ * @param userIdentityState The state flow for user identity management. Defaults to a new [State] with the initial state.
  */
 @Suppress("TooManyFunctions")
 open class Analytics protected constructor(
     val configuration: Configuration,
     analyticsConfiguration: AnalyticsConfiguration,
-    internal val userIdentityState: FlowState<UserIdentity> = FlowState(
+    internal val userIdentityState: State<UserIdentity> = State(
         initialState = UserIdentity.initialState(
             analyticsConfiguration.storage
         )
@@ -72,7 +72,7 @@ open class Analytics protected constructor(
      * The `sourceConfigState` is a state flow that manages the source configuration for the analytics instance.
      */
     @InternalRudderApi
-    val sourceConfigState = FlowState(initialState = SourceConfig.initialState())
+    val sourceConfigState = State(initialState = SourceConfig.initialState())
 
     private val processEventChannel: Channel<Event> = Channel(Channel.UNLIMITED)
     private var processEventJob: Job? = null

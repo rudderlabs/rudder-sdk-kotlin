@@ -2,7 +2,7 @@ package com.rudderstack.sdk.kotlin.core.internals.models.useridentity
 
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderTraits
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
-import com.rudderstack.sdk.kotlin.core.internals.statemanagement.FlowAction
+import com.rudderstack.sdk.kotlin.core.internals.statemanagement.StateAction
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
@@ -45,5 +45,5 @@ data class UserIdentity(
         storage.write(StorageKeys.ANONYMOUS_ID, anonymousId)
     }
 
-    internal sealed interface UserIdentityAction : FlowAction<UserIdentity>
+    internal sealed interface UserIdentityAction : StateAction<UserIdentity>
 }

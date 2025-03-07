@@ -11,7 +11,7 @@ import com.rudderstack.sdk.kotlin.android.utils.AppSDKVersion
 import com.rudderstack.sdk.kotlin.android.utils.application
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.connectivity.ConnectivityState
-import com.rudderstack.sdk.kotlin.core.internals.statemanagement.FlowState
+import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import io.mockk.CapturingSlot
 import io.mockk.MockKAnnotations
 import io.mockk.every
@@ -47,9 +47,9 @@ class AndroidConnectivityObserverTest {
     private lateinit var mockConnectivityManager: ConnectivityManager
 
     @MockK
-    private lateinit var mockConnectivityState: FlowState<Boolean>
+    private lateinit var mockConnectivityState: State<Boolean>
 
-    private lateinit var connectivityStateSlot: CapturingSlot<FlowState<Boolean>>
+    private lateinit var connectivityStateSlot: CapturingSlot<State<Boolean>>
 
     @BeforeEach
     fun setup() {

@@ -1,6 +1,6 @@
 package com.rudderstack.sdk.kotlin.android.plugins.sessiontracking
 
-import com.rudderstack.sdk.kotlin.core.internals.statemanagement.FlowAction
+import com.rudderstack.sdk.kotlin.core.internals.statemanagement.StateAction
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 
@@ -26,7 +26,7 @@ internal data class SessionState(
         }
     }
 
-    sealed interface SessionStateAction : FlowAction<SessionState>
+    sealed interface SessionStateAction : StateAction<SessionState>
 
     class UpdateSessionIdAction(
         private val sessionId: Long

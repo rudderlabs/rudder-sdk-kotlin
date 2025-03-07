@@ -9,7 +9,7 @@ import com.rudderstack.sdk.kotlin.core.internals.models.ScreenEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
-import com.rudderstack.sdk.kotlin.core.internals.statemanagement.FlowState
+import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.utils.LenientJson
 import io.mockk.every
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -59,7 +59,7 @@ class EventFilteringPluginTest {
     fun setup() {
         eventFilteringPlugin = EventFilteringPlugin("MockDestination")
 
-        every { mockAnalytics.sourceConfigState } returns FlowState(initialState = SourceConfig.initialState())
+        every { mockAnalytics.sourceConfigState } returns State(initialState = SourceConfig.initialState())
         eventFilteringPlugin.setup(mockAnalytics)
     }
 

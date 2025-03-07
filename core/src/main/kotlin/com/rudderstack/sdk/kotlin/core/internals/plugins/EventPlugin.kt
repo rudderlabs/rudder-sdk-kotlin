@@ -17,44 +17,37 @@ interface EventPlugin : Plugin {
     /**
      * Handles a track event.
      */
-    fun track(payload: TrackEvent): Event? {
-        return payload
-    }
+    fun track(payload: TrackEvent) {}
 
     /**
      * Handles a screen event.
      */
-    fun screen(payload: ScreenEvent): Event? {
-        return payload
-    }
+    fun screen(payload: ScreenEvent) {}
 
     /**
      * Handles a group event.
      */
-    fun group(payload: GroupEvent): Event? {
-        return payload
-    }
+    fun group(payload: GroupEvent) {}
 
     /**
      * Handles an identify event.
      */
-    fun identify(payload: IdentifyEvent): Event? {
-        return payload
-    }
+    fun identify(payload: IdentifyEvent) {}
 
     /**
      * Handles an alias event.
      */
-    fun alias(payload: AliasEvent): Event? {
-        return payload
-    }
+    fun alias(payload: AliasEvent) {}
 
-    override suspend fun intercept(event: Event): Event? = handleEvent(event)
+    override suspend fun intercept(event: Event): Event? {
+        handleEvent(event)
+        return event
+    }
 
     /**
      * Executes the appropriate method for the given event.
      */
-    fun handleEvent(event: Event): Event? = when (event) {
+    fun handleEvent(event: Event) = when (event) {
         is TrackEvent -> track(event)
         is ScreenEvent -> screen(event)
         is GroupEvent -> group(event)

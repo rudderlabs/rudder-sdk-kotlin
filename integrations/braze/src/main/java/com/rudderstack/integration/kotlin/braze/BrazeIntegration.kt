@@ -17,7 +17,6 @@ import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLif
 import com.rudderstack.sdk.kotlin.android.utils.application
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
-import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
@@ -86,8 +85,8 @@ class BrazeIntegration : IntegrationPlugin(), ActivityLifecycleObserver {
         return braze
     }
 
-    override fun track(payload: TrackEvent): Event {
-        if (brazeConfig.isHybridMode()) return payload
+    override fun track(payload: TrackEvent) {
+        if (brazeConfig.isHybridMode()) return
 
         when (payload.event) {
             INSTALL_ATTRIBUTED -> {
@@ -102,7 +101,6 @@ class BrazeIntegration : IntegrationPlugin(), ActivityLifecycleObserver {
                 handleCustomEvent(payload)
             }
         }
-        return payload
     }
 
     private fun handleInstallAttributedEvent(payload: TrackEvent) {
@@ -161,8 +159,8 @@ class BrazeIntegration : IntegrationPlugin(), ActivityLifecycleObserver {
         }
     }
 
-    override fun identify(payload: IdentifyEvent): Event {
-        if (brazeConfig.isHybridMode()) return payload
+    override fun identify(payload: IdentifyEvent) {
+        if (brazeConfig.isHybridMode()) return
 
         payload.toIdentifyTraits().let { currentIdentifyTraits ->
             val deDupedTraits = this.brazeConfig.takeIf { it.supportDedup }?.let {
@@ -174,7 +172,6 @@ class BrazeIntegration : IntegrationPlugin(), ActivityLifecycleObserver {
 
             previousIdentifyTraits = currentIdentifyTraits
         }.also { LoggerAnalytics.verbose("BrazeIntegration: Identify event sent.") }
-        return payload
     }
 
     override fun flush() {

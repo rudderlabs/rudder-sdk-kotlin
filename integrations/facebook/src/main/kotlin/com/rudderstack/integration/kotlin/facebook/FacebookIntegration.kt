@@ -14,7 +14,6 @@ import com.rudderstack.sdk.kotlin.core.ecommerce.ECommerceEvents
 import com.rudderstack.sdk.kotlin.core.ecommerce.ECommerceParamNames
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
-import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.ScreenEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
@@ -71,7 +70,7 @@ class FacebookIntegration : IntegrationPlugin() {
         }
     }
 
-    override fun screen(payload: ScreenEvent): Event? {
+    override fun screen(payload: ScreenEvent) {
         payload.screenName
             .take(MAX_REMAINING_SCREEN_EVENT_LENGTH)
             .takeIf {
@@ -86,11 +85,9 @@ class FacebookIntegration : IntegrationPlugin() {
                 }
                 LoggerAnalytics.debug("FacebookIntegration: Screen $it sent to Facebook")
             }
-
-        return payload
     }
 
-    override fun identify(payload: IdentifyEvent): Event? {
+    override fun identify(payload: IdentifyEvent) {
         AppEventsLogger.setUserID(payload.userId)
 
         val address = analytics.traits?.get("address")?.let {
@@ -109,11 +106,9 @@ class FacebookIntegration : IntegrationPlugin() {
             zip = address?.postalCode,
             country = address?.country
         )
-
-        return payload
     }
 
-    override fun track(payload: TrackEvent): Event? {
+    override fun track(payload: TrackEvent) {
         payload.event
             .take(MAX_EVENT_LENGTH)
             .let {
@@ -173,8 +168,6 @@ class FacebookIntegration : IntegrationPlugin() {
                 }
                 LoggerAnalytics.debug("FacebookIntegration: Event $eventName sent to Facebook")
             }
-
-        return payload
     }
 
     override fun reset() {
