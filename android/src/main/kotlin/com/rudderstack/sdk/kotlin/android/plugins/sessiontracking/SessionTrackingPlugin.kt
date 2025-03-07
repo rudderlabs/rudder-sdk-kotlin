@@ -10,7 +10,7 @@ import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
-import com.rudderstack.sdk.kotlin.core.internals.statemanagement.FlowState
+import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.utils.DateTimeUtils
 import kotlinx.coroutines.CoroutineDispatcher
@@ -39,7 +39,7 @@ internal class SessionTrackingPlugin(
     private val storage: Storage
         get() = analytics.storage
 
-    private lateinit var sessionState: FlowState<SessionState>
+    private lateinit var sessionState: State<SessionState>
 
     internal val sessionId
         get() = sessionState.value.sessionId
@@ -62,7 +62,7 @@ internal class SessionTrackingPlugin(
                 LoggerAnalytics.error("Session timeout cannot be negative. Setting it to default value.")
                 DEFAULT_SESSION_TIMEOUT_IN_MILLIS
             }
-            sessionState = FlowState(SessionState.initialState(analytics.storage))
+            sessionState = State(SessionState.initialState(analytics.storage))
 
             when {
                 config.sessionConfiguration.automaticSessionTracking -> {

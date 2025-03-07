@@ -1,7 +1,7 @@
 package com.rudderstack.sdk.kotlin.core.internals.models
 
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig.Companion.serializer
-import com.rudderstack.sdk.kotlin.core.internals.statemanagement.FlowState
+import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.LenientJson
@@ -103,7 +103,7 @@ class SourceConfigTest {
 
     @Test
     fun `given an initial SourceConfig state, when UpdateAction called, then sourceConfig state is updated`() {
-        val sourceConfigFlowState = FlowState(SourceConfig.initialState())
+        val sourceConfigState = State(SourceConfig.initialState())
         val newSourceConfig = SourceConfig(
             source = RudderServerConfigSource(
                 sourceId = "newId",
@@ -115,9 +115,9 @@ class SourceConfigTest {
             )
         )
 
-        sourceConfigFlowState.dispatch(SourceConfig.UpdateAction(newSourceConfig))
+        sourceConfigState.dispatch(SourceConfig.UpdateAction(newSourceConfig))
 
-        assertEquals(newSourceConfig, sourceConfigFlowState.value)
+        assertEquals(newSourceConfig, sourceConfigState.value)
     }
 
     @Test

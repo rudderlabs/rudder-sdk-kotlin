@@ -2,7 +2,7 @@ package com.rudderstack.sdk.kotlin.android.state
 
 import android.app.Activity
 import androidx.navigation.NavController
-import com.rudderstack.sdk.kotlin.core.internals.statemanagement.FlowAction
+import com.rudderstack.sdk.kotlin.core.internals.statemanagement.StateAction
 import org.jetbrains.annotations.VisibleForTesting
 
 internal data class NavContext(
@@ -15,7 +15,7 @@ internal data class NavContext(
         fun initialState() = emptySet<NavContext>()
     }
 
-    internal sealed interface NavContextAction : FlowAction<Set<NavContext>>
+    internal sealed interface NavContextAction : StateAction<Set<NavContext>>
 
     internal class AddNavContextAction(private val navContext: NavContext) : NavContextAction {
 

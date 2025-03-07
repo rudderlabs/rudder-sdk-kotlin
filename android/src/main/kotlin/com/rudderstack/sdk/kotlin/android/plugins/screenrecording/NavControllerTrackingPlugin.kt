@@ -7,7 +7,7 @@ import com.rudderstack.sdk.kotlin.android.state.NavContext
 import com.rudderstack.sdk.kotlin.android.utils.automaticProperty
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
-import com.rudderstack.sdk.kotlin.core.internals.statemanagement.FlowState
+import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -19,7 +19,7 @@ internal const val COMPOSE_NAVIGATOR_NAME = "composable"
 
 // plugin for automatically tracking navControllers
 internal class NavControllerTrackingPlugin(
-    internal val navContextState: FlowState<Set<NavContext>>
+    internal val navContextState: State<Set<NavContext>>
 ) : Plugin, NavController.OnDestinationChangedListener {
 
     override val pluginType: Plugin.PluginType = Plugin.PluginType.Utility

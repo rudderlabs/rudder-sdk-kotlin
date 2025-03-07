@@ -5,7 +5,7 @@ import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig.Companion.s
 import com.rudderstack.sdk.kotlin.core.internals.network.ErrorStatus
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClient
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
-import com.rudderstack.sdk.kotlin.core.internals.statemanagement.FlowState
+import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.LenientJson
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
@@ -36,12 +36,12 @@ class SourceConfigManagerTest {
     private val testDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
     private val analytics: Analytics = mockAnalytics(testScope, testDispatcher)
-    private val sourceConfigState: FlowState<SourceConfig> = mockk(relaxed = true)
+    private val sourceConfigState: State<SourceConfig> = mockk(relaxed = true)
     private val httpClient: HttpClient = mockk(relaxed = true)
     private lateinit var sourceConfigManager: SourceConfigManager
 
     @MockK
-    private lateinit var mockFlowState: FlowState<Boolean>
+    private lateinit var mockState: State<Boolean>
 
     private lateinit var flowCollectorSlot: CapturingSlot<FlowCollector<Boolean>>
 
@@ -51,8 +51,8 @@ class SourceConfigManagerTest {
 
         // Mock the connectivity state and capture the block.
         flowCollectorSlot = slot()
-        every { analytics.connectivityState } returns mockFlowState
-        coEvery { mockFlowState.collect(capture(flowCollectorSlot)) }
+        every { analytics.connectivityState } returns mockState
+        coEvery { mockState.collect(capture(flowCollectorSlot)) }
 
         sourceConfigManager = SourceConfigManager(analytics, sourceConfigState, httpClient)
     }
