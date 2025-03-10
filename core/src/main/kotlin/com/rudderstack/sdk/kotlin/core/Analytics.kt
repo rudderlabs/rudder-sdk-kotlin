@@ -39,6 +39,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
+import org.jetbrains.annotations.VisibleForTesting
 
 /**
  * The `Analytics` class is the core of the RudderStack SDK, responsible for tracking events,
@@ -97,7 +98,7 @@ open class Analytics protected constructor(
     }
 
     protected fun setupSourceConfig() {
-        SourceConfigManager(
+        this.sourceConfigManager = provideSourceConfigManager(
             analytics = this,
             sourceConfigState = sourceConfigState
         ).apply {
@@ -451,3 +452,9 @@ open class Analytics protected constructor(
         }
     }
 }
+
+@VisibleForTesting
+internal fun provideSourceConfigManager(analytics: Analytics, sourceConfigState: State<SourceConfig>,) = SourceConfigManager(
+    analytics = analytics,
+    sourceConfigState = sourceConfigState
+)
