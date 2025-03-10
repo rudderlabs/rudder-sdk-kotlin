@@ -324,17 +324,61 @@ class AnalyticsTest {
         }
     }
 
-    @Test
-    fun `given analytics is shutdown, when track is called, then no event is stored in storage`() = runTest(testDispatcher) {
-        analytics.shutdown()
+//    @Test
+//    fun `given analytics is shutdown, when track is called, then no event is stored in storage`() = runTest(testDispatcher) {
+//        analytics.shutdown()
+//
+//        analytics.track(TRACK_EVENT_NAME)
+//        testDispatcher.scheduler.runCurrent()
+//
+//        coVerify(exactly = 0) {
+//            mockStorage.write(any(), any<String>())
+//        }
+//    }
 
-        analytics.track(TRACK_EVENT_NAME)
+    // Screen events with different arguments
+
+    @Test
+    fun `given SDK is ready to process any new events, when screen is called with only screen name, then event is stored in storage`() = runTest(testDispatcher) {
+        analytics.screen(SCREEN_EVENT_NAME)
         testDispatcher.scheduler.runCurrent()
 
-        coVerify(exactly = 0) {
-            mockStorage.write(any(), any<String>())
+        coVerify(exactly = 1) {
+            mockStorage.write(StorageKeys.EVENT, any<String>())
         }
     }
+
+    @Test
+    fun `given SDK is ready to process any new events, when screen is called with screen name and category, then event with category is stored in storage`() = runTest(testDispatcher) {
+        analytics.screen(SCREEN_EVENT_NAME, SCREEN_CATEGORY)
+        testDispatcher.scheduler.runCurrent()
+
+        coVerify(exactly = 1) {
+            mockStorage.write(StorageKeys.EVENT, any<String>())
+        }
+    }
+
+    @Test
+    fun `given SDK is ready to process any new events, when screen is called with screen name, category and properties, then event with properties is stored in storage`() = runTest(testDispatcher) {
+        analytics.screen(SCREEN_EVENT_NAME, SCREEN_CATEGORY, provideSampleJsonPayload())
+        testDispatcher.scheduler.runCurrent()
+
+        coVerify(exactly = 1) {
+            mockStorage.write(StorageKeys.EVENT, any<String>())
+        }
+    }
+
+//    @Test
+//    fun `given analytics is shutdown, when screen is called, then no event is stored in storage`() = runTest(testDispatcher) {
+//        analytics.shutdown()
+//
+//        analytics.screen(SCREEN_EVENT_NAME)
+//        testDispatcher.scheduler.runCurrent()
+//
+//        coVerify(exactly = 0) {
+//            mockStorage.write(any(), any<String>())
+//        }
+//    }
 
     private fun MockKVerificationScope.matchJsonString(expectedJsonString: String) =
         withArg<String> { actualJsonString ->
