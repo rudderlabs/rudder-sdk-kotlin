@@ -3,6 +3,7 @@ package com.rudderstack.sdk.kotlin.core
 import com.rudderstack.sdk.kotlin.core.internals.logger.KotlinLogger
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger.LogLevel
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.models.provider.provideSampleJsonPayload
 import com.rudderstack.sdk.kotlin.core.internals.storage.LibraryVersion
@@ -13,6 +14,7 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import com.rudderstack.sdk.kotlin.core.internals.utils.generateUUID
 import io.mockk.MockKAnnotations
 import io.mockk.MockKVerificationScope
+import io.mockk.clearMocks
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
@@ -32,7 +34,11 @@ import kotlinx.serialization.json.put
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.Arguments
+import org.junit.jupiter.params.provider.MethodSource
 import org.skyscreamer.jsonassert.JSONAssert
+import java.util.stream.Stream
 
 private val TRAITS: JsonObject = buildJsonObject { put("key-1", "value-1") }
 private const val trackPayloadPath = "messageWitContextObject/track_with_all_arguments_from_server.json"
@@ -188,8 +194,6 @@ class AnalyticsTest {
         }
     }
 
-    // Events with all the parameters
-
     @Test
     fun `when SDK is initialised, then SourceConfigManager should be initialised and source config observers should be notified`() {
         assertNotNull(analytics.sourceConfigManager)
@@ -199,6 +203,8 @@ class AnalyticsTest {
             mockSourceConfigManager.refreshSourceConfigAndNotifyObservers()
         }
     }
+
+    // Events with all the parameters
 
     @Test
     fun `given SDK is ready to process any new events, when a track event is made, then it should be stored in the storage`() =
@@ -294,47 +300,24 @@ class AnalyticsTest {
 
     // Track events with different arguments
 
-    @Test
-    fun `given SDK is ready to process any new events, when track is called with only event name, then event is stored in storage`() = runTest(testDispatcher) {
-        analytics.track(TRACK_EVENT_NAME)
+    @ParameterizedTest
+    @MethodSource("trackEventTestCases")
+    fun `given SDK is ready to process any new events, when track events are made, then event is stored in storage`(
+        name: String,
+        properties: JsonObject,
+        options: RudderOption,
+    ) = runTest(testDispatcher) {
+        analytics.track(
+            name = name,
+            properties = properties,
+            options = options,
+        )
         testDispatcher.scheduler.runCurrent()
 
         coVerify(exactly = 1) {
             mockStorage.write(StorageKeys.EVENT, any<String>())
         }
     }
-
-    @Test
-    fun `given SDK is ready to process any new events, when track is called with event name and properties, then event with properties is stored in storage`() = runTest(testDispatcher) {
-        analytics.track(TRACK_EVENT_NAME, provideSampleJsonPayload())
-        testDispatcher.scheduler.runCurrent()
-
-        coVerify(exactly = 1) {
-            mockStorage.write(StorageKeys.EVENT, any<String>())
-    }
-        }
-
-    @Test
-    fun `given SDK is ready to process any new events, when track is called with event name and options, then event with options is stored in storage`() = runTest(testDispatcher) {
-        analytics.track(TRACK_EVENT_NAME, options = provideRudderOption())
-        testDispatcher.scheduler.runCurrent()
-
-        coVerify(exactly = 1) {
-            mockStorage.write(StorageKeys.EVENT, any<String>())
-        }
-    }
-
-//    @Test
-//    fun `given analytics is shutdown, when track is called, then no event is stored in storage`() = runTest(testDispatcher) {
-//        analytics.shutdown()
-//
-//        analytics.track(TRACK_EVENT_NAME)
-//        testDispatcher.scheduler.runCurrent()
-//
-//        coVerify(exactly = 0) {
-//            mockStorage.write(any(), any<String>())
-//        }
-//    }
 
     // Screen events with different arguments
 
@@ -378,18 +361,6 @@ class AnalyticsTest {
         }
     }
 
-//    @Test
-//    fun `given analytics is shutdown, when screen is called, then no event is stored in storage`() = runTest(testDispatcher) {
-//        analytics.shutdown()
-//
-//        analytics.screen(SCREEN_EVENT_NAME)
-//        testDispatcher.scheduler.runCurrent()
-//
-//        coVerify(exactly = 0) {
-//            mockStorage.write(any(), any<String>())
-//        }
-//    }
-
     // Group events with different arguments
 
     @Test
@@ -421,18 +392,6 @@ class AnalyticsTest {
             mockStorage.write(StorageKeys.EVENT, any<String>())
         }
     }
-
-//    @Test
-//    fun `given analytics is shutdown, when group is called, then no event is stored in storage`() = runTest(testDispatcher) {
-//        analytics.shutdown()
-//
-//        analytics.group(GROUP_ID)
-//        testDispatcher.scheduler.runCurrent()
-//
-//        coVerify(exactly = 0) {
-//            mockStorage.write(any(), any<String>())
-//        }
-//    }
 
     // Identify events with different arguments
 
@@ -475,18 +434,6 @@ class AnalyticsTest {
             mockStorage.write(StorageKeys.EVENT, any<String>())
         }
     }
-
-//    @Test
-//    fun `given analytics is shutdown, when identify is called, then no event is stored in storage`() = runTest(testDispatcher) {
-//        analytics.shutdown()
-//
-//        analytics.identify(USER_ID)
-//        testDispatcher.scheduler.runCurrent()
-//
-//        coVerify(exactly = 0) {
-//            mockStorage.write(any(), any<String>())
-//        }
-//    }
 
     // Alias events with different arguments
 
@@ -536,6 +483,15 @@ class AnalyticsTest {
         withArg<String> { actualJsonString ->
             JSONAssert.assertEquals(expectedJsonString, actualJsonString, true)
         }
+
+    companion object {
+        @JvmStatic
+        fun trackEventTestCases() = Stream.of(
+            Arguments.of(TRACK_EVENT_NAME, emptyJsonObject, RudderOption()),
+            Arguments.of(TRACK_EVENT_NAME, provideSampleJsonPayload(), RudderOption()),
+            Arguments.of(TRACK_EVENT_NAME, emptyJsonObject, provideRudderOption()),
+        )
+    }
 }
 
 private fun provideConfiguration() =
