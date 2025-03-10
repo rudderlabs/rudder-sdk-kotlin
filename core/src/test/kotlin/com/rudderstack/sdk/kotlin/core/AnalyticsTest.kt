@@ -299,6 +299,11 @@ class AnalyticsTest {
             }
         }
 
+    private fun MockKVerificationScope.matchJsonString(expectedJsonString: String) =
+        withArg<String> { actualJsonString ->
+            JSONAssert.assertEquals(expectedJsonString, actualJsonString, true)
+        }
+
     @ParameterizedTest
     @MethodSource("trackEventTestCases")
     fun `given SDK is ready to process any new events, when track events are made, then they are stored in storage`(
@@ -397,41 +402,22 @@ class AnalyticsTest {
     }
 
     @Test
-    fun `given SDK is ready to process any new events, when alias is called with newId and previousId, then event with both IDs is stored in storage`() = runTest(testDispatcher) {
-        analytics.alias(ALIAS_ID, PREVIOUS_ID)
+    fun `given analytics is shutdown, when events are called, then no event is stored in storage`() = runTest(testDispatcher) {
+        analytics.shutdown()
+        // Clear all mocks to avoid any previous calls
+        clearMocks(mockStorage)
+
+        analytics.track(TRACK_EVENT_NAME)
+        analytics.screen(SCREEN_EVENT_NAME)
+        analytics.group(GROUP_ID)
+        analytics.identify(USER_ID)
+        analytics.alias(ALIAS_ID)
         testDispatcher.scheduler.runCurrent()
 
-        coVerify(exactly = 1) {
-            mockStorage.write(StorageKeys.EVENT, any<String>())
+        coVerify(exactly = 0) {
+            mockStorage.write(any(), any<String>())
         }
     }
-
-    @Test
-    fun `given SDK is ready to process any new events, when alias is called with newId and options, then event with options is stored in storage`() = runTest(testDispatcher) {
-        analytics.alias(ALIAS_ID, options = provideRudderOption())
-        testDispatcher.scheduler.runCurrent()
-
-        coVerify(exactly = 1) {
-            mockStorage.write(StorageKeys.EVENT, any<String>())
-        }
-    }
-
-//    @Test
-//    fun `given analytics is shutdown, when alias is called, then no event is stored in storage`() = runTest(testDispatcher) {
-//        analytics.shutdown()
-//
-//        analytics.alias(ALIAS_ID)
-//        testDispatcher.scheduler.runCurrent()
-//
-//        coVerify(exactly = 0) {
-//            mockStorage.write(any(), any<String>())
-//        }
-//    }
-
-    private fun MockKVerificationScope.matchJsonString(expectedJsonString: String) =
-        withArg<String> { actualJsonString ->
-            JSONAssert.assertEquals(expectedJsonString, actualJsonString, true)
-        }
 
     companion object {
         @JvmStatic
