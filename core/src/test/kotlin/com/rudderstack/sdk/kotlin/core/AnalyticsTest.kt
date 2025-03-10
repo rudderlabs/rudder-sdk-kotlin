@@ -7,9 +7,11 @@ import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.Properties
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
+import com.rudderstack.sdk.kotlin.core.internals.models.connectivity.ConnectivityState
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.models.provider.provideSampleJsonPayload
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
+import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.storage.LibraryVersion
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
@@ -71,6 +73,9 @@ class AnalyticsTest {
     @MockK
     private lateinit var mockStorage: Storage
 
+    @MockK
+    private lateinit var mockConnectivityState: State<Boolean>
+
     private val mockCurrentTime = "<original-timestamp>"
     private val testDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
@@ -100,6 +105,7 @@ class AnalyticsTest {
             every { sourceConfigManager } returns mockSourceConfigManager
 
             every { storage } returns mockStorage
+            every { connectivityState } returns mockConnectivityState
         }
 
         // Mocking persisted values and assigning default values
@@ -199,6 +205,14 @@ class AnalyticsTest {
         }
     }
 
+    @Test
+    fun `when SDK is initialised, then connectivity state should be set to default state`() = runTest(testDispatcher) {
+        verify(exactly = 1) {
+            mockConnectivityState.dispatch(match { action ->
+                action is ConnectivityState.SetDefaultStateAction
+            })
+        }
+    }
     @Test
     fun `when SDK is initialised, then SourceConfigManager should be initialised and source config observers should be notified`() {
         assertNotNull(analytics.sourceConfigManager)
