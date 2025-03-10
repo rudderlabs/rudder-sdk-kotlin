@@ -292,6 +292,50 @@ class AnalyticsTest {
             }
         }
 
+    // Track events with different arguments
+
+    @Test
+    fun `given SDK is ready to process any new events, when track is called with only event name, then event is stored in storage`() = runTest(testDispatcher) {
+        analytics.track(TRACK_EVENT_NAME)
+        testDispatcher.scheduler.runCurrent()
+
+        coVerify(exactly = 1) {
+            mockStorage.write(StorageKeys.EVENT, any<String>())
+        }
+    }
+
+    @Test
+    fun `given SDK is ready to process any new events, when track is called with event name and properties, then event with properties is stored in storage`() = runTest(testDispatcher) {
+        analytics.track(TRACK_EVENT_NAME, provideSampleJsonPayload())
+        testDispatcher.scheduler.runCurrent()
+
+        coVerify(exactly = 1) {
+            mockStorage.write(StorageKeys.EVENT, any<String>())
+    }
+        }
+
+    @Test
+    fun `given SDK is ready to process any new events, when track is called with event name and options, then event with options is stored in storage`() = runTest(testDispatcher) {
+        analytics.track(TRACK_EVENT_NAME, options = provideRudderOption())
+        testDispatcher.scheduler.runCurrent()
+
+        coVerify(exactly = 1) {
+            mockStorage.write(StorageKeys.EVENT, any<String>())
+        }
+    }
+
+    @Test
+    fun `given analytics is shutdown, when track is called, then no event is stored in storage`() = runTest(testDispatcher) {
+        analytics.shutdown()
+
+        analytics.track(TRACK_EVENT_NAME)
+        testDispatcher.scheduler.runCurrent()
+
+        coVerify(exactly = 0) {
+            mockStorage.write(any(), any<String>())
+        }
+    }
+
     private fun MockKVerificationScope.matchJsonString(expectedJsonString: String) =
         withArg<String> { actualJsonString ->
             JSONAssert.assertEquals(expectedJsonString, actualJsonString, true)
