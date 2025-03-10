@@ -359,8 +359,18 @@ class AnalyticsTest {
     }
 
     @Test
-    fun `given SDK is ready to process any new events, when screen is called with screen name, category and properties, then event with properties is stored in storage`() = runTest(testDispatcher) {
+    fun `given SDK is ready to process any new events, when screen is called with screen name, category and properties, then event with category and properties is stored in storage`() = runTest(testDispatcher) {
         analytics.screen(SCREEN_EVENT_NAME, SCREEN_CATEGORY, provideSampleJsonPayload())
+        testDispatcher.scheduler.runCurrent()
+
+        coVerify(exactly = 1) {
+            mockStorage.write(StorageKeys.EVENT, any<String>())
+        }
+    }
+
+    @Test
+    fun `given SDK is ready to process any new events, when screen is called with screen name and options, then event with options is stored in storage`() = runTest(testDispatcher) {
+        analytics.screen(SCREEN_EVENT_NAME, options = provideRudderOption())
         testDispatcher.scheduler.runCurrent()
 
         coVerify(exactly = 1) {
