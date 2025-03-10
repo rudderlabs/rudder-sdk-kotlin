@@ -3,10 +3,13 @@ package com.rudderstack.sdk.kotlin.core
 import com.rudderstack.sdk.kotlin.core.internals.logger.KotlinLogger
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger.LogLevel
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.Properties
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
+import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.models.provider.provideSampleJsonPayload
+import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.storage.LibraryVersion
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
@@ -55,6 +58,7 @@ private const val GROUP_ID = "Group Id 1"
 private const val USER_ID = "User Id 1"
 private const val ALIAS_ID = "Alias Id 1"
 private const val PREVIOUS_ID = "Previous Id 1"
+private const val NEW_EVENT_NAME = "New Event Name"
 
 class AnalyticsTest {
 
@@ -450,6 +454,37 @@ class AnalyticsTest {
             }
         }
 
+    @Test
+    fun `when custom plugin is dynamically added, then it should intercept the message and process event`() = runTest(testDispatcher) {
+        val customPlugin = provideCustomPlugin()
+
+        analytics.add(customPlugin)
+        analytics.track(TRACK_EVENT_NAME)
+        testDispatcher.scheduler.runCurrent()
+
+        coVerify(exactly = 1) {
+            mockStorage.write(StorageKeys.EVENT, withArg<String> { eventString ->
+                assertTrue(eventString.contains(NEW_EVENT_NAME), "Event string should contain '$NEW_EVENT_NAME'")
+            })
+        }
+    }
+
+    @Test
+    fun `when custom plugin is dynamically removed, then it shouldn't intercept the message and process event`() = runTest(testDispatcher) {
+        val customPlugin = provideCustomPlugin()
+        analytics.add(customPlugin)
+
+        analytics.remove(customPlugin)
+        analytics.track(TRACK_EVENT_NAME)
+        testDispatcher.scheduler.runCurrent()
+
+        coVerify(exactly = 1) {
+            mockStorage.write(StorageKeys.EVENT, withArg<String> { eventString ->
+                assertTrue(eventString.contains(TRACK_EVENT_NAME))
+            })
+        }
+    }
+
     companion object {
         @JvmStatic
         fun trackEventTestCases(): Stream<Arguments> = Stream.of(
@@ -504,3 +539,14 @@ private fun provideLibraryVersion(): LibraryVersion {
     }
 }
 
+private fun provideCustomPlugin() = object : Plugin {
+    override val pluginType: Plugin.PluginType = Plugin.PluginType.OnProcess
+    override lateinit var analytics: Analytics
+
+    override suspend fun intercept(event: Event): Event? {
+        if (event is TrackEvent) {
+            event.event = NEW_EVENT_NAME
+        }
+        return super.intercept(event)
+    }
+}
