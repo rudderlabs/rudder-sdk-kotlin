@@ -402,6 +402,18 @@ class AnalyticsTest {
     }
 
     @Test
+    fun `given SDK is ready to process any new events, when RESET call is made, then user details are reset`() {
+        analytics.identify(userId = USER_ID, traits = TRAITS)
+        analytics.reset()
+
+        val userId = analytics.userId
+        val traits = analytics.traits
+
+        assertEquals(String.empty(), userId)
+        assertEquals(emptyJsonObject, traits)
+    }
+
+    @Test
     fun `given analytics is shutdown, when events are called, then no event is stored in storage`() = runTest(testDispatcher) {
         analytics.shutdown()
         // Clear all mocks to avoid any previous calls
