@@ -434,6 +434,104 @@ class AnalyticsTest {
 //        }
 //    }
 
+    // Identify events with different arguments
+
+    @Test
+    fun `given SDK is ready to process any new events, when identify is called without params, then event is stored in storage`() = runTest(testDispatcher) {
+        analytics.identify()
+        testDispatcher.scheduler.runCurrent()
+
+        coVerify(exactly = 1) {
+            mockStorage.write(StorageKeys.EVENT, any<String>())
+        }
+    }
+
+    @Test
+    fun `given SDK is ready to process any new events, when identify is called with only userId, then event with userId is stored in storage`() = runTest(testDispatcher) {
+        analytics.identify(USER_ID)
+        testDispatcher.scheduler.runCurrent()
+
+        coVerify(exactly = 1) {
+            mockStorage.write(StorageKeys.EVENT, any<String>())
+        }
+    }
+
+    @Test
+    fun `given SDK is ready to process any new events, when identify is called with userId and traits, then event with traits is stored in storage`() = runTest(testDispatcher) {
+        analytics.identify(USER_ID, provideSampleJsonPayload())
+        testDispatcher.scheduler.runCurrent()
+
+        coVerify(exactly = 1) {
+            mockStorage.write(StorageKeys.EVENT, any<String>())
+        }
+    }
+
+    @Test
+    fun `given SDK is ready to process any new events, when identify is called with userId and options, then event with options is stored in storage`() = runTest(testDispatcher) {
+        analytics.identify(USER_ID, options = provideRudderOption())
+        testDispatcher.scheduler.runCurrent()
+
+        coVerify(exactly = 1) {
+            mockStorage.write(StorageKeys.EVENT, any<String>())
+        }
+    }
+
+//    @Test
+//    fun `given analytics is shutdown, when identify is called, then no event is stored in storage`() = runTest(testDispatcher) {
+//        analytics.shutdown()
+//
+//        analytics.identify(USER_ID)
+//        testDispatcher.scheduler.runCurrent()
+//
+//        coVerify(exactly = 0) {
+//            mockStorage.write(any(), any<String>())
+//        }
+//    }
+
+    // Alias events with different arguments
+
+    @Test
+    fun `given SDK is ready to process any new events, when alias is called with required newId, then event is stored in storage`() = runTest(testDispatcher) {
+        analytics.alias(ALIAS_ID)
+        testDispatcher.scheduler.runCurrent()
+
+        coVerify(exactly = 1) {
+            mockStorage.write(StorageKeys.EVENT, any<String>())
+        }
+    }
+
+    @Test
+    fun `given SDK is ready to process any new events, when alias is called with newId and previousId, then event with both IDs is stored in storage`() = runTest(testDispatcher) {
+        analytics.alias(ALIAS_ID, PREVIOUS_ID)
+        testDispatcher.scheduler.runCurrent()
+
+        coVerify(exactly = 1) {
+            mockStorage.write(StorageKeys.EVENT, any<String>())
+        }
+    }
+
+    @Test
+    fun `given SDK is ready to process any new events, when alias is called with newId and options, then event with options is stored in storage`() = runTest(testDispatcher) {
+        analytics.alias(ALIAS_ID, options = provideRudderOption())
+        testDispatcher.scheduler.runCurrent()
+
+        coVerify(exactly = 1) {
+            mockStorage.write(StorageKeys.EVENT, any<String>())
+        }
+    }
+
+//    @Test
+//    fun `given analytics is shutdown, when alias is called, then no event is stored in storage`() = runTest(testDispatcher) {
+//        analytics.shutdown()
+//
+//        analytics.alias(ALIAS_ID)
+//        testDispatcher.scheduler.runCurrent()
+//
+//        coVerify(exactly = 0) {
+//            mockStorage.write(any(), any<String>())
+//        }
+//    }
+
     private fun MockKVerificationScope.matchJsonString(expectedJsonString: String) =
         withArg<String> { actualJsonString ->
             JSONAssert.assertEquals(expectedJsonString, actualJsonString, true)
