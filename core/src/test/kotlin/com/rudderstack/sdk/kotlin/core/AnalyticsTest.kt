@@ -3,6 +3,7 @@ package com.rudderstack.sdk.kotlin.core
 import com.rudderstack.sdk.kotlin.core.internals.logger.KotlinLogger
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger.LogLevel
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.models.Properties
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.models.provider.provideSampleJsonPayload
@@ -298,11 +299,9 @@ class AnalyticsTest {
             }
         }
 
-    // Track events with different arguments
-
     @ParameterizedTest
     @MethodSource("trackEventTestCases")
-    fun `given SDK is ready to process any new events, when track events are made, then event is stored in storage`(
+    fun `given SDK is ready to process any new events, when track events are made, then they are stored in storage`(
         name: String,
         properties: JsonObject,
         options: RudderOption,
@@ -319,127 +318,77 @@ class AnalyticsTest {
         }
     }
 
-    // Screen events with different arguments
-
-    @Test
-    fun `given SDK is ready to process any new events, when screen is called with only screen name, then event is stored in storage`() = runTest(testDispatcher) {
-        analytics.screen(SCREEN_EVENT_NAME)
+    @ParameterizedTest
+    @MethodSource("screenEventTestCases")
+    fun `given SDK is ready to process any new events, when screen events are made, then they are stored in storage`(
+        screenName: String,
+        category: String,
+        properties: Properties,
+        options: RudderOption,
+    ) = runTest(testDispatcher) {
+        analytics.screen(
+            screenName = screenName,
+            category = category,
+            properties = properties,
+            options = options,
+        )
         testDispatcher.scheduler.runCurrent()
 
         coVerify(exactly = 1) {
             mockStorage.write(StorageKeys.EVENT, any<String>())
         }
     }
-
-    @Test
-    fun `given SDK is ready to process any new events, when screen is called with screen name and category, then event with category is stored in storage`() = runTest(testDispatcher) {
-        analytics.screen(SCREEN_EVENT_NAME, SCREEN_CATEGORY)
+    
+    @ParameterizedTest
+    @MethodSource("groupEventTestCases")
+    fun `given SDK is ready to process any new events, when group events are made, then they are stored in storage`(
+        groupId: String,
+        traits: JsonObject,
+        options: RudderOption,
+    ) = runTest(testDispatcher) {
+        analytics.group(
+            groupId = groupId,
+            traits = traits,
+            options = options,
+        )
         testDispatcher.scheduler.runCurrent()
 
         coVerify(exactly = 1) {
             mockStorage.write(StorageKeys.EVENT, any<String>())
         }
     }
-
-    @Test
-    fun `given SDK is ready to process any new events, when screen is called with screen name, category and properties, then event with category and properties is stored in storage`() = runTest(testDispatcher) {
-        analytics.screen(SCREEN_EVENT_NAME, SCREEN_CATEGORY, provideSampleJsonPayload())
+    
+    @ParameterizedTest
+    @MethodSource("identifyEventTestCases")
+    fun `given SDK is ready to process any new events, when identify events are made, then they are stored in storage`(
+        userId: String,
+        traits: JsonObject,
+        options: RudderOption,
+    ) = runTest(testDispatcher) {
+        analytics.identify(
+            userId = userId,
+            traits = traits,
+            options = options,
+        )
         testDispatcher.scheduler.runCurrent()
 
         coVerify(exactly = 1) {
             mockStorage.write(StorageKeys.EVENT, any<String>())
         }
     }
-
-    @Test
-    fun `given SDK is ready to process any new events, when screen is called with screen name and options, then event with options is stored in storage`() = runTest(testDispatcher) {
-        analytics.screen(SCREEN_EVENT_NAME, options = provideRudderOption())
-        testDispatcher.scheduler.runCurrent()
-
-        coVerify(exactly = 1) {
-            mockStorage.write(StorageKeys.EVENT, any<String>())
-        }
-    }
-
-    // Group events with different arguments
-
-    @Test
-    fun `given SDK is ready to process any new events, when group is called with only groupId, then event is stored in storage`() = runTest(testDispatcher) {
-        analytics.group(GROUP_ID)
-        testDispatcher.scheduler.runCurrent()
-
-        coVerify(exactly = 1) {
-            mockStorage.write(StorageKeys.EVENT, any<String>())
-        }
-    }
-
-    @Test
-    fun `given SDK is ready to process any new events, when group is called with groupId and traits, then event with traits is stored in storage`() = runTest(testDispatcher) {
-        analytics.group(GROUP_ID, provideSampleJsonPayload())
-        testDispatcher.scheduler.runCurrent()
-
-        coVerify(exactly = 1) {
-            mockStorage.write(StorageKeys.EVENT, any<String>())
-        }
-    }
-
-    @Test
-    fun `given SDK is ready to process any new events, when group is called with groupId and options, then event with options is stored in storage`() = runTest(testDispatcher) {
-        analytics.group(GROUP_ID, options = provideRudderOption())
-        testDispatcher.scheduler.runCurrent()
-
-        coVerify(exactly = 1) {
-            mockStorage.write(StorageKeys.EVENT, any<String>())
-        }
-    }
-
-    // Identify events with different arguments
-
-    @Test
-    fun `given SDK is ready to process any new events, when identify is called without params, then event is stored in storage`() = runTest(testDispatcher) {
-        analytics.identify()
-        testDispatcher.scheduler.runCurrent()
-
-        coVerify(exactly = 1) {
-            mockStorage.write(StorageKeys.EVENT, any<String>())
-        }
-    }
-
-    @Test
-    fun `given SDK is ready to process any new events, when identify is called with only userId, then event with userId is stored in storage`() = runTest(testDispatcher) {
-        analytics.identify(USER_ID)
-        testDispatcher.scheduler.runCurrent()
-
-        coVerify(exactly = 1) {
-            mockStorage.write(StorageKeys.EVENT, any<String>())
-        }
-    }
-
-    @Test
-    fun `given SDK is ready to process any new events, when identify is called with userId and traits, then event with traits is stored in storage`() = runTest(testDispatcher) {
-        analytics.identify(USER_ID, provideSampleJsonPayload())
-        testDispatcher.scheduler.runCurrent()
-
-        coVerify(exactly = 1) {
-            mockStorage.write(StorageKeys.EVENT, any<String>())
-        }
-    }
-
-    @Test
-    fun `given SDK is ready to process any new events, when identify is called with userId and options, then event with options is stored in storage`() = runTest(testDispatcher) {
-        analytics.identify(USER_ID, options = provideRudderOption())
-        testDispatcher.scheduler.runCurrent()
-
-        coVerify(exactly = 1) {
-            mockStorage.write(StorageKeys.EVENT, any<String>())
-        }
-    }
-
-    // Alias events with different arguments
-
-    @Test
-    fun `given SDK is ready to process any new events, when alias is called with required newId, then event is stored in storage`() = runTest(testDispatcher) {
-        analytics.alias(ALIAS_ID)
+    
+    @ParameterizedTest
+    @MethodSource("aliasEventTestCases")
+    fun `given SDK is ready to process any new events, when alias events are made, then they are stored in storage`(
+        newId: String,
+        previousId: String,
+        options: RudderOption,
+    ) = runTest(testDispatcher) {
+        analytics.alias(
+            newId = newId,
+            previousId = previousId,
+            options = options,
+        )
         testDispatcher.scheduler.runCurrent()
 
         coVerify(exactly = 1) {
@@ -486,10 +435,41 @@ class AnalyticsTest {
 
     companion object {
         @JvmStatic
-        fun trackEventTestCases() = Stream.of(
+        fun trackEventTestCases(): Stream<Arguments> = Stream.of(
             Arguments.of(TRACK_EVENT_NAME, emptyJsonObject, RudderOption()),
             Arguments.of(TRACK_EVENT_NAME, provideSampleJsonPayload(), RudderOption()),
             Arguments.of(TRACK_EVENT_NAME, emptyJsonObject, provideRudderOption()),
+        )
+        
+        @JvmStatic
+        fun screenEventTestCases(): Stream<Arguments> = Stream.of(
+            Arguments.of(SCREEN_EVENT_NAME, String.empty(), emptyJsonObject, RudderOption()),
+            Arguments.of(SCREEN_EVENT_NAME, SCREEN_CATEGORY, emptyJsonObject, RudderOption()),
+            Arguments.of(SCREEN_EVENT_NAME, SCREEN_CATEGORY, provideSampleJsonPayload(), RudderOption()),
+            Arguments.of(SCREEN_EVENT_NAME, String.empty(), provideSampleJsonPayload(), RudderOption()),
+            Arguments.of(SCREEN_EVENT_NAME, String.empty(), emptyJsonObject, provideRudderOption()),
+        )
+        
+        @JvmStatic
+        fun groupEventTestCases(): Stream<Arguments> = Stream.of(
+            Arguments.of(GROUP_ID, emptyJsonObject, RudderOption()),
+            Arguments.of(GROUP_ID, provideSampleJsonPayload(), RudderOption()),
+            Arguments.of(GROUP_ID, emptyJsonObject, provideRudderOption()),
+        )
+        
+        @JvmStatic
+        fun identifyEventTestCases(): Stream<Arguments> = Stream.of(
+            Arguments.of(String.empty(), emptyJsonObject, RudderOption()),
+            Arguments.of(USER_ID, emptyJsonObject, RudderOption()),
+            Arguments.of(USER_ID, provideSampleJsonPayload(), RudderOption()),
+            Arguments.of(USER_ID, emptyJsonObject, provideRudderOption()),
+        )
+        
+        @JvmStatic
+        fun aliasEventTestCases(): Stream<Arguments> = Stream.of(
+            Arguments.of(ALIAS_ID, String.empty(), RudderOption()),
+            Arguments.of(ALIAS_ID, PREVIOUS_ID, RudderOption()),
+            Arguments.of(ALIAS_ID, String.empty(), RudderOption()),
         )
     }
 }
