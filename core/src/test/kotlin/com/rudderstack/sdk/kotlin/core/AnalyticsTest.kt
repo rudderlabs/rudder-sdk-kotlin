@@ -380,6 +380,50 @@ class AnalyticsTest {
 //        }
 //    }
 
+    // Group events with different arguments
+
+    @Test
+    fun `given SDK is ready to process any new events, when group is called with only groupId, then event is stored in storage`() = runTest(testDispatcher) {
+        analytics.group(GROUP_ID)
+        testDispatcher.scheduler.runCurrent()
+
+        coVerify(exactly = 1) {
+            mockStorage.write(StorageKeys.EVENT, any<String>())
+        }
+    }
+
+    @Test
+    fun `given SDK is ready to process any new events, when group is called with groupId and traits, then event with traits is stored in storage`() = runTest(testDispatcher) {
+        analytics.group(GROUP_ID, provideSampleJsonPayload())
+        testDispatcher.scheduler.runCurrent()
+
+        coVerify(exactly = 1) {
+            mockStorage.write(StorageKeys.EVENT, any<String>())
+        }
+    }
+
+    @Test
+    fun `given SDK is ready to process any new events, when group is called with groupId and options, then event with options is stored in storage`() = runTest(testDispatcher) {
+        analytics.group(GROUP_ID, options = provideRudderOption())
+        testDispatcher.scheduler.runCurrent()
+
+        coVerify(exactly = 1) {
+            mockStorage.write(StorageKeys.EVENT, any<String>())
+        }
+    }
+
+//    @Test
+//    fun `given analytics is shutdown, when group is called, then no event is stored in storage`() = runTest(testDispatcher) {
+//        analytics.shutdown()
+//
+//        analytics.group(GROUP_ID)
+//        testDispatcher.scheduler.runCurrent()
+//
+//        coVerify(exactly = 0) {
+//            mockStorage.write(any(), any<String>())
+//        }
+//    }
+
     private fun MockKVerificationScope.matchJsonString(expectedJsonString: String) =
         withArg<String> { actualJsonString ->
             JSONAssert.assertEquals(expectedJsonString, actualJsonString, true)
