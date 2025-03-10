@@ -431,6 +431,25 @@ class AnalyticsTest {
         }
     }
 
+    @Test
+    fun `given there are few events that are yet to be processed, when shutdown is called, then all events in the queue are stored in storage then shutdown is completed`() =
+        runTest(testDispatcher) {
+            // Event pending to be processed
+            analytics.track(TRACK_EVENT_NAME)
+            analytics.screen(SCREEN_EVENT_NAME)
+            analytics.group(GROUP_ID)
+            analytics.identify(USER_ID)
+            analytics.alias(ALIAS_ID)
+
+            analytics.shutdown()
+            // Process all the events
+            testDispatcher.scheduler.runCurrent()
+
+            coVerify(exactly = 5) {
+                mockStorage.write(StorageKeys.EVENT, any<String>())
+            }
+        }
+
     companion object {
         @JvmStatic
         fun trackEventTestCases(): Stream<Arguments> = Stream.of(
