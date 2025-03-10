@@ -34,13 +34,20 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.skyscreamer.jsonassert.JSONAssert
 
-private const val USER_ID = "user-id"
 private val TRAITS: JsonObject = buildJsonObject { put("key-1", "value-1") }
 private const val trackPayloadPath = "messageWitContextObject/track_with_all_arguments_from_server.json"
 private const val screenPayloadPath = "messageWitContextObject/screen_with_all_arguments_from_server.json"
 private const val groupPayloadPath = "messageWitContextObject/group_with_all_arguments_from_server.json"
 private const val identifyPayloadPath = "messageWitContextObject/identify_events_with_all_arguments_from_server.json"
 private const val aliasPayloadPath = "messageWitContextObject/alias_events_with_all_arguments_from_server.json"
+
+private const val TRACK_EVENT_NAME = "Track event 1"
+private const val SCREEN_EVENT_NAME = "Test Screen 1"
+private const val SCREEN_CATEGORY = "Main"
+private const val GROUP_ID = "Group Id 1"
+private const val USER_ID = "User Id 1"
+private const val ALIAS_ID = "Alias Id 1"
+private const val PREVIOUS_ID = "Previous Id 1"
 
 class AnalyticsTest {
 
@@ -181,6 +188,8 @@ class AnalyticsTest {
         }
     }
 
+    // Events with all the parameters
+
     @Test
     fun `when SDK is initialised, then SourceConfigManager should be initialised and source config observers should be notified`() {
         assertNotNull(analytics.sourceConfigManager)
@@ -197,7 +206,7 @@ class AnalyticsTest {
             val expectedJsonString = readFileTrimmed(trackPayloadPath)
 
             analytics.track(
-                name = "Track event 1",
+                name = TRACK_EVENT_NAME,
                 properties = provideSampleJsonPayload(),
                 options = provideRudderOption(),
             )
@@ -216,8 +225,8 @@ class AnalyticsTest {
             val expectedJsonString = readFileTrimmed(screenPayloadPath)
 
             analytics.screen(
-                screenName = "Test Screen 1",
-                category = "Main",
+                screenName = SCREEN_EVENT_NAME,
+                category = SCREEN_CATEGORY,
                 properties = provideSampleJsonPayload(),
                 options = provideRudderOption(),
             )
@@ -235,7 +244,7 @@ class AnalyticsTest {
             val expectedJsonString = readFileTrimmed(groupPayloadPath)
 
             analytics.group(
-                groupId = "Group Id 1",
+                groupId = GROUP_ID,
                 traits = provideSampleJsonPayload(),
                 options = provideRudderOption(),
             )
@@ -253,7 +262,7 @@ class AnalyticsTest {
             val expectedJsonString = readFileTrimmed(identifyPayloadPath)
 
             analytics.identify(
-                userId = "User Id 1",
+                userId = USER_ID,
                 traits = provideSampleJsonPayload(),
                 options = provideRudderOption(),
             )
@@ -271,8 +280,8 @@ class AnalyticsTest {
             val expectedJsonString = readFileTrimmed(aliasPayloadPath)
 
             analytics.alias(
-                newId = "Alias Id 1",
-                previousId = "Previous Id 1",
+                newId = ALIAS_ID,
+                previousId = PREVIOUS_ID,
                 options = provideRudderOption(),
             )
             testDispatcher.scheduler.runCurrent()
