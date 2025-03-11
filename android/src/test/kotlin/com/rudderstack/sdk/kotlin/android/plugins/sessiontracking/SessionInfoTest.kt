@@ -8,7 +8,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
-class SessionStateTest {
+class SessionInfoTest {
 
     private val storage = spyk(MockMemoryStorage())
 
@@ -19,18 +19,18 @@ class SessionStateTest {
         storage.write(StorageKeys.IS_SESSION_MANUAL, true)
         storage.write(StorageKeys.IS_SESSION_START, false)
 
-        val sessionState = SessionState.initialState(storage)
+        val sessionInfo = SessionInfo.initialState(storage)
 
-        assertEquals(12345L, sessionState.sessionId)
-        assertEquals(67890L, sessionState.lastActivityTime)
-        assertEquals(true, sessionState.isSessionManual)
-        assertEquals(false, sessionState.isSessionStart)
+        assertEquals(12345L, sessionInfo.sessionId)
+        assertEquals(67890L, sessionInfo.lastActivityTime)
+        assertEquals(true, sessionInfo.isSessionManual)
+        assertEquals(false, sessionInfo.isSessionStart)
     }
 
     @Test
     fun `given current state, when UpdateSessionIdAction is reduced, then sessionId is updated`() {
-        val initialState = SessionState(1L, 0L, isSessionManual = false, isSessionStart = false)
-        val action = SessionState.UpdateSessionIdAction(sessionId = 12345L)
+        val initialState = SessionInfo(1L, 0L, isSessionManual = false, isSessionStart = false)
+        val action = SessionInfo.UpdateSessionIdAction(sessionId = 12345L)
 
         val newState = action.reduce(initialState)
 
@@ -42,8 +42,8 @@ class SessionStateTest {
 
     @Test
     fun `given current state, when UpdateLastActivityTimeAction is reduced, then lastActivityTime is updated`() {
-        val initialState = SessionState(1L, 0L, isSessionManual = false, isSessionStart = false)
-        val action = SessionState.UpdateLastActivityTimeAction(lastActivityTime = 67890L)
+        val initialState = SessionInfo(1L, 0L, isSessionManual = false, isSessionStart = false)
+        val action = SessionInfo.UpdateLastActivityTimeAction(lastActivityTime = 67890L)
 
         val newState = action.reduce(initialState)
 
@@ -55,8 +55,8 @@ class SessionStateTest {
 
     @Test
     fun `given current state, when UpdateIsSessionManualAction is reduced, then isSessionManual is updated`() {
-        val initialState = SessionState(1L, 0L, isSessionManual = false, isSessionStart = false)
-        val action = SessionState.UpdateIsSessionManualAction(isSessionManual = true)
+        val initialState = SessionInfo(1L, 0L, isSessionManual = false, isSessionStart = false)
+        val action = SessionInfo.UpdateIsSessionManualAction(isSessionManual = true)
 
         val newState = action.reduce(initialState)
 
@@ -68,8 +68,8 @@ class SessionStateTest {
 
     @Test
     fun `given current state, when UpdateIsSessionStartAction is reduced, then isSessionStart is updated`() {
-        val initialState = SessionState(1L, 0L, isSessionManual = false, isSessionStart = false)
-        val action = SessionState.UpdateIsSessionStartAction(isSessionStart = true)
+        val initialState = SessionInfo(1L, 0L, isSessionManual = false, isSessionStart = false)
+        val action = SessionInfo.UpdateIsSessionStartAction(isSessionStart = true)
 
         val newState = action.reduce(initialState)
 
@@ -81,8 +81,8 @@ class SessionStateTest {
 
     @Test
     fun `given current state, when EndSessionAction is reduced, then state is reset`() {
-        val initialState = SessionState(12345L, 67890L, isSessionManual = true, isSessionStart = true)
-        val action = SessionState.EndSessionAction
+        val initialState = SessionInfo(12345L, 67890L, isSessionManual = true, isSessionStart = true)
+        val action = SessionInfo.EndSessionAction
 
         val newState = action.reduce(initialState)
 
@@ -94,45 +94,45 @@ class SessionStateTest {
 
     @Test
     fun `given a sessionId, when storeSessionId is called, then sessionId is written to storage`() = runTest {
-        val sessionState = SessionState(1L, 0L, isSessionManual = false, isSessionStart = false)
+        val sessionInfo = SessionInfo(1L, 0L, isSessionManual = false, isSessionStart = false)
 
-        sessionState.storeSessionId(12345L, storage)
+        sessionInfo.storeSessionId(12345L, storage)
 
         assertEquals(12345L, storage.readLong(StorageKeys.SESSION_ID, 0L))
     }
 
     @Test
     fun `given a lastActivityTime, when storeLastActivityTime is called, then lastActivityTime is written to storage`() = runTest {
-        val sessionState = SessionState(1L, 0L, isSessionManual = false, isSessionStart = false)
+        val sessionInfo = SessionInfo(1L, 0L, isSessionManual = false, isSessionStart = false)
 
-        sessionState.storeLastActivityTime(67890L, storage)
+        sessionInfo.storeLastActivityTime(67890L, storage)
 
         assertEquals(67890L, storage.readLong(StorageKeys.LAST_ACTIVITY_TIME, 0L))
     }
 
     @Test
     fun `given a isSessionManual, when storeIsSessionManual is called, then isSessionManual is written to storage`() = runTest {
-        val sessionState = SessionState(1L, 0L, isSessionManual = false, isSessionStart = false)
+        val sessionInfo = SessionInfo(1L, 0L, isSessionManual = false, isSessionStart = false)
 
-        sessionState.storeIsSessionManual(true, storage)
+        sessionInfo.storeIsSessionManual(true, storage)
 
         assertEquals(true, storage.readBoolean(StorageKeys.IS_SESSION_MANUAL, false))
     }
 
     @Test
     fun `given isSessionStart value, when storeIsSessionStart is called, then isSessionStart is written to storage`() = runTest {
-        val sessionState = SessionState(1L, 0L, isSessionManual = false, isSessionStart = false)
+        val sessionInfo = SessionInfo(1L, 0L, isSessionManual = false, isSessionStart = false)
 
-        sessionState.storeIsSessionStart(true, storage)
+        sessionInfo.storeIsSessionStart(true, storage)
 
         assertEquals(true, storage.readBoolean(StorageKeys.IS_SESSION_START, false))
     }
 
     @Test
     fun `given session data in storage, when removeSessionData is called, then all session data is removed from storage`() = runTest {
-        val sessionState = SessionState(1L, 0L, isSessionManual = false, isSessionStart = false)
+        val sessionInfo = SessionInfo(1L, 0L, isSessionManual = false, isSessionStart = false)
 
-        sessionState.removeSessionData(storage)
+        sessionInfo.removeSessionData(storage)
 
         coVerify {
             storage.remove(StorageKeys.SESSION_ID)

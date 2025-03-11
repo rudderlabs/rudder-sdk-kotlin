@@ -33,17 +33,17 @@ internal class SessionManager(
         get() = analytics.storage
     private val sessionTrackingObserver = SessionTrackingObserver(this)
 
-    private var sessionState: State<SessionState> = State(SessionState.initialState(storage))
+    private var sessionInfo: State<SessionInfo> = State(SessionInfo.initialState(storage))
     internal var sessionTimeout by Delegates.notNull<Long>()
 
     internal val sessionId
-        get() = sessionState.value.sessionId
+        get() = sessionInfo.value.sessionId
     private val lastActivityTime
-        get() = sessionState.value.lastActivityTime
+        get() = sessionInfo.value.lastActivityTime
     internal val isSessionManual
-        get() = sessionState.value.isSessionManual
+        get() = sessionInfo.value.isSessionManual
     internal val isSessionStart
-        get() = sessionState.value.isSessionStart
+        get() = sessionInfo.value.isSessionStart
 
     init {
         sessionTimeout = if (sessionConfiguration.sessionTimeoutInMillis >= 0) {
@@ -86,35 +86,35 @@ internal class SessionManager(
     }
 
     private fun updateSessionId(sessionId: Long) {
-        sessionState.dispatch(SessionState.UpdateSessionIdAction(sessionId))
+        sessionInfo.dispatch(SessionInfo.UpdateSessionIdAction(sessionId))
         withSessionDispatcher {
-            sessionState.value.storeSessionId(sessionId, storage)
+            sessionInfo.value.storeSessionId(sessionId, storage)
         }
     }
 
     private fun updateIsSessionManualIfChanged(isSessionManual: Boolean) {
         if (this.isSessionManual != isSessionManual) {
-            sessionState.dispatch(SessionState.UpdateIsSessionManualAction(isSessionManual))
+            sessionInfo.dispatch(SessionInfo.UpdateIsSessionManualAction(isSessionManual))
             withSessionDispatcher {
-                sessionState.value.storeIsSessionManual(isSessionManual, storage)
+                sessionInfo.value.storeIsSessionManual(isSessionManual, storage)
             }
         }
     }
 
     internal fun updateIsSessionStartIfChanged(isSessionStart: Boolean) {
         if (this.isSessionStart != isSessionStart) {
-            sessionState.dispatch(SessionState.UpdateIsSessionStartAction(isSessionStart))
+            sessionInfo.dispatch(SessionInfo.UpdateIsSessionStartAction(isSessionStart))
             withSessionDispatcher {
-                sessionState.value.storeIsSessionStart(isSessionStart, storage)
+                sessionInfo.value.storeIsSessionStart(isSessionStart, storage)
             }
         }
     }
 
     internal fun updateLastActivityTime() {
         val lastActivityTime = getMonotonicCurrentTime()
-        sessionState.dispatch(SessionState.UpdateLastActivityTimeAction(lastActivityTime))
+        sessionInfo.dispatch(SessionInfo.UpdateLastActivityTimeAction(lastActivityTime))
         withSessionDispatcher {
-            sessionState.value.storeLastActivityTime(lastActivityTime, storage)
+            sessionInfo.value.storeLastActivityTime(lastActivityTime, storage)
         }
     }
 
@@ -156,9 +156,9 @@ internal class SessionManager(
 
     internal fun endSession() {
         detachSessionTrackingObservers()
-        sessionState.dispatch(SessionState.EndSessionAction)
+        sessionInfo.dispatch(SessionInfo.EndSessionAction)
         withSessionDispatcher {
-            sessionState.value.removeSessionData(storage)
+            sessionInfo.value.removeSessionData(storage)
         }
     }
 
