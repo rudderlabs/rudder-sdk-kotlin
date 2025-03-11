@@ -16,6 +16,7 @@ import io.mockk.mockkObject
 import io.mockk.mockkStatic
 import io.mockk.spyk
 import io.mockk.unmockkAll
+import io.mockk.verify
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -127,6 +128,14 @@ class SessionTrackingPluginTest {
         sessionTrackingPlugin.intercept(message)
         testDispatcher.scheduler.advanceUntilIdle()
         assertEquals(currentTime, mockStorage.readLong(StorageKeys.LAST_ACTIVITY_TIME, 0L))
+    }
+
+    @Test
+    fun `when teardown is called, then session tracking observer is detached`() = runTest {
+        pluginSetup()
+        sessionTrackingPlugin.teardown()
+
+        verify { sessionManager.detachSessionTrackingObservers() }
     }
 
     private fun pluginSetup(
