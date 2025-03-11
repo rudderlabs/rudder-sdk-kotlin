@@ -6,7 +6,6 @@ import com.rudderstack.sdk.kotlin.android.utils.MockMemoryStorage
 import com.rudderstack.sdk.kotlin.android.utils.getMonotonicCurrentTime
 import com.rudderstack.sdk.kotlin.android.utils.mockAnalytics
 import com.rudderstack.sdk.kotlin.core.Analytics
-import com.rudderstack.sdk.kotlin.android.Analytics as AndroidAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
@@ -17,20 +16,14 @@ import io.mockk.mockkObject
 import io.mockk.mockkStatic
 import io.mockk.spyk
 import io.mockk.unmockkAll
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class SessionTrackingPluginTest {
 
     private val testDispatcher = StandardTestDispatcher()
@@ -44,8 +37,6 @@ class SessionTrackingPluginTest {
 
     @BeforeEach
     fun setUp() {
-        Dispatchers.setMain(testDispatcher)
-
         mockCurrentMonotonicTime()
         mockSystemCurrentTime()
 
@@ -57,93 +48,84 @@ class SessionTrackingPluginTest {
 
     @AfterEach
     fun tearDown() {
-        Dispatchers.resetMain()
         unmockkAll()
     }
 
     @Test
-    fun `given automatic session enabled, when intercept called, then correct payload is attached`() = runTest {
-        val sessionId = 1234567890L
-        val currentTime = 100000000L
-        mockSystemCurrentTime(sessionId * 1000)
-        mockCurrentMonotonicTime(currentTime)
-        val firstMessage = TrackEvent("test", emptyJsonObject)
-        val secondMessage = TrackEvent("test", emptyJsonObject)
-        pluginSetup(automaticSessionTracking = true)
-
-        sessionTrackingPlugin.setup(mockAnalytics)
-        advanceUntilIdle()
-
-        sessionTrackingPlugin.intercept(firstMessage)
-        sessionTrackingPlugin.intercept(secondMessage)
-
-        assertEquals(sessionId.toString(), firstMessage.context[SESSION_ID].toString())
-        assertEquals("true", firstMessage.context[SESSION_START].toString())
-        assertEquals(sessionId.toString(), secondMessage.context[SESSION_ID].toString())
-        assertEquals(null, secondMessage.context[SESSION_START])
-    }
-
-    @Test
-    fun `given manual session is started from analytics, when intercept called, then correct payload is attached`() =
-        runTest {
+    fun `given automatic session enabled, when intercept called, then correct payload is attached`() =
+        runTest(testDispatcher) {
             val sessionId = 1234567890L
-            pluginSetup(automaticSessionTracking = false)
+            val currentTime = 100000000L
+            mockSystemCurrentTime(sessionId * 1000)
+            mockCurrentMonotonicTime(currentTime)
+            val firstEvent = TrackEvent("test", emptyJsonObject)
+            val secondEvent = TrackEvent("test", emptyJsonObject)
+            pluginSetup(automaticSessionTracking = true)
 
-            sessionTrackingPlugin.setup(mockAnalytics)
-            advanceUntilIdle()
-            sessionManager.startSession(sessionId, true)
-            advanceUntilIdle()
-            val firstMessage = TrackEvent("test", emptyJsonObject)
-            val secondMessage = TrackEvent("test", emptyJsonObject)
+            testDispatcher.scheduler.advanceUntilIdle()
 
-            sessionTrackingPlugin.intercept(firstMessage)
-            sessionTrackingPlugin.intercept(secondMessage)
+            sessionTrackingPlugin.intercept(firstEvent)
+            sessionTrackingPlugin.intercept(secondEvent)
 
-            assertEquals(sessionId.toString(), firstMessage.context[SESSION_ID].toString())
-            assertEquals("true", firstMessage.context[SESSION_START].toString())
-            assertEquals(sessionId.toString(), secondMessage.context[SESSION_ID].toString())
-            assertEquals(null, secondMessage.context[SESSION_START])
+            assertEquals(sessionId.toString(), firstEvent.context[SESSION_ID].toString())
+            assertEquals("true", firstEvent.context[SESSION_START].toString())
+            assertEquals(sessionId.toString(), secondEvent.context[SESSION_ID].toString())
+            assertEquals(null, secondEvent.context[SESSION_START])
         }
 
     @Test
-    fun `given manual session is ongoing, when an event is made, then last activity time is not updated`() = runTest {
-        val sessionId = 1234567890L
-        val currentTime = 100000000L
-        mockSystemCurrentTime(sessionId * 1000)
-        mockCurrentMonotonicTime(currentTime)
-        val message = TrackEvent("test", emptyJsonObject)
-        pluginSetup(automaticSessionTracking = false)
-        mockStorage.write(StorageKeys.SESSION_ID, sessionId)
-        mockStorage.write(StorageKeys.IS_SESSION_MANUAL, true)
-        mockStorage.write(StorageKeys.LAST_ACTIVITY_TIME, currentTime - 600_000L)
+    fun `given manual session is started from analytics, when intercept called, then correct payload is attached`() =
+        runTest(testDispatcher) {
+            val sessionId = 1234567890L
+            pluginSetup(automaticSessionTracking = false)
 
-        sessionTrackingPlugin.setup(mockAnalytics)
-        advanceUntilIdle()
+            sessionManager.startSession(sessionId, true)
+            testDispatcher.scheduler.advanceUntilIdle()
+            val firstEvent = TrackEvent("test", emptyJsonObject)
+            val secondEvent = TrackEvent("test", emptyJsonObject)
 
-        sessionTrackingPlugin.intercept(message)
-        advanceUntilIdle()
+            sessionTrackingPlugin.intercept(firstEvent)
+            sessionTrackingPlugin.intercept(secondEvent)
 
-        assertEquals(currentTime - 600_000L, mockStorage.readLong(StorageKeys.LAST_ACTIVITY_TIME, 0L))
-    }
+            assertEquals(sessionId.toString(), firstEvent.context[SESSION_ID].toString())
+            assertEquals("true", firstEvent.context[SESSION_START].toString())
+            assertEquals(sessionId.toString(), secondEvent.context[SESSION_ID].toString())
+            assertEquals(null, secondEvent.context[SESSION_START])
+        }
 
     @Test
-    fun `given an automatic session, when an event is made, then last activity time is updated`() = runTest(testDispatcher) {
+    fun `given manual session is ongoing, when an event is made, then last activity time is not updated`() =
+        runTest(testDispatcher) {
+            val sessionId = 1234567890L
+            val currentTime = 100000000L
+            mockSystemCurrentTime(sessionId * 1000)
+            mockCurrentMonotonicTime(currentTime)
+            val message = TrackEvent("test", emptyJsonObject)
+            mockStorage.write(StorageKeys.SESSION_ID, sessionId)
+            mockStorage.write(StorageKeys.IS_SESSION_MANUAL, true)
+            mockStorage.write(StorageKeys.LAST_ACTIVITY_TIME, currentTime - 600_000L)
+            pluginSetup(automaticSessionTracking = false)
+
+            sessionTrackingPlugin.intercept(message)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            assertEquals(currentTime - 600_000L, mockStorage.readLong(StorageKeys.LAST_ACTIVITY_TIME, 0L))
+        }
+
+    @Test
+    fun `given an automatic session is ongoing, when an event is made, then last activity time is updated`() = runTest(testDispatcher) {
         val sessionId = 1234567890L
         val currentTime = 100000000L
         mockSystemCurrentTime(sessionId * 1000)
         mockCurrentMonotonicTime(currentTime)
         val message = TrackEvent("test", emptyJsonObject)
-        pluginSetup(automaticSessionTracking = true)
         mockStorage.write(StorageKeys.SESSION_ID, sessionId)
         mockStorage.write(StorageKeys.IS_SESSION_MANUAL, false)
         mockStorage.write(StorageKeys.LAST_ACTIVITY_TIME, currentTime - 600_000L)
-
-        sessionTrackingPlugin.setup(mockAnalytics)
-        advanceUntilIdle()
+        pluginSetup(automaticSessionTracking = true)
 
         sessionTrackingPlugin.intercept(message)
-        advanceUntilIdle()
-
+        testDispatcher.scheduler.advanceUntilIdle()
         assertEquals(currentTime, mockStorage.readLong(StorageKeys.LAST_ACTIVITY_TIME, 0L))
     }
 
@@ -153,14 +135,17 @@ class SessionTrackingPluginTest {
     ) {
         sessionManager = spyk(
             SessionManager(
-                analytics = mockAnalytics, sessionConfiguration = SessionConfiguration(
+                sessionDispatcher = testDispatcher,
+                analytics = mockAnalytics,
+                sessionConfiguration = SessionConfiguration(
                     automaticSessionTracking = automaticSessionTracking,
                     sessionTimeoutInMillis = sessionTimeoutInMillis
                 )
             )
         )
 
-        every { (mockAnalytics as AndroidAnalytics).sessionManager } returns sessionManager
+        every { sessionTrackingPlugin.sessionManager } returns sessionManager
+        sessionTrackingPlugin.setup(mockAnalytics)
     }
 
     private fun mockCurrentMonotonicTime(currentTime: Long = System.currentTimeMillis()) {

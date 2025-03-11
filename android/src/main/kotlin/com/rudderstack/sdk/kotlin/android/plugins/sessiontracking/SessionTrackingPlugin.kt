@@ -1,5 +1,6 @@
 package com.rudderstack.sdk.kotlin.android.plugins.sessiontracking
 
+import com.rudderstack.sdk.kotlin.android.SessionConfiguration
 import com.rudderstack.sdk.kotlin.android.utils.mergeWithHigherPriorityTo
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
@@ -23,10 +24,7 @@ internal class SessionTrackingPlugin : Plugin {
         super.setup(analytics)
 
         (analytics.configuration as? AndroidConfiguration)?.let { config ->
-            sessionManager = SessionManager(
-                analytics = analytics,
-                sessionConfiguration = config.sessionConfiguration
-            )
+            sessionManager = provideSessionManager(analytics, config.sessionConfiguration)
         }
     }
 
@@ -54,4 +52,11 @@ internal class SessionTrackingPlugin : Plugin {
         }
         event.context = event.context mergeWithHigherPriorityTo sessionPayload
     }
+}
+
+private fun provideSessionManager(analytics: Analytics, sessionConfiguration: SessionConfiguration): SessionManager {
+    return SessionManager(
+        analytics = analytics,
+        sessionConfiguration = sessionConfiguration
+    )
 }
