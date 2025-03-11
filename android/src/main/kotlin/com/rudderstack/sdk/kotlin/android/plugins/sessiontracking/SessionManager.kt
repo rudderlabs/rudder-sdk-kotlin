@@ -1,12 +1,13 @@
 package com.rudderstack.sdk.kotlin.android.plugins.sessiontracking
 
-import com.rudderstack.sdk.kotlin.android.Analytics
 import com.rudderstack.sdk.kotlin.android.DEFAULT_SESSION_TIMEOUT_IN_MILLIS
 import com.rudderstack.sdk.kotlin.android.SessionConfiguration
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleObserver
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ProcessLifecycleObserver
 import com.rudderstack.sdk.kotlin.android.utils.addLifecycleObserver
 import com.rudderstack.sdk.kotlin.android.utils.getMonotonicCurrentTime
+import com.rudderstack.sdk.kotlin.android.utils.removeLifecycleObserver
+import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
@@ -17,7 +18,9 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 import kotlin.properties.Delegates
+import com.rudderstack.sdk.kotlin.android.Analytics as AndroidAnalytics
 
+@Suppress("TooManyFunctions")
 @OptIn(ExperimentalCoroutinesApi::class)
 internal class SessionManager(
     // single thread dispatcher is required so that the session variables are updated (on storage) in a sequential manner.
@@ -28,9 +31,10 @@ internal class SessionManager(
 
     private val storage: Storage
         get() = analytics.storage
+    private val sessionTrackingObserver = SessionTrackingObserver(this)
 
     private var sessionState: State<SessionState> = State(SessionState.initialState(storage))
-    internal var sessionTimeout by Delegates.notNull<Long>()
+    private var sessionTimeout by Delegates.notNull<Long>()
 
     internal val sessionId
         get() = sessionState.value.sessionId
@@ -75,6 +79,9 @@ internal class SessionManager(
         if (shouldUpdateIsSessionManual) {
             updateIsSessionManualIfChanged(isSessionManual)
         }
+        if (isSessionManual) {
+            detachSessionTrackingObservers()
+        }
         updateSessionId(sessionId)
     }
 
@@ -116,11 +123,19 @@ internal class SessionManager(
     }
 
     private fun attachSessionTrackingObservers() {
-        val sessionTrackingObserver = SessionTrackingObserver(this)
-        (analytics as? Analytics)?.addLifecycleObserver(
+        (analytics as? AndroidAnalytics)?.addLifecycleObserver(
             sessionTrackingObserver as ProcessLifecycleObserver
         )
-        (analytics as? Analytics)?.addLifecycleObserver(
+        (analytics as? AndroidAnalytics)?.addLifecycleObserver(
+            sessionTrackingObserver as ActivityLifecycleObserver
+        )
+    }
+
+    internal fun detachSessionTrackingObservers() {
+        (analytics as? AndroidAnalytics)?.removeLifecycleObserver(
+            sessionTrackingObserver as ProcessLifecycleObserver
+        )
+        (analytics as? AndroidAnalytics)?.removeLifecycleObserver(
             sessionTrackingObserver as ActivityLifecycleObserver
         )
     }
@@ -132,6 +147,7 @@ internal class SessionManager(
     }
 
     internal fun endSession() {
+        detachSessionTrackingObservers()
         sessionState.dispatch(SessionState.EndSessionAction)
         withSessionDispatcher {
             sessionState.value.removeSessionData(storage)

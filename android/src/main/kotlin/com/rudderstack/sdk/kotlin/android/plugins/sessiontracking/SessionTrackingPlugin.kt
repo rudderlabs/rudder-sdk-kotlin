@@ -11,11 +11,11 @@ import com.rudderstack.sdk.kotlin.android.Analytics as AndroidAnalytics
 internal const val SESSION_ID = "sessionId"
 internal const val SESSION_START = "sessionStart"
 
-@Suppress("TooManyFunctions")
 internal class SessionTrackingPlugin : Plugin {
 
     override val pluginType: Plugin.PluginType = Plugin.PluginType.PreProcess
     override lateinit var analytics: Analytics
+
     private lateinit var sessionManager: SessionManager
 
     override fun setup(analytics: Analytics) {
@@ -24,6 +24,10 @@ internal class SessionTrackingPlugin : Plugin {
         (analytics as? AndroidAnalytics)?.let {
             sessionManager = analytics.sessionManager
         }
+    }
+
+    override fun teardown() {
+        sessionManager.detachSessionTrackingObservers()
     }
 
     override suspend fun intercept(event: Event): Event {
