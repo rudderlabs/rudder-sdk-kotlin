@@ -112,17 +112,6 @@ class Analytics(
     }
 
     /**
-     * Returns the current session ID.
-     *
-     * @return The current session ID.
-     */
-    fun getSessionId(): Long? {
-        if (!isAnalyticsActive() || sessionTrackingPlugin.sessionManager.sessionId == DEFAULT_SESSION_ID) return null
-
-        return sessionTrackingPlugin.sessionManager.sessionId
-    }
-
-    /**
      * Resets the user identity, clears the existing anonymous ID and
      * generate a new one, also clears the user ID and traits.
      */
@@ -275,4 +264,13 @@ class Analytics(
     }
 
     override fun getPlatformType(): PlatformType = PlatformType.Mobile
+
+    /**
+     * Returns the current session ID.
+     */
+    val sessionId: Long?
+        get() {
+            if (!isAnalyticsActive() || sessionTrackingPlugin.sessionManager.sessionId == DEFAULT_SESSION_ID) return null
+            return sessionTrackingPlugin.sessionManager.sessionId
+        }
 }
