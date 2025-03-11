@@ -6,7 +6,7 @@ import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import com.rudderstack.sdk.kotlin.android.Analytics as AndroidAnalytics
+import com.rudderstack.sdk.kotlin.android.Configuration as AndroidConfiguration
 
 internal const val SESSION_ID = "sessionId"
 internal const val SESSION_START = "sessionStart"
@@ -16,13 +16,17 @@ internal class SessionTrackingPlugin : Plugin {
     override val pluginType: Plugin.PluginType = Plugin.PluginType.PreProcess
     override lateinit var analytics: Analytics
 
-    private lateinit var sessionManager: SessionManager
+    internal lateinit var sessionManager: SessionManager
+        private set
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
 
-        (analytics as? AndroidAnalytics)?.let {
-            sessionManager = analytics.sessionManager
+        (analytics.configuration as? AndroidConfiguration)?.let { config ->
+            sessionManager = SessionManager(
+                analytics = analytics,
+                sessionConfiguration = config.sessionConfiguration
+            )
         }
     }
 

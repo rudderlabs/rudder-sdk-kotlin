@@ -21,7 +21,6 @@ import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ProcessLife
 import com.rudderstack.sdk.kotlin.android.plugins.screenrecording.ActivityTrackingPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.screenrecording.NavControllerTrackingPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.sessiontracking.DEFAULT_SESSION_ID
-import com.rudderstack.sdk.kotlin.android.plugins.sessiontracking.SessionManager
 import com.rudderstack.sdk.kotlin.android.plugins.sessiontracking.SessionTrackingPlugin
 import com.rudderstack.sdk.kotlin.android.state.NavContext
 import com.rudderstack.sdk.kotlin.android.storage.provideAndroidStorage
@@ -82,10 +81,7 @@ class Analytics(
     internal val activityLifecycleManagementPlugin = ActivityLifecycleManagementPlugin()
     internal val processLifecycleManagementPlugin = ProcessLifecycleManagementPlugin()
     private val integrationsManagementPlugin = IntegrationsManagementPlugin()
-    internal val sessionManager = SessionManager(
-        analytics = this,
-        sessionConfiguration = configuration.sessionConfiguration
-    )
+    private val sessionTrackingPlugin = SessionTrackingPlugin()
 
     init {
         setup()
@@ -102,8 +98,8 @@ class Analytics(
             LoggerAnalytics.error("Session Id should be at least $MIN_SESSION_ID_LENGTH digits.")
             return
         }
-        val newSessionId = sessionId ?: sessionManager.generateSessionId()
-        sessionManager.startSession(sessionId = newSessionId, isSessionManual = true)
+        val newSessionId = sessionId ?: sessionTrackingPlugin.sessionManager.generateSessionId()
+        sessionTrackingPlugin.sessionManager.startSession(sessionId = newSessionId, isSessionManual = true)
     }
 
     /**
@@ -112,7 +108,7 @@ class Analytics(
     fun endSession() {
         if (!isAnalyticsActive()) return
 
-        sessionManager.endSession()
+        sessionTrackingPlugin.sessionManager.endSession()
     }
 
     /**
@@ -121,9 +117,9 @@ class Analytics(
      * @return The current session ID.
      */
     fun getSessionId(): Long? {
-        if (!isAnalyticsActive() || sessionManager.sessionId == DEFAULT_SESSION_ID) return null
+        if (!isAnalyticsActive() || sessionTrackingPlugin.sessionManager.sessionId == DEFAULT_SESSION_ID) return null
 
-        return sessionManager.sessionId
+        return sessionTrackingPlugin.sessionManager.sessionId
     }
 
     /**
@@ -135,7 +131,7 @@ class Analytics(
 
         super.reset()
 
-        sessionManager.refreshSession()
+        sessionTrackingPlugin.sessionManager.refreshSession()
         integrationsManagementPlugin.reset()
     }
 
@@ -262,7 +258,7 @@ class Analytics(
         add(OSInfoPlugin())
         add(ScreenInfoPlugin())
         add(TimezoneInfoPlugin())
-        add(SessionTrackingPlugin())
+        add(sessionTrackingPlugin)
         add(integrationsManagementPlugin)
 
         // Add these plugins at last in chain
