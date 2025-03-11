@@ -34,7 +34,7 @@ internal class SessionManager(
     private val sessionTrackingObserver = SessionTrackingObserver(this)
 
     private var sessionState: State<SessionState> = State(SessionState.initialState(storage))
-    private var sessionTimeout by Delegates.notNull<Long>()
+    internal var sessionTimeout by Delegates.notNull<Long>()
 
     internal val sessionId
         get() = sessionState.value.sessionId
@@ -110,6 +110,14 @@ internal class SessionManager(
         }
     }
 
+    internal fun updateLastActivityTime() {
+        val lastActivityTime = getMonotonicCurrentTime()
+        sessionState.dispatch(SessionState.UpdateLastActivityTimeAction(lastActivityTime))
+        withSessionDispatcher {
+            sessionState.value.storeLastActivityTime(lastActivityTime, storage)
+        }
+    }
+
     private fun checkAndStartSessionOnLaunch() {
         if (shouldStartNewSessionOnLaunch()) {
             startSession(sessionId = generateSessionId(), isSessionManual = false)
@@ -151,14 +159,6 @@ internal class SessionManager(
         sessionState.dispatch(SessionState.EndSessionAction)
         withSessionDispatcher {
             sessionState.value.removeSessionData(storage)
-        }
-    }
-
-    internal fun updateLastActivityTime() {
-        val lastActivityTime = getMonotonicCurrentTime()
-        sessionState.dispatch(SessionState.UpdateLastActivityTimeAction(lastActivityTime))
-        withSessionDispatcher {
-            sessionState.value.storeLastActivityTime(lastActivityTime, storage)
         }
     }
 
