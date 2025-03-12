@@ -19,17 +19,16 @@ import com.rudderstack.sdk.kotlin.android.plugins.devicemode.IntegrationsManagem
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleManagementPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ProcessLifecycleManagementPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.screenrecording.ActivityTrackingPlugin
+import com.rudderstack.sdk.kotlin.android.plugins.screenrecording.NavContext
 import com.rudderstack.sdk.kotlin.android.plugins.screenrecording.NavControllerTrackingPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.sessiontracking.DEFAULT_SESSION_ID
 import com.rudderstack.sdk.kotlin.android.plugins.sessiontracking.SessionTrackingPlugin
-import com.rudderstack.sdk.kotlin.android.state.NavContext
 import com.rudderstack.sdk.kotlin.android.storage.provideAndroidStorage
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.platform.Platform
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
-import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.utils.isAnalyticsActive
 import com.rudderstack.sdk.kotlin.core.provideAnalyticsConfiguration
 import org.jetbrains.annotations.ApiStatus.Experimental
@@ -73,11 +72,6 @@ class Analytics(
 ) {
 
     private var navControllerTrackingPlugin: NavControllerTrackingPlugin? = null
-
-    private val navContextState by lazy {
-        State(NavContext.initialState())
-    }
-
     internal val activityLifecycleManagementPlugin = ActivityLifecycleManagementPlugin()
     internal val processLifecycleManagementPlugin = ProcessLifecycleManagementPlugin()
     private val integrationsManagementPlugin = IntegrationsManagementPlugin()
@@ -199,17 +193,15 @@ class Analytics(
         if (!isAnalyticsActive()) return
 
         if (navControllerTrackingPlugin == null) {
-            navControllerTrackingPlugin = NavControllerTrackingPlugin(navContextState).also {
+            navControllerTrackingPlugin = NavControllerTrackingPlugin().also {
                 add(it)
             }
         }
 
-        navContextState.dispatch(
-            action = NavContext.AddNavContextAction(
-                navContext = NavContext(
-                    navController = navController,
-                    callingActivity = activity
-                )
+        navControllerTrackingPlugin?.addContextAndObserver(
+            navContext = NavContext(
+                navController = navController,
+                callingActivity = activity
             )
         )
     }
