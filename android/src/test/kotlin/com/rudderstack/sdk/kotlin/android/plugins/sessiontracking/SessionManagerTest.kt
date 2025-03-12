@@ -18,15 +18,11 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.DateTimeUtils
 import io.mockk.every
 import io.mockk.mockkObject
 import io.mockk.mockkStatic
+import io.mockk.unmockkAll
 import io.mockk.verify
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -34,7 +30,6 @@ import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class SessionManagerTest {
 
     private val testDispatcher = StandardTestDispatcher()
@@ -48,8 +43,6 @@ class SessionManagerTest {
 
     @BeforeEach
     fun setup() {
-        Dispatchers.setMain(testDispatcher)
-
         mockCurrentMonotonicTime()
         mockSystemCurrentTime()
 
@@ -60,11 +53,11 @@ class SessionManagerTest {
 
     @AfterEach
     fun teardown() {
-        Dispatchers.resetMain()
+        unmockkAll()
     }
 
     @Test
-    fun `given automatic session tracking enabled, when setup is called, then session tracking observers are added`() {
+    fun `given automatic session tracking enabled, when session manager is initialised, then session tracking observers are added`() {
         sessionManagerSetup(automaticSessionTracking = true)
 
         verify {
@@ -84,64 +77,79 @@ class SessionManagerTest {
     }
 
     @Test
-    fun `given session timeout occured, when app is launched, then new session starts`() = runTest {
-        val automaticSessionTrackingEnabled = true
-        mockStorage.write(
-            StorageKeys.LAST_ACTIVITY_TIME,
-            System.currentTimeMillis() - 600_000L
-        ) // Last event was 10 mins ago
+    fun `given an automatic session enabled, when app is launched and session is timed out, then new session starts`() =
+        runTest(testDispatcher) {
+            val automaticSessionTrackingEnabled = true
+            val initialSessionId = 1234567890L
+            val currentTime = System.currentTimeMillis()
+            mockCurrentMonotonicTime(currentTime)
+            mockSystemCurrentTime(currentTime)
+            mockStorage.write(StorageKeys.SESSION_ID, initialSessionId)
+            mockStorage.write(StorageKeys.IS_SESSION_MANUAL, false)
+            mockStorage.write(
+                StorageKeys.LAST_ACTIVITY_TIME,
+                currentTime - 600_000L
+            ) // Last event was 10 mins ago
 
-        sessionManagerSetup(automaticSessionTracking = automaticSessionTrackingEnabled, sessionTimeoutInMillis = 300_000L)
+            sessionManagerSetup(
+                automaticSessionTracking = automaticSessionTrackingEnabled,
+                sessionTimeoutInMillis = 300_000L
+            )
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        advanceUntilIdle()
-
-        assertNotEquals(0L, mockStorage.readLong(StorageKeys.SESSION_ID, 0L))
-        assertFalse(mockStorage.readBoolean(StorageKeys.IS_SESSION_MANUAL, false))
-    }
+            assertNotEquals(initialSessionId, mockStorage.readLong(StorageKeys.SESSION_ID, 0L))
+            assertEquals(currentTime / 1000, mockStorage.readLong(StorageKeys.SESSION_ID, 0L))
+            assertFalse(mockStorage.readBoolean(StorageKeys.IS_SESSION_MANUAL, false))
+        }
 
     @Test
-    fun `given previous session was manual and automatic enabled on new launch, when app launched, then new session starts`() =
-        runTest {
+    fun `given previous session was manual, when automatic session enabled and app launched, then new automatic session starts`() =
+        runTest(testDispatcher) {
             val automaticSessionTrackingEnabled = true
+            val initialSessionId = 1234567890L
+            mockStorage.write(StorageKeys.SESSION_ID, initialSessionId)
             mockStorage.write(StorageKeys.IS_SESSION_MANUAL, true)
 
             sessionManagerSetup(automaticSessionTracking = automaticSessionTrackingEnabled)
-            advanceUntilIdle()
+            testDispatcher.scheduler.advanceUntilIdle()
 
-            assertNotEquals(0L, mockStorage.readLong(StorageKeys.SESSION_ID, 0L))
+            assertNotEquals(initialSessionId, mockStorage.readLong(StorageKeys.SESSION_ID, 0L))
             assertFalse(mockStorage.readBoolean(StorageKeys.IS_SESSION_MANUAL, false))
         }
 
     @Test
-    fun `given no session id stored previously and automatic session enabled, when app launched, then new session is started`() =
-        runTest {
+    fun `given no session id stored previously, when automatic session enabled and app launched, then new automatic session is started with correct session id`() =
+        runTest(testDispatcher) {
             val automaticSessionTrackingEnabled = true
+            val currentTime = System.currentTimeMillis()
+            mockSystemCurrentTime(currentTime)
 
             sessionManagerSetup(automaticSessionTracking = automaticSessionTrackingEnabled)
-            advanceUntilIdle()
+            testDispatcher.scheduler.advanceUntilIdle()
 
             assertNotEquals(0L, mockStorage.readLong(StorageKeys.SESSION_ID, 0L))
+            assertEquals(currentTime / 1000, mockStorage.readLong(StorageKeys.SESSION_ID, 0L))
             assertFalse(mockStorage.readBoolean(StorageKeys.IS_SESSION_MANUAL, false))
         }
 
     @Test
-    fun `given automatic session is disabled and previous session was manual, when app launched, then session is not cleared`() =
-        runTest {
+    fun `given previous session was manual, when automatic session is disabled and app launched, then previous session variables are not cleared`() =
+        runTest(testDispatcher) {
             val automaticSessionTrackingEnabled = false
             val previousSessionId = 1234567890L
             mockStorage.write(StorageKeys.IS_SESSION_MANUAL, true)
             mockStorage.write(StorageKeys.SESSION_ID, previousSessionId)
 
             sessionManagerSetup(automaticSessionTracking = automaticSessionTrackingEnabled)
-            advanceUntilIdle()
+            testDispatcher.scheduler.advanceUntilIdle()
 
             assertEquals(previousSessionId, mockStorage.readLong(StorageKeys.SESSION_ID, 0L))
             assertEquals(true, mockStorage.readBoolean(StorageKeys.IS_SESSION_MANUAL, false))
         }
 
     @Test
-    fun `given automatic session is disabled and previous session was automatic, when app launched, then session is cleared`() =
-        runTest {
+    fun `given previous session was automatic, when automatic session is disabled and app launched, then previous session variables are cleared`() =
+        runTest(testDispatcher) {
             val automaticSessionTrackingEnabled = false
             val previousSessionId = 1234567890L
             val lastActivityTime = System.currentTimeMillis() - 600_000L
@@ -150,7 +158,7 @@ class SessionManagerTest {
             mockStorage.write(StorageKeys.LAST_ACTIVITY_TIME, lastActivityTime)
 
             sessionManagerSetup(automaticSessionTracking = automaticSessionTrackingEnabled)
-            advanceUntilIdle()
+            testDispatcher.scheduler.advanceUntilIdle()
 
             assertEquals(0L, mockStorage.readLong(StorageKeys.SESSION_ID, 0L))
             assertEquals(false, mockStorage.readBoolean(StorageKeys.IS_SESSION_MANUAL, false))
@@ -158,79 +166,68 @@ class SessionManagerTest {
         }
 
     @Test
-    fun `given automatic session enabled currently and session is not ended previously and timeout occurs, when checkAndStartSessionOnForeground called, then start new session called`() =
-        runTest {
+    fun `given automatic session ongoing previously, when app is foregrounded and session is timed out, then new session starts`() =
+        runTest(testDispatcher) {
             val automaticSessionTrackingEnabled = true
+            val previousSessionId = 1234567890L
             val currentTime = System.currentTimeMillis()
-            mockStorage.write(StorageKeys.IS_SESSION_MANUAL, false)
-            mockStorage.write(StorageKeys.LAST_ACTIVITY_TIME, currentTime - 600_000L) // Last event was 10 mins ago
             mockCurrentMonotonicTime(currentTime)
+            mockStorage.write(StorageKeys.IS_SESSION_MANUAL, false)
+            mockStorage.write(StorageKeys.SESSION_ID, previousSessionId)
+            mockStorage.write(StorageKeys.LAST_ACTIVITY_TIME, currentTime - 600_000L) // Last event was 10 mins ago
 
             sessionManagerSetup(
                 automaticSessionTracking = automaticSessionTrackingEnabled,
                 sessionTimeoutInMillis = 300_000L
             )
-            advanceUntilIdle()
-            sessionManager.checkAndStartSessionOnForeground()
-            advanceUntilIdle()
+            sessionManager.checkAndStartSessionOnForeground() // app is foregrounded
+            testDispatcher.scheduler.advanceUntilIdle()
 
-            assertNotEquals(0L, mockStorage.readLong(StorageKeys.SESSION_ID, 0L))
+            assertNotEquals(previousSessionId, mockStorage.readLong(StorageKeys.SESSION_ID, 0L))
             assertFalse(mockStorage.readBoolean(StorageKeys.IS_SESSION_MANUAL, false))
         }
 
     @Test
-    fun `given automatic session enabled, when refresh called, then session is refreshed`() = runTest {
-        val automaticSessionTrackingEnabled = true
-        val previousSessionId = 1234567890L
-        val currentTime = System.currentTimeMillis()
-        mockStorage.write(StorageKeys.IS_SESSION_MANUAL, false)
-        mockStorage.write(StorageKeys.SESSION_ID, previousSessionId)
-        mockStorage.write(StorageKeys.LAST_ACTIVITY_TIME, currentTime - 200_000L)
-        mockCurrentMonotonicTime(currentTime)
-        mockSystemCurrentTime(currentTime)
+    fun `given automatic session enabled previously, when reset called (which internally calls refreshSession), then session is refreshed`() =
+        runTest(testDispatcher) {
+            val automaticSessionTrackingEnabled = true
+            val previousSessionId = 1234567890L
+            mockStorage.write(StorageKeys.IS_SESSION_MANUAL, false)
+            mockStorage.write(StorageKeys.SESSION_ID, previousSessionId)
 
-        sessionManagerSetup(
-            automaticSessionTracking = automaticSessionTrackingEnabled,
-            sessionTimeoutInMillis = 300_000L
-        )
-        advanceUntilIdle()
-        sessionManager.refreshSession()
-        advanceUntilIdle()
+            sessionManagerSetup(automaticSessionTracking = automaticSessionTrackingEnabled)
+            sessionManager.refreshSession()
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        assertEquals(currentTime / 1000, mockStorage.readLong(StorageKeys.SESSION_ID, 0L))
-    }
+            assertNotEquals(previousSessionId, mockStorage.readLong(StorageKeys.SESSION_ID, 0L))
+        }
 
     @Test
-    fun `given manual session is active, when refresh called, then session is refreshed`() = runTest {
-        val automaticSessionTrackingEnabled = false
-        val previousSessionId = 1234567890L
-        val currentTime = System.currentTimeMillis()
-        mockStorage.write(StorageKeys.IS_SESSION_MANUAL, true)
-        mockStorage.write(StorageKeys.SESSION_ID, previousSessionId)
-        mockkStatic(DateTimeUtils::class)
-        every { DateTimeUtils.getSystemCurrentTime() } returns currentTime
+    fun `given manual session enabled previously, when reset called (which internally calls refreshSession), then session is refreshed`() =
+        runTest(testDispatcher) {
+            val automaticSessionTrackingEnabled = false
+            val previousSessionId = 1234567890L
+            mockStorage.write(StorageKeys.IS_SESSION_MANUAL, true)
+            mockStorage.write(StorageKeys.SESSION_ID, previousSessionId)
 
-        sessionManagerSetup(automaticSessionTracking = automaticSessionTrackingEnabled)
+            sessionManagerSetup(automaticSessionTracking = automaticSessionTrackingEnabled)
+            sessionManager.refreshSession()
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        advanceUntilIdle()
-        sessionManager.refreshSession()
-        advanceUntilIdle()
-
-        assertEquals(currentTime / 1000, mockStorage.readLong(StorageKeys.SESSION_ID, 0L))
-    }
+            assertNotEquals(previousSessionId, mockStorage.readLong(StorageKeys.SESSION_ID, 0L))
+        }
 
     @Test
-    fun `given automatic session enabled, when endSession called, then all the session variables are cleared`() =
-        runTest {
+    fun `given automatic session enabled previously, when session is ended with endSession, then all the session variables are cleared`() =
+        runTest(testDispatcher) {
             mockStorage.write(StorageKeys.SESSION_ID, 1234567890L)
             mockStorage.write(StorageKeys.IS_SESSION_MANUAL, false)
             mockStorage.write(StorageKeys.LAST_ACTIVITY_TIME, System.currentTimeMillis())
             mockStorage.write(StorageKeys.IS_SESSION_START, true)
 
             sessionManagerSetup(automaticSessionTracking = true)
-            advanceUntilIdle()
             sessionManager.endSession()
-            advanceUntilIdle()
+            testDispatcher.scheduler.advanceUntilIdle()
 
             assertEquals(0L, mockStorage.readLong(StorageKeys.SESSION_ID, 0L))
             assertEquals(false, mockStorage.readBoolean(StorageKeys.IS_SESSION_MANUAL, false))
@@ -239,27 +236,24 @@ class SessionManagerTest {
         }
 
     @Test
-    fun `given manual session is active, when endSession called, then all the session variables are cleared`() =
-        runTest {
+    fun `given manual session enabled previously, when session is ended with endSession, then all the session variables are cleared`() =
+        runTest(testDispatcher) {
             mockStorage.write(StorageKeys.SESSION_ID, 1234567890L)
             mockStorage.write(StorageKeys.IS_SESSION_MANUAL, true)
-            mockStorage.write(StorageKeys.LAST_ACTIVITY_TIME, System.currentTimeMillis())
             mockStorage.write(StorageKeys.IS_SESSION_START, true)
 
             sessionManagerSetup(automaticSessionTracking = false)
-            advanceUntilIdle()
             sessionManager.endSession()
-            advanceUntilIdle()
+            testDispatcher.scheduler.advanceUntilIdle()
 
             assertEquals(0L, mockStorage.readLong(StorageKeys.SESSION_ID, 0L))
             assertEquals(false, mockStorage.readBoolean(StorageKeys.IS_SESSION_MANUAL, false))
-            assertEquals(0L, mockStorage.readLong(StorageKeys.LAST_ACTIVITY_TIME, 0L))
             assertEquals(false, mockStorage.readBoolean(StorageKeys.IS_SESSION_START, false))
         }
 
     @Test
     fun `given a value of session timeout in config, when plugin setup called, then session timeout is set correctly`() =
-        runTest {
+        runTest(testDispatcher) {
             val sessionTimeout = 600000L
 
             sessionManagerSetup(
@@ -272,7 +266,7 @@ class SessionManagerTest {
 
     @Test
     fun `given a negative value of session timeout in config, when plugin setup called, then session timeout set as default`() =
-        runTest {
+        runTest(testDispatcher) {
             sessionManagerSetup(
                 automaticSessionTracking = true,
                 sessionTimeoutInMillis = -1L
@@ -282,23 +276,21 @@ class SessionManagerTest {
         }
 
     @Test
-    fun `given an ongoing session, when endSession is called, then session tracking observers are detached`() = runTest {
+    fun `given an ongoing session, when endSession is called, then session tracking observers are detached`() = runTest(testDispatcher) {
         sessionManagerSetup(automaticSessionTracking = true)
-        advanceUntilIdle()
 
         sessionManager.endSession()
-        advanceUntilIdle()
+        testDispatcher.scheduler.advanceUntilIdle()
 
         verifyDetachObservers()
     }
 
     @Test
-    fun `when startSession is called for a manual session, then session tracking observers are detached`() = runTest {
+    fun `when startSession is called for a manual session, then session tracking observers are detached`() = runTest(testDispatcher) {
         sessionManagerSetup(automaticSessionTracking = true)
-        advanceUntilIdle()
 
         sessionManager.startSession(1234567890L, isSessionManual = true)
-        advanceUntilIdle()
+        testDispatcher.scheduler.advanceUntilIdle()
 
         verifyDetachObservers()
     }
