@@ -388,7 +388,7 @@ open class Analytics protected constructor(
     override fun getPlatformType(): PlatformType = PlatformType.Server
 
     /**
-     * Gets the stored anonymous ID.
+     * Get the stored anonymous ID.
      *
      * The `analyticsInstance.anonymousId` is used to update and get the `anonymousID` value.
      * This ID is typically generated automatically to track users who have not yet been identified
@@ -396,7 +396,7 @@ open class Analytics protected constructor(
      *
      * **Note**: This will return null if the [Analytics] instance is shut down.
      *
-     * Gets the anonymousId:
+     * Get the anonymousId:
      * ```kotlin
      * val anonymousId = analyticsInstance.anonymousId
      * ```
@@ -408,14 +408,14 @@ open class Analytics protected constructor(
         }
 
     /**
-     * Gets the user ID.
+     * Get the user ID.
      *
      * The `analyticsInstance.userId` is used to get the `userId` value.
      * This ID is assigned when an identify event is made.
      *
      * This can return null if the analytics is shut down.
      *
-     * Gets the userId:
+     * Get the userId:
      * ```kotlin
      * val userId = analyticsInstance.userId
      * ```
@@ -427,14 +427,14 @@ open class Analytics protected constructor(
         }
 
     /**
-     * Gets the user traits.
+     * Get the user traits.
      *
      * The `analyticsInstance.traits` is used to get the `traits` value.
      * This traits is assigned when an identify event is made.
      *
      * This can return null if the analytics is shut down.
      *
-     * Gets the traits:
+     * Get the traits:
      * ```kotlin
      * val traits = analyticsInstance.traits
      * ```

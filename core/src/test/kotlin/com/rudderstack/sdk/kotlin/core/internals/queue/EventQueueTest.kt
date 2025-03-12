@@ -289,6 +289,66 @@ class EventQueueTest {
     }
 
     @Test
+    fun `given a stream of events containing different anonymous ids, when these events are made, then storage rolled over for each different anonymousId`() =
+        runTest {
+            val storage = mockAnalytics.storage
+            val mockEvent1: Event = mockk(relaxed = true)
+            val mockEvent2: Event = mockk(relaxed = true)
+            every { mockEvent1.anonymousId } returns "anonymousId1"
+            every { mockEvent2.anonymousId } returns "anonymousId1"
+
+            val mockEvent3: Event = mockk(relaxed = true)
+            val mockEvent4: Event = mockk(relaxed = true)
+            every { mockEvent3.anonymousId } returns "anonymousId2"
+            every { mockEvent4.anonymousId } returns "anonymousId2"
+
+            eventQueue.start()
+
+            eventQueue.put(mockEvent1)
+            eventQueue.put(mockEvent2)
+            eventQueue.put(mockEvent3)
+            eventQueue.put(mockEvent4)
+
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            coVerify(exactly = 2) {
+                storage.rollover()
+            }
+        }
+
+    @Test
+    fun `given a stream of events containing different anonymous ids, when these events are made, then the last_event_anonymous_id is updated`() =
+        runTest {
+            val storage = mockAnalytics.storage
+            val mockEvent1: Event = mockk(relaxed = true)
+            val mockEvent2: Event = mockk(relaxed = true)
+            every { mockEvent1.anonymousId } returns "anonymousId1"
+            every { mockEvent2.anonymousId } returns "anonymousId1"
+
+            val mockEvent3: Event = mockk(relaxed = true)
+            val mockEvent4: Event = mockk(relaxed = true)
+            every { mockEvent3.anonymousId } returns "anonymousId2"
+            every { mockEvent4.anonymousId } returns "anonymousId2"
+
+            eventQueue.start()
+
+            eventQueue.put(mockEvent1)
+            eventQueue.put(mockEvent2)
+            testDispatcher.scheduler.advanceUntilIdle()
+            coVerify(exactly = 1) {
+                storage.write(StorageKeys.LAST_EVENT_ANONYMOUS_ID, "anonymousId1")
+            }
+
+            eventQueue.put(mockEvent3)
+            eventQueue.put(mockEvent4)
+
+            testDispatcher.scheduler.advanceUntilIdle()
+            coVerify(exactly = 1) {
+                storage.write(StorageKeys.LAST_EVENT_ANONYMOUS_ID, "anonymousId2")
+            }
+        }
+
+    @Test
     fun `given default flush policies are enabled, when message queue is started, then flush policies should be scheduled`() {
         eventQueue.start()
         testDispatcher.scheduler.advanceUntilIdle()
