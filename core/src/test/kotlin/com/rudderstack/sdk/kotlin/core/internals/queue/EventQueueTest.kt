@@ -155,7 +155,7 @@ class EventQueueTest {
             } returns fileUrlList
 
             // Mock file existence check
-            every { eventQueue.isFileExists(any()) } returns true
+            every { eventQueue.doesFileExist(any()) } returns true
 
             val batchPayload = "test content"
 
@@ -194,7 +194,7 @@ class EventQueueTest {
         } returns fileUrlList
 
         // Mock file existence check
-        every { eventQueue.isFileExists(any()) } returns true
+        every { eventQueue.doesFileExist(any()) } returns true
 
         val batchPayload = "test content"
 
@@ -236,7 +236,7 @@ class EventQueueTest {
         } returns fileUrlList
 
         // Mock file existence check
-        every { eventQueue.isFileExists(any()) } returns true
+        every { eventQueue.doesFileExist(any()) } returns true
 
         // Throw file not found exception while reading the file
         val exception = FileNotFoundException("File not found")
@@ -270,7 +270,7 @@ class EventQueueTest {
         } returns fileUrlList
 
         // Mock file existence check
-        every { eventQueue.isFileExists(any()) } returns true
+        every { eventQueue.doesFileExist(any()) } returns true
 
         // Throw generic exception while reading the file
         val exception = Exception("File not found")
