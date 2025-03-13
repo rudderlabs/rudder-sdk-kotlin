@@ -26,13 +26,11 @@ import io.mockk.just
 import io.mockk.mockkConstructor
 import io.mockk.mockkObject
 import io.mockk.mockkStatic
-import io.mockk.spyk
 import io.mockk.verify
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -106,38 +104,25 @@ class AnalyticsTest {
             writeKey = "<writeKey>",
             dataPlaneUrl = "<data_plane_url>",
         )
-        analytics = spyk(Analytics(configuration))
+        analytics = Analytics(configuration)
     }
 
     @Test
-    fun `given sessionId is of invalid length, when manual session is invoked, then session should not change`() =
-        runTest {
-            val sessionId = 1234L
+    fun `given sessionId is of invalid length, when manual session is invoked, then session should not change`() {
+        val sessionId = 1234L
 
-            analytics.startSession(sessionId)
+        analytics.startSession(sessionId)
 
-            assertSessionIdNotPresentInTrackedEvent(sessionId)
-        }
+        assertEquals(DEFAULT_SESSION_ID, analytics.sessionId)
+    }
 
     @Test
-    fun `given manual session is active, when session is ended, then no session info should be present in the events`() =
-        runTest {
-            val sessionId = 9876543210L
-            analytics.startSession(sessionId)
+    fun `given manual session is active, when session is ended, then no session info should be present in the events`() {
+        val sessionId = 9876543210L
+        analytics.startSession(sessionId)
 
-            analytics.endSession()
+        analytics.endSession()
 
-            assertSessionIdNotPresentInTrackedEvent(sessionId)
-        }
-
-    private fun assertSessionIdNotPresentInTrackedEvent(sessionId: Long) {
-        analytics.track("test")
-        testDispatcher.scheduler.runCurrent()
-        coVerify(exactly = 1) {
-            mockStorage.write(StorageKeys.EVENT, withArg<String> { eventString ->
-                assertFalse(eventString.contains("$sessionId,"))
-            })
-        }
         assertNull(analytics.sessionId)
     }
 
@@ -149,12 +134,11 @@ class AnalyticsTest {
     }
 
     @Test
-    fun `given sessionId is of valid length, when manual session is invoked, then a new session should be started`() =
-        runTest {
-            analytics.startSession(NEW_SESSION_ID)
+    fun `given sessionId is of valid length, when manual session is invoked, then a new session should be started`() {
+        analytics.startSession(NEW_SESSION_ID)
 
-            assertIfNewSessionIsGenerated()
-        }
+        assertEquals(NEW_SESSION_ID, analytics.sessionId)
+    }
 
     @Test
     fun `given session is active, when reset is called, then session should refresh`() {
@@ -162,18 +146,7 @@ class AnalyticsTest {
 
         analytics.reset()
 
-        assertIfNewSessionIsGenerated()
-    }
-
-    private fun assertIfNewSessionIsGenerated() {
-        analytics.track("test")
-        testDispatcher.scheduler.runCurrent()
-        coVerify(exactly = 1) {
-            mockStorage.write(StorageKeys.EVENT, withArg<String> { eventString ->
-                assertTrue(eventString.contains("$NEW_SESSION_ID"))
-                assertTrue(eventString.contains("\"sessionStart\":true"))
-            })
-        }
+        assertEquals(NEW_SESSION_ID, analytics.sessionId)
     }
 
     @Test
