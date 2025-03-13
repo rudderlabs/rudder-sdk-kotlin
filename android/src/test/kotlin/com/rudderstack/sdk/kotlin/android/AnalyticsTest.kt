@@ -27,9 +27,14 @@ import io.mockk.mockkConstructor
 import io.mockk.mockkObject
 import io.mockk.mockkStatic
 import io.mockk.verify
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -57,9 +62,12 @@ class AnalyticsTest {
     private lateinit var configuration: Configuration
     private lateinit var analytics: Analytics
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @BeforeEach
     fun setup() {
         MockKAnnotations.init(this, relaxed = true)
+        // Although we don't need this in the current test class, it is needed due to the know issue with the use of Dispatchers.main.
+        Dispatchers.setMain(testDispatcher)
 
         mockkConstructor(DeviceInfoPlugin::class)
         every {
@@ -105,6 +113,13 @@ class AnalyticsTest {
             dataPlaneUrl = "<data_plane_url>",
         )
         analytics = Analytics(configuration)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @AfterEach
+    fun tearDown() {
+        // Although we don't need this in the current test class, it is needed due to the know issue with the use of Dispatchers.main.
+        Dispatchers.resetMain()
     }
 
     @Test
