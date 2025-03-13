@@ -7,7 +7,7 @@ import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 internal const val DEFAULT_SESSION_ID = 0L
 internal const val DEFAULT_LAST_ACTIVITY_TIME = 0L
 
-internal data class SessionState(
+internal data class SessionInfo(
     val sessionId: Long,
     val lastActivityTime: Long,
     val isSessionManual: Boolean,
@@ -16,8 +16,8 @@ internal data class SessionState(
 
     companion object {
 
-        fun initialState(storage: Storage): SessionState {
-            return SessionState(
+        fun initialState(storage: Storage): SessionInfo {
+            return SessionInfo(
                 sessionId = storage.readLong(StorageKeys.SESSION_ID, DEFAULT_SESSION_ID),
                 lastActivityTime = storage.readLong(StorageKeys.LAST_ACTIVITY_TIME, DEFAULT_LAST_ACTIVITY_TIME),
                 isSessionManual = storage.readBoolean(StorageKeys.IS_SESSION_MANUAL, false),
@@ -26,48 +26,48 @@ internal data class SessionState(
         }
     }
 
-    sealed interface SessionStateAction : StateAction<SessionState>
+    sealed interface SessionInfoAction : StateAction<SessionInfo>
 
     class UpdateSessionIdAction(
         private val sessionId: Long
-    ) : SessionStateAction {
+    ) : SessionInfoAction {
 
-        override fun reduce(currentState: SessionState): SessionState {
+        override fun reduce(currentState: SessionInfo): SessionInfo {
             return currentState.copy(sessionId = sessionId)
         }
     }
 
     class UpdateLastActivityTimeAction(
         private val lastActivityTime: Long
-    ) : SessionStateAction {
+    ) : SessionInfoAction {
 
-        override fun reduce(currentState: SessionState): SessionState {
+        override fun reduce(currentState: SessionInfo): SessionInfo {
             return currentState.copy(lastActivityTime = lastActivityTime)
         }
     }
 
     class UpdateIsSessionManualAction(
         private val isSessionManual: Boolean
-    ) : SessionStateAction {
+    ) : SessionInfoAction {
 
-        override fun reduce(currentState: SessionState): SessionState {
+        override fun reduce(currentState: SessionInfo): SessionInfo {
             return currentState.copy(isSessionManual = isSessionManual)
         }
     }
 
     class UpdateIsSessionStartAction(
         private val isSessionStart: Boolean
-    ) : SessionStateAction {
+    ) : SessionInfoAction {
 
-        override fun reduce(currentState: SessionState): SessionState {
+        override fun reduce(currentState: SessionInfo): SessionInfo {
             return currentState.copy(isSessionStart = isSessionStart)
         }
     }
 
-    data object EndSessionAction : SessionStateAction {
+    data object EndSessionAction : SessionInfoAction {
 
-        override fun reduce(currentState: SessionState): SessionState {
-            return SessionState(
+        override fun reduce(currentState: SessionInfo): SessionInfo {
+            return SessionInfo(
                 sessionId = 0L,
                 lastActivityTime = 0L,
                 isSessionManual = false,

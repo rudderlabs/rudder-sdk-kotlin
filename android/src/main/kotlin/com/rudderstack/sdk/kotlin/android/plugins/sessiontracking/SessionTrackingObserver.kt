@@ -9,7 +9,7 @@ import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ProcessLife
 import java.util.concurrent.atomic.AtomicBoolean
 
 internal class SessionTrackingObserver(
-    private val plugin: SessionTrackingPlugin
+    private val sessionManager: SessionManager
 ) : ProcessLifecycleObserver, ActivityLifecycleObserver {
 
     @VisibleForTesting
@@ -25,12 +25,12 @@ internal class SessionTrackingObserver(
 
     override fun onStop(owner: LifecycleOwner) {
         isSessionAlreadyUpdated.set(false)
-        plugin.updateLastActivityTime()
+        sessionManager.updateLastActivityTime()
     }
 
     private fun updateSession() {
         if (isSessionAlreadyUpdated.compareAndSet(false, true)) {
-            plugin.checkAndStartSessionOnForeground()
+            sessionManager.checkAndStartSessionOnForeground()
         }
     }
 }

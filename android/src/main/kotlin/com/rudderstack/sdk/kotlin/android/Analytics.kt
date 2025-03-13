@@ -92,8 +92,8 @@ class Analytics(
             LoggerAnalytics.error("Session Id should be at least $MIN_SESSION_ID_LENGTH digits.")
             return
         }
-        val newSessionId = sessionId ?: sessionTrackingPlugin.generateSessionId()
-        sessionTrackingPlugin.startSession(sessionId = newSessionId, isSessionManual = true)
+        val newSessionId = sessionId ?: sessionTrackingPlugin.sessionManager.generateSessionId()
+        sessionTrackingPlugin.sessionManager.startSession(sessionId = newSessionId, isSessionManual = true)
     }
 
     /**
@@ -102,18 +102,7 @@ class Analytics(
     fun endSession() {
         if (!isAnalyticsActive()) return
 
-        sessionTrackingPlugin.endSession()
-    }
-
-    /**
-     * Returns the current session ID.
-     *
-     * @return The current session ID.
-     */
-    fun getSessionId(): Long? {
-        if (!isAnalyticsActive() || sessionTrackingPlugin.sessionId == DEFAULT_SESSION_ID) return null
-
-        return sessionTrackingPlugin.sessionId
+        sessionTrackingPlugin.sessionManager.endSession()
     }
 
     /**
@@ -125,7 +114,7 @@ class Analytics(
 
         super.reset()
 
-        sessionTrackingPlugin.refreshSession()
+        sessionTrackingPlugin.sessionManager.refreshSession()
         integrationsManagementPlugin.reset()
     }
 
@@ -267,4 +256,13 @@ class Analytics(
     }
 
     override fun getPlatformType(): PlatformType = PlatformType.Mobile
+
+    /**
+     * Returns the current session ID.
+     */
+    val sessionId: Long?
+        get() {
+            if (!isAnalyticsActive() || sessionTrackingPlugin.sessionManager.sessionId == DEFAULT_SESSION_ID) return null
+            return sessionTrackingPlugin.sessionManager.sessionId
+        }
 }
