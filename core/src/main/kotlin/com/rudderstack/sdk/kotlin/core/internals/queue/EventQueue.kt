@@ -106,10 +106,23 @@ internal class EventQueue(
 
     @Suppress("TooGenericExceptionCaught")
     private fun write() = analytics.analyticsScope.launch(analytics.storageDispatcher) {
+        var lastEventAnonymousId =
+            storage.readString(StorageKeys.LAST_EVENT_ANONYMOUS_ID, analytics.anonymousId ?: String.empty())
+
         for (queueMessage in writeChannel) {
             val isFlushSignal = (queueMessage.type == QueueMessage.QueueMessageType.FLUSH_SIGNAL)
 
             if (!isFlushSignal) {
+                val currentEventAnonymousId = queueMessage.event?.anonymousId ?: String.empty()
+                if (currentEventAnonymousId != lastEventAnonymousId) {
+                    withContext(analytics.storageDispatcher) {
+                        // rollover when last and current anonymousId are different
+                        storage.rollover()
+                        lastEventAnonymousId = currentEventAnonymousId
+                        storage.write(StorageKeys.LAST_EVENT_ANONYMOUS_ID, lastEventAnonymousId)
+                    }
+                }
+
                 try {
                     queueMessage.event?.let {
                         stringifyBaseEvent(it).also { stringValue ->
@@ -140,12 +153,14 @@ internal class EventQueue(
             val fileUrlList = storage.readString(StorageKeys.EVENT, String.empty()).parseFilePaths()
             for (filePath in fileUrlList) {
                 val file = File(filePath)
-                if (!isFileExists(file)) continue
+                if (!doesFileExist(file)) continue
                 // ensureActive is at this position so that this coroutine can be cancelled - but any uploaded event MUST be cleared from storage.
                 ensureActive()
                 var shouldCleanup = false
                 try {
                     val batchPayload = jsonSentAtUpdater.updateSentAt(readFileAsString(filePath))
+                    // todo: update the header here with the anonymousId fetched from the batch.
+
                     LoggerAnalytics.debug("Batch Payload: $batchPayload")
                     when (val result: Result<String, Exception> = httpClientFactory.sendData(batchPayload)) {
                         is Result.Success -> {
@@ -173,7 +188,7 @@ internal class EventQueue(
     }
 
     @VisibleForTesting
-    fun isFileExists(file: File) = file.exists()
+    fun doesFileExist(file: File) = file.exists()
 
     @VisibleForTesting
     fun readFileAsString(filePath: String): String {

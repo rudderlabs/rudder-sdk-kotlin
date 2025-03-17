@@ -168,6 +168,14 @@ enum class StorageKeys(val key: String) {
     ANONYMOUS_ID("anonymous_id"),
 
     /**
+     * Key for storing the last event anonymous id, which is required for processing the batch of events.
+     *
+     * **Note**: It can be different from [ANONYMOUS_ID].
+     *
+     */
+    LAST_EVENT_ANONYMOUS_ID("last_event_anonymous_id"),
+
+    /**
      *Key for storing the user id of the client.
      */
     USER_ID("user_id"),
