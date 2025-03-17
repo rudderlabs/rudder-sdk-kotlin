@@ -58,6 +58,11 @@ interface AnalyticsConfiguration {
      * State for connectivity.
      */
     val connectivityState: State<Boolean>
+
+    /**
+     * Source config manager.
+     */
+    var sourceConfigManager: SourceConfigManager
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -78,6 +83,8 @@ private class AnalyticsConfigurationImpl(
     override val integrationsDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(1)
 
     override val connectivityState: State<Boolean> = State(initialState = ConnectivityState.INITIAL_STATE)
+
+    override lateinit var sourceConfigManager: SourceConfigManager
 }
 
 /**
