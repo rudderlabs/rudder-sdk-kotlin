@@ -27,7 +27,7 @@ import java.io.FileNotFoundException
 
 internal const val UPLOAD_SIG = "#!upload"
 private const val BATCH_ENDPOINT = "/v1/batch"
-private const val ANONYMOUS_ID_KEY = "anonymousId"
+private val ANONYMOUS_ID_REGEX = """"anonymousId"\s*:\s*"([^"]+)"""".toRegex()
 
 @OptIn(DelicateCoroutinesApi::class)
 internal class EventQueue(
@@ -180,8 +180,9 @@ internal class EventQueue(
         }
     }
 
-    private fun getAnonymousIdFromBatch(batchPayload: String): String {
-        return batchPayload.substringAfterLast("$ANONYMOUS_ID_KEY\":\"").substringBefore("\"").ifEmpty {
+    @VisibleForTesting
+    internal fun getAnonymousIdFromBatch(batchPayload: String): String {
+        return ANONYMOUS_ID_REGEX.find(batchPayload)?.groupValues?.get(1) ?: run {
             LoggerAnalytics.error("Fetched empty anonymousId from batch payload, falling back to random UUID.")
             generateUUID()
         }
