@@ -433,7 +433,6 @@ class EventQueueTest {
             }
         }
 
-
     @Test
     fun `given default flush policies are enabled, when message queue is started, then flush policies should be scheduled`() {
         eventQueue.start()
