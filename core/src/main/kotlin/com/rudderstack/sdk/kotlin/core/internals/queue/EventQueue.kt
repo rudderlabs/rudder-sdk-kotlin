@@ -12,15 +12,13 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import com.rudderstack.sdk.kotlin.core.internals.utils.encodeToBase64
 import com.rudderstack.sdk.kotlin.core.internals.utils.encodeToString
+import com.rudderstack.sdk.kotlin.core.internals.utils.generateUUID
 import com.rudderstack.sdk.kotlin.core.internals.utils.parseFilePaths
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.ensureActive
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.annotations.VisibleForTesting
@@ -29,6 +27,7 @@ import java.io.FileNotFoundException
 
 internal const val UPLOAD_SIG = "#!upload"
 private const val BATCH_ENDPOINT = "/v1/batch"
+private val ANONYMOUS_ID_REGEX = """"anonymousId"\s*:\s*"([^"]+)"""".toRegex()
 
 @OptIn(DelicateCoroutinesApi::class)
 internal class EventQueue(
@@ -51,22 +50,16 @@ internal class EventQueue(
     private var uploadChannel: Channel<String>
     private val storage get() = analytics.storage
     private val flushSignal = QueueMessage(QueueMessage.QueueMessageType.FLUSH_SIGNAL)
+    private var lastEventAnonymousId = storage.readString(
+        StorageKeys.LAST_EVENT_ANONYMOUS_ID,
+        analytics.anonymousId ?: String.empty()
+    )
+    private var lastBatchAnonymousId = String.empty()
 
     init {
         running = false
         writeChannel = Channel(UNLIMITED)
         uploadChannel = Channel(UNLIMITED)
-        updateAnonymousId()
-    }
-
-    private fun updateAnonymousId() {
-        analytics.userIdentityState
-            .distinctUntilChanged { old, new ->
-                old.anonymousId == new.anonymousId
-            }
-            .onEach { userOptionsState ->
-                httpClientFactory.updateAnonymousIdHeaderString(userOptionsState.anonymousId.encodeToBase64())
-            }.launchIn(analytics.analyticsScope)
     }
 
     internal fun put(event: Event) {
@@ -106,23 +99,11 @@ internal class EventQueue(
 
     @Suppress("TooGenericExceptionCaught")
     private fun write() = analytics.analyticsScope.launch(analytics.storageDispatcher) {
-        var lastEventAnonymousId =
-            storage.readString(StorageKeys.LAST_EVENT_ANONYMOUS_ID, analytics.anonymousId ?: String.empty())
-
         for (queueMessage in writeChannel) {
             val isFlushSignal = (queueMessage.type == QueueMessage.QueueMessageType.FLUSH_SIGNAL)
 
             if (!isFlushSignal) {
-                val currentEventAnonymousId = queueMessage.event?.anonymousId ?: String.empty()
-                if (currentEventAnonymousId != lastEventAnonymousId) {
-                    withContext(analytics.storageDispatcher) {
-                        // rollover when last and current anonymousId are different
-                        storage.rollover()
-                        lastEventAnonymousId = currentEventAnonymousId
-                        storage.write(StorageKeys.LAST_EVENT_ANONYMOUS_ID, lastEventAnonymousId)
-                    }
-                }
-
+                updateAnonymousIdAndRolloverIfNeeded(queueMessage)
                 try {
                     queueMessage.event?.let {
                         stringifyBaseEvent(it).also { stringValue ->
@@ -159,8 +140,8 @@ internal class EventQueue(
                 var shouldCleanup = false
                 try {
                     val batchPayload = jsonSentAtUpdater.updateSentAt(readFileAsString(filePath))
-                    // todo: update the header here with the anonymousId fetched from the batch.
 
+                    checkAndUpdateBatchRequestHeader(batchPayload)
                     LoggerAnalytics.debug("Batch Payload: $batchPayload")
                     when (val result: Result<String, Exception> = httpClientFactory.sendData(batchPayload)) {
                         is Result.Success -> {
@@ -184,6 +165,34 @@ internal class EventQueue(
                     }
                 }
             }
+        }
+    }
+
+    private suspend fun updateAnonymousIdAndRolloverIfNeeded(queueMessage: QueueMessage) {
+        val currentEventAnonymousId = queueMessage.event?.anonymousId ?: String.empty()
+        if (currentEventAnonymousId != lastEventAnonymousId) {
+            withContext(analytics.storageDispatcher) {
+                // rollover when last and current anonymousId are different
+                storage.rollover()
+                lastEventAnonymousId = currentEventAnonymousId
+                storage.write(StorageKeys.LAST_EVENT_ANONYMOUS_ID, lastEventAnonymousId)
+            }
+        }
+    }
+
+    private fun checkAndUpdateBatchRequestHeader(batchPayload: String) {
+        val currentBatchAnonymousId = getAnonymousIdFromBatch(batchPayload)
+        if (lastBatchAnonymousId != currentBatchAnonymousId) {
+            httpClientFactory.updateAnonymousIdHeaderString(currentBatchAnonymousId.encodeToBase64())
+            lastBatchAnonymousId = currentBatchAnonymousId
+        }
+    }
+
+    @VisibleForTesting
+    internal fun getAnonymousIdFromBatch(batchPayload: String): String {
+        return ANONYMOUS_ID_REGEX.find(batchPayload)?.groupValues?.get(1) ?: run {
+            LoggerAnalytics.error("Fetched empty anonymousId from batch payload, falling back to random UUID.")
+            generateUUID()
         }
     }
 
