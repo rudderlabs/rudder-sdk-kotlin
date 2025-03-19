@@ -1,5 +1,7 @@
 package com.rudderstack.sdk.kotlin.core.internals.logger
 
+import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
+
 /**
  * `LoggerAnalytics` is a singleton class that manages the logging instance for the SDK, supporting configurable
  * logger types and log levels. It allows setting up either an Android or Kotlin logger, providing consistent
@@ -40,12 +42,11 @@ object LoggerAnalytics {
      *
      * @param logger The logger instance to use (e.g., `AndroidLogger` or `KotlinLogger`).
      * @param logLevel The log level to activate for the logger, defining the minimum severity of logs to display.
-     * @param tag A string tag to associate with all log messages. It is optional and defaults to `Rudder-Analytics`.
      */
-    fun setup(logger: Logger, logLevel: Logger.LogLevel, tag: String = TAG) {
+    @InternalRudderApi
+    fun setup(logger: Logger, logLevel: Logger.LogLevel) {
         this.logger = logger
         this.logLevel = logLevel
-        this.logger?.setTag(tag)
     }
 
     /**

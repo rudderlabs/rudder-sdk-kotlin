@@ -2,7 +2,6 @@ package com.rudderstack.sdk.kotlin.android.logger
 
 import android.util.Log
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
-import com.rudderstack.sdk.kotlin.core.internals.logger.TAG
 
 /**
  * `AndroidLogger` is a concrete implementation of the `Logger` interface designed to handle logging
@@ -18,23 +17,25 @@ import com.rudderstack.sdk.kotlin.core.internals.logger.TAG
  */
 internal class AndroidLogger : Logger {
 
+    private val tag = "Rudder-Analytics"
+
     override fun verbose(log: String) {
-        Log.v(TAG, log)
+        Log.v(tag, log)
     }
 
     override fun debug(log: String) {
-        Log.d(TAG, log)
+        Log.d(tag, log)
     }
 
     override fun info(log: String) {
-        Log.i(TAG, log)
+        Log.i(tag, log)
     }
 
     override fun warn(log: String) {
-        Log.w(TAG, log)
+        Log.w(tag, log)
     }
 
     override fun error(log: String, throwable: Throwable?) {
-        Log.e(TAG, log, throwable)
+        Log.e(tag, log, throwable)
     }
 }
