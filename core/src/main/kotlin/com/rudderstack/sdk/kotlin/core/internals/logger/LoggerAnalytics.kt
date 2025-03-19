@@ -40,12 +40,10 @@ object LoggerAnalytics {
      *
      * @param logger The logger instance to use (e.g., `AndroidLogger` or `KotlinLogger`).
      * @param logLevel The log level to activate for the logger, defining the minimum severity of logs to display.
-     * @param tag A string tag to associate with all log messages. It is optional and defaults to `Rudder-Analytics`.
      */
-    fun setup(logger: Logger, logLevel: Logger.LogLevel, tag: String = TAG) {
+    fun setup(logger: Logger, logLevel: Logger.LogLevel) {
         this.logger = logger
         this.logLevel = logLevel
-        this.logger?.setTag(tag)
     }
 
     /**
