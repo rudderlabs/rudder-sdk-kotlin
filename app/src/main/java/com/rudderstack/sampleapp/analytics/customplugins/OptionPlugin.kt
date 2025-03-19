@@ -97,7 +97,7 @@ class OptionPlugin (
  *
  * @param other The JSON object to merge with the current JSON object.
  */
-infix fun JsonObject.mergeWithHigherPriorityTo(other: JsonObject): JsonObject {
+private infix fun JsonObject.mergeWithHigherPriorityTo(other: JsonObject): JsonObject {
     return JsonObject(this.toMap() + other.toMap())
 }
 
