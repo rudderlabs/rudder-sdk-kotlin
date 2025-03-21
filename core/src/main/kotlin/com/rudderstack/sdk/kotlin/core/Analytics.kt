@@ -16,19 +16,17 @@ import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.connectivity.ConnectivityState
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.ResetUserIdentityAction
-import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.SetAnonymousIdAction
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.SetUserIdAndTraitsAction
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.SetUserIdForAliasEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.UserIdentity
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.resetUserIdentity
-import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.storeAnonymousId
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.storeUserId
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.storeUserIdAndTraits
 import com.rudderstack.sdk.kotlin.core.internals.platform.Platform
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.PluginChain
-import com.rudderstack.sdk.kotlin.core.internals.statemanagement.FlowState
+import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.storage.provideBasicStorage
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import com.rudderstack.sdk.kotlin.core.internals.utils.addNameAndCategoryToProperties
@@ -41,6 +39,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
+import org.jetbrains.annotations.VisibleForTesting
 
 /**
  * The `Analytics` class is the core of the RudderStack SDK, responsible for tracking events,
@@ -55,13 +54,13 @@ import kotlinx.coroutines.launch
  * @constructor Primary constructor for creating an `Analytics` instance with a custom coroutine configuration.
  * @param configuration The configuration object that defines settings such as write key, data plane URL, logger, etc.
  * @param analyticsConfiguration The analytics configuration object that defines coroutine settings and some other variables.
- * @param userIdentityState The state flow for user identity management. Defaults to a new `FlowState` with the initial state.
+ * @param userIdentityState The state flow for user identity management. Defaults to a new [State] with the initial state.
  */
 @Suppress("TooManyFunctions")
 open class Analytics protected constructor(
     val configuration: Configuration,
     analyticsConfiguration: AnalyticsConfiguration,
-    internal val userIdentityState: FlowState<UserIdentity> = FlowState(
+    internal val userIdentityState: State<UserIdentity> = State(
         initialState = UserIdentity.initialState(
             analyticsConfiguration.storage
         )
@@ -74,7 +73,7 @@ open class Analytics protected constructor(
      * The `sourceConfigState` is a state flow that manages the source configuration for the analytics instance.
      */
     @InternalRudderApi
-    val sourceConfigState = FlowState(initialState = SourceConfig.initialState())
+    val sourceConfigState = State(initialState = SourceConfig.initialState())
 
     private val processEventChannel: Channel<Event> = Channel(Channel.UNLIMITED)
     private var processEventJob: Job? = null
@@ -99,7 +98,7 @@ open class Analytics protected constructor(
     }
 
     protected fun setupSourceConfig() {
-        SourceConfigManager(
+        this.sourceConfigManager = provideSourceConfigManager(
             analytics = this,
             sourceConfigState = sourceConfigState
         ).apply {
@@ -224,6 +223,10 @@ open class Analytics protected constructor(
     ) {
         if (!isAnalyticsActive()) return
 
+        if (!this.userId.isNullOrEmpty() && this.userId != userId) {
+            reset()
+        }
+
         userIdentityState.dispatch(
             SetUserIdAndTraitsAction(
                 newUserId = userId,
@@ -279,7 +282,7 @@ open class Analytics protected constructor(
 
     /**
      * Flushes all pending events that are currently queued in the plugin chain.
-     * This method specifically targets the `RudderStackDataplanePlugin` to initiate the flush operation.
+     * This method specifically targets the `RudderStackDataPlanePlugin` to initiate the flush operation.
      */
     open fun flush() {
         if (!isAnalyticsActive()) return
@@ -353,19 +356,15 @@ open class Analytics protected constructor(
     }
 
     /**
-     * Resets the user identity, clearing the user ID, traits, and external IDs.
-     * If clearAnonymousId is true, clears the existing anonymous ID and generate a new one.
-     *
-     * @param clearAnonymousId A boolean flag to determine whether to clear the anonymous ID. Defaults to false.
+     * Resets the user identity, clears the existing anonymous ID and
+     * generate a new one, also clears the user ID and traits.
      */
-    @JvmOverloads
-    open fun reset(clearAnonymousId: Boolean = false) {
+    open fun reset() {
         if (!isAnalyticsActive()) return
 
-        userIdentityState.dispatch(ResetUserIdentityAction(clearAnonymousId))
+        userIdentityState.dispatch(ResetUserIdentityAction)
         analyticsScope.launch {
             userIdentityState.value.resetUserIdentity(
-                clearAnonymousId = clearAnonymousId,
                 storage = storage,
             )
         }
@@ -390,36 +389,23 @@ open class Analytics protected constructor(
     override fun getPlatformType(): PlatformType = PlatformType.Server
 
     /**
-     * Update or get the stored anonymous ID.
+     * Get the stored anonymous ID.
      *
      * The `analyticsInstance.anonymousId` is used to update and get the `anonymousID` value.
      * This ID is typically generated automatically to track users who have not yet been identified
      * (e.g., before they log in or sign up).
      *
-     * This can return null if the analytics is shut down.
-     *
-     * Set the anonymousId:
-     * ```kotlin
-     * analyticsInstance.anonymousId = "Custom Anonymous ID"
-     * ```
+     * **Note**: This will return null if the [Analytics] instance is shut down.
      *
      * Get the anonymousId:
      * ```kotlin
      * val anonymousId = analyticsInstance.anonymousId
      * ```
      */
-    var anonymousId: String?
+    val anonymousId: String?
         get() {
             if (!isAnalyticsActive()) return null
             return userIdentityState.value.anonymousId
-        }
-        set(value) {
-            if (!isAnalyticsActive()) return
-
-            value?.let { anonymousId ->
-                userIdentityState.dispatch(SetAnonymousIdAction(anonymousId))
-                storeAnonymousId()
-            }
         }
 
     /**
@@ -466,3 +452,9 @@ open class Analytics protected constructor(
         }
     }
 }
+
+@VisibleForTesting
+internal fun provideSourceConfigManager(analytics: Analytics, sourceConfigState: State<SourceConfig>) = SourceConfigManager(
+    analytics = analytics,
+    sourceConfigState = sourceConfigState
+)

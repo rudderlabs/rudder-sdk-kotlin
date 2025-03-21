@@ -3,7 +3,11 @@ package com.rudderstack.sdk.kotlin.core
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
+import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
+import com.rudderstack.sdk.kotlin.core.internals.models.provider.provideSampleExternalIdsPayload
+import com.rudderstack.sdk.kotlin.core.internals.models.provider.provideSampleIntegrationsPayload
+import com.rudderstack.sdk.kotlin.core.internals.models.provider.provideSampleJsonPayload
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.UserIdentity
 import com.rudderstack.sdk.kotlin.core.internals.policies.DEFAULT_FLUSH_INTERVAL_IN_MILLIS
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
@@ -16,6 +20,8 @@ import kotlinx.coroutines.test.TestScope
 import java.io.BufferedReader
 
 const val ANONYMOUS_ID = "<anonymous-id>"
+internal const val UUID = "c323f9d5-aa04-4305-ba8d-1eff5e99f468"
+internal const val MESSAGE_ID = "<message-id>"
 
 fun mockAnalytics(testScope: TestScope, testDispatcher: TestDispatcher): Analytics {
     val mock = mockk<Analytics>(relaxed = true)
@@ -87,3 +93,9 @@ internal class Block {
 internal fun provideSpyBlock(): Block {
     return spyk(Block())
 }
+
+internal fun provideRudderOption() = RudderOption(
+    integrations = provideSampleIntegrationsPayload(),
+    customContext = provideSampleJsonPayload(),
+    externalIds = provideSampleExternalIdsPayload(),
+)

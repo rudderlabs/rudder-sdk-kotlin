@@ -24,7 +24,7 @@ class PluginChainTest {
     private val pluginList = mapOf(
         Plugin.PluginType.PreProcess to preProcessInteractor,
         Plugin.PluginType.OnProcess to onProcessInteractor,
-        Plugin.PluginType.Destination to destinationInteractor
+        Plugin.PluginType.Terminal to destinationInteractor
     )
 
     @BeforeEach

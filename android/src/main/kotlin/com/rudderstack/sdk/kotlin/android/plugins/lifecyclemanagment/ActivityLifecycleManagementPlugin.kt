@@ -17,7 +17,7 @@ import com.rudderstack.sdk.kotlin.android.Configuration as AndroidConfiguration
 @OptIn(DelicateCoroutinesApi::class)
 internal class ActivityLifecycleManagementPlugin : Plugin, Application.ActivityLifecycleCallbacks {
 
-    override val pluginType: Plugin.PluginType = Plugin.PluginType.Manual
+    override val pluginType: Plugin.PluginType = Plugin.PluginType.Utility
     override lateinit var analytics: Analytics
 
     private lateinit var application: Application

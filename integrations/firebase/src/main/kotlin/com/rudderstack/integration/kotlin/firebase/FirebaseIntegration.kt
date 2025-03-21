@@ -64,7 +64,7 @@ class FirebaseIntegration : IntegrationPlugin() {
         return firebaseAnalytics
     }
 
-    override fun identify(payload: IdentifyEvent): Event? {
+    override fun identify(payload: IdentifyEvent) {
         firebaseAnalytics?.takeIf { payload.userId.isNotEmpty() }?.setUserId(payload.userId)
 
         analytics.traits?.keys
@@ -73,11 +73,9 @@ class FirebaseIntegration : IntegrationPlugin() {
             ?.forEach { key ->
                 firebaseAnalytics?.setUserProperty(key, analytics.traits?.getString(key))
             }
-
-        return payload
     }
 
-    override fun screen(payload: ScreenEvent): Event? {
+    override fun screen(payload: ScreenEvent) {
         if (payload.screenName.isNotEmpty()) {
             getBundle().apply {
                 putString(FirebaseAnalytics.Param.SCREEN_NAME, payload.screenName)
@@ -85,19 +83,16 @@ class FirebaseIntegration : IntegrationPlugin() {
                 firebaseAnalytics?.logEvent(FirebaseAnalytics.Event.SCREEN_VIEW, this)
             }
         }
-        return payload
     }
 
-    override fun track(payload: TrackEvent): Event? {
-        val eventName = payload.event.takeIf { it.isNotEmpty() } ?: return payload
+    override fun track(payload: TrackEvent) {
+        val eventName = payload.event.takeIf { it.isNotEmpty() } ?: return
 
         when (eventName) {
             APPLICATION_OPENED -> handleApplicationOpenedEvent(payload.properties)
             in ECOMMERCE_EVENTS_MAPPING -> handleECommerceEvent(eventName, payload.properties)
             else -> handleCustomEvent(eventName, payload.properties)
         }
-
-        return payload
     }
 
     override fun reset() {

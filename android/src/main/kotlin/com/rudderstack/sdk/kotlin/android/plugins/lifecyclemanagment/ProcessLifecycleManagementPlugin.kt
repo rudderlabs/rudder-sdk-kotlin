@@ -17,7 +17,7 @@ import com.rudderstack.sdk.kotlin.android.Analytics as AndroidAnalytics
 @OptIn(DelicateCoroutinesApi::class)
 internal class ProcessLifecycleManagementPlugin : Plugin, DefaultLifecycleObserver {
 
-    override val pluginType: Plugin.PluginType = Plugin.PluginType.Manual
+    override val pluginType: Plugin.PluginType = Plugin.PluginType.Utility
     override lateinit var analytics: Analytics
 
     private lateinit var lifecycle: Lifecycle

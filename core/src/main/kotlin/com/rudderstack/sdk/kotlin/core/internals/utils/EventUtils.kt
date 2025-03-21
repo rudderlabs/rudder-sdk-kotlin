@@ -1,7 +1,6 @@
 package com.rudderstack.sdk.kotlin.core.internals.utils
 
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
-import com.rudderstack.sdk.kotlin.core.internals.models.RudderTraits
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.UserIdentity
 import kotlinx.serialization.json.JsonObject
@@ -10,7 +9,6 @@ import kotlinx.serialization.json.put
 
 private const val NAME = "name"
 private const val CATEGORY = "category"
-private const val ANONYMOUS_ID = "anonymousId"
 private const val TRAITS = "traits"
 
 internal fun addNameAndCategoryToProperties(name: String, category: String, properties: JsonObject): JsonObject {
@@ -40,7 +38,7 @@ internal fun Event.addRudderOptionFields() {
 internal fun Event.addPersistedValues() {
     this.setAnonymousId()
     this.setUserId()
-    this.setTraitsInContext { this.buildTraits() }
+    this.setTraitsInContext()
 }
 
 private fun Event.setAnonymousId() {
@@ -51,26 +49,16 @@ private fun Event.setUserId() {
     this.userId = userIdentityState.userId
 }
 
-private fun Event.setTraitsInContext(getLatestTraits: () -> RudderTraits) {
-    getLatestTraits().let { latestTraits ->
-        this.context = this.context mergeWithHigherPriorityTo latestTraits
-    }
+private fun Event.setTraitsInContext() {
+    this.context = this.context mergeWithHigherPriorityTo getLatestTraits()
 }
 
-private fun Event.buildTraits(): RudderTraits {
-    val latestAnonymousId = userIdentityState.anonymousId
-    val latestTraits = userIdentityState.traits
-
-    return (latestTraits mergeWithHigherPriorityTo getDefaultTraits(latestAnonymousId))
-        .let { updatedTraits ->
-            buildJsonObject {
-                put(TRAITS, updatedTraits)
-            }
-        }
-}
-
-private fun getDefaultTraits(anonymousId: String): RudderTraits = buildJsonObject {
-    put(ANONYMOUS_ID, anonymousId)
+private fun Event.getLatestTraits(): JsonObject {
+    return userIdentityState.traits
+        .takeIf { it.isNotEmpty() }
+        ?.let {
+            buildJsonObject { put(TRAITS, it) }
+        } ?: emptyJsonObject
 }
 
 internal fun provideEmptyUserIdentityState() = UserIdentity(String.empty(), String.empty(), emptyJsonObject)

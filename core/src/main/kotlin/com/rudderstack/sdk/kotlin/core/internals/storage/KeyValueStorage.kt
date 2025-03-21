@@ -1,5 +1,7 @@
 package com.rudderstack.sdk.kotlin.core.internals.storage
 
+import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
+
 /**
  * Interface defining a basic key-value storage mechanism.
  *
@@ -8,6 +10,7 @@ package com.rudderstack.sdk.kotlin.core.internals.storage
  * Implementations of this interface should handle the persistence of these values in a storage medium such as
  * a database, shared preferences, or in-memory cache.
  */
+@InternalRudderApi
 interface KeyValueStorage {
 
     /**

@@ -1,0 +1,18 @@
+
+{
+  "appKey": "someAppKey",
+  "dataCenter": "US-03",
+  "trackAnonymousUser": false,
+  "enableSubscriptionGroupInGroupCall": false,
+  "enableNestedArrayOperations": false,
+  "supportDedup": true,
+  "blacklistedEvents" : [ ],
+  "whitelistedEvents" : [ ],
+  "eventFilteringOption" : "disable",
+  "consentManagement" : [ {
+    "provider" : "oneTrust",
+    "resolutionStrategy" : "",
+    "consents" : [ ]
+  } ],
+  "connectionMode" : "device"
+}

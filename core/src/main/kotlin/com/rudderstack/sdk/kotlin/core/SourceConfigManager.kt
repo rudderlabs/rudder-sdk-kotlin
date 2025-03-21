@@ -5,8 +5,9 @@ import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClient
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClientImpl
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
-import com.rudderstack.sdk.kotlin.core.internals.statemanagement.FlowState
+import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
+import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import com.rudderstack.sdk.kotlin.core.internals.utils.LenientJson
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
@@ -22,9 +23,13 @@ private const val BUILD_VERSION = "bv"
 private const val ANDROID = "android"
 private const val KOTLIN = "kotlin"
 
-internal class SourceConfigManager(
+/**
+ * Manager for handling source config.
+ */
+@InternalRudderApi
+class SourceConfigManager(
     private val analytics: Analytics,
-    private val sourceConfigState: FlowState<SourceConfig>,
+    private val sourceConfigState: State<SourceConfig>,
     private val httpClientFactory: HttpClient = analytics.createGetHttpClientFactory(),
 ) {
 

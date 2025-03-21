@@ -18,7 +18,6 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import org.jetbrains.annotations.VisibleForTesting
 
 typealias AnalyticsContext = JsonObject
 typealias Properties = JsonObject
@@ -116,7 +115,6 @@ sealed class Event {
      *
      * @param platform The platform type associated with the event.
      */
-    @VisibleForTesting
     fun updateData(platform: PlatformType) {
         this.channel = platform
         this.addRudderOptionFields()

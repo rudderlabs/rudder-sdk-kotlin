@@ -1,6 +1,6 @@
 package com.rudderstack.sdk.kotlin.core.internals.models.connectivity
 
-import com.rudderstack.sdk.kotlin.core.internals.statemanagement.FlowAction
+import com.rudderstack.sdk.kotlin.core.internals.statemanagement.StateAction
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 
 private const val DEFAULT_STATE = true
@@ -22,7 +22,7 @@ class ConnectivityState {
      * Action to set the default state of connectivity.
      * Default state is always `true`.
      */
-    class SetDefaultStateAction : FlowAction<Boolean> {
+    class SetDefaultStateAction : StateAction<Boolean> {
 
         override fun reduce(currentState: Boolean): Boolean {
             return DEFAULT_STATE
@@ -32,7 +32,7 @@ class ConnectivityState {
     /**
      * Action to enable the connectivity.
      */
-    class EnableConnectivityAction : FlowAction<Boolean> {
+    class EnableConnectivityAction : StateAction<Boolean> {
 
         override fun reduce(currentState: Boolean): Boolean {
             return CONNECTION_AVAILABLE
@@ -42,7 +42,7 @@ class ConnectivityState {
     /**
      * Action to disable the connectivity.
      */
-    class DisableConnectivityAction : FlowAction<Boolean> {
+    class DisableConnectivityAction : StateAction<Boolean> {
 
         override fun reduce(currentState: Boolean): Boolean {
             return CONNECTION_UNAVAILABLE

@@ -36,7 +36,7 @@ internal const val FROM_BACKGROUND = "from_background"
 // plugin to manage default lifecycle events
 internal class AndroidLifecyclePlugin : Plugin, ProcessLifecycleObserver {
 
-    override val pluginType: Plugin.PluginType = Plugin.PluginType.Manual
+    override val pluginType: Plugin.PluginType = Plugin.PluginType.Utility
     override lateinit var analytics: Analytics
 
     private lateinit var storage: Storage

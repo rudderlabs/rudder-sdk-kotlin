@@ -13,9 +13,8 @@ class PluginChain(
     private val pluginList: Map<Plugin.PluginType, PluginInteractor> = mapOf(
         Plugin.PluginType.PreProcess to PluginInteractor(),
         Plugin.PluginType.OnProcess to PluginInteractor(),
-        Plugin.PluginType.Destination to PluginInteractor(),
-        Plugin.PluginType.After to PluginInteractor(),
-        Plugin.PluginType.Manual to PluginInteractor(),
+        Plugin.PluginType.Terminal to PluginInteractor(),
+        Plugin.PluginType.Utility to PluginInteractor(),
     )
 ) {
 
@@ -30,7 +29,7 @@ class PluginChain(
     suspend fun process(event: Event) {
         val preProcessResult = applyPlugins(Plugin.PluginType.PreProcess, event)
         val onProcessResult = applyPlugins(Plugin.PluginType.OnProcess, preProcessResult)
-        applyPlugins(Plugin.PluginType.Destination, onProcessResult)
+        applyPlugins(Plugin.PluginType.Terminal, onProcessResult)
     }
 
     /**

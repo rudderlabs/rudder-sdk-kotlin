@@ -65,13 +65,11 @@ class AdjustIntegration : IntegrationPlugin(), ActivityLifecycleObserver {
         }
     }
 
-    override fun identify(payload: IdentifyEvent): Event {
+    override fun identify(payload: IdentifyEvent) {
         payload.setSessionParams()
-
-        return payload
     }
 
-    override fun track(payload: TrackEvent): Event {
+    override fun track(payload: TrackEvent) {
         eventToTokenMappings.getTokenOrNull(payload.event)?.let { eventToken ->
             payload.setSessionParams()
             val adjustEvent = initAdjustEvent(eventToken).apply {
@@ -87,8 +85,6 @@ class AdjustIntegration : IntegrationPlugin(), ActivityLifecycleObserver {
                     "or the corresponding token is empty. Therefore dropping the ${payload.event} event."
             )
         }
-
-        return payload
     }
 
     override fun reset() {
