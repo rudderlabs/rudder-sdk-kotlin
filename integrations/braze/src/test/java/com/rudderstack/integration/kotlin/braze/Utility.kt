@@ -1,6 +1,7 @@
 package com.rudderstack.integration.kotlin.braze
 
 import com.braze.enums.Gender
+import com.rudderstack.integration.kotlin.braze.Utility.toISOString
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.ExternalId
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
@@ -35,6 +36,7 @@ internal const val COUNTRY = "USA"
 internal const val USER_ID = "<userId>"
 
 internal object Utility {
+    internal val DATE_STRING: String = Date(631172471000).toISOString()
 
     internal fun Any.readFileAsJsonObject(fileName: String): JsonObject {
         this::class.java.classLoader?.getResourceAsStream(fileName).let { inputStream ->
@@ -130,7 +132,7 @@ internal object Utility {
 
     private fun getStandardAndCustomTraits(): JsonObject = buildJsonObject {
         // Standard traits
-        put("birthday", Date(631172471000).toISOString())
+        put("birthday", DATE_STRING)
         put("address", buildJsonObject {
             put("city", CITY)
             put("country", COUNTRY)
@@ -146,12 +148,12 @@ internal object Utility {
         put("key-2", 1234)
         put("key-3", 678.45)
         put("key-4", "value-4")
-        put("key-5", Date(631172471000).toISOString())
+        put("key-5", DATE_STRING)
     }
 
     internal fun getSlightDifferentStandardAndCustomTraits(): JsonObject = buildJsonObject {
         // Standard traits
-        put("birthday", Date(631172471000).toISOString())
+        put("birthday", DATE_STRING)
         put("address", buildJsonObject {
             put("city", CITY)
             put("country", COUNTRY)
@@ -167,12 +169,27 @@ internal object Utility {
         put("key-2", 1234)
         put("key-3", 678.45)
         put("key-4", "value-43") // Different
-        put("key-5", Date(631172471000).toISOString())
+        put("key-5", DATE_STRING)
     }
 
-    private fun Date.toISOString(): String {
+    internal fun Date.toISOString(): String {
         return SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply {
             timeZone = TimeZone.getTimeZone("UTC")
         }.format(this)
+    }
+
+    private const val MILLIS_TO_SECONDS_DIVISOR = 1000
+    private fun Long.toSeconds() = this / MILLIS_TO_SECONDS_DIVISOR
+    private val iso8601DateFormatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
+    /**
+     * Tries to convert the given [value] to a [Long] representing the time in milliseconds.
+     *
+     * @param value The value to be converted.
+     * @return The time in milliseconds if the conversion is successful, otherwise `null`.
+     */
+    internal fun tryDateConversion(value: String): Long? {
+        return runCatching {
+            iso8601DateFormatter.parse(value)?.time?.toSeconds()
+        }.getOrNull()
     }
 }
