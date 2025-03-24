@@ -9,22 +9,22 @@ import kotlinx.serialization.json.jsonPrimitive
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
-private val deviceToken = "someDeviceToken"
+private val pushToken = "somePushToken"
 private const val EVENT_NAME = "Sample Event"
 private val emptyJsonObject = JsonObject(emptyMap())
 
-class SetDeviceTokenPluginTest {
+class SetPushTokenPluginTest {
 
     @Test
-    fun `given a device token, when it is set using custom plugin, then it is added in the payload`()
+    fun `given a push token, when it is set using custom plugin, then it is added in the payload`()
     = runTest {
         val event = provideDefaultEvent()
-        val setDeviceTokenPlugin = SetDeviceTokenPlugin(deviceToken)
+        val setPushTokenPlugin = SetPushTokenPlugin(pushToken)
 
-        setDeviceTokenPlugin.intercept(event)
+        setPushTokenPlugin.intercept(event)
 
-        val actualDeviceToken = event.context["device"]?.jsonObject?.get("token")?.jsonPrimitive?.content
-        assertEquals(deviceToken, actualDeviceToken)
+        val actualPushToken = event.context["device"]?.jsonObject?.get("token")?.jsonPrimitive?.content
+        assertEquals(pushToken, actualPushToken)
     }
 }
 
