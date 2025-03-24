@@ -7,18 +7,14 @@ import com.rudderstack.sdk.kotlin.android.Analytics
 import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.android.SessionConfiguration
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
-import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
 import com.rudderstack.sampleapp.analytics.customplugins.AndroidAdvertisingIdPlugin
 import com.rudderstack.sampleapp.analytics.customplugins.AndroidAdvertisingIdPlugin.Companion.isAdvertisingLibraryAvailable
-import com.rudderstack.sampleapp.analytics.customplugins.OptionPlugin
 import com.rudderstack.sampleapp.analytics.customplugins.SampleIntegrationPlugin
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
 
 object RudderAnalyticsUtils {
 
@@ -45,16 +41,6 @@ object RudderAnalyticsUtils {
         if (isAdvertisingLibraryAvailable()) {
             analytics.add(AndroidAdvertisingIdPlugin())
         }
-        analytics.add(OptionPlugin(
-            option = RudderOption(
-                customContext = buildJsonObject {
-                    put("key", "value")
-                },
-                integrations = buildJsonObject {
-                    put("CleverTap", true)
-                }
-            )
-        ))
 
         analytics.add(AdjustIntegration())
 
