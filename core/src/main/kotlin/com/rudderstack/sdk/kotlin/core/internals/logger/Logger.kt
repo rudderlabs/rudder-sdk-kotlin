@@ -1,12 +1,6 @@
 package com.rudderstack.sdk.kotlin.core.internals.logger
 
 /**
- * TAG is the default tag used for logging in the RudderStack SDK.
- * */
-var TAG = "Rudder-Analytics"
-    private set
-
-/**
  * `Logger` is an interface that defines a standard logging mechanism for the RudderStack SDK.
  * It provides methods to log messages at different levels (VERBOSE, DEBUG, INFO, WARN and ERROR).
  */
@@ -19,15 +13,6 @@ interface Logger {
          */
         @JvmField
         val DEFAULT_LOG_LEVEL = LogLevel.NONE
-    }
-
-    /**
-     * Sets a custom tag for the logger.
-     *
-     * @param tag The tag to be used for logging.
-     */
-    fun setTag(tag: String) {
-        TAG = tag
     }
 
     /**
