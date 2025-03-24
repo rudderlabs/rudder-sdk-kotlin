@@ -14,23 +14,25 @@ package com.rudderstack.sdk.kotlin.core.internals.logger
  */
 internal class KotlinLogger : Logger {
 
+    private val tag = "Rudder-Analytics"
+
     override fun verbose(log: String) {
-        println("$TAG-verbose : $log")
+        println("$tag-verbose : $log")
     }
 
     override fun info(log: String) {
-        println("$TAG-info : $log")
+        println("$tag-info : $log")
     }
 
     override fun debug(log: String) {
-        println("$TAG-debug : $log")
+        println("$tag-debug : $log")
     }
 
     override fun warn(log: String) {
-        println("$TAG-warn : $log")
+        println("$tag-warn : $log")
     }
 
     override fun error(log: String, throwable: Throwable?) {
-        println("$TAG-error : $log")
+        println("$tag-error : $log")
     }
 }

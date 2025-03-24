@@ -2,22 +2,14 @@ name: Linting Check
 
 on:
   push:
-    branches: ["main", "develop"]
+    branches: [ "main", "develop" ]
   pull_request:
-    branches: ["main", "develop"]
-    types: ["opened", "reopened", "synchronize"]
+    branches: [ "main", "develop" ]
+    types: [ "opened", "reopened", "synchronize" ]
   workflow_dispatch:
 
 jobs:
-  cancel_previous:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: styfle/cancel-workflow-action@0.11.0
-        with:
-          workflow_id: ${{ github.event.workflow.id }}
-
   lint-check:
-    needs: cancel_previous
     runs-on: ubuntu-latest
 
     steps:

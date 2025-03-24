@@ -1,10 +1,12 @@
 package com.rudderstack.sampleapp.analytics.customplugins
 
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
+import com.rudderstack.sdk.kotlin.core.internals.models.ExternalId
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
-import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.junit.jupiter.api.Test
@@ -17,6 +19,8 @@ private const val VALUE_2 = "value2"
 private const val EVENT_NAME = "Sample Event"
 private val DEFAULT_INTEGRATION_ENABLED = buildJsonObject { put("All", true) }
 private val AMPLITUDE_INTEGRATION_ENABLED = buildJsonObject { put("Amplitude", true) }
+private val EXTERNAL_ID = listOf(ExternalId(type = "globalExternalId", id = "someValue"))
+private val emptyJsonObject = JsonObject(emptyMap())
 
 class OptionPluginTest {
 
@@ -38,6 +42,10 @@ class OptionPluginTest {
                 expected = DEFAULT_INTEGRATION_ENABLED.toString(),
                 actual = event.integrations.toString()
             )
+            verifyResult(
+                expected = emptyJsonObject.toString(),
+                actual = (event.context["external_ids"] as? JsonObject ?: emptyJsonObject).toString()
+            )
         }
 
     @Test
@@ -48,12 +56,21 @@ class OptionPluginTest {
                     customContext = buildJsonObject {
                         put(KEY_1, VALUE_1)
                     },
-                    integrations = AMPLITUDE_INTEGRATION_ENABLED
+                    integrations = AMPLITUDE_INTEGRATION_ENABLED,
+                    externalIds = EXTERNAL_ID,
                 )
             )
             val event = provideDefaultEvent().apply {
                 configureDefaultIntegration(this)
-                context = buildJsonObject { put(KEY_2, VALUE_2) }
+                context = buildJsonObject {
+                    put(KEY_2, VALUE_2)
+                    put("externalId", buildJsonArray {
+                        add(buildJsonObject {
+                            put("type", "brazeExternalId")
+                            put("id", "value1234")
+                        })
+                    })
+                }
             }
 
             optionPlugin.intercept(event)
@@ -62,6 +79,17 @@ class OptionPluginTest {
                 expected = buildJsonObject {
                     put(KEY_1, VALUE_1)
                     put(KEY_2, VALUE_2)
+                    // Verify both externalIds are added:
+                    put("externalId", buildJsonArray {
+                        add(buildJsonObject {
+                            put("type", "brazeExternalId")
+                            put("id", "value1234")
+                        })
+                        add(buildJsonObject {
+                            put("type", "globalExternalId")
+                            put("id", "someValue")
+                        })
+                    })
                 }.toString(),
                 actual = event.context.toString()
             )
@@ -84,18 +112,38 @@ class OptionPluginTest {
                 integrations = buildJsonObject {
                     put("All", false)
                     put("Amplitude", true)
-                }
+                },
+                externalIds = listOf(
+                    ExternalId(type = "globalExternalId", id = "newValue"),
+                )
             )
             val optionPlugin = OptionPlugin(option = higherPreferenceOption)
             val event = provideDefaultEvent().apply {
                 configureDefaultIntegration(this)
-                context = buildJsonObject { put(KEY_1, VALUE_2) }
+                context = buildJsonObject {
+                    put(KEY_1, VALUE_2)
+                    put("externalId", buildJsonArray {
+                        add(buildJsonObject {
+                            put("type", "globalExternalId")
+                            put("id", "oldValue")
+                        })
+                    })
+                }
             }
 
             optionPlugin.intercept(event)
 
             verifyResult(
-                expected = higherPreferenceOption.customContext.toString(),
+                expected = buildJsonObject {
+                    put(KEY_1, VALUE_1)
+                    // Verify externalId is updated:
+                    put("externalId", buildJsonArray {
+                        add(buildJsonObject {
+                            put("type", "globalExternalId")
+                            put("id", "newValue")
+                        })
+                    })
+                }.toString(),
                 actual = event.context.toString()
             )
             verifyResult(
