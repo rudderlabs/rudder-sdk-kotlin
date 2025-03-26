@@ -10,36 +10,38 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.encodeToJsonElement
 
 /**
- * A plugin that sets the device token in the event payload.
+ * A plugin that sets the push token in the event payload.
  *
- * Add this plugin just after the SDK initialization to set the device token in the event payload.
+ * Add this plugin just after the SDK initialization to set the push token in the event payload.
  *
  * Add the plugin like this:
  * ```
- * analytics.add(SetDeviceTokenPlugin(deviceToken = "someDeviceToken"))
+ * analytics.add(SetPushTokenPlugin(pushToken = "somePushToken"))
  * ```
  *
- * @param deviceToken The device token to be set in the event payload.
+ * This will set the push token in the `event.context.device` payload of each events.
+ *
+ * @param pushToken The push token to be set in the payload.
  */
-class SetDeviceTokenPlugin(
-    private val deviceToken: String
+class SetPushTokenPlugin(
+    private val pushToken: String
 ) : Plugin {
 
-    override val pluginType: Plugin.PluginType = Plugin.PluginType.PreProcess
+    override val pluginType: Plugin.PluginType = Plugin.PluginType.OnProcess
 
     override lateinit var analytics: Analytics
 
     override suspend fun intercept(event: Event): Event {
-        setDeviceToken(event)
-        LoggerAnalytics.verbose("SetDeviceTokenPlugin: Setting device token: $deviceToken in the event payload")
+        setPushToken(event)
+        LoggerAnalytics.verbose("SetPushTokenPlugin: Setting push token: $pushToken in the event payload")
         return event
     }
 
-    private fun setDeviceToken(event: Event): Event {
+    private fun setPushToken(event: Event): Event {
         val device = event.context["device"] as? JsonObject ?: JsonObject(emptyMap())
 
         val updatedDevice = JsonObject(
-            device.toMap() + ("token" to Json.encodeToJsonElement(deviceToken))
+            device.toMap() + ("token" to Json.encodeToJsonElement(pushToken))
         ).let {
             buildJsonObject {
                 put("device", it)

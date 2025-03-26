@@ -21,7 +21,7 @@ class SetAnonymousIdPlugin(
     private val anonymousId: String
 ) : Plugin {
 
-    override val pluginType: Plugin.PluginType = Plugin.PluginType.PreProcess
+    override val pluginType: Plugin.PluginType = Plugin.PluginType.OnProcess
 
     override lateinit var analytics: Analytics
 

@@ -27,6 +27,20 @@ private const val CLASS_FOR_NAME = "com.google.android.gms.ads.identifier.Advert
 private const val FIRE_LIMIT_AD_TRACKING = "limit_ad_tracking"
 private const val FIRE_ADVERTISING_ID = "advertising_id"
 
+/**
+ * A plugin that collects the advertising ID and ad tracking status.
+ *
+ * Add this plugin just after the SDK initialization to collect the advertising ID and ad tracking status.
+ *
+ * Add the plugin like this:
+ * ```
+ * analytics.add(AndroidAdvertisingIdPlugin())
+ * ```
+ *
+ * This will collect the advertising ID and ad tracking status and add it to the `event.context.device` payload of each events.
+ *
+ * @param scope The coroutine scope to run the async task to collect the advertising ID.
+ */
 class AndroidAdvertisingIdPlugin @OptIn(DelicateCoroutinesApi::class) constructor(private val scope: CoroutineScope = GlobalScope) : Plugin {
 
     override val pluginType = Plugin.PluginType.OnProcess
