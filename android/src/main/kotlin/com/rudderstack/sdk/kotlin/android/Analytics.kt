@@ -31,6 +31,7 @@ import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.utils.isAnalyticsActive
 import com.rudderstack.sdk.kotlin.core.provideAnalyticsConfiguration
+import org.jetbrains.annotations.ApiStatus.Experimental
 
 private const val MIN_SESSION_ID_LENGTH = 10
 
@@ -173,9 +174,10 @@ class Analytics(
      * In case multiple [NavController]s are used, call this method for each of them.
      *
      * @param navController [NavController] to be tracked
-     * @param activity [Activity] of the `NavHostFragment` or the parent composable in which [navController] is instantiated.
+     * @param activity [Activity] of the [NavHostFragment] or the parent composable in which [navController] is instantiated.
      */
     @Synchronized
+    @Experimental
     fun setNavigationDestinationsTracking(navController: NavController, activity: Activity) {
         if (!isAnalyticsActive()) return
 
