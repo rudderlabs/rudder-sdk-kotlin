@@ -150,7 +150,12 @@ open class Analytics protected constructor(
      */
     @JvmOverloads
     fun track(name: String, properties: Properties = emptyJsonObject, options: RudderOption = RudderOption()) {
-        if (!isAnalyticsActive() || !isSourceEnabled) return
+        if (!isAnalyticsActive()) return
+
+        if (!isSourceEnabled) {
+            LoggerAnalytics.error("Source is disabled is dashboard. The track call will not be sent to dataPlane.")
+            return
+        }
 
         val event = TrackEvent(
             event = name,
@@ -178,7 +183,12 @@ open class Analytics protected constructor(
         properties: Properties = emptyJsonObject,
         options: RudderOption = RudderOption()
     ) {
-        if (!isAnalyticsActive() || !isSourceEnabled) return
+        if (!isAnalyticsActive()) return
+
+        if (!isSourceEnabled) {
+            LoggerAnalytics.error("Source is disabled is dashboard. The screen call will not be sent to dataPlane.")
+            return
+        }
 
         val updatedProperties = addNameAndCategoryToProperties(screenName, category, properties)
 
@@ -202,7 +212,12 @@ open class Analytics protected constructor(
      */
     @JvmOverloads
     fun group(groupId: String, traits: RudderTraits = emptyJsonObject, options: RudderOption = RudderOption()) {
-        if (!isAnalyticsActive() || !isSourceEnabled) return
+        if (!isAnalyticsActive()) return
+
+        if (!isSourceEnabled) {
+            LoggerAnalytics.error("Source is disabled is dashboard. The group call will not be sent to dataPlane.")
+            return
+        }
 
         val event = GroupEvent(
             groupId = groupId,
@@ -247,7 +262,13 @@ open class Analytics protected constructor(
             )
         }
 
-        if (!isSourceEnabled) return
+        if (!isSourceEnabled) {
+            LoggerAnalytics.warn(
+                "Source is disabled in the dashboard. " +
+                    "The identify call will not be sent to dataPlane, but the userId and traits will still be updated."
+            )
+            return
+        }
 
         val event = IdentifyEvent(
             options = options,
@@ -280,7 +301,13 @@ open class Analytics protected constructor(
             userIdentityState.value.storeUserId(storage = storage)
         }
 
-        if (!isSourceEnabled) return
+        if (!isSourceEnabled) {
+            LoggerAnalytics.warn(
+                "Source is disabled in the dashboard. " +
+                    "The alias call will not be sent to dataPlane, but the userId will still be updated."
+            )
+            return
+        }
 
         val event = AliasEvent(
             previousId = updatedPreviousId,
@@ -296,7 +323,15 @@ open class Analytics protected constructor(
      * This method specifically targets the `RudderStackDataPlanePlugin` to initiate the flush operation.
      */
     open fun flush() {
-        if (!isAnalyticsActive() || !isSourceEnabled) return
+        if (!isAnalyticsActive()) return
+
+        if (!isSourceEnabled) {
+            LoggerAnalytics.warn(
+                "Source is disabled in the dashboard. " +
+                    "No events will be flushed to dataPlane, but the events will be flushed to integrations."
+            )
+            return
+        }
 
         this.pluginChain.applyClosure {
             if (it is RudderStackDataplanePlugin) {

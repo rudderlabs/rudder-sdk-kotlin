@@ -115,7 +115,13 @@ class Analytics(
 
         sessionTrackingPlugin.sessionManager.refreshSession()
 
-        if (!isSourceEnabled) return
+        if (!isSourceEnabled) {
+            LoggerAnalytics.warn(
+                "Source is disabled in the dashboard. " +
+                    "The reset call will not be forwarded to integrations."
+            )
+            return
+        }
         integrationsManagementPlugin.reset()
     }
 
