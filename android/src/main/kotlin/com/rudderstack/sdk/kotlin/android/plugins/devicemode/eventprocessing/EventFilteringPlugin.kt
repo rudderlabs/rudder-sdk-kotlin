@@ -7,6 +7,7 @@ import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
+import com.rudderstack.sdk.kotlin.core.internals.statemanagement.dropInitialState
 import com.rudderstack.sdk.kotlin.core.internals.utils.LenientJson
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import kotlinx.coroutines.flow.filter
@@ -73,6 +74,7 @@ internal class EventFilteringPlugin(private val key: String) : Plugin {
         // todo: use integrations dispatcher here and then we don't need to use CopyOnWriteArrayList for filteringList
         analytics.analyticsScope.launch {
             analytics.sourceConfigState
+                .dropInitialState()
                 .filter { it.source.isSourceEnabled }
                 .collect { sourceConfig ->
                     val destinationConfig = findDestination(sourceConfig, key)?.destinationConfig

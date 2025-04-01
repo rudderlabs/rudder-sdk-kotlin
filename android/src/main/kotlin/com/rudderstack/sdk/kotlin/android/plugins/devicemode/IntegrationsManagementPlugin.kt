@@ -6,6 +6,7 @@ import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.PluginChain
+import com.rudderstack.sdk.kotlin.core.internals.statemanagement.dropInitialState
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collectIndexed
 import kotlinx.coroutines.flow.filter
@@ -31,12 +32,15 @@ internal class IntegrationsManagementPlugin : Plugin {
     private val sourceConfig: SourceConfig
         get() = analytics.sourceConfigState.value
 
+    private var isSourceEnabledFetchedOnce = false
+
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
 
         integrationPluginChain.analytics = analytics
         analytics.withIntegrationsDispatcher {
             analytics.sourceConfigState
+                .dropInitialState()
                 .filter { it.source.isSourceEnabled }
                 .collectIndexed { index, sourceConfig ->
                     integrationPluginChain.applyClosure { plugin ->
@@ -46,6 +50,7 @@ internal class IntegrationsManagementPlugin : Plugin {
                     }
 
                     if (index == FIRST_INDEX) {
+                        isSourceEnabledFetchedOnce = true
                         processEvents()
                     }
                 }
@@ -74,8 +79,9 @@ internal class IntegrationsManagementPlugin : Plugin {
     internal fun addIntegration(plugin: IntegrationPlugin) {
         integrationPluginChain.add(plugin)
         analytics.withIntegrationsDispatcher {
-            // todo: refactor this condition.
-            if (!plugin.isDestinationReady && sourceConfig.source.isSourceEnabled) {
+            // todo: recheck this logic
+            // if the source config is already fetched once and enabled, then initialise the destination since it is added after fetching of source config.
+            if (isSourceEnabledFetchedOnce) {
                 plugin.initDestination(sourceConfig)
             }
         }

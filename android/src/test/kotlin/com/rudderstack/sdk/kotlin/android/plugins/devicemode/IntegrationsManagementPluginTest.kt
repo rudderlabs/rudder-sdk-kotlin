@@ -78,6 +78,7 @@ class IntegrationsManagementPluginTest {
         runTest {
             integrationsManagementPlugin.setup(mockAnalytics)
 
+            advanceUntilIdle()
             mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
             advanceUntilIdle()
             integrationsManagementPlugin.addIntegration(integrationPlugin)
@@ -104,6 +105,7 @@ class IntegrationsManagementPluginTest {
             integrationsManagementPlugin.setup(mockAnalytics)
 
             integrationsManagementPlugin.addIntegration(integrationPlugin)
+            advanceUntilIdle()
             mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
             advanceUntilIdle()
 
@@ -120,6 +122,7 @@ class IntegrationsManagementPluginTest {
         runTest {
             integrationsManagementPlugin.setup(mockAnalytics)
             integrationsManagementPlugin.addIntegration(integrationPlugin)
+            advanceUntilIdle()
             mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
             advanceUntilIdle()
 
@@ -148,6 +151,7 @@ class IntegrationsManagementPluginTest {
         runTest {
             integrationsManagementPlugin.setup(mockAnalytics)
             integrationsManagementPlugin.addIntegration(integrationPlugin)
+            advanceUntilIdle()
             mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
             advanceUntilIdle()
 
@@ -185,6 +189,7 @@ class IntegrationsManagementPluginTest {
                 integrationsManagementPlugin.intercept(event)
             }
 
+            advanceUntilIdle()
             mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
             advanceUntilIdle()
 
@@ -208,6 +213,7 @@ class IntegrationsManagementPluginTest {
                 integrationsManagementPlugin.intercept(event)
             }
 
+            advanceUntilIdle()
             mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
             advanceUntilIdle()
 

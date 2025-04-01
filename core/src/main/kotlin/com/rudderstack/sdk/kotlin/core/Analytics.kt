@@ -70,7 +70,7 @@ open class Analytics protected constructor(
     private val pluginChain: PluginChain = PluginChain().also { it.analytics = this }
 
     /**
-     * The `sourceConfigState` is a state flow that manages the source configuration for the analytics instance.
+     * The `sourceConfigState` is a [State] that manages the source configuration for the analytics instance.
      */
     @InternalRudderApi
     val sourceConfigState = State(initialState = SourceConfig.initialState())
