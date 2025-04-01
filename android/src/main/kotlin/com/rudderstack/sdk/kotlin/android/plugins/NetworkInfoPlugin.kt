@@ -76,4 +76,8 @@ internal class NetworkInfoPlugin(
             }
         )
     }
+
+    override fun teardown() {
+        networkUtils.teardown()
+    }
 }
