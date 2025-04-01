@@ -8,7 +8,7 @@ private const val ONE_COUNT = 1
 
 /**
  * Drops the initial state/value of the [State] and emits the subsequent states. This is useful when you don't want to use
- * the default initial value of [State] variable.
+ * the default initial value of a [State] variable.
  *
  * @return [Flow] of the [State] after dropping the initial value.
  */

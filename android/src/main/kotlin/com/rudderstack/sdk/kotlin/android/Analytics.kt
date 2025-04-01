@@ -111,10 +111,11 @@ class Analytics(
      */
     override fun reset() {
         if (!isAnalyticsActive()) return
-
         super.reset()
 
         sessionTrackingPlugin.sessionManager.refreshSession()
+
+        if (!isSourceEnabled) return
         integrationsManagementPlugin.reset()
     }
 

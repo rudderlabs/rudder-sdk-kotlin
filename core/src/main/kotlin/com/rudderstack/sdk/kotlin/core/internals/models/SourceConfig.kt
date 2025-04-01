@@ -34,7 +34,7 @@ data class SourceConfig(
                 sourceId = String.empty(),
                 sourceName = String.empty(),
                 writeKey = String.empty(),
-                isSourceEnabled = false,
+                isSourceEnabled = true,
                 workspaceId = String.empty(),
                 updatedAt = String.empty()
             )

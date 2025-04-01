@@ -75,6 +75,9 @@ open class Analytics protected constructor(
     @InternalRudderApi
     val sourceConfigState = State(initialState = SourceConfig.initialState())
 
+    protected val isSourceEnabled: Boolean
+        get() = sourceConfigState.value.source.isSourceEnabled
+
     private val processEventChannel: Channel<Event> = Channel(Channel.UNLIMITED)
     private var processEventJob: Job? = null
 
@@ -143,7 +146,7 @@ open class Analytics protected constructor(
      */
     @JvmOverloads
     fun track(name: String, properties: Properties = emptyJsonObject, options: RudderOption = RudderOption()) {
-        if (!isAnalyticsActive()) return
+        if (!isAnalyticsActive() || !isSourceEnabled) return
 
         val event = TrackEvent(
             event = name,
@@ -171,7 +174,7 @@ open class Analytics protected constructor(
         properties: Properties = emptyJsonObject,
         options: RudderOption = RudderOption()
     ) {
-        if (!isAnalyticsActive()) return
+        if (!isAnalyticsActive() || !isSourceEnabled) return
 
         val updatedProperties = addNameAndCategoryToProperties(screenName, category, properties)
 
@@ -195,7 +198,7 @@ open class Analytics protected constructor(
      */
     @JvmOverloads
     fun group(groupId: String, traits: RudderTraits = emptyJsonObject, options: RudderOption = RudderOption()) {
-        if (!isAnalyticsActive()) return
+        if (!isAnalyticsActive() || !isSourceEnabled) return
 
         val event = GroupEvent(
             groupId = groupId,
@@ -240,6 +243,8 @@ open class Analytics protected constructor(
             )
         }
 
+        if (!isSourceEnabled) return
+
         val event = IdentifyEvent(
             options = options,
             userIdentityState = userIdentityState.value,
@@ -271,6 +276,8 @@ open class Analytics protected constructor(
             userIdentityState.value.storeUserId(storage = storage)
         }
 
+        if (!isSourceEnabled) return
+
         val event = AliasEvent(
             previousId = updatedPreviousId,
             options = options,
@@ -285,7 +292,7 @@ open class Analytics protected constructor(
      * This method specifically targets the `RudderStackDataPlanePlugin` to initiate the flush operation.
      */
     open fun flush() {
-        if (!isAnalyticsActive()) return
+        if (!isAnalyticsActive() || !isSourceEnabled) return
 
         this.pluginChain.applyClosure {
             if (it is RudderStackDataplanePlugin) {
