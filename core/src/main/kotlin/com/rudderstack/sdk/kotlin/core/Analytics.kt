@@ -75,7 +75,11 @@ open class Analytics protected constructor(
     @InternalRudderApi
     val sourceConfigState = State(initialState = SourceConfig.initialState())
 
-    protected val isSourceEnabled: Boolean
+    /**
+     * The `isSourceEnabled` property indicates whether the source is enabled in the latest fetched [SourceConfig].
+     */
+    @InternalRudderApi
+    val isSourceEnabled: Boolean
         get() = sourceConfigState.value.source.isSourceEnabled
 
     private val processEventChannel: Channel<Event> = Channel(Channel.UNLIMITED)

@@ -117,7 +117,7 @@ internal class EventQueue(
                 }
             }
 
-            if (isFlushSignal || flushPoliciesFacade.shouldFlush()) {
+            if (isFlushSignal || (flushPoliciesFacade.shouldFlush() && analytics.isSourceEnabled)) {
                 uploadChannel.trySend(UPLOAD_SIG)
                 flushPoliciesFacade.reset()
             }
