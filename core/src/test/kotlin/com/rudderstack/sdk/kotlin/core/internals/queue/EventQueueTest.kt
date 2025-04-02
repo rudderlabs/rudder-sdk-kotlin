@@ -451,6 +451,7 @@ class EventQueueTest {
         every { eventQueue.stringifyBaseEvent(mockEvent) } returns jsonString
         // Mock the behavior for StartupFlushPolicy
         every { mockFlushPoliciesFacade.shouldFlush() } returns true
+        every { mockAnalytics.isSourceEnabled } returns true
 
         // Execute messageQueue actions
         eventQueue.start()
@@ -471,6 +472,7 @@ class EventQueueTest {
         every { eventQueue.stringifyBaseEvent(mockEvent) } returns jsonString
         // Mock the behavior for StartupFlushPolicy
         every { mockFlushPoliciesFacade.shouldFlush() } returns true
+        every { mockAnalytics.isSourceEnabled } returns true
 
         // Execute messageQueue actions
         eventQueue.start()
