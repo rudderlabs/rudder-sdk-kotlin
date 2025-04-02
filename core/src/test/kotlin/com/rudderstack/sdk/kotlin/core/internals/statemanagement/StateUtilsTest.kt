@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test
 class StateUtilsTest {
 
     @Test
-    fun `given a state variable, when collected with dropping the initial state, when the default value is not collected`() =
+    fun `given a state variable, when collected with dropping the initial state, then the default value is not collected`() =
         runTest {
             val initialState = 0
             val state = State(initialState)

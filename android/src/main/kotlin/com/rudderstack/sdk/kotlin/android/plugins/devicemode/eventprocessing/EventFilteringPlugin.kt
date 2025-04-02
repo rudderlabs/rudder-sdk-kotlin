@@ -88,7 +88,7 @@ internal class EventFilteringPlugin(private val key: String) : Plugin {
         filteringList.clear()
 
         if (filteringOption.isBlank()) {
-            LoggerAnalytics.error("EventFilteringPlugin: Missing event filtering option for destination: $key")
+            LoggerAnalytics.debug("EventFilteringPlugin: Missing event filtering option for destination: $key")
             return
         }
 
