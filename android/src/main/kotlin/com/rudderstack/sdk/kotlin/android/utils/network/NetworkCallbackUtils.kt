@@ -12,6 +12,8 @@ import androidx.core.content.ContextCompat
  */
 internal class NetworkCallbackUtils(private val context: Context) {
 
+    private lateinit var connectivityManager: ConnectivityManager
+
     /**
      * Checks if the device is connected to a cellular network.
      *
@@ -52,17 +54,22 @@ internal class NetworkCallbackUtils(private val context: Context) {
 
     @Throws(RuntimeException::class)
     internal fun setup() {
-        val connectivityManager =
+        this.connectivityManager =
             ContextCompat.getSystemService(context, ConnectivityManager::class.java) as ConnectivityManager
 
         val cellularRequest: NetworkRequest = NetworkRequest.Builder()
             .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
             .build()
-        connectivityManager.registerNetworkCallback(cellularRequest, cellularCallback)
+        this.connectivityManager.registerNetworkCallback(cellularRequest, cellularCallback)
 
         val wifiRequest: NetworkRequest = NetworkRequest.Builder()
             .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
             .build()
-        connectivityManager.registerNetworkCallback(wifiRequest, wifiCallback)
+        this.connectivityManager.registerNetworkCallback(wifiRequest, wifiCallback)
+    }
+
+    internal fun teardown() {
+        this.connectivityManager.unregisterNetworkCallback(cellularCallback)
+        this.connectivityManager.unregisterNetworkCallback(wifiCallback)
     }
 }
