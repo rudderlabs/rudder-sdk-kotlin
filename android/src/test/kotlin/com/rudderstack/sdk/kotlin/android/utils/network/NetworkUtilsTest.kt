@@ -121,4 +121,13 @@ class NetworkUtilsTest {
 
         assertEquals(expectedBluetoothStatus, isBluetoothEnabled)
     }
+
+    @Test
+    fun `when teardown is called, then network callback utils teardown is called`() {
+        val networkUtils = NetworkUtils(mockNetworkCallbackUtils, mockDefaultNetworkUtils)
+
+        networkUtils.teardown()
+
+        verify { mockNetworkCallbackUtils.teardown() }
+    }
 }
