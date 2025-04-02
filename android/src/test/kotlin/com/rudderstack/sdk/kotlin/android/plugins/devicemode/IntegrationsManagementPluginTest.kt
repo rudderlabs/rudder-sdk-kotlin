@@ -88,6 +88,17 @@ class IntegrationsManagementPluginTest {
         }
 
     @Test
+    fun `given an integration plugin, when no sourceConfig is fetched and setup is called, then it is not initialised`() =
+        runTest {
+            integrationsManagementPlugin.setup(mockAnalytics)
+
+            integrationsManagementPlugin.addIntegration(integrationPlugin)
+            advanceUntilIdle()
+
+            verify(exactly = 0) { integrationPlugin.initDestination(any()) }
+        }
+
+    @Test
     fun `given an added integration plugin, when it is removed, then its teardown is called`() = runTest {
         integrationsManagementPlugin.setup(mockAnalytics)
         integrationsManagementPlugin.addIntegration(integrationPlugin)

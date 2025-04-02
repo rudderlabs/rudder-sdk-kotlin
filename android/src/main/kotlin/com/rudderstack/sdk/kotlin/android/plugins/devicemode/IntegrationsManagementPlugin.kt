@@ -32,7 +32,7 @@ internal class IntegrationsManagementPlugin : Plugin {
     private val sourceConfig: SourceConfig
         get() = analytics.sourceConfigState.value
 
-    private var isSourceEnabledFetchedOnce = false
+    private var isSourceEnabledFetchedAtLeastOnce = false
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
@@ -50,7 +50,7 @@ internal class IntegrationsManagementPlugin : Plugin {
                     }
 
                     if (index == FIRST_INDEX) {
-                        isSourceEnabledFetchedOnce = true
+                        isSourceEnabledFetchedAtLeastOnce = true
                         processEvents()
                     }
                 }
@@ -81,7 +81,7 @@ internal class IntegrationsManagementPlugin : Plugin {
         analytics.withIntegrationsDispatcher {
             // todo: recheck this logic
             // if the source config is already fetched once and enabled, then initialise the destination since it is added after fetching of source config.
-            if (isSourceEnabledFetchedOnce) {
+            if (isSourceEnabledFetchedAtLeastOnce) {
                 plugin.initDestination(sourceConfig)
             }
         }
