@@ -5,8 +5,10 @@ import io.mockk.coVerify
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import com.rudderstack.sdk.kotlin.core.mockAnalytics
+import io.mockk.every
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 class FlushPoliciesTest {
@@ -14,6 +16,11 @@ class FlushPoliciesTest {
     private val testDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
     private val mockAnalytics = mockAnalytics(testScope, testDispatcher)
+
+    @BeforeEach
+    fun setup() {
+        every { mockAnalytics.isSourceEnabled } returns true
+    }
 
     @Test
     fun `given only StartupFlushPolicy is enabled, when shouldFlush is called, then it should return true`() {
