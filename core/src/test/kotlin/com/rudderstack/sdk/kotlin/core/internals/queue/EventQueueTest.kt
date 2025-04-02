@@ -514,6 +514,57 @@ class EventQueueTest {
     }
 
     @Test
+    fun `given default flush policies are enabled but source is disabled, when events are made, the flush call is never triggered`() {
+        val storage = mockAnalytics.storage
+        val mockEvent: Event = mockk(relaxed = true)
+        val jsonString = """{"type":"track","event":"Test Event"}"""
+        every { eventQueue.stringifyBaseEvent(mockEvent) } returns jsonString
+        // Mock the behavior for StartupFlushPolicy
+        every { mockFlushPoliciesFacade.shouldFlush() } returns true
+        every { mockAnalytics.isSourceEnabled } returns false
+
+        // Execute messageQueue actions
+        eventQueue.start()
+
+        // Make the first event
+        eventQueue.put(mockEvent)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify(exactly = 0) {
+            mockFlushPoliciesFacade.reset()
+            storage.rollover()
+        }
+
+        // Mock the behavior for CountFlushPolicy
+        every { mockFlushPoliciesFacade.shouldFlush() } returns false
+
+        repeat(29) {
+            eventQueue.put(mockEvent)
+        }
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // No flush should be triggered
+        coVerify(exactly = 0) {
+            mockFlushPoliciesFacade.reset()
+            storage.rollover()
+        }
+
+        // Mock the behavior for CountFlushPolicy
+        every { mockFlushPoliciesFacade.shouldFlush() } returns true
+
+        // Make the 30th event
+        eventQueue.put(mockEvent)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+
+        // no flush call is triggered
+        coVerify(exactly = 0) {
+            mockFlushPoliciesFacade.reset()
+            storage.rollover()
+        }
+    }
+
+    @Test
     fun `given default flush policies are enabled, when events are made, then the flush policies state should be updated`() {
         val storage = mockAnalytics.storage
         val times = 20
