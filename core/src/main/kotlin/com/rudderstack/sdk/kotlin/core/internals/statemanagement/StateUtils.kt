@@ -13,4 +13,4 @@ private const val ONE_COUNT = 1
  * @return [Flow] of the [State] after dropping the initial value.
  */
 @InternalRudderApi
-fun <T> State<T>.dropInitialState(): Flow<T> = this.drop(ONE_COUNT)
+fun <T> Flow<T>.dropInitialState(): Flow<T> = this.drop(ONE_COUNT)
