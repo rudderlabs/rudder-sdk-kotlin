@@ -173,7 +173,7 @@ class AnalyticsTest {
             analytics.add(customPlugin)
             analytics.track(TRACK_EVENT_NAME)
             testDispatcher.scheduler.runCurrent()
-            disableSourceEnabled()
+            disableSource()
             coVerify(exactly = 1) {
                 mockStorage.write(StorageKeys.EVENT, withArg<String> { eventString ->
                     assertTrue(eventString.contains(NEW_EVENT_NAME))
@@ -190,7 +190,7 @@ class AnalyticsTest {
             analytics.remove(customPlugin)
             analytics.track(TRACK_EVENT_NAME)
             testDispatcher.scheduler.runCurrent()
-            disableSourceEnabled()
+            disableSource()
             coVerify(exactly = 1) {
                 mockStorage.write(StorageKeys.EVENT, withArg<String> { eventString ->
                     assertTrue(eventString.contains(TRACK_EVENT_NAME))
@@ -213,7 +213,7 @@ class AnalyticsTest {
         assertNull(analytics.sessionId)
     }
 
-    private fun disableSourceEnabled() {
+    private fun disableSource() {
         analytics.sourceConfigState.dispatch(
             SourceConfig.UpdateAction(
                 SourceConfig(

@@ -81,6 +81,7 @@ class EventQueueTest {
         coEvery { mockStorage.close() } just runs
         coEvery { mockStorage.write(StorageKeys.EVENT, any<String>()) } just runs
         every { mockAnalytics.sourceConfigState } returns State(SourceConfig.initialState())
+        every { mockAnalytics.isSourceEnabled } returns true
 
         eventQueue = spyk(
             EventQueue(

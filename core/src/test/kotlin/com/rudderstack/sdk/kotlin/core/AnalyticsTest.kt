@@ -208,7 +208,7 @@ class AnalyticsTest {
 
     @Test
     fun `when SDK is initialised, then connectivity state should be set to default state`() = runTest(testDispatcher) {
-        disableSourceEnabled()
+        disableSource()
         verify(exactly = 1) {
             mockConnectivityState.dispatch(match { action ->
                 action is ConnectivityState.SetDefaultStateAction
@@ -239,7 +239,7 @@ class AnalyticsTest {
                 options = provideRudderOption(),
             )
             testDispatcher.scheduler.runCurrent()
-            disableSourceEnabled()
+            disableSource()
 
             assertEquals(mockStorage, analytics.storage)
 
@@ -260,7 +260,7 @@ class AnalyticsTest {
                 options = provideRudderOption(),
             )
             testDispatcher.scheduler.runCurrent()
-            disableSourceEnabled()
+            disableSource()
 
             assertEquals(mockStorage, analytics.storage)
             coVerify(exactly = 1) {
@@ -279,7 +279,7 @@ class AnalyticsTest {
                 options = provideRudderOption(),
             )
             testDispatcher.scheduler.runCurrent()
-            disableSourceEnabled()
+            disableSource()
 
             assertEquals(mockStorage, analytics.storage)
             coVerify(exactly = 1) {
@@ -298,7 +298,7 @@ class AnalyticsTest {
                 options = provideRudderOption(),
             )
             testDispatcher.scheduler.runCurrent()
-            disableSourceEnabled()
+            disableSource()
 
             assertEquals(mockStorage, analytics.storage)
             coVerify(exactly = 1) {
@@ -317,7 +317,7 @@ class AnalyticsTest {
                 options = provideRudderOption(),
             )
             testDispatcher.scheduler.runCurrent()
-            disableSourceEnabled()
+            disableSource()
 
             assertEquals(mockStorage, analytics.storage)
             coVerify(exactly = 1) {
@@ -343,7 +343,7 @@ class AnalyticsTest {
             options = options,
         )
         testDispatcher.scheduler.runCurrent()
-        disableSourceEnabled()
+        disableSource()
 
         coVerify(exactly = 1) {
             mockStorage.write(StorageKeys.EVENT, any<String>())
@@ -365,7 +365,7 @@ class AnalyticsTest {
             options = options,
         )
         testDispatcher.scheduler.runCurrent()
-        disableSourceEnabled()
+        disableSource()
 
         coVerify(exactly = 1) {
             mockStorage.write(StorageKeys.EVENT, any<String>())
@@ -385,7 +385,7 @@ class AnalyticsTest {
             options = options,
         )
         testDispatcher.scheduler.runCurrent()
-        disableSourceEnabled()
+        disableSource()
 
         coVerify(exactly = 1) {
             mockStorage.write(StorageKeys.EVENT, any<String>())
@@ -405,7 +405,7 @@ class AnalyticsTest {
             options = options,
         )
         testDispatcher.scheduler.runCurrent()
-        disableSourceEnabled()
+        disableSource()
 
         coVerify(exactly = 1) {
             mockStorage.write(StorageKeys.EVENT, any<String>())
@@ -425,7 +425,7 @@ class AnalyticsTest {
             options = options,
         )
         testDispatcher.scheduler.runCurrent()
-        disableSourceEnabled()
+        disableSource()
 
         coVerify(exactly = 1) {
             mockStorage.write(StorageKeys.EVENT, any<String>())
@@ -475,7 +475,7 @@ class AnalyticsTest {
             analytics.shutdown()
             // Process all the events
             testDispatcher.scheduler.runCurrent()
-            disableSourceEnabled()
+            disableSource()
 
             coVerify(exactly = 5) {
                 mockStorage.write(StorageKeys.EVENT, any<String>())
@@ -489,7 +489,7 @@ class AnalyticsTest {
         analytics.add(customPlugin)
         analytics.track(TRACK_EVENT_NAME)
         testDispatcher.scheduler.runCurrent()
-        disableSourceEnabled()
+        disableSource()
 
         coVerify(exactly = 1) {
             mockStorage.write(StorageKeys.EVENT, withArg<String> { eventString ->
@@ -506,7 +506,7 @@ class AnalyticsTest {
         analytics.remove(customPlugin)
         analytics.track(TRACK_EVENT_NAME)
         testDispatcher.scheduler.runCurrent()
-        disableSourceEnabled()
+        disableSource()
 
         coVerify(exactly = 1) {
             mockStorage.write(StorageKeys.EVENT, withArg<String> { eventString ->
@@ -515,7 +515,7 @@ class AnalyticsTest {
         }
     }
 
-    private fun disableSourceEnabled() {
+    private fun disableSource() {
         analytics.sourceConfigState.dispatch(
             SourceConfig.UpdateAction(
                 SourceConfig(
