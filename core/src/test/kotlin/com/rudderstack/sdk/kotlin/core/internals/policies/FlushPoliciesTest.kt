@@ -1,6 +1,8 @@
 package com.rudderstack.sdk.kotlin.core.internals.policies
 
 import com.rudderstack.sdk.kotlin.core.advanceTimeBy
+import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
+import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import io.mockk.coVerify
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -19,7 +21,13 @@ class FlushPoliciesTest {
 
     @BeforeEach
     fun setup() {
-        every { mockAnalytics.isSourceEnabled } returns true
+        every { mockAnalytics.sourceConfigState } returns State(
+            SourceConfig(
+                source = SourceConfig.initialState().source.copy(
+                    isSourceEnabled = true
+                )
+            )
+        )
     }
 
     @Test

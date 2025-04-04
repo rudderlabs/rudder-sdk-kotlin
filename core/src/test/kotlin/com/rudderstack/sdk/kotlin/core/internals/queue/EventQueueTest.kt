@@ -81,7 +81,13 @@ class EventQueueTest {
         coEvery { mockStorage.close() } just runs
         coEvery { mockStorage.write(StorageKeys.EVENT, any<String>()) } just runs
         every { mockAnalytics.sourceConfigState } returns State(SourceConfig.initialState())
-        every { mockAnalytics.isSourceEnabled } returns true
+        every { mockAnalytics.sourceConfigState } returns State(
+            SourceConfig(
+                source = SourceConfig.initialState().source.copy(
+                    isSourceEnabled = true
+                )
+            )
+        )
 
         eventQueue = spyk(
             EventQueue(
@@ -454,7 +460,13 @@ class EventQueueTest {
         every { eventQueue.stringifyBaseEvent(mockEvent) } returns jsonString
         // Mock the behavior for StartupFlushPolicy
         every { mockFlushPoliciesFacade.shouldFlush() } returns true
-        every { mockAnalytics.isSourceEnabled } returns true
+        every { mockAnalytics.sourceConfigState } returns State(
+            SourceConfig(
+                source = SourceConfig.initialState().source.copy(
+                    isSourceEnabled = true
+                )
+            )
+        )
 
         // Execute messageQueue actions
         eventQueue.start()
@@ -475,7 +487,13 @@ class EventQueueTest {
         every { eventQueue.stringifyBaseEvent(mockEvent) } returns jsonString
         // Mock the behavior for StartupFlushPolicy
         every { mockFlushPoliciesFacade.shouldFlush() } returns true
-        every { mockAnalytics.isSourceEnabled } returns true
+        every { mockAnalytics.sourceConfigState } returns State(
+            SourceConfig(
+                source = SourceConfig.initialState().source.copy(
+                    isSourceEnabled = true
+                )
+            )
+        )
 
         // Execute messageQueue actions
         eventQueue.start()
@@ -529,7 +547,13 @@ class EventQueueTest {
                 source = SourceConfig.initialState().source.copy(isSourceEnabled = false)
             )
         )
-        every { mockAnalytics.isSourceEnabled } returns false
+        every { mockAnalytics.sourceConfigState } returns State(
+            SourceConfig(
+                source = SourceConfig.initialState().source.copy(
+                    isSourceEnabled = false
+                )
+            )
+        )
 
         // Execute messageQueue actions
         eventQueue.start()

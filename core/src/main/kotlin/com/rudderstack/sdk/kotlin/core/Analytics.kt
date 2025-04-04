@@ -32,6 +32,7 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import com.rudderstack.sdk.kotlin.core.internals.utils.addNameAndCategoryToProperties
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import com.rudderstack.sdk.kotlin.core.internals.utils.isAnalyticsActive
+import com.rudderstack.sdk.kotlin.core.internals.utils.isSourceEnabled
 import com.rudderstack.sdk.kotlin.core.internals.utils.resolvePreferredPreviousId
 import com.rudderstack.sdk.kotlin.core.plugins.LibraryInfoPlugin
 import com.rudderstack.sdk.kotlin.core.plugins.RudderStackDataplanePlugin
@@ -74,13 +75,6 @@ open class Analytics protected constructor(
      */
     @InternalRudderApi
     val sourceConfigState = State(initialState = SourceConfig.initialState())
-
-    /**
-     * The `isSourceEnabled` property indicates whether the source is enabled in the latest fetched [SourceConfig].
-     */
-    @InternalRudderApi
-    val isSourceEnabled: Boolean
-        get() = sourceConfigState.value.source.isSourceEnabled
 
     private val processEventChannel: Channel<Event> = Channel(Channel.UNLIMITED)
     private var processEventJob: Job? = null
@@ -150,12 +144,7 @@ open class Analytics protected constructor(
      */
     @JvmOverloads
     fun track(name: String, properties: Properties = emptyJsonObject, options: RudderOption = RudderOption()) {
-        if (!isAnalyticsActive()) return
-
-        if (!isSourceEnabled) {
-            LoggerAnalytics.error("Source is disabled is dashboard. The track call will not be sent to dataPlane.")
-            return
-        }
+        if (!isAnalyticsActive() || !isSourceEnabled()) return
 
         val event = TrackEvent(
             event = name,
@@ -183,12 +172,7 @@ open class Analytics protected constructor(
         properties: Properties = emptyJsonObject,
         options: RudderOption = RudderOption()
     ) {
-        if (!isAnalyticsActive()) return
-
-        if (!isSourceEnabled) {
-            LoggerAnalytics.error("Source is disabled is dashboard. The screen call will not be sent to dataPlane.")
-            return
-        }
+        if (!isAnalyticsActive() || !isSourceEnabled()) return
 
         val updatedProperties = addNameAndCategoryToProperties(screenName, category, properties)
 
@@ -212,12 +196,7 @@ open class Analytics protected constructor(
      */
     @JvmOverloads
     fun group(groupId: String, traits: RudderTraits = emptyJsonObject, options: RudderOption = RudderOption()) {
-        if (!isAnalyticsActive()) return
-
-        if (!isSourceEnabled) {
-            LoggerAnalytics.error("Source is disabled is dashboard. The group call will not be sent to dataPlane.")
-            return
-        }
+        if (!isAnalyticsActive() || !isSourceEnabled()) return
 
         val event = GroupEvent(
             groupId = groupId,
@@ -262,13 +241,7 @@ open class Analytics protected constructor(
             )
         }
 
-        if (!isSourceEnabled) {
-            LoggerAnalytics.warn(
-                "Source is disabled in the dashboard. " +
-                    "The identify call will not be sent to dataPlane, but the userId and traits will still be updated."
-            )
-            return
-        }
+        if (!isSourceEnabled()) return
 
         val event = IdentifyEvent(
             options = options,
@@ -301,13 +274,7 @@ open class Analytics protected constructor(
             userIdentityState.value.storeUserId(storage = storage)
         }
 
-        if (!isSourceEnabled) {
-            LoggerAnalytics.warn(
-                "Source is disabled in the dashboard. " +
-                    "The alias call will not be sent to dataPlane, but the userId will still be updated."
-            )
-            return
-        }
+        if (!isSourceEnabled()) return
 
         val event = AliasEvent(
             previousId = updatedPreviousId,
@@ -323,15 +290,7 @@ open class Analytics protected constructor(
      * This method specifically targets the `RudderStackDataPlanePlugin` to initiate the flush operation.
      */
     open fun flush() {
-        if (!isAnalyticsActive()) return
-
-        if (!isSourceEnabled) {
-            LoggerAnalytics.warn(
-                "Source is disabled in the dashboard. " +
-                    "No events will be flushed to dataPlane, but the events will be flushed to integrations."
-            )
-            return
-        }
+        if (!isAnalyticsActive() || !isSourceEnabled()) return
 
         this.pluginChain.applyClosure {
             if (it is RudderStackDataplanePlugin) {

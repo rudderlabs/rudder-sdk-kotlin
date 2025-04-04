@@ -30,6 +30,7 @@ import com.rudderstack.sdk.kotlin.core.internals.platform.Platform
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.utils.isAnalyticsActive
+import com.rudderstack.sdk.kotlin.core.internals.utils.isSourceEnabled
 import com.rudderstack.sdk.kotlin.core.provideAnalyticsConfiguration
 import org.jetbrains.annotations.ApiStatus.Experimental
 
@@ -115,13 +116,8 @@ class Analytics(
 
         sessionTrackingPlugin.sessionManager.refreshSession()
 
-        if (!isSourceEnabled) {
-            LoggerAnalytics.warn(
-                "Source is disabled in the dashboard. " +
-                    "The reset call will not be forwarded to integrations."
-            )
-            return
-        }
+        if (!isSourceEnabled()) return
+
         integrationsManagementPlugin.reset()
     }
 
