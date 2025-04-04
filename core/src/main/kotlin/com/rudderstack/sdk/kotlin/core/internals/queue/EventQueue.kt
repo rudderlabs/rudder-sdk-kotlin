@@ -74,9 +74,23 @@ internal class EventQueue(
             writeChannel = Channel(UNLIMITED)
             uploadChannel = Channel(UNLIMITED)
         }
-        flushPoliciesFacade.schedule(analytics)
+        observeConfigAndUpdateSchedule()
         write()
         upload()
+    }
+
+    private fun observeConfigAndUpdateSchedule() {
+        with(analytics) {
+            analyticsScope.launch(analyticsDispatcher) {
+                sourceConfigState.collect { sourceConfig ->
+                    if (sourceConfig.source.isSourceEnabled) {
+                        flushPoliciesFacade.schedule(analytics)
+                    } else {
+                        flushPoliciesFacade.cancelSchedule()
+                    }
+                }
+            }
+        }
     }
 
     internal fun flush() {
@@ -117,7 +131,7 @@ internal class EventQueue(
                 }
             }
 
-            if (isFlushSignal || (flushPoliciesFacade.shouldFlush() && analytics.isSourceEnabled)) {
+            if (isFlushSignal || flushPoliciesFacade.shouldFlush()) {
                 uploadChannel.trySend(UPLOAD_SIG)
                 flushPoliciesFacade.reset()
             }

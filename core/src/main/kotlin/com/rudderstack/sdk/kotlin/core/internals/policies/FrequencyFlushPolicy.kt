@@ -37,9 +37,7 @@ class FrequencyFlushPolicy(private var flushIntervalInMillis: Long = DEFAULT_FLU
                 if (flushIntervalInMillis > 0) {
                     do {
                         delay(flushIntervalInMillis)
-                        if (analytics.isSourceEnabled) {
-                            analytics.flush()
-                        }
+                        analytics.flush()
                     } while (isActive)
                 }
             }
