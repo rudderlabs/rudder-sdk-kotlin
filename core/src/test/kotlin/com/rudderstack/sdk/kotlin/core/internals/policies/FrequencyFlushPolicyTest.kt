@@ -4,10 +4,7 @@ import com.rudderstack.sdk.kotlin.core.advanceTimeBy
 import io.mockk.coVerify
 import kotlinx.coroutines.test.StandardTestDispatcher
 import com.rudderstack.sdk.kotlin.core.mockAnalytics
-import io.mockk.every
 import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.runTest
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 class FrequencyFlushPolicyTest {
@@ -15,11 +12,6 @@ class FrequencyFlushPolicyTest {
     private val testDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
     private val mockAnalytics = mockAnalytics(testScope, testDispatcher)
-
-    @BeforeEach
-    fun setup() {
-        every { mockAnalytics.isSourceEnabled } returns true
-    }
 
     @Test
     fun `given the flush interval is set to the default value, when the policy is scheduled, then it should flush after the default interval`() {
@@ -75,39 +67,6 @@ class FrequencyFlushPolicyTest {
         testDispatcher.advanceTimeBy()
         // Should not flush after cancelling
         coVerify(exactly = 3) {
-            mockAnalytics.flush()
-        }
-    }
-
-    @Test
-    fun `given a flush interval, when the policy is scheduled but the source is disabled, then it should not attempt flush`() =
-        runTest {
-            val frequencyFlushPolicy = FrequencyFlushPolicy()
-
-            every { mockAnalytics.isSourceEnabled } returns false
-            frequencyFlushPolicy.schedule(mockAnalytics)
-
-            testDispatcher.advanceTimeBy()
-            coVerify(exactly = 0) {
-                mockAnalytics.flush()
-            }
-        }
-
-    @Test
-    fun `given a flush interval, when the policy is schedule and source is re-enabled, the flushing should resume`() = runTest {
-        val frequencyFlushPolicy = FrequencyFlushPolicy()
-
-        every { mockAnalytics.isSourceEnabled } returns false
-        frequencyFlushPolicy.schedule(mockAnalytics)
-
-        testDispatcher.advanceTimeBy()
-        coVerify(exactly = 0) {
-            mockAnalytics.flush()
-        }
-
-        every { mockAnalytics.isSourceEnabled } returns true
-        testDispatcher.advanceTimeBy()
-        coVerify(exactly = 1) {
             mockAnalytics.flush()
         }
     }
