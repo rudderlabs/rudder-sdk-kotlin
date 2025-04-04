@@ -1,5 +1,6 @@
 package com.rudderstack.sdk.kotlin.android.utils.network
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.Network
@@ -53,6 +54,7 @@ internal class NetworkCallbackUtils(private val context: Context) {
     }
 
     @Throws(RuntimeException::class)
+    @SuppressLint("MissingPermission") // This is to suppress the lint error for ACCESS_NETWORK_STATE permission.
     internal fun setup() {
         this.connectivityManager =
             ContextCompat.getSystemService(context, ConnectivityManager::class.java) as ConnectivityManager
