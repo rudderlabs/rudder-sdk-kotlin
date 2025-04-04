@@ -3,11 +3,13 @@ package com.rudderstack.sdk.kotlin.core.internals.queue
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.KotlinLogger
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
+import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.models.provider.provideEvent
 import com.rudderstack.sdk.kotlin.core.internals.network.ErrorStatus
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClient
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPoliciesFacade
+import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
@@ -78,6 +80,7 @@ class EventQueueTest {
 
         coEvery { mockStorage.close() } just runs
         coEvery { mockStorage.write(StorageKeys.EVENT, any<String>()) } just runs
+        every { mockAnalytics.sourceConfigState } returns State(SourceConfig.initialState())
 
         eventQueue = spyk(
             EventQueue(
@@ -208,7 +211,6 @@ class EventQueueTest {
 
         every { eventQueue.getAnonymousIdFromBatch(batchPayload1) } returns anonymousId1
         every { eventQueue.getAnonymousIdFromBatch(batchPayload2) } returns anonymousId2
-
 
         // Mock the behavior for HttpClient
         every { mockHttpClient.sendData(batchPayload1) } returns Result.Success("Ok")
@@ -521,6 +523,11 @@ class EventQueueTest {
         every { eventQueue.stringifyBaseEvent(mockEvent) } returns jsonString
         // Mock the behavior for StartupFlushPolicy
         every { mockFlushPoliciesFacade.shouldFlush() } returns true
+        every { mockAnalytics.sourceConfigState } returns State(
+            SourceConfig(
+                source = SourceConfig.initialState().source.copy(isSourceEnabled = false)
+            )
+        )
         every { mockAnalytics.isSourceEnabled } returns false
 
         // Execute messageQueue actions
@@ -555,7 +562,6 @@ class EventQueueTest {
         // Make the 30th event
         eventQueue.put(mockEvent)
         testDispatcher.scheduler.advanceUntilIdle()
-
 
         // no flush call is triggered
         coVerify(exactly = 0) {
