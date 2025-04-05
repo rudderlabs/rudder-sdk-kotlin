@@ -10,6 +10,7 @@ import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.spyk
+import io.mockk.verify
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
@@ -85,6 +86,13 @@ class NetworkInfoPluginTest {
             actual.toString(),
             true
         )
+    }
+
+    @Test
+    fun `when teardown is called, then network utils teardown is called`() = runTest {
+        networkInfoPlugin.teardown()
+
+        verify { mockNetworkUtils.teardown() }
     }
 }
 
