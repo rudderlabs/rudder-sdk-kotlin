@@ -25,6 +25,7 @@ import kotlin.coroutines.coroutineContext
 
 private const val BATCH_ENDPOINT = "/v1/batch"
 private val ANONYMOUS_ID_REGEX = """"anonymousId"\s*:\s*"([^"]+)"""".toRegex()
+private const val UPLOAD_SIG = "#!upload"
 
 /**
  * EventUpload is responsible for uploading events to the RudderStack data plane.

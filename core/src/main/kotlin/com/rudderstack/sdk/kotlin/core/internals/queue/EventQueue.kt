@@ -14,8 +14,6 @@ import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-internal const val UPLOAD_SIG = "#!upload"
-
 @OptIn(DelicateCoroutinesApi::class)
 internal class EventQueue(
     private val analytics: Analytics,
