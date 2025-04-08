@@ -13,6 +13,7 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import com.rudderstack.sdk.kotlin.core.internals.utils.encodeToBase64
 import com.rudderstack.sdk.kotlin.core.internals.utils.encodeToString
 import com.rudderstack.sdk.kotlin.core.internals.utils.generateUUID
+import com.rudderstack.sdk.kotlin.core.internals.utils.isSourceEnabled
 import com.rudderstack.sdk.kotlin.core.internals.utils.parseFilePaths
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.channels.Channel
@@ -74,9 +75,23 @@ internal class EventQueue(
             writeChannel = Channel(UNLIMITED)
             uploadChannel = Channel(UNLIMITED)
         }
-        flushPoliciesFacade.schedule(analytics)
+        observeConfigAndUpdateSchedule()
         write()
         upload()
+    }
+
+    private fun observeConfigAndUpdateSchedule() {
+        with(analytics) {
+            analyticsScope.launch(analyticsDispatcher) {
+                sourceConfigState.collect { sourceConfig ->
+                    if (sourceConfig.source.isSourceEnabled) {
+                        flushPoliciesFacade.schedule(analytics)
+                    } else {
+                        flushPoliciesFacade.cancelSchedule()
+                    }
+                }
+            }
+        }
     }
 
     internal fun flush() {
@@ -117,7 +132,7 @@ internal class EventQueue(
                 }
             }
 
-            if (isFlushSignal || flushPoliciesFacade.shouldFlush()) {
+            if ((isFlushSignal || flushPoliciesFacade.shouldFlush()) && analytics.isSourceEnabled()) {
                 uploadChannel.trySend(UPLOAD_SIG)
                 flushPoliciesFacade.reset()
             }

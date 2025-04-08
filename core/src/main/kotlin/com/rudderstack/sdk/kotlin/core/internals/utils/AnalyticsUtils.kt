@@ -14,3 +14,15 @@ fun Analytics.isAnalyticsActive(): Boolean {
     }
     return true
 }
+
+/**
+ * Checks if the source is enabled.
+ */
+@InternalRudderApi
+fun Analytics.isSourceEnabled(): Boolean {
+    if (!sourceConfigState.value.source.isSourceEnabled) {
+        LoggerAnalytics.error("Source is disabled. This operation is not allowed.")
+        return false
+    }
+    return true
+}

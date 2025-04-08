@@ -3,11 +3,13 @@ package com.rudderstack.sdk.kotlin.core.internals.queue
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.KotlinLogger
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
+import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.models.provider.provideEvent
 import com.rudderstack.sdk.kotlin.core.internals.network.ErrorStatus
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClient
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPoliciesFacade
+import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
@@ -78,6 +80,14 @@ class EventQueueTest {
 
         coEvery { mockStorage.close() } just runs
         coEvery { mockStorage.write(StorageKeys.EVENT, any<String>()) } just runs
+        every { mockAnalytics.sourceConfigState } returns State(SourceConfig.initialState())
+        every { mockAnalytics.sourceConfigState } returns State(
+            SourceConfig(
+                source = SourceConfig.initialState().source.copy(
+                    isSourceEnabled = true
+                )
+            )
+        )
 
         eventQueue = spyk(
             EventQueue(
@@ -208,7 +218,6 @@ class EventQueueTest {
 
         every { eventQueue.getAnonymousIdFromBatch(batchPayload1) } returns anonymousId1
         every { eventQueue.getAnonymousIdFromBatch(batchPayload2) } returns anonymousId2
-
 
         // Mock the behavior for HttpClient
         every { mockHttpClient.sendData(batchPayload1) } returns Result.Success("Ok")
@@ -451,6 +460,13 @@ class EventQueueTest {
         every { eventQueue.stringifyBaseEvent(mockEvent) } returns jsonString
         // Mock the behavior for StartupFlushPolicy
         every { mockFlushPoliciesFacade.shouldFlush() } returns true
+        every { mockAnalytics.sourceConfigState } returns State(
+            SourceConfig(
+                source = SourceConfig.initialState().source.copy(
+                    isSourceEnabled = true
+                )
+            )
+        )
 
         // Execute messageQueue actions
         eventQueue.start()
@@ -471,6 +487,13 @@ class EventQueueTest {
         every { eventQueue.stringifyBaseEvent(mockEvent) } returns jsonString
         // Mock the behavior for StartupFlushPolicy
         every { mockFlushPoliciesFacade.shouldFlush() } returns true
+        every { mockAnalytics.sourceConfigState } returns State(
+            SourceConfig(
+                source = SourceConfig.initialState().source.copy(
+                    isSourceEnabled = true
+                )
+            )
+        )
 
         // Execute messageQueue actions
         eventQueue.start()
@@ -506,6 +529,67 @@ class EventQueueTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         coVerify(exactly = 2) {
+            mockFlushPoliciesFacade.reset()
+            storage.rollover()
+        }
+    }
+
+    @Test
+    fun `given default flush policies are enabled but source is disabled, when events are made, the flush call is never triggered`() {
+        val storage = mockAnalytics.storage
+        val mockEvent: Event = mockk(relaxed = true)
+        val jsonString = """{"type":"track","event":"Test Event"}"""
+        every { eventQueue.stringifyBaseEvent(mockEvent) } returns jsonString
+        // Mock the behavior for StartupFlushPolicy
+        every { mockFlushPoliciesFacade.shouldFlush() } returns true
+        every { mockAnalytics.sourceConfigState } returns State(
+            SourceConfig(
+                source = SourceConfig.initialState().source.copy(isSourceEnabled = false)
+            )
+        )
+        every { mockAnalytics.sourceConfigState } returns State(
+            SourceConfig(
+                source = SourceConfig.initialState().source.copy(
+                    isSourceEnabled = false
+                )
+            )
+        )
+
+        // Execute messageQueue actions
+        eventQueue.start()
+
+        // Make the first event
+        eventQueue.put(mockEvent)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify(exactly = 0) {
+            mockFlushPoliciesFacade.reset()
+            storage.rollover()
+        }
+
+        // Mock the behavior for CountFlushPolicy
+        every { mockFlushPoliciesFacade.shouldFlush() } returns false
+
+        repeat(29) {
+            eventQueue.put(mockEvent)
+        }
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // No flush should be triggered
+        coVerify(exactly = 0) {
+            mockFlushPoliciesFacade.reset()
+            storage.rollover()
+        }
+
+        // Mock the behavior for CountFlushPolicy
+        every { mockFlushPoliciesFacade.shouldFlush() } returns true
+
+        // Make the 30th event
+        eventQueue.put(mockEvent)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // no flush call is triggered
+        coVerify(exactly = 0) {
             mockFlushPoliciesFacade.reset()
             storage.rollover()
         }

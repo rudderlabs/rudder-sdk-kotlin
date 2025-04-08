@@ -30,6 +30,7 @@ import com.rudderstack.sdk.kotlin.core.internals.platform.Platform
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.utils.isAnalyticsActive
+import com.rudderstack.sdk.kotlin.core.internals.utils.isSourceEnabled
 import com.rudderstack.sdk.kotlin.core.provideAnalyticsConfiguration
 
 private const val MIN_SESSION_ID_LENGTH = 10
@@ -110,10 +111,12 @@ class Analytics(
      */
     override fun reset() {
         if (!isAnalyticsActive()) return
-
         super.reset()
 
         sessionTrackingPlugin.sessionManager.refreshSession()
+
+        if (!isSourceEnabled()) return
+
         integrationsManagementPlugin.reset()
     }
 

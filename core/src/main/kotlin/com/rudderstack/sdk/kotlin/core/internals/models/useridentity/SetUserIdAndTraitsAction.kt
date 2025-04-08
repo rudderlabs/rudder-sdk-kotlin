@@ -1,6 +1,7 @@
 package com.rudderstack.sdk.kotlin.core.internals.models.useridentity
 
 import com.rudderstack.sdk.kotlin.core.Analytics
+import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderTraits
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
@@ -26,6 +27,8 @@ internal class SetUserIdAndTraitsAction(
         )
 
         resetValuesIfUserIdChanged(isUserIdChanged = isUserIdChanged)
+
+        LoggerAnalytics.verbose("UserId changed from ${currentState.userId} to $newUserId. Updated traits: $updatedTraits")
 
         return currentState.copy(userId = newUserId, traits = updatedTraits)
     }
