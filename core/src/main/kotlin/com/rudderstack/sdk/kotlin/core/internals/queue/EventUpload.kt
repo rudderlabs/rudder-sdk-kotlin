@@ -88,6 +88,7 @@ internal class EventUpload(
             try {
                 prepareBatch(filePath)
                     .takeIf { it.isNotEmpty() }
+                    ?.also { updateAnonymousIdHeaderIfChanged(it) }
                     ?.let { batchPayload ->
                         uploadEvents(batchPayload)
                     }?.takeIf { shouldCleanup ->
@@ -102,11 +103,10 @@ internal class EventUpload(
 
     private fun prepareBatch(filePath: String): String {
         return runCatching {
-            val batchPayload = jsonSentAtUpdater.updateSentAt(readFileAsString(filePath))
-            updateAnonymousIdHeaderIfChanged(batchPayload)
-            batchPayload
-        }.getOrElse {
-            LoggerAnalytics.error("Error when preparing batch payload. Deleting the files:", it)
+            readFileAsString(filePath)
+                .let { jsonSentAtUpdater.updateSentAt(it) }
+        }.getOrElse { exception ->
+            LoggerAnalytics.error("Error when preparing batch payload. Deleting the files:", exception)
             cleanup(filePath)
             String.empty()
         }
