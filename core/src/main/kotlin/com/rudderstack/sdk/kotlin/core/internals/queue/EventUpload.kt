@@ -2,6 +2,7 @@ package com.rudderstack.sdk.kotlin.core.internals.queue
 
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.network.ErrorStatus
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClient
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClientImpl
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
@@ -91,10 +92,8 @@ internal class EventUpload(
                     .takeIf { it.isNotEmpty() }
                     ?.also { updateAnonymousIdHeaderIfChanged(it) }
                     ?.let { batchPayload ->
-                        uploadEvents(batchPayload)
-                    }?.takeIf { shouldCleanup ->
-                        shouldCleanup
-                    }?.let { cleanup(filePath) }
+                        uploadEvents(batchPayload, filePath)
+                    }
             } catch (e: Exception) {
                 LoggerAnalytics.error("Error when uploading event", e)
                 cleanup(filePath)
@@ -129,21 +128,50 @@ internal class EventUpload(
         }
     }
 
-    private fun uploadEvents(batchPayload: String): Boolean {
-        var shouldCleanup = false
-
+    private fun uploadEvents(batchPayload: String, filePath: String) {
         LoggerAnalytics.debug("Batch Payload: $batchPayload")
         when (val result: Result<String, Exception> = httpClientFactory.sendData(batchPayload)) {
             is Result.Success -> {
                 LoggerAnalytics.debug("Event uploaded successfully. Server response: ${result.response}")
-                shouldCleanup = true
+                cleanup(filePath)
             }
 
             is Result.Failure -> {
                 LoggerAnalytics.debug("Error when uploading event due to ${result.status} ${result.error}")
+                result.status?.let { handleFailure(it, filePath) }
             }
         }
-        return shouldCleanup
+    }
+
+    @VisibleForTesting
+    internal fun handleFailure(status: ErrorStatus, filePath: String) {
+        // TODO: Implement the step to reset the backoff logic
+        when (status) {
+            ErrorStatus.ERROR_400 -> {
+                // TODO: Log the error
+                cleanup(filePath)
+            }
+
+            ErrorStatus.ERROR_401 -> {
+                // TODO: Log the error
+                // TODO: Delete all the files related to this writeKey
+                analytics.shutdown()
+            }
+
+            ErrorStatus.ERROR_404 -> {
+                // TODO: Log the error
+                // TODO: Update source config state to disabled.
+            }
+
+            ErrorStatus.ERROR_413 -> {
+                // TODO: Log the error
+                cleanup(filePath)
+            }
+
+            ErrorStatus.ERROR_RETRY -> {
+                // TODO: Add exponential backoff
+            }
+        }
     }
 
     private fun cleanup(filePath: String) {
