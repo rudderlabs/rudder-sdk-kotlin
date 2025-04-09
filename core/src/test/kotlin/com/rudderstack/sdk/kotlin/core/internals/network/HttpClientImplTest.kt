@@ -127,7 +127,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            ErrorStatus.ERROR_429,
+            ErrorStatus.ERROR_RETRY,
             IOException(provideErrorMessage(429, mockConnection))
         )
     }
@@ -231,7 +231,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            ErrorStatus.ERROR_429,
+            ErrorStatus.ERROR_RETRY,
             IOException(provideErrorMessage(429, mockConnection))
         )
     }
