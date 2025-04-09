@@ -4,7 +4,6 @@ private const val BAD_REQUEST_CODE = 400
 private const val UNAUTHORIZED_CODE = 401
 private const val RESOURCE_NOT_FOUND_CODE = 404
 private const val PAYLOAD_TOO_LARGE_CODE = 413
-private const val TOO_MANY_REQUESTS_CODE = 429
 
 /**
  * Enum class representing various error statuses that can occur during an operation.
@@ -35,11 +34,6 @@ enum class ErrorStatus {
     ERROR_413,
 
     /**
-     * Indicates that the rate limit has been exceeded, typically associated with HTTP status code 429.
-     */
-    ERROR_429,
-
-    /**
      * Indicates a retry able error, typically associated with HTTP status code 4xx-5xx, excluding other error listed above.
      */
     ERROR_RETRY;
@@ -59,7 +53,6 @@ enum class ErrorStatus {
             UNAUTHORIZED_CODE -> ERROR_401
             RESOURCE_NOT_FOUND_CODE -> ERROR_404
             PAYLOAD_TOO_LARGE_CODE -> ERROR_413
-            TOO_MANY_REQUESTS_CODE -> ERROR_429
             else -> ERROR_RETRY
         }
     }
