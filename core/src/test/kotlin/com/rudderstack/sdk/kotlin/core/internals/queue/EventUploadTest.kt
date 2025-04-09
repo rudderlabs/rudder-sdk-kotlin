@@ -8,11 +8,13 @@ import com.rudderstack.sdk.kotlin.core.internals.network.HttpClient
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
+import com.rudderstack.sdk.kotlin.core.internals.utils.DateTimeUtils
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import com.rudderstack.sdk.kotlin.core.internals.utils.encodeToBase64
 import com.rudderstack.sdk.kotlin.core.internals.utils.generateUUID
 import com.rudderstack.sdk.kotlin.core.mockAnalytics
+import com.rudderstack.sdk.kotlin.core.readFileTrimmed
 import com.rudderstack.sdk.kotlin.core.setupLogger
 import io.mockk.MockKAnnotations
 import io.mockk.coEvery
@@ -20,6 +22,7 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.just
+import io.mockk.mockkObject
 import io.mockk.mockkStatic
 import io.mockk.runs
 import io.mockk.spyk
@@ -40,6 +43,11 @@ private const val batchPayload1 = "test content 1"
 private const val batchPayload2 = "test content 2"
 private const val anonymousId1 = "anonymousId1"
 private const val anonymousId2 = "anonymousId2"
+
+private const val mockCurrentTime = "<original-timestamp>"
+private const val unprocessedBatchWithTwoEvents = "message/batch/unprocessed_batch_with_two_events.json"
+private const val processedBatchWithTwoEvents = "message/batch/processed_batch_with_two_events.json"
+
 class EventUploadTest {
     // Two batch files are ready to be sent
     private val filePaths = listOf(
@@ -83,6 +91,9 @@ class EventUploadTest {
 
         mockkStatic(::readFileAsString, ::doesFileExist)
 
+        mockkObject(DateTimeUtils)
+        every { DateTimeUtils.now() } returns mockCurrentTime
+
         eventUpload = spyk(
             EventUpload(
                 analytics = mockAnalytics,
@@ -106,19 +117,24 @@ class EventUploadTest {
     @Test
     fun `given multiple batch is ready to be sent to the server and server returns success, when flush is called, then all the batches are sent to the server and removed from the storage`() =
         runTest {
+            val unprocessedBatch = readFileTrimmed(unprocessedBatchWithTwoEvents)
+            val processedBatch = readFileTrimmed(processedBatchWithTwoEvents)
             prepareMultipleBatch()
             // Mock messageQueue file reading
             filePaths.forEach { path ->
-                every { readFileAsString(path) } returns batchPayload
+                every { readFileAsString(path) } returns unprocessedBatch
             }
             // Mock the behavior for HttpClient
-            every { mockHttpClient.sendData(batchPayload) } returns Result.Success("Ok")
+            every { mockHttpClient.sendData(any()) } returns Result.Success("Ok")
 
             processMessage()
 
             // Verify the expected behavior
             filePaths.forEach { path ->
                 verify(exactly = 1) { mockStorage.remove(path) }
+            }
+            verify(exactly = 2) {
+                mockHttpClient.sendData(processedBatch)
             }
         }
 
