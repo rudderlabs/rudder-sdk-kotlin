@@ -33,10 +33,20 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
-import java.io.FileNotFoundException
 import java.io.IOException
 
+private const val batchPayload = "test content"
+private const val batchPayload1 = "test content 1"
+private const val batchPayload2 = "test content 2"
+private const val anonymousId1 = "anonymousId1"
+private const val anonymousId2 = "anonymousId2"
 class EventUploadTest {
+    // Two batch files are ready to be sent
+    private val filePaths = listOf(
+        "/data/user/0/com.rudderstack.android.sampleapp/app_rudder-android-store/<WRITE_KEY>-0",
+        "/data/user/0/com.rudderstack.android.sampleapp/app_rudder-android-store/<WRITE_KEY>-1"
+    )
+
     @MockK
     private lateinit var mockStorage: Storage
 
@@ -96,77 +106,34 @@ class EventUploadTest {
     @Test
     fun `given multiple batch is ready to be sent to the server and server returns success, when flush is called, then all the batches are sent to the server and removed from the storage`() =
         runTest {
-            val storage = mockAnalytics.storage
-            // Two batch files are ready to be sent
-            val filePaths = listOf(
-                "/data/user/0/com.rudderstack.android.sampleapp/app_rudder-android-store/<WRITE_KEY>-0",
-                "/data/user/0/com.rudderstack.android.sampleapp/app_rudder-android-store/<WRITE_KEY>-1"
-            )
-            val fileUrlList = filePaths.joinToString(",")
-
-            // Mock storage read
-            coEvery {
-                storage.readString(StorageKeys.EVENT, String.empty())
-            } returns fileUrlList
-
-            // Mock file existence check
-            every { doesFileExist(any()) } returns true
-
-            val batchPayload = "test content"
-
+            prepareMultipleBatch()
             // Mock messageQueue file reading
             filePaths.forEach { path ->
                 every { readFileAsString(path) } returns batchPayload
             }
-
             // Mock the behavior for HttpClient
             every { mockHttpClient.sendData(batchPayload) } returns Result.Success("Ok")
 
-            // Execute messageQueue actions
-            eventUpload.start()
-            eventUpload.flush()
-            testDispatcher.scheduler.advanceUntilIdle()
+            processMessage()
 
             // Verify the expected behavior
             filePaths.forEach { path ->
-                verify(exactly = 1) { storage.remove(path) }
+                verify(exactly = 1) { mockStorage.remove(path) }
             }
         }
 
     @Test
     fun `given batches of events with different anonymousIds, when they are uploaded, then header is updated for each batch with different anonymousId`() {
-        val storage = mockAnalytics.storage
-
-        val filePaths = listOf(
-            "/data/user/0/com.rudderstack.android.sampleapp/app_rudder-android-store/<WRITE_KEY>-0",
-            "/data/user/0/com.rudderstack.android.sampleapp/app_rudder-android-store/<WRITE_KEY>-1"
-        )
-        val fileUrlList = filePaths.joinToString(",")
-
-        val batchPayload1 = "test content 1"
-        val batchPayload2 = "test content 2"
-        val anonymousId1 = "anonymousId1"
-        val anonymousId2 = "anonymousId2"
-
-        coEvery {
-            storage.readString(StorageKeys.EVENT, String.empty())
-        } returns fileUrlList
-        every { doesFileExist(any()) } returns true
+        prepareMultipleBatch()
         every { readFileAsString(filePaths[0]) } returns batchPayload1
         every { readFileAsString(filePaths[1]) } returns batchPayload2
-
         every { eventUpload.getAnonymousIdFromBatch(batchPayload1) } returns anonymousId1
         every { eventUpload.getAnonymousIdFromBatch(batchPayload2) } returns anonymousId2
-
         // Mock the behavior for HttpClient
         every { mockHttpClient.sendData(batchPayload1) } returns Result.Success("Ok")
         every { mockHttpClient.sendData(batchPayload2) } returns Result.Success("Ok")
 
-        // Execute messageQueue actions
-        eventUpload.start()
-        eventUpload.flush()
-
-        testDispatcher.scheduler.advanceUntilIdle()
+        processMessage()
 
         coVerify(exactly = 1) {
             mockHttpClient.updateAnonymousIdHeaderString(anonymousId1.encodeToBase64())
@@ -180,15 +147,13 @@ class EventUploadTest {
         batchPayload: String,
         anonymousIdFromBatch: String
     ) = runTest(testDispatcher) {
-        val storage = mockAnalytics.storage
-
         val filePaths = listOf(
             "/data/user/0/com.rudderstack.android.sampleapp/app_rudder-android-store/<WRITE_KEY>-0"
         )
         val fileUrlList = filePaths.joinToString(",")
 
         coEvery {
-            storage.readString(StorageKeys.EVENT, String.empty())
+            mockStorage.readString(StorageKeys.EVENT, String.empty())
         } returns fileUrlList
         every { doesFileExist(any()) } returns true
         every { readFileAsString(filePaths[0]) } returns batchPayload
@@ -200,10 +165,7 @@ class EventUploadTest {
         mockkStatic(::generateUUID)
         every { generateUUID() } returns randomUUID
 
-        // Execute messageQueue actions
-        eventUpload.start()
-        eventUpload.flush()
-        testDispatcher.scheduler.advanceUntilIdle()
+        processMessage()
 
         val encodedAnonymousId = anonymousIdFromBatch.encodeToBase64()
         coVerify(atLeast = 1) {
@@ -213,112 +175,57 @@ class EventUploadTest {
 
     @Test
     fun `given batch is ready to be sent to the server and server returns error, when flush is called, then the batch is not removed from storage`() {
-        val storage = mockAnalytics.storage
-        // Two batch files are ready to be sent
-        val filePaths = listOf(
-            "/data/user/0/com.rudderstack.android.sampleapp/app_rudder-android-store/<WRITE_KEY>-0",
-            "/data/user/0/com.rudderstack.android.sampleapp/app_rudder-android-store/<WRITE_KEY>-1"
-        )
-        val fileUrlList = filePaths.joinToString(",")
-
-        // Mock storage read
-        coEvery {
-            storage.readString(StorageKeys.EVENT, String.empty())
-        } returns fileUrlList
-
-        // Mock file existence check
-        every { doesFileExist(any()) } returns true
-
-        val batchPayload = "test content"
-
+        prepareMultipleBatch()
         // Mock messageQueue file reading
         filePaths.forEach { path ->
             every { readFileAsString(path) } returns batchPayload
         }
-
         // Mock the behavior for HttpClient
         every { mockHttpClient.sendData(batchPayload) } returns Result.Failure(
             ErrorStatus.GENERAL_ERROR,
             IOException("Internal Server Error")
         )
 
-        // Execute messageQueue actions
-        eventUpload.start()
-        eventUpload.flush()
-        testDispatcher.scheduler.advanceUntilIdle()
+        processMessage()
 
         // Verify the expected behavior
         filePaths.forEach { path ->
-            verify(exactly = 0) { storage.remove(path) }
+            verify(exactly = 0) { mockStorage.remove(path) }
         }
     }
 
     @Test
-    fun `given batch is ready to be sent to the server and some exception occurs while reading the file, when flush is called, then the exception is thrown and handled`() {
-        val storage = mockAnalytics.storage
-        // Two batch files are ready to be sent
-        val filePaths = listOf(
-            "/data/user/0/com.rudderstack.android.sampleapp/app_rudder-android-store/<WRITE_KEY>-0",
-            "/data/user/0/com.rudderstack.android.sampleapp/app_rudder-android-store/<WRITE_KEY>-1"
-        )
-        val fileUrlList = filePaths.joinToString(",")
-
-        // Mock storage read
-        coEvery {
-            storage.readString(StorageKeys.EVENT, String.empty())
-        } returns fileUrlList
-
-        // Mock file existence check
-        every { doesFileExist(any()) } returns true
-
-        // Throw generic exception while reading the file
+    fun `given batch is ready to be sent to the server and some exception occurs while reading the file, when flush is called, then the exception handled and file gets removed from the storage`() {
+        prepareMultipleBatch()
         val exception = Exception("File not found")
         filePaths.forEach { path ->
             every { readFileAsString(path) } throws exception
         }
 
-        // Execute messageQueue actions
-        eventUpload.start()
-        eventUpload.flush()
-        testDispatcher.scheduler.advanceUntilIdle()
+        processMessage()
 
-        verify(exactly = filePaths.size) {
-            mockKotlinLogger.error("Error when uploading event", exception)
+        filePaths.forEach { path ->
+            verify(exactly = 1) { mockStorage.remove(path) }
         }
     }
 
-    @Test
-    fun `given batch is ready to be sent to the server and file is not found, when flush is called, then the exception is thrown and handled`() {
-        val storage = mockAnalytics.storage
-        // Two batch files are ready to be sent
-        val filePaths = listOf(
-            "/data/user/0/com.rudderstack.android.sampleapp/app_rudder-android-store/<WRITE_KEY>-0",
-            "/data/user/0/com.rudderstack.android.sampleapp/app_rudder-android-store/<WRITE_KEY>-1"
-        )
+    private fun prepareMultipleBatch() {
         val fileUrlList = filePaths.joinToString(",")
 
         // Mock storage read
         coEvery {
-            storage.readString(StorageKeys.EVENT, String.empty())
+            mockStorage.readString(StorageKeys.EVENT, String.empty())
         } returns fileUrlList
 
         // Mock file existence check
         every { doesFileExist(any()) } returns true
+    }
 
-        // Throw file not found exception while reading the file
-        val exception = FileNotFoundException("File not found")
-        filePaths.forEach { path ->
-            every { readFileAsString(path) } throws exception
-        }
-
+    private fun processMessage() {
         // Execute messageQueue actions
         eventUpload.start()
         eventUpload.flush()
         testDispatcher.scheduler.advanceUntilIdle()
-
-        verify(exactly = filePaths.size) {
-            mockKotlinLogger.error("Message storage file not found", exception)
-        }
     }
 
     companion object {
