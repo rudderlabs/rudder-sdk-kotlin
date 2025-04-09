@@ -26,10 +26,12 @@ import io.mockk.mockkObject
 import io.mockk.mockkStatic
 import io.mockk.runs
 import io.mockk.spyk
+import io.mockk.unmockkObject
 import io.mockk.verify
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -100,6 +102,11 @@ class EventUploadTest {
                 httpClientFactory = mockHttpClient,
             )
         )
+    }
+
+    @AfterEach
+    fun tearDown() {
+        unmockkObject(DateTimeUtils)
     }
 
     @Test
@@ -198,7 +205,7 @@ class EventUploadTest {
         }
         // Mock the behavior for HttpClient
         every { mockHttpClient.sendData(batchPayload) } returns Result.Failure(
-            ErrorStatus.GENERAL_ERROR,
+            ErrorStatus.ERROR_RETRY,
             IOException("Internal Server Error")
         )
 

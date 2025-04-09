@@ -78,6 +78,7 @@ internal class EventUpload(
         }
     }
 
+    @Suppress("TooGenericExceptionCaught")
     private suspend fun processAndUploadEvent() {
         val fileUrlList = storage.readString(StorageKeys.EVENT, String.empty()).parseFilePaths()
         for (filePath in fileUrlList) {
