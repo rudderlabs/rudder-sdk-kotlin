@@ -188,7 +188,7 @@ internal class HttpClientImpl private constructor(
             connect()
             constructResponse()
         } catch (e: Exception) {
-            Result.Failure(status = ErrorStatus.GENERAL_ERROR, error = e)
+            Result.Failure(status = toErrorStatus(responseCode), error = e)
         } finally {
             disconnect()
         }

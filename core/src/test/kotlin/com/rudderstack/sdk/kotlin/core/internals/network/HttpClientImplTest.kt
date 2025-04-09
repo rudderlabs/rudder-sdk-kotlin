@@ -77,7 +77,7 @@ class HttpClientImplTest {
 
         val result = getHttpClient.getData()
 
-        assertFailure(result, ErrorStatus.GENERAL_ERROR, exception)
+        assertFailure(result, ErrorStatus.ERROR_RETRY, exception)
     }
 
     @Test
@@ -88,7 +88,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            ErrorStatus.BAD_REQUEST,
+            ErrorStatus.ERROR_400,
             IOException(provideErrorMessage(400, mockConnection))
         )
     }
@@ -101,7 +101,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            ErrorStatus.RESOURCE_NOT_FOUND,
+            ErrorStatus.ERROR_404,
             IOException(provideErrorMessage(404, mockConnection))
         )
     }
@@ -114,7 +114,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            ErrorStatus.SERVER_ERROR,
+            ErrorStatus.ERROR_RETRY,
             IOException(provideErrorMessage(500, mockConnection))
         )
     }
@@ -127,7 +127,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            ErrorStatus.TOO_MANY_REQUESTS,
+            ErrorStatus.ERROR_429,
             IOException(provideErrorMessage(429, mockConnection))
         )
     }
@@ -140,7 +140,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            ErrorStatus.GENERAL_ERROR,
+            ErrorStatus.ERROR_RETRY,
             IOException(provideErrorMessage(450, mockConnection))
         )
     }
@@ -164,7 +164,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            ErrorStatus.INVALID_WRITE_KEY,
+            ErrorStatus.ERROR_401,
             IOException(provideErrorMessage(401, mockConnection))
         )
     }
@@ -194,7 +194,7 @@ class HttpClientImplTest {
 
         val result = postHttpClient.sendData(REQUEST_BODY)
 
-        assertFailure(result, ErrorStatus.GENERAL_ERROR, exception)
+        assertFailure(result, ErrorStatus.ERROR_RETRY, exception)
     }
 
     @Test
@@ -205,7 +205,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            ErrorStatus.BAD_REQUEST,
+            ErrorStatus.ERROR_400,
             IOException(provideErrorMessage(400, mockConnection))
         )
     }
@@ -218,7 +218,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            ErrorStatus.RESOURCE_NOT_FOUND,
+            ErrorStatus.ERROR_404,
             IOException(provideErrorMessage(404, mockConnection))
         )
     }
@@ -231,7 +231,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            ErrorStatus.TOO_MANY_REQUESTS,
+            ErrorStatus.ERROR_429,
             IOException(provideErrorMessage(429, mockConnection))
         )
     }
@@ -244,7 +244,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            ErrorStatus.GENERAL_ERROR,
+            ErrorStatus.ERROR_RETRY,
             IOException(provideErrorMessage(450, mockConnection))
         )
     }
@@ -257,7 +257,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            ErrorStatus.SERVER_ERROR,
+            ErrorStatus.ERROR_RETRY,
             IOException(provideErrorMessage(500, mockConnection))
         )
     }
@@ -281,7 +281,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            ErrorStatus.INVALID_WRITE_KEY,
+            ErrorStatus.ERROR_401,
             IOException(provideErrorMessage(401, mockConnection))
         )
     }
