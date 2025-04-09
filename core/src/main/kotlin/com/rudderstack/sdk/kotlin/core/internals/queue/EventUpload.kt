@@ -20,7 +20,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.annotations.VisibleForTesting
 import java.io.File
-import java.io.FileNotFoundException
 import kotlin.coroutines.coroutineContext
 
 private const val BATCH_ENDPOINT = "/v1/batch"
@@ -82,42 +81,35 @@ internal class EventUpload(
     private suspend fun processAndUploadEvent() {
         val fileUrlList = storage.readString(StorageKeys.EVENT, String.empty()).parseFilePaths()
         for (filePath in fileUrlList) {
-            val file = File(filePath)
-            if (!doesFileExist(file)) continue
+            if (!doesFileExist(filePath)) continue
             // ensureActive is at this position so that this coroutine can be cancelled - but any uploaded event MUST be cleared from storage.
             coroutineContext.ensureActive()
-            var shouldCleanup = false
+
             try {
-                shouldCleanup = uploadEvents(filePath)
-            } catch (e: FileNotFoundException) {
-                LoggerAnalytics.error("Message storage file not found", e)
+                prepareBatch(filePath)
+                    .takeIf { it.isNotEmpty() }
+                    ?.let { batchPayload ->
+                        uploadEvents(batchPayload)
+                    }?.takeIf { shouldCleanup ->
+                        shouldCleanup
+                    }?.let { cleanup(filePath) }
             } catch (e: Exception) {
                 LoggerAnalytics.error("Error when uploading event", e)
-            }
-
-            if (shouldCleanup) {
-                cleanup(file, filePath)
+                cleanup(filePath)
             }
         }
     }
 
-    private fun uploadEvents(filePath: String): Boolean {
-        var shouldCleanup = false
-        val batchPayload = jsonSentAtUpdater.updateSentAt(readFileAsString(filePath))
-
-        updateAnonymousIdHeaderIfChanged(batchPayload)
-        LoggerAnalytics.debug("Batch Payload: $batchPayload")
-        when (val result: Result<String, Exception> = httpClientFactory.sendData(batchPayload)) {
-            is Result.Success -> {
-                LoggerAnalytics.debug("Event uploaded successfully. Server response: ${result.response}")
-                shouldCleanup = true
-            }
-
-            is Result.Failure -> {
-                LoggerAnalytics.debug("Error when uploading event due to ${result.status} ${result.error}")
-            }
+    private fun prepareBatch(filePath: String): String {
+        return runCatching {
+            val batchPayload = jsonSentAtUpdater.updateSentAt(readFileAsString(filePath))
+            updateAnonymousIdHeaderIfChanged(batchPayload)
+            batchPayload
+        }.getOrElse {
+            LoggerAnalytics.error("Error when preparing batch payload. Deleting the files:", it)
+            cleanup(filePath)
+            String.empty()
         }
-        return shouldCleanup
     }
 
     private fun updateAnonymousIdHeaderIfChanged(batchPayload: String) {
@@ -136,10 +128,28 @@ internal class EventUpload(
         }
     }
 
-    private fun cleanup(file: File, filePath: String) {
-        storage.remove(file.path).let {
-            LoggerAnalytics.debug("Removed file: $filePath")
+    private fun uploadEvents(batchPayload: String): Boolean {
+        var shouldCleanup = false
+
+        LoggerAnalytics.debug("Batch Payload: $batchPayload")
+        when (val result: Result<String, Exception> = httpClientFactory.sendData(batchPayload)) {
+            is Result.Success -> {
+                LoggerAnalytics.debug("Event uploaded successfully. Server response: ${result.response}")
+                shouldCleanup = true
+            }
+
+            is Result.Failure -> {
+                LoggerAnalytics.debug("Error when uploading event due to ${result.status} ${result.error}")
+            }
         }
+        return shouldCleanup
+    }
+
+    private fun cleanup(filePath: String) {
+        filePath
+            .takeIf { it.isNotEmpty() }
+            ?.let { storage.remove(it) }
+            ?.let { LoggerAnalytics.debug("Removed file: $it") }
     }
 
     internal fun cancel() {
@@ -148,7 +158,10 @@ internal class EventUpload(
 }
 
 @VisibleForTesting
-internal fun doesFileExist(file: File) = file.exists()
+internal fun doesFileExist(filePath: String): Boolean {
+    val file = File(filePath)
+    return file.exists()
+}
 
 @VisibleForTesting
 internal fun readFileAsString(filePath: String): String {
