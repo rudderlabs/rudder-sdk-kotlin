@@ -51,11 +51,13 @@ private const val unprocessedBatchWithTwoEvents = "message/batch/unprocessed_bat
 private const val processedBatchWithTwoEvents = "message/batch/processed_batch_with_two_events.json"
 
 class EventUploadTest {
+
     // Two batch files are ready to be sent
     private val filePaths = listOf(
         "/data/user/0/com.rudderstack.android.sampleapp/app_rudder-android-store/<WRITE_KEY>-0",
         "/data/user/0/com.rudderstack.android.sampleapp/app_rudder-android-store/<WRITE_KEY>-1"
     )
+    private val singleFilePath = filePaths[0]
 
     @MockK
     private lateinit var mockStorage: Storage
@@ -232,6 +234,25 @@ class EventUploadTest {
         }
     }
 
+    @ParameterizedTest
+    @MethodSource("droppableHandlingProvider")
+    fun `given server returns droppable error, when flush is called, then the batch is removed from storage`(
+        errorStatus: ErrorStatus,
+    ) = runTest {
+        val unprocessedBatch = readFileTrimmed(unprocessedBatchWithTwoEvents)
+        every { mockStorage.readString(StorageKeys.EVENT, String.empty()) } returns singleFilePath
+        every { doesFileExist(singleFilePath) } returns true
+        every { readFileAsString(singleFilePath) } returns unprocessedBatch
+        every { mockHttpClient.sendData(any()) } returns Result.Failure(
+            status = errorStatus,
+            error = IOException("Error response")
+        )
+
+        processMessage()
+
+        verify(exactly = 1) { mockStorage.remove(singleFilePath) }
+    }
+
     private fun prepareMultipleBatch() {
         val fileUrlList = filePaths.joinToString(",")
 
@@ -271,6 +292,12 @@ class EventUploadTest {
                 """{"userId": "12345", "event": "test"}""",
                 "some_random_id"
             )
+        )
+
+        @JvmStatic
+        fun droppableHandlingProvider() = listOf(
+            Arguments.of(ErrorStatus.ERROR_400, true),
+            Arguments.of(ErrorStatus.ERROR_413, true),
         )
     }
 }
