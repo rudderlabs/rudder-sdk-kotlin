@@ -39,12 +39,12 @@ enum class ErrorStatus {
     ERROR_RETRY,
 
     /**
-     * Indicates a network unavailable error.
+     * Indicates a retry able error, typically happens when the network is unavailable.
      */
     ERROR_NETWORK_UNAVAILABLE,
 
     /**
-     * Indicates that some unknown error occurred when connecting to the server.
+     * Indicates a fatal error, typically associated with some exception or failure that cannot be retried.
      */
     ERROR_UNKNOWN;
 
