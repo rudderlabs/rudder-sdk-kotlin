@@ -29,7 +29,7 @@ enum class ErrorStatus {
     ERROR_404,
 
     /**
-     * Indicates that the request entity is too large, typically associated with HTTP status code 413.
+     * Indicates that the request payload is too large, typically associated with HTTP status code 413.
      */
     ERROR_413,
 
