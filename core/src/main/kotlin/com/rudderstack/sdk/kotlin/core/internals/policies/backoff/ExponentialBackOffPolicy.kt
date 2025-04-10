@@ -3,13 +3,13 @@ package com.rudderstack.sdk.kotlin.core.internals.policies.backoff
 import java.security.SecureRandom
 import kotlin.math.pow
 
-private const val MIN_INTERVAL = 10L
-private const val MAX_INTERVAL = 60_000L
-private const val DEFAULT_INTERVAL = 3000L
+internal const val MIN_INTERVAL = 10L
+internal const val MAX_INTERVAL = 60_000L
+internal const val DEFAULT_INTERVAL = 3000L
 
-private const val MIN_BASE = 1.1
-private const val MAX_BASE = 5.0
-private const val DEFAULT_BASE = 2.0
+internal const val MIN_BASE = 1.1
+internal const val MAX_BASE = 5.0
+internal const val DEFAULT_BASE = 2.0
 
 /**
  * This class implements an exponential backoff strategy with jitter for handling retries.
