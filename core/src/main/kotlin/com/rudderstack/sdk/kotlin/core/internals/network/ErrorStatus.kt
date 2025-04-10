@@ -36,9 +36,20 @@ enum class ErrorStatus {
     /**
      * Indicates a retry able error, typically associated with HTTP status code 4xx-5xx, excluding other error listed above.
      */
-    ERROR_RETRY;
+    ERROR_RETRY,
+
+    /**
+     * Indicates a network unavailable error.
+     */
+    ERROR_NETWORK_UNAVAILABLE,
+
+    /**
+     * Indicates that some unknown error occurred when connecting to the server.
+     */
+    ERROR_UNKNOWN;
 
     companion object {
+
         /**
          * Converts an HTTP status code to a corresponding `ErrorStatus` enum value.
          *

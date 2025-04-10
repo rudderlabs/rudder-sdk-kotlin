@@ -4,6 +4,7 @@ import com.rudderstack.sdk.kotlin.core.internals.network.ErrorStatus.Companion.t
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import com.rudderstack.sdk.kotlin.core.internals.utils.validatedBaseUrl
 import java.io.IOException
+import java.net.ConnectException
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.Locale
@@ -49,6 +50,7 @@ internal class HttpClientImpl private constructor(
 ) : HttpClient {
 
     companion object {
+
         /**
          * Creates a new instance of `HttpClientImpl` configured for making HTTP GET requests.
          *
@@ -188,7 +190,22 @@ internal class HttpClientImpl private constructor(
             connect()
             constructResponse()
         } catch (e: Exception) {
-            Result.Failure(status = toErrorStatus(responseCode), error = e)
+            when (e) {
+                is ConnectException,
+                is java.net.UnknownHostException,
+                is java.net.NoRouteToHostException,
+                is java.net.SocketTimeoutException -> {
+                    Result.Failure(status = ErrorStatus.ERROR_NETWORK_UNAVAILABLE, error = e)
+                }
+
+                is IOException -> {
+                    Result.Failure(status = ErrorStatus.ERROR_RETRY, error = e)
+                }
+
+                else -> {
+                    Result.Failure(status = ErrorStatus.ERROR_UNKNOWN, error = e)
+                }
+            }
         } finally {
             disconnect()
         }
@@ -226,6 +243,7 @@ internal class HttpClientImpl private constructor(
  * Provides default settings such as connection timeout and read timeout.
  */
 internal class DefaultHttpURLConnectionFactory : HttpURLConnectionFactory {
+
     override fun createConnection(url: URL, headers: Map<String, String>): HttpURLConnection {
         val connection = url.openConnection() as HttpURLConnection
         return connection.apply {
