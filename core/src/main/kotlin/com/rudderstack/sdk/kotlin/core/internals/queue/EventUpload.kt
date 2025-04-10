@@ -19,9 +19,6 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.ensureActive
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.annotations.VisibleForTesting
@@ -56,25 +53,6 @@ internal class EventUpload(
     // This job is required to mainly stop the upload process when the source is disabled.
     // The type is null to clear the job reference when the source is disabled.
     private var uploadJob: Job? = null
-
-    init {
-        observeConfigAndUpdateSchedule()
-    }
-
-    private fun observeConfigAndUpdateSchedule() {
-        with(analytics) {
-            analyticsScope.launch(analyticsDispatcher) {
-                sourceConfigState
-                    .map { it.source.isSourceEnabled }
-                    .distinctUntilChanged()
-                    .filter { isEnabled -> isEnabled } // Only emit when true
-                    .collect {
-                        LoggerAnalytics.debug("Source enabled, starting event upload")
-                        start()
-                    }
-            }
-        }
-    }
 
     internal fun start() {
         resetUploadChannel()
