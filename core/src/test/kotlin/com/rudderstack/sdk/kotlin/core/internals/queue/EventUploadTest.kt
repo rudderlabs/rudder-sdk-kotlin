@@ -207,7 +207,7 @@ class EventUploadTest {
         }
         // Mock the behavior for HttpClient
         every { mockHttpClient.sendData(batchPayload) } returns Result.Failure(
-            ErrorStatus.ERROR_RETRY,
+            ErrorStatus.ERROR_UNKNOWN,
             IOException("Internal Server Error")
         )
 
