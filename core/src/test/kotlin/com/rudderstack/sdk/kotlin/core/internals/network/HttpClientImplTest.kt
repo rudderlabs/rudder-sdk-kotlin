@@ -17,6 +17,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.io.IOException
+import java.net.ConnectException
 import java.net.HttpURLConnection
 import java.net.MalformedURLException
 import java.net.UnknownHostException
@@ -77,7 +78,7 @@ class HttpClientImplTest {
 
         val result = getHttpClient.getData()
 
-        assertFailure(result, ErrorStatus.ERROR_RETRY, exception)
+        assertFailure(result, ErrorStatus.ERROR_NETWORK_UNAVAILABLE, exception)
     }
 
     @Test
@@ -289,6 +290,48 @@ class HttpClientImplTest {
     @Test
     fun `when two different instances of HttpClient are created for get and post requests, then they should not be equal`() {
         assertNotEquals(getHttpClient, postHttpClient)
+    }
+
+    @Test
+    fun `given network is unavailable, when sendData is called, then return network unavailable error`() {
+        // This is to simulate a network error.
+        every { mockConnection.connect() } throws ConnectException()
+
+        val result = postHttpClient.sendData(REQUEST_BODY)
+
+        assertFailure(
+            result,
+            ErrorStatus.ERROR_NETWORK_UNAVAILABLE,
+            ConnectException()
+        )
+    }
+
+    @Test
+    fun `given IO exception is thrown, when sendData is called, then return retry able error`() {
+        // This is to simulate a network error.
+        every { mockConnection.connect() } throws IOException()
+
+        val result = postHttpClient.sendData(REQUEST_BODY)
+
+        assertFailure(
+            result,
+            ErrorStatus.ERROR_RETRY,
+            IOException()
+        )
+    }
+
+    @Test
+    fun `given any unknown exception is thrown, when sendData is called, then return unknown exception`() {
+        // This is to simulate a network error.
+        every { mockConnection.connect() } throws Exception()
+
+        val result = postHttpClient.sendData(REQUEST_BODY)
+
+        assertFailure(
+            result,
+            ErrorStatus.ERROR_UNKNOWN,
+            Exception()
+        )
     }
 
     private fun assertSuccess(result: Result<String, Exception>) {

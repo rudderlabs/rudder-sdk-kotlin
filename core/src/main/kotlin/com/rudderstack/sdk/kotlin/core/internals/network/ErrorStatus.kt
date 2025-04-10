@@ -29,16 +29,27 @@ enum class ErrorStatus {
     ERROR_404,
 
     /**
-     * Indicates that the request entity is too large, typically associated with HTTP status code 413.
+     * Indicates that the request payload is too large, typically associated with HTTP status code 413.
      */
     ERROR_413,
 
     /**
      * Indicates a retry able error, typically associated with HTTP status code 4xx-5xx, excluding other error listed above.
      */
-    ERROR_RETRY;
+    ERROR_RETRY,
+
+    /**
+     * Indicates a retry able error, typically happens when the network is unavailable.
+     */
+    ERROR_NETWORK_UNAVAILABLE,
+
+    /**
+     * Indicates a fatal error, typically associated with some exception or failure that cannot be retried.
+     */
+    ERROR_UNKNOWN;
 
     companion object {
+
         /**
          * Converts an HTTP status code to a corresponding `ErrorStatus` enum value.
          *
