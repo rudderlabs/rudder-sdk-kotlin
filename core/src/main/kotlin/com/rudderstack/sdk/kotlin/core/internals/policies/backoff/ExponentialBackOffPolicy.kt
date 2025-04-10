@@ -3,6 +3,14 @@ package com.rudderstack.sdk.kotlin.core.internals.policies.backoff
 import java.security.SecureRandom
 import kotlin.math.pow
 
+private const val MIN_INTERVAL = 10L
+private const val MAX_INTERVAL = 60_000L
+private const val DEFAULT_INTERVAL = 3000L
+
+private const val MIN_BASE = 1.1
+private const val MAX_BASE = 5.0
+private const val DEFAULT_BASE = 2.0
+
 /**
  * This class implements an exponential backoff strategy with jitter for handling retries.
  * It allows for configurable interval and base for the exponential calculation.
@@ -10,11 +18,22 @@ import kotlin.math.pow
  * The delay is then adjusted with a random jitter to avoid synchronized retries.
  */
 class ExponentialBackOffPolicy(
-    private val intervalInMillis: Long,
-    private val base: Double = 2.0,
+    private var intervalInMillis: Long = DEFAULT_INTERVAL,
+    private var base: Double = DEFAULT_BASE,
 ) : BackOffPolicy {
     private var attempt = 0
     private val random = SecureRandom()
+
+    init {
+        intervalInMillis = when {
+            intervalInMillis in MIN_INTERVAL..MAX_INTERVAL -> intervalInMillis
+            else -> DEFAULT_INTERVAL
+        }
+        base = when {
+            base in MIN_BASE..MAX_BASE -> base
+            else -> DEFAULT_BASE
+        }
+    }
 
     override fun nextDelayInMillis(): Long {
         val delayInMillis = (intervalInMillis * base.pow(attempt++)).toLong()
