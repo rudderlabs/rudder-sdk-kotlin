@@ -203,6 +203,10 @@ internal class EventUpload(
             ErrorStatus.ERROR_RETRY -> {
                 // TODO: Add exponential backoff
             }
+
+            else -> {
+                // TODO: Implement this
+            }
         }
     }
 
