@@ -2,6 +2,7 @@ package com.rudderstack.sdk.kotlin.core.internals.queue
 
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.network.ErrorStatus
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClient
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClientImpl
@@ -13,10 +14,14 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.encodeToBase64
 import com.rudderstack.sdk.kotlin.core.internals.utils.generateUUID
 import com.rudderstack.sdk.kotlin.core.internals.utils.parseFilePaths
 import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.annotations.VisibleForTesting
@@ -48,9 +53,34 @@ internal class EventUpload(
     private var lastBatchAnonymousId = String.empty()
     private val storage get() = analytics.storage
 
+    // This job is required to mainly stop the upload process when the source is disabled.
+    // The type is null to clear the job reference when the source is disabled.
+    private var uploadJob: Job? = null
+
+    init {
+        observeConfigAndUpdateSchedule()
+    }
+
+    private fun observeConfigAndUpdateSchedule() {
+        with(analytics) {
+            analyticsScope.launch(analyticsDispatcher) {
+                sourceConfigState
+                    .map { it.source.isSourceEnabled }
+                    .distinctUntilChanged()
+                    .filter { isEnabled -> isEnabled } // Only emit when true
+                    .collect {
+                        LoggerAnalytics.debug("Source enabled, starting event upload")
+                        start()
+                    }
+            }
+        }
+    }
+
     internal fun start() {
         resetUploadChannel()
-        upload()
+        if (uploadJob == null || uploadJob?.isActive == false) {
+            uploadJob = upload()
+        }
     }
 
     @OptIn(DelicateCoroutinesApi::class)
@@ -161,6 +191,8 @@ internal class EventUpload(
             ErrorStatus.ERROR_404 -> {
                 // TODO: Log the error
                 // TODO: Update source config state to disabled.
+                cancel()
+                analytics.sourceConfigState.dispatch(SourceConfig.DisableSourceAction())
             }
 
             ErrorStatus.ERROR_413 -> {
@@ -182,6 +214,9 @@ internal class EventUpload(
     }
 
     internal fun cancel() {
+        uploadJob?.cancel().also {
+            uploadJob = null
+        }
         uploadChannel.cancel()
     }
 }
