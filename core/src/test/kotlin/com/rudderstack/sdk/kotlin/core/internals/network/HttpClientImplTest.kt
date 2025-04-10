@@ -20,7 +20,6 @@ import java.io.IOException
 import java.net.ConnectException
 import java.net.HttpURLConnection
 import java.net.MalformedURLException
-import java.net.SocketException
 import java.net.UnknownHostException
 
 private const val WRONG_BASE_URL = "<wrong-url>"
@@ -324,14 +323,14 @@ class HttpClientImplTest {
     @Test
     fun `given any unknown exception is thrown, when sendData is called, then return unknown exception`() {
         // This is to simulate a network error.
-        every { mockConnection.connect() } throws SocketException()
+        every { mockConnection.connect() } throws Exception()
 
         val result = postHttpClient.sendData(REQUEST_BODY)
 
         assertFailure(
             result,
-            ErrorStatus.ERROR_RETRY,
-            SocketException()
+            ErrorStatus.ERROR_UNKNOWN,
+            Exception()
         )
     }
 
