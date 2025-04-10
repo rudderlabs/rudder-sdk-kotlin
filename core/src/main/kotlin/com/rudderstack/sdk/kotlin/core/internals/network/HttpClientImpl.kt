@@ -6,7 +6,10 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.validatedBaseUrl
 import java.io.IOException
 import java.net.ConnectException
 import java.net.HttpURLConnection
+import java.net.NoRouteToHostException
+import java.net.SocketTimeoutException
 import java.net.URL
+import java.net.UnknownHostException
 import java.util.Locale
 import java.util.zip.GZIPOutputStream
 
@@ -192,9 +195,9 @@ internal class HttpClientImpl private constructor(
         } catch (e: Exception) {
             when (e) {
                 is ConnectException,
-                is java.net.UnknownHostException,
-                is java.net.NoRouteToHostException,
-                is java.net.SocketTimeoutException -> {
+                is UnknownHostException,
+                is NoRouteToHostException,
+                is SocketTimeoutException -> {
                     Result.Failure(status = ErrorStatus.ERROR_NETWORK_UNAVAILABLE, error = e)
                 }
 
