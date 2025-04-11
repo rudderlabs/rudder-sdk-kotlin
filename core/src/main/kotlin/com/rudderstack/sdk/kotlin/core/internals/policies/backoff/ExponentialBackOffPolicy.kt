@@ -1,7 +1,7 @@
 package com.rudderstack.sdk.kotlin.core.internals.policies.backoff
 
-import java.security.SecureRandom
 import kotlin.math.pow
+import kotlin.random.Random
 
 internal const val MIN_MIN_DELAY_IN_MILLIS = 3000L
 internal const val MAX_MIN_DELAY_IN_MILLIS = 60_000L
@@ -21,8 +21,8 @@ internal class ExponentialBackOffPolicy(
     private var minDelayInMillis: Long = DEFAULT_INTERVAL_IN_MILLIS,
     private var base: Double = DEFAULT_BASE,
 ) : BackOffPolicy {
+
     private var attempt = 0
-    private val random = SecureRandom()
 
     init {
         minDelayInMillis = when {
@@ -43,7 +43,7 @@ internal class ExponentialBackOffPolicy(
     }
 
     private fun withJitter(delayInMillis: Long): Long {
-        val jitter = random.nextInt(delayInMillis.toInt())
+        val jitter = Random.nextLong(delayInMillis)
         return delayInMillis + jitter
     }
 
