@@ -3,11 +3,11 @@ package com.rudderstack.sdk.kotlin.core.internals.policies.backoff
 import java.security.SecureRandom
 import kotlin.math.pow
 
-internal const val MIN_INTERVAL = 10L
-internal const val MAX_INTERVAL = 60_000L
-internal const val DEFAULT_INTERVAL = 3000L
+internal const val MIN_MIN_DELAY_IN_MILLIS = 3000L
+internal const val MAX_MIN_DELAY_IN_MILLIS = 60_000L
+internal const val DEFAULT_INTERVAL_IN_MILLIS = 3000L
 
-internal const val MIN_BASE = 1.1
+internal const val MIN_BASE = 2.0
 internal const val MAX_BASE = 5.0
 internal const val DEFAULT_BASE = 2.0
 
@@ -18,16 +18,16 @@ internal const val DEFAULT_BASE = 2.0
  * The delay is then adjusted with a random jitter to avoid synchronized retries.
  */
 internal class ExponentialBackOffPolicy(
-    private var intervalInMillis: Long = DEFAULT_INTERVAL,
+    private var minDelayInMillis: Long = DEFAULT_INTERVAL_IN_MILLIS,
     private var base: Double = DEFAULT_BASE,
 ) : BackOffPolicy {
     private var attempt = 0
     private val random = SecureRandom()
 
     init {
-        intervalInMillis = when {
-            intervalInMillis in MIN_INTERVAL..MAX_INTERVAL -> intervalInMillis
-            else -> DEFAULT_INTERVAL
+        minDelayInMillis = when {
+            minDelayInMillis in MIN_MIN_DELAY_IN_MILLIS..MAX_MIN_DELAY_IN_MILLIS -> minDelayInMillis
+            else -> DEFAULT_INTERVAL_IN_MILLIS
         }
         base = when {
             base in MIN_BASE..MAX_BASE -> base
@@ -36,7 +36,7 @@ internal class ExponentialBackOffPolicy(
     }
 
     override fun nextDelayInMillis(): Long {
-        val delayInMillis = (intervalInMillis * base.pow(attempt++)).toLong()
+        val delayInMillis = (minDelayInMillis * base.pow(attempt++)).toLong()
         val delayWithJitterInMillis = withJitter(delayInMillis)
 
         return delayWithJitterInMillis

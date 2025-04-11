@@ -29,7 +29,7 @@ class ExponentialBackOffPolicyTest {
         // mockking the jitter to be half of the delay
         every { anyConstructed<SecureRandom>().nextInt(any()) } answers { firstArg<Int>() / 2 }
 
-        val policy = ExponentialBackOffPolicy(intervalInMillis = 1000L, base = 2.0)
+        val policy = ExponentialBackOffPolicy(minDelayInMillis = 1000L, base = 2.0)
 
         val delay1 = policy.nextDelayInMillis()
         val delay2 = policy.nextDelayInMillis()
@@ -42,7 +42,7 @@ class ExponentialBackOffPolicyTest {
 
     @Test
     fun `when resetBackOff called, then it should reset attempt counter`() {
-        val policy = ExponentialBackOffPolicy(intervalInMillis = 500L, base = 2.0)
+        val policy = ExponentialBackOffPolicy(minDelayInMillis = 500L, base = 2.0)
 
         policy.nextDelayInMillis() // attempt 0
         policy.nextDelayInMillis() // attempt 1
@@ -54,9 +54,9 @@ class ExponentialBackOffPolicyTest {
 
     @Test
     fun `when invalid interval passed, then exponential backoff should use default interval`() {
-        val policy = ExponentialBackOffPolicy(intervalInMillis = 5L)
+        val policy = ExponentialBackOffPolicy(minDelayInMillis = 5L)
         val delay = policy.nextDelayInMillis()
-        assertEquals(DEFAULT_INTERVAL, delay)
+        assertEquals(DEFAULT_INTERVAL_IN_MILLIS, delay)
     }
 
     @Test
@@ -64,7 +64,7 @@ class ExponentialBackOffPolicyTest {
         val policy = ExponentialBackOffPolicy(base = 10.0)
         val firstDelay = policy.nextDelayInMillis()
 
-        assertEquals(DEFAULT_INTERVAL, firstDelay)
+        assertEquals(DEFAULT_INTERVAL_IN_MILLIS, firstDelay)
     }
 
     @RepeatedTest(10)
@@ -72,7 +72,7 @@ class ExponentialBackOffPolicyTest {
         // unmockking the SecureRandom to get the actual jitter
         unmockkAll()
 
-        val policy = ExponentialBackOffPolicy(intervalInMillis = 1000L, base = 2.0)
+        val policy = ExponentialBackOffPolicy(minDelayInMillis = 1000L, base = 2.0)
         val delay = policy.nextDelayInMillis()
 
         val expectedMax = 1000L + 999L
