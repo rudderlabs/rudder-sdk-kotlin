@@ -1,6 +1,5 @@
 package com.rudderstack.sdk.kotlin.core.internals.policies.backoff
 
-import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import java.security.SecureRandom
 import kotlin.math.pow
 
@@ -18,8 +17,7 @@ internal const val DEFAULT_BASE = 2.0
  * The next delay is calculated using the formula: delay = interval * base^attempt.
  * The delay is then adjusted with a random jitter to avoid synchronized retries.
  */
-@InternalRudderApi
-class ExponentialBackOffPolicy(
+internal class ExponentialBackOffPolicy(
     private var intervalInMillis: Long = DEFAULT_INTERVAL,
     private var base: Double = DEFAULT_BASE,
 ) : BackOffPolicy {
