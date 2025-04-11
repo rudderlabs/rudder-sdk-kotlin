@@ -134,7 +134,7 @@ class SourceConfigManagerTest {
         runTest(testDispatcher) {
             every { httpClient.getData() } returns Result.Failure(
                 error = Exception(),
-                status = ErrorStatus.SERVER_ERROR
+                status = ErrorStatus.ERROR_RETRY
             )
 
             sourceConfigManager.refreshSourceConfigAndNotifyObservers()
