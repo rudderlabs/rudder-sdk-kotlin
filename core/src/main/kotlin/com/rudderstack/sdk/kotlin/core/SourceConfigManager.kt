@@ -81,8 +81,7 @@ class SourceConfigManager(
     }
 
     private suspend fun handleFailure(result: Result.Failure<NetworkErrorStatus>): SourceConfig? = when (result.error) {
-        NetworkErrorStatus.ERROR_400,
-        NetworkErrorStatus.ERROR_UNKNOWN -> {
+        NetworkErrorStatus.ERROR_400 -> {
             analytics.shutdown()
             null
         }
@@ -91,6 +90,7 @@ class SourceConfigManager(
         NetworkErrorStatus.ERROR_404,
         NetworkErrorStatus.ERROR_413,
         NetworkErrorStatus.ERROR_RETRY,
+        NetworkErrorStatus.ERROR_UNKNOWN,
         NetworkErrorStatus.ERROR_NETWORK_UNAVAILABLE -> retryBlockWithBackoff {
             getSourceConfigWithFallback { null }
         }
