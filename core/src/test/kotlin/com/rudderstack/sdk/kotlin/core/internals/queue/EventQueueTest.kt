@@ -416,17 +416,6 @@ class EventQueueTest {
     }
 
     @Test
-    fun `given event upload is disabled, when event queue is started at due to source enabled, then event upload should be started`() {
-        eventQueue.start()
-        clearMocks(mockEventUpload)
-
-        mockAnalytics.sourceConfigState.dispatch(SourceConfig.EnableSourceAction())
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        verify { mockEventUpload.start() }
-    }
-
-    @Test
     fun `when event queue is started, then event upload is also started`() {
         eventQueue.start()
         testDispatcher.scheduler.advanceUntilIdle()

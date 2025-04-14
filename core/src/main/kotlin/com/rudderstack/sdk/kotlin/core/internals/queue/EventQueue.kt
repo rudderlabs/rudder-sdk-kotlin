@@ -66,7 +66,6 @@ internal class EventQueue(
                     .collect { isSourceEnabled ->
                         if (isSourceEnabled) {
                             flushPoliciesFacade.schedule(analytics)
-                            eventUpload.start()
                         } else {
                             flushPoliciesFacade.cancelSchedule()
                         }

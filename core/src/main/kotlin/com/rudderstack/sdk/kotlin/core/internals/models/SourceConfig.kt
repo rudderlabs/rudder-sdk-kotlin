@@ -66,19 +66,6 @@ data class SourceConfig(
     }
 
     /**
-     * Action to enable the source.
-     * TODO: This will be utilised when we implement the dynamic source config behaviour.
-     * Currently it is being used only for tests.
-     */
-    @VisibleForTesting
-    internal class EnableSourceAction : StateAction<SourceConfig> {
-
-        override fun reduce(currentState: SourceConfig): SourceConfig {
-            return currentState.copy(source = currentState.source.copy(isSourceEnabled = true))
-        }
-    }
-
-    /**
      * Method to store the source configuration in the storage.
      */
     suspend fun storeSourceConfig(storage: Storage) {
