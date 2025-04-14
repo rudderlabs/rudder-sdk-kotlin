@@ -78,7 +78,7 @@ class SourceConfigManager(
 
                     is Result.Failure -> {
                         LoggerAnalytics.error(
-                            "Failed to get sourceConfig due to ${sourceConfigResult.status} ${sourceConfigResult.error}"
+                            "Failed to get sourceConfig due to ${sourceConfigResult.error}"
                         )
                         null
                     }

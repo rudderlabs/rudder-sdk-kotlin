@@ -176,7 +176,7 @@ abstract class IntegrationPlugin : EventPlugin {
             } else {
                 callback(
                     null,
-                    Result.Failure(null, IllegalStateException("Destination $key is absent or disabled in dashboard."))
+                    Result.Failure(IllegalStateException("Destination $key is absent or disabled in dashboard."))
                 )
             }
         } ?: run {
@@ -205,7 +205,7 @@ abstract class IntegrationPlugin : EventPlugin {
     private fun setFailureConfigAndNotifyCallbacks(throwable: Throwable) {
         update(emptyJsonObject)
         this.isDestinationReady = false
-        notifyCallbacks(Result.Failure(null, throwable))
+        notifyCallbacks(Result.Failure(throwable))
     }
 
     private fun setSuccessConfigAndNotifyCallbacks(destinationConfig: JsonObject) {

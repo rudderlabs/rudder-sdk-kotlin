@@ -3,9 +3,9 @@ package com.rudderstack.sdk.kotlin.core.internals.queue
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
-import com.rudderstack.sdk.kotlin.core.internals.network.ErrorStatus
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClient
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClientImpl
+import com.rudderstack.sdk.kotlin.core.internals.network.NetworkResult
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.JsonSentAtUpdater
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
@@ -136,7 +136,7 @@ internal class EventUpload(
 
     private fun uploadEvents(batchPayload: String, filePath: String) {
         LoggerAnalytics.debug("Batch Payload: $batchPayload")
-        when (val result: Result<String, Exception> = httpClientFactory.sendData(batchPayload)) {
+        when (val result: NetworkResult = httpClientFactory.sendData(batchPayload)) {
             is Result.Success -> {
                 LoggerAnalytics.debug("Event uploaded successfully. Server response: ${result.response}")
                 cleanup(filePath)
