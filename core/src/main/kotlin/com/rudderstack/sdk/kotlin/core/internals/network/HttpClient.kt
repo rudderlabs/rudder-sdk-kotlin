@@ -57,7 +57,7 @@ interface HttpClient {
      *
      * @return A [Result] containing the response data as a [String], or an error message if the request fails.
      */
-    fun getData(): Result<String, Exception>
+    fun getData(): NetworkResult
 
     /**
      * Sends data to the server using a POST request.
@@ -65,7 +65,7 @@ interface HttpClient {
      * @param body The body of the POST request as a [String].
      * @return A [Result] containing the response data as a [String], or an error message if the request fails.
      */
-    fun sendData(body: String): Result<String, Exception>
+    fun sendData(body: String): NetworkResult
 }
 
 /**

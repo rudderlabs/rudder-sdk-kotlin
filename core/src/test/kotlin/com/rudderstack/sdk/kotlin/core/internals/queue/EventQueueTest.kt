@@ -5,7 +5,7 @@ import com.rudderstack.sdk.kotlin.core.internals.logger.KotlinLogger
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.models.provider.provideEvent
-import com.rudderstack.sdk.kotlin.core.internals.network.ErrorStatus
+import com.rudderstack.sdk.kotlin.core.internals.network.NetworkErrorStatus
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClient
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPoliciesFacade
@@ -46,7 +46,6 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
 import java.io.FileNotFoundException
-import java.io.IOException
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class EventQueueTest {
@@ -299,8 +298,7 @@ class EventQueueTest {
 
         // Mock the behavior for HttpClient
         every { mockHttpClient.sendData(batchPayload) } returns Result.Failure(
-            ErrorStatus.ERROR_UNKNOWN,
-            IOException("Internal Server Error")
+            NetworkErrorStatus.ERROR_UNKNOWN
         )
 
         // Execute messageQueue actions

@@ -1,7 +1,5 @@
 package com.rudderstack.sdk.kotlin.core.internals.utils
 
-import com.rudderstack.sdk.kotlin.core.internals.network.ErrorStatus
-
 /**
  * A sealed class representing a result that can either be a success or a failure.
  *
@@ -22,11 +20,9 @@ sealed class Result<out T, out E> {
     /**
      * Represents a failure result.
      *
-     * @param status An optional status indicating the error type, of type [ErrorStatus].
      * @param error The error result of type [E].
      */
     class Failure<out E>(
-        val status: ErrorStatus? = null,
         val error: E
     ) : Result<Nothing, E>()
 

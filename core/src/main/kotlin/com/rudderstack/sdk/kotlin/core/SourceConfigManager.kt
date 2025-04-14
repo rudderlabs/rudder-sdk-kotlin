@@ -2,9 +2,9 @@ package com.rudderstack.sdk.kotlin.core
 
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
-import com.rudderstack.sdk.kotlin.core.internals.network.ErrorStatus
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClient
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClientImpl
+import com.rudderstack.sdk.kotlin.core.internals.network.NetworkErrorStatus
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.policies.backoff.ExponentialBackOffPolicy
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
@@ -80,19 +80,18 @@ class SourceConfigManager(
         }
     }
 
-    private suspend fun handleFailure(result: Result.Failure<Exception>): SourceConfig? = when (result.status) {
-        ErrorStatus.ERROR_400,
-        ErrorStatus.ERROR_UNKNOWN -> {
+    private suspend fun handleFailure(result: Result.Failure<NetworkErrorStatus>): SourceConfig? = when (result.error) {
+        NetworkErrorStatus.ERROR_400,
+        NetworkErrorStatus.ERROR_UNKNOWN -> {
             analytics.shutdown()
             null
         }
 
-        ErrorStatus.ERROR_401,
-        ErrorStatus.ERROR_404,
-        ErrorStatus.ERROR_413,
-        ErrorStatus.ERROR_RETRY,
-        ErrorStatus.ERROR_NETWORK_UNAVAILABLE,
-        null -> retryBlockWithBackoff {
+        NetworkErrorStatus.ERROR_401,
+        NetworkErrorStatus.ERROR_404,
+        NetworkErrorStatus.ERROR_413,
+        NetworkErrorStatus.ERROR_RETRY,
+        NetworkErrorStatus.ERROR_NETWORK_UNAVAILABLE -> retryBlockWithBackoff {
             getSourceConfigWithFallback { null }
         }
     }
@@ -109,7 +108,7 @@ class SourceConfigManager(
     }
 
     private suspend fun getSourceConfigWithFallback(
-        onFailure: suspend (Result.Failure<Exception>) -> SourceConfig?
+        onFailure: suspend (Result.Failure<NetworkErrorStatus>) -> SourceConfig?
     ): SourceConfig? {
         return when (val result = httpClientFactory.getData()) {
             is Result.Success -> result.toSourceConfig()
