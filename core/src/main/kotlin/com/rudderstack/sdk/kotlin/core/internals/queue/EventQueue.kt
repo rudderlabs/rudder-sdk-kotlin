@@ -5,6 +5,7 @@ import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClient
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClientImpl
+import com.rudderstack.sdk.kotlin.core.internals.network.NetworkResult
 import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPoliciesFacade
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.JsonSentAtUpdater
@@ -158,14 +159,14 @@ internal class EventQueue(
 
                     checkAndUpdateBatchRequestHeader(batchPayload)
                     LoggerAnalytics.debug("Batch Payload: $batchPayload")
-                    when (val result: Result<String, Exception> = httpClientFactory.sendData(batchPayload)) {
+                    when (val result: NetworkResult = httpClientFactory.sendData(batchPayload)) {
                         is Result.Success -> {
                             LoggerAnalytics.debug("Event uploaded successfully. Server response: ${result.response}")
                             shouldCleanup = true
                         }
 
                         is Result.Failure -> {
-                            LoggerAnalytics.debug("Error when uploading event due to ${result.status} ${result.error}")
+                            LoggerAnalytics.debug("Error when uploading event due to ${result.error}")
                         }
                     }
                 } catch (e: FileNotFoundException) {

@@ -2,7 +2,7 @@ package com.rudderstack.sdk.kotlin.core
 
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig.Companion.serializer
-import com.rudderstack.sdk.kotlin.core.internals.network.ErrorStatus
+import com.rudderstack.sdk.kotlin.core.internals.network.NetworkErrorStatus
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClient
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
@@ -18,7 +18,6 @@ import io.mockk.impl.annotations.MockK
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -30,7 +29,6 @@ import org.junit.jupiter.api.Test
 
 private const val downloadedSourceConfig = "config/source_config_with_single_destination.json"
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class SourceConfigManagerTest {
 
     private val testDispatcher = StandardTestDispatcher()
@@ -133,8 +131,7 @@ class SourceConfigManagerTest {
     fun `given connection is available but network request fails, when source config is fetched, then it is neither stored nor any of the observer is notified`() =
         runTest(testDispatcher) {
             every { httpClient.getData() } returns Result.Failure(
-                error = Exception(),
-                status = ErrorStatus.ERROR_RETRY
+                error = NetworkErrorStatus.ERROR_RETRY,
             )
 
             sourceConfigManager.refreshSourceConfigAndNotifyObservers()
