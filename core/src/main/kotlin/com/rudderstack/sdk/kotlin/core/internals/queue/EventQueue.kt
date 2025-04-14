@@ -66,6 +66,8 @@ internal class EventQueue(
                     .collect { isSourceEnabled ->
                         if (isSourceEnabled) {
                             flushPoliciesFacade.schedule(analytics)
+                            // TODO: Uncomment the following line, after dynamic update of source config is implemented
+                            // eventUpload.start()
                         } else {
                             flushPoliciesFacade.cancelSchedule()
                         }
