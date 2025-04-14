@@ -5,9 +5,6 @@ import com.rudderstack.sdk.kotlin.core.internals.logger.KotlinLogger
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.models.provider.provideEvent
-import com.rudderstack.sdk.kotlin.core.internals.network.NetworkErrorStatus
-import com.rudderstack.sdk.kotlin.core.internals.network.HttpClient
-import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPoliciesFacade
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
@@ -38,10 +35,6 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.Arguments
-import org.junit.jupiter.params.provider.MethodSource
-import java.io.FileNotFoundException
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class EventQueueTest {
