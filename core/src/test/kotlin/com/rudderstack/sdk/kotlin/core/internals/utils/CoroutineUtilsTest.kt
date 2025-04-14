@@ -55,7 +55,7 @@ class CoroutineUtilsTest {
         val job: Job? = null
         var createJobCalled = false
 
-        val result = job.createIfInActive {
+        val result = job.createIfInactive {
             createJobCalled = true
             launch {}
         }
@@ -72,7 +72,7 @@ class CoroutineUtilsTest {
         originalJob.cancelAndJoin()
         var createJobCalled = false
 
-        val result = originalJob.createIfInActive {
+        val result = originalJob.createIfInactive {
             createJobCalled = true
             launch {}
         }
@@ -90,7 +90,7 @@ class CoroutineUtilsTest {
         val originalJob = launch {}
         var createJobCalled = false
 
-        val result = originalJob.createIfInActive {
+        val result = originalJob.createIfInactive {
             createJobCalled = true
             launch {}
         }

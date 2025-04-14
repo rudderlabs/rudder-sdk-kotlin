@@ -25,7 +25,7 @@ internal fun <T> createUnlimitedUploadChannel(): Channel<T> = Channel(UNLIMITED)
 /**
  * Creates a new job if the current job is null or not active.
  */
-internal inline fun Job?.createIfInActive(newJob: () -> Job): Job {
+internal inline fun Job?.createIfInactive(newJob: () -> Job): Job {
     return if (this == null || !this.isActive) {
         newJob()
     } else {

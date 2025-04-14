@@ -10,7 +10,7 @@ import com.rudderstack.sdk.kotlin.core.internals.network.NetworkResult
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.JsonSentAtUpdater
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
-import com.rudderstack.sdk.kotlin.core.internals.utils.createIfInActive
+import com.rudderstack.sdk.kotlin.core.internals.utils.createIfInactive
 import com.rudderstack.sdk.kotlin.core.internals.utils.createNewIfClosed
 import com.rudderstack.sdk.kotlin.core.internals.utils.createUnlimitedUploadChannel
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
@@ -58,7 +58,7 @@ internal class EventUpload(
 
     internal fun start() {
         uploadChannel = uploadChannel.createNewIfClosed()
-        uploadJob = uploadJob.createIfInActive(newJob = ::upload)
+        uploadJob = uploadJob.createIfInactive(newJob = ::upload)
     }
 
     internal fun flush() {
@@ -105,7 +105,10 @@ internal class EventUpload(
             readFileAsString(filePath)
                 .let { jsonSentAtUpdater.updateSentAt(it) }
         }.getOrElse { exception ->
-            LoggerAnalytics.error("Error when preparing batch payload. Deleting the files:", exception)
+            LoggerAnalytics.error(
+                "Error when preparing batch payload for file: $filePath. Deleting the file. Exception: ",
+                exception
+            )
             cleanup(filePath)
             String.empty()
         }
