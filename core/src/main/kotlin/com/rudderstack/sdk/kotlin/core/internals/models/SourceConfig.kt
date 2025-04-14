@@ -58,10 +58,23 @@ data class SourceConfig(
     /**
      * Action to disable the source.
      */
-    class DisableSourceAction : StateAction<SourceConfig> {
+    internal class DisableSourceAction : StateAction<SourceConfig> {
 
         override fun reduce(currentState: SourceConfig): SourceConfig {
             return currentState.copy(source = currentState.source.copy(isSourceEnabled = false))
+        }
+    }
+
+    /**
+     * Action to enable the source.
+     * TODO: This will be utilised when we implement the dynamic source config behaviour.
+     * Currently it is being used only for tests.
+     */
+    @VisibleForTesting
+    internal class EnableSourceAction : StateAction<SourceConfig> {
+
+        override fun reduce(currentState: SourceConfig): SourceConfig {
+            return currentState.copy(source = currentState.source.copy(isSourceEnabled = true))
         }
     }
 
