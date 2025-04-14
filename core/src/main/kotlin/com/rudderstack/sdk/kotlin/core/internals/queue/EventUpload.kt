@@ -167,8 +167,7 @@ internal class EventUpload(
             }
 
             ErrorStatus.ERROR_404 -> {
-                // TODO: Log the error
-                // TODO: Update source config state to disabled.
+                LoggerAnalytics.error("Source is disabled. Stopping the upload process until the source is enabled again.")
                 cancel()
                 analytics.sourceConfigState.dispatch(SourceConfig.DisableSourceAction())
             }
