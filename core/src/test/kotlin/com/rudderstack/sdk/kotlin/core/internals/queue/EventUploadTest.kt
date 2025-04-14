@@ -17,6 +17,7 @@ import com.rudderstack.sdk.kotlin.core.mockAnalytics
 import com.rudderstack.sdk.kotlin.core.readFileTrimmed
 import com.rudderstack.sdk.kotlin.core.setupLogger
 import io.mockk.MockKAnnotations
+import io.mockk.clearMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -252,6 +253,38 @@ class EventUploadTest {
 
         verify(exactly = 1) { mockStorage.remove(singleFilePath) }
     }
+
+    @Test
+    fun `given server returns source is disabled as error, when flush is called, then the upload queue is stopped`() {
+        prepareMultipleBatch()
+        // Mock messageQueue file reading
+        filePaths.forEach { path ->
+            every { readFileAsString(path) } returns batchPayload
+        }
+        // Mock the behavior for HttpClient
+        every { mockHttpClient.sendData(batchPayload) } returns Result.Failure(
+            ErrorStatus.ERROR_404,
+            IOException("Internal Server Error")
+        )
+
+        processMessage()
+
+        // Verify network attempt is made and event is not removed from storage
+        verify(exactly = 1) { mockHttpClient.sendData(batchPayload) }
+        filePaths.forEach { path ->
+            verify(exactly = 0) { mockStorage.remove(path) }
+        }
+
+        clearMocks(mockHttpClient)
+
+        // Re-attempting to flush the same batch
+        eventUpload.flush()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Verify this time network attempt is not made again
+        verify(exactly = 0) { mockHttpClient.sendData(batchPayload) }
+    }
+
 
     private fun prepareMultipleBatch() {
         val fileUrlList = filePaths.joinToString(",")
