@@ -5,6 +5,7 @@ import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClient
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClientImpl
+import com.rudderstack.sdk.kotlin.core.internals.network.NetworkErrorStatus
 import com.rudderstack.sdk.kotlin.core.internals.network.NetworkResult
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.JsonSentAtUpdater
@@ -143,39 +144,39 @@ internal class EventUpload(
             }
 
             is Result.Failure -> {
-                LoggerAnalytics.debug("Error when uploading event due to ${result.status} ${result.error}")
-                result.status?.let { handleFailure(it, filePath) }
+                LoggerAnalytics.debug("Error when uploading event due to ${result.error}")
+                handleFailure(result.error, filePath)
             }
         }
     }
 
     @VisibleForTesting
-    internal fun handleFailure(status: ErrorStatus, filePath: String) {
+    internal fun handleFailure(status: NetworkErrorStatus, filePath: String) {
         // TODO: Implement the step to reset the backoff logic
         when (status) {
-            ErrorStatus.ERROR_400 -> {
+            NetworkErrorStatus.ERROR_400 -> {
                 // TODO: Log the error
                 cleanup(filePath)
             }
 
-            ErrorStatus.ERROR_401 -> {
+            NetworkErrorStatus.ERROR_401 -> {
                 // TODO: Log the error
                 // TODO: Delete all the files related to this writeKey
                 analytics.shutdown()
             }
 
-            ErrorStatus.ERROR_404 -> {
+            NetworkErrorStatus.ERROR_404 -> {
                 LoggerAnalytics.error("Source is disabled. Stopping the upload process until the source is enabled again.")
                 cancel()
                 analytics.sourceConfigState.dispatch(SourceConfig.DisableSourceAction())
             }
 
-            ErrorStatus.ERROR_413 -> {
+            NetworkErrorStatus.ERROR_413 -> {
                 // TODO: Log the error
                 cleanup(filePath)
             }
 
-            ErrorStatus.ERROR_RETRY -> {
+            NetworkErrorStatus.ERROR_RETRY -> {
                 // TODO: Add exponential backoff
             }
 

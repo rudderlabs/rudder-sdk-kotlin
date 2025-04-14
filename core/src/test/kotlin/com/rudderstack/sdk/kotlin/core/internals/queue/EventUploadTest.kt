@@ -39,7 +39,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
-import java.io.IOException
 
 private const val batchPayload = "test content"
 private const val batchPayload1 = "test content 1"
@@ -237,15 +236,14 @@ class EventUploadTest {
     @ParameterizedTest
     @MethodSource("droppableHandlingProvider")
     fun `given server returns droppable error, when flush is called, then the batch is removed from storage`(
-        errorStatus: ErrorStatus,
+        errorStatus: NetworkErrorStatus,
     ) = runTest {
         val unprocessedBatch = readFileTrimmed(unprocessedBatchWithTwoEvents)
         every { mockStorage.readString(StorageKeys.EVENT, String.empty()) } returns singleFilePath
         every { doesFileExist(singleFilePath) } returns true
         every { readFileAsString(singleFilePath) } returns unprocessedBatch
         every { mockHttpClient.sendData(any()) } returns Result.Failure(
-            status = errorStatus,
-            error = IOException("Error response")
+            error = errorStatus,
         )
 
         processMessage()
@@ -262,8 +260,7 @@ class EventUploadTest {
         }
         // Mock the behavior for HttpClient
         every { mockHttpClient.sendData(batchPayload) } returns Result.Failure(
-            ErrorStatus.ERROR_404,
-            IOException("Internal Server Error")
+            error = NetworkErrorStatus.ERROR_404,
         )
 
         processMessage()
@@ -328,8 +325,8 @@ class EventUploadTest {
 
         @JvmStatic
         fun droppableHandlingProvider() = listOf(
-            Arguments.of(ErrorStatus.ERROR_400, true),
-            Arguments.of(ErrorStatus.ERROR_413, true),
+            Arguments.of(NetworkErrorStatus.ERROR_400, true),
+            Arguments.of(NetworkErrorStatus.ERROR_413, true),
         )
     }
 }
