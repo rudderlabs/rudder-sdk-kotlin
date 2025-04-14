@@ -168,12 +168,11 @@ internal class EventUpload(
                 cleanup(filePath)
             }
 
-            NetworkErrorStatus.ERROR_RETRY -> {
+            NetworkErrorStatus.ERROR_RETRY,
+            NetworkErrorStatus.ERROR_NETWORK_UNAVAILABLE,
+            NetworkErrorStatus.ERROR_UNKNOWN,
+            -> {
                 // TODO: Add exponential backoff
-            }
-
-            else -> {
-                // TODO: Implement this
             }
         }
     }
