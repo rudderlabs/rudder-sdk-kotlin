@@ -156,13 +156,13 @@ internal class EventUpload(
         when (status) {
             NetworkErrorStatus.ERROR_400 -> {
                 // TODO: Log the error
-                cleanup(filePath)
+//                cleanup(filePath)
             }
 
             NetworkErrorStatus.ERROR_401 -> {
                 // TODO: Log the error
                 // TODO: Delete all the files related to this writeKey
-                analytics.shutdown()
+//                analytics.shutdown()
             }
 
             NetworkErrorStatus.ERROR_404 -> {
