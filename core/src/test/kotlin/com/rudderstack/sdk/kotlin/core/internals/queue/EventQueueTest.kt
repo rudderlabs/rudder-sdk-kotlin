@@ -13,6 +13,7 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.encodeToString
 import com.rudderstack.sdk.kotlin.core.mockAnalytics
 import com.rudderstack.sdk.kotlin.core.setupLogger
 import io.mockk.MockKAnnotations
+import io.mockk.clearMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -48,6 +49,9 @@ class EventQueueTest {
     @MockK
     private lateinit var mockFlushPoliciesFacade: FlushPoliciesFacade
 
+    @MockK
+    private lateinit var mockEventUpload: EventUpload
+
     private val testDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
     private val mockAnalytics: Analytics = mockAnalytics(testScope, testDispatcher)
@@ -78,6 +82,7 @@ class EventQueueTest {
             EventQueue(
                 analytics = mockAnalytics,
                 flushPoliciesFacade = mockFlushPoliciesFacade,
+                eventUpload = mockEventUpload,
             )
         )
     }
@@ -198,7 +203,6 @@ class EventQueueTest {
 
     @Test
     fun `given default flush policies are enabled, when first event is made, then flush call should be triggered`() {
-        val storage = mockAnalytics.storage
         val mockEvent: Event = mockk(relaxed = true)
         val jsonString = """{"type":"track","event":"Test Event"}"""
         every { eventQueue.stringifyBaseEvent(mockEvent) } returns jsonString
@@ -219,13 +223,12 @@ class EventQueueTest {
 
         coVerify(exactly = 1) {
             mockFlushPoliciesFacade.reset()
-            storage.rollover()
+            mockEventUpload.flush()
         }
     }
 
     @Test
     fun `given default flush policies are enabled, when 30 events are made, then flush call should be triggered`() {
-        val storage = mockAnalytics.storage
         val mockEvent: Event = mockk(relaxed = true)
         val jsonString = """{"type":"track","event":"Test Event"}"""
         every { eventQueue.stringifyBaseEvent(mockEvent) } returns jsonString
@@ -248,7 +251,7 @@ class EventQueueTest {
 
         coVerify(exactly = 1) {
             mockFlushPoliciesFacade.reset()
-            storage.rollover()
+            mockEventUpload.flush()
         }
 
         // Mock the behavior for CountFlushPolicy
@@ -262,7 +265,7 @@ class EventQueueTest {
         // No new flush should be triggered
         coVerify(exactly = 1) {
             mockFlushPoliciesFacade.reset()
-            storage.rollover()
+            mockEventUpload.flush()
         }
 
         // Mock the behavior for CountFlushPolicy
@@ -274,13 +277,12 @@ class EventQueueTest {
 
         coVerify(exactly = 2) {
             mockFlushPoliciesFacade.reset()
-            storage.rollover()
+            mockEventUpload.flush()
         }
     }
 
     @Test
     fun `given default flush policies are enabled but source is disabled, when events are made, the flush call is never triggered`() {
-        val storage = mockAnalytics.storage
         val mockEvent: Event = mockk(relaxed = true)
         val jsonString = """{"type":"track","event":"Test Event"}"""
         every { eventQueue.stringifyBaseEvent(mockEvent) } returns jsonString
@@ -308,7 +310,7 @@ class EventQueueTest {
 
         coVerify(exactly = 0) {
             mockFlushPoliciesFacade.reset()
-            storage.rollover()
+            mockEventUpload.flush()
         }
 
         // Mock the behavior for CountFlushPolicy
@@ -322,7 +324,7 @@ class EventQueueTest {
         // No flush should be triggered
         coVerify(exactly = 0) {
             mockFlushPoliciesFacade.reset()
-            storage.rollover()
+            mockEventUpload.flush()
         }
 
         // Mock the behavior for CountFlushPolicy
@@ -335,7 +337,7 @@ class EventQueueTest {
         // no flush call is triggered
         coVerify(exactly = 0) {
             mockFlushPoliciesFacade.reset()
-            storage.rollover()
+            mockEventUpload.flush()
         }
     }
 
@@ -386,8 +388,7 @@ class EventQueueTest {
         }
 
     @Test
-    fun `given no policies are enabled, when explicit flush call is made, then rollover should happen`() {
-        val storage = mockAnalytics.storage
+    fun `given no policies are enabled, when explicit flush call is made, then flush call should happen`() {
         val times = 100
         val mockEvent: Event = mockk(relaxed = true)
         val jsonString = """{"type":"track","event":"Test Event"}"""
@@ -403,16 +404,42 @@ class EventQueueTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         coVerify(exactly = 0) {
-            storage.rollover()
+            mockEventUpload.flush()
         }
 
         eventQueue.flush()
         testDispatcher.scheduler.advanceUntilIdle()
 
         coVerify(exactly = 1) {
-            storage.rollover()
+            mockEventUpload.flush()
         }
     }
 
+    @Test
+    fun `given event upload is disabled, when event queue is started at due to source enabled, then event upload should be started`() {
+        eventQueue.start()
+        clearMocks(mockEventUpload)
 
+        mockAnalytics.sourceConfigState.dispatch(SourceConfig.EnableSourceAction())
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        verify { mockEventUpload.start() }
+    }
+
+    @Test
+    fun `when event queue is started, then event upload is also started`() {
+        eventQueue.start()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        verify { mockEventUpload.start() }
+    }
+
+    @Test
+    fun `given event queue is started, when event queue is stopped, then event upload is also stopped`() {
+        eventQueue.start()
+
+        eventQueue.stop()
+
+        verify { mockEventUpload.cancel() }
+    }
 }
