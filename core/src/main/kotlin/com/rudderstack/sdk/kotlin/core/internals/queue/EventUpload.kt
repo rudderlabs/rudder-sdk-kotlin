@@ -10,14 +10,15 @@ import com.rudderstack.sdk.kotlin.core.internals.network.NetworkResult
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.JsonSentAtUpdater
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
+import com.rudderstack.sdk.kotlin.core.internals.utils.createIfInActive
+import com.rudderstack.sdk.kotlin.core.internals.utils.createNewIfClosed
+import com.rudderstack.sdk.kotlin.core.internals.utils.createUnlimitedUploadChannel
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import com.rudderstack.sdk.kotlin.core.internals.utils.encodeToBase64
 import com.rudderstack.sdk.kotlin.core.internals.utils.generateUUID
 import com.rudderstack.sdk.kotlin.core.internals.utils.parseFilePaths
-import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
@@ -56,7 +57,7 @@ internal class EventUpload(
     private var uploadJob: Job? = null
 
     internal fun start() {
-        uploadChannel = uploadChannel.startIfClosed()
+        uploadChannel = uploadChannel.createNewIfClosed()
         uploadJob = uploadJob.createIfInActive(newJob = ::upload)
     }
 
@@ -201,23 +202,4 @@ internal fun doesFileExist(filePath: String): Boolean {
 @VisibleForTesting
 internal fun readFileAsString(filePath: String): String {
     return File(filePath).readText()
-}
-
-@OptIn(DelicateCoroutinesApi::class)
-private fun <T> Channel<T>.startIfClosed(): Channel<T> {
-    return if (isClosedForSend || isClosedForReceive) {
-        createUnlimitedUploadChannel()
-    } else {
-        this
-    }
-}
-
-private fun <T> createUnlimitedUploadChannel(): Channel<T> = Channel(UNLIMITED)
-
-private inline fun Job?.createIfInActive(newJob: () -> Job): Job {
-    return if (this == null || !this.isActive) {
-        newJob()
-    } else {
-        this
-    }
 }
