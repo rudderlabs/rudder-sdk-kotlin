@@ -46,7 +46,6 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
 import java.io.FileNotFoundException
-import java.io.IOException
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class EventQueueTest {
@@ -299,8 +298,7 @@ class EventQueueTest {
 
         // Mock the behavior for HttpClient
         every { mockHttpClient.sendData(batchPayload) } returns Result.Failure(
-            NetworkErrorStatus.GENERAL_ERROR,
-            IOException("Internal Server Error")
+            NetworkErrorStatus.ERROR_UNKNOWN
         )
 
         // Execute messageQueue actions
