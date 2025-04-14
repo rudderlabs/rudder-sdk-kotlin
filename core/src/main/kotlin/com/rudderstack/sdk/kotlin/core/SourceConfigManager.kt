@@ -107,8 +107,8 @@ class SourceConfigManager(
         return null
     }
 
-    private suspend fun getSourceConfigWithFallback(
-        onFailure: suspend (Result.Failure<NetworkErrorStatus>) -> SourceConfig?
+    private inline fun getSourceConfigWithFallback(
+        onFailure: (Result.Failure<NetworkErrorStatus>) -> SourceConfig?
     ): SourceConfig? {
         return when (val result = httpClientFactory.getData()) {
             is Result.Success -> result.toSourceConfig()
