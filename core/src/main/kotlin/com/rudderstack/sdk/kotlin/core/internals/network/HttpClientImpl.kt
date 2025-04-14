@@ -1,5 +1,6 @@
 package com.rudderstack.sdk.kotlin.core.internals.network
 
+import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.network.NetworkErrorStatus.Companion.toErrorStatus
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import com.rudderstack.sdk.kotlin.core.internals.utils.validatedBaseUrl
@@ -193,6 +194,7 @@ internal class HttpClientImpl private constructor(
             connect()
             constructResponse()
         } catch (e: Exception) {
+            LoggerAnalytics.error("Network error: ${e.message}", e)
             when (e) {
                 is ConnectException,
                 is UnknownHostException,
