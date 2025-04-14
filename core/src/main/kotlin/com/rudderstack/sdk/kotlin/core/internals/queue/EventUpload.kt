@@ -56,17 +56,8 @@ internal class EventUpload(
     private var uploadJob: Job? = null
 
     internal fun start() {
-        resetUploadChannel()
-        if (uploadJob == null || uploadJob?.isActive == false) {
-            uploadJob = upload()
-        }
-    }
-
-    @OptIn(DelicateCoroutinesApi::class)
-    private fun resetUploadChannel() {
-        if (uploadChannel.isClosedForSend || uploadChannel.isClosedForReceive) {
-            uploadChannel = createUnlimitedUploadChannel()
-        }
+        uploadChannel = uploadChannel.startIfClosed()
+        uploadJob = uploadJob.createIfInActive(newJob = ::upload)
     }
 
     internal fun flush() {
@@ -212,4 +203,21 @@ internal fun readFileAsString(filePath: String): String {
     return File(filePath).readText()
 }
 
-internal fun createUnlimitedUploadChannel(): Channel<String> = Channel(UNLIMITED)
+@OptIn(DelicateCoroutinesApi::class)
+private fun <T> Channel<T>.startIfClosed(): Channel<T> {
+    return if (isClosedForSend || isClosedForReceive) {
+        createUnlimitedUploadChannel()
+    } else {
+        this
+    }
+}
+
+private fun <T> createUnlimitedUploadChannel(): Channel<T> = Channel(UNLIMITED)
+
+private inline fun Job?.createIfInActive(newJob: () -> Job): Job {
+    return if (this == null || !this.isActive) {
+        newJob()
+    } else {
+        this
+    }
+}
