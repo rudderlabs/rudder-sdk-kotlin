@@ -3,8 +3,8 @@ package com.rudderstack.sdk.kotlin.core.internals.queue
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.KotlinLogger
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
-import com.rudderstack.sdk.kotlin.core.internals.network.ErrorStatus
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClient
+import com.rudderstack.sdk.kotlin.core.internals.network.NetworkErrorStatus
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
@@ -238,8 +238,7 @@ class EventUploadTest {
 
         // Mock the behavior for HttpClient
         every { mockHttpClient.sendData(batchPayload) } returns Result.Failure(
-            ErrorStatus.ERROR_UNKNOWN,
-            IOException("Internal Server Error")
+            NetworkErrorStatus.ERROR_UNKNOWN
         )
 
         // Execute messageQueue actions
