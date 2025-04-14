@@ -2,7 +2,7 @@ package com.rudderstack.sdk.kotlin.core
 
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig.Companion.serializer
-import com.rudderstack.sdk.kotlin.core.internals.network.ErrorStatus
+import com.rudderstack.sdk.kotlin.core.internals.network.NetworkErrorStatus
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClient
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
@@ -134,7 +134,7 @@ class SourceConfigManagerTest {
         runTest(testDispatcher) {
             every { httpClient.getData() } returns Result.Failure(
                 error = Exception(),
-                status = ErrorStatus.ERROR_RETRY
+                status = NetworkErrorStatus.ERROR_RETRY
             )
 
             sourceConfigManager.refreshSourceConfigAndNotifyObservers()

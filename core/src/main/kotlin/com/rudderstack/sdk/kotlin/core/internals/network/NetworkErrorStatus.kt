@@ -11,7 +11,7 @@ private const val PAYLOAD_TOO_LARGE_CODE = 413
  * This enum encapsulates the different types of errors that may arise, providing meaningful names for common HTTP status codes
  * and other error conditions. It helps in categorizing and handling errors in a structured manner.
  */
-enum class ErrorStatus {
+enum class NetworkErrorStatus {
 
     /**
      * Indicates a bad request error, typically associated with HTTP status code 400.
@@ -59,7 +59,7 @@ enum class ErrorStatus {
          * @param errorCode The HTTP status code or error code to be mapped to an `ErrorStatus`.
          * @return The corresponding `ErrorStatus` enum value.
          */
-        fun toErrorStatus(errorCode: Int): ErrorStatus = when (errorCode) {
+        fun toErrorStatus(errorCode: Int): NetworkErrorStatus = when (errorCode) {
             BAD_REQUEST_CODE -> ERROR_400
             UNAUTHORIZED_CODE -> ERROR_401
             RESOURCE_NOT_FOUND_CODE -> ERROR_404

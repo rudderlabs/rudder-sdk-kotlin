@@ -78,7 +78,7 @@ class HttpClientImplTest {
 
         val result = getHttpClient.getData()
 
-        assertFailure(result, ErrorStatus.ERROR_NETWORK_UNAVAILABLE, exception)
+        assertFailure(result, NetworkErrorStatus.ERROR_NETWORK_UNAVAILABLE, exception)
     }
 
     @Test
@@ -89,7 +89,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            ErrorStatus.ERROR_400,
+            NetworkErrorStatus.ERROR_400,
             IOException(provideErrorMessage(400, mockConnection))
         )
     }
@@ -102,7 +102,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            ErrorStatus.ERROR_404,
+            NetworkErrorStatus.ERROR_404,
             IOException(provideErrorMessage(404, mockConnection))
         )
     }
@@ -115,7 +115,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            ErrorStatus.ERROR_RETRY,
+            NetworkErrorStatus.ERROR_RETRY,
             IOException(provideErrorMessage(500, mockConnection))
         )
     }
@@ -128,7 +128,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            ErrorStatus.ERROR_RETRY,
+            NetworkErrorStatus.ERROR_RETRY,
             IOException(provideErrorMessage(429, mockConnection))
         )
     }
@@ -141,7 +141,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            ErrorStatus.ERROR_RETRY,
+            NetworkErrorStatus.ERROR_RETRY,
             IOException(provideErrorMessage(450, mockConnection))
         )
     }
@@ -165,7 +165,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            ErrorStatus.ERROR_401,
+            NetworkErrorStatus.ERROR_401,
             IOException(provideErrorMessage(401, mockConnection))
         )
     }
@@ -195,7 +195,7 @@ class HttpClientImplTest {
 
         val result = postHttpClient.sendData(REQUEST_BODY)
 
-        assertFailure(result, ErrorStatus.ERROR_RETRY, exception)
+        assertFailure(result, NetworkErrorStatus.ERROR_RETRY, exception)
     }
 
     @Test
@@ -206,7 +206,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            ErrorStatus.ERROR_400,
+            NetworkErrorStatus.ERROR_400,
             IOException(provideErrorMessage(400, mockConnection))
         )
     }
@@ -219,7 +219,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            ErrorStatus.ERROR_404,
+            NetworkErrorStatus.ERROR_404,
             IOException(provideErrorMessage(404, mockConnection))
         )
     }
@@ -232,7 +232,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            ErrorStatus.ERROR_RETRY,
+            NetworkErrorStatus.ERROR_RETRY,
             IOException(provideErrorMessage(429, mockConnection))
         )
     }
@@ -245,7 +245,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            ErrorStatus.ERROR_RETRY,
+            NetworkErrorStatus.ERROR_RETRY,
             IOException(provideErrorMessage(450, mockConnection))
         )
     }
@@ -258,7 +258,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            ErrorStatus.ERROR_RETRY,
+            NetworkErrorStatus.ERROR_RETRY,
             IOException(provideErrorMessage(500, mockConnection))
         )
     }
@@ -282,7 +282,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            ErrorStatus.ERROR_401,
+            NetworkErrorStatus.ERROR_401,
             IOException(provideErrorMessage(401, mockConnection))
         )
     }
@@ -301,7 +301,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            ErrorStatus.ERROR_NETWORK_UNAVAILABLE,
+            NetworkErrorStatus.ERROR_NETWORK_UNAVAILABLE,
             ConnectException()
         )
     }
@@ -315,7 +315,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            ErrorStatus.ERROR_RETRY,
+            NetworkErrorStatus.ERROR_RETRY,
             IOException()
         )
     }
@@ -329,7 +329,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            ErrorStatus.ERROR_UNKNOWN,
+            NetworkErrorStatus.ERROR_UNKNOWN,
             Exception()
         )
     }
@@ -342,7 +342,7 @@ class HttpClientImplTest {
 
     private fun assertFailure(
         result: Result<String, Exception>,
-        expectedStatus: ErrorStatus,
+        expectedStatus: NetworkErrorStatus,
         expectedException: Exception
     ) {
         assertTrue(result is Result.Failure)
