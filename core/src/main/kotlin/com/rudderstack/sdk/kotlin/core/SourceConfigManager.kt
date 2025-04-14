@@ -2,9 +2,11 @@ package com.rudderstack.sdk.kotlin.core
 
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
+import com.rudderstack.sdk.kotlin.core.internals.network.ErrorStatus
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClient
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClientImpl
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
+import com.rudderstack.sdk.kotlin.core.internals.policies.backoff.ExponentialBackOffPolicy
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
@@ -14,6 +16,7 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import com.rudderstack.sdk.kotlin.core.internals.utils.encodeToBase64
 import com.rudderstack.sdk.kotlin.core.internals.utils.notifyOnlyOnceOnConnectionAvailable
 import com.rudderstack.sdk.kotlin.core.internals.utils.safelyExecute
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
 private const val SOURCE_CONFIG_ENDPOINT = "/sourceConfig"
@@ -22,6 +25,8 @@ private const val VERSION = "v"
 private const val BUILD_VERSION = "bv"
 private const val ANDROID = "android"
 private const val KOTLIN = "kotlin"
+
+private const val SOURCE_CONFIG_RETRY_ATTEMPT = 5
 
 /**
  * Manager for handling source config.
@@ -68,22 +73,47 @@ class SourceConfigManager(
     private suspend fun downloadSourceConfig(): SourceConfig? {
         return withContext(analytics.networkDispatcher) {
             safelyExecute {
-                when (val sourceConfigResult = httpClientFactory.getData()) {
-                    is Result.Success -> {
-                        LenientJson.decodeFromString<SourceConfig>(sourceConfigResult.response).let { config ->
-                            LoggerAnalytics.info("SourceConfig is fetched successfully: $config")
-                            config
-                        }
-                    }
-
-                    is Result.Failure -> {
-                        LoggerAnalytics.error(
-                            "Failed to get sourceConfig due to ${sourceConfigResult.status} ${sourceConfigResult.error}"
-                        )
-                        null
-                    }
+                getSourceConfigWithFallback {
+                    handleFailure(it)
                 }
             }
+        }
+    }
+
+    private suspend fun handleFailure(result: Result.Failure<Exception>): SourceConfig? = when (result.status) {
+        ErrorStatus.ERROR_400,
+        ErrorStatus.ERROR_UNKNOWN -> {
+            analytics.shutdown()
+            null
+        }
+
+        ErrorStatus.ERROR_401,
+        ErrorStatus.ERROR_404,
+        ErrorStatus.ERROR_413,
+        ErrorStatus.ERROR_RETRY,
+        ErrorStatus.ERROR_NETWORK_UNAVAILABLE,
+        null -> retryBlockWithBackoff {
+            getSourceConfigWithFallback { null }
+        }
+    }
+
+    private suspend fun retryBlockWithBackoff(block: suspend () -> SourceConfig?): SourceConfig? {
+        val backOffPolicy = ExponentialBackOffPolicy()
+        repeat(SOURCE_CONFIG_RETRY_ATTEMPT) { attempt ->
+            delay(backOffPolicy.nextDelayInMillis())
+            LoggerAnalytics.verbose("Retrying fetching of SourceConfig, attempt: ${attempt + 1}")
+
+            block()?.let { return it }
+        }
+        return null
+    }
+
+    private suspend fun getSourceConfigWithFallback(
+        onFailure: suspend (Result.Failure<Exception>) -> SourceConfig?
+    ): SourceConfig? {
+        return when (val result = httpClientFactory.getData()) {
+            is Result.Success -> result.toSourceConfig()
+            is Result.Failure -> onFailure.invoke(result)
         }
     }
 
@@ -127,4 +157,10 @@ private fun Analytics.getQuery() = when (getPlatformType()) {
             VERSION to this.storage.getLibraryVersion().getVersionName(),
         )
     }
+}
+
+private fun Result.Success<String>.toSourceConfig(): SourceConfig {
+    val config = LenientJson.decodeFromString<SourceConfig>(response)
+    LoggerAnalytics.info("SourceConfig is fetched successfully: $config")
+    return config
 }

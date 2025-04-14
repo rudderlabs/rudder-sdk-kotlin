@@ -299,7 +299,7 @@ class EventQueueTest {
 
         // Mock the behavior for HttpClient
         every { mockHttpClient.sendData(batchPayload) } returns Result.Failure(
-            ErrorStatus.GENERAL_ERROR,
+            ErrorStatus.ERROR_UNKNOWN,
             IOException("Internal Server Error")
         )
 
