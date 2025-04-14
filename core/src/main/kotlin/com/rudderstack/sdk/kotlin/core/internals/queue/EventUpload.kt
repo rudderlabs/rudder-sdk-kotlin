@@ -97,11 +97,9 @@ internal class EventUpload(
 
             try {
                 prepareBatch(filePath)
-                    .takeIf { it.isNotEmpty() }
-                    ?.also { updateAnonymousIdHeaderIfChanged(it) }
-                    ?.let { batchPayload ->
-                        uploadEvents(batchPayload, filePath)
-                    }
+                    .takeIf { batch -> batch.isNotEmpty() }
+                    ?.also { batch -> updateAnonymousIdHeaderIfChanged(batch) }
+                    ?.let { batch -> uploadEvents(batch, filePath) }
             } catch (e: Exception) {
                 LoggerAnalytics.error("Error when uploading event", e)
                 cleanup(filePath)
