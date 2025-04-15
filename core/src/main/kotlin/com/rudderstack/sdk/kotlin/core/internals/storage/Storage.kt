@@ -1,6 +1,7 @@
 package com.rudderstack.sdk.kotlin.core.internals.storage
 
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
+import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 
 /**
@@ -133,6 +134,20 @@ interface Storage {
      * @return An instance of [LibraryVersion] containing version details.
      */
     fun getLibraryVersion(): LibraryVersion
+
+    /**
+     * Deletes the directory currently being used by the storage implementation, along with the
+     * shared preferences file.
+     *
+     * This operation permanently removes the current directory and its contents, as well as the
+     * shared preferences file.
+     *
+     * Use this method with caution, as any files or data within these locations will be irretrievably lost.
+     *
+     * **Note**: It is recommended to call the shutdown API after invoking this method to ensure the SDK is in a consistent state.
+     */
+    @UseWithCaution
+    fun deleteStorageAndPreferences()
 }
 
 /**
