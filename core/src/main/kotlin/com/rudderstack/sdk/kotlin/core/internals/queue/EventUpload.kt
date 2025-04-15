@@ -150,8 +150,11 @@ internal class EventUpload(
         // TODO: Implement the step to reset the backoff logic
         when (status) {
             NetworkErrorStatus.ERROR_400 -> {
-                // TODO: Log the error
-//                cleanup(filePath)
+                LoggerAnalytics.error(
+                    "Invalid request: missing or malformed body. " +
+                        "Ensure the payload is valid JSON and includes either anonymousId or userId."
+                )
+                cleanup(filePath)
             }
 
             NetworkErrorStatus.ERROR_401 -> {
