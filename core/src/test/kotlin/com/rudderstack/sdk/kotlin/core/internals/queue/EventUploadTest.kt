@@ -282,6 +282,20 @@ class EventUploadTest {
         verify(exactly = 0) { mockHttpClient.sendData(batchPayload) }
     }
 
+    @Test
+    fun `given server returns 413, when flush is called, then the batch is removed from the storage`() = runTest {
+        val unprocessedBatch = readFileTrimmed(unprocessedBatchWithTwoEvents)
+        every { mockStorage.readString(StorageKeys.EVENT, String.empty()) } returns singleFilePath
+        every { doesFileExist(singleFilePath) } returns true
+        every { readFileAsString(singleFilePath) } returns unprocessedBatch
+        every { mockHttpClient.sendData(any()) } returns Result.Failure(
+            error = NetworkErrorStatus.ERROR_413,
+        )
+
+        processMessage()
+
+        verify(exactly = 1) { mockStorage.remove(singleFilePath) }
+    }
 
     private fun prepareMultipleBatch() {
         val fileUrlList = filePaths.joinToString(",")
