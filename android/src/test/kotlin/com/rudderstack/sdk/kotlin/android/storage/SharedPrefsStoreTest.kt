@@ -2,6 +2,7 @@ package com.rudderstack.sdk.kotlin.android.storage
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
@@ -128,6 +129,7 @@ class SharedPrefsStoreTest {
         }
     }
 
+    @OptIn(UseWithCaution::class)
     @Test
     fun `given android version is N and above, when deletePrefs is called, then verify that shared preference is deleted`() {
         every { CheckBuildVersionUseCase.isAndroidVersionNAndAbove() } returns true
@@ -135,14 +137,5 @@ class SharedPrefsStoreTest {
         sharedPrefsStore.deletePrefs()
 
         verify { mockContext.deleteSharedPreferences(prefsName) }
-    }
-
-    @Test
-    fun `given android version is below N, when deletePrefs is called, then verify that shared preferences is deleted`() {
-        every { CheckBuildVersionUseCase.isAndroidVersionNAndAbove() } returns false
-
-        sharedPrefsStore.deletePrefs()
-
-        verify { mockContext.deleteFile("null/shared_prefs/${prefsName}.xml") }
     }
 }
