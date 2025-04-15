@@ -6,6 +6,7 @@ import com.rudderstack.sdk.kotlin.core.internals.network.HttpClient
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClientImpl
 import com.rudderstack.sdk.kotlin.core.internals.network.NetworkErrorStatus
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
+import com.rudderstack.sdk.kotlin.core.internals.policies.backoff.BackOffPolicy
 import com.rudderstack.sdk.kotlin.core.internals.policies.backoff.ExponentialBackOffPolicy
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
@@ -18,6 +19,7 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.notifyOnlyOnceOnConnectio
 import com.rudderstack.sdk.kotlin.core.internals.utils.safelyExecute
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import org.jetbrains.annotations.VisibleForTesting
 
 private const val SOURCE_CONFIG_ENDPOINT = "/sourceConfig"
 private const val PLATFORM = "p"
@@ -97,7 +99,7 @@ class SourceConfigManager(
     }
 
     private suspend fun retryBlockWithBackoff(block: suspend () -> SourceConfig?): SourceConfig? {
-        val backOffPolicy = ExponentialBackOffPolicy()
+        val backOffPolicy = provideBackoffPolicy()
         repeat(SOURCE_CONFIG_RETRY_ATTEMPT) { attempt ->
             delay(backOffPolicy.nextDelayInMillis())
             LoggerAnalytics.verbose("Retrying fetching of SourceConfig, attempt: ${attempt + 1}")
@@ -162,4 +164,9 @@ private fun Result.Success<String>.toSourceConfig(): SourceConfig {
     val config = LenientJson.decodeFromString<SourceConfig>(response)
     LoggerAnalytics.info("SourceConfig is fetched successfully: $config")
     return config
+}
+
+@VisibleForTesting
+internal fun provideBackoffPolicy(): BackOffPolicy {
+    return ExponentialBackOffPolicy()
 }
