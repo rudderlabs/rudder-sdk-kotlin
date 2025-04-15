@@ -1,11 +1,16 @@
 package com.rudderstack.sdk.kotlin.core.internals.network
 
-import com.rudderstack.sdk.kotlin.core.internals.network.ErrorStatus.Companion.toErrorStatus
+import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.network.NetworkErrorStatus.Companion.toErrorStatus
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import com.rudderstack.sdk.kotlin.core.internals.utils.validatedBaseUrl
 import java.io.IOException
+import java.net.ConnectException
 import java.net.HttpURLConnection
+import java.net.NoRouteToHostException
+import java.net.SocketTimeoutException
 import java.net.URL
+import java.net.UnknownHostException
 import java.util.Locale
 import java.util.zip.GZIPOutputStream
 
@@ -49,6 +54,7 @@ internal class HttpClientImpl private constructor(
 ) : HttpClient {
 
     companion object {
+
         /**
          * Creates a new instance of `HttpClientImpl` configured for making HTTP GET requests.
          *
@@ -144,7 +150,7 @@ internal class HttpClientImpl private constructor(
      *
      * @return `Result<String>` containing the response data or an error.
      */
-    override fun getData(): Result<String, Exception> {
+    override fun getData(): NetworkResult {
         val url: URL = createURL(baseUrl, endPoint, getConfig.query)
         return connectionFactory.createConnection(url, headers)
             .useConnection()
@@ -158,7 +164,7 @@ internal class HttpClientImpl private constructor(
      * @param body The body of the POST request to be sent.
      * @return `Result<String>` containing the response data or an error.
      */
-    override fun sendData(body: String): Result<String, Exception> {
+    override fun sendData(body: String): NetworkResult {
         val url = createURL(baseUrl, endPoint)
         return connectionFactory.createConnection(url, headers)
             .useConnection {
@@ -182,13 +188,29 @@ internal class HttpClientImpl private constructor(
     }
 
     @Suppress("TooGenericExceptionCaught")
-    private fun HttpURLConnection.useConnection(setup: HttpURLConnection.() -> Unit = {}): Result<String, Exception> {
+    private fun HttpURLConnection.useConnection(setup: HttpURLConnection.() -> Unit = {}): NetworkResult {
         return try {
             this.apply(setup)
             connect()
             constructResponse()
         } catch (e: Exception) {
-            Result.Failure(status = ErrorStatus.GENERAL_ERROR, error = e)
+            LoggerAnalytics.error("Network error: ${e.message}", e)
+            when (e) {
+                is ConnectException,
+                is UnknownHostException,
+                is NoRouteToHostException,
+                is SocketTimeoutException -> {
+                    Result.Failure(error = NetworkErrorStatus.ERROR_NETWORK_UNAVAILABLE)
+                }
+
+                is IOException -> {
+                    Result.Failure(error = NetworkErrorStatus.ERROR_RETRY)
+                }
+
+                else -> {
+                    Result.Failure(error = NetworkErrorStatus.ERROR_UNKNOWN)
+                }
+            }
         } finally {
             disconnect()
         }
@@ -207,16 +229,13 @@ internal class HttpClientImpl private constructor(
         }
     }
 
-    private fun HttpURLConnection.constructResponse(): Result<String, IOException> = when (responseCode) {
+    private fun HttpURLConnection.constructResponse(): NetworkResult = when (responseCode) {
         in OK_RESPONSE_CODE..SUCCESSFUL_TRANSACTION_CODE -> Result.Success(
             response = getSuccessResponse()
         )
 
         else -> Result.Failure(
-            status = toErrorStatus(responseCode),
-            error = IOException(
-                "HTTP $responseCode, URL: $url, Error: ${getErrorResponse()}"
-            )
+            error = toErrorStatus(responseCode),
         )
     }
 }
@@ -226,6 +245,7 @@ internal class HttpClientImpl private constructor(
  * Provides default settings such as connection timeout and read timeout.
  */
 internal class DefaultHttpURLConnectionFactory : HttpURLConnectionFactory {
+
     override fun createConnection(url: URL, headers: Map<String, String>): HttpURLConnection {
         val connection = url.openConnection() as HttpURLConnection
         return connection.apply {

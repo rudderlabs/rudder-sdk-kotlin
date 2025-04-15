@@ -468,7 +468,7 @@ class BrazeIntegrationTest {
                 setCustomUserAttribute("key-2", 1234L)
                 setCustomUserAttribute("key-3", 678.45)
                 setCustomUserAttribute("key-4", "value-4")
-                setCustomUserAttributeToSecondsFromEpoch("key-5", 631152671)
+                setCustomUserAttributeToSecondsFromEpoch("key-5", Utility.tryDateConversion(Utility.DATE_STRING) ?: 0)
             }
         }
     }

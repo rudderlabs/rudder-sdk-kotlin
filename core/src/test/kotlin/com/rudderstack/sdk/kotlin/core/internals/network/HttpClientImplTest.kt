@@ -1,6 +1,5 @@
 package com.rudderstack.sdk.kotlin.core.internals.network
 
-import com.rudderstack.sdk.kotlin.core.internals.network.provider.provideErrorMessage
 import com.rudderstack.sdk.kotlin.core.internals.network.provider.provideHttpClientImplForGetRequest
 import com.rudderstack.sdk.kotlin.core.internals.network.provider.provideHttpClientImplForPostRequest
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
@@ -11,12 +10,12 @@ import io.mockk.mockkStatic
 import io.mockk.verify
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotEquals
-import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.io.IOException
+import java.net.ConnectException
 import java.net.HttpURLConnection
 import java.net.MalformedURLException
 import java.net.UnknownHostException
@@ -77,7 +76,7 @@ class HttpClientImplTest {
 
         val result = getHttpClient.getData()
 
-        assertFailure(result, ErrorStatus.GENERAL_ERROR, exception)
+        assertFailure(result, NetworkErrorStatus.ERROR_NETWORK_UNAVAILABLE)
     }
 
     @Test
@@ -88,8 +87,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            ErrorStatus.BAD_REQUEST,
-            IOException(provideErrorMessage(400, mockConnection))
+            NetworkErrorStatus.ERROR_400
         )
     }
 
@@ -101,8 +99,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            ErrorStatus.RESOURCE_NOT_FOUND,
-            IOException(provideErrorMessage(404, mockConnection))
+            NetworkErrorStatus.ERROR_404
         )
     }
 
@@ -114,8 +111,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            ErrorStatus.SERVER_ERROR,
-            IOException(provideErrorMessage(500, mockConnection))
+            NetworkErrorStatus.ERROR_RETRY
         )
     }
 
@@ -127,8 +123,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            ErrorStatus.TOO_MANY_REQUESTS,
-            IOException(provideErrorMessage(429, mockConnection))
+            NetworkErrorStatus.ERROR_RETRY
         )
     }
 
@@ -140,8 +135,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            ErrorStatus.GENERAL_ERROR,
-            IOException(provideErrorMessage(450, mockConnection))
+            NetworkErrorStatus.ERROR_RETRY
         )
     }
 
@@ -164,8 +158,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            ErrorStatus.INVALID_WRITE_KEY,
-            IOException(provideErrorMessage(401, mockConnection))
+            NetworkErrorStatus.ERROR_401
         )
     }
 
@@ -194,7 +187,7 @@ class HttpClientImplTest {
 
         val result = postHttpClient.sendData(REQUEST_BODY)
 
-        assertFailure(result, ErrorStatus.GENERAL_ERROR, exception)
+        assertFailure(result, NetworkErrorStatus.ERROR_RETRY)
     }
 
     @Test
@@ -205,8 +198,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            ErrorStatus.BAD_REQUEST,
-            IOException(provideErrorMessage(400, mockConnection))
+            NetworkErrorStatus.ERROR_400
         )
     }
 
@@ -218,8 +210,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            ErrorStatus.RESOURCE_NOT_FOUND,
-            IOException(provideErrorMessage(404, mockConnection))
+            NetworkErrorStatus.ERROR_404
         )
     }
 
@@ -231,8 +222,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            ErrorStatus.TOO_MANY_REQUESTS,
-            IOException(provideErrorMessage(429, mockConnection))
+            NetworkErrorStatus.ERROR_RETRY
         )
     }
 
@@ -244,8 +234,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            ErrorStatus.GENERAL_ERROR,
-            IOException(provideErrorMessage(450, mockConnection))
+            NetworkErrorStatus.ERROR_RETRY
         )
     }
 
@@ -257,8 +246,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            ErrorStatus.SERVER_ERROR,
-            IOException(provideErrorMessage(500, mockConnection))
+            NetworkErrorStatus.ERROR_RETRY
         )
     }
 
@@ -281,8 +269,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            ErrorStatus.INVALID_WRITE_KEY,
-            IOException(provideErrorMessage(401, mockConnection))
+            NetworkErrorStatus.ERROR_401
         )
     }
 
@@ -291,16 +278,54 @@ class HttpClientImplTest {
         assertNotEquals(getHttpClient, postHttpClient)
     }
 
-    private fun assertSuccess(result: Result<String, Exception>) {
+    @Test
+    fun `given network is unavailable, when sendData is called, then return network unavailable error`() {
+        // This is to simulate a network error.
+        every { mockConnection.connect() } throws ConnectException()
+
+        val result = postHttpClient.sendData(REQUEST_BODY)
+
+        assertFailure(
+            result,
+            NetworkErrorStatus.ERROR_NETWORK_UNAVAILABLE
+        )
+    }
+
+    @Test
+    fun `given IO exception is thrown, when sendData is called, then return retry able error`() {
+        // This is to simulate a network error.
+        every { mockConnection.connect() } throws IOException()
+
+        val result = postHttpClient.sendData(REQUEST_BODY)
+
+        assertFailure(
+            result,
+            NetworkErrorStatus.ERROR_RETRY
+        )
+    }
+
+    @Test
+    fun `given any unknown exception is thrown, when sendData is called, then return unknown exception`() {
+        // This is to simulate a network error.
+        every { mockConnection.connect() } throws Exception()
+
+        val result = postHttpClient.sendData(REQUEST_BODY)
+
+        assertFailure(
+            result,
+            NetworkErrorStatus.ERROR_UNKNOWN
+        )
+    }
+
+    private fun assertSuccess(result: NetworkResult) {
         assertTrue(result is Result.Success)
         verify { mockConnection.connect() }
         verify { mockConnection.disconnect() }
     }
 
     private fun assertFailure(
-        result: Result<String, Exception>,
-        expectedStatus: ErrorStatus,
-        expectedException: Exception
+        result: NetworkResult,
+        expectedStatus: NetworkErrorStatus
     ) {
         assertTrue(result is Result.Failure)
         verify { mockConnection.connect() }
@@ -308,7 +333,6 @@ class HttpClientImplTest {
 
         result as Result.Failure // Safe cast after assertTrue
 
-        assertEquals(expectedStatus, result.status)
-        assertThrows(expectedException::class.java) { throw result.error }
+        assertEquals(expectedStatus, result.error)
     }
 }

@@ -10,6 +10,7 @@ import com.rudderstack.sdk.kotlin.core.AnalyticsConfiguration
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger.LogLevel
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
+import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
@@ -172,6 +173,7 @@ class AnalyticsTest {
             analytics.add(customPlugin)
             analytics.track(TRACK_EVENT_NAME)
             testDispatcher.scheduler.runCurrent()
+            disableSource()
             coVerify(exactly = 1) {
                 mockStorage.write(StorageKeys.EVENT, withArg<String> { eventString ->
                     assertTrue(eventString.contains(NEW_EVENT_NAME))
@@ -188,7 +190,7 @@ class AnalyticsTest {
             analytics.remove(customPlugin)
             analytics.track(TRACK_EVENT_NAME)
             testDispatcher.scheduler.runCurrent()
-
+            disableSource()
             coVerify(exactly = 1) {
                 mockStorage.write(StorageKeys.EVENT, withArg<String> { eventString ->
                     assertTrue(eventString.contains(TRACK_EVENT_NAME))
@@ -209,6 +211,16 @@ class AnalyticsTest {
         testDispatcher.scheduler.runCurrent()
 
         assertNull(analytics.sessionId)
+    }
+
+    private fun disableSource() {
+        analytics.sourceConfigState.dispatch(
+            SourceConfig.UpdateAction(
+                SourceConfig(
+                    source = SourceConfig.initialState().source.copy(isSourceEnabled = false)
+                )
+            )
+        )
     }
 }
 

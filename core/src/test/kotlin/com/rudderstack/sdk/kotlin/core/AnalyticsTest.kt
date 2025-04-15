@@ -6,6 +6,7 @@ import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.Properties
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
+import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.connectivity.ConnectivityState
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
@@ -207,12 +208,14 @@ class AnalyticsTest {
 
     @Test
     fun `when SDK is initialised, then connectivity state should be set to default state`() = runTest(testDispatcher) {
+        disableSource()
         verify(exactly = 1) {
             mockConnectivityState.dispatch(match { action ->
                 action is ConnectivityState.SetDefaultStateAction
             })
         }
     }
+
     @Test
     fun `when SDK is initialised, then SourceConfigManager should be initialised and source config observers should be notified`() {
         assertNotNull(analytics.sourceConfigManager)
@@ -236,6 +239,7 @@ class AnalyticsTest {
                 options = provideRudderOption(),
             )
             testDispatcher.scheduler.runCurrent()
+            disableSource()
 
             assertEquals(mockStorage, analytics.storage)
 
@@ -256,6 +260,7 @@ class AnalyticsTest {
                 options = provideRudderOption(),
             )
             testDispatcher.scheduler.runCurrent()
+            disableSource()
 
             assertEquals(mockStorage, analytics.storage)
             coVerify(exactly = 1) {
@@ -274,6 +279,7 @@ class AnalyticsTest {
                 options = provideRudderOption(),
             )
             testDispatcher.scheduler.runCurrent()
+            disableSource()
 
             assertEquals(mockStorage, analytics.storage)
             coVerify(exactly = 1) {
@@ -292,6 +298,7 @@ class AnalyticsTest {
                 options = provideRudderOption(),
             )
             testDispatcher.scheduler.runCurrent()
+            disableSource()
 
             assertEquals(mockStorage, analytics.storage)
             coVerify(exactly = 1) {
@@ -310,6 +317,7 @@ class AnalyticsTest {
                 options = provideRudderOption(),
             )
             testDispatcher.scheduler.runCurrent()
+            disableSource()
 
             assertEquals(mockStorage, analytics.storage)
             coVerify(exactly = 1) {
@@ -335,6 +343,7 @@ class AnalyticsTest {
             options = options,
         )
         testDispatcher.scheduler.runCurrent()
+        disableSource()
 
         coVerify(exactly = 1) {
             mockStorage.write(StorageKeys.EVENT, any<String>())
@@ -356,6 +365,7 @@ class AnalyticsTest {
             options = options,
         )
         testDispatcher.scheduler.runCurrent()
+        disableSource()
 
         coVerify(exactly = 1) {
             mockStorage.write(StorageKeys.EVENT, any<String>())
@@ -375,6 +385,7 @@ class AnalyticsTest {
             options = options,
         )
         testDispatcher.scheduler.runCurrent()
+        disableSource()
 
         coVerify(exactly = 1) {
             mockStorage.write(StorageKeys.EVENT, any<String>())
@@ -394,6 +405,7 @@ class AnalyticsTest {
             options = options,
         )
         testDispatcher.scheduler.runCurrent()
+        disableSource()
 
         coVerify(exactly = 1) {
             mockStorage.write(StorageKeys.EVENT, any<String>())
@@ -413,6 +425,7 @@ class AnalyticsTest {
             options = options,
         )
         testDispatcher.scheduler.runCurrent()
+        disableSource()
 
         coVerify(exactly = 1) {
             mockStorage.write(StorageKeys.EVENT, any<String>())
@@ -462,6 +475,7 @@ class AnalyticsTest {
             analytics.shutdown()
             // Process all the events
             testDispatcher.scheduler.runCurrent()
+            disableSource()
 
             coVerify(exactly = 5) {
                 mockStorage.write(StorageKeys.EVENT, any<String>())
@@ -475,6 +489,7 @@ class AnalyticsTest {
         analytics.add(customPlugin)
         analytics.track(TRACK_EVENT_NAME)
         testDispatcher.scheduler.runCurrent()
+        disableSource()
 
         coVerify(exactly = 1) {
             mockStorage.write(StorageKeys.EVENT, withArg<String> { eventString ->
@@ -491,12 +506,23 @@ class AnalyticsTest {
         analytics.remove(customPlugin)
         analytics.track(TRACK_EVENT_NAME)
         testDispatcher.scheduler.runCurrent()
+        disableSource()
 
         coVerify(exactly = 1) {
             mockStorage.write(StorageKeys.EVENT, withArg<String> { eventString ->
                 assertTrue(eventString.contains(TRACK_EVENT_NAME))
             })
         }
+    }
+
+    private fun disableSource() {
+        analytics.sourceConfigState.dispatch(
+            SourceConfig.UpdateAction(
+                SourceConfig(
+                    source = SourceConfig.initialState().source.copy(isSourceEnabled = false)
+                )
+            )
+        )
     }
 
     companion object {

@@ -41,4 +41,8 @@ internal class NetworkUtils(
     }
 
     internal fun isBluetoothEnabled(): Boolean = defaultNetworkUtils.isBluetoothEnabled()
+
+    internal fun teardown() {
+        networkCallbackUtils?.teardown()
+    }
 }

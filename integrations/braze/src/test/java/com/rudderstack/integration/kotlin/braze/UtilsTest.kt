@@ -14,6 +14,9 @@ import kotlinx.serialization.json.put
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.Calendar
 
 private const val EXTERNAL_ID = "<externalId>"
@@ -153,7 +156,8 @@ class UtilsTest {
 
         val date = tryDateConversion(value)
 
-        assertEquals(1630434600L, date)
+        val expected = Utility.tryDateConversion(value)
+        assertEquals(expected, date)
     }
 
     @Test

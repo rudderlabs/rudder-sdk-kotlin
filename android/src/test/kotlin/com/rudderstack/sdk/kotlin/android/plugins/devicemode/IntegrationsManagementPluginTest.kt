@@ -78,12 +78,24 @@ class IntegrationsManagementPluginTest {
         runTest {
             integrationsManagementPlugin.setup(mockAnalytics)
 
+            advanceUntilIdle()
             mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
             advanceUntilIdle()
             integrationsManagementPlugin.addIntegration(integrationPlugin)
             advanceUntilIdle()
 
             verify(exactly = 1) { integrationPlugin.initDestination(sourceConfigWithCorrectApiKey) }
+        }
+
+    @Test
+    fun `given an integration plugin, when no sourceConfig is fetched and setup is called, then it is not initialised`() =
+        runTest {
+            integrationsManagementPlugin.setup(mockAnalytics)
+
+            integrationsManagementPlugin.addIntegration(integrationPlugin)
+            advanceUntilIdle()
+
+            verify(exactly = 0) { integrationPlugin.initDestination(any()) }
         }
 
     @Test
@@ -104,6 +116,7 @@ class IntegrationsManagementPluginTest {
             integrationsManagementPlugin.setup(mockAnalytics)
 
             integrationsManagementPlugin.addIntegration(integrationPlugin)
+            advanceUntilIdle()
             mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
             advanceUntilIdle()
 
@@ -120,6 +133,7 @@ class IntegrationsManagementPluginTest {
         runTest {
             integrationsManagementPlugin.setup(mockAnalytics)
             integrationsManagementPlugin.addIntegration(integrationPlugin)
+            advanceUntilIdle()
             mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
             advanceUntilIdle()
 
@@ -148,6 +162,7 @@ class IntegrationsManagementPluginTest {
         runTest {
             integrationsManagementPlugin.setup(mockAnalytics)
             integrationsManagementPlugin.addIntegration(integrationPlugin)
+            advanceUntilIdle()
             mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
             advanceUntilIdle()
 
@@ -185,6 +200,7 @@ class IntegrationsManagementPluginTest {
                 integrationsManagementPlugin.intercept(event)
             }
 
+            advanceUntilIdle()
             mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
             advanceUntilIdle()
 
@@ -208,6 +224,7 @@ class IntegrationsManagementPluginTest {
                 integrationsManagementPlugin.intercept(event)
             }
 
+            advanceUntilIdle()
             mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
             advanceUntilIdle()
 

@@ -3,14 +3,12 @@ package com.rudderstack.sdk.kotlin.core.internals.queue
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.KotlinLogger
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
+import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.models.provider.provideEvent
-import com.rudderstack.sdk.kotlin.core.internals.network.ErrorStatus
-import com.rudderstack.sdk.kotlin.core.internals.network.HttpClient
-import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPoliciesFacade
+import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
-import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import com.rudderstack.sdk.kotlin.core.internals.utils.encodeToString
 import com.rudderstack.sdk.kotlin.core.mockAnalytics
 import com.rudderstack.sdk.kotlin.core.setupLogger
@@ -37,17 +35,12 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import java.io.FileNotFoundException
-import java.io.IOException
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class EventQueueTest {
 
     @MockK
     private lateinit var mockStorage: Storage
-
-    @MockK
-    private lateinit var mockHttpClient: HttpClient
 
     @MockK
     private lateinit var mockKotlinLogger: KotlinLogger
@@ -72,11 +65,18 @@ class EventQueueTest {
 
         coEvery { mockStorage.close() } just runs
         coEvery { mockStorage.write(StorageKeys.EVENT, any<String>()) } just runs
+        every { mockAnalytics.sourceConfigState } returns State(SourceConfig.initialState())
+        every { mockAnalytics.sourceConfigState } returns State(
+            SourceConfig(
+                source = SourceConfig.initialState().source.copy(
+                    isSourceEnabled = true
+                )
+            )
+        )
 
         eventQueue = spyk(
             EventQueue(
                 analytics = mockAnalytics,
-                httpClientFactory = mockHttpClient,
                 flushPoliciesFacade = mockFlushPoliciesFacade,
             )
         )
@@ -124,168 +124,6 @@ class EventQueueTest {
 
         val result = eventQueue.stringifyBaseEvent(event)
         assertEquals(jsonString, result)
-    }
-
-    @Test
-    fun `test readFileAsString reads file correctly`() {
-        val filePath = "test_file_path"
-        val fileContent = "test content"
-
-        every { eventQueue.readFileAsString(filePath) } returns fileContent
-
-        val result = eventQueue.readFileAsString(filePath)
-
-        assertEquals(fileContent, result)
-    }
-
-    @Test
-    fun `given multiple batch is ready to be sent to the server and server returns success, when flush is called, then all the batches are sent to the server and removed from the storage`() =
-        runTest {
-            val storage = mockAnalytics.storage
-            // Two batch files are ready to be sent
-            val filePaths = listOf(
-                "/data/user/0/com.rudderstack.android.sampleapp/app_rudder-android-store/<WRITE_KEY>-0",
-                "/data/user/0/com.rudderstack.android.sampleapp/app_rudder-android-store/<WRITE_KEY>-1"
-            )
-            val fileUrlList = filePaths.joinToString(",")
-
-            // Mock storage read
-            coEvery {
-                storage.readString(StorageKeys.EVENT, String.empty())
-            } returns fileUrlList
-
-            // Mock file existence check
-            every { eventQueue.doesFileExist(any()) } returns true
-
-            val batchPayload = "test content"
-
-            // Mock messageQueue file reading
-            filePaths.forEach { path ->
-                every { eventQueue.readFileAsString(path) } returns batchPayload
-            }
-
-            // Mock the behavior for HttpClient
-            every { mockHttpClient.sendData(batchPayload) } returns Result.Success("Ok")
-
-            // Execute messageQueue actions
-            eventQueue.start()
-            eventQueue.flush()
-            testDispatcher.scheduler.advanceUntilIdle()
-
-            // Verify the expected behavior
-            filePaths.forEach { path ->
-                verify(exactly = 1) { storage.remove(path) }
-            }
-        }
-
-    @Test
-    fun `given batch is ready to be sent to the server and server returns error, when flush is called, then the batch is not removed from storage`() {
-        val storage = mockAnalytics.storage
-        // Two batch files are ready to be sent
-        val filePaths = listOf(
-            "/data/user/0/com.rudderstack.android.sampleapp/app_rudder-android-store/<WRITE_KEY>-0",
-            "/data/user/0/com.rudderstack.android.sampleapp/app_rudder-android-store/<WRITE_KEY>-1"
-        )
-        val fileUrlList = filePaths.joinToString(",")
-
-        // Mock storage read
-        coEvery {
-            storage.readString(StorageKeys.EVENT, String.empty())
-        } returns fileUrlList
-
-        // Mock file existence check
-        every { eventQueue.doesFileExist(any()) } returns true
-
-        val batchPayload = "test content"
-
-        // Mock messageQueue file reading
-        filePaths.forEach { path ->
-            every { eventQueue.readFileAsString(path) } returns batchPayload
-        }
-
-        // Mock the behavior for HttpClient
-        every { mockHttpClient.sendData(batchPayload) } returns Result.Failure(
-            ErrorStatus.GENERAL_ERROR,
-            IOException("Internal Server Error")
-        )
-
-        // Execute messageQueue actions
-        eventQueue.start()
-        eventQueue.flush()
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        // Verify the expected behavior
-        filePaths.forEach { path ->
-            verify(exactly = 0) { storage.remove(path) }
-        }
-    }
-
-    @Test
-    fun `given batch is ready to be sent to the server and file is not found, when flush is called, then the exception is thrown and handled`() {
-        val storage = mockAnalytics.storage
-        // Two batch files are ready to be sent
-        val filePaths = listOf(
-            "/data/user/0/com.rudderstack.android.sampleapp/app_rudder-android-store/<WRITE_KEY>-0",
-            "/data/user/0/com.rudderstack.android.sampleapp/app_rudder-android-store/<WRITE_KEY>-1"
-        )
-        val fileUrlList = filePaths.joinToString(",")
-
-        // Mock storage read
-        coEvery {
-            storage.readString(StorageKeys.EVENT, String.empty())
-        } returns fileUrlList
-
-        // Mock file existence check
-        every { eventQueue.doesFileExist(any()) } returns true
-
-        // Throw file not found exception while reading the file
-        val exception = FileNotFoundException("File not found")
-        filePaths.forEach { path ->
-            every { eventQueue.readFileAsString(path) } throws exception
-        }
-
-        // Execute messageQueue actions
-        eventQueue.start()
-        eventQueue.flush()
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        verify(exactly = filePaths.size) {
-            mockKotlinLogger.error("Message storage file not found", exception)
-        }
-    }
-
-    @Test
-    fun `given batch is ready to be sent to the server and some exception occurs while reading the file, when flush is called, then the exception is thrown and handled`() {
-        val storage = mockAnalytics.storage
-        // Two batch files are ready to be sent
-        val filePaths = listOf(
-            "/data/user/0/com.rudderstack.android.sampleapp/app_rudder-android-store/<WRITE_KEY>-0",
-            "/data/user/0/com.rudderstack.android.sampleapp/app_rudder-android-store/<WRITE_KEY>-1"
-        )
-        val fileUrlList = filePaths.joinToString(",")
-
-        // Mock storage read
-        coEvery {
-            storage.readString(StorageKeys.EVENT, String.empty())
-        } returns fileUrlList
-
-        // Mock file existence check
-        every { eventQueue.doesFileExist(any()) } returns true
-
-        // Throw generic exception while reading the file
-        val exception = Exception("File not found")
-        filePaths.forEach { path ->
-            every { eventQueue.readFileAsString(path) } throws exception
-        }
-
-        // Execute messageQueue actions
-        eventQueue.start()
-        eventQueue.flush()
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        verify(exactly = filePaths.size) {
-            mockKotlinLogger.error("Error when uploading event", exception)
-        }
     }
 
     @Test
@@ -366,6 +204,13 @@ class EventQueueTest {
         every { eventQueue.stringifyBaseEvent(mockEvent) } returns jsonString
         // Mock the behavior for StartupFlushPolicy
         every { mockFlushPoliciesFacade.shouldFlush() } returns true
+        every { mockAnalytics.sourceConfigState } returns State(
+            SourceConfig(
+                source = SourceConfig.initialState().source.copy(
+                    isSourceEnabled = true
+                )
+            )
+        )
 
         // Execute messageQueue actions
         eventQueue.start()
@@ -386,6 +231,13 @@ class EventQueueTest {
         every { eventQueue.stringifyBaseEvent(mockEvent) } returns jsonString
         // Mock the behavior for StartupFlushPolicy
         every { mockFlushPoliciesFacade.shouldFlush() } returns true
+        every { mockAnalytics.sourceConfigState } returns State(
+            SourceConfig(
+                source = SourceConfig.initialState().source.copy(
+                    isSourceEnabled = true
+                )
+            )
+        )
 
         // Execute messageQueue actions
         eventQueue.start()
@@ -421,6 +273,67 @@ class EventQueueTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         coVerify(exactly = 2) {
+            mockFlushPoliciesFacade.reset()
+            storage.rollover()
+        }
+    }
+
+    @Test
+    fun `given default flush policies are enabled but source is disabled, when events are made, the flush call is never triggered`() {
+        val storage = mockAnalytics.storage
+        val mockEvent: Event = mockk(relaxed = true)
+        val jsonString = """{"type":"track","event":"Test Event"}"""
+        every { eventQueue.stringifyBaseEvent(mockEvent) } returns jsonString
+        // Mock the behavior for StartupFlushPolicy
+        every { mockFlushPoliciesFacade.shouldFlush() } returns true
+        every { mockAnalytics.sourceConfigState } returns State(
+            SourceConfig(
+                source = SourceConfig.initialState().source.copy(isSourceEnabled = false)
+            )
+        )
+        every { mockAnalytics.sourceConfigState } returns State(
+            SourceConfig(
+                source = SourceConfig.initialState().source.copy(
+                    isSourceEnabled = false
+                )
+            )
+        )
+
+        // Execute messageQueue actions
+        eventQueue.start()
+
+        // Make the first event
+        eventQueue.put(mockEvent)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify(exactly = 0) {
+            mockFlushPoliciesFacade.reset()
+            storage.rollover()
+        }
+
+        // Mock the behavior for CountFlushPolicy
+        every { mockFlushPoliciesFacade.shouldFlush() } returns false
+
+        repeat(29) {
+            eventQueue.put(mockEvent)
+        }
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // No flush should be triggered
+        coVerify(exactly = 0) {
+            mockFlushPoliciesFacade.reset()
+            storage.rollover()
+        }
+
+        // Mock the behavior for CountFlushPolicy
+        every { mockFlushPoliciesFacade.shouldFlush() } returns true
+
+        // Make the 30th event
+        eventQueue.put(mockEvent)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // no flush call is triggered
+        coVerify(exactly = 0) {
             mockFlushPoliciesFacade.reset()
             storage.rollover()
         }
@@ -500,4 +413,6 @@ class EventQueueTest {
             storage.rollover()
         }
     }
+
+
 }
