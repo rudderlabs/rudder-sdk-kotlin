@@ -7,8 +7,8 @@ import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.storage.KeyValueStorage
 
 internal class SharedPrefsStore(
-    context: Context,
-    prefsName: String,
+    private val context: Context,
+    private val prefsName: String,
 ) : KeyValueStorage {
 
     private val preferences: SharedPreferences = context.getSharedPreferences(prefsName, Context.MODE_PRIVATE)
@@ -43,6 +43,16 @@ internal class SharedPrefsStore(
 
     override fun save(key: String, value: Long) {
         put(key, value)
+    }
+
+    override fun deletePrefs() {
+        if (CheckBuildVersionUseCase.isAndroidVersionNAndAbove()) {
+            context.deleteSharedPreferences(prefsName)
+        } else {
+            // TODO: Test this
+            context.deleteFile(context.applicationInfo.dataDir + "/shared_prefs/$prefsName.xml")
+        }
+        LoggerAnalytics.info("SharedPrefsStore: Preference cleared.")
     }
 
     override fun clear(key: String) {
