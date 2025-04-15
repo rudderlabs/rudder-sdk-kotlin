@@ -75,47 +75,46 @@ class SourceConfigManager(
     private suspend fun downloadSourceConfig(): SourceConfig? {
         return withContext(analytics.networkDispatcher) {
             safelyExecute {
-                getSourceConfigWithFallback {
-                    handleFailure(it)
+                fetchSourceConfigWithFallback { failureResult ->
+                    getSourceConfigOnFailure(failureResult)
                 }
             }
         }
     }
 
-    private suspend fun handleFailure(result: Result.Failure<NetworkErrorStatus>): SourceConfig? = when (result.error) {
-        NetworkErrorStatus.ERROR_400 -> {
-            analytics.shutdown()
-            null
+    private suspend fun getSourceConfigOnFailure(result: Result.Failure<NetworkErrorStatus>): SourceConfig? =
+        when (result.error) {
+            NetworkErrorStatus.ERROR_400 -> {
+                analytics.shutdown()
+                null
+            }
+
+            NetworkErrorStatus.ERROR_401,
+            NetworkErrorStatus.ERROR_404,
+            NetworkErrorStatus.ERROR_413,
+            NetworkErrorStatus.ERROR_RETRY,
+            NetworkErrorStatus.ERROR_UNKNOWN,
+            NetworkErrorStatus.ERROR_NETWORK_UNAVAILABLE -> fetchSourceConfigWithBackOff()
         }
 
-        NetworkErrorStatus.ERROR_401,
-        NetworkErrorStatus.ERROR_404,
-        NetworkErrorStatus.ERROR_413,
-        NetworkErrorStatus.ERROR_RETRY,
-        NetworkErrorStatus.ERROR_UNKNOWN,
-        NetworkErrorStatus.ERROR_NETWORK_UNAVAILABLE -> retryBlockWithBackoff {
-            getSourceConfigWithFallback { null }
-        }
-    }
-
-    private suspend fun retryBlockWithBackoff(block: suspend () -> SourceConfig?): SourceConfig? {
+    private suspend fun fetchSourceConfigWithBackOff(): SourceConfig? {
         val backOffPolicy = provideBackoffPolicy()
         repeat(SOURCE_CONFIG_RETRY_ATTEMPT) { attempt ->
             delay(backOffPolicy.nextDelayInMillis())
             LoggerAnalytics.verbose("Retrying fetching of SourceConfig, attempt: ${attempt + 1}")
 
-            block()?.let { return it }
+            fetchSourceConfigWithFallback { null }?.let { return it }
         }
         LoggerAnalytics.info("All retry attempts for fetching SourceConfig have been exhausted. Returning null.")
         return null
     }
 
-    private inline fun getSourceConfigWithFallback(
-        fallback: (Result.Failure<NetworkErrorStatus>) -> SourceConfig?
+    private inline fun fetchSourceConfigWithFallback(
+        onFailure: (Result.Failure<NetworkErrorStatus>) -> SourceConfig?
     ): SourceConfig? {
         return when (val result = httpClientFactory.getData()) {
             is Result.Success -> result.toSourceConfig()
-            is Result.Failure -> fallback(result)
+            is Result.Failure -> onFailure(result)
         }
     }
 
