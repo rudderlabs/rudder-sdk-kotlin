@@ -5,6 +5,8 @@ import android.content.SharedPreferences
 import androidx.core.content.edit
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.storage.KeyValueStorage
+import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
+import java.io.File
 
 internal class SharedPrefsStore(
     private val context: Context,
@@ -45,12 +47,23 @@ internal class SharedPrefsStore(
         put(key, value)
     }
 
+    @UseWithCaution
     override fun deletePrefs() {
         if (CheckBuildVersionUseCase.isAndroidVersionNAndAbove()) {
             context.deleteSharedPreferences(prefsName)
         } else {
-            // TODO: Test this
-            context.deleteFile(context.applicationInfo.dataDir + "/shared_prefs/$prefsName.xml")
+            File(context.getSharedPreferencesFilePath(prefsName))
+                .takeIf { file -> file.exists() }
+                ?.let { file ->
+                    file.delete()
+                        .let { isDeleted ->
+                            LoggerAnalytics.debug(
+                                "SharedPrefsStore: Path: " +
+                                    "${context.getSharedPreferencesFilePath(prefsName)} " +
+                                    "delete status: $isDeleted"
+                            )
+                        }
+                }
         }
         LoggerAnalytics.info("SharedPrefsStore: Preference cleared.")
     }
@@ -80,4 +93,8 @@ internal class SharedPrefsStore(
             }
         }
     }
+}
+
+private fun Context.getSharedPreferencesFilePath(prefsName: String): String {
+    return "${this.applicationInfo.dataDir}/shared_prefs/$prefsName.xml"
 }
