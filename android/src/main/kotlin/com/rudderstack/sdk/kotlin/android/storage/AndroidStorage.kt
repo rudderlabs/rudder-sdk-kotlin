@@ -9,6 +9,7 @@ import com.rudderstack.sdk.kotlin.core.internals.storage.LibraryVersion
 import com.rudderstack.sdk.kotlin.core.internals.storage.MAX_PAYLOAD_SIZE
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
+import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
 import com.rudderstack.sdk.kotlin.core.internals.utils.toAndroidPrefsKey
 import com.rudderstack.sdk.kotlin.core.internals.utils.underscoreSeparator
 import java.io.File
@@ -104,6 +105,12 @@ internal class AndroidStorage(
 
             override fun getBuildVersion(): String = android.os.Build.VERSION.SDK_INT.toString()
         }
+    }
+
+    @UseWithCaution
+    override fun deleteStorageAndPreferences() {
+        storageDirectory.deleteRecursively()
+        rudderPrefsRepo.deletePrefs()
     }
 }
 
