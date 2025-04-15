@@ -1,6 +1,7 @@
 package com.rudderstack.sdk.kotlin.core.internals.storage
 
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
+import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
 
 /**
  * Interface defining a basic key-value storage mechanism.
@@ -107,11 +108,10 @@ interface KeyValueStorage {
     fun clear(key: String)
 
     /**
-     * Deletes all the preferences stored in the storage.
+     * Deletes all stored preferences from the storage mechanism.
      *
-     * This method clears all preferences stored in the shared preferences file. If the Android system version is
-     * Nougat or above, it removes the entire preferences file. For older versions, it manually deletes the
-     * underlying shared preferences file.
+     * This method deletes the shared preferences file entirely to ensure a clean state.
      */
+    @UseWithCaution
     fun deletePrefs()
 }
