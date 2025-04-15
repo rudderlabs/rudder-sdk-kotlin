@@ -106,15 +106,16 @@ class SourceConfigManager(
 
             block()?.let { return it }
         }
+        LoggerAnalytics.info("All retry attempts for fetching SourceConfig have been exhausted. Returning null.")
         return null
     }
 
     private inline fun getSourceConfigWithFallback(
-        onFailure: (Result.Failure<NetworkErrorStatus>) -> SourceConfig?
+        fallback: (Result.Failure<NetworkErrorStatus>) -> SourceConfig?
     ): SourceConfig? {
         return when (val result = httpClientFactory.getData()) {
             is Result.Success -> result.toSourceConfig()
-            is Result.Failure -> onFailure.invoke(result)
+            is Result.Failure -> fallback(result)
         }
     }
 
