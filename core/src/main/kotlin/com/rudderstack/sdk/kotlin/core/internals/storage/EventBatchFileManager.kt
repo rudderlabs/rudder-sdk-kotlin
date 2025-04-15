@@ -92,7 +92,7 @@ class EventBatchFileManager(
      */
     fun read(): List<String> {
         val files = directory.listFiles { _, name ->
-            name.contains(writeKey) && !name.endsWith(TMP_SUFFIX)
+            !name.endsWith(TMP_SUFFIX)
         } ?: emptyArray()
         return files.map { it.absolutePath }
     }
@@ -155,7 +155,7 @@ class EventBatchFileManager(
     private fun currentFile(): File {
         if (curFile == null) {
             val index = keyValueStorage.getInt(fileIndexKey, 0)
-            curFile = File(directory, "$writeKey-$index$TMP_SUFFIX")
+            curFile = File(directory, "$index$TMP_SUFFIX")
         }
         return curFile!!
     }
