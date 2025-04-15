@@ -5,6 +5,7 @@ import java.util.Locale
 import java.util.UUID
 
 private const val EMPTY_STRING = ""
+private const val UNDERSCORE_SEPARATOR = "_"
 
 /**
  * Encodes the string to a Base64 encoded string.
@@ -85,6 +86,16 @@ internal fun String?.parseFilePaths(): List<String> {
  */
 @InternalRudderApi
 fun String.Companion.empty(): String = EMPTY_STRING
+
+/**
+ * Provides an underscore separator constant.
+ *
+ * This companion object extension function returns an underscore separator (`"_"`).
+ *
+ * @return An underscore separator as a string.
+ */
+@InternalRudderApi
+fun String.Companion.underscoreSeparator(): String = UNDERSCORE_SEPARATOR
 
 /**
  * Validates and formats a base URL by ensuring it ends with a slash (`/`).
