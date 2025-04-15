@@ -105,4 +105,13 @@ interface KeyValueStorage {
      * @param key The key used to identify the storage location to be cleared.
      */
     fun clear(key: String)
+
+    /**
+     * Deletes all the preferences stored in the storage.
+     *
+     * This method clears all preferences stored in the shared preferences file. If the Android system version is
+     * Nougat or above, it removes the entire preferences file. For older versions, it manually deletes the
+     * underlying shared preferences file.
+     */
+    fun deletePrefs()
 }
