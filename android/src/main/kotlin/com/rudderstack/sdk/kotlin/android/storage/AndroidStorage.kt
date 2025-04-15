@@ -10,6 +10,7 @@ import com.rudderstack.sdk.kotlin.core.internals.storage.MAX_PAYLOAD_SIZE
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.toAndroidPrefsKey
+import com.rudderstack.sdk.kotlin.core.internals.utils.underscoreSeparator
 import java.io.File
 
 private const val RUDDER_PREFS = "rl_prefs"
@@ -21,7 +22,8 @@ internal class AndroidStorage(
     private val rudderPrefsRepo: KeyValueStorage = SharedPrefsStore(context, RUDDER_PREFS.toAndroidPrefsKey(writeKey))
 ) : Storage {
 
-    private val storageDirectory: File = context.getDir(DIRECTORY_NAME, Context.MODE_PRIVATE)
+    private val storageDirectory: File =
+        context.getDir(DIRECTORY_NAME.appendWriteKeyToDirectoryName(writeKey), Context.MODE_PRIVATE)
     private val eventBatchFile = EventBatchFileManager(storageDirectory, writeKey, rudderPrefsRepo)
 
     override suspend fun write(key: StorageKeys, value: Boolean) {
@@ -117,4 +119,8 @@ internal fun provideAndroidStorage(writeKey: String, application: Context): Stor
         context = application,
         writeKey = writeKey,
     )
+}
+
+private fun String.appendWriteKeyToDirectoryName(writeKey: String): String {
+    return "$this${String.underscoreSeparator()}$writeKey"
 }
