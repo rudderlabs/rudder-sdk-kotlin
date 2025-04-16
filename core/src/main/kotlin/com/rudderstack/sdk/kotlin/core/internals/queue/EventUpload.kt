@@ -12,7 +12,7 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.JsonSentAtUpdater
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import com.rudderstack.sdk.kotlin.core.internals.utils.createIfInactive
 import com.rudderstack.sdk.kotlin.core.internals.utils.createNewIfClosed
-import com.rudderstack.sdk.kotlin.core.internals.utils.createUnlimitedUploadChannel
+import com.rudderstack.sdk.kotlin.core.internals.utils.createUnlimitedCapacityChannel
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import com.rudderstack.sdk.kotlin.core.internals.utils.encodeToBase64
 import com.rudderstack.sdk.kotlin.core.internals.utils.generateUUID
@@ -36,7 +36,7 @@ private const val UPLOAD_SIG = "#!upload"
  */
 internal class EventUpload(
     private val analytics: Analytics,
-    private var uploadChannel: Channel<String> = createUnlimitedUploadChannel(),
+    private var uploadChannel: Channel<String> = createUnlimitedCapacityChannel(),
     private val jsonSentAtUpdater: JsonSentAtUpdater = JsonSentAtUpdater(),
     private val httpClientFactory: HttpClient = with(analytics.configuration) {
         return@with HttpClientImpl.createPostHttpClient(

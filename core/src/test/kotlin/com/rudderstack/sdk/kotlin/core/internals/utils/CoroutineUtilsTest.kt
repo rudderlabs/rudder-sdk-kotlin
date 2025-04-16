@@ -43,7 +43,7 @@ class CoroutineUtilsTest {
     @OptIn(DelicateCoroutinesApi::class)
     @Test
     fun `when new channel is created with unlimited capacity, it should be ready to send and receive`() {
-        val result: Channel<String> = createUnlimitedUploadChannel()
+        val result: Channel<String> = createUnlimitedCapacityChannel()
 
         assertNotNull(result)
         assertFalse(result.isClosedForSend)
