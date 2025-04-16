@@ -16,6 +16,7 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.createUnlimitedCapacityCh
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import com.rudderstack.sdk.kotlin.core.internals.utils.encodeToBase64
 import com.rudderstack.sdk.kotlin.core.internals.utils.generateUUID
+import com.rudderstack.sdk.kotlin.core.internals.utils.handleInvalidWriteKey
 import com.rudderstack.sdk.kotlin.core.internals.utils.parseFilePaths
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -159,9 +160,9 @@ internal class EventUpload(
             }
 
             NetworkErrorStatus.ERROR_401 -> {
-                // TODO: Log the error
-                // TODO: Delete all the files related to this writeKey
-//                analytics.shutdown()
+                LoggerAnalytics.error("Invalid write key. Ensure the write key is valid.")
+                cancel()
+                analytics.handleInvalidWriteKey()
             }
 
             NetworkErrorStatus.ERROR_404 -> {
