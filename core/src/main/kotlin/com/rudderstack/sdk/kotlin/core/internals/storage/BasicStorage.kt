@@ -1,14 +1,14 @@
 package com.rudderstack.sdk.kotlin.core.internals.storage
 
 import com.rudderstack.sdk.kotlin.core.internals.storage.exception.PayloadTooLargeException
-import com.rudderstack.sdk.kotlin.core.internals.utils.toFileDirectory
+import com.rudderstack.sdk.kotlin.core.internals.utils.appendWriteKey
 import source.version.VersionConstants
 import java.io.File
 
 /**
  * The directory where the event files are stored.
  * */
-const val FILE_DIRECTORY = "/tmp/rudderstack-analytics-kotlin/"
+private const val FILE_DIRECTORY = "/tmp/rudderstack-analytics-kotlin"
 private const val FILE_NAME = "events"
 
 /**
@@ -23,9 +23,9 @@ private const val FILE_NAME = "events"
 internal class BasicStorage(writeKey: String) : Storage {
 
     /**
-     * The directory where the storage files are kept, determined by the provided [writeKey].
+     * The directory where the storage files are kept, determined by the provided `writeKey`.
      */
-    private val storageDirectory = File(writeKey.toFileDirectory(FILE_DIRECTORY))
+    private val storageDirectory = File(FILE_DIRECTORY.appendWriteKey(writeKey))
 
     /**
      * The subdirectory within [storageDirectory] where event files are stored.
