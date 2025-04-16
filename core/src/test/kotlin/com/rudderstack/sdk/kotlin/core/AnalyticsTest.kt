@@ -508,6 +508,24 @@ class AnalyticsTest {
             verify(exactly = 1) { mockStorage.close() }
         }
 
+    @OptIn(ExperimentalCoroutinesApi::class, UseWithCaution::class)
+    @Test
+    fun `given writeKey is not proper, when shutdown is called, then storage is deleted and closed`() =
+        runTest(testDispatcher) {
+            every { mockAnalyticsConfiguration.isInvalidWriteKey } returns true
+
+            analytics.shutdown()
+            advanceUntilIdle()
+            // Call this to execute invokeOnCompletion block
+            mockAnalyticsJob.cancel()
+
+            assertTrue(analytics.isAnalyticsShutdown)
+            verify(exactly = 1) {
+                mockStorage.close()
+                mockStorage.delete()
+            }
+        }
+
     @Test
     fun `when custom plugin is dynamically added, then it should intercept the message and process event`() = runTest(testDispatcher) {
         val customPlugin = provideCustomPlugin()
