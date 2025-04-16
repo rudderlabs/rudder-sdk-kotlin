@@ -49,21 +49,14 @@ internal class SharedPrefsStore(
 
     @UseWithCaution
     override fun delete() {
-        if (CheckBuildVersionUseCase.isAndroidVersionNAndAbove()) {
+        val isDeleted = if (CheckBuildVersionUseCase.isAndroidVersionNAndAbove()) {
             context.deleteSharedPreferences(prefsName)
         } else {
             File(context.getSharedPreferencesFilePath(prefsName))
                 .takeIf { file -> file.exists() }
-                ?.delete()
-                ?.let { isDeleted ->
-                    LoggerAnalytics.debug(
-                        "SharedPrefsStore: Attempted to delete shared preferences at path: " +
-                            "${context.getSharedPreferencesFilePath(prefsName)}. " +
-                            "Deletion successful: $isDeleted"
-                    )
-                }
+                ?.delete() ?: false
         }
-        LoggerAnalytics.info("Preference cleared.")
+        LoggerAnalytics.debug("Attempt to delete shared preferences successful: $isDeleted")
     }
 
     override fun clear(key: String) {

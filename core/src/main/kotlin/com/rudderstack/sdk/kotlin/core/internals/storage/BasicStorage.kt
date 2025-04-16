@@ -133,9 +133,14 @@ internal class BasicStorage(writeKey: String) : Storage {
 
     @UseWithCaution
     override fun delete() {
-        propertiesFile.delete()
-        storageDirectory.deleteRecursively()
-        LoggerAnalytics.info("Storage cleared.")
+        runCatching {
+            propertiesFile.delete()
+            storageDirectory.deleteRecursively().let { isDeleted ->
+                LoggerAnalytics.info("Storage directory deleted: $isDeleted")
+            }
+        }.onFailure {
+            LoggerAnalytics.error("Error while clearing storage: ${it.stackTraceToString()}")
+        }
     }
 }
 

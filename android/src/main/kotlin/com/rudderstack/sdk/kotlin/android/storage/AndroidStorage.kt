@@ -110,9 +110,14 @@ internal class AndroidStorage(
 
     @UseWithCaution
     override fun delete() {
-        rudderPrefsRepo.delete()
-        storageDirectory.deleteRecursively()
-        LoggerAnalytics.info("Storage cleared.")
+        runCatching {
+            rudderPrefsRepo.delete()
+            storageDirectory.deleteRecursively().let { isDeleted ->
+                LoggerAnalytics.info("Storage directory deleted: $isDeleted")
+            }
+        }.onFailure {
+            LoggerAnalytics.error("Error while clearing storage: ${it.stackTraceToString()}")
+        }
     }
 }
 
