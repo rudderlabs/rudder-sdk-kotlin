@@ -215,7 +215,7 @@ fun CreateLogcat(viewModel: MainViewModel) {
         val logText by viewModel.state.collectAsState()
 
         Text(
-            text = "Payload",
+            text = "Payload Generated",
             style = MaterialTheme.typography.titleSmall,
             modifier = Modifier.align(Alignment.Start),
         )
