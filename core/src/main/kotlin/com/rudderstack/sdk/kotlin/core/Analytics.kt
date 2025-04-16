@@ -29,6 +29,7 @@ import com.rudderstack.sdk.kotlin.core.internals.plugins.PluginChain
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.storage.provideBasicStorage
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
+import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
 import com.rudderstack.sdk.kotlin.core.internals.utils.addNameAndCategoryToProperties
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import com.rudderstack.sdk.kotlin.core.internals.utils.isAnalyticsActive
@@ -317,8 +318,12 @@ open class Analytics protected constructor(
         }
     }
 
+    @OptIn(UseWithCaution::class)
     private fun shutdownHook() {
         analyticsJob.invokeOnCompletion {
+            this@Analytics.storage
+                .takeIf { isInvalidWriteKey }
+                ?.delete()
             this@Analytics.storage.close()
             LoggerAnalytics.info("Analytics shutdown completed.")
         }
