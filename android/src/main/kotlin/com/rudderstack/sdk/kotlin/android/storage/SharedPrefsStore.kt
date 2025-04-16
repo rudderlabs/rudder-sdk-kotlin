@@ -65,7 +65,7 @@ internal class SharedPrefsStore(
                         }
                 }
         }
-        LoggerAnalytics.info("SharedPrefsStore: Preference cleared.")
+        LoggerAnalytics.info("Preference cleared.")
     }
 
     override fun clear(key: String) {

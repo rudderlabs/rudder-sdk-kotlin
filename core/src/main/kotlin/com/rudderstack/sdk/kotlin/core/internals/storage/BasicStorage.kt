@@ -135,7 +135,7 @@ internal class BasicStorage(writeKey: String) : Storage {
     override fun delete() {
         propertiesFile.delete()
         storageDirectory.deleteRecursively()
-        LoggerAnalytics.info("Storage deleted successfully.")
+        LoggerAnalytics.info("Storage cleared.")
     }
 }
 

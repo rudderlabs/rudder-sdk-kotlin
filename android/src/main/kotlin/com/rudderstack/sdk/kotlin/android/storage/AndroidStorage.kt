@@ -3,6 +3,7 @@ package com.rudderstack.sdk.kotlin.android.storage
 import android.content.Context
 import com.rudderstack.sdk.kotlin.BuildConfig
 import com.rudderstack.sdk.kotlin.android.storage.exceptions.QueuedPayloadTooLargeException
+import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.storage.EventBatchFileManager
 import com.rudderstack.sdk.kotlin.core.internals.storage.KeyValueStorage
 import com.rudderstack.sdk.kotlin.core.internals.storage.LibraryVersion
@@ -109,8 +110,9 @@ internal class AndroidStorage(
 
     @UseWithCaution
     override fun delete() {
-        storageDirectory.deleteRecursively()
         rudderPrefsRepo.delete()
+        storageDirectory.deleteRecursively()
+        LoggerAnalytics.info("Storage cleared.")
     }
 }
 
