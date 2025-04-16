@@ -85,7 +85,7 @@ internal class MockMemoryStorage : Storage {
     }
 
     @UseWithCaution
-    override fun deleteStorageAndPreferences() {
+    override fun delete() {
         messageBatchMap.clear()
     }
 }

@@ -136,18 +136,16 @@ interface Storage {
     fun getLibraryVersion(): LibraryVersion
 
     /**
-     * Deletes the directory currently being used by the storage implementation, along with the
-     * shared preferences file.
+     * Deletes the storage being used by the implementation, along with any associated configuration.
      *
-     * This operation permanently removes the current directory and its contents, as well as the
-     * shared preferences file.
+     * This operation permanently removes all stored data.
      *
-     * Use this method with caution, as any files or data within these locations will be irretrievably lost.
+     * Use this method with caution, as any data within the storage will be irretrievably lost.
      *
-     * **Note**: It is recommended to call the shutdown API after invoking this method to ensure the SDK is in a consistent state.
+     * **Note**: It is recommended to use this API during shutdown to ensure storage is not removed abruptly, which could lead to unexpected errors.
      */
     @UseWithCaution
-    fun deleteStorageAndPreferences()
+    fun delete()
 }
 
 /**

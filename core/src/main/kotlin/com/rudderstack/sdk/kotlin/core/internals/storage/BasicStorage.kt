@@ -132,7 +132,7 @@ internal class BasicStorage(writeKey: String) : Storage {
     }
 
     @UseWithCaution
-    override fun deleteStorageAndPreferences() {
+    override fun delete() {
         propertiesFile.delete()
         storageDirectory.deleteRecursively()
         LoggerAnalytics.info("Storage deleted successfully.")
