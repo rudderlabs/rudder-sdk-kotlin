@@ -101,14 +101,15 @@ dependencies {
     implementation(libs.ui.tooling)
     implementation(libs.foundation)
     // Material Design
-    implementation(libs.androidx.material)
+    implementation(libs.androidx.material3.android)
+    // Navigation
+    implementation(libs.androidx.navigation.compose)
     // Integration with activities
     implementation(libs.androidx.activity.compose)
     // Integration with ViewModels
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     // adding play services to generate advertising id
     implementation(libs.play.services.ads)
-    implementation(libs.androidx.material3.android)
 
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.kotlinx.coroutines.test)
