@@ -56,6 +56,16 @@ data class SourceConfig(
     }
 
     /**
+     * Action to disable the source.
+     */
+    internal class DisableSourceAction : StateAction<SourceConfig> {
+
+        override fun reduce(currentState: SourceConfig): SourceConfig {
+            return currentState.copy(source = currentState.source.copy(isSourceEnabled = false))
+        }
+    }
+
+    /**
      * Method to store the source configuration in the storage.
      */
     suspend fun storeSourceConfig(storage: Storage) {

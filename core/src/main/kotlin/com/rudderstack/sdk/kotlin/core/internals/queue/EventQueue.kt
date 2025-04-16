@@ -11,6 +11,8 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.isSourceEnabled
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -58,13 +60,18 @@ internal class EventQueue(
     private fun observeConfigAndUpdateSchedule() {
         with(analytics) {
             analyticsScope.launch(analyticsDispatcher) {
-                sourceConfigState.collect { sourceConfig ->
-                    if (sourceConfig.source.isSourceEnabled) {
-                        flushPoliciesFacade.schedule(analytics)
-                    } else {
-                        flushPoliciesFacade.cancelSchedule()
+                sourceConfigState
+                    .map { it.source.isSourceEnabled }
+                    .distinctUntilChanged()
+                    .collect { isSourceEnabled ->
+                        if (isSourceEnabled) {
+                            flushPoliciesFacade.schedule(analytics)
+                            // TODO: Uncomment the following line, after dynamic update of source config is implemented
+                            // eventUpload.start()
+                        } else {
+                            flushPoliciesFacade.cancelSchedule()
+                        }
                     }
-                }
             }
         }
     }
