@@ -1,14 +1,13 @@
-package com.rudderstack.sampleapp.mainview
-
-import java.util.Date
+package com.rudderstack.sampleapp.mainscreen
 
 data class MainViewModelState(
-    val logDataList: List<LogData> = emptyList(),
+    val log: String = "",
     val state: AnalyticsState? = null,
-) {
-    data class LogData(val time: Date, val log: String)
+    val isAdvertisingIdEnabled: Boolean = false
 
-    sealed class AnalyticsState(val eventName: String) {
+) {
+    sealed class AnalyticsState(val eventName: String? = "") {
+        data object InitialState : AnalyticsState()
         data object TrackMessage : AnalyticsState("Track")
         data object ScreenMessage : AnalyticsState("Screen")
         data object GroupMessage : AnalyticsState("Group")
@@ -20,7 +19,7 @@ data class MainViewModelState(
         data object StartSession : AnalyticsState("Start Session")
         data object StartSessionWithCustomId : AnalyticsState("Start Session with custom id")
         data object EndSession : AnalyticsState("End Session")
+        data object NavigateToScreens : AnalyticsState("Navigate to screens")
     }
-
 }
 
