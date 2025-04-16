@@ -11,7 +11,7 @@ import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 @OptIn(DelicateCoroutinesApi::class)
 internal fun <T> Channel<T>.createNewIfClosed(): Channel<T> {
     return if (isClosedForSend || isClosedForReceive) {
-        createUnlimitedUploadChannel()
+        createUnlimitedCapacityChannel()
     } else {
         this
     }
@@ -20,7 +20,7 @@ internal fun <T> Channel<T>.createNewIfClosed(): Channel<T> {
 /**
  * Creates a new channel with unlimited capacity.
  */
-internal fun <T> createUnlimitedUploadChannel(): Channel<T> = Channel(UNLIMITED)
+internal fun <T> createUnlimitedCapacityChannel(): Channel<T> = Channel(UNLIMITED)
 
 /**
  * Creates a new job if the current job is null or not active.
