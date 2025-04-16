@@ -171,7 +171,7 @@ internal class EventUpload(
             }
 
             NetworkErrorStatus.ERROR_413 -> {
-                // TODO: Log the error
+                LoggerAnalytics.error("Batch request failed: Payload size exceeds the maximum allowed limit.")
                 cleanup(filePath)
             }
 
