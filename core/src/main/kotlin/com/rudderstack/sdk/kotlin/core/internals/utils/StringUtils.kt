@@ -125,6 +125,6 @@ fun generateUUID(): String {
  * @return The formatted directory name.
  */
 @InternalRudderApi
-fun String.appendWriteKeyToDirectoryName(writeKey: String): String {
+fun String.appendWriteKey(writeKey: String): String {
     return "$this${String.underscoreSeparator()}$writeKey"
 }

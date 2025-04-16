@@ -10,7 +10,7 @@ import com.rudderstack.sdk.kotlin.core.internals.storage.MAX_PAYLOAD_SIZE
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
-import com.rudderstack.sdk.kotlin.core.internals.utils.appendWriteKeyToDirectoryName
+import com.rudderstack.sdk.kotlin.core.internals.utils.appendWriteKey
 import com.rudderstack.sdk.kotlin.core.internals.utils.toAndroidPrefsKey
 import java.io.File
 
@@ -24,7 +24,7 @@ internal class AndroidStorage(
 ) : Storage {
 
     private val storageDirectory: File =
-        context.getDir(DIRECTORY_NAME.appendWriteKeyToDirectoryName(writeKey), Context.MODE_PRIVATE)
+        context.getDir(DIRECTORY_NAME.appendWriteKey(writeKey), Context.MODE_PRIVATE)
     private val eventBatchFile = EventBatchFileManager(storageDirectory, writeKey, rudderPrefsRepo)
 
     override suspend fun write(key: StorageKeys, value: Boolean) {
