@@ -1,35 +1,41 @@
 [versions]
 
-activity-compose = "1.9.3"
-adjust-android = "5.1.0"
+#sdk dependencies
 agp = "8.7.2"
-android-core-ktx = "1.15.0"
-android-sdk-ui = "34.0.0"
-firebase-bom = "[32.2.2, 33.8.0)"
-facebook-android-sdk = "18.0.1"
-foundation = "1.7.5"
+android-core-ktx = "1.16.0"
+detekt = "1.23.6"
 json-assert = "1.5.0"
 junit-bom = "5.11.4"
 kotlin = "1.9.0"
 kotlinx-coroutines-core = "1.8.0"
 kotlinx-serialization-json = "1.5.1"
-lifecycle-process = "2.8.7"
-lifecycle-viewmodel-compose = "2.8.7"
-material-version = "1.7.5"
 mockk = "1.13.7"
-detekt = "1.23.6"
-navigation = "2.8.4"
-play-services-ads = "23.5.0"
-ui = "1.7.5"
+lifecycle-process = "2.8.7"
+navigation = "2.8.9"
 nexus = "2.0.0"
-material3-android = "1.3.1"
+
+#integration dependencies
+adjust-android = "5.1.0"
+firebase-bom = "[32.2.2, 33.8.0)"
+facebook-android-sdk = "18.0.1"
+android-sdk-ui = "34.0.0" #braze
+
+#sample application dependencies
+activity-compose = "1.10.1"
+foundation = "1.7.8"
+lifecycle-viewmodel-compose = "2.8.7"
+material3-android = "1.3.2"
+navigation-compose = "2.8.9"
+play-services-ads = "23.5.0"
+
+ui = "1.7.8"
 
 [libraries]
 android-sdk-ui = { module = "com.braze:android-sdk-ui", version.ref = "android-sdk-ui" }
 adjust-android = { module = "com.adjust.sdk:adjust-android", version.ref = "adjust-android" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activity-compose" }
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle-viewmodel-compose" }
-androidx-material = { module = "androidx.compose.material:material", version.ref = "material-version" }
+androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigation-compose" }
 firebase-analytics = { module = "com.google.firebase:firebase-analytics" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebase-bom" }
 facebook-android = { module = "com.facebook.android:facebook-android-sdk", version.ref = "facebook-android-sdk" }
