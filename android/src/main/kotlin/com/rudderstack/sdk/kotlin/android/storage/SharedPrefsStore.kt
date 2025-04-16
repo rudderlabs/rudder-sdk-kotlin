@@ -54,15 +54,13 @@ internal class SharedPrefsStore(
         } else {
             File(context.getSharedPreferencesFilePath(prefsName))
                 .takeIf { file -> file.exists() }
-                ?.let { file ->
-                    file.delete()
-                        .let { isDeleted ->
-                            LoggerAnalytics.debug(
-                                "SharedPrefsStore: Path: " +
-                                    "${context.getSharedPreferencesFilePath(prefsName)} " +
-                                    "delete status: $isDeleted"
-                            )
-                        }
+                ?.delete()
+                ?.let { isDeleted ->
+                    LoggerAnalytics.debug(
+                        "SharedPrefsStore: Attempted to delete shared preferences at path: " +
+                            "${context.getSharedPreferencesFilePath(prefsName)}. " +
+                            "Deletion successful: $isDeleted"
+                    )
                 }
         }
         LoggerAnalytics.info("Preference cleared.")
