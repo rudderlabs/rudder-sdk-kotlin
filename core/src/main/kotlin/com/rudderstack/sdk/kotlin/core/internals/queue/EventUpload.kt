@@ -88,6 +88,7 @@ internal class EventUpload(
             // ensureActive is at this position so that this coroutine can be cancelled - but any uploaded event MUST be cleared from storage.
             coroutineContext.ensureActive()
 
+            // TODO: Use safelyExecute
             try {
                 prepareBatch(filePath)
                     .takeIf { batch -> batch.isNotEmpty() }
