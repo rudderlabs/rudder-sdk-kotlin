@@ -83,4 +83,9 @@ internal class MockMemoryStorage : Storage {
             override fun getVersionName() = "1.0.0"
         }
     }
+
+    @UseWithCaution
+    override fun deleteStorageAndPreferences() {
+        messageBatchMap.clear()
+    }
 }

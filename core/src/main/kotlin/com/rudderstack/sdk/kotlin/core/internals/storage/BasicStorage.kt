@@ -10,7 +10,7 @@ import java.io.File
 /**
  * The directory where the event files are stored.
  * */
-private const val FILE_DIRECTORY = "/tmp/rudderstack-analytics-kotlin"
+internal const val FILE_DIRECTORY = "/tmp/rudderstack-analytics-kotlin"
 private const val FILE_NAME = "events"
 
 /**
