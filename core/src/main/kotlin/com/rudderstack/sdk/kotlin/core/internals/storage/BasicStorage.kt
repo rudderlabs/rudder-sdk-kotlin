@@ -1,6 +1,8 @@
 package com.rudderstack.sdk.kotlin.core.internals.storage
 
+import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.storage.exception.PayloadTooLargeException
+import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
 import com.rudderstack.sdk.kotlin.core.internals.utils.appendWriteKey
 import source.version.VersionConstants
 import java.io.File
@@ -127,6 +129,13 @@ internal class BasicStorage(writeKey: String) : Storage {
 
             override fun getVersionName(): String = VersionConstants.VERSION_NAME
         }
+    }
+
+    @UseWithCaution
+    override fun deleteStorageAndPreferences() {
+        propertiesFile.deletePrefs()
+        storageDirectory.deleteRecursively()
+        LoggerAnalytics.info("Storage deleted successfully.")
     }
 }
 
