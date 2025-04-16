@@ -114,3 +114,17 @@ internal val String.validatedBaseUrl
 fun generateUUID(): String {
     return UUID.randomUUID().toString()
 }
+
+/**
+ * Appends the provided write key to the directory name using an underscore separator (`_`).
+ *
+ * This extension function formats the directory name by appending the given
+ * write key using an underscore separator.
+ *
+ * @param writeKey The write key to be appended to the directory name.
+ * @return The formatted directory name.
+ */
+@InternalRudderApi
+fun String.appendWriteKeyToDirectoryName(writeKey: String): String {
+    return "$this${String.underscoreSeparator()}$writeKey"
+}

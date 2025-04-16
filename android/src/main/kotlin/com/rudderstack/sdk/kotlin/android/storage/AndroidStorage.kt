@@ -10,8 +10,8 @@ import com.rudderstack.sdk.kotlin.core.internals.storage.MAX_PAYLOAD_SIZE
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
+import com.rudderstack.sdk.kotlin.core.internals.utils.appendWriteKeyToDirectoryName
 import com.rudderstack.sdk.kotlin.core.internals.utils.toAndroidPrefsKey
-import com.rudderstack.sdk.kotlin.core.internals.utils.underscoreSeparator
 import java.io.File
 
 private const val RUDDER_PREFS = "rl_prefs"
@@ -126,8 +126,4 @@ internal fun provideAndroidStorage(writeKey: String, application: Context): Stor
         context = application,
         writeKey = writeKey,
     )
-}
-
-private fun String.appendWriteKeyToDirectoryName(writeKey: String): String {
-    return "$this${String.underscoreSeparator()}$writeKey"
 }
