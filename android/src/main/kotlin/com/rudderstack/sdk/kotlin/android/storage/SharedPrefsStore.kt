@@ -48,7 +48,7 @@ internal class SharedPrefsStore(
     }
 
     @UseWithCaution
-    override fun deletePrefs() {
+    override fun delete() {
         if (CheckBuildVersionUseCase.isAndroidVersionNAndAbove()) {
             context.deleteSharedPreferences(prefsName)
         } else {

@@ -110,7 +110,7 @@ internal class AndroidStorage(
     @UseWithCaution
     override fun deleteStorageAndPreferences() {
         storageDirectory.deleteRecursively()
-        rudderPrefsRepo.deletePrefs()
+        rudderPrefsRepo.delete()
     }
 }
 

@@ -110,7 +110,7 @@ internal class PropertiesFile(
     }
 
     @UseWithCaution
-    override fun deletePrefs() {
+    override fun delete() {
         propsFile.deleteRecursively()
         LoggerAnalytics.info("Preferences deleted successfully.")
     }

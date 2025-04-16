@@ -108,10 +108,10 @@ interface KeyValueStorage {
     fun clear(key: String)
 
     /**
-     * Deletes all stored preferences from the storage mechanism.
-     *
      * This method deletes the shared preferences file entirely to ensure a clean state.
+     *
+     * **Note**: It is recommended to use this API during shutdown to ensure the file is not removed abruptly, which could lead to unexpected errors.
      */
     @UseWithCaution
-    fun deletePrefs()
+    fun delete()
 }

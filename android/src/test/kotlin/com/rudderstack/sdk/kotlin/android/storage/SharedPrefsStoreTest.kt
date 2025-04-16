@@ -134,7 +134,7 @@ class SharedPrefsStoreTest {
     fun `given android version is N and above, when deletePrefs is called, then verify that shared preference is deleted`() {
         every { CheckBuildVersionUseCase.isAndroidVersionNAndAbove() } returns true
 
-        sharedPrefsStore.deletePrefs()
+        sharedPrefsStore.delete()
 
         verify { mockContext.deleteSharedPreferences(prefsName) }
     }
