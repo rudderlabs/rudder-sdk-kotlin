@@ -60,7 +60,7 @@ internal enum class NonRetryAbleEventUploadError : NonRetryAbleError {
  * Extension function to convert a `NetworkResult` to an `EventUploadResult`.
  * @return An `EventUploadResult` representing the result of the network operation.
  */
-internal fun NetworkResult.toEventUploadError(): EventUploadResult {
+internal fun NetworkResult.toEventUploadResult(): EventUploadResult {
     return when (this) {
         is Result.Success -> {
             return EventUploadSuccess(response)
