@@ -31,7 +31,7 @@ internal sealed interface RetryAbleError : EventUploadError
 internal sealed interface NonRetryAbleError : EventUploadError
 
 /**
- * `RetryAbleEventUploadError` is an enum class representing the different types of retryable event upload errors.
+ * `RetryAbleEventUploadError` is an enum class representing the different types of retry able event upload errors.
  *  @property ERROR_RETRY A generic error that can be retried.
  *  @property ERROR_NETWORK_UNAVAILABLE An error indicating that the network is unavailable, and the upload can be retried.
  *  @property ERROR_UNKNOWN An unknown error occurred, and the upload can be retried.
@@ -43,7 +43,7 @@ internal enum class RetryAbleEventUploadError : RetryAbleError {
 }
 
 /**
- * `NonRetryAbleEventUploadError` is an enum class representing the different types of non-retryable event upload errors.
+ * `NonRetryAbleEventUploadError` is an enum class representing the different types of non-retry able event upload errors.
  *  @property ERROR_400 An error indicating that the request was invalid (e.g., missing or malformed body).
  *  @property ERROR_401 An error indicating that the request was unauthorized.
  *  @property ERROR_404 An error indicating that the resource was not found (e.g., the source is disabled).
