@@ -11,6 +11,7 @@ import io.mockk.impl.annotations.MockK
 import io.mockk.mockkStatic
 import io.mockk.spyk
 import io.mockk.verify
+import io.mockk.verifyOrder
 import kotlinx.coroutines.CompletableJob
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -61,6 +62,10 @@ class AnalyticsUtilTest {
         mockAnalytics.handleInvalidWriteKey()
 
         verify(exactly = 1) {
+            mockAnalyticsConfiguration.isInvalidWriteKey = true
+            mockAnalytics.shutdown()
+        }
+        verifyOrder {
             mockAnalyticsConfiguration.isInvalidWriteKey = true
             mockAnalytics.shutdown()
         }
