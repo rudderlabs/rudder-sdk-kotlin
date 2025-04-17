@@ -10,6 +10,7 @@ import com.rudderstack.sdk.kotlin.core.internals.network.NetworkResult
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.JsonSentAtUpdater
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
+import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
 import com.rudderstack.sdk.kotlin.core.internals.utils.createIfInactive
 import com.rudderstack.sdk.kotlin.core.internals.utils.createNewIfClosed
 import com.rudderstack.sdk.kotlin.core.internals.utils.createUnlimitedCapacityChannel
@@ -147,6 +148,7 @@ internal class EventUpload(
         }
     }
 
+    @OptIn(UseWithCaution::class)
     @VisibleForTesting
     internal fun handleFailure(status: NetworkErrorStatus, filePath: String) {
         // TODO: Implement the step to reset the backoff logic

@@ -31,8 +31,11 @@ fun Analytics.isSourceEnabled(): Boolean {
  * Marks the current write key as invalid and shuts down the analytics instance.
  * This method is typically invoked when the system determines that the write key cannot be used anymore.
  *
- * It deletes the stored events and preferences associated with the `writeKey`, and shuts down the SDK.
+ * **NOTE: It deletes the stored events and preferences associated with the `writeKey`, and shuts down the SDK.**
+ *
+ * Treat this as a terminal operation, as once the SDK is shutdown no further operation will be allowed.
  */
+@UseWithCaution
 internal fun Analytics.handleInvalidWriteKey() {
     isInvalidWriteKey = true
     shutdown()
