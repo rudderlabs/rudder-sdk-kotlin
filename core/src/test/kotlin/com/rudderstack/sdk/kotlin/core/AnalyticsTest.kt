@@ -30,6 +30,7 @@ import io.mockk.mockkObject
 import io.mockk.mockkStatic
 import io.mockk.spyk
 import io.mockk.verify
+import io.mockk.verifyOrder
 import kotlinx.coroutines.CompletableJob
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
@@ -521,6 +522,10 @@ class AnalyticsTest {
 
             assertTrue(analytics.isAnalyticsShutdown)
             verify(exactly = 1) {
+                mockStorage.close()
+                mockStorage.delete()
+            }
+            verifyOrder {
                 mockStorage.close()
                 mockStorage.delete()
             }
