@@ -72,6 +72,7 @@ internal class AndroidStorage(
 
     override fun close() {
         eventBatchFile.closeAndReset()
+        LoggerAnalytics.info("Storage closed")
     }
 
     override fun readInt(key: StorageKeys, defaultVal: Int): Int {
