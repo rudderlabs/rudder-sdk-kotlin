@@ -321,10 +321,10 @@ open class Analytics protected constructor(
     @OptIn(UseWithCaution::class)
     private fun shutdownHook() {
         analyticsJob.invokeOnCompletion {
-            this@Analytics.storage
-                .takeIf { isInvalidWriteKey }
-                ?.delete()
-            this@Analytics.storage.close()
+            if (isInvalidWriteKey) {
+                storage.delete()
+            }
+            storage.close()
             LoggerAnalytics.info("Analytics shutdown completed.")
         }
         analyticsScope.launch {
