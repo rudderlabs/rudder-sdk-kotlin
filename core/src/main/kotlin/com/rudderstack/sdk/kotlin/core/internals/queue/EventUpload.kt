@@ -3,13 +3,17 @@ package com.rudderstack.sdk.kotlin.core.internals.queue
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
+import com.rudderstack.sdk.kotlin.core.internals.network.EventUploadResult
+import com.rudderstack.sdk.kotlin.core.internals.network.EventUploadSuccess
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClient
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClientImpl
-import com.rudderstack.sdk.kotlin.core.internals.network.NetworkErrorStatus
-import com.rudderstack.sdk.kotlin.core.internals.network.NetworkResult
+import com.rudderstack.sdk.kotlin.core.internals.network.NonRetryAbleError
+import com.rudderstack.sdk.kotlin.core.internals.network.NonRetryAbleEventUploadError
+import com.rudderstack.sdk.kotlin.core.internals.network.RetryAbleError
+import com.rudderstack.sdk.kotlin.core.internals.network.toEventUploadResult
+import com.rudderstack.sdk.kotlin.core.internals.policies.backoff.MaxAttemptsExponentialBackoff
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.JsonSentAtUpdater
-import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import com.rudderstack.sdk.kotlin.core.internals.utils.createIfInactive
 import com.rudderstack.sdk.kotlin.core.internals.utils.createNewIfClosed
 import com.rudderstack.sdk.kotlin.core.internals.utils.createUnlimitedCapacityChannel
@@ -17,6 +21,7 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import com.rudderstack.sdk.kotlin.core.internals.utils.encodeToBase64
 import com.rudderstack.sdk.kotlin.core.internals.utils.generateUUID
 import com.rudderstack.sdk.kotlin.core.internals.utils.parseFilePaths
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.consumeEach
@@ -37,7 +42,6 @@ private const val UPLOAD_SIG = "#!upload"
 internal class EventUpload(
     private val analytics: Analytics,
     private var uploadChannel: Channel<String> = createUnlimitedCapacityChannel(),
-    private val jsonSentAtUpdater: JsonSentAtUpdater = JsonSentAtUpdater(),
     private val httpClientFactory: HttpClient = with(analytics.configuration) {
         return@with HttpClientImpl.createPostHttpClient(
             baseUrl = dataPlaneUrl,
@@ -47,6 +51,7 @@ internal class EventUpload(
             anonymousIdHeaderString = analytics.anonymousId ?: String.empty()
         )
     },
+    private val maxAttemptsExponentialBackoff: MaxAttemptsExponentialBackoff = MaxAttemptsExponentialBackoff(),
 ) {
 
     private var lastBatchAnonymousId = String.empty()
@@ -85,33 +90,21 @@ internal class EventUpload(
         val fileUrlList = storage.readString(StorageKeys.EVENT, String.empty()).parseFilePaths()
         for (filePath in fileUrlList) {
             if (!doesFileExist(filePath)) continue
-            // ensureActive is at this position so that this coroutine can be cancelled - but any uploaded event MUST be cleared from storage.
+            // ensureActive will help in cancelling the coroutine
             coroutineContext.ensureActive()
 
-            // TODO: Use safelyExecute
             try {
-                prepareBatch(filePath)
-                    .takeIf { batch -> batch.isNotEmpty() }
-                    ?.also { batch -> updateAnonymousIdHeaderIfChanged(batch) }
-                    ?.let { batch -> uploadEvents(batch, filePath) }
+                readFileAsString(filePath)
+                    .let { batch -> JsonSentAtUpdater.updateSentAt(batch) }
+                    .also { batch -> updateAnonymousIdHeaderIfChanged(batch) }
+                    .let { batch -> uploadEvents(batch, filePath) }
+            } catch (e: CancellationException) {
+                LoggerAnalytics.error("Job was cancelled. Stopping the upload process.", e)
+                cleanup(filePath)
             } catch (e: Exception) {
-                LoggerAnalytics.error("Error when uploading event", e)
+                LoggerAnalytics.error("Error when processing batch payload. Deleting the file.", e)
                 cleanup(filePath)
             }
-        }
-    }
-
-    private fun prepareBatch(filePath: String): String {
-        return runCatching {
-            readFileAsString(filePath)
-                .let { jsonSentAtUpdater.updateSentAt(it) }
-        }.getOrElse { exception ->
-            LoggerAnalytics.error(
-                "Error when preparing batch payload for file: $filePath. Deleting the file. Exception: ",
-                exception
-            )
-            cleanup(filePath)
-            String.empty()
         }
     }
 
@@ -131,26 +124,37 @@ internal class EventUpload(
         }
     }
 
-    private fun uploadEvents(batchPayload: String, filePath: String) {
+    private suspend fun uploadEvents(batchPayload: String, filePath: String) {
         LoggerAnalytics.debug("Batch Payload: $batchPayload")
-        when (val result: NetworkResult = httpClientFactory.sendData(batchPayload)) {
-            is Result.Success -> {
-                LoggerAnalytics.debug("Event uploaded successfully. Server response: ${result.response}")
-                cleanup(filePath)
-            }
+        var payload = batchPayload
 
-            is Result.Failure -> {
-                LoggerAnalytics.debug("Error when uploading event due to ${result.error}")
-                handleFailure(result.error, filePath)
+        var result: EventUploadResult
+        do {
+            result = httpClientFactory.sendData(payload).toEventUploadResult()
+
+            when (result) {
+                is EventUploadSuccess -> {
+                    LoggerAnalytics.debug("Event uploaded successfully. Server response: ${result.response}")
+                    maxAttemptsExponentialBackoff.reset()
+                    cleanup(filePath)
+                }
+                is RetryAbleError -> {
+                    LoggerAnalytics.debug("EventUpload: Retry able error occurred")
+                    maxAttemptsExponentialBackoff.delayWithBackoff()
+                    payload = JsonSentAtUpdater.updateSentAt(payload)
+                }
+                is NonRetryAbleError -> {
+                    maxAttemptsExponentialBackoff.reset()
+                    handleNonRetryAbleError(result, filePath)
+                }
             }
-        }
+        } while (result is RetryAbleError)
     }
 
     @VisibleForTesting
-    internal fun handleFailure(status: NetworkErrorStatus, filePath: String) {
-        // TODO: Implement the step to reset the backoff logic
+    internal fun handleNonRetryAbleError(status: NonRetryAbleError, filePath: String) {
         when (status) {
-            NetworkErrorStatus.ERROR_400 -> {
+            NonRetryAbleEventUploadError.ERROR_400 -> {
                 LoggerAnalytics.error(
                     "Invalid request: missing or malformed body. " +
                         "Ensure the payload is valid JSON and includes either anonymousId or userId."
@@ -158,28 +162,21 @@ internal class EventUpload(
                 cleanup(filePath)
             }
 
-            NetworkErrorStatus.ERROR_401 -> {
+            NonRetryAbleEventUploadError.ERROR_401 -> {
                 // TODO: Log the error
                 // TODO: Delete all the files related to this writeKey
 //                analytics.shutdown()
             }
 
-            NetworkErrorStatus.ERROR_404 -> {
+            NonRetryAbleEventUploadError.ERROR_404 -> {
                 LoggerAnalytics.error("Source is disabled. Stopping the upload process until the source is enabled again.")
                 cancel()
                 analytics.sourceConfigState.dispatch(SourceConfig.DisableSourceAction())
             }
 
-            NetworkErrorStatus.ERROR_413 -> {
+            NonRetryAbleEventUploadError.ERROR_413 -> {
                 LoggerAnalytics.error("Batch request failed: Payload size exceeds the maximum allowed limit.")
                 cleanup(filePath)
-            }
-
-            NetworkErrorStatus.ERROR_RETRY,
-            NetworkErrorStatus.ERROR_NETWORK_UNAVAILABLE,
-            NetworkErrorStatus.ERROR_UNKNOWN,
-            -> {
-                // TODO: Add exponential backoff
             }
         }
     }
@@ -188,7 +185,7 @@ internal class EventUpload(
         filePath
             .takeIf { it.isNotEmpty() }
             ?.let { storage.remove(it) }
-            ?.let { LoggerAnalytics.debug("Removed file: $it") }
+            ?.let { LoggerAnalytics.debug("Removed batch file: $it") }
     }
 
     internal fun cancel() {
