@@ -318,19 +318,25 @@ open class Analytics protected constructor(
         }
     }
 
-    @OptIn(UseWithCaution::class)
     private fun shutdownHook() {
         analyticsJob.invokeOnCompletion {
-            storage.close()
-            if (isInvalidWriteKey) {
-                storage.delete()
-            }
+            closeAndCleanupStorage()
             LoggerAnalytics.info("Analytics shutdown completed.")
         }
         analyticsScope.launch {
             this@Analytics.pluginChain.removeAll()
         }.invokeOnCompletion {
             analyticsScope.cancel()
+        }
+    }
+
+    @OptIn(UseWithCaution::class)
+    private fun closeAndCleanupStorage() {
+        storage.run {
+            close()
+            if (isInvalidWriteKey) {
+                delete()
+            }
         }
     }
 
