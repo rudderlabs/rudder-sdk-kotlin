@@ -124,13 +124,11 @@ internal class EventUpload(
     }
 
     private suspend fun uploadEvents(batchPayload: String, filePath: String) {
-        LoggerAnalytics.debug("Batch Payload: $batchPayload")
-        var payload = batchPayload
-
         var result: EventUploadResult
         do {
-            payload = JsonSentAtUpdater.updateSentAt(payload)
-            result = httpClientFactory.sendData(payload).toEventUploadResult()
+            val updatedPayload = JsonSentAtUpdater.updateSentAt(batchPayload)
+            LoggerAnalytics.verbose("Batch Payload: $updatedPayload")
+            result = httpClientFactory.sendData(updatedPayload).toEventUploadResult()
 
             when (result) {
                 is Success -> {
