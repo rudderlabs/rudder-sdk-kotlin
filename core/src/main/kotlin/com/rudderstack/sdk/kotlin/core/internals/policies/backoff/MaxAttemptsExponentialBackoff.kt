@@ -3,26 +3,26 @@ package com.rudderstack.sdk.kotlin.core.internals.policies.backoff
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import kotlinx.coroutines.delay
 
+private const val DEFAULT_MAX_ATTEMPT = 5
 private const val DEFAULT_COOL_OFF_PERIOD_IN_MILLIS = 30 * 60 * 1000L // 30 minutes
 
 /**
- * Manages retry attempts with an exponential backoff strategy and enforces limits.
+ * Manages retry attempts with exponential backoff delays.
  *
- * Features:
- * - Tracks consecutive retry attempts
- * - Applies exponential backoff between retries
- * - Enforces a maximum attempt limit
- * - Implements a cool-off period when maximum attempts are reached
- * - Delegates actual backoff calculation to the provided BackOffPolicy
+ * This class:
+ * - Applies increasing delays between retry attempts
+ * - Tracks attempt count and enforces maximum limits
+ * - Suspends execution between attempts with appropriate delays
+ * - Implements a longer cool-off period when max attempts are reached
  *
- * @param maxAttempts Maximum retry attempts before entering cool-off (default: 5)
- * @param coolOffPeriod Duration in ms to pause after max attempts (default: 30 minutes)
- * @param base Exponential multiplier for backoff calculation (default: 2.0)
+ * @param maxAttempts Maximum retries before entering cool-off (default: 5)
+ * @param coolOffPeriod Duration in ms after max attempts (default: 30 minutes)
+ * @param base Exponential factor for backoff calculation (default: 2.0)
  * @param minDelayInMillis Initial delay in milliseconds (default: 3000ms)
- * @param exponentialBackOffPolicy The policy for calculating delay (default: ExponentialBackOffPolicy)
+ * @param exponentialBackOffPolicy Delay calculation policy
  */
 internal class MaxAttemptsExponentialBackoff(
-    private val maxAttempts: Int = 5,
+    private val maxAttempts: Int = DEFAULT_MAX_ATTEMPT,
     private val coolOffPeriod: Long = DEFAULT_COOL_OFF_PERIOD_IN_MILLIS,
     base: Double = DEFAULT_BASE,
     minDelayInMillis: Long = DEFAULT_INTERVAL_IN_MILLIS,
