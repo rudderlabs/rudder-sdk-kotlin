@@ -20,7 +20,7 @@ class MaxAttemptsExponentialBackoffTest {
     private val maxAttempts = 3
     private val coolOffPeriod = 30.minutes
     private lateinit var backoff: MaxAttemptsExponentialBackoff
-    private val expectedDelays = listOf(100L, 200L, 400L)
+    private val expectedDelays = listOf(3000L, 5000L, 9000L)
 
     @BeforeEach
     fun setup() {
@@ -30,14 +30,9 @@ class MaxAttemptsExponentialBackoffTest {
             exponentialBackOffPolicy = mockBackOffPolicy
         )
 
-        // Reset the mock before each test
         every { mockBackOffPolicy.resetBackOff() } returns Unit
 
-        setupMockDelays(expectedDelays)
-    }
-
-    private fun setupMockDelays(delays: List<Long>) {
-        every { mockBackOffPolicy.nextDelayInMillis() } returnsMany delays
+        every { mockBackOffPolicy.nextDelayInMillis() } returnsMany expectedDelays
     }
 
     @Test
