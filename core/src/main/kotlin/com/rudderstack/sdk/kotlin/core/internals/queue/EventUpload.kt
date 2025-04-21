@@ -4,12 +4,12 @@ import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.network.EventUploadResult
-import com.rudderstack.sdk.kotlin.core.internals.network.EventUploadSuccess
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClient
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClientImpl
 import com.rudderstack.sdk.kotlin.core.internals.network.NonRetryAbleError
 import com.rudderstack.sdk.kotlin.core.internals.network.NonRetryAbleEventUploadError
 import com.rudderstack.sdk.kotlin.core.internals.network.RetryAbleError
+import com.rudderstack.sdk.kotlin.core.internals.network.Success
 import com.rudderstack.sdk.kotlin.core.internals.network.toEventUploadResult
 import com.rudderstack.sdk.kotlin.core.internals.policies.backoff.MaxAttemptsExponentialBackoff
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
@@ -133,7 +133,7 @@ internal class EventUpload(
             result = httpClientFactory.sendData(payload).toEventUploadResult()
 
             when (result) {
-                is EventUploadSuccess -> {
+                is Success -> {
                     LoggerAnalytics.debug("Event uploaded successfully. Server response: ${result.response}")
                     maxAttemptsExponentialBackoff.reset()
                     cleanup(filePath)

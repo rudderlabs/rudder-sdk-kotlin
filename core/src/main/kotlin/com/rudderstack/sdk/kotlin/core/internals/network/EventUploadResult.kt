@@ -12,7 +12,7 @@ internal sealed interface EventUploadResult
  * `EventUploadSuccess` represents a successful event upload.
  * @property response The response from the server.
  */
-internal data class EventUploadSuccess(val response: String) : EventUploadResult
+internal data class Success(val response: String) : EventUploadResult
 
 /**
  * `EventUploadError` is a sealed interface representing an error that occurred during event upload.
@@ -63,7 +63,7 @@ internal enum class NonRetryAbleEventUploadError : NonRetryAbleError {
 internal fun NetworkResult.toEventUploadResult(): EventUploadResult {
     return when (this) {
         is Result.Success -> {
-            return EventUploadSuccess(response)
+            return Success(response)
         }
 
         is Result.Failure -> {
