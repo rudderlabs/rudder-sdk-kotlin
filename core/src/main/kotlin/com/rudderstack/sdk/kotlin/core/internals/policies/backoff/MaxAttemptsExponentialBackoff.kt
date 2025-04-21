@@ -56,11 +56,11 @@ internal class MaxAttemptsExponentialBackoff(
             }
 
             else -> {
-                exponentialBackOffPolicy.nextDelayInMillis().let { delayTime ->
+                exponentialBackOffPolicy.nextDelayInMillis().let { delayInMillis ->
                     LoggerAnalytics.verbose(
-                        "Sleeping for $delayTime milliseconds (attempt $consecutiveAttempts of $maxAttempts)"
+                        "Sleeping for $delayInMillis milliseconds (attempt $consecutiveAttempts of $maxAttempts)"
                     )
-                    delay(delayTime)
+                    delay(delayInMillis)
                 }
             }
         }
