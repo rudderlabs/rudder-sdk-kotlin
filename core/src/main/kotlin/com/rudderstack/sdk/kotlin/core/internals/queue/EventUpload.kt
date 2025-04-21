@@ -150,8 +150,7 @@ internal class EventUpload(
         } while (result is RetryAbleError)
     }
 
-    @VisibleForTesting
-    internal fun handleNonRetryAbleError(status: NonRetryAbleError, filePath: String) {
+    private fun handleNonRetryAbleError(status: NonRetryAbleError, filePath: String) {
         when (status) {
             NonRetryAbleEventUploadError.ERROR_400 -> {
                 LoggerAnalytics.error(
