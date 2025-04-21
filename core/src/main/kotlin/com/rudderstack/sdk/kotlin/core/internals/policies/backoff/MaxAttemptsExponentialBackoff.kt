@@ -16,14 +16,14 @@ private const val DEFAULT_COOL_OFF_PERIOD_IN_MILLIS = 30 * 60 * 1000L // 30 minu
  * - Implements a longer cool-off period when max attempts are reached
  *
  * @param maxAttempts Maximum retries before entering cool-off (default: 5)
- * @param coolOffPeriod Duration in ms after max attempts (default: 30 minutes)
+ * @param coolOffPeriodInMillis Duration in ms after max attempts (default: 30 minutes)
  * @param base Exponential factor for backoff calculation (default: 2.0)
  * @param minDelayInMillis Initial delay in milliseconds (default: 3000ms)
  * @param exponentialBackOffPolicy Delay calculation policy
  */
 internal class MaxAttemptsExponentialBackoff(
     private val maxAttempts: Int = DEFAULT_MAX_ATTEMPT,
-    private val coolOffPeriod: Long = DEFAULT_COOL_OFF_PERIOD_IN_MILLIS,
+    private val coolOffPeriodInMillis: Long = DEFAULT_COOL_OFF_PERIOD_IN_MILLIS,
     base: Double = DEFAULT_BASE,
     minDelayInMillis: Long = DEFAULT_INTERVAL_IN_MILLIS,
     private val exponentialBackOffPolicy: BackOffPolicy = ExponentialBackOffPolicy(
@@ -51,8 +51,8 @@ internal class MaxAttemptsExponentialBackoff(
             consecutiveAttempts > maxAttempts -> {
                 LoggerAnalytics.verbose("Max attempts reached. Entering cool-off period for upload queue")
                 reset()
-                LoggerAnalytics.verbose("Next attempt will be after $coolOffPeriod milliseconds")
-                delay(coolOffPeriod)
+                LoggerAnalytics.verbose("Next attempt will be after $coolOffPeriodInMillis milliseconds")
+                delay(coolOffPeriodInMillis)
             }
 
             else -> {
