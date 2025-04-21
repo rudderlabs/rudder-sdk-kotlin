@@ -5,6 +5,7 @@ import com.rudderstack.sdk.kotlin.core.internals.logger.KotlinLogger
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClient
 import com.rudderstack.sdk.kotlin.core.internals.network.NetworkErrorStatus
+import com.rudderstack.sdk.kotlin.core.internals.policies.backoff.MaxAttemptsExponentialBackoff
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
@@ -50,6 +51,7 @@ private const val mockCurrentTime = "<original-timestamp>"
 private const val unprocessedBatchWithTwoEvents = "message/batch/unprocessed_batch_with_two_events.json"
 private const val processedBatchWithTwoEvents = "message/batch/processed_batch_with_two_events.json"
 
+private const val MAX_ATTEMPT = 6
 class EventUploadTest {
 
     // Two batch files are ready to be sent
@@ -67,6 +69,9 @@ class EventUploadTest {
 
     @MockK
     private lateinit var mockKotlinLogger: KotlinLogger
+
+    @MockK
+    private lateinit var mockMaxAttemptsExponentialBackoff: MaxAttemptsExponentialBackoff
 
     private val testDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
@@ -102,6 +107,7 @@ class EventUploadTest {
             EventUpload(
                 analytics = mockAnalytics,
                 httpClientFactory = mockHttpClient,
+                maxAttemptsExponentialBackoff = mockMaxAttemptsExponentialBackoff,
             )
         )
     }
@@ -198,26 +204,25 @@ class EventUploadTest {
         }
     }
 
-    // TODO: Correct this
-//    @Test
-//    fun `given batch is ready to be sent to the server and server returns error, when flush is called, then the batch is not removed from storage`() {
-//        prepareMultipleBatch()
-//        // Mock messageQueue file reading
-//        filePaths.forEach { path ->
-//            every { readFileAsString(path) } returns batchPayload
-//        }
-//        // Mock the behavior for HttpClient
-//        every { mockHttpClient.sendData(batchPayload) } returns Result.Failure(
-//            NetworkErrorStatus.ERROR_UNKNOWN
-//        )
-//
-//        processMessage()
-//
-//        // Verify the expected behavior
-//        filePaths.forEach { path ->
-//            verify(exactly = 0) { mockStorage.remove(path) }
-//        }
-//    }
+    @Test
+    fun `given batch is ready to be sent to the server and server initially returns retry able error, when flush is called, then the batch is removed at the last after success is received`() =
+        runTest {
+            prepareSingleBatch()
+            simulateRetryAbleError()
+
+            processMessage()
+
+            // Once the batch is sent successfully, the file should be removed from storage
+            verify(exactly = 1) { mockStorage.remove(singleFilePath) }
+            val totalAttempts = 6 // 5 normal attempt and 1 for cool off period
+            coVerify(exactly = totalAttempts) {
+                mockMaxAttemptsExponentialBackoff.delayWithBackoff()
+            }
+            // There's one explicit `reset` call after the success
+            verify(exactly = 1) {
+                mockMaxAttemptsExponentialBackoff.reset()
+            }
+        }
 
     @Test
     fun `given batch is ready to be sent to the server and some exception occurs while reading the file, when flush is called, then the exception handled and file gets removed from the storage`() {
@@ -306,6 +311,26 @@ class EventUploadTest {
         every { doesFileExist(any()) } returns true
     }
 
+    private fun prepareSingleBatch() {
+        coEvery {
+            mockStorage.readString(StorageKeys.EVENT, String.empty())
+        } returns singleFilePath
+        every { doesFileExist(any()) } returns true
+        every { readFileAsString(singleFilePath) } returns batchPayload
+    }
+
+    private fun simulateRetryAbleError() {
+        var callCount = 0
+        every { mockHttpClient.sendData(any()) } answers {
+            callCount++
+            when {
+                callCount <= MAX_ATTEMPT -> Result.Failure(NetworkErrorStatus.ERROR_UNKNOWN)
+                // This else block is needed to stop the infinite loop
+                else -> Result.Success("Ok")
+            }
+        }
+    }
+
     private fun processMessage() {
         // Execute messageQueue actions
         eventUpload.start()
@@ -334,12 +359,5 @@ class EventUploadTest {
                 "some_random_id"
             )
         )
-
-        // TODO: I'll uncomment this once the droppable handling is implemented
-//        @JvmStatic
-//        fun droppableHandlingProvider() = listOf(
-//            Arguments.of(NetworkErrorStatus.ERROR_400, true),
-//            Arguments.of(NetworkErrorStatus.ERROR_413, true),
-//        )
     }
 }
