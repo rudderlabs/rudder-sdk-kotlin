@@ -99,7 +99,7 @@ internal class EventUpload(
                     .let { batch -> uploadEvents(batch, filePath) }
             } catch (e: CancellationException) {
                 LoggerAnalytics.error("Job was cancelled. Stopping the upload process.", e)
-                cleanup(filePath)
+                throw e
             } catch (e: Exception) {
                 LoggerAnalytics.error("Error when processing batch payload. Deleting the file.", e)
                 cleanup(filePath)
