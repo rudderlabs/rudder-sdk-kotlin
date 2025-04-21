@@ -73,7 +73,7 @@ class MaxAttemptsExponentialBackoffTest {
     }
 
     @Test
-    fun `given backoff policy reset, when reset called, then resets attempts counter and backoff policy`() = runTest {
+    fun `when reset called, then resets attempts counter and backoff policy`() = runTest {
         // Go through all normal attempts
         repeat(maxAttempts) {
             backoff.delayWithBackoff()
@@ -87,7 +87,7 @@ class MaxAttemptsExponentialBackoffTest {
         // Now check that the counter was reset by making another attempt
         // and verifying we're back to the first delay
         val timeBefore = createTestClock().currentTimeInMillis()
-        every { mockBackOffPolicy.nextDelayInMillis() } returns expectedDelays[0]
+        every { mockBackOffPolicy.nextDelayInMillis() } returnsMany expectedDelays
 
         backoff.delayWithBackoff()
 
