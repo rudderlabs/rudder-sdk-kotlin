@@ -95,7 +95,6 @@ internal class EventUpload(
 
             try {
                 readFileAsString(filePath)
-                    .let { batch -> JsonSentAtUpdater.updateSentAt(batch) }
                     .also { batch -> updateAnonymousIdHeaderIfChanged(batch) }
                     .let { batch -> uploadEvents(batch, filePath) }
             } catch (e: CancellationException) {
@@ -130,6 +129,7 @@ internal class EventUpload(
 
         var result: EventUploadResult
         do {
+            payload = JsonSentAtUpdater.updateSentAt(payload)
             result = httpClientFactory.sendData(payload).toEventUploadResult()
 
             when (result) {
@@ -141,7 +141,6 @@ internal class EventUpload(
                 is RetryAbleError -> {
                     LoggerAnalytics.debug("EventUpload: Retry able error occurred")
                     maxAttemptsExponentialBackoff.delayWithBackoff()
-                    payload = JsonSentAtUpdater.updateSentAt(payload)
                 }
                 is NonRetryAbleError -> {
                     maxAttemptsExponentialBackoff.reset()
