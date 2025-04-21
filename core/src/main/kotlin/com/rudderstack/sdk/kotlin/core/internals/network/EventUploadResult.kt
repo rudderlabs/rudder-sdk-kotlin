@@ -9,7 +9,7 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 internal sealed interface EventUploadResult
 
 /**
- * `EventUploadSuccess` represents a successful event upload.
+ * `Success` represents a successful event upload.
  * @property response The response from the server.
  */
 internal data class Success(val response: String) : EventUploadResult
