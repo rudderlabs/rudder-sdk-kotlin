@@ -259,6 +259,20 @@ class EventUploadTest {
     }
 
     @Test
+    fun `given some exception is thrown while updating sentAt, when flush is called, file is removed but without any upload attempt`() {
+        val unprocessedBatch = readFileTrimmed(unprocessedBatchWithTwoEvents)
+        prepareSingleBatch(batchPayload = unprocessedBatch)
+        every { DateTimeUtils.now() } throws Exception()
+        simulateRetryAbleError(maxAttempt = MAX_ATTEMPT)
+
+        processMessage()
+
+        // Once the batch is sent successfully, the file should be removed from storage
+        verify(exactly = 1) { mockStorage.remove(singleFilePath) }
+        verify(exactly = 0) { mockHttpClient.sendData(any()) }
+    }
+
+    @Test
     fun `given batch is ready to be sent to the server and some exception occurs while reading the file, when flush is called, then the exception handled and file gets removed from the storage`() {
         prepareMultipleBatch()
         val exception = Exception("File not found")
