@@ -10,6 +10,7 @@ import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.DateTimeUtils
+import com.rudderstack.sdk.kotlin.core.internals.utils.JsonSentAtUpdater
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import com.rudderstack.sdk.kotlin.core.internals.utils.encodeToBase64
@@ -51,7 +52,8 @@ private const val mockCurrentTime = "<original-timestamp>"
 private const val unprocessedBatchWithTwoEvents = "message/batch/unprocessed_batch_with_two_events.json"
 private const val processedBatchWithTwoEvents = "message/batch/processed_batch_with_two_events.json"
 
-private const val MAX_ATTEMPT = 6
+private const val MAX_ATTEMPT = 5
+
 class EventUploadTest {
 
     // Two batch files are ready to be sent
@@ -72,6 +74,15 @@ class EventUploadTest {
 
     @MockK
     private lateinit var mockMaxAttemptsExponentialBackoff: MaxAttemptsExponentialBackoff
+
+    private val listOfTimeStamp = listOf(
+        "1970-01-01T00:00:00Z",
+        "1970-01-01T00:00:01Z",
+        "1970-01-01T00:00:02Z",
+        "1970-01-01T00:00:03Z",
+        "1970-01-01T00:00:04Z",
+        "1970-01-01T00:00:05Z"
+    )
 
     private val testDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
@@ -207,15 +218,14 @@ class EventUploadTest {
     @Test
     fun `given batch is ready to be sent to the server and server initially returns retry able error, when flush is called, then the batch is removed at the last after success is received`() =
         runTest {
-            prepareSingleBatch()
+            prepareSingleBatch(batchPayload)
             simulateRetryAbleError()
 
             processMessage()
 
             // Once the batch is sent successfully, the file should be removed from storage
             verify(exactly = 1) { mockStorage.remove(singleFilePath) }
-            val totalAttempts = 6 // 5 normal attempt and 1 for cool off period
-            coVerify(exactly = totalAttempts) {
+            coVerify(exactly = MAX_ATTEMPT) {
                 mockMaxAttemptsExponentialBackoff.delayWithBackoff()
             }
             // There's one explicit `reset` call after the success
@@ -223,6 +233,30 @@ class EventUploadTest {
                 mockMaxAttemptsExponentialBackoff.reset()
             }
         }
+
+    @Test
+    fun `given retry attempt is made multiple times, when flush is called, then the sentAt is updated`() {
+        val unprocessedBatch = readFileTrimmed(unprocessedBatchWithTwoEvents)
+        prepareSingleBatch(batchPayload = unprocessedBatch)
+        val updatedBatchList: MutableList<String> = getBatchWithUpdatedSentAtTimeStamp(
+            unprocessedBatch = unprocessedBatch,
+            listOfTimeStamp = listOfTimeStamp,
+        )
+        // Reset the timestamp mock
+        every { DateTimeUtils.now() } returnsMany listOfTimeStamp
+        simulateRetryAbleError(maxAttempt = MAX_ATTEMPT)
+
+        processMessage()
+
+        // The batch should be sent with the updated `sentAt` timestamp
+        updatedBatchList.forEach { payload ->
+            verify(exactly = 1) { mockHttpClient.sendData(payload) }
+        }
+        // Once the batch is sent successfully, the file should be removed from storage
+        verify(exactly = 1) { mockStorage.remove(singleFilePath) }
+        // There's one explicit `reset` call after the success
+        verify(exactly = 1) { mockMaxAttemptsExponentialBackoff.reset() }
+    }
 
     @Test
     fun `given batch is ready to be sent to the server and some exception occurs while reading the file, when flush is called, then the exception handled and file gets removed from the storage`() {
@@ -311,7 +345,7 @@ class EventUploadTest {
         every { doesFileExist(any()) } returns true
     }
 
-    private fun prepareSingleBatch() {
+    private fun prepareSingleBatch(batchPayload: String) {
         coEvery {
             mockStorage.readString(StorageKeys.EVENT, String.empty())
         } returns singleFilePath
@@ -319,12 +353,12 @@ class EventUploadTest {
         every { readFileAsString(singleFilePath) } returns batchPayload
     }
 
-    private fun simulateRetryAbleError() {
+    private fun simulateRetryAbleError(maxAttempt: Int = MAX_ATTEMPT) {
         var callCount = 0
         every { mockHttpClient.sendData(any()) } answers {
             callCount++
             when {
-                callCount <= MAX_ATTEMPT -> Result.Failure(NetworkErrorStatus.ERROR_UNKNOWN)
+                callCount <= maxAttempt -> Result.Failure(NetworkErrorStatus.ERROR_UNKNOWN)
                 // This else block is needed to stop the infinite loop
                 else -> Result.Success("Ok")
             }
@@ -336,6 +370,19 @@ class EventUploadTest {
         eventUpload.start()
         eventUpload.flush()
         testDispatcher.scheduler.advanceUntilIdle()
+    }
+
+    private fun getBatchWithUpdatedSentAtTimeStamp(
+        unprocessedBatch: String,
+        listOfTimeStamp: List<String>
+    ): MutableList<String> {
+        val totalAttempts: Int = listOfTimeStamp.size
+        every { DateTimeUtils.now() } returnsMany listOfTimeStamp
+        return mutableListOf<String>().apply {
+            repeat(totalAttempts) {
+                add(JsonSentAtUpdater.updateSentAt(unprocessedBatch))
+            }
+        }
     }
 
     companion object {
