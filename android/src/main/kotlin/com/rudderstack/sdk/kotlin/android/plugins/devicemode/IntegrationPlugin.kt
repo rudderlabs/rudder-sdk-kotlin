@@ -33,7 +33,7 @@ abstract class IntegrationPlugin : EventPlugin {
     private val pluginList = CopyOnWriteArrayList<Plugin>()
     private val destinationReadyCallbacks = mutableListOf<(Any?, DestinationResult) -> Unit>()
 
-    private var isCustomIntegration: Boolean = false
+    private var isStandardIntegration: Boolean = true
 
     @Volatile
     private var isPluginSetup = false
@@ -82,7 +82,7 @@ abstract class IntegrationPlugin : EventPlugin {
 
     final override fun setup(analytics: Analytics) {
         super.setup(analytics)
-        isCustomIntegration = this !is StandardIntegration
+        isStandardIntegration = this is StandardIntegration
         pluginChain = PluginChain().also { it.analytics = analytics }
         isPluginSetup = true
         pluginList.forEach { plugin -> add(plugin) }
@@ -100,7 +100,7 @@ abstract class IntegrationPlugin : EventPlugin {
     }
 
     private fun isDestinationConfigured(sourceConfig: SourceConfig): JsonObject? {
-        if (isCustomIntegration) {
+        if (!isStandardIntegration) {
             return emptyJsonObject
         }
         findDestination(sourceConfig, key)?.let { configDestination ->
@@ -209,7 +209,7 @@ abstract class IntegrationPlugin : EventPlugin {
     }
 
     private fun setFailureConfigAndNotifyCallbacks(throwable: Throwable) {
-        if (!isCustomIntegration) {
+        if (isStandardIntegration) {
             update(emptyJsonObject)
         }
         this.isDestinationReady = false
@@ -217,7 +217,7 @@ abstract class IntegrationPlugin : EventPlugin {
     }
 
     private fun setSuccessConfigAndNotifyCallbacks(destinationConfig: JsonObject) {
-        if (!isCustomIntegration) {
+        if (isStandardIntegration) {
             update(destinationConfig)
         }
         this.isDestinationReady = true
