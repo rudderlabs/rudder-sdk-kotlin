@@ -15,6 +15,7 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import com.rudderstack.sdk.kotlin.core.internals.utils.encodeToBase64
 import com.rudderstack.sdk.kotlin.core.internals.utils.generateUUID
+import com.rudderstack.sdk.kotlin.core.internals.utils.handleInvalidWriteKey
 import com.rudderstack.sdk.kotlin.core.mockAnalytics
 import com.rudderstack.sdk.kotlin.core.readFileTrimmed
 import com.rudderstack.sdk.kotlin.core.setupLogger
@@ -345,6 +346,24 @@ class EventUploadTest {
         processMessage()
 
         verify(exactly = 1) { mockStorage.remove(singleFilePath) }
+    }
+
+    @Test
+    fun `given server returns 401, when flush is called, then the invalid write key process is initiated`() = runTest {
+        val unprocessedBatch = readFileTrimmed(unprocessedBatchWithTwoEvents)
+        every { mockStorage.readString(StorageKeys.EVENT, String.empty()) } returns singleFilePath
+        every { doesFileExist(singleFilePath) } returns true
+        every { readFileAsString(singleFilePath) } returns unprocessedBatch
+        every { mockHttpClient.sendData(any()) } returns Result.Failure(
+            error = NetworkErrorStatus.ERROR_401,
+        )
+
+        processMessage()
+
+        verify(exactly = 1) {
+            eventUpload.cancel()
+            mockAnalytics.handleInvalidWriteKey()
+        }
     }
 
     private fun prepareMultipleBatch() {

@@ -14,12 +14,15 @@ import com.rudderstack.sdk.kotlin.core.internals.network.toEventUploadResult
 import com.rudderstack.sdk.kotlin.core.internals.policies.backoff.MaxAttemptsExponentialBackoff
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.JsonSentAtUpdater
+import com.rudderstack.sdk.kotlin.core.internals.utils.Result
+import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
 import com.rudderstack.sdk.kotlin.core.internals.utils.createIfInactive
 import com.rudderstack.sdk.kotlin.core.internals.utils.createNewIfClosed
 import com.rudderstack.sdk.kotlin.core.internals.utils.createUnlimitedCapacityChannel
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import com.rudderstack.sdk.kotlin.core.internals.utils.encodeToBase64
 import com.rudderstack.sdk.kotlin.core.internals.utils.generateUUID
+import com.rudderstack.sdk.kotlin.core.internals.utils.handleInvalidWriteKey
 import com.rudderstack.sdk.kotlin.core.internals.utils.parseFilePaths
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -148,6 +151,7 @@ internal class EventUpload(
         } while (result is RetryAbleError)
     }
 
+    @OptIn(UseWithCaution::class)
     private fun handleNonRetryAbleError(status: NonRetryAbleError, filePath: String) {
         when (status) {
             NonRetryAbleEventUploadError.ERROR_400 -> {
@@ -159,9 +163,9 @@ internal class EventUpload(
             }
 
             NonRetryAbleEventUploadError.ERROR_401 -> {
-                // TODO: Log the error
-                // TODO: Delete all the files related to this writeKey
-//                analytics.shutdown()
+                LoggerAnalytics.error("Invalid write key. Ensure the write key is valid.")
+                cancel()
+                analytics.handleInvalidWriteKey()
             }
 
             NonRetryAbleEventUploadError.ERROR_404 -> {
