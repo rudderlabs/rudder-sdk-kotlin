@@ -14,7 +14,6 @@ import com.rudderstack.sdk.kotlin.core.internals.network.toEventUploadResult
 import com.rudderstack.sdk.kotlin.core.internals.policies.backoff.MaxAttemptsExponentialBackoff
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.JsonSentAtUpdater
-import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
 import com.rudderstack.sdk.kotlin.core.internals.utils.createIfInactive
 import com.rudderstack.sdk.kotlin.core.internals.utils.createNewIfClosed
