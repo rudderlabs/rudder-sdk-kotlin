@@ -3,6 +3,7 @@ package com.rudderstack.sdk.kotlin.android.utils
 import com.rudderstack.sdk.kotlin.core.internals.storage.LibraryVersion
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
+import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
 
 internal class MockMemoryStorage : Storage {
 
@@ -82,5 +83,10 @@ internal class MockMemoryStorage : Storage {
 
             override fun getVersionName() = "1.0.0"
         }
+    }
+
+    @UseWithCaution
+    override fun delete() {
+        messageBatchMap.clear()
     }
 }

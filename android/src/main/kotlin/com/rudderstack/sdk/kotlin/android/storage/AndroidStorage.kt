@@ -3,12 +3,15 @@ package com.rudderstack.sdk.kotlin.android.storage
 import android.content.Context
 import com.rudderstack.sdk.kotlin.BuildConfig
 import com.rudderstack.sdk.kotlin.android.storage.exceptions.QueuedPayloadTooLargeException
+import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.storage.EventBatchFileManager
 import com.rudderstack.sdk.kotlin.core.internals.storage.KeyValueStorage
 import com.rudderstack.sdk.kotlin.core.internals.storage.LibraryVersion
 import com.rudderstack.sdk.kotlin.core.internals.storage.MAX_PAYLOAD_SIZE
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
+import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
+import com.rudderstack.sdk.kotlin.core.internals.utils.appendWriteKey
 import com.rudderstack.sdk.kotlin.core.internals.utils.toAndroidPrefsKey
 import java.io.File
 
@@ -21,7 +24,8 @@ internal class AndroidStorage(
     private val rudderPrefsRepo: KeyValueStorage = SharedPrefsStore(context, RUDDER_PREFS.toAndroidPrefsKey(writeKey))
 ) : Storage {
 
-    private val storageDirectory: File = context.getDir(DIRECTORY_NAME, Context.MODE_PRIVATE)
+    private val storageDirectory: File =
+        context.getDir(DIRECTORY_NAME.appendWriteKey(writeKey), Context.MODE_PRIVATE)
     private val eventBatchFile = EventBatchFileManager(storageDirectory, writeKey, rudderPrefsRepo)
 
     override suspend fun write(key: StorageKeys, value: Boolean) {
@@ -101,6 +105,14 @@ internal class AndroidStorage(
             override fun getVersionName(): String = BuildConfig.VERSION_NAME
 
             override fun getBuildVersion(): String = android.os.Build.VERSION.SDK_INT.toString()
+        }
+    }
+
+    @UseWithCaution
+    override fun delete() {
+        rudderPrefsRepo.delete()
+        storageDirectory.deleteRecursively().let { isDeleted ->
+            LoggerAnalytics.info("Storage directory deleted: $isDeleted")
         }
     }
 }

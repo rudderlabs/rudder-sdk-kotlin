@@ -2,9 +2,13 @@ package com.rudderstack.sdk.kotlin.android.storage
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkObject
+import io.mockk.unmockkObject
 import io.mockk.verify
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -30,6 +34,13 @@ class SharedPrefsStoreTest {
         every { mockSharedPreferences.edit() } returns mockEditor
 
         sharedPrefsStore = SharedPrefsStore(mockContext, prefsName)
+
+        mockkObject(CheckBuildVersionUseCase)
+    }
+
+    @AfterEach
+    fun tearDown() {
+        unmockkObject(CheckBuildVersionUseCase)
     }
 
     @Test
@@ -116,5 +127,15 @@ class SharedPrefsStoreTest {
             mockEditor.remove("key")
             mockEditor.commit()
         }
+    }
+
+    @OptIn(UseWithCaution::class)
+    @Test
+    fun `given android version is N and above, when deletePrefs is called, then verify that shared preference is deleted`() {
+        every { CheckBuildVersionUseCase.isAndroidVersionNAndAbove() } returns true
+
+        sharedPrefsStore.delete()
+
+        verify { mockContext.deleteSharedPreferences(prefsName) }
     }
 }
