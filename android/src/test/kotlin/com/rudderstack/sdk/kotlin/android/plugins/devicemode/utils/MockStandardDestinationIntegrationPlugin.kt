@@ -2,6 +2,7 @@ package com.rudderstack.sdk.kotlin.android.plugins.devicemode.utils
 
 import androidx.annotation.VisibleForTesting
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.IntegrationPlugin
+import com.rudderstack.sdk.kotlin.android.plugins.devicemode.StandardIntegration
 import com.rudderstack.sdk.kotlin.core.internals.models.AliasEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.GroupEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
@@ -12,7 +13,7 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
-class MockDestinationIntegrationPlugin : IntegrationPlugin() {
+class MockStandardDestinationIntegrationPlugin : StandardIntegration, IntegrationPlugin() {
 
     private var mockDestinationSdk: MockDestinationSdk? = null
     private var previousApiKey = String.empty()

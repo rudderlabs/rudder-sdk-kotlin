@@ -1,7 +1,7 @@
 package com.rudderstack.sdk.kotlin.android.plugins.devicemode
 
 import com.rudderstack.sdk.kotlin.android.Configuration
-import com.rudderstack.sdk.kotlin.android.plugins.devicemode.utils.MockDestinationIntegrationPlugin
+import com.rudderstack.sdk.kotlin.android.plugins.devicemode.utils.MockStandardDestinationIntegrationPlugin
 import com.rudderstack.sdk.kotlin.android.utils.mockAnalytics
 import com.rudderstack.sdk.kotlin.android.utils.readFileAsString
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
@@ -33,7 +33,7 @@ class IntegrationsManagementPluginTest {
     private val testDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
     private val mockAnalytics = mockAnalytics(testScope, testDispatcher)
-    private val integrationPlugin = spyk(MockDestinationIntegrationPlugin())
+    private val integrationPlugin = spyk(MockStandardDestinationIntegrationPlugin())
     private val sourceConfigWithCorrectApiKey = LenientJson.decodeFromString<SourceConfig>(
         readFileAsString(pathToSourceConfigWithCorrectApiKey)
     )

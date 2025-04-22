@@ -3,7 +3,7 @@ package com.rudderstack.sdk.kotlin.android.plugins.devicemode
 import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.utils.MockDestinationCustomPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.utils.MockDestinationSdk
-import com.rudderstack.sdk.kotlin.android.plugins.devicemode.utils.MockDestinationIntegrationPlugin
+import com.rudderstack.sdk.kotlin.android.plugins.devicemode.utils.MockStandardDestinationIntegrationPlugin
 import com.rudderstack.sdk.kotlin.android.utils.mockAnalytics
 import com.rudderstack.sdk.kotlin.android.utils.readFileAsString
 import com.rudderstack.sdk.kotlin.core.internals.models.AliasEvent
@@ -54,7 +54,7 @@ internal const val pathToSourceConfigWithDestinationDisabled =
 
 @Suppress("UNCHECKED_CAST")
 @OptIn(ExperimentalCoroutinesApi::class)
-class IntegrationPluginTest {
+class StandardIntegrationPluginTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
@@ -68,13 +68,13 @@ class IntegrationPluginTest {
     )
     private val apiKeyRegex = Regex("[^a-zA-Z0-9-]")
 
-    private lateinit var plugin: MockDestinationIntegrationPlugin
+    private lateinit var plugin: MockStandardDestinationIntegrationPlugin
 
     @BeforeEach
     fun setup() {
         Dispatchers.setMain(testDispatcher)
 
-        plugin = spyk(MockDestinationIntegrationPlugin())
+        plugin = spyk(MockStandardDestinationIntegrationPlugin())
         mockInitialiseSdk()
         every { mockAnalytics.configuration } returns mockk<Configuration>(relaxed = true)
         plugin.setup(mockAnalytics)
