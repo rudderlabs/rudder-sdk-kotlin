@@ -5,6 +5,7 @@ import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.analytics.ktx.analytics
 import com.google.firebase.ktx.Firebase
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.IntegrationPlugin
+import com.rudderstack.sdk.kotlin.android.plugins.devicemode.StandardIntegration
 import com.rudderstack.sdk.kotlin.android.utils.getArray
 import com.rudderstack.sdk.kotlin.android.utils.getDouble
 import com.rudderstack.sdk.kotlin.android.utils.getLong
@@ -43,7 +44,7 @@ private const val TAX_KEY = "tax"
  * Firebase Integration Plugin. See [IntegrationPlugin] for more info.
  */
 @Suppress("TooManyFunctions")
-class FirebaseIntegration : IntegrationPlugin() {
+class FirebaseIntegration : StandardIntegration, IntegrationPlugin() {
 
     private var firebaseAnalytics: FirebaseAnalytics? = null
 

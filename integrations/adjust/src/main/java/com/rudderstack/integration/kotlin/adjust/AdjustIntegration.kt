@@ -11,6 +11,7 @@ import com.adjust.sdk.AdjustInstance
 import com.adjust.sdk.LogLevel
 import com.rudderstack.sdk.kotlin.android.Analytics
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.IntegrationPlugin
+import com.rudderstack.sdk.kotlin.android.plugins.devicemode.StandardIntegration
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleObserver
 import com.rudderstack.sdk.kotlin.android.utils.addLifecycleObserver
 import com.rudderstack.sdk.kotlin.android.utils.application
@@ -31,7 +32,7 @@ private const val USER_ID = "userId"
  * AdjustIntegration is a plugin that sends events to the Adjust SDK.
  */
 @OptIn(InternalRudderApi::class)
-class AdjustIntegration : IntegrationPlugin(), ActivityLifecycleObserver {
+class AdjustIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifecycleObserver {
 
     override val key: String
         get() = "Adjust"

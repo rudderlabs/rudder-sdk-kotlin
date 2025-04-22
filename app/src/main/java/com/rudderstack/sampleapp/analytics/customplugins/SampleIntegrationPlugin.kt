@@ -13,7 +13,7 @@ class SampleIntegrationPlugin : IntegrationPlugin() {
     private var destinationSdk: SampleDestinationSdk? = null
 
     override val key: String
-        get() = "Amplitude"
+        get() = "MyKey"
 
     override fun create(
         destinationConfig: JsonObject,

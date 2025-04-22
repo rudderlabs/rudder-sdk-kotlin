@@ -33,6 +33,8 @@ abstract class IntegrationPlugin : EventPlugin {
     private val pluginList = CopyOnWriteArrayList<Plugin>()
     private val destinationReadyCallbacks = mutableListOf<(Any?, DestinationResult) -> Unit>()
 
+    private var isCustomIntegration: Boolean = false
+
     @Volatile
     private var isPluginSetup = false
 
@@ -80,6 +82,7 @@ abstract class IntegrationPlugin : EventPlugin {
 
     final override fun setup(analytics: Analytics) {
         super.setup(analytics)
+        isCustomIntegration = this !is StandardIntegration
         pluginChain = PluginChain().also { it.analytics = analytics }
         isPluginSetup = true
         pluginList.forEach { plugin -> add(plugin) }
@@ -97,6 +100,9 @@ abstract class IntegrationPlugin : EventPlugin {
     }
 
     private fun isDestinationConfigured(sourceConfig: SourceConfig): JsonObject? {
+        if (isCustomIntegration) {
+            return emptyJsonObject
+        }
         findDestination(sourceConfig, key)?.let { configDestination ->
             if (!configDestination.isDestinationEnabled) {
                 val errorMessage = "Destination $key is disabled in dashboard. " +
@@ -203,13 +209,17 @@ abstract class IntegrationPlugin : EventPlugin {
     }
 
     private fun setFailureConfigAndNotifyCallbacks(throwable: Throwable) {
-        update(emptyJsonObject)
+        if (!isCustomIntegration) {
+            update(emptyJsonObject)
+        }
         this.isDestinationReady = false
         notifyCallbacks(Result.Failure(throwable))
     }
 
     private fun setSuccessConfigAndNotifyCallbacks(destinationConfig: JsonObject) {
-        update(destinationConfig)
+        if (!isCustomIntegration) {
+            update(destinationConfig)
+        }
         this.isDestinationReady = true
         notifyCallbacks(Result.Success(Unit))
     }
