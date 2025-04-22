@@ -10,12 +10,14 @@ import com.rudderstack.sdk.kotlin.core.internals.network.NetworkResult
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.JsonSentAtUpdater
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
+import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
 import com.rudderstack.sdk.kotlin.core.internals.utils.createIfInactive
 import com.rudderstack.sdk.kotlin.core.internals.utils.createNewIfClosed
 import com.rudderstack.sdk.kotlin.core.internals.utils.createUnlimitedCapacityChannel
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import com.rudderstack.sdk.kotlin.core.internals.utils.encodeToBase64
 import com.rudderstack.sdk.kotlin.core.internals.utils.generateUUID
+import com.rudderstack.sdk.kotlin.core.internals.utils.handleInvalidWriteKey
 import com.rudderstack.sdk.kotlin.core.internals.utils.parseFilePaths
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -146,6 +148,7 @@ internal class EventUpload(
         }
     }
 
+    @OptIn(UseWithCaution::class)
     @VisibleForTesting
     internal fun handleFailure(status: NetworkErrorStatus, filePath: String) {
         // TODO: Implement the step to reset the backoff logic
@@ -159,9 +162,9 @@ internal class EventUpload(
             }
 
             NetworkErrorStatus.ERROR_401 -> {
-                // TODO: Log the error
-                // TODO: Delete all the files related to this writeKey
-//                analytics.shutdown()
+                LoggerAnalytics.error("Invalid write key. Ensure the write key is valid.")
+                cancel()
+                analytics.handleInvalidWriteKey()
             }
 
             NetworkErrorStatus.ERROR_404 -> {

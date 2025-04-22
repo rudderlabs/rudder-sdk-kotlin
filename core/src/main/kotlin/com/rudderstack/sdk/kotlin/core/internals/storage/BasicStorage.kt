@@ -97,6 +97,7 @@ internal class BasicStorage(writeKey: String) : Storage {
 
     override fun close() {
         eventsFile.closeAndReset()
+        LoggerAnalytics.info("Storage closed")
     }
 
     override fun readInt(key: StorageKeys, defaultVal: Int): Int {
