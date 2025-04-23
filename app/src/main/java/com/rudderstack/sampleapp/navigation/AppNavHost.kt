@@ -20,7 +20,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
 import com.rudderstack.android.sampleapp.R
 import com.rudderstack.sampleapp.mainscreen.MainViewModel
 import com.rudderstack.sampleapp.ui.theme.Black
@@ -31,7 +30,7 @@ import com.rudderstack.sampleapp.ui.theme.White
 @Composable
 fun AppNavHost(
     viewModel: MainViewModel,
-    navController: NavHostController = rememberNavController(),
+    navController: NavHostController,
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
     Scaffold(

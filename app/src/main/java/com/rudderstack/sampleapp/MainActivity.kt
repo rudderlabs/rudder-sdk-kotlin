@@ -18,9 +18,10 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            analytics.setNavigationDestinationsTracking(rememberNavController(), this@MainActivity)
+            val navController = rememberNavController()
+            analytics.setNavigationDestinationsTracking(navController, this@MainActivity)
             RudderAndroidLibsTheme {
-                AppNavHost(viewModel = viewModel)
+                AppNavHost(viewModel = viewModel, navController = navController)
             }
         }
     }
