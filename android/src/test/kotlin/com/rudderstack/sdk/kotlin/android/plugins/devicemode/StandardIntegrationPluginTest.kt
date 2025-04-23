@@ -3,7 +3,7 @@ package com.rudderstack.sdk.kotlin.android.plugins.devicemode
 import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.utils.MockDestinationCustomPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.utils.MockDestinationSdk
-import com.rudderstack.sdk.kotlin.android.plugins.devicemode.utils.MockStandardDestinationIntegrationPlugin
+import com.rudderstack.sdk.kotlin.android.plugins.devicemode.utils.MockStandardIntegrationPlugin
 import com.rudderstack.sdk.kotlin.android.utils.mockAnalytics
 import com.rudderstack.sdk.kotlin.android.utils.readFileAsString
 import com.rudderstack.sdk.kotlin.core.internals.models.AliasEvent
@@ -68,13 +68,13 @@ class StandardIntegrationPluginTest {
     )
     private val apiKeyRegex = Regex("[^a-zA-Z0-9-]")
 
-    private lateinit var plugin: MockStandardDestinationIntegrationPlugin
+    private lateinit var plugin: MockStandardIntegrationPlugin
 
     @BeforeEach
     fun setup() {
         Dispatchers.setMain(testDispatcher)
 
-        plugin = spyk(MockStandardDestinationIntegrationPlugin())
+        plugin = spyk(MockStandardIntegrationPlugin())
         mockInitialiseSdk()
         every { mockAnalytics.configuration } returns mockk<Configuration>(relaxed = true)
         plugin.setup(mockAnalytics)
@@ -136,7 +136,7 @@ class StandardIntegrationPluginTest {
     fun `given an integration plugin for which create throws an exception, when plugin is initialised, then integration is not ready`() =
         runTest {
             val exception = Exception("Test exception")
-            val plugin = object : IntegrationPlugin() {
+            val plugin = object : StandardIntegration, IntegrationPlugin() {
                 override val key: String
                     get() = "MockDestination"
 
