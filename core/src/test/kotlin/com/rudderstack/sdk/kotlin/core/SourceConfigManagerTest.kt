@@ -8,6 +8,7 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.LenientJson
+import com.rudderstack.sdk.kotlin.core.internals.utils.MockBackOffPolicy
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import io.mockk.CapturingSlot
 import io.mockk.MockKAnnotations
@@ -16,7 +17,9 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.mockk
+import io.mockk.mockkStatic
 import io.mockk.slot
+import io.mockk.spyk
 import io.mockk.verify
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.launch
@@ -26,6 +29,9 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.Arguments
+import org.junit.jupiter.params.provider.MethodSource
 
 private const val downloadedSourceConfig = "config/source_config_with_single_destination.json"
 
@@ -159,10 +165,92 @@ class SourceConfigManagerTest {
             verify(exactly = 0) { sourceConfigState.dispatch(any()) }
         }
 
+    @Test
+    fun `given sourceConfig api return 400 response code, when source config is fetched, then analytics instance is shutdown`() =
+        runTest(testDispatcher) {
+            every { httpClient.getData() } returns Result.Failure(
+                error = NetworkErrorStatus.ERROR_400,
+            )
+
+            sourceConfigManager.refreshSourceConfigAndNotifyObservers()
+            testDispatcher.scheduler.advanceUntilIdle()
+            simulateConnectionAvailability()
+
+            coVerify(exactly = 1) { analytics.shutdown() }
+        }
+
+    @ParameterizedTest(name = "given sourceConfig api return {0}, when source config is fetched, then analytics instance is not shutdown and backoff is called 5 times")
+    @MethodSource("provideSourceConfigErrorStatus")
+    fun sourceConfigBackOffRetryTest(
+        errorStatus: NetworkErrorStatus
+    ) = runTest(testDispatcher) {
+        val mockBackoffPolicy = spyk(MockBackOffPolicy())
+        mockkStatic(::provideBackoffPolicy)
+        every { provideBackoffPolicy() } returns mockBackoffPolicy
+
+        every { httpClient.getData() } returns Result.Failure(
+            error = errorStatus,
+        )
+
+        sourceConfigManager.refreshSourceConfigAndNotifyObservers()
+        testDispatcher.scheduler.advanceUntilIdle()
+        simulateConnectionAvailability()
+
+        coVerify(exactly = 0) { analytics.shutdown() }
+        coVerify(exactly = 5) { mockBackoffPolicy.nextDelayInMillis() }
+    }
+
+    @ParameterizedTest(name = "given sourceConfig api return {0} for first time but success the next, when source config is fetched, backoff is called 1 time and source config downloaded and stored")
+    @MethodSource("provideSourceConfigErrorStatus")
+    fun sourceConfigBackOffRetryTestWithSuccess(
+        errorStatus: NetworkErrorStatus
+    ) = runTest(testDispatcher) {
+        val mockBackoffPolicy = spyk(MockBackOffPolicy())
+        mockkStatic(::provideBackoffPolicy)
+        every { provideBackoffPolicy() } returns mockBackoffPolicy
+
+        val downloadedSourceConfigString = readFileAsString(downloadedSourceConfig)
+        every { httpClient.getData() } returnsMany listOf(
+            Result.Failure(error = errorStatus),
+            Result.Success(downloadedSourceConfigString)
+        )
+
+        sourceConfigManager.refreshSourceConfigAndNotifyObservers()
+        testDispatcher.scheduler.advanceUntilIdle()
+        simulateConnectionAvailability()
+
+        coVerify(exactly = 0) { analytics.shutdown() }
+        coVerify(exactly = 1) { mockBackoffPolicy.nextDelayInMillis() }
+        LenientJson.decodeFromString<SourceConfig>(downloadedSourceConfigString).let { sourceConfig ->
+            coVerify(exactly = 1) {
+                analytics.storage.write(
+                    StorageKeys.SOURCE_CONFIG_PAYLOAD,
+                    Json.encodeToString(serializer(), sourceConfig)
+                )
+            }
+            verify(exactly = 1) {
+                sourceConfigState.dispatch(match { it is SourceConfig.UpdateAction && it.updatedSourceConfig == sourceConfig })
+            }
+        }
+    }
+
     // This setup is needed to simulate the connection availability and invoking the block.
     private fun TestScope.simulateConnectionAvailability() {
         backgroundScope.launch {
             flowCollectorSlot.captured.emit(true)
         }.also { testDispatcher.scheduler.runCurrent() }
+    }
+
+    companion object {
+
+        @JvmStatic
+        fun provideSourceConfigErrorStatus() = listOf(
+            Arguments.of(NetworkErrorStatus.ERROR_401),
+            Arguments.of(NetworkErrorStatus.ERROR_404),
+            Arguments.of(NetworkErrorStatus.ERROR_413),
+            Arguments.of(NetworkErrorStatus.ERROR_RETRY),
+            Arguments.of(NetworkErrorStatus.ERROR_UNKNOWN),
+            Arguments.of(NetworkErrorStatus.ERROR_NETWORK_UNAVAILABLE)
+        )
     }
 }
