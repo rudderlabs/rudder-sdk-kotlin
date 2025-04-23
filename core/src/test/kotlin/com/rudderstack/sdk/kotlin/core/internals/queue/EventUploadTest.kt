@@ -12,6 +12,7 @@ import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.DateTimeUtils
 import com.rudderstack.sdk.kotlin.core.internals.utils.JsonSentAtUpdater
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
+import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import com.rudderstack.sdk.kotlin.core.internals.utils.encodeToBase64
 import com.rudderstack.sdk.kotlin.core.internals.utils.generateUUID
@@ -348,6 +349,7 @@ class EventUploadTest {
         verify(exactly = 1) { mockStorage.remove(singleFilePath) }
     }
 
+    @OptIn(UseWithCaution::class)
     @Test
     fun `given server returns 401, when flush is called, then the invalid write key process is initiated`() = runTest {
         val unprocessedBatch = readFileTrimmed(unprocessedBatchWithTwoEvents)
