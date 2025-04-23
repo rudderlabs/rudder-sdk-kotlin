@@ -9,7 +9,7 @@ private const val DEFAULT_MAX_ATTEMPT = 5
 private val DEFAULT_COOL_OFF_PERIOD_IN_MILLIS = 30.minutes
 
 /**
- * Manages retry attempts with exponential backoff delays.
+ * Manages retry attempts with backoff delays.
  *
  * This class:
  * - Applies increasing delays between retry attempts
@@ -19,12 +19,12 @@ private val DEFAULT_COOL_OFF_PERIOD_IN_MILLIS = 30.minutes
  *
  * @param maxAttempts Maximum retries before entering cool-off (default: 5)
  * @param coolOffPeriod Duration in minutes (default: 30 minutes)
- * @param exponentialBackOffPolicy Delay calculation policy
+ * @param backOffPolicy Delay calculation policy. Default to [ExponentialBackOffPolicy]
  */
-internal class MaxAttemptsExponentialBackoff(
+internal class MaxAttemptsWithBackoff(
     private val maxAttempts: Int = DEFAULT_MAX_ATTEMPT,
     private val coolOffPeriod: Duration = DEFAULT_COOL_OFF_PERIOD_IN_MILLIS,
-    private val exponentialBackOffPolicy: BackOffPolicy = ExponentialBackOffPolicy(),
+    private val backOffPolicy: BackOffPolicy = ExponentialBackOffPolicy(),
 ) {
 
     private var currentAttempt = 0
@@ -33,7 +33,7 @@ internal class MaxAttemptsExponentialBackoff(
         currentAttempt++
         when {
             currentAttempt > maxAttempts -> applyCoolOffPeriod()
-            else -> applyExponentialBackoff()
+            else -> applyBackoff()
         }
     }
 
@@ -44,8 +44,8 @@ internal class MaxAttemptsExponentialBackoff(
         delay(coolOffPeriod)
     }
 
-    private suspend fun applyExponentialBackoff() {
-        val delayInMillis = exponentialBackOffPolicy.nextDelayInMillis()
+    private suspend fun applyBackoff() {
+        val delayInMillis = backOffPolicy.nextDelayInMillis()
         LoggerAnalytics.verbose("Sleeping for $delayInMillis milliseconds (attempt $currentAttempt of $maxAttempts)")
         delay(delayInMillis)
     }
@@ -53,6 +53,6 @@ internal class MaxAttemptsExponentialBackoff(
     internal fun reset() {
         LoggerAnalytics.verbose("Resetting retry attempts and backoff policy")
         currentAttempt = 0
-        exponentialBackOffPolicy.resetBackOff()
+        backOffPolicy.resetBackOff()
     }
 }

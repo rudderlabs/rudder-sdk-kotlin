@@ -5,7 +5,7 @@ import com.rudderstack.sdk.kotlin.core.internals.logger.KotlinLogger
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClient
 import com.rudderstack.sdk.kotlin.core.internals.network.NetworkErrorStatus
-import com.rudderstack.sdk.kotlin.core.internals.policies.backoff.MaxAttemptsExponentialBackoff
+import com.rudderstack.sdk.kotlin.core.internals.policies.backoff.MaxAttemptsWithBackoff
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
@@ -74,7 +74,7 @@ class EventUploadTest {
     private lateinit var mockKotlinLogger: KotlinLogger
 
     @MockK
-    private lateinit var mockMaxAttemptsExponentialBackoff: MaxAttemptsExponentialBackoff
+    private lateinit var mockMaxAttemptsWithBackoff: MaxAttemptsWithBackoff
 
     private val listOfTimeStamp = listOf(
         "1970-01-01T00:00:00Z",
@@ -119,7 +119,7 @@ class EventUploadTest {
             EventUpload(
                 analytics = mockAnalytics,
                 httpClientFactory = mockHttpClient,
-                maxAttemptsExponentialBackoff = mockMaxAttemptsExponentialBackoff,
+                maxAttemptsWithBackoff = mockMaxAttemptsWithBackoff,
             )
         )
     }
@@ -227,11 +227,11 @@ class EventUploadTest {
             // Once the batch is sent successfully, the file should be removed from storage
             verify(exactly = 1) { mockStorage.remove(singleFilePath) }
             coVerify(exactly = MAX_ATTEMPT) {
-                mockMaxAttemptsExponentialBackoff.delayWithBackoff()
+                mockMaxAttemptsWithBackoff.delayWithBackoff()
             }
             // There's one explicit `reset` call after the success
             verify(exactly = 1) {
-                mockMaxAttemptsExponentialBackoff.reset()
+                mockMaxAttemptsWithBackoff.reset()
             }
         }
 
@@ -256,7 +256,7 @@ class EventUploadTest {
         // Once the batch is sent successfully, the file should be removed from storage
         verify(exactly = 1) { mockStorage.remove(singleFilePath) }
         // There's one explicit `reset` call after the success
-        verify(exactly = 1) { mockMaxAttemptsExponentialBackoff.reset() }
+        verify(exactly = 1) { mockMaxAttemptsWithBackoff.reset() }
     }
 
     @Test

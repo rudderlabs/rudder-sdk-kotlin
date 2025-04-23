@@ -14,20 +14,20 @@ import org.junit.jupiter.api.Test
 import kotlin.time.Duration.Companion.minutes
 
 @ExperimentalCoroutinesApi
-class MaxAttemptsExponentialBackoffTest {
+class MaxAttemptsWithBackoffTest {
 
     private val mockBackOffPolicy = mockk<BackOffPolicy>()
     private val maxAttempts = 3
     private val coolOffPeriod = 30.minutes
-    private lateinit var backoff: MaxAttemptsExponentialBackoff
+    private lateinit var backoff: MaxAttemptsWithBackoff
     private val expectedDelays = listOf(3000L, 5000L, 9000L)
 
     @BeforeEach
     fun setup() {
-        backoff = MaxAttemptsExponentialBackoff(
+        backoff = MaxAttemptsWithBackoff(
             maxAttempts = maxAttempts,
             coolOffPeriod = coolOffPeriod,
-            exponentialBackOffPolicy = mockBackOffPolicy
+            backOffPolicy = mockBackOffPolicy
         )
 
         every { mockBackOffPolicy.resetBackOff() } returns Unit

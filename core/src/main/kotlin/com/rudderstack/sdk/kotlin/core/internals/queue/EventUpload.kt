@@ -11,7 +11,7 @@ import com.rudderstack.sdk.kotlin.core.internals.network.NonRetryAbleEventUpload
 import com.rudderstack.sdk.kotlin.core.internals.network.RetryAbleError
 import com.rudderstack.sdk.kotlin.core.internals.network.Success
 import com.rudderstack.sdk.kotlin.core.internals.network.toEventUploadResult
-import com.rudderstack.sdk.kotlin.core.internals.policies.backoff.MaxAttemptsExponentialBackoff
+import com.rudderstack.sdk.kotlin.core.internals.policies.backoff.MaxAttemptsWithBackoff
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.JsonSentAtUpdater
 import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
@@ -53,7 +53,7 @@ internal class EventUpload(
             anonymousIdHeaderString = analytics.anonymousId ?: String.empty()
         )
     },
-    private val maxAttemptsExponentialBackoff: MaxAttemptsExponentialBackoff = MaxAttemptsExponentialBackoff(),
+    private val maxAttemptsWithBackoff: MaxAttemptsWithBackoff = MaxAttemptsWithBackoff(),
 ) {
 
     private var lastBatchAnonymousId = String.empty()
@@ -135,15 +135,15 @@ internal class EventUpload(
             when (result) {
                 is Success -> {
                     LoggerAnalytics.debug("Event uploaded successfully. Server response: ${result.response}")
-                    maxAttemptsExponentialBackoff.reset()
+                    maxAttemptsWithBackoff.reset()
                     cleanup(filePath)
                 }
                 is RetryAbleError -> {
                     LoggerAnalytics.debug("EventUpload: Retry able error occurred")
-                    maxAttemptsExponentialBackoff.delayWithBackoff()
+                    maxAttemptsWithBackoff.delayWithBackoff()
                 }
                 is NonRetryAbleError -> {
-                    maxAttemptsExponentialBackoff.reset()
+                    maxAttemptsWithBackoff.reset()
                     handleNonRetryAbleError(result, filePath)
                 }
             }
