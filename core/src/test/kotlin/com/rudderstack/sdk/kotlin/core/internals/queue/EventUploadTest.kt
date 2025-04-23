@@ -5,11 +5,14 @@ import com.rudderstack.sdk.kotlin.core.internals.logger.KotlinLogger
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClient
 import com.rudderstack.sdk.kotlin.core.internals.network.NetworkErrorStatus
+import com.rudderstack.sdk.kotlin.core.internals.policies.backoff.MaxAttemptsWithBackoff
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.DateTimeUtils
+import com.rudderstack.sdk.kotlin.core.internals.utils.JsonSentAtUpdater
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
+import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import com.rudderstack.sdk.kotlin.core.internals.utils.encodeToBase64
 import com.rudderstack.sdk.kotlin.core.internals.utils.generateUUID
@@ -51,6 +54,8 @@ private const val mockCurrentTime = "<original-timestamp>"
 private const val unprocessedBatchWithTwoEvents = "message/batch/unprocessed_batch_with_two_events.json"
 private const val processedBatchWithTwoEvents = "message/batch/processed_batch_with_two_events.json"
 
+private const val MAX_ATTEMPT = 5
+
 class EventUploadTest {
 
     // Two batch files are ready to be sent
@@ -68,6 +73,18 @@ class EventUploadTest {
 
     @MockK
     private lateinit var mockKotlinLogger: KotlinLogger
+
+    @MockK
+    private lateinit var mockMaxAttemptsWithBackoff: MaxAttemptsWithBackoff
+
+    private val listOfTimeStamp = listOf(
+        "1970-01-01T00:00:00Z",
+        "1970-01-01T00:00:01Z",
+        "1970-01-01T00:00:02Z",
+        "1970-01-01T00:00:03Z",
+        "1970-01-01T00:00:04Z",
+        "1970-01-01T00:00:05Z"
+    )
 
     private val testDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
@@ -103,6 +120,7 @@ class EventUploadTest {
             EventUpload(
                 analytics = mockAnalytics,
                 httpClientFactory = mockHttpClient,
+                maxAttemptsWithBackoff = mockMaxAttemptsWithBackoff,
             )
         )
     }
@@ -200,23 +218,60 @@ class EventUploadTest {
     }
 
     @Test
-    fun `given batch is ready to be sent to the server and server returns error, when flush is called, then the batch is not removed from storage`() {
-        prepareMultipleBatch()
-        // Mock messageQueue file reading
-        filePaths.forEach { path ->
-            every { readFileAsString(path) } returns batchPayload
+    fun `given batch is ready to be sent to the server and server initially returns retry able error, when flush is called, then the batch is removed at the last after success is received`() =
+        runTest {
+            prepareSingleBatch(batchPayload)
+            simulateRetryAbleError()
+
+            processMessage()
+
+            // Once the batch is sent successfully, the file should be removed from storage
+            verify(exactly = 1) { mockStorage.remove(singleFilePath) }
+            coVerify(exactly = MAX_ATTEMPT) {
+                mockMaxAttemptsWithBackoff.delayWithBackoff()
+            }
+            // There's one explicit `reset` call after the success
+            verify(exactly = 1) {
+                mockMaxAttemptsWithBackoff.reset()
+            }
         }
-        // Mock the behavior for HttpClient
-        every { mockHttpClient.sendData(batchPayload) } returns Result.Failure(
-            NetworkErrorStatus.ERROR_UNKNOWN
+
+    @Test
+    fun `given retry attempt is made multiple times, when flush is called, then the sentAt is updated`() {
+        val unprocessedBatch = readFileTrimmed(unprocessedBatchWithTwoEvents)
+        prepareSingleBatch(batchPayload = unprocessedBatch)
+        val updatedBatchList: MutableList<String> = getBatchWithUpdatedSentAtTimeStamp(
+            unprocessedBatch = unprocessedBatch,
+            listOfTimeStamp = listOfTimeStamp,
         )
+        // Reset the timestamp mock
+        every { DateTimeUtils.now() } returnsMany listOfTimeStamp
+        simulateRetryAbleError(maxAttempt = MAX_ATTEMPT)
 
         processMessage()
 
-        // Verify the expected behavior
-        filePaths.forEach { path ->
-            verify(exactly = 0) { mockStorage.remove(path) }
+        // The batch should be sent with the updated `sentAt` timestamp
+        updatedBatchList.forEach { payload ->
+            verify(exactly = 1) { mockHttpClient.sendData(payload) }
         }
+        // Once the batch is sent successfully, the file should be removed from storage
+        verify(exactly = 1) { mockStorage.remove(singleFilePath) }
+        // There's one explicit `reset` call after the success
+        verify(exactly = 1) { mockMaxAttemptsWithBackoff.reset() }
+    }
+
+    @Test
+    fun `given some exception is thrown while updating sentAt, when flush is called, file is removed but without any upload attempt`() {
+        val unprocessedBatch = readFileTrimmed(unprocessedBatchWithTwoEvents)
+        prepareSingleBatch(batchPayload = unprocessedBatch)
+        every { DateTimeUtils.now() } throws Exception()
+        simulateRetryAbleError(maxAttempt = MAX_ATTEMPT)
+
+        processMessage()
+
+        // Once the batch is sent successfully, the file should be removed from storage
+        verify(exactly = 1) { mockStorage.remove(singleFilePath) }
+        verify(exactly = 0) { mockHttpClient.sendData(any()) }
     }
 
     @Test
@@ -294,6 +349,7 @@ class EventUploadTest {
         verify(exactly = 1) { mockStorage.remove(singleFilePath) }
     }
 
+    @OptIn(UseWithCaution::class)
     @Test
     fun `given server returns 401, when flush is called, then the invalid write key process is initiated`() = runTest {
         val unprocessedBatch = readFileTrimmed(unprocessedBatchWithTwoEvents)
@@ -324,11 +380,44 @@ class EventUploadTest {
         every { doesFileExist(any()) } returns true
     }
 
+    private fun prepareSingleBatch(batchPayload: String) {
+        coEvery {
+            mockStorage.readString(StorageKeys.EVENT, String.empty())
+        } returns singleFilePath
+        every { doesFileExist(any()) } returns true
+        every { readFileAsString(singleFilePath) } returns batchPayload
+    }
+
+    private fun simulateRetryAbleError(maxAttempt: Int = MAX_ATTEMPT) {
+        var callCount = 0
+        every { mockHttpClient.sendData(any()) } answers {
+            callCount++
+            when {
+                callCount <= maxAttempt -> Result.Failure(NetworkErrorStatus.ERROR_UNKNOWN)
+                // This else block is needed to stop the infinite loop
+                else -> Result.Success("Ok")
+            }
+        }
+    }
+
     private fun processMessage() {
         // Execute messageQueue actions
         eventUpload.start()
         eventUpload.flush()
         testDispatcher.scheduler.advanceUntilIdle()
+    }
+
+    private fun getBatchWithUpdatedSentAtTimeStamp(
+        unprocessedBatch: String,
+        listOfTimeStamp: List<String>
+    ): MutableList<String> {
+        val totalAttempts: Int = listOfTimeStamp.size
+        every { DateTimeUtils.now() } returnsMany listOfTimeStamp
+        return mutableListOf<String>().apply {
+            repeat(totalAttempts) {
+                add(JsonSentAtUpdater.updateSentAt(unprocessedBatch))
+            }
+        }
     }
 
     companion object {
@@ -352,12 +441,5 @@ class EventUploadTest {
                 "some_random_id"
             )
         )
-
-        // TODO: I'll uncomment this once the droppable handling is implemented
-//        @JvmStatic
-//        fun droppableHandlingProvider() = listOf(
-//            Arguments.of(NetworkErrorStatus.ERROR_400, true),
-//            Arguments.of(NetworkErrorStatus.ERROR_413, true),
-//        )
     }
 }
