@@ -34,7 +34,6 @@ private const val PHONE_KEY = "phone"
 private const val DATE_OF_BIRTH_KEY = "dateOfBirth"
 private const val GENDER_KEY = "gender"
 
-// onDestinationReady, create, update,
 /**
  * The Facebook Integration Plugin. This plugin is used to send events to Facebook.
  */

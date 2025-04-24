@@ -9,7 +9,7 @@ import com.rudderstack.sdk.kotlin.android.SessionConfiguration
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sampleapp.analytics.customplugins.AndroidAdvertisingIdPlugin
 import com.rudderstack.sampleapp.analytics.customplugins.AndroidAdvertisingIdPlugin.Companion.isAdvertisingLibraryAvailable
-import com.rudderstack.sampleapp.analytics.customplugins.SampleIntegrationPlugin
+import com.rudderstack.sampleapp.analytics.customplugins.SampleCustomIntegrationPlugin
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
@@ -44,7 +44,7 @@ object RudderAnalyticsUtils {
 
         analytics.add(AdjustIntegration())
 
-        val sampleIntegrationPlugin = SampleIntegrationPlugin()
+        val sampleIntegrationPlugin = SampleCustomIntegrationPlugin()
         sampleIntegrationPlugin.add(object : Plugin {
             override val pluginType: Plugin.PluginType = Plugin.PluginType.PreProcess
             override lateinit var analytics: com.rudderstack.sdk.kotlin.core.Analytics
