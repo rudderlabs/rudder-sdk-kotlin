@@ -1,12 +1,11 @@
 package com.rudderstack.integration.kotlin.braze
 
 import com.braze.enums.Gender
-import com.rudderstack.integration.kotlin.braze.Utility.toISOString
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.ExternalId
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
-import com.rudderstack.sdk.kotlin.core.internals.models.RudderTraits
+import com.rudderstack.sdk.kotlin.core.internals.models.Traits
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.UserIdentity
@@ -123,7 +122,7 @@ internal object Utility {
     internal fun provideUserIdentity(
         anonymousId: String = "<anonymousId>",
         userId: String = USER_ID,
-        traits: RudderTraits = getStandardAndCustomTraits(),
+        traits: Traits = getStandardAndCustomTraits(),
     ) = UserIdentity(
         anonymousId = anonymousId,
         userId = userId,

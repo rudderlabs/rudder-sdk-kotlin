@@ -1,6 +1,6 @@
 package com.rudderstack.sdk.kotlin.core.internals.utils
 
-import com.rudderstack.sdk.kotlin.core.internals.models.RudderTraits
+import com.rudderstack.sdk.kotlin.core.internals.models.Traits
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
@@ -24,20 +24,20 @@ class StorageUtilsTest {
     }
 
     @Test
-    fun `given value is of RudderTraits type, when traits are read from storage, then return RudderTraits object`() {
+    fun `given value is of Traits type, when traits are read from storage, then return Traits object`() {
         every { mockStorage.readString(any(), any()) } returns getTraitsString()
 
-        val result = mockStorage.readValuesOrDefault<RudderTraits>(key = StorageKeys.TRAITS, defaultValue = emptyJsonObject)
+        val result = mockStorage.readValuesOrDefault<Traits>(key = StorageKeys.TRAITS, defaultValue = emptyJsonObject)
 
         val expected = getTraitsJson()
         assertEquals(expected, result)
     }
 
     @Test
-    fun `given value is of RudderTraits type, when empty traits are read from storage, then return default value`() {
+    fun `given value is of Traits type, when empty traits are read from storage, then return default value`() {
         every { mockStorage.readString(any(), any()) } returns "{}"
 
-        val result = mockStorage.readValuesOrDefault<RudderTraits>(key = StorageKeys.TRAITS, defaultValue = emptyJsonObject)
+        val result = mockStorage.readValuesOrDefault<Traits>(key = StorageKeys.TRAITS, defaultValue = emptyJsonObject)
 
         val expected = emptyJsonObject
         assertEquals(expected, result)

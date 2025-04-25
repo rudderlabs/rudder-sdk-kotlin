@@ -9,10 +9,10 @@ import com.rudderstack.sdk.kotlin.core.internals.models.GroupEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.Properties
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
-import com.rudderstack.sdk.kotlin.core.internals.models.RudderTraits
 import com.rudderstack.sdk.kotlin.core.internals.models.ScreenEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
+import com.rudderstack.sdk.kotlin.core.internals.models.Traits
 import com.rudderstack.sdk.kotlin.core.internals.models.connectivity.ConnectivityState
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.ResetUserIdentityAction
@@ -191,11 +191,11 @@ open class Analytics protected constructor(
      * This function constructs a `GroupEvent` event and processes it through the plugin chain.
      *
      * @param groupId Group ID you want your user to attach to
-     * @param traits A [RudderTraits] object containing key-value pairs of event traits. Defaults to an empty JSON object.
+     * @param traits A [Traits] object containing key-value pairs of event traits. Defaults to an empty JSON object.
      * @param options A [RudderOption] object to specify additional event options. Defaults to an empty RudderOption object.
      */
     @JvmOverloads
-    fun group(groupId: String, traits: RudderTraits = emptyJsonObject, options: RudderOption = RudderOption()) {
+    fun group(groupId: String, traits: Traits = emptyJsonObject, options: RudderOption = RudderOption()) {
         if (!isAnalyticsActive() || !isSourceEnabled()) return
 
         val event = GroupEvent(
@@ -213,15 +213,11 @@ open class Analytics protected constructor(
      * It also lets you record traits about the user like their name, email address, etc.
      *
      * @param userId The unique identifier for the user. Defaults to an empty string.
-     * @param traits A [RudderTraits] object containing key-value pairs of user traits. Defaults to an empty JSON object.
+     * @param traits A [Traits] object containing key-value pairs of user traits. Defaults to an empty JSON object.
      * @param options A [RudderOption] object to specify additional event options. Defaults to an empty RudderOption object.
      */
     @JvmOverloads
-    fun identify(
-        userId: String = String.empty(),
-        traits: RudderTraits = emptyJsonObject,
-        options: RudderOption = RudderOption()
-    ) {
+    fun identify(userId: String = String.empty(), traits: Traits = emptyJsonObject, options: RudderOption = RudderOption()) {
         if (!isAnalyticsActive()) return
 
         if (!this.userId.isNullOrEmpty() && this.userId != userId) {
@@ -445,7 +441,7 @@ open class Analytics protected constructor(
      * val traits = analyticsInstance.traits
      * ```
      */
-    val traits: RudderTraits?
+    val traits: Traits?
         get() {
             if (!isAnalyticsActive()) return null
             return userIdentityState.value.traits
