@@ -9,7 +9,9 @@ import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.LenientJson
 import com.rudderstack.sdk.kotlin.core.internals.utils.MockBackOffPolicy
+import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
+import com.rudderstack.sdk.kotlin.core.internals.utils.handleInvalidWriteKey
 import io.mockk.CapturingSlot
 import io.mockk.MockKAnnotations
 import io.mockk.coEvery
@@ -165,8 +167,9 @@ class SourceConfigManagerTest {
             verify(exactly = 0) { sourceConfigState.dispatch(any()) }
         }
 
+    @OptIn(UseWithCaution::class)
     @Test
-    fun `given sourceConfig api return 400 response code, when source config is fetched, then analytics instance is shutdown`() =
+    fun `given sourceConfig api return 400 response code, when source config is fetched, then invalid write key process in initiated`() =
         runTest(testDispatcher) {
             every { httpClient.getData() } returns Result.Failure(
                 error = NetworkErrorStatus.ERROR_400,
@@ -176,7 +179,7 @@ class SourceConfigManagerTest {
             testDispatcher.scheduler.advanceUntilIdle()
             simulateConnectionAvailability()
 
-            coVerify(exactly = 1) { analytics.shutdown() }
+            coVerify(exactly = 1) { analytics.handleInvalidWriteKey() }
         }
 
     @ParameterizedTest(name = "given sourceConfig api return {0}, when source config is fetched, then analytics instance is not shutdown and backoff is called 5 times")
