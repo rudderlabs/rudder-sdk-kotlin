@@ -25,7 +25,7 @@ import com.adjust.sdk.AdjustEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
-import com.rudderstack.sdk.kotlin.core.internals.models.RudderTraits
+import com.rudderstack.sdk.kotlin.core.internals.models.Traits
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.UserIdentity
@@ -331,7 +331,7 @@ private fun provideTrackEvent(
 private fun provideUserIdentityState(
     anonymousId: String = ANONYMOUS_ID,
     userId: String = USER_ID,
-    traits: RudderTraits = emptyJsonObject,
+    traits: Traits = emptyJsonObject,
 ) = UserIdentity(
     anonymousId = anonymousId,
     userId = userId,

@@ -1,6 +1,6 @@
 package com.rudderstack.sdk.kotlin.core.internals.models.useridentity
 
-import com.rudderstack.sdk.kotlin.core.internals.models.RudderTraits
+import com.rudderstack.sdk.kotlin.core.internals.models.Traits
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.StateAction
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
@@ -29,7 +29,7 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.readValuesOrDefault
 data class UserIdentity(
     val anonymousId: String,
     val userId: String,
-    val traits: RudderTraits,
+    val traits: Traits,
 ) {
 
     companion object {

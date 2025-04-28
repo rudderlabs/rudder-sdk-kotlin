@@ -7,7 +7,7 @@ import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Properties
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
-import com.rudderstack.sdk.kotlin.core.internals.models.RudderTraits
+import com.rudderstack.sdk.kotlin.core.internals.models.Traits
 import java.util.Date
 
 private lateinit var analytics: Analytics
@@ -41,7 +41,7 @@ fun trackMessageKotlinAPI(analytics: Analytics) {
 
     analytics.identify(
         userId = "User 1",
-        traits = RudderTraits(emptyMap()),
+        traits = Traits(emptyMap()),
         options = RudderOption(),
     )
 
@@ -53,7 +53,7 @@ fun trackMessageKotlinAPI(analytics: Analytics) {
 
     analytics.group(
         groupId = "Group at ${Date()}",
-        traits = RudderTraits(emptyMap()),
+        traits = Traits(emptyMap()),
         options = RudderOption()
     )
     LoggerAnalytics.debug("Message sent")

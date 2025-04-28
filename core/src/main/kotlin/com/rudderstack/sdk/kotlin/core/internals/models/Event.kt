@@ -21,7 +21,7 @@ import kotlinx.serialization.json.jsonPrimitive
 
 typealias AnalyticsContext = JsonObject
 typealias Properties = JsonObject
-typealias RudderTraits = JsonObject
+typealias Traits = JsonObject
 
 /*
  * Default timestamp value of sentAt field in Event class.

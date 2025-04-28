@@ -2,7 +2,7 @@ package com.rudderstack.sdk.kotlin.core.internals.models.useridentity
 
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
-import com.rudderstack.sdk.kotlin.core.internals.models.RudderTraits
+import com.rudderstack.sdk.kotlin.core.internals.models.Traits
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.LenientJson
@@ -12,14 +12,14 @@ import kotlinx.serialization.encodeToString
 
 internal class SetUserIdAndTraitsAction(
     private val newUserId: String,
-    private val newTraits: RudderTraits,
+    private val newTraits: Traits,
     private val analytics: Analytics,
 ) : UserIdentity.UserIdentityAction {
 
     override fun reduce(currentState: UserIdentity): UserIdentity {
         val isUserIdChanged = isUserIdChanged(currentState = currentState)
 
-        val updatedTraits: RudderTraits = getUpdatedValues(
+        val updatedTraits: Traits = getUpdatedValues(
             previousValue = currentState.traits,
             newValue = this.newTraits,
             mergeWithPriority = { other -> this mergeWithHigherPriorityTo other },

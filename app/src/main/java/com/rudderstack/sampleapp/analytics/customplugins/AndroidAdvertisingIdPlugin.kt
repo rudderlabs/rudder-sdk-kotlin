@@ -41,6 +41,7 @@ private const val FIRE_ADVERTISING_ID = "advertising_id"
  *
  * @param scope The coroutine scope to run the async task to collect the advertising ID.
  */
+@Suppress("UNCHECKED_CAST")
 class AndroidAdvertisingIdPlugin @OptIn(DelicateCoroutinesApi::class) constructor(private val scope: CoroutineScope = GlobalScope) : Plugin {
 
     override val pluginType = Plugin.PluginType.OnProcess
