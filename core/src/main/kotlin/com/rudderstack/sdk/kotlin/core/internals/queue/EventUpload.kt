@@ -196,7 +196,7 @@ internal class EventUpload(
         filePath
             .takeIf { it.isNotEmpty() }
             ?.let { storage.remove(it) }
-            ?.let { LoggerAnalytics.debug("Removed file: $it") }
+            ?.let { LoggerAnalytics.debug("Removed file: $filePath") }
     }
 
     internal fun cancel() {
