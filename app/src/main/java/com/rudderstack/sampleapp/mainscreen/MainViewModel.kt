@@ -12,7 +12,7 @@ import com.rudderstack.sdk.kotlin.core.internals.models.GroupEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.Properties
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
-import com.rudderstack.sdk.kotlin.core.internals.models.RudderTraits
+import com.rudderstack.sdk.kotlin.core.internals.models.Traits
 import com.rudderstack.sdk.kotlin.core.internals.models.ScreenEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
@@ -159,7 +159,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private fun sendGroupEvent() {
         analytics.group(
             groupId = "Group ID",
-            traits = RudderTraits(emptyMap()),
+            traits = Traits(emptyMap()),
             options = RudderOption()
         )
     }
@@ -171,7 +171,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private fun sendIdentifyEvent() {
         analytics.identify(
             userId = "User123",
-            traits = RudderTraits(emptyMap()),
+            traits = Traits(emptyMap()),
             options = RudderOption()
         )
     }
