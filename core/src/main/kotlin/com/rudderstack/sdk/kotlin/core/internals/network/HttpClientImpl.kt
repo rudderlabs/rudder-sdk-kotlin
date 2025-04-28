@@ -1,7 +1,7 @@
 package com.rudderstack.sdk.kotlin.core.internals.network
 
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
-import com.rudderstack.sdk.kotlin.core.internals.network.NetworkErrorStatus.Companion.toErrorStatus
+import com.rudderstack.sdk.kotlin.core.internals.network.NetworkErrorStatus.Companion.fromErrorCode
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import com.rudderstack.sdk.kotlin.core.internals.utils.validatedBaseUrl
 import java.io.IOException
@@ -200,15 +200,15 @@ internal class HttpClientImpl private constructor(
                 is UnknownHostException,
                 is NoRouteToHostException,
                 is SocketTimeoutException -> {
-                    Result.Failure(error = NetworkErrorStatus.ERROR_NETWORK_UNAVAILABLE)
+                    Result.Failure(error = NetworkErrorStatus.ErrorNetworkUnavailable)
                 }
 
                 is IOException -> {
-                    Result.Failure(error = NetworkErrorStatus.ERROR_RETRY)
+                    Result.Failure(error = NetworkErrorStatus.ErrorRetry())
                 }
 
                 else -> {
-                    Result.Failure(error = NetworkErrorStatus.ERROR_UNKNOWN)
+                    Result.Failure(error = NetworkErrorStatus.ErrorUnknown)
                 }
             }
         } finally {
@@ -235,7 +235,7 @@ internal class HttpClientImpl private constructor(
         )
 
         else -> Result.Failure(
-            error = toErrorStatus(responseCode),
+            error = fromErrorCode(responseCode),
         )
     }
 }
