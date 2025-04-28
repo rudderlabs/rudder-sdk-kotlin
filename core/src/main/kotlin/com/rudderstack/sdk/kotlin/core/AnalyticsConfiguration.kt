@@ -63,6 +63,15 @@ interface AnalyticsConfiguration {
      * Source config manager.
      */
     var sourceConfigManager: SourceConfigManager
+
+    /**
+     * Indicates whether the configured write key is invalid.
+     *
+     * This property helps determine the validity of the write key used by the analytics module.
+     * When set to true, it means an invalid write key has been detected, which may halt or restrict analytics operations.
+     * Defaults to false.
+     */
+    var isInvalidWriteKey: Boolean
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -85,6 +94,8 @@ private class AnalyticsConfigurationImpl(
     override val connectivityState: State<Boolean> = State(initialState = ConnectivityState.INITIAL_STATE)
 
     override lateinit var sourceConfigManager: SourceConfigManager
+
+    override var isInvalidWriteKey: Boolean = false
 }
 
 /**

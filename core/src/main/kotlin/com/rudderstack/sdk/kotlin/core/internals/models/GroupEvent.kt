@@ -22,7 +22,7 @@ import kotlinx.serialization.json.JsonObject
 @SerialName("group")
 data class GroupEvent(
     var groupId: String,
-    var traits: RudderTraits = emptyJsonObject,
+    var traits: Traits = emptyJsonObject,
     @Transient override var options: RudderOption = RudderOption(),
     @Transient override var userIdentityState: UserIdentity = provideEmptyUserIdentityState()
 ) : Event() {

@@ -2,26 +2,36 @@ package com.rudderstack.sdk.kotlin.core.internals.queue
 
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
+import com.rudderstack.sdk.kotlin.core.internals.network.EventUploadResult
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClient
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClientImpl
-import com.rudderstack.sdk.kotlin.core.internals.network.NetworkResult
+import com.rudderstack.sdk.kotlin.core.internals.network.NonRetryAbleError
+import com.rudderstack.sdk.kotlin.core.internals.network.NonRetryAbleEventUploadError
+import com.rudderstack.sdk.kotlin.core.internals.network.RetryAbleError
+import com.rudderstack.sdk.kotlin.core.internals.network.Success
+import com.rudderstack.sdk.kotlin.core.internals.network.toEventUploadResult
+import com.rudderstack.sdk.kotlin.core.internals.policies.backoff.MaxAttemptsWithBackoff
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.JsonSentAtUpdater
-import com.rudderstack.sdk.kotlin.core.internals.utils.Result
+import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
+import com.rudderstack.sdk.kotlin.core.internals.utils.createIfInactive
+import com.rudderstack.sdk.kotlin.core.internals.utils.createNewIfClosed
+import com.rudderstack.sdk.kotlin.core.internals.utils.createUnlimitedCapacityChannel
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import com.rudderstack.sdk.kotlin.core.internals.utils.encodeToBase64
 import com.rudderstack.sdk.kotlin.core.internals.utils.generateUUID
+import com.rudderstack.sdk.kotlin.core.internals.utils.handleInvalidWriteKey
 import com.rudderstack.sdk.kotlin.core.internals.utils.parseFilePaths
-import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.annotations.VisibleForTesting
 import java.io.File
-import java.io.FileNotFoundException
 import kotlin.coroutines.coroutineContext
 
 private const val BATCH_ENDPOINT = "/v1/batch"
@@ -33,8 +43,7 @@ private const val UPLOAD_SIG = "#!upload"
  */
 internal class EventUpload(
     private val analytics: Analytics,
-    private var uploadChannel: Channel<String> = createUnlimitedUploadChannel(),
-    private val jsonSentAtUpdater: JsonSentAtUpdater = JsonSentAtUpdater(),
+    private var uploadChannel: Channel<String> = createUnlimitedCapacityChannel(),
     private val httpClientFactory: HttpClient = with(analytics.configuration) {
         return@with HttpClientImpl.createPostHttpClient(
             baseUrl = dataPlaneUrl,
@@ -44,21 +53,19 @@ internal class EventUpload(
             anonymousIdHeaderString = analytics.anonymousId ?: String.empty()
         )
     },
+    private val maxAttemptsWithBackoff: MaxAttemptsWithBackoff = MaxAttemptsWithBackoff(),
 ) {
 
     private var lastBatchAnonymousId = String.empty()
     private val storage get() = analytics.storage
 
-    internal fun start() {
-        resetUploadChannel()
-        upload()
-    }
+    // This job is required to mainly stop the upload process when the source is disabled.
+    // The type is null to clear the job reference when the source is disabled.
+    private var uploadJob: Job? = null
 
-    @OptIn(DelicateCoroutinesApi::class)
-    private fun resetUploadChannel() {
-        if (uploadChannel.isClosedForSend || uploadChannel.isClosedForReceive) {
-            uploadChannel = createUnlimitedUploadChannel()
-        }
+    internal fun start() {
+        uploadChannel = uploadChannel.createNewIfClosed()
+        uploadJob = uploadJob.createIfInactive(newJob = ::upload)
     }
 
     internal fun flush() {
@@ -80,45 +87,26 @@ internal class EventUpload(
         }
     }
 
+    @Suppress("TooGenericExceptionCaught")
     private suspend fun processAndUploadEvent() {
         val fileUrlList = storage.readString(StorageKeys.EVENT, String.empty()).parseFilePaths()
         for (filePath in fileUrlList) {
-            val file = File(filePath)
-            if (!doesFileExist(file)) continue
-            // ensureActive is at this position so that this coroutine can be cancelled - but any uploaded event MUST be cleared from storage.
+            if (!doesFileExist(filePath)) continue
+            // ensureActive will help in cancelling the coroutine
             coroutineContext.ensureActive()
-            var shouldCleanup = false
+
             try {
-                shouldCleanup = uploadEvents(filePath)
-            } catch (e: FileNotFoundException) {
-                LoggerAnalytics.error("Message storage file not found", e)
+                readFileAsString(filePath)
+                    .also { batch -> updateAnonymousIdHeaderIfChanged(batch) }
+                    .let { batch -> uploadEvents(batch, filePath) }
+            } catch (e: CancellationException) {
+                LoggerAnalytics.error("Job was cancelled. Stopping the upload process.", e)
+                throw e
             } catch (e: Exception) {
-                LoggerAnalytics.error("Error when uploading event", e)
-            }
-
-            if (shouldCleanup) {
-                cleanup(file, filePath)
+                LoggerAnalytics.error("Error when processing batch payload. Deleting the file.", e)
+                cleanup(filePath)
             }
         }
-    }
-
-    private fun uploadEvents(filePath: String): Boolean {
-        var shouldCleanup = false
-        val batchPayload = jsonSentAtUpdater.updateSentAt(readFileAsString(filePath))
-
-        updateAnonymousIdHeaderIfChanged(batchPayload)
-        LoggerAnalytics.debug("Batch Payload: $batchPayload")
-        when (val result: NetworkResult = httpClientFactory.sendData(batchPayload)) {
-            is Result.Success -> {
-                LoggerAnalytics.debug("Event uploaded successfully. Server response: ${result.response}")
-                shouldCleanup = true
-            }
-
-            is Result.Failure -> {
-                LoggerAnalytics.debug("Error when uploading event due to ${result.error}")
-            }
-        }
-        return shouldCleanup
     }
 
     private fun updateAnonymousIdHeaderIfChanged(batchPayload: String) {
@@ -137,23 +125,83 @@ internal class EventUpload(
         }
     }
 
-    private fun cleanup(file: File, filePath: String) {
-        storage.remove(file.path).let {
-            LoggerAnalytics.debug("Removed file: $filePath")
+    private suspend fun uploadEvents(batchPayload: String, filePath: String) {
+        var result: EventUploadResult
+        do {
+            val updatedPayload = JsonSentAtUpdater.updateSentAt(batchPayload)
+            LoggerAnalytics.verbose("Batch Payload: $updatedPayload")
+            result = httpClientFactory.sendData(updatedPayload).toEventUploadResult()
+
+            when (result) {
+                is Success -> {
+                    LoggerAnalytics.debug("Event uploaded successfully. Server response: ${result.response}")
+                    maxAttemptsWithBackoff.reset()
+                    cleanup(filePath)
+                }
+                is RetryAbleError -> {
+                    LoggerAnalytics.debug("EventUpload: Retry able error occurred")
+                    maxAttemptsWithBackoff.delayWithBackoff()
+                }
+                is NonRetryAbleError -> {
+                    maxAttemptsWithBackoff.reset()
+                    handleNonRetryAbleError(result, filePath)
+                }
+            }
+        } while (result is RetryAbleError)
+    }
+
+    @OptIn(UseWithCaution::class)
+    private fun handleNonRetryAbleError(status: NonRetryAbleError, filePath: String) {
+        when (status) {
+            NonRetryAbleEventUploadError.ERROR_400 -> {
+                LoggerAnalytics.error(
+                    "Invalid request: missing or malformed body. " +
+                        "Ensure the payload is valid JSON and includes either anonymousId or userId."
+                )
+                cleanup(filePath)
+            }
+
+            NonRetryAbleEventUploadError.ERROR_401 -> {
+                LoggerAnalytics.error("Invalid write key. Ensure the write key is valid.")
+                cancel()
+                analytics.handleInvalidWriteKey()
+            }
+
+            NonRetryAbleEventUploadError.ERROR_404 -> {
+                LoggerAnalytics.error("Source is disabled. Stopping the upload process until the source is enabled again.")
+                cancel()
+                analytics.sourceConfigState.dispatch(SourceConfig.DisableSourceAction())
+            }
+
+            NonRetryAbleEventUploadError.ERROR_413 -> {
+                LoggerAnalytics.error("Batch request failed: Payload size exceeds the maximum allowed limit.")
+                cleanup(filePath)
+            }
         }
     }
 
+    private fun cleanup(filePath: String) {
+        filePath
+            .takeIf { it.isNotEmpty() }
+            ?.let { storage.remove(it) }
+            ?.let { LoggerAnalytics.debug("Removed file: $it") }
+    }
+
     internal fun cancel() {
+        uploadJob?.cancel().also {
+            uploadJob = null
+        }
         uploadChannel.cancel()
     }
 }
 
 @VisibleForTesting
-internal fun doesFileExist(file: File) = file.exists()
+internal fun doesFileExist(filePath: String): Boolean {
+    val file = File(filePath)
+    return file.exists()
+}
 
 @VisibleForTesting
 internal fun readFileAsString(filePath: String): String {
     return File(filePath).readText()
 }
-
-internal fun createUnlimitedUploadChannel(): Channel<String> = Channel(UNLIMITED)

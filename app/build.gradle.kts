@@ -95,14 +95,15 @@ dependencies {
     implementation(project(":integrations:adjust"))
     // implementation(project(":integrations:braze")) // This requires minimum Sdk version of 25 and above.
 
-    implementation(libs.material)
     //compose
     implementation(libs.ui)
     implementation(libs.ui.tooling.preview)
     implementation(libs.ui.tooling)
     implementation(libs.foundation)
     // Material Design
-    implementation(libs.androidx.material)
+    implementation(libs.androidx.material3.android)
+    // Navigation
+    implementation(libs.androidx.navigation.compose)
     // Integration with activities
     implementation(libs.androidx.activity.compose)
     // Integration with ViewModels
