@@ -13,6 +13,6 @@
   -->
 
 <resources>
-    <string name="app_name">Rudder-Android-Libs</string>
-    <string name="title_activity_main">MainActivity</string>
+    <string name="app_name">Rudderstack Analytics</string>
+    <string name="title_activity_main">Rudderstack Analytics</string>
 </resources>
