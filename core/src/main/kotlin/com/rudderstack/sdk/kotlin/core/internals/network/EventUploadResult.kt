@@ -37,9 +37,12 @@ internal sealed interface NonRetryAbleError : EventUploadError
  *  @property ERROR_UNKNOWN An unknown error occurred, and the upload can be retried.
  */
 internal enum class RetryAbleEventUploadError : RetryAbleError {
+
     ERROR_RETRY,
     ERROR_NETWORK_UNAVAILABLE,
-    ERROR_UNKNOWN
+    ERROR_UNKNOWN;
+
+    var responseCode: Int? = null
 }
 
 /**
@@ -49,11 +52,12 @@ internal enum class RetryAbleEventUploadError : RetryAbleError {
  *  @property ERROR_404 An error indicating that the resource was not found (e.g., the source is disabled).
  *  @property ERROR_413 An error indicating that the payload size exceeds the maximum allowed limit.
  */
-internal enum class NonRetryAbleEventUploadError : NonRetryAbleError {
-    ERROR_400,
-    ERROR_401,
-    ERROR_404,
-    ERROR_413
+internal enum class NonRetryAbleEventUploadError(val responseCode: Int) : NonRetryAbleError {
+
+    ERROR_400(responseCode = 400),
+    ERROR_401(responseCode = 401),
+    ERROR_404(responseCode = 404),
+    ERROR_413(responseCode = 413)
 }
 
 /**
@@ -63,19 +67,42 @@ internal enum class NonRetryAbleEventUploadError : NonRetryAbleError {
 internal fun NetworkResult.toEventUploadResult(): EventUploadResult {
     return when (this) {
         is Result.Success -> {
-            return Success(response)
+            Success(response)
         }
 
         is Result.Failure -> {
-            when (this.error) {
-                NetworkErrorStatus.ERROR_RETRY -> RetryAbleEventUploadError.ERROR_RETRY
-                NetworkErrorStatus.ERROR_NETWORK_UNAVAILABLE -> RetryAbleEventUploadError.ERROR_NETWORK_UNAVAILABLE
-                NetworkErrorStatus.ERROR_UNKNOWN -> RetryAbleEventUploadError.ERROR_UNKNOWN
-                NetworkErrorStatus.ERROR_400 -> NonRetryAbleEventUploadError.ERROR_400
-                NetworkErrorStatus.ERROR_401 -> NonRetryAbleEventUploadError.ERROR_401
-                NetworkErrorStatus.ERROR_404 -> NonRetryAbleEventUploadError.ERROR_404
-                NetworkErrorStatus.ERROR_413 -> NonRetryAbleEventUploadError.ERROR_413
+            when (val error = this.error) {
+                is NetworkErrorStatus.ErrorRetry -> RetryAbleEventUploadError.ERROR_RETRY.apply {
+                    this.responseCode = error.responseCode
+                }
+
+                NetworkErrorStatus.ErrorNetworkUnavailable -> RetryAbleEventUploadError.ERROR_NETWORK_UNAVAILABLE
+                NetworkErrorStatus.ErrorUnknown -> RetryAbleEventUploadError.ERROR_UNKNOWN
+                NetworkErrorStatus.Error400 -> NonRetryAbleEventUploadError.ERROR_400
+                NetworkErrorStatus.Error401 -> NonRetryAbleEventUploadError.ERROR_401
+                NetworkErrorStatus.Error404 -> NonRetryAbleEventUploadError.ERROR_404
+                NetworkErrorStatus.Error413 -> NonRetryAbleEventUploadError.ERROR_413
             }
         }
     }
+}
+
+/**
+ * Extension function that retrieves the response code from a RetryAbleError.
+ * @return The HTTP response code associated with this error, or null if not available.
+ */
+internal fun EventUploadError.getResponseCode(): Int? {
+    return when (this) {
+        is RetryAbleEventUploadError -> this.responseCode
+        is NonRetryAbleEventUploadError -> this.responseCode
+    }
+}
+
+/**
+ * Extension function that formats the error's response code as a message string.
+ * @return A string representation of the response code, or "Not available" if the code is null.
+ */
+internal fun EventUploadError.formatResponseCodeMessage(): String {
+    val responseCode = this.getResponseCode() ?: "Not available"
+    return "Response code: $responseCode"
 }
