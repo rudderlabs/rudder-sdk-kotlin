@@ -76,7 +76,7 @@ class HttpClientImplTest {
 
         val result = getHttpClient.getData()
 
-        assertFailure(result, NetworkErrorStatus.ERROR_NETWORK_UNAVAILABLE)
+        assertFailure(result, NetworkErrorStatus.ErrorNetworkUnavailable)
     }
 
     @Test
@@ -87,7 +87,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            NetworkErrorStatus.ERROR_400
+            NetworkErrorStatus.Error400
         )
     }
 
@@ -99,7 +99,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            NetworkErrorStatus.ERROR_404
+            NetworkErrorStatus.Error404
         )
     }
 
@@ -111,7 +111,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            NetworkErrorStatus.ERROR_RETRY
+            NetworkErrorStatus.ErrorRetry(responseCode = 500)
         )
     }
 
@@ -123,7 +123,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            NetworkErrorStatus.ERROR_RETRY
+            NetworkErrorStatus.ErrorRetry(responseCode = 429)
         )
     }
 
@@ -135,7 +135,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            NetworkErrorStatus.ERROR_RETRY
+            NetworkErrorStatus.ErrorRetry(responseCode = 450)
         )
     }
 
@@ -158,7 +158,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            NetworkErrorStatus.ERROR_401
+            NetworkErrorStatus.Error401
         )
     }
 
@@ -187,7 +187,7 @@ class HttpClientImplTest {
 
         val result = postHttpClient.sendData(REQUEST_BODY)
 
-        assertFailure(result, NetworkErrorStatus.ERROR_RETRY)
+        assertFailure(result, NetworkErrorStatus.ErrorRetry())
     }
 
     @Test
@@ -198,7 +198,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            NetworkErrorStatus.ERROR_400
+            NetworkErrorStatus.Error400
         )
     }
 
@@ -210,7 +210,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            NetworkErrorStatus.ERROR_404
+            NetworkErrorStatus.Error404
         )
     }
 
@@ -222,7 +222,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            NetworkErrorStatus.ERROR_RETRY
+            NetworkErrorStatus.ErrorRetry(responseCode = 429)
         )
     }
 
@@ -234,7 +234,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            NetworkErrorStatus.ERROR_RETRY
+            NetworkErrorStatus.ErrorRetry(responseCode = 450)
         )
     }
 
@@ -246,7 +246,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            NetworkErrorStatus.ERROR_RETRY
+            NetworkErrorStatus.ErrorRetry(responseCode = 500)
         )
     }
 
@@ -269,7 +269,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            NetworkErrorStatus.ERROR_401
+            NetworkErrorStatus.Error401
         )
     }
 
@@ -287,7 +287,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            NetworkErrorStatus.ERROR_NETWORK_UNAVAILABLE
+            NetworkErrorStatus.ErrorNetworkUnavailable
         )
     }
 
@@ -300,7 +300,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            NetworkErrorStatus.ERROR_RETRY
+            NetworkErrorStatus.ErrorRetry()
         )
     }
 
@@ -313,7 +313,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            NetworkErrorStatus.ERROR_UNKNOWN
+            NetworkErrorStatus.ErrorUnknown
         )
     }
 
