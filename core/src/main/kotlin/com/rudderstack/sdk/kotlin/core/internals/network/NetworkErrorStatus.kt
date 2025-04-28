@@ -5,66 +5,87 @@ private const val UNAUTHORIZED_CODE = 401
 private const val RESOURCE_NOT_FOUND_CODE = 404
 private const val PAYLOAD_TOO_LARGE_CODE = 413
 
+private const val HTTP_ERROR_START = 400
+private const val HTTP_ERROR_END = 599
+private val HTTP_RETRY_RANGE = HTTP_ERROR_START..HTTP_ERROR_END
+
 /**
- * Enum class representing various error statuses that can occur during an operation.
+ * Sealed class representing various error statuses that can occur during network operations.
  *
- * This enum encapsulates the different types of errors that may arise, providing meaningful names for common HTTP status codes
- * and other error conditions. It helps in categorizing and handling errors in a structured manner.
+ * This sealed class encapsulates different types of errors that may arise, providing meaningful names
+ * for common HTTP status codes as well as handling dynamic error codes for retry able errors.
+ *
+ * @param responseCode The HTTP status code associated with the error, if applicable.
  */
-enum class NetworkErrorStatus {
+sealed class NetworkErrorStatus(open val responseCode: Int?) {
 
     /**
-     * Indicates a bad request error, typically associated with HTTP status code 400.
+     * Indicates a HTTP status code 400.
      */
-    ERROR_400,
+    data object Error400 : NetworkErrorStatus(BAD_REQUEST_CODE)
 
     /**
-     * Indicates an invalid write key error, typically associated with HTTP status code 401.
+     * Indicates HTTP status code 401.
      */
-    ERROR_401,
+    data object Error401 : NetworkErrorStatus(UNAUTHORIZED_CODE)
 
     /**
-     * Indicates that the requested resource was not found, typically associated with HTTP status code 404.
+     * Indicates HTTP status code 404.
      */
-    ERROR_404,
+    data object Error404 : NetworkErrorStatus(RESOURCE_NOT_FOUND_CODE)
 
     /**
-     * Indicates that the request payload is too large, typically associated with HTTP status code 413.
+     * Indicates HTTP status code 413.
      */
-    ERROR_413,
+    data object Error413 : NetworkErrorStatus(PAYLOAD_TOO_LARGE_CODE)
 
     /**
-     * Indicates a retry able error, typically associated with HTTP status code 4xx-5xx, excluding other error listed above.
+     * Indicates a retry able error.
+     * This variant accepts a dynamic error code for cases when the code is not one of the predefined ones.
+     *
+     * The value will be null if the error code is not available e.g., in case of IO exception.
+     *
+     * @param responseCode The HTTP status code associated with the error, if applicable.
      */
-    ERROR_RETRY,
+    data class ErrorRetry(override val responseCode: Int? = null) : NetworkErrorStatus(responseCode)
 
     /**
-     * Indicates a retry able error, typically happens when the network is unavailable.
+     * Indicates a retry able error that happens when the network is unavailable.
      */
-    ERROR_NETWORK_UNAVAILABLE,
+    data object ErrorNetworkUnavailable : NetworkErrorStatus(null)
 
     /**
-     * Indicates a fatal error, typically associated with some exception or failure that cannot be retried.
+     * Indicates a fatal error that cannot be retried.
      */
-    ERROR_UNKNOWN;
+    data object ErrorUnknown : NetworkErrorStatus(null)
 
     companion object {
 
         /**
-         * Converts an HTTP status code to a corresponding `ErrorStatus` enum value.
+         * Converts an HTTP status code to a corresponding NetworkErrorStatus instance.
+         * - If the code exactly matches one of the defined statuses (e.g., 400, 401, 404, 413), that instance is returned.
+         * - For any other error code in the 400–599 range, an ERROR_RETRY instance is returned with the actual code.
+         * - Otherwise, returns ERROR_UNKNOWN.
          *
-         * This method maps HTTP status codes and other specific error codes to the appropriate `ErrorStatus` enum values
-         * for easier handling of different error conditions.
-         *
-         * @param errorCode The HTTP status code or error code to be mapped to an `ErrorStatus`.
-         * @return The corresponding `ErrorStatus` enum value.
+         * @param errorCode The HTTP status code to be mapped.
+         * @return The corresponding NetworkErrorStatus instance.
          */
-        fun toErrorStatus(errorCode: Int): NetworkErrorStatus = when (errorCode) {
-            BAD_REQUEST_CODE -> ERROR_400
-            UNAUTHORIZED_CODE -> ERROR_401
-            RESOURCE_NOT_FOUND_CODE -> ERROR_404
-            PAYLOAD_TOO_LARGE_CODE -> ERROR_413
-            else -> ERROR_RETRY
+        fun fromErrorCode(errorCode: Int?): NetworkErrorStatus = when (errorCode) {
+            BAD_REQUEST_CODE -> Error400
+            UNAUTHORIZED_CODE -> Error401
+            RESOURCE_NOT_FOUND_CODE -> Error404
+            PAYLOAD_TOO_LARGE_CODE -> Error413
+            in HTTP_RETRY_RANGE -> ErrorRetry(errorCode)
+            else -> ErrorUnknown
         }
     }
+}
+
+/**
+ * Extension function to format the response code message for a NetworkErrorStatus.
+ * @return A string representation of the response code, or "Not available" if the code is null.
+ */
+internal fun NetworkErrorStatus.formatResponseCodeMessage(): String {
+    val responseCode = this.responseCode ?: "Not available"
+    return "Response code: $responseCode"
 }
