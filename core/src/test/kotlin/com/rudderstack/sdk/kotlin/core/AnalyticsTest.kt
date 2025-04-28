@@ -17,6 +17,7 @@ import com.rudderstack.sdk.kotlin.core.internals.storage.LibraryVersion
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.DateTimeUtils
+import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import com.rudderstack.sdk.kotlin.core.internals.utils.generateUUID
 import io.mockk.MockKAnnotations
@@ -29,8 +30,13 @@ import io.mockk.mockkObject
 import io.mockk.mockkStatic
 import io.mockk.spyk
 import io.mockk.verify
+import io.mockk.verifyOrder
+import kotlinx.coroutines.CompletableJob
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
@@ -82,6 +88,7 @@ class AnalyticsTest {
     private val testScope = TestScope(testDispatcher)
 
     private val configuration = provideConfiguration()
+    private lateinit var mockAnalyticsJob: CompletableJob
     private lateinit var analytics: Analytics
 
     @BeforeEach
@@ -90,6 +97,9 @@ class AnalyticsTest {
 
         // Mock LoggerAnalytics
         mockkObject(LoggerAnalytics)
+
+        // This is needed to trigger analyticsJob.invokeOnCompletion()
+        mockAnalyticsJob = SupervisorJob()
 
         // Mock Analytics Configuration
         mockkStatic(::provideAnalyticsConfiguration)
@@ -107,6 +117,7 @@ class AnalyticsTest {
 
             every { storage } returns mockStorage
             every { connectivityState } returns mockConnectivityState
+            every { analyticsJob } returns mockAnalyticsJob
         }
 
         // Mocking persisted values and assigning default values
@@ -371,7 +382,7 @@ class AnalyticsTest {
             mockStorage.write(StorageKeys.EVENT, any<String>())
         }
     }
-    
+
     @ParameterizedTest
     @MethodSource("groupEventTestCases")
     fun `given SDK is ready to process any new events, when group events are made, then they are stored in storage`(
@@ -391,7 +402,7 @@ class AnalyticsTest {
             mockStorage.write(StorageKeys.EVENT, any<String>())
         }
     }
-    
+
     @ParameterizedTest
     @MethodSource("identifyEventTestCases")
     fun `given SDK is ready to process any new events, when identify events are made, then they are stored in storage`(
@@ -411,7 +422,7 @@ class AnalyticsTest {
             mockStorage.write(StorageKeys.EVENT, any<String>())
         }
     }
-    
+
     @ParameterizedTest
     @MethodSource("aliasEventTestCases")
     fun `given SDK is ready to process any new events, when alias events are made, then they are stored in storage`(
@@ -482,6 +493,44 @@ class AnalyticsTest {
             }
         }
 
+    @OptIn(ExperimentalCoroutinesApi::class, UseWithCaution::class)
+    @Test
+    fun `given writeKey is proper, when shutdown is called, then storage is closed but not deleted`() =
+        runTest(testDispatcher) {
+            every { mockAnalyticsConfiguration.isInvalidWriteKey } returns false
+
+            analytics.shutdown()
+            advanceUntilIdle()
+            // Call this to execute invokeOnCompletion block
+            mockAnalyticsJob.cancel()
+
+            assertTrue(analytics.isAnalyticsShutdown)
+            verify(exactly = 0) { mockStorage.delete() }
+            verify(exactly = 1) { mockStorage.close() }
+        }
+
+    @OptIn(ExperimentalCoroutinesApi::class, UseWithCaution::class)
+    @Test
+    fun `given writeKey is not proper, when shutdown is called, then storage is deleted and closed`() =
+        runTest(testDispatcher) {
+            every { mockAnalyticsConfiguration.isInvalidWriteKey } returns true
+
+            analytics.shutdown()
+            advanceUntilIdle()
+            // Call this to execute invokeOnCompletion block
+            mockAnalyticsJob.cancel()
+
+            assertTrue(analytics.isAnalyticsShutdown)
+            verify(exactly = 1) {
+                mockStorage.close()
+                mockStorage.delete()
+            }
+            verifyOrder {
+                mockStorage.close()
+                mockStorage.delete()
+            }
+        }
+
     @Test
     fun `when custom plugin is dynamically added, then it should intercept the message and process event`() = runTest(testDispatcher) {
         val customPlugin = provideCustomPlugin()
@@ -532,7 +581,7 @@ class AnalyticsTest {
             Arguments.of(TRACK_EVENT_NAME, provideSampleJsonPayload(), RudderOption()),
             Arguments.of(TRACK_EVENT_NAME, emptyJsonObject, provideRudderOption()),
         )
-        
+
         @JvmStatic
         fun screenEventTestCases(): Stream<Arguments> = Stream.of(
             Arguments.of(SCREEN_EVENT_NAME, String.empty(), emptyJsonObject, RudderOption()),
@@ -541,14 +590,14 @@ class AnalyticsTest {
             Arguments.of(SCREEN_EVENT_NAME, String.empty(), provideSampleJsonPayload(), RudderOption()),
             Arguments.of(SCREEN_EVENT_NAME, String.empty(), emptyJsonObject, provideRudderOption()),
         )
-        
+
         @JvmStatic
         fun groupEventTestCases(): Stream<Arguments> = Stream.of(
             Arguments.of(GROUP_ID, emptyJsonObject, RudderOption()),
             Arguments.of(GROUP_ID, provideSampleJsonPayload(), RudderOption()),
             Arguments.of(GROUP_ID, emptyJsonObject, provideRudderOption()),
         )
-        
+
         @JvmStatic
         fun identifyEventTestCases(): Stream<Arguments> = Stream.of(
             Arguments.of(String.empty(), emptyJsonObject, RudderOption()),
@@ -556,7 +605,7 @@ class AnalyticsTest {
             Arguments.of(USER_ID, provideSampleJsonPayload(), RudderOption()),
             Arguments.of(USER_ID, emptyJsonObject, provideRudderOption()),
         )
-        
+
         @JvmStatic
         fun aliasEventTestCases(): Stream<Arguments> = Stream.of(
             Arguments.of(ALIAS_ID, String.empty(), RudderOption()),

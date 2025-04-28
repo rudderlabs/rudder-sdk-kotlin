@@ -1,6 +1,7 @@
 package com.rudderstack.sdk.kotlin.core.internals.storage
 
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
+import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
 
 /**
  * Interface defining a basic key-value storage mechanism.
@@ -105,4 +106,12 @@ interface KeyValueStorage {
      * @param key The key used to identify the storage location to be cleared.
      */
     fun clear(key: String)
+
+    /**
+     * This method deletes the shared preferences file entirely to ensure a clean state.
+     *
+     * **Note**: It is recommended to use this API during shutdown to ensure the file is not removed abruptly, which could lead to unexpected errors.
+     */
+    @UseWithCaution
+    fun delete()
 }

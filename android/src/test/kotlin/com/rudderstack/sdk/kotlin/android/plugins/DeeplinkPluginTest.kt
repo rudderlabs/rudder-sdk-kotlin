@@ -17,6 +17,8 @@ import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.just
 import io.mockk.mockk
+import io.mockk.mockkObject
+import io.mockk.unmockkObject
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -46,9 +48,6 @@ class DeeplinkPluginTest {
     @MockK
     private lateinit var mockActivity: Activity
 
-    @MockK
-    private lateinit var mockCheckBuildVersionUseCase: CheckBuildVersionUseCase
-
     private lateinit var plugin: DeeplinkPlugin
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -57,7 +56,7 @@ class DeeplinkPluginTest {
         MockKAnnotations.init(this, relaxed = true)
         Dispatchers.setMain(testDispatcher)
 
-        plugin = DeeplinkPlugin(mockCheckBuildVersionUseCase)
+        plugin = DeeplinkPlugin()
         every { mockAnalytics.track(any<String>(), any<JsonObject>(), any<RudderOption>()) } returns Unit
 
         every { mockActivity.intent.data } returns mockUri()
@@ -67,13 +66,15 @@ class DeeplinkPluginTest {
             host = "testApplication"
         )
         every { (mockAnalytics as AndroidAnalytics).addLifecycleObserver(plugin) } just Runs
-        every { mockCheckBuildVersionUseCase.isAndroidVersionLollipopAndAbove() } returns true
+        mockkObject(CheckBuildVersionUseCase)
+        every { CheckBuildVersionUseCase.isAndroidVersionLollipopAndAbove() } returns true
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @AfterEach
     fun teardown() {
         Dispatchers.resetMain()
+        unmockkObject(CheckBuildVersionUseCase)
     }
 
     @Test
@@ -136,7 +137,7 @@ class DeeplinkPluginTest {
     fun `given trackDeepLinks is enabled and api level is 21, when onActivityCreated is called, then Deeplink opened event called with correct properties`() =
         runTest {
             val trackingEnabled = true
-            every { mockCheckBuildVersionUseCase.isAndroidVersionLollipopAndAbove() } returns false
+            every { CheckBuildVersionUseCase.isAndroidVersionLollipopAndAbove() } returns false
             val mockConfiguration = mockk<Configuration> {
                 every { application } returns mockApplication
                 every { trackDeepLinks } returns trackingEnabled

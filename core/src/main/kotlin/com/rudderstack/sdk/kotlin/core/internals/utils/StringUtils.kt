@@ -5,6 +5,7 @@ import java.util.Locale
 import java.util.UUID
 
 private const val EMPTY_STRING = ""
+private const val UNDERSCORE_SEPARATOR = "_"
 
 /**
  * Encodes the string to a Base64 encoded string.
@@ -87,6 +88,16 @@ internal fun String?.parseFilePaths(): List<String> {
 fun String.Companion.empty(): String = EMPTY_STRING
 
 /**
+ * Provides an underscore separator constant.
+ *
+ * This companion object extension function returns an underscore separator (`"_"`).
+ *
+ * @return An underscore separator as a string.
+ */
+@InternalRudderApi
+fun String.Companion.underscoreSeparator(): String = UNDERSCORE_SEPARATOR
+
+/**
  * Validates and formats a base URL by ensuring it ends with a slash (`/`).
  *
  * This property checks if the string ends with a slash. If not, it appends a slash to the end.
@@ -102,4 +113,18 @@ internal val String.validatedBaseUrl
 @InternalRudderApi
 fun generateUUID(): String {
     return UUID.randomUUID().toString()
+}
+
+/**
+ * Appends the provided write key to the directory name using an underscore separator (`_`).
+ *
+ * This extension function formats the directory name by appending the given
+ * write key using an underscore separator.
+ *
+ * @param writeKey The write key to be appended to the directory name.
+ * @return The formatted directory name.
+ */
+@InternalRudderApi
+fun String.appendWriteKey(writeKey: String): String {
+    return "$this${String.underscoreSeparator()}$writeKey"
 }

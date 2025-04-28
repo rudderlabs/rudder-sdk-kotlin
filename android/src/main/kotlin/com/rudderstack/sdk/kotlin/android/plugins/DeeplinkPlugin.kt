@@ -21,9 +21,7 @@ internal const val REFERRING_APPLICATION_KEY = "referring_application"
 internal const val URL_KEY = "url"
 internal const val DEEPLINK_OPENED_KEY = "Deep Link Opened"
 
-internal class DeeplinkPlugin(
-    private val checkBuildVersionUseCase: CheckBuildVersionUseCase = CheckBuildVersionUseCase()
-) : Plugin, ActivityLifecycleObserver {
+internal class DeeplinkPlugin : Plugin, ActivityLifecycleObserver {
 
     override val pluginType: Plugin.PluginType = Plugin.PluginType.Utility
 
@@ -66,7 +64,7 @@ internal class DeeplinkPlugin(
     }
 
     private fun Activity.getReferrerString(): String? {
-        return if (checkBuildVersionUseCase.isAndroidVersionLollipopAndAbove()) {
+        return if (CheckBuildVersionUseCase.isAndroidVersionLollipopAndAbove()) {
             this.referrer?.toString()
         } else {
             getReferrerCompatible(this)?.toString()
