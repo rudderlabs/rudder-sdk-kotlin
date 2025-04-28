@@ -51,17 +51,17 @@ internal class EventUploadResultTest {
     companion object {
         @JvmStatic
         fun retryAbleErrorMappings(): Stream<Arguments> = Stream.of(
-            Arguments.of(NetworkErrorStatus.ERROR_RETRY, RetryAbleEventUploadError.ERROR_RETRY),
-            Arguments.of(NetworkErrorStatus.ERROR_NETWORK_UNAVAILABLE, RetryAbleEventUploadError.ERROR_NETWORK_UNAVAILABLE),
-            Arguments.of(NetworkErrorStatus.ERROR_UNKNOWN, RetryAbleEventUploadError.ERROR_UNKNOWN)
+            Arguments.of(NetworkErrorStatus.ErrorRetry(), RetryAbleEventUploadError.ERROR_RETRY),
+            Arguments.of(NetworkErrorStatus.ErrorNetworkUnavailable, RetryAbleEventUploadError.ERROR_NETWORK_UNAVAILABLE),
+            Arguments.of(NetworkErrorStatus.ErrorUnknown, RetryAbleEventUploadError.ERROR_UNKNOWN)
         )
 
         @JvmStatic
         fun nonRetryAbleErrorMappings(): Stream<Arguments> = Stream.of(
-            Arguments.of(NetworkErrorStatus.ERROR_400, NonRetryAbleEventUploadError.ERROR_400),
-            Arguments.of(NetworkErrorStatus.ERROR_401, NonRetryAbleEventUploadError.ERROR_401),
-            Arguments.of(NetworkErrorStatus.ERROR_404, NonRetryAbleEventUploadError.ERROR_404),
-            Arguments.of(NetworkErrorStatus.ERROR_413, NonRetryAbleEventUploadError.ERROR_413)
+            Arguments.of(NetworkErrorStatus.Error400, NonRetryAbleEventUploadError.ERROR_400),
+            Arguments.of(NetworkErrorStatus.Error401, NonRetryAbleEventUploadError.ERROR_401),
+            Arguments.of(NetworkErrorStatus.Error404, NonRetryAbleEventUploadError.ERROR_404),
+            Arguments.of(NetworkErrorStatus.Error413, NonRetryAbleEventUploadError.ERROR_413)
         )
     }
 }
