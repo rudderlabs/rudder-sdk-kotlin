@@ -5,10 +5,12 @@ import android.content.SharedPreferences
 import androidx.core.content.edit
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.storage.KeyValueStorage
+import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
+import java.io.File
 
 internal class SharedPrefsStore(
-    context: Context,
-    prefsName: String,
+    private val context: Context,
+    private val prefsName: String,
 ) : KeyValueStorage {
 
     private val preferences: SharedPreferences = context.getSharedPreferences(prefsName, Context.MODE_PRIVATE)
@@ -45,6 +47,18 @@ internal class SharedPrefsStore(
         put(key, value)
     }
 
+    @UseWithCaution
+    override fun delete() {
+        val isDeleted = if (CheckBuildVersionUseCase.isAndroidVersionNAndAbove()) {
+            context.deleteSharedPreferences(prefsName)
+        } else {
+            File(context.getSharedPreferencesFilePath(prefsName))
+                .takeIf { file -> file.exists() }
+                ?.delete() ?: false
+        }
+        LoggerAnalytics.debug("Attempt to delete shared preferences successful: $isDeleted")
+    }
+
     override fun clear(key: String) {
         with(preferences.edit()) {
             remove(key)
@@ -70,4 +84,8 @@ internal class SharedPrefsStore(
             }
         }
     }
+}
+
+private fun Context.getSharedPreferencesFilePath(prefsName: String): String {
+    return "${this.applicationInfo.dataDir}/shared_prefs/$prefsName.xml"
 }

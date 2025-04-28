@@ -1,6 +1,7 @@
 package com.rudderstack.sdk.kotlin.core.internals.storage
 
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
+import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 
 /**
@@ -133,6 +134,18 @@ interface Storage {
      * @return An instance of [LibraryVersion] containing version details.
      */
     fun getLibraryVersion(): LibraryVersion
+
+    /**
+     * Deletes the storage being used by the implementation, along with any associated configuration.
+     *
+     * This operation permanently removes all stored data.
+     *
+     * Use this method with caution, as any data within the storage will be irretrievably lost.
+     *
+     * **Note**: It is recommended to use this API during shutdown to ensure storage is not removed abruptly, which could lead to unexpected errors.
+     */
+    @UseWithCaution
+    fun delete()
 }
 
 /**

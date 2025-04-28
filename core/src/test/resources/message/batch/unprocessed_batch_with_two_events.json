@@ -1,0 +1,116 @@
+{
+  "batch": [
+    {
+      "event": "Application Installed",
+      "properties": {
+        "version": "0.1.0",
+        "build": 100
+      },
+      "type": "track",
+      "messageId": "<message-id>",
+      "context": {
+        "library": {
+          "name": "com.rudderstack.sdk.kotlin",
+          "version": "1.0.0-alpha.1"
+        },
+        "device": {
+          "id": "4721280db9b0ad1d",
+          "manufacturer": "Google",
+          "model": "sdk_gphone64_arm64",
+          "name": "emu64a",
+          "type": "Android",
+          "advertisingId": "19cc73ff-17a6-40c7-9402-5281e50cf6a5",
+          "adTrackingEnabled": true
+        },
+        "app": {
+          "name": "Rudder-Android-Libs",
+          "namespace": "com.rudderstack.android.sampleapp",
+          "version": "0.1.0",
+          "build": "100"
+        },
+        "network": {
+          "carrier": "T-Mobile",
+          "cellular": true,
+          "wifi": true,
+          "bluetooth": true
+        },
+        "locale": "en-US",
+        "os": {
+          "name": "Android",
+          "version": "16"
+        },
+        "screen": {
+          "density": 480,
+          "height": 2992,
+          "width": 1344
+        },
+        "timezone": "Asia/Kolkata",
+        "sessionId": 1744195662,
+        "sessionStart": true
+      },
+      "originalTimestamp": "<original-timestamp>",
+      "sentAt": "{{ RSA_DEF_SENT_AT_TS }}",
+      "integrations": {
+        "All": true
+      },
+      "anonymousId": "<anonymous-id>",
+      "channel": "mobile"
+    },
+    {
+      "event": "Application Opened",
+      "properties": {
+        "version": "0.1.0",
+        "from_background": false
+      },
+      "type": "track",
+      "messageId": "<message-id>",
+      "context": {
+        "library": {
+          "name": "com.rudderstack.sdk.kotlin",
+          "version": "1.0.0-alpha.1"
+        },
+        "device": {
+          "id": "4721280db9b0ad1d",
+          "manufacturer": "Google",
+          "model": "sdk_gphone64_arm64",
+          "name": "emu64a",
+          "type": "Android",
+          "advertisingId": "19cc73ff-17a6-40c7-9402-5281e50cf6a5",
+          "adTrackingEnabled": true
+        },
+        "app": {
+          "name": "Rudder-Android-Libs",
+          "namespace": "com.rudderstack.android.sampleapp",
+          "version": "0.1.0",
+          "build": "100"
+        },
+        "network": {
+          "carrier": "T-Mobile",
+          "cellular": true,
+          "wifi": true,
+          "bluetooth": true
+        },
+        "locale": "en-US",
+        "os": {
+          "name": "Android",
+          "version": "16"
+        },
+        "screen": {
+          "density": 480,
+          "height": 2992,
+          "width": 1344
+        },
+        "timezone": "Asia/Kolkata",
+        "sessionId": 1744195662
+      },
+      "originalTimestamp": "<original-timestamp>",
+      "sentAt": "{{ RSA_DEF_SENT_AT_TS }}",
+      "integrations": {
+        "All": true
+      },
+      "anonymousId": "<anonymous-id>",
+      "channel": "mobile"
+    }
+  ],
+  "sentAt": "{{ RSA_DEF_SENT_AT_TS }}"
+}

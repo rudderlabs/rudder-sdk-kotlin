@@ -10,8 +10,6 @@ import java.util.Date
 
 class JsonSentAtUpdaterTest {
 
-    private val jsonSentAtUpdater = JsonSentAtUpdater()
-
     private val mockCurrentTime = Date(0).toInstant().toString()
 
     @BeforeEach
@@ -23,7 +21,7 @@ class JsonSentAtUpdaterTest {
     @Test
     fun `given a json value with correct sentAt field, when updateSentAt called, then the sentAt field is updated`() {
         provideValidJsons().forEach { (jsonString, expectedJsonString) ->
-            val updatedJsonString = jsonSentAtUpdater.updateSentAt(jsonString)
+            val updatedJsonString = JsonSentAtUpdater.updateSentAt(jsonString)
 
             assertEquals(expectedJsonString, updatedJsonString)
         }
@@ -32,7 +30,7 @@ class JsonSentAtUpdaterTest {
     @Test
     fun `given a json value with incorrect sentAt field, when updateSentAt called, then the sentAt field is not updated`() {
         provideInvalidJsons().forEach { jsonString ->
-            val updatedJsonString = jsonSentAtUpdater.updateSentAt(jsonString)
+            val updatedJsonString = JsonSentAtUpdater.updateSentAt(jsonString)
 
             assertEquals(jsonString, updatedJsonString)
         }

@@ -1,6 +1,7 @@
 package com.rudderstack.sdk.kotlin.core.internals.storage
 
 import com.rudderstack.sdk.kotlin.core.internals.models.DEFAULT_SENT_AT_TIMESTAMP
+import com.rudderstack.sdk.kotlin.core.internals.utils.appendWriteKey
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -11,14 +12,14 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.io.File
 
-private const val TEST_WRITE_KEY = "asdf"
+private const val TEST_WRITE_KEY = "writeKey"
 
 class EventBatchFileManagerTest {
 
     private val writeKey = TEST_WRITE_KEY
-    private val fileName = "$writeKey-0"
+    private val fileName = "0"
     private val epochTimestamp = DEFAULT_SENT_AT_TIMESTAMP
-    private val directory = File(FILE_DIRECTORY)
+    private val directory = File(FILE_DIRECTORY.appendWriteKey(writeKey))
     private val keyValueStorage = PropertiesFile(directory.parentFile, writeKey)
 
     private lateinit var eventBatchFileManager: EventBatchFileManager
@@ -86,11 +87,11 @@ class EventBatchFileManagerTest {
         eventBatchFileManager.storeEvent(createLargeString(800))
         eventBatchFileManager.storeEvent(provideMessagePayload())
 
-        assertFalse(File(directory, "$writeKey-0.tmp").exists())
-        assertTrue(File(directory, "$writeKey-0").exists())
+        assertFalse(File(directory, "0.tmp").exists())
+        assertTrue(File(directory, "0").exists())
 
         val expectedContents = """{"batch":[${provideMessagePayload()}"""
-        val newFile = File(directory, "$writeKey-1.tmp")
+        val newFile = File(directory, "1.tmp")
         assertTrue(newFile.exists())
 
         val actualContents = newFile.readText()
@@ -206,8 +207,8 @@ class EventBatchFileManagerTest {
         file1.rollover()
         file2.rollover()
 
-        assertEquals(listOf("$FILE_DIRECTORY$writeKey1-0"), file1.read())
-        assertEquals(listOf("$FILE_DIRECTORY$writeKey2-0"), file2.read())
+        assertEquals(listOf("${FILE_DIRECTORY.appendWriteKey(writeKey)}/0"), file1.read())
+        assertEquals(listOf("${FILE_DIRECTORY.appendWriteKey(writeKey)}/0"), file2.read())
     }
 
     @Test

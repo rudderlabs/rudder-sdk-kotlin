@@ -1,6 +1,7 @@
 package com.rudderstack.sdk.kotlin.core.internals.storage
 
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
 import com.rudderstack.sdk.kotlin.core.internals.utils.toPropertiesFileName
 import java.io.File
 import java.io.FileInputStream
@@ -106,5 +107,12 @@ internal class PropertiesFile(
         properties.remove(key)
         save()
         return true
+    }
+
+    @UseWithCaution
+    override fun delete() {
+        propsFile.deleteRecursively().let { isDeleted ->
+            LoggerAnalytics.info("Attempt to delete properties file successful: $isDeleted")
+        }
     }
 }
