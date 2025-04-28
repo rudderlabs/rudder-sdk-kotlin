@@ -5,6 +5,7 @@ import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClient
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClientImpl
 import com.rudderstack.sdk.kotlin.core.internals.network.NetworkErrorStatus
+import com.rudderstack.sdk.kotlin.core.internals.network.formatResponseCodeMessage
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.policies.backoff.BackOffPolicy
 import com.rudderstack.sdk.kotlin.core.internals.policies.backoff.ExponentialBackOffPolicy
@@ -83,18 +84,27 @@ class SourceConfigManager(
     }
 
     private suspend fun getSourceConfigOnFailure(result: Result.Failure<NetworkErrorStatus>): SourceConfig? =
-        when (result.error) {
-            NetworkErrorStatus.ERROR_400 -> {
+        when (val error = result.error) {
+            NetworkErrorStatus.Error400 -> {
+                LoggerAnalytics.error(
+                    "SourceConfigManager: ${error.formatResponseCodeMessage()}. " +
+                        "Invalid write key. Ensure the write key is valid."
+                )
                 analytics.shutdown()
                 null
             }
 
-            NetworkErrorStatus.ERROR_401,
-            NetworkErrorStatus.ERROR_404,
-            NetworkErrorStatus.ERROR_413,
-            NetworkErrorStatus.ERROR_RETRY,
-            NetworkErrorStatus.ERROR_UNKNOWN,
-            NetworkErrorStatus.ERROR_NETWORK_UNAVAILABLE -> fetchSourceConfigWithBackOff()
+            NetworkErrorStatus.Error401,
+            NetworkErrorStatus.Error404,
+            NetworkErrorStatus.Error413,
+            is NetworkErrorStatus.ErrorRetry,
+            NetworkErrorStatus.ErrorUnknown,
+            NetworkErrorStatus.ErrorNetworkUnavailable -> {
+                LoggerAnalytics.debug(
+                    "SourceConfigManager: ${error.formatResponseCodeMessage()}. Retrying to fetch SourceConfig."
+                )
+                fetchSourceConfigWithBackOff()
+            }
         }
 
     private suspend fun fetchSourceConfigWithBackOff(): SourceConfig? {
