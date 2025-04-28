@@ -13,8 +13,10 @@ import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import com.rudderstack.sdk.kotlin.core.internals.utils.LenientJson
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
+import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import com.rudderstack.sdk.kotlin.core.internals.utils.encodeToBase64
+import com.rudderstack.sdk.kotlin.core.internals.utils.handleInvalidWriteKey
 import com.rudderstack.sdk.kotlin.core.internals.utils.notifyOnlyOnceOnConnectionAvailable
 import com.rudderstack.sdk.kotlin.core.internals.utils.safelyExecute
 import kotlinx.coroutines.delay
@@ -82,10 +84,12 @@ class SourceConfigManager(
         }
     }
 
+    @OptIn(UseWithCaution::class)
     private suspend fun getSourceConfigOnFailure(result: Result.Failure<NetworkErrorStatus>): SourceConfig? =
         when (result.error) {
             NetworkErrorStatus.ERROR_400 -> {
-                analytics.shutdown()
+                LoggerAnalytics.error("Invalid write key. Ensure the write key is valid.")
+                analytics.handleInvalidWriteKey()
                 null
             }
 
