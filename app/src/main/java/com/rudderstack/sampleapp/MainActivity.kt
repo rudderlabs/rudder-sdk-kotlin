@@ -19,7 +19,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             val navController = rememberNavController()
-            analytics.setNavigationDestinationsTracking(navController, this@MainActivity)
+    LaunchedEffect(Unit) {
+        analytics.setNavigationDestinationsTracking(navController, this@MainActivity)
+    }  
             RudderAndroidLibsTheme {
                 AppNavHost(viewModel = viewModel, navController = navController)
             }
