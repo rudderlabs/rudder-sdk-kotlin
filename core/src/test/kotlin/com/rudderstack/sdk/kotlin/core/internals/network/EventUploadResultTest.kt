@@ -1,7 +1,9 @@
 package com.rudderstack.sdk.kotlin.core.internals.network
 
+import com.rudderstack.sdk.kotlin.core.internals.network.NetworkErrorStatus.Companion.fromErrorCode
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
@@ -48,6 +50,38 @@ internal class EventUploadResultTest {
         assertEquals(expectedError, eventUploadResult)
     }
 
+    @ParameterizedTest
+    @MethodSource("nonRetryAbleErrorToResponseCodeMappings")
+    fun `when non retry able error is given, then it returns the correct response code`(
+        error: EventUploadError,
+        expectedResponseCode: Int
+    ) {
+        val responseCode = error.getResponseCode()
+
+        assertEquals(expectedResponseCode, responseCode)
+    }
+
+    @Test
+    fun `when retry able error is given, then it returns null`() {
+        RetryAbleEventUploadError.entries.forEach { error ->
+            val responseCode = error.getResponseCode()
+
+            assertNull(responseCode)
+        }
+    }
+
+    @Test
+    fun `given retry able error with response code, when converted, then returns the correct response code`() {
+        val errorCode = 500
+        val networkResult = Result.Failure(error = fromErrorCode(errorCode))
+
+        val eventUploadResult = networkResult.toEventUploadResult()
+
+        assertTrue(eventUploadResult is RetryAbleEventUploadError)
+        val actualResponseCode = (eventUploadResult as RetryAbleEventUploadError).getResponseCode()
+        assertEquals(errorCode, actualResponseCode)
+    }
+
     companion object {
         @JvmStatic
         fun retryAbleErrorMappings(): Stream<Arguments> = Stream.of(
@@ -62,6 +96,14 @@ internal class EventUploadResultTest {
             Arguments.of(NetworkErrorStatus.Error401, NonRetryAbleEventUploadError.ERROR_401),
             Arguments.of(NetworkErrorStatus.Error404, NonRetryAbleEventUploadError.ERROR_404),
             Arguments.of(NetworkErrorStatus.Error413, NonRetryAbleEventUploadError.ERROR_413)
+        )
+
+        @JvmStatic
+        fun nonRetryAbleErrorToResponseCodeMappings(): Stream<Arguments> = Stream.of(
+            Arguments.of(NonRetryAbleEventUploadError.ERROR_400, 400),
+            Arguments.of(NonRetryAbleEventUploadError.ERROR_401, 401),
+            Arguments.of(NonRetryAbleEventUploadError.ERROR_404, 404),
+            Arguments.of(NonRetryAbleEventUploadError.ERROR_413, 413),
         )
     }
 }
