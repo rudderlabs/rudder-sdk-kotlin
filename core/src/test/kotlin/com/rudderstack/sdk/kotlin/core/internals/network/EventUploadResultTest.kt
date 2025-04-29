@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
+import org.junit.jupiter.params.shadow.com.univocity.parsers.common.RetryableErrorHandler
 import java.util.stream.Stream
 
 internal class EventUploadResultTest {
@@ -61,13 +62,14 @@ internal class EventUploadResultTest {
         assertEquals(expectedResponseCode, responseCode)
     }
 
-    @Test
-    fun `when retry able error is given, then it returns null`() {
-        RetryAbleEventUploadError.entries.forEach { error ->
-            val responseCode = error.getResponseCode()
+    @ParameterizedTest
+    @MethodSource("getListOfRetryAbleErrors")
+    fun `when retry able error is provided, then it returns null response code`(
+        retryAbleError: RetryAbleEventUploadError
+    ) {
+        val responseCode = retryAbleError.getResponseCode()
 
-            assertNull(responseCode)
-        }
+        assertNull(responseCode)
     }
 
     @Test
@@ -83,11 +85,12 @@ internal class EventUploadResultTest {
     }
 
     companion object {
+
         @JvmStatic
         fun retryAbleErrorMappings(): Stream<Arguments> = Stream.of(
-            Arguments.of(NetworkErrorStatus.ErrorRetry(), RetryAbleEventUploadError.ERROR_RETRY),
-            Arguments.of(NetworkErrorStatus.ErrorNetworkUnavailable, RetryAbleEventUploadError.ERROR_NETWORK_UNAVAILABLE),
-            Arguments.of(NetworkErrorStatus.ErrorUnknown, RetryAbleEventUploadError.ERROR_UNKNOWN)
+            Arguments.of(NetworkErrorStatus.ErrorRetry(), RetryAbleEventUploadError.ErrorRetry()),
+            Arguments.of(NetworkErrorStatus.ErrorNetworkUnavailable, RetryAbleEventUploadError.ErrorNetworkUnavailable),
+            Arguments.of(NetworkErrorStatus.ErrorUnknown, RetryAbleEventUploadError.ErrorUnknown)
         )
 
         @JvmStatic
@@ -104,6 +107,13 @@ internal class EventUploadResultTest {
             Arguments.of(NonRetryAbleEventUploadError.ERROR_401, 401),
             Arguments.of(NonRetryAbleEventUploadError.ERROR_404, 404),
             Arguments.of(NonRetryAbleEventUploadError.ERROR_413, 413),
+        )
+
+        @JvmStatic
+        fun getListOfRetryAbleErrors(): Stream<Arguments> = Stream.of(
+            Arguments.of(RetryAbleEventUploadError.ErrorRetry()),
+            Arguments.of(RetryAbleEventUploadError.ErrorNetworkUnavailable),
+            Arguments.of(RetryAbleEventUploadError.ErrorUnknown)
         )
     }
 }

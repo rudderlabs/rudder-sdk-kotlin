@@ -31,18 +31,27 @@ internal sealed interface RetryAbleError : EventUploadError
 internal sealed interface NonRetryAbleError : EventUploadError
 
 /**
- * `RetryAbleEventUploadError` is an enum class representing the different types of retry able event upload errors.
- *  @property ERROR_RETRY A generic error that can be retried.
- *  @property ERROR_NETWORK_UNAVAILABLE An error indicating that the network is unavailable, and the upload can be retried.
- *  @property ERROR_UNKNOWN An unknown error occurred, and the upload can be retried.
+ * `RetryAbleEventUploadError` is an sealed class representing the different types of retry able event upload errors.
+ *
+ * @property responseCode The HTTP response code associated with the error, if available.
  */
-internal enum class RetryAbleEventUploadError : RetryAbleError {
+internal sealed class RetryAbleEventUploadError(open val responseCode: Int? = null) : RetryAbleError {
 
-    ERROR_RETRY,
-    ERROR_NETWORK_UNAVAILABLE,
-    ERROR_UNKNOWN;
+    /**
+     * `ErrorRetry` represents a retry able error with a specific HTTP response code.
+     * @property responseCode The HTTP response code associated with the error, if available.
+     */
+    internal data class ErrorRetry(override val responseCode: Int? = null) : RetryAbleEventUploadError(responseCode)
 
-    var responseCode: Int? = null
+    /**
+     * `ErrorNetworkUnavailable` represents a retry able error that occurs when the network is unavailable.
+     */
+    internal data object ErrorNetworkUnavailable : RetryAbleEventUploadError(null)
+
+    /**
+     * `ErrorUnknown` represents an unknown but retry able error.
+     */
+    internal data object ErrorUnknown : RetryAbleEventUploadError(null)
 }
 
 /**
@@ -72,12 +81,9 @@ internal fun NetworkResult.toEventUploadResult(): EventUploadResult {
 
         is Result.Failure -> {
             when (val error = this.error) {
-                is NetworkErrorStatus.ErrorRetry -> RetryAbleEventUploadError.ERROR_RETRY.apply {
-                    this.responseCode = error.responseCode
-                }
-
-                NetworkErrorStatus.ErrorNetworkUnavailable -> RetryAbleEventUploadError.ERROR_NETWORK_UNAVAILABLE
-                NetworkErrorStatus.ErrorUnknown -> RetryAbleEventUploadError.ERROR_UNKNOWN
+                is NetworkErrorStatus.ErrorRetry -> RetryAbleEventUploadError.ErrorRetry(error.responseCode)
+                NetworkErrorStatus.ErrorNetworkUnavailable -> RetryAbleEventUploadError.ErrorNetworkUnavailable
+                NetworkErrorStatus.ErrorUnknown -> RetryAbleEventUploadError.ErrorUnknown
                 NetworkErrorStatus.Error400 -> NonRetryAbleEventUploadError.ERROR_400
                 NetworkErrorStatus.Error401 -> NonRetryAbleEventUploadError.ERROR_401
                 NetworkErrorStatus.Error404 -> NonRetryAbleEventUploadError.ERROR_404
