@@ -79,8 +79,8 @@ internal class EventUploadResultTest {
         val eventUploadResult = networkResult.toEventUploadResult()
 
         assertTrue(eventUploadResult is RetryAbleEventUploadError)
-        val actualResponseCode = (eventUploadResult as RetryAbleEventUploadError).statusCode
-        assertEquals(errorCode, actualResponseCode)
+        val actualStatusCode = (eventUploadResult as RetryAbleEventUploadError).statusCode
+        assertEquals(errorCode, actualStatusCode)
     }
 
     companion object {

@@ -38,12 +38,12 @@ internal sealed interface NonRetryAbleError : EventUploadError
 /**
  * `RetryAbleEventUploadError` is an sealed class representing the different types of retry able event upload errors.
  *
- * @property statusCode The HTTP response code associated with the error, if available.
+ * @property statusCode The HTTP status code associated with the error, if available.
  */
 internal sealed class RetryAbleEventUploadError(override val statusCode: Int? = null) : RetryAbleError {
 
     /**
-     * `ErrorRetry` represents a retry able error with a specific HTTP response code.
+     * `ErrorRetry` represents a retry able error with a specific HTTP status code.
      * @property statusCode The HTTP status code associated with the error, if available.
      */
     internal data class ErrorRetry(override val statusCode: Int? = null) : RetryAbleEventUploadError(statusCode)
