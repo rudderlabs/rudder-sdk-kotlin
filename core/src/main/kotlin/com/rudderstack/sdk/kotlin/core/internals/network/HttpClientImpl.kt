@@ -1,7 +1,7 @@
 package com.rudderstack.sdk.kotlin.core.internals.network
 
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
-import com.rudderstack.sdk.kotlin.core.internals.network.NetworkErrorStatus.Companion.fromErrorCode
+import com.rudderstack.sdk.kotlin.core.internals.network.NetworkErrorStatus.Companion.toErrorStatus
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import com.rudderstack.sdk.kotlin.core.internals.utils.validatedBaseUrl
 import java.io.IOException
@@ -235,7 +235,7 @@ internal class HttpClientImpl private constructor(
         )
 
         else -> Result.Failure(
-            error = fromErrorCode(responseCode),
+            error = toErrorStatus(responseCode),
         )
     }
 }

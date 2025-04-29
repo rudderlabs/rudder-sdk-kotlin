@@ -1,6 +1,6 @@
 package com.rudderstack.sdk.kotlin.core.internals.network
 
-import com.rudderstack.sdk.kotlin.core.internals.network.NetworkErrorStatus.Companion.fromErrorCode
+import com.rudderstack.sdk.kotlin.core.internals.network.NetworkErrorStatus.Companion.toErrorStatus
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
@@ -73,7 +73,7 @@ internal class EventUploadResultTest {
     @Test
     fun `given retry able error with response code, when converted, then returns the correct response code`() {
         val errorCode = 500
-        val networkResult = Result.Failure(error = fromErrorCode(errorCode))
+        val networkResult = Result.Failure(error = toErrorStatus(errorCode))
 
         val eventUploadResult = networkResult.toEventUploadResult()
 
