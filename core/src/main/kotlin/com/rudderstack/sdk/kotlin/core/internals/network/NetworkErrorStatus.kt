@@ -67,7 +67,7 @@ sealed class NetworkErrorStatus(open val responseCode: Int?) {
          * @param errorCode The HTTP status code to be mapped.
          * @return The corresponding NetworkErrorStatus instance.
          */
-        fun toErrorStatus(errorCode: Int?): NetworkErrorStatus = when (errorCode) {
+        fun toErrorStatus(errorCode: Int): NetworkErrorStatus = when (errorCode) {
             BAD_REQUEST_CODE -> Error400
             UNAUTHORIZED_CODE -> Error401
             RESOURCE_NOT_FOUND_CODE -> Error404
