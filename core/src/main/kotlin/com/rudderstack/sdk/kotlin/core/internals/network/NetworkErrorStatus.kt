@@ -63,9 +63,6 @@ sealed class NetworkErrorStatus(open val responseCode: Int?) {
 
         /**
          * Converts an HTTP status code to a corresponding NetworkErrorStatus instance.
-         * - If the code exactly matches one of the defined statuses (e.g., 400, 401, 404, 413), that instance is returned.
-         * - For any other error code in the 400–599 range, an ERROR_RETRY instance is returned with the actual code.
-         * - Otherwise, returns ERROR_UNKNOWN.
          *
          * @param errorCode The HTTP status code to be mapped.
          * @return The corresponding NetworkErrorStatus instance.
