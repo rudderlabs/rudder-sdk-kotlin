@@ -158,8 +158,8 @@ internal class EventUpload(
         when (status) {
             NonRetryAbleEventUploadError.ERROR_400 -> {
                 LoggerAnalytics.error(
-                    "EventUpload: ${status.formatResponseCodeMessage()}. Invalid request: missing or malformed body. " +
-                        "Ensure the payload is valid JSON and includes either anonymousId or userId."
+                    "EventUpload: ${status.formatResponseCodeMessage()}. Invalid request: Missing or malformed body. " +
+                        "Ensure the payload is a valid JSON and includes either 'anonymousId' or 'userId' properties."
                 )
                 cleanup(filePath)
             }
@@ -176,7 +176,7 @@ internal class EventUpload(
             NonRetryAbleEventUploadError.ERROR_404 -> {
                 LoggerAnalytics.error(
                     "EventUpload: ${status.formatResponseCodeMessage()}. Source is disabled. " +
-                        "Stopping the upload process until the source is enabled again."
+                        "Stopping the events upload process until the source is enabled again."
                 )
                 cancel()
                 analytics.sourceConfigState.dispatch(SourceConfig.DisableSourceAction())
@@ -185,7 +185,7 @@ internal class EventUpload(
             NonRetryAbleEventUploadError.ERROR_413 -> {
                 LoggerAnalytics.error(
                     "EventUpload: ${status.formatResponseCodeMessage()}. " +
-                        "Batch request failed: Payload size exceeds the maximum allowed limit."
+                        "Request failed: Payload size exceeds the maximum allowed limit."
                 )
                 cleanup(filePath)
             }
