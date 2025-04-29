@@ -41,7 +41,7 @@ sealed class NetworkErrorStatus(open val responseCode: Int?) {
 
     /**
      * Indicates a retry able error.
-     * This variant accepts a dynamic error code for cases when the code is not one of the predefined ones.
+     * This accepts a dynamic error code for cases when the code is not one of the predefined ones.
      *
      * The value will be null if the error code is not available e.g., in case of IO exception.
      *
@@ -55,7 +55,7 @@ sealed class NetworkErrorStatus(open val responseCode: Int?) {
     data object ErrorNetworkUnavailable : NetworkErrorStatus(null)
 
     /**
-     * Indicates a fatal error that cannot be retried.
+     * Indicates an unknown but retry able error.
      */
     data object ErrorUnknown : NetworkErrorStatus(null)
 
