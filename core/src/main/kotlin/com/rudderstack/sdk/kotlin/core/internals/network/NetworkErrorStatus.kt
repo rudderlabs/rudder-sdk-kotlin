@@ -1,9 +1,9 @@
 package com.rudderstack.sdk.kotlin.core.internals.network
 
-private const val BAD_REQUEST_CODE = 400
-private const val UNAUTHORIZED_CODE = 401
-private const val RESOURCE_NOT_FOUND_CODE = 404
-private const val PAYLOAD_TOO_LARGE_CODE = 413
+internal const val HTTP_400 = 400
+internal const val HTTP_401 = 401
+internal const val HTTP_404 = 404
+internal const val HTTP_413 = 413
 
 private const val HTTP_ERROR_START = 400
 private const val HTTP_ERROR_END = 599
@@ -22,22 +22,22 @@ sealed class NetworkErrorStatus(open val responseCode: Int?) {
     /**
      * Indicates a HTTP status code 400.
      */
-    data object Error400 : NetworkErrorStatus(BAD_REQUEST_CODE)
+    data object Error400 : NetworkErrorStatus(HTTP_400)
 
     /**
      * Indicates HTTP status code 401.
      */
-    data object Error401 : NetworkErrorStatus(UNAUTHORIZED_CODE)
+    data object Error401 : NetworkErrorStatus(HTTP_401)
 
     /**
      * Indicates HTTP status code 404.
      */
-    data object Error404 : NetworkErrorStatus(RESOURCE_NOT_FOUND_CODE)
+    data object Error404 : NetworkErrorStatus(HTTP_404)
 
     /**
      * Indicates HTTP status code 413.
      */
-    data object Error413 : NetworkErrorStatus(PAYLOAD_TOO_LARGE_CODE)
+    data object Error413 : NetworkErrorStatus(HTTP_413)
 
     /**
      * Indicates a retry able error.
@@ -68,10 +68,10 @@ sealed class NetworkErrorStatus(open val responseCode: Int?) {
          * @return The corresponding NetworkErrorStatus instance.
          */
         fun toErrorStatus(errorCode: Int): NetworkErrorStatus = when (errorCode) {
-            BAD_REQUEST_CODE -> Error400
-            UNAUTHORIZED_CODE -> Error401
-            RESOURCE_NOT_FOUND_CODE -> Error404
-            PAYLOAD_TOO_LARGE_CODE -> Error413
+            HTTP_400 -> Error400
+            HTTP_401 -> Error401
+            HTTP_404 -> Error404
+            HTTP_413 -> Error413
             in HTTP_RETRY_RANGE -> ErrorRetry(errorCode)
             else -> ErrorUnknown
         }

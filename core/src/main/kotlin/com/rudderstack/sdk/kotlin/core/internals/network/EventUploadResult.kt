@@ -54,10 +54,10 @@ internal enum class RetryAbleEventUploadError : RetryAbleError {
  */
 internal enum class NonRetryAbleEventUploadError(val responseCode: Int) : NonRetryAbleError {
 
-    ERROR_400(responseCode = 400),
-    ERROR_401(responseCode = 401),
-    ERROR_404(responseCode = 404),
-    ERROR_413(responseCode = 413)
+    ERROR_400(responseCode = HTTP_400),
+    ERROR_401(responseCode = HTTP_401),
+    ERROR_404(responseCode = HTTP_404),
+    ERROR_413(responseCode = HTTP_413)
 }
 
 /**
