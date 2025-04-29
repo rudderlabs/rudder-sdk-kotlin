@@ -5,7 +5,7 @@ import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClient
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClientImpl
 import com.rudderstack.sdk.kotlin.core.internals.network.NetworkErrorStatus
-import com.rudderstack.sdk.kotlin.core.internals.network.formatResponseCodeMessage
+import com.rudderstack.sdk.kotlin.core.internals.network.formatStatusCodeMessage
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.policies.backoff.BackOffPolicy
 import com.rudderstack.sdk.kotlin.core.internals.policies.backoff.ExponentialBackOffPolicy
@@ -90,7 +90,7 @@ class SourceConfigManager(
         when (val error = result.error) {
             NetworkErrorStatus.Error400 -> {
                 LoggerAnalytics.error(
-                    "SourceConfigManager: ${error.formatResponseCodeMessage()}. " +
+                    "SourceConfigManager: ${error.formatStatusCodeMessage()}. " +
                         "Invalid write key. Ensure the write key is valid."
                 )
                 analytics.handleInvalidWriteKey()
@@ -104,7 +104,7 @@ class SourceConfigManager(
             NetworkErrorStatus.ErrorUnknown,
             NetworkErrorStatus.ErrorNetworkUnavailable -> {
                 LoggerAnalytics.debug(
-                    "SourceConfigManager: ${error.formatResponseCodeMessage()}. Retrying to fetch SourceConfig."
+                    "SourceConfigManager: ${error.formatStatusCodeMessage()}. Retrying to fetch SourceConfig."
                 )
                 fetchSourceConfigWithBackOff()
             }

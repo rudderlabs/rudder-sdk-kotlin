@@ -111,7 +111,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            NetworkErrorStatus.ErrorRetry(responseCode = 500)
+            NetworkErrorStatus.ErrorRetry(statusCode = 500)
         )
     }
 
@@ -123,7 +123,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            NetworkErrorStatus.ErrorRetry(responseCode = 429)
+            NetworkErrorStatus.ErrorRetry(statusCode = 429)
         )
     }
 
@@ -135,7 +135,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            NetworkErrorStatus.ErrorRetry(responseCode = 450)
+            NetworkErrorStatus.ErrorRetry(statusCode = 450)
         )
     }
 
@@ -222,7 +222,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            NetworkErrorStatus.ErrorRetry(responseCode = 429)
+            NetworkErrorStatus.ErrorRetry(statusCode = 429)
         )
     }
 
@@ -234,7 +234,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            NetworkErrorStatus.ErrorRetry(responseCode = 450)
+            NetworkErrorStatus.ErrorRetry(statusCode = 450)
         )
     }
 
@@ -246,7 +246,7 @@ class HttpClientImplTest {
 
         assertFailure(
             result,
-            NetworkErrorStatus.ErrorRetry(responseCode = 500)
+            NetworkErrorStatus.ErrorRetry(statusCode = 500)
         )
     }
 

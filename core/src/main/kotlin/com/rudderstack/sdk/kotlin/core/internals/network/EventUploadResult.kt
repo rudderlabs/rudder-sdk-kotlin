@@ -18,11 +18,11 @@ internal data class Success(val response: String) : EventUploadResult
  * `EventUploadError` is a sealed interface representing an error that occurred during event upload.
  * It can be either a retry able error or a non-retry able error.
  *
- * @property responseCode The HTTP response code associated with the error, if available.
+ * @property statusCode The HTTP stats code associated with the error, if available.
  */
 internal sealed interface EventUploadError : EventUploadResult {
 
-    val responseCode: Int?
+    val statusCode: Int?
 }
 
 /**
@@ -38,15 +38,15 @@ internal sealed interface NonRetryAbleError : EventUploadError
 /**
  * `RetryAbleEventUploadError` is an sealed class representing the different types of retry able event upload errors.
  *
- * @property responseCode The HTTP response code associated with the error, if available.
+ * @property statusCode The HTTP response code associated with the error, if available.
  */
-internal sealed class RetryAbleEventUploadError(override val responseCode: Int? = null) : RetryAbleError {
+internal sealed class RetryAbleEventUploadError(override val statusCode: Int? = null) : RetryAbleError {
 
     /**
      * `ErrorRetry` represents a retry able error with a specific HTTP response code.
-     * @property responseCode The HTTP response code associated with the error, if available.
+     * @property statusCode The HTTP status code associated with the error, if available.
      */
-    internal data class ErrorRetry(override val responseCode: Int? = null) : RetryAbleEventUploadError(responseCode)
+    internal data class ErrorRetry(override val statusCode: Int? = null) : RetryAbleEventUploadError(statusCode)
 
     /**
      * `ErrorNetworkUnavailable` represents a retry able error that occurs when the network is unavailable.
@@ -66,12 +66,12 @@ internal sealed class RetryAbleEventUploadError(override val responseCode: Int? 
  *  @property ERROR_404 An error indicating that the resource was not found (e.g., the source is disabled).
  *  @property ERROR_413 An error indicating that the payload size exceeds the maximum allowed limit.
  */
-internal enum class NonRetryAbleEventUploadError(override val responseCode: Int) : NonRetryAbleError {
+internal enum class NonRetryAbleEventUploadError(override val statusCode: Int) : NonRetryAbleError {
 
-    ERROR_400(responseCode = HTTP_400),
-    ERROR_401(responseCode = HTTP_401),
-    ERROR_404(responseCode = HTTP_404),
-    ERROR_413(responseCode = HTTP_413)
+    ERROR_400(statusCode = HTTP_400),
+    ERROR_401(statusCode = HTTP_401),
+    ERROR_404(statusCode = HTTP_404),
+    ERROR_413(statusCode = HTTP_413)
 }
 
 /**
@@ -86,7 +86,7 @@ internal fun NetworkResult.toEventUploadResult(): EventUploadResult {
 
         is Result.Failure -> {
             when (val error = this.error) {
-                is NetworkErrorStatus.ErrorRetry -> RetryAbleEventUploadError.ErrorRetry(error.responseCode)
+                is NetworkErrorStatus.ErrorRetry -> RetryAbleEventUploadError.ErrorRetry(error.statusCode)
                 NetworkErrorStatus.ErrorNetworkUnavailable -> RetryAbleEventUploadError.ErrorNetworkUnavailable
                 NetworkErrorStatus.ErrorUnknown -> RetryAbleEventUploadError.ErrorUnknown
                 NetworkErrorStatus.Error400 -> NonRetryAbleEventUploadError.ERROR_400
@@ -99,10 +99,10 @@ internal fun NetworkResult.toEventUploadResult(): EventUploadResult {
 }
 
 /**
- * Extension function that formats the error's response code as a message string.
- * @return A string representation of the response code, or "Not available" if the code is null.
+ * Extension function that formats the error's status code as a message string.
+ * @return A string representation of the status code, or "Not available" if the code is null.
  */
-internal fun EventUploadError.formatResponseCodeMessage(): String {
-    val responseCode = this.responseCode ?: "Not available"
-    return "Response code: $responseCode"
+internal fun EventUploadError.formatStatusCodeMessage(): String {
+    val statusCode = this.statusCode ?: "Not available"
+    return "Status code: $statusCode"
 }

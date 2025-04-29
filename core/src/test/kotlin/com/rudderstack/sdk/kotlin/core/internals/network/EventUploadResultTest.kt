@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
-import org.junit.jupiter.params.shadow.com.univocity.parsers.common.RetryableErrorHandler
 import java.util.stream.Stream
 
 internal class EventUploadResultTest {
@@ -52,35 +51,35 @@ internal class EventUploadResultTest {
     }
 
     @ParameterizedTest
-    @MethodSource("nonRetryAbleErrorToResponseCodeMappings")
-    fun `when non retry able error is given, then it returns the correct response code`(
+    @MethodSource("nonRetryAbleErrorToStatusCodeMappings")
+    fun `when non retry able error is given, then it returns the correct status code`(
         error: EventUploadError,
-        expectedResponseCode: Int
+        expectedStatusCode: Int
     ) {
-        val responseCode = error.responseCode
+        val statusCode = error.statusCode
 
-        assertEquals(expectedResponseCode, responseCode)
+        assertEquals(expectedStatusCode, statusCode)
     }
 
     @ParameterizedTest
     @MethodSource("getListOfRetryAbleErrors")
-    fun `when retry able error is provided, then it returns null response code`(
+    fun `when retry able error is provided, then it returns null status code`(
         retryAbleError: RetryAbleEventUploadError
     ) {
-        val responseCode = retryAbleError.responseCode
+        val statusCode = retryAbleError.statusCode
 
-        assertNull(responseCode)
+        assertNull(statusCode)
     }
 
     @Test
-    fun `given retry able error with response code, when converted, then returns the correct response code`() {
+    fun `given retry able error with status code, when converted, then returns the correct status code`() {
         val errorCode = 500
         val networkResult = Result.Failure(error = toErrorStatus(errorCode))
 
         val eventUploadResult = networkResult.toEventUploadResult()
 
         assertTrue(eventUploadResult is RetryAbleEventUploadError)
-        val actualResponseCode = (eventUploadResult as RetryAbleEventUploadError).responseCode
+        val actualResponseCode = (eventUploadResult as RetryAbleEventUploadError).statusCode
         assertEquals(errorCode, actualResponseCode)
     }
 
@@ -102,7 +101,7 @@ internal class EventUploadResultTest {
         )
 
         @JvmStatic
-        fun nonRetryAbleErrorToResponseCodeMappings(): Stream<Arguments> = Stream.of(
+        fun nonRetryAbleErrorToStatusCodeMappings(): Stream<Arguments> = Stream.of(
             Arguments.of(NonRetryAbleEventUploadError.ERROR_400, 400),
             Arguments.of(NonRetryAbleEventUploadError.ERROR_401, 401),
             Arguments.of(NonRetryAbleEventUploadError.ERROR_404, 404),

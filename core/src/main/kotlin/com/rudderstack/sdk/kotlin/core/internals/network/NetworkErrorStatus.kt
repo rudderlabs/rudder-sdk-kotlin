@@ -15,9 +15,9 @@ private val HTTP_RETRY_RANGE = HTTP_ERROR_START..HTTP_ERROR_END
  * This sealed class encapsulates different types of errors that may arise, providing meaningful names
  * for common HTTP status codes as well as handling dynamic error codes for retry able errors.
  *
- * @param responseCode The HTTP status code associated with the error, if applicable.
+ * @param statusCode The HTTP status code associated with the error, if applicable.
  */
-sealed class NetworkErrorStatus(open val responseCode: Int?) {
+sealed class NetworkErrorStatus(open val statusCode: Int?) {
 
     /**
      * Indicates a HTTP status code 400.
@@ -45,9 +45,9 @@ sealed class NetworkErrorStatus(open val responseCode: Int?) {
      *
      * The value will be null if the error code is not available e.g., in case of IO exception.
      *
-     * @param responseCode The HTTP status code associated with the error, if applicable.
+     * @param statusCode The HTTP status code associated with the error, if applicable.
      */
-    data class ErrorRetry(override val responseCode: Int? = null) : NetworkErrorStatus(responseCode)
+    data class ErrorRetry(override val statusCode: Int? = null) : NetworkErrorStatus(statusCode)
 
     /**
      * Indicates a retry able error that happens when the network is unavailable.
@@ -79,10 +79,10 @@ sealed class NetworkErrorStatus(open val responseCode: Int?) {
 }
 
 /**
- * Extension function to format the response code message for a NetworkErrorStatus.
- * @return A string representation of the response code, or "Not available" if the code is null.
+ * Extension function to format the status code message for a NetworkErrorStatus.
+ * @return A string representation of the status code, or "Not available" if the code is null.
  */
-internal fun NetworkErrorStatus.formatResponseCodeMessage(): String {
-    val responseCode = this.responseCode ?: "Not available"
-    return "Response code: $responseCode"
+internal fun NetworkErrorStatus.formatStatusCodeMessage(): String {
+    val statusCode = this.statusCode ?: "Not available"
+    return "Status code: $statusCode"
 }
