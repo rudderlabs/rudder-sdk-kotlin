@@ -17,8 +17,13 @@ internal data class Success(val response: String) : EventUploadResult
 /**
  * `EventUploadError` is a sealed interface representing an error that occurred during event upload.
  * It can be either a retry able error or a non-retry able error.
+ *
+ * @property responseCode The HTTP response code associated with the error, if available.
  */
-internal sealed interface EventUploadError : EventUploadResult
+internal sealed interface EventUploadError : EventUploadResult {
+
+    val responseCode: Int?
+}
 
 /**
  * `RetryAbleError` is a sealed interface representing an event upload error that can be retried.
@@ -35,7 +40,7 @@ internal sealed interface NonRetryAbleError : EventUploadError
  *
  * @property responseCode The HTTP response code associated with the error, if available.
  */
-internal sealed class RetryAbleEventUploadError(open val responseCode: Int? = null) : RetryAbleError {
+internal sealed class RetryAbleEventUploadError(override val responseCode: Int? = null) : RetryAbleError {
 
     /**
      * `ErrorRetry` represents a retry able error with a specific HTTP response code.
@@ -61,7 +66,7 @@ internal sealed class RetryAbleEventUploadError(open val responseCode: Int? = nu
  *  @property ERROR_404 An error indicating that the resource was not found (e.g., the source is disabled).
  *  @property ERROR_413 An error indicating that the payload size exceeds the maximum allowed limit.
  */
-internal enum class NonRetryAbleEventUploadError(val responseCode: Int) : NonRetryAbleError {
+internal enum class NonRetryAbleEventUploadError(override val responseCode: Int) : NonRetryAbleError {
 
     ERROR_400(responseCode = HTTP_400),
     ERROR_401(responseCode = HTTP_401),
@@ -94,21 +99,10 @@ internal fun NetworkResult.toEventUploadResult(): EventUploadResult {
 }
 
 /**
- * Extension function that retrieves the response code from a RetryAbleError.
- * @return The HTTP response code associated with this error, or null if not available.
- */
-internal fun EventUploadError.getResponseCode(): Int? {
-    return when (this) {
-        is RetryAbleEventUploadError -> this.responseCode
-        is NonRetryAbleEventUploadError -> this.responseCode
-    }
-}
-
-/**
  * Extension function that formats the error's response code as a message string.
  * @return A string representation of the response code, or "Not available" if the code is null.
  */
 internal fun EventUploadError.formatResponseCodeMessage(): String {
-    val responseCode = this.getResponseCode() ?: "Not available"
+    val responseCode = this.responseCode ?: "Not available"
     return "Response code: $responseCode"
 }

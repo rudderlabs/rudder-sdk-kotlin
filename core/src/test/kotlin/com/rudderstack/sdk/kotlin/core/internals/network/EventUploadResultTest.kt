@@ -57,7 +57,7 @@ internal class EventUploadResultTest {
         error: EventUploadError,
         expectedResponseCode: Int
     ) {
-        val responseCode = error.getResponseCode()
+        val responseCode = error.responseCode
 
         assertEquals(expectedResponseCode, responseCode)
     }
@@ -67,7 +67,7 @@ internal class EventUploadResultTest {
     fun `when retry able error is provided, then it returns null response code`(
         retryAbleError: RetryAbleEventUploadError
     ) {
-        val responseCode = retryAbleError.getResponseCode()
+        val responseCode = retryAbleError.responseCode
 
         assertNull(responseCode)
     }
@@ -80,7 +80,7 @@ internal class EventUploadResultTest {
         val eventUploadResult = networkResult.toEventUploadResult()
 
         assertTrue(eventUploadResult is RetryAbleEventUploadError)
-        val actualResponseCode = (eventUploadResult as RetryAbleEventUploadError).getResponseCode()
+        val actualResponseCode = (eventUploadResult as RetryAbleEventUploadError).responseCode
         assertEquals(errorCode, actualResponseCode)
     }
 
