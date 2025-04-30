@@ -6,23 +6,32 @@ import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.jsonPrimitive
 
-class SampleIntegrationPlugin : IntegrationPlugin() {
+/**
+ * Sample custom integration plugin.
+ *
+ * This is a sample custom integration plugin that demonstrates how to create a custom
+ * integration plugin for RudderStack.
+ * It implements the [IntegrationPlugin] class and overrides the required methods.
+ *
+ * To use it, simply add it to the `Analytics` instance of your app using [add] method.
+ */
+class SampleCustomIntegrationPlugin : IntegrationPlugin() {
 
     private var destinationSdk: SampleDestinationSdk? = null
 
     override val key: String
-        get() = "Amplitude"
+        get() = "MyKey"
 
+    /**
+     * For custom integration plugins, the [destinationConfig] is an empty [JsonObject], so it is not used.
+     */
     override fun create(
         destinationConfig: JsonObject,
     ) {
         if (destinationSdk == null) {
-            val apiKey = destinationConfig["apiKey"]?.jsonPrimitive?.content
-            apiKey?.let {
-                destinationSdk = SampleDestinationSdk.create(it)
-            }
+            val apiKey = "SomeCustomApiKey"
+            destinationSdk = SampleDestinationSdk.create(apiKey)
         }
     }
 

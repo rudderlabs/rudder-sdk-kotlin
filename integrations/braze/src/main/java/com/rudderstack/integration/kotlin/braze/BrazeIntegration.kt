@@ -13,6 +13,7 @@ import com.braze.models.outgoing.AttributionData
 import com.braze.models.outgoing.BrazeProperties
 import com.braze.support.BrazeLogger
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.IntegrationPlugin
+import com.rudderstack.sdk.kotlin.android.plugins.devicemode.StandardIntegration
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleObserver
 import com.rudderstack.sdk.kotlin.android.utils.application
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
@@ -40,7 +41,7 @@ internal const val ALIAS_LABEL = "rudder_id"
  * BrazeIntegration is a plugin that sends events to the Braze SDK.
  */
 @OptIn(InternalRudderApi::class)
-class BrazeIntegration : IntegrationPlugin(), ActivityLifecycleObserver {
+class BrazeIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifecycleObserver {
 
     override val key: String
         get() = "Braze"

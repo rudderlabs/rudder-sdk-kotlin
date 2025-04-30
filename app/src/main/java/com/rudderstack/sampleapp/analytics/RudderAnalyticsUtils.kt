@@ -4,7 +4,7 @@ import android.app.Application
 import com.rudderstack.android.sampleapp.BuildConfig
 import com.rudderstack.sampleapp.analytics.customplugins.AndroidAdvertisingIdPlugin
 import com.rudderstack.sampleapp.analytics.customplugins.AndroidAdvertisingIdPlugin.Companion.isAdvertisingLibraryAvailable
-import com.rudderstack.sampleapp.analytics.customplugins.SampleIntegrationPlugin
+import com.rudderstack.sampleapp.analytics.customplugins.SampleCustomIntegrationPlugin
 import com.rudderstack.sdk.kotlin.android.Analytics
 import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.android.SessionConfiguration
@@ -21,7 +21,7 @@ object RudderAnalyticsUtils {
     lateinit var analytics: Analytics
 
     private val androidAdvertisingIdPlugin = AndroidAdvertisingIdPlugin()
-    private val sampleIntegrationPlugin = SampleIntegrationPlugin()
+    private val sampleIntegrationPlugin = SampleCustomIntegrationPlugin()
 
     /**
      * Initializes the RudderStack Analytics SDK with the application context.

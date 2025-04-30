@@ -7,6 +7,7 @@ import com.facebook.LoggingBehavior
 import com.facebook.appevents.AppEventsConstants
 import com.facebook.appevents.AppEventsLogger
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.IntegrationPlugin
+import com.rudderstack.sdk.kotlin.android.plugins.devicemode.StandardIntegration
 import com.rudderstack.sdk.kotlin.android.utils.application
 import com.rudderstack.sdk.kotlin.android.utils.getInt
 import com.rudderstack.sdk.kotlin.android.utils.getString
@@ -36,7 +37,7 @@ private const val GENDER_KEY = "gender"
 /**
  * The Facebook Integration Plugin. This plugin is used to send events to Facebook.
  */
-class FacebookIntegration : IntegrationPlugin() {
+class FacebookIntegration : StandardIntegration, IntegrationPlugin() {
 
     private var facebookAppEventsLogger: AppEventsLogger? = null
 
