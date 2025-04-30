@@ -187,6 +187,69 @@ open class JavaAnalytics protected constructor(
     fun group(groupId: String, traits: Map<String, Any>, options: RudderOption) {
         analytics.group(groupId = groupId, traits = fromMap(traits), options = options)
     }
+
+    /**
+     * Identifies a user with the specified user ID.
+     *
+     * @param userId The unique identifier for the user.
+     */
+    fun identify(userId: String) {
+        analytics.identify(userId = userId)
+    }
+
+    /**
+     * Identifies a user with the specified traits.
+     *
+     * @param traits A map of properties or characteristics associated with the current user.
+     */
+    fun identify(traits: Map<String, Any>) {
+        analytics.identify(traits = fromMap(traits))
+    }
+
+    /**
+     * The `identify` event allows you to identify a visiting user and associate their actions to that `userId`.
+     * It also lets you record traits about the user like their name, email address, etc.
+     *
+     * @param userId The unique identifier for the user.
+     * @param traits A map of properties or characteristics associated with the user.
+     */
+    fun identify(userId: String, traits: Map<String, Any>) {
+        analytics.identify(userId = userId, traits = fromMap(traits))
+    }
+
+    /**
+     * The `identify` event allows you to identify a visiting user and associate their actions to that `userId`.
+     * It also lets you record traits about the user like their name, email address, etc.
+     *
+     * @param userId The unique identifier for the user.
+     * @param options A [RudderOption] object to specify additional event options.
+     */
+    fun identify(userId: String, options: RudderOption) {
+        analytics.identify(userId = userId, options = options)
+    }
+
+    /**
+     * The `identify` event allows you to identify a visiting user and associate their actions to that `userId`.
+     * It also lets you record traits about the user like their name, email address, etc.
+     *
+     * @param traits A map of properties or characteristics associated with the current user.
+     * @param options A [RudderOption] object to specify additional event options.
+     */
+    fun identify(traits: Map<String, Any>, options: RudderOption) {
+        analytics.identify(traits = fromMap(traits), options = options)
+    }
+
+    /**
+     * The `identify` event allows you to identify a visiting user and associate their actions to that `userId`.
+     * It also lets you record traits about the user like their name, email address, etc.
+     *
+     * @param userId The unique identifier for the user.
+     * @param traits A map of properties or characteristics associated with the user.
+     * @param options A [RudderOption] object to specify additional event options.
+     */
+    fun identify(userId: String, traits: Map<String, Any>, options: RudderOption) {
+        analytics.identify(userId = userId, traits = fromMap(traits), options = options)
+    }
 }
 
 @VisibleForTesting

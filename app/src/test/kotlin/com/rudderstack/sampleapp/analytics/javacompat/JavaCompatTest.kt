@@ -89,4 +89,19 @@ class JavaCompatTest {
         }
         confirmVerified(javaAnalytics)
     }
+
+    @Test
+    fun `when identify event is made, then it should be tracked`() {
+        javaCompat.identify()
+
+        verify(exactly = 1) {
+            javaAnalytics.identify(userId = any<String>())
+            javaAnalytics.identify(traits = any<Map<String, Any>>())
+            javaAnalytics.identify(userId = any<String>(), traits = any<Map<String, Any>>())
+            javaAnalytics.identify(userId = any<String>(), options = any<RudderOption>())
+            javaAnalytics.identify(traits = any<Map<String, Any>>(), options = any<RudderOption>())
+            javaAnalytics.identify(userId = any<String>(), traits = any<Map<String, Any>>(), options = any<RudderOption>())
+        }
+        confirmVerified(javaAnalytics)
+    }
 }

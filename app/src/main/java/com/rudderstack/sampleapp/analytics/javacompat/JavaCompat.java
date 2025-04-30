@@ -70,10 +70,9 @@ public class JavaCompat {
     }
 
     /**
-     * Track an event using the provided JavaAnalytics instance.
+     * Make a track event.
      * <p>
-     * This method demonstrates how to track events with different parameters.
-     * Code:
+     * Sample code:
      *
      * <pre>{@code
      * JavaCompat.track();
@@ -91,10 +90,9 @@ public class JavaCompat {
     }
 
     /**
-     * Identify a user using the provided JavaAnalytics instance.
+     * Make a screen event.
      * <p>
-     * This method demonstrates how to identify users with different parameters.
-     * Code:
+     * Sample code:
      *
      * <pre>{@code
      * JavaCompat.screen();
@@ -116,6 +114,15 @@ public class JavaCompat {
         analytics.screen(name, category, properties, option);
     }
 
+    /**
+     * Make a group event.
+     * <p>
+     * Sample code:
+     *
+     * <pre>{@code
+     * JavaCompat.group();
+     * }</pre>
+     */
     public void group() {
         String groupId = "Sample group ID";
         Map<String, Object> traits = getMap();
@@ -125,6 +132,28 @@ public class JavaCompat {
         analytics.group(groupId, traits);
         analytics.group(groupId, option);
         analytics.group(groupId, traits, option);
+    }
+
+    /**
+     * Make an identify event.
+     * <p>
+     * Sample code:
+     *
+     * <pre>{@code
+     * JavaCompat.identify();
+     * }</pre>
+     */
+    public void identify() {
+        String userId = "Sample user ID";
+        Map<String, Object> traits = getMap();
+        RudderOption option = getRudderOption();
+
+        analytics.identify(userId);
+        analytics.identify(traits);
+        analytics.identify(userId, traits);
+        analytics.identify(userId, option);
+        analytics.identify(traits, option);
+        analytics.identify(userId, traits, option);
     }
 
     @NonNull
