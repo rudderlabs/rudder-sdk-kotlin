@@ -156,6 +156,26 @@ public class JavaCompat {
         analytics.identify(userId, traits, option);
     }
 
+    /**
+     * Make an alias event.
+     * <p>
+     * Sample code:
+     *
+     * <pre>{@code
+     * JavaCompat.alias();
+     * }</pre>
+     */
+    public void alias() {
+        String newId = "Sample alias";
+        String previousId = "Sample previous ID";
+        RudderOption option = getRudderOption();
+
+        analytics.alias(newId);
+        analytics.alias(newId, option);
+        analytics.alias(newId, previousId);
+        analytics.alias(newId, previousId, option);
+    }
+
     @NonNull
     private static Map<String, Object> getMap() {
         Map<String, Object> value = new HashMap<>();

@@ -29,7 +29,7 @@ open class JavaAnalytics protected constructor(
      *
      * @param name The name of the event to track.
      */
-    fun track(name: String,) {
+    fun track(name: String) {
         analytics.track(name = name)
     }
 
@@ -249,6 +249,46 @@ open class JavaAnalytics protected constructor(
      */
     fun identify(userId: String, traits: Map<String, Any>, options: RudderOption) {
         analytics.identify(userId = userId, traits = fromMap(traits), options = options)
+    }
+
+    /**
+     * The `alias` event allows merging multiple identities of a known user into a single unified profile.
+     *
+     * @param newId The new identifier to be associated with the user, representing the updated or primary user ID.
+     */
+    fun alias(newId: String) {
+        analytics.alias(newId = newId)
+    }
+
+    /**
+     * The `alias` event allows merging multiple identities of a known user into a single unified profile.
+     *
+     * @param newId The new identifier to be associated with the user, representing the updated or primary user ID.
+     * @param options A [RudderOption] object to specify additional event options.
+     */
+    fun alias(newId: String, options: RudderOption) {
+        analytics.alias(newId = newId, options = options)
+    }
+
+    /**
+     * The `alias` event allows merging multiple identities of a known user into a single unified profile.
+     *
+     * @param newId The new identifier to be associated with the user, representing the updated or primary user ID.
+     * @param previousId The previous ID tied to the user, which may be a user-provided value or fall back on prior identifiers.
+     */
+    fun alias(newId: String, previousId: String) {
+        analytics.alias(newId = newId, previousId = previousId)
+    }
+
+    /**
+     * The `alias` event allows merging multiple identities of a known user into a single unified profile.
+     *
+     * @param newId The new identifier to be associated with the user, representing the updated or primary user ID.
+     * @param previousId The previous ID tied to the user, which may be a user-provided value or fall back on prior identifiers.
+     * @param options A [RudderOption] object to specify additional event options.
+     */
+    fun alias(newId: String, previousId: String, options: RudderOption) {
+        analytics.alias(newId = newId, previousId = previousId, options = options)
     }
 }
 

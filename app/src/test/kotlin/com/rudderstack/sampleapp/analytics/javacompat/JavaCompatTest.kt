@@ -104,4 +104,17 @@ class JavaCompatTest {
         }
         confirmVerified(javaAnalytics)
     }
+
+    @Test
+    fun `when alias event is made, then it should be tracked`() {
+        javaCompat.alias()
+
+        verify(exactly = 1) {
+            javaAnalytics.alias(newId = any<String>())
+            javaAnalytics.alias(newId = any<String>(), options = any<RudderOption>())
+            javaAnalytics.alias(newId = any<String>(), previousId = any<String>())
+            javaAnalytics.alias(newId = any<String>(), previousId = any<String>(), options = any<RudderOption>())
+        }
+        confirmVerified(javaAnalytics)
+    }
 }
