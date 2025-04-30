@@ -42,6 +42,16 @@ open class JavaAnalytics protected constructor(
     }
 
     /**
+     * Tracks an event with the specified name and options.
+     *
+     * @param name The name of the event to track.
+     * @param options Additional options for tracking the event.
+     */
+    fun track(name: String, options: RudderOption) {
+        analytics.track(name = name, options = options)
+    }
+
+    /**
      * Tracks an event with the specified name, properties, and options.
      *
      * @param name The name of the event to track.
@@ -50,15 +60,5 @@ open class JavaAnalytics protected constructor(
      */
     fun track(name: String, properties: Map<String, Any>, options: RudderOption) {
         analytics.track(name = name, properties = fromMap(properties), options = options)
-    }
-
-    /**
-     * Tracks an event with the specified name and options.
-     *
-     * @param name The name of the event to track.
-     * @param options Additional options for tracking the event.
-     */
-    fun track(name: String, options: RudderOption) {
-        analytics.track(name = name, options = options)
     }
 }
