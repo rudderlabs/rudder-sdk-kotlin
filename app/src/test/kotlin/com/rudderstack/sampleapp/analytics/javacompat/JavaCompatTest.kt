@@ -8,6 +8,7 @@ import io.mockk.confirmVerified
 import io.mockk.impl.annotations.MockK
 import io.mockk.spyk
 import io.mockk.verify
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -17,20 +18,29 @@ private const val DATA_PLANE_URL = "https://test.rudderstack.com"
 class JavaCompatTest {
 
     @MockK
-    private lateinit var application: Application
+    private lateinit var mockApplication: Application
 
     private lateinit var javaAnalytics: JavaAnalytics
+    private lateinit var javaCompat: JavaCompat
 
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this, relaxed = true)
 
-        javaAnalytics = spyk(JavaCompat.initAnalytics(application, WRITE_KEY, DATA_PLANE_URL))
+        javaAnalytics = spyk(JavaCompat.analyticsFactory(mockApplication, WRITE_KEY, DATA_PLANE_URL))
+        javaCompat = JavaCompat(javaAnalytics)
+    }
+
+    @Test
+    fun `when analytics is initialized, then it should be created with the correct parameters`() {
+        javaCompat = JavaCompat(mockApplication, WRITE_KEY, DATA_PLANE_URL)
+
+        assertNotNull(javaCompat)
     }
 
     @Test
     fun `when track event is made, then it should be tracked`() {
-        JavaCompat.track(javaAnalytics)
+        javaCompat.track()
 
         verify(exactly = 1) {
             javaAnalytics.track(name = any<String>())
@@ -43,17 +53,26 @@ class JavaCompatTest {
 
     @Test
     fun `when screen event is made, then it should be tracked`() {
-        JavaCompat.screen(javaAnalytics)
+        javaCompat.screen()
 
         verify(exactly = 1) {
             javaAnalytics.screen(screenName = any<String>())
             javaAnalytics.screen(screenName = any<String>(), category = any<String>())
             javaAnalytics.screen(screenName = any<String>(), properties = any<Map<String, Any>>())
             javaAnalytics.screen(screenName = any<String>(), options = any<RudderOption>())
-            javaAnalytics.screen(screenName = any<String>(), properties = any<Map<String, Any>>(), options = any<RudderOption>())
+            javaAnalytics.screen(
+                screenName = any<String>(),
+                properties = any<Map<String, Any>>(),
+                options = any<RudderOption>()
+            )
             javaAnalytics.screen(screenName = any<String>(), category = any<String>(), properties = any<Map<String, Any>>())
             javaAnalytics.screen(screenName = any<String>(), category = any<String>(), options = any<RudderOption>())
-            javaAnalytics.screen(screenName = any<String>(), category = any<String>(), properties = any<Map<String, Any>>(), options = any<RudderOption>())
+            javaAnalytics.screen(
+                screenName = any<String>(),
+                category = any<String>(),
+                properties = any<Map<String, Any>>(),
+                options = any<RudderOption>()
+            )
         }
         confirmVerified(javaAnalytics)
     }

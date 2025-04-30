@@ -5,6 +5,7 @@ import static com.rudderstack.sdk.kotlin.core.javacompat.JsonInteropHelper.fromM
 import android.app.Application;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.VisibleForTesting;
 
 import com.rudderstack.sdk.kotlin.android.Configuration;
 import com.rudderstack.sdk.kotlin.android.SessionConfiguration;
@@ -25,7 +26,16 @@ import kotlinx.serialization.json.JsonObject;
 
 public class JavaCompat {
 
-    private JavaCompat() {}
+    private final JavaAnalytics analytics;
+
+    public JavaCompat(@NonNull Application application, @NonNull String writeKey, @NonNull String dataPlaneUrl) {
+        analytics = analyticsFactory(application, writeKey, dataPlaneUrl);
+    }
+
+    @VisibleForTesting
+    public JavaCompat(JavaAnalytics analytics) {
+        this.analytics = analytics;
+    }
 
     /**
      * Initialize the JavaAnalytics instance with the given parameters.
@@ -42,8 +52,9 @@ public class JavaCompat {
      * @param dataPlaneUrl The data plane URL for the analytics service.
      * @return A JavaAnalytics instance configured with the provided parameters.
      */
+    @VisibleForTesting
     @NonNull
-    public static JavaAnalytics initAnalytics(@NonNull Application application, @NonNull String writeKey, @NonNull String dataPlaneUrl) {
+    public static JavaAnalytics analyticsFactory(@NonNull Application application, @NonNull String writeKey, @NonNull String dataPlaneUrl) {
         SessionConfiguration sessionConfiguration = new SessionConfigurationBuilder()
                 .withAutomaticSessionTracking(true)
                 .withSessionTimeoutInMillis(30)
@@ -55,9 +66,7 @@ public class JavaCompat {
                 .withGzipEnabled(true)
                 .build();
 
-        JavaAnalytics javaAnalytics = new JavaAnalytics(configuration);
-        JavaCompat.track(javaAnalytics);
-        return javaAnalytics;
+        return new JavaAnalytics(configuration);
     }
 
     /**
@@ -67,12 +76,10 @@ public class JavaCompat {
      * Code:
      *
      * <pre>{@code
-     * JavaCompat.track(analytics);
+     * JavaCompat.track();
      * }</pre>
-     *
-     * @param analytics The JavaAnalytics instance to use for tracking events.
      */
-    public static void track(@NonNull JavaAnalytics analytics) {
+    public void track() {
         String name = "Sample track event";
         Map<String, Object> properties = getMap();
         RudderOption option = getRudderOption();
@@ -90,12 +97,10 @@ public class JavaCompat {
      * Code:
      *
      * <pre>{@code
-     * JavaCompat.screen(analytics);
+     * JavaCompat.screen();
      * }</pre>
-     *
-     * @param analytics The JavaAnalytics instance to use for identifying users.
      */
-    public static void screen(@NonNull JavaAnalytics analytics) {
+    public void screen() {
         String name = "Sample screen event";
         String category = "Sample screen category";
         Map<String, Object> properties = getMap();
