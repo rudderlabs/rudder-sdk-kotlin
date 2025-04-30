@@ -116,6 +116,17 @@ public class JavaCompat {
         analytics.screen(name, category, properties, option);
     }
 
+    public void group() {
+        String groupId = "Sample group ID";
+        Map<String, Object> traits = getMap();
+        RudderOption option = getRudderOption();
+
+        analytics.group(groupId);
+        analytics.group(groupId, traits);
+        analytics.group(groupId, option);
+        analytics.group(groupId, traits, option);
+    }
+
     @NonNull
     private static Map<String, Object> getMap() {
         Map<String, Object> value = new HashMap<>();

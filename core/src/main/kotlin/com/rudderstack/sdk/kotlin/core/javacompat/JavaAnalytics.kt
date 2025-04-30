@@ -12,6 +12,7 @@ import org.jetbrains.annotations.VisibleForTesting
  * This class provides method overloads to ensure Java compatibility with the Kotlin Analytics API.
  * It delegates all operations to the underlying Analytics implementation.
  */
+@Suppress("TooManyFunctions")
 open class JavaAnalytics protected constructor(
     private val analytics: Analytics
 ) {
@@ -46,7 +47,7 @@ open class JavaAnalytics protected constructor(
      * Tracks an event with the specified name and options.
      *
      * @param name The name of the event to track.
-     * @param options Additional options for tracking the event.
+     * @param options A [RudderOption] object to specify additional event options.
      */
     fun track(name: String, options: RudderOption) {
         analytics.track(name = name, options = options)
@@ -57,7 +58,7 @@ open class JavaAnalytics protected constructor(
      *
      * @param name The name of the event to track.
      * @param properties A map of properties associated with the event.
-     * @param options Additional options for tracking the event.
+     * @param options A [RudderOption] object to specify additional event options.
      */
     fun track(name: String, properties: Map<String, Any>, options: RudderOption) {
         analytics.track(name = name, properties = fromMap(properties), options = options)
@@ -96,7 +97,7 @@ open class JavaAnalytics protected constructor(
      * Tracks a screen view event with the specified screen name and options.
      *
      * @param screenName The name of the screen being viewed.
-     * @param options Additional options for tracking the screen view event.
+     * @param options A [RudderOption] object to specify additional event options.
      */
     fun screen(screenName: String, options: RudderOption) {
         analytics.screen(screenName = screenName, options = options)
@@ -118,7 +119,7 @@ open class JavaAnalytics protected constructor(
      *
      * @param screenName The name of the screen being viewed.
      * @param category The category of the screen.
-     * @param options Additional options for tracking the screen view event.
+     * @param options A [RudderOption] object to specify additional event options.
      */
     fun screen(screenName: String, category: String, options: RudderOption) {
         analytics.screen(screenName = screenName, category = category, options = options)
@@ -129,7 +130,7 @@ open class JavaAnalytics protected constructor(
      *
      * @param screenName The name of the screen being viewed.
      * @param properties A map of additional properties associated with the screen view.
-     * @param options Additional options for tracking the screen view event.
+     * @param options A [RudderOption] object to specify additional event options.
      */
     fun screen(screenName: String, properties: Map<String, Any>, options: RudderOption) {
         analytics.screen(screenName = screenName, properties = fromMap(properties), options = options)
@@ -141,10 +142,50 @@ open class JavaAnalytics protected constructor(
      * @param screenName The name of the screen being viewed.
      * @param category The category of the screen.
      * @param properties A map of additional properties associated with the screen view.
-     * @param options Additional options for tracking the screen view event.
+     * @param options A [RudderOption] object to specify additional event options.
      */
     fun screen(screenName: String, category: String, properties: Map<String, Any>, options: RudderOption) {
         analytics.screen(screenName = screenName, category = category, properties = fromMap(properties), options = options)
+    }
+
+    /**
+     * Add the user to a group.
+     *
+     * @param groupId The unique identifier for the group.
+     */
+    fun group(groupId: String) {
+        analytics.group(groupId = groupId)
+    }
+
+    /**
+     * Add the user to a group.
+     *
+     * @param groupId The unique identifier for the group.
+     * @param traits A [RudderOption] object to specify additional event options.
+     */
+    fun group(groupId: String, traits: Map<String, Any>) {
+        analytics.group(groupId = groupId, traits = fromMap(traits))
+    }
+
+    /**
+     * Add the user to a group.
+     *
+     * @param groupId The unique identifier for the group.
+     * @param options A [RudderOption] object to specify additional event options.
+     */
+    fun group(groupId: String, options: RudderOption) {
+        analytics.group(groupId = groupId, options = options)
+    }
+
+    /**
+     * Add the user to a group.
+     *
+     * @param groupId The unique identifier for the group.
+     * @param traits A map containing additional information about the group.
+     * @param options A [RudderOption] object to specify additional event options.
+     */
+    fun group(groupId: String, traits: Map<String, Any>, options: RudderOption) {
+        analytics.group(groupId = groupId, traits = fromMap(traits), options = options)
     }
 }
 

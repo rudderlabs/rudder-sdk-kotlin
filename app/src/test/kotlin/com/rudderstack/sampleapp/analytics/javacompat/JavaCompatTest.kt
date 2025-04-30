@@ -76,4 +76,17 @@ class JavaCompatTest {
         }
         confirmVerified(javaAnalytics)
     }
+
+    @Test
+    fun `when group event is made, then it should be tracked`() {
+        javaCompat.group()
+
+        verify(exactly = 1) {
+            javaAnalytics.group(groupId = any<String>())
+            javaAnalytics.group(groupId = any<String>(), traits = any<Map<String, Any>>())
+            javaAnalytics.group(groupId = any<String>(), options = any<RudderOption>())
+            javaAnalytics.group(groupId = any<String>(), traits = any<Map<String, Any>>(), options = any<RudderOption>())
+        }
+        confirmVerified(javaAnalytics)
+    }
 }
