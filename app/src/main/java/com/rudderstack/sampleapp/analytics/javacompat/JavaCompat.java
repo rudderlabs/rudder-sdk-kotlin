@@ -1,7 +1,5 @@
 package com.rudderstack.sampleapp.analytics.javacompat;
 
-import static com.rudderstack.sdk.kotlin.core.javacompat.JsonInteropHelper.fromMap;
-
 import android.app.Application;
 
 import androidx.annotation.NonNull;
@@ -21,8 +19,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
-import kotlinx.serialization.json.JsonObject;
 
 public class JavaCompat {
 
@@ -213,11 +209,5 @@ public class JavaCompat {
         ExternalId externalId1 = new ExternalId("externalId1", "value1");
         ExternalId externalId2 = new ExternalId("externalId2", "value2");
         return Arrays.asList(externalId1, externalId2);
-    }
-
-    @NonNull
-    private static JsonObject getJsonObject() {
-        Map<String, Object> value = getMap();
-        return fromMap(value);
     }
 }

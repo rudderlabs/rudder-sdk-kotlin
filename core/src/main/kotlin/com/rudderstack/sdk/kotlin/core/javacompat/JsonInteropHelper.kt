@@ -13,7 +13,7 @@ import kotlin.jvm.Throws
  * Provides utility functions to convert between standard Java/Kotlin data structures and
  * kotlinx.serialization's JSON types.
  */
-object JsonInteropHelper {
+internal object JsonInteropHelper {
 
     /**
      * Converts a Map with String keys and Any values to a JsonObject.
@@ -26,7 +26,7 @@ object JsonInteropHelper {
      */
     @JvmStatic
     @Throws(IllegalArgumentException::class)
-    fun fromMap(map: Map<String, Any>): JsonObject {
+    internal fun fromMap(map: Map<String, Any>): JsonObject {
         val content = map.mapValues { (_, value) -> toJsonElement(value) }
         return JsonObject(content)
     }
