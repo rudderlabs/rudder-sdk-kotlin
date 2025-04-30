@@ -25,8 +25,7 @@ import kotlinx.serialization.json.JsonObject;
 
 public class JavaCompat {
 
-    private JavaCompat() {
-    }
+    private JavaCompat() {}
 
     /**
      * Initialize the JavaAnalytics instance with the given parameters.
@@ -82,6 +81,34 @@ public class JavaCompat {
         analytics.track(name, properties);
         analytics.track(name, option);
         analytics.track(name, properties, option);
+    }
+
+    /**
+     * Identify a user using the provided JavaAnalytics instance.
+     * <p>
+     * This method demonstrates how to identify users with different parameters.
+     * Code:
+     *
+     * <pre>{@code
+     * JavaCompat.screen(analytics);
+     * }</pre>
+     *
+     * @param analytics The JavaAnalytics instance to use for identifying users.
+     */
+    public static void screen(@NonNull JavaAnalytics analytics) {
+        String name = "Sample screen event";
+        String category = "Sample screen category";
+        Map<String, Object> properties = getMap();
+        RudderOption option = getRudderOption();
+
+        analytics.screen(name);
+        analytics.screen(name, category);
+        analytics.screen(name, properties);
+        analytics.screen(name, option);
+        analytics.screen(name, properties, option);
+        analytics.screen(name, category, properties);
+        analytics.screen(name, category, option);
+        analytics.screen(name, category, properties, option);
     }
 
     @NonNull
