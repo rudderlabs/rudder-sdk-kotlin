@@ -13,6 +13,7 @@ import com.rudderstack.sdk.kotlin.android.javacompat.SessionConfigurationBuilder
 import com.rudderstack.sdk.kotlin.core.internals.models.ExternalId;
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption;
 import com.rudderstack.sdk.kotlin.core.javacompat.JavaAnalytics;
+import com.rudderstack.sdk.kotlin.core.javacompat.RudderOptionBuilder;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -74,7 +75,7 @@ public class JavaCompat {
      */
     public static void track(@NonNull JavaAnalytics analytics) {
         String name = "Sample track event";
-        JsonObject properties = getJsonObject();
+        Map<String, Object> properties = getMap();
         RudderOption option = getRudderOption();
 
         analytics.track(name);
@@ -84,7 +85,7 @@ public class JavaCompat {
     }
 
     @NonNull
-    private static JsonObject getJsonObject() {
+    private static Map<String, Object> getMap() {
         Map<String, Object> value = new HashMap<>();
         value.put("key-1", "value-1");
         value.put("age", 30);
@@ -92,23 +93,27 @@ public class JavaCompat {
         value.put("scores", Arrays.asList(10, 20, 30));
         value.put("details", Map.of("city", "Delhi", "zip", 12345));
 
-        return fromMap(value);
+        return value;
     }
 
     @NonNull
     private static RudderOption getRudderOption() {
-        JsonObject integrations = getIntegrations();
+        Map<String, Object> integrations = getIntegrations();
         List<ExternalId> externalIds = getExternalIds();
-        JsonObject customContext = getJsonObject();
-        return new RudderOption(integrations, externalIds, customContext);
+        Map<String, Object> customContext = getMap();
+        return new RudderOptionBuilder()
+                .setIntegrations(integrations)
+                .setExternalId(externalIds)
+                .setCustomContext(customContext)
+                .build();
     }
 
     @NonNull
-    private static JsonObject getIntegrations() {
+    private static Map<String, Object> getIntegrations() {
         Map<String, Object> integrations = new LinkedHashMap<>();
         integrations.put("All", true);
         integrations.put("Google Analytics", false);
-        return fromMap(integrations);
+        return integrations;
     }
 
     @NonNull
@@ -116,5 +121,11 @@ public class JavaCompat {
         ExternalId externalId1 = new ExternalId("externalId1", "value1");
         ExternalId externalId2 = new ExternalId("externalId2", "value2");
         return Arrays.asList(externalId1, externalId2);
+    }
+
+    @NonNull
+    private static JsonObject getJsonObject() {
+        Map<String, Object> value = getMap();
+        return fromMap(value);
     }
 }
