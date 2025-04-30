@@ -20,10 +20,26 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * This class provides a compatibility layer for Java analytics events.
+ * <p>
+ *
+ * Sample code:
+ * <pre>{@code
+ * JavaCompat javaCompat = new JavaCompat(application, writeKey, dataPlaneUrl);
+ * }</pre>
+ */
 public class JavaCompat {
 
     private final JavaAnalytics analytics;
 
+    /**
+     * Constructor to initialize the JavaCompat instance with the given parameters.
+     *
+     * @param application  The application context.
+     * @param writeKey     The write key for the analytics service.
+     * @param dataPlaneUrl The data plane URL for the analytics service.
+     */
     public JavaCompat(@NonNull Application application, @NonNull String writeKey, @NonNull String dataPlaneUrl) {
         analytics = analyticsFactory(application, writeKey, dataPlaneUrl);
     }
@@ -33,21 +49,6 @@ public class JavaCompat {
         this.analytics = analytics;
     }
 
-    /**
-     * Initialize the JavaAnalytics instance with the given parameters.
-     * <p>
-     * This method sets up the analytics instance with the provided write key and data plane URL.
-     * Code:
-     *
-     * <pre>{@code
-     * JavaAnalytics analytics = JavaCompat.initAnalytics(application, writeKey, dataPlaneUrl);
-     * }</pre>
-     *
-     * @param application  The application context.
-     * @param writeKey     The write key for the analytics service.
-     * @param dataPlaneUrl The data plane URL for the analytics service.
-     * @return A JavaAnalytics instance configured with the provided parameters.
-     */
     @VisibleForTesting
     @NonNull
     public static JavaAnalytics analyticsFactory(@NonNull Application application, @NonNull String writeKey, @NonNull String dataPlaneUrl) {
@@ -71,7 +72,7 @@ public class JavaCompat {
      * Sample code:
      *
      * <pre>{@code
-     * JavaCompat.track();
+     * javaCompat.track();
      * }</pre>
      */
     public void track() {
@@ -91,7 +92,7 @@ public class JavaCompat {
      * Sample code:
      *
      * <pre>{@code
-     * JavaCompat.screen();
+     * javaCompat.screen();
      * }</pre>
      */
     public void screen() {
@@ -116,7 +117,7 @@ public class JavaCompat {
      * Sample code:
      *
      * <pre>{@code
-     * JavaCompat.group();
+     * javaCompat.group();
      * }</pre>
      */
     public void group() {
@@ -136,7 +137,7 @@ public class JavaCompat {
      * Sample code:
      *
      * <pre>{@code
-     * JavaCompat.identify();
+     * javaCompat.identify();
      * }</pre>
      */
     public void identify() {
@@ -158,7 +159,7 @@ public class JavaCompat {
      * Sample code:
      *
      * <pre>{@code
-     * JavaCompat.alias();
+     * javaCompat.alias();
      * }</pre>
      */
     public void alias() {
