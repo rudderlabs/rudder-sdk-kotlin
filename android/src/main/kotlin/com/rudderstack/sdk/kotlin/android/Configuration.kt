@@ -56,10 +56,10 @@ internal const val DEFAULT_SESSION_TIMEOUT_IN_MILLIS = 300_000L
  */
 data class Configuration @JvmOverloads constructor(
     val application: Application,
-    val trackApplicationLifecycleEvents: Boolean = true,
-    val trackDeepLinks: Boolean = true,
-    val trackActivities: Boolean = false,
-    val collectDeviceId: Boolean = true,
+    val trackApplicationLifecycleEvents: Boolean = DEFAULT_TRACK_APPLICATION_LIFECYCLE_EVENTS,
+    val trackDeepLinks: Boolean = DEFAULT_TRACK_DEEP_LINKS,
+    val trackActivities: Boolean = DEFAULT_TRACK_ACTIVITIES,
+    val collectDeviceId: Boolean = DEFAULT_COLLECT_DEVICE_ID,
     val sessionConfiguration: SessionConfiguration = SessionConfiguration(),
     override val writeKey: String,
     override val dataPlaneUrl: String,
@@ -72,7 +72,16 @@ data class Configuration @JvmOverloads constructor(
     dataPlaneUrl = dataPlaneUrl,
     logLevel = logLevel,
     flushPolicies = flushPolicies,
-)
+) {
+
+    companion object {
+
+        internal const val DEFAULT_TRACK_APPLICATION_LIFECYCLE_EVENTS = true
+        internal const val DEFAULT_TRACK_DEEP_LINKS = true
+        internal const val DEFAULT_TRACK_ACTIVITIES = false
+        internal const val DEFAULT_COLLECT_DEVICE_ID = true
+    }
+}
 
 /**
  * Data class for configuring session tracking in analytics.
@@ -88,6 +97,12 @@ data class Configuration @JvmOverloads constructor(
  *
  */
 data class SessionConfiguration(
-    val automaticSessionTracking: Boolean = true,
+    val automaticSessionTracking: Boolean = DEFAULT_AUTOMATIC_SESSION_TRACKING,
     val sessionTimeoutInMillis: Long = DEFAULT_SESSION_TIMEOUT_IN_MILLIS,
-)
+) {
+
+    companion object {
+
+        internal const val DEFAULT_AUTOMATIC_SESSION_TRACKING = true
+    }
+}
