@@ -99,19 +99,19 @@ public class JavaCompat {
      * }</pre>
      */
     public void screen() {
-        String name = "Sample screen event";
+        String screenName = "Sample screen event";
         String category = "Sample screen category";
         Map<String, Object> properties = getMap();
         RudderOption option = getRudderOption();
 
-        analytics.screen(name);
-        analytics.screen(name, category);
-        analytics.screen(name, properties);
-        analytics.screen(name, option);
-        analytics.screen(name, properties, option);
-        analytics.screen(name, category, properties);
-        analytics.screen(name, category, option);
-        analytics.screen(name, category, properties, option);
+        analytics.screen(screenName);
+        analytics.screen(screenName, category);
+        analytics.screen(screenName, properties);
+        analytics.screen(screenName, option);
+        analytics.screen(screenName, properties, option);
+        analytics.screen(screenName, category, properties);
+        analytics.screen(screenName, category, option);
+        analytics.screen(screenName, category, properties, option);
     }
 
     /**
