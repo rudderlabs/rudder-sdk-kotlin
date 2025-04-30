@@ -1,4 +1,4 @@
-package com.rudderstack.sampleapp.analytics.customplugins;
+package com.rudderstack.sampleapp.analytics.javacompat;
 
 import static com.rudderstack.sdk.kotlin.core.javacompat.JsonInteropHelper.fromMap;
 
