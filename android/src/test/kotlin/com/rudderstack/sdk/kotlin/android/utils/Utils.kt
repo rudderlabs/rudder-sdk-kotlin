@@ -1,6 +1,9 @@
 package com.rudderstack.sdk.kotlin.android.utils
 
 import android.net.Uri
+import com.rudderstack.sdk.kotlin.android.DEFAULT_SESSION_TIMEOUT_IN_MILLIS
+import com.rudderstack.sdk.kotlin.android.SessionConfiguration
+import com.rudderstack.sdk.kotlin.android.SessionConfiguration.Companion.DEFAULT_AUTOMATIC_SESSION_TRACKING
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
@@ -86,4 +89,14 @@ fun provideSpyBlock(): Block {
 fun Any.readFileAsString(fileName: String): String {
     val inputStream = this::class.java.classLoader?.getResourceAsStream(fileName)
     return inputStream?.bufferedReader()?.use(BufferedReader::readText) ?: ""
+}
+
+fun provideSessionConfiguration(
+    automaticSessionTracking: Boolean = DEFAULT_AUTOMATIC_SESSION_TRACKING,
+    sessionTimeoutInMillis: Long = DEFAULT_SESSION_TIMEOUT_IN_MILLIS,
+): SessionConfiguration {
+    return SessionConfiguration(
+        automaticSessionTracking = automaticSessionTracking,
+        sessionTimeoutInMillis = sessionTimeoutInMillis
+    )
 }

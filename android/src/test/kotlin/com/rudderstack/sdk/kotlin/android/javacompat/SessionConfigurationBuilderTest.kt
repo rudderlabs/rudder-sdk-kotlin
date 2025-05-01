@@ -1,8 +1,6 @@
 package com.rudderstack.sdk.kotlin.android.javacompat
 
-import com.rudderstack.sdk.kotlin.android.DEFAULT_SESSION_TIMEOUT_IN_MILLIS
-import com.rudderstack.sdk.kotlin.android.SessionConfiguration
-import com.rudderstack.sdk.kotlin.android.SessionConfiguration.Companion.DEFAULT_AUTOMATIC_SESSION_TRACKING
+import com.rudderstack.sdk.kotlin.android.utils.provideSessionConfiguration
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.BeforeEach
@@ -52,14 +50,4 @@ class SessionConfigurationBuilderTest {
             provideSessionConfiguration(sessionTimeoutInMillis = CUSTOM_TIME_IN_MILLIS, automaticSessionTracking = false)
         assertEquals(expected, config)
     }
-}
-
-private fun provideSessionConfiguration(
-    automaticSessionTracking: Boolean = DEFAULT_AUTOMATIC_SESSION_TRACKING,
-    sessionTimeoutInMillis: Long = DEFAULT_SESSION_TIMEOUT_IN_MILLIS,
-): SessionConfiguration {
-    return SessionConfiguration(
-        automaticSessionTracking = automaticSessionTracking,
-        sessionTimeoutInMillis = sessionTimeoutInMillis
-    )
 }
