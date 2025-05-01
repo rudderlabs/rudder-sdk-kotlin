@@ -1,11 +1,17 @@
 package com.rudderstack.sampleapp.analytics.javacompat
 
+import android.app.Activity
+import androidx.navigation.NavController
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
 import com.rudderstack.sdk.kotlin.android.javacompat.JavaAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import io.mockk.MockKAnnotations
 import io.mockk.confirmVerified
+import io.mockk.every
 import io.mockk.impl.annotations.MockK
+import io.mockk.mockk
 import io.mockk.verify
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -22,6 +28,93 @@ class JavaCompatTest {
 
         javaCompat = JavaCompat(mockJavaAnalytics)
     }
+
+    // Android specific tests
+
+    @Test
+    fun `when startSession is called, then it should be tracked`() {
+        javaCompat.startSession()
+        javaCompat.startSession(1234567890L)
+
+        verify(exactly = 1) {
+            mockJavaAnalytics.startSession()
+            mockJavaAnalytics.startSession(sessionId = any<Long>())
+        }
+        confirmVerified(mockJavaAnalytics)
+    }
+
+    @Test
+    fun `when endSession is called, then it should be tracked`() {
+        javaCompat.endSession()
+
+        verify(exactly = 1) {
+            mockJavaAnalytics.endSession()
+        }
+        confirmVerified(mockJavaAnalytics)
+    }
+
+    @Test
+    fun `when reset is called, then it should be tracked`() {
+        javaCompat.reset()
+
+        verify(exactly = 1) {
+            mockJavaAnalytics.reset()
+        }
+        confirmVerified(mockJavaAnalytics)
+    }
+
+    @Test
+    fun `when flush is called, then it should be tracked`() {
+        javaCompat.flush()
+
+        verify(exactly = 1) {
+            mockJavaAnalytics.flush()
+        }
+        confirmVerified(mockJavaAnalytics)
+    }
+
+    @Test
+    fun `when plugin is added, then it should be tracked`() {
+        javaCompat.add()
+
+        verify(exactly = 1) {
+            mockJavaAnalytics.add(plugin = any<Plugin>())
+        }
+        confirmVerified(mockJavaAnalytics)
+    }
+
+    @Test
+    fun `when plugin is removed, then it should be tracked`() {
+        javaCompat.remove()
+
+        verify(exactly = 1) {
+            mockJavaAnalytics.add(plugin = any<Plugin>())
+            mockJavaAnalytics.remove(plugin = any<Plugin>())
+        }
+        confirmVerified(mockJavaAnalytics)
+    }
+
+    @Test
+    fun `when setNavigationDestinationsTracking is called, then it should be tracked`() {
+        val mockNavController = mockk<NavController>(relaxed = true)
+        val mockActivity = mockk<Activity>(relaxed = true)
+        javaCompat.setNavigationDestinationsTracking(mockNavController, mockActivity)
+
+        verify(exactly = 1) {
+            mockJavaAnalytics.setNavigationDestinationsTracking(navController = mockNavController, activity = mockActivity)
+        }
+        confirmVerified(mockJavaAnalytics)
+    }
+
+    @Test
+    fun `when sessionId is fetched, then it should be returned`() {
+        val sessionId = 1234567890L
+        every { mockJavaAnalytics.sessionId } returns sessionId
+
+        assertEquals(sessionId, javaCompat.sessionId)
+    }
+
+    // Core specific tests
 
     @Test
     fun `when track event is made, then it should be tracked`() {
@@ -99,6 +192,16 @@ class JavaCompatTest {
             mockJavaAnalytics.alias(newId = any<String>(), options = any<RudderOption>())
             mockJavaAnalytics.alias(newId = any<String>(), previousId = any<String>())
             mockJavaAnalytics.alias(newId = any<String>(), previousId = any<String>(), options = any<RudderOption>())
+        }
+        confirmVerified(mockJavaAnalytics)
+    }
+
+    @Test
+    fun `when shutdown is called, then it should be tracked`() {
+        javaCompat.shutdown()
+
+        verify(exactly = 1) {
+            mockJavaAnalytics.shutdown()
         }
         confirmVerified(mockJavaAnalytics)
     }

@@ -290,6 +290,13 @@ open class JavaAnalytics protected constructor(
     fun alias(newId: String, previousId: String, options: RudderOption) {
         analytics.alias(newId = newId, previousId = previousId, options = options)
     }
+
+    /**
+     * Shuts down the analytics instance, releasing any resources and stopping event processing.
+     */
+    fun shutdown() {
+        analytics.shutdown()
+    }
 }
 
 @VisibleForTesting

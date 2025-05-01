@@ -1,17 +1,21 @@
 package com.rudderstack.sampleapp.analytics.javacompat;
 
+import android.app.Activity;
 import android.app.Application;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
+import androidx.navigation.NavController;
 
 import com.rudderstack.sdk.kotlin.android.Configuration;
 import com.rudderstack.sdk.kotlin.android.SessionConfiguration;
 import com.rudderstack.sdk.kotlin.android.javacompat.ConfigurationBuilder;
 import com.rudderstack.sdk.kotlin.android.javacompat.SessionConfigurationBuilder;
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger;
 import com.rudderstack.sdk.kotlin.core.internals.models.ExternalId;
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption;
 import com.rudderstack.sdk.kotlin.android.javacompat.JavaAnalytics;
+import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin;
 import com.rudderstack.sdk.kotlin.core.javacompat.RudderOptionBuilder;
 
 import java.util.Arrays;
@@ -23,7 +27,6 @@ import java.util.Map;
 /**
  * This class provides a compatibility layer for Java analytics events.
  * <p>
- *
  * Sample code:
  * <pre>{@code
  * JavaCompat javaCompat = new JavaCompat(application, writeKey, dataPlaneUrl);
@@ -59,20 +62,110 @@ public class JavaCompat {
         Configuration configuration = (Configuration) new ConfigurationBuilder(application, writeKey, dataPlaneUrl)
                 .setTrackApplicationLifecycleEvents(true)
                 .setSessionConfiguration(sessionConfiguration)
+                .setLogLevel(Logger.LogLevel.VERBOSE)
                 .setGzipEnabled(true)
                 .build();
 
         return new JavaAnalytics(configuration);
     }
 
+    // Android
+
+    /**
+     * Start a session.
+     */
+    public void startSession() {
+        analytics.startSession();
+    }
+
+    /**
+     * Start a session with a specific session ID.
+     *
+     * @param sessionId The session ID to start.
+     */
+    public void startSession(Long sessionId) {
+        analytics.startSession(sessionId);
+    }
+
+    /**
+     * End the current session.
+     */
+    public void endSession() {
+        analytics.endSession();
+    }
+
+    /**
+     * Make a RESET call.
+     */
+    public void reset() {
+        analytics.reset();
+    }
+
+    /**
+     * Make a flush call.
+     */
+    public void flush() {
+        analytics.flush();
+    }
+
+    /**
+     * Add a custom plugin to the analytics instance.
+     */
+    @VisibleForTesting
+    public void add() {
+        Plugin customPlugin = getPlugin();
+
+        this.add(customPlugin);
+    }
+
+    /**
+     * Add a custom plugin to the analytics instance.
+     */
+    public void add(Plugin plugin) {
+        analytics.add(plugin);
+    }
+
+    /**
+     * Remove a custom plugin from the analytics instance.
+     */
+    @VisibleForTesting
+    public void remove() {
+        Plugin customPlugin = getPlugin();
+        this.add(customPlugin);
+
+        this.remove(customPlugin);
+    }
+
+    /**
+     * Remove a custom plugin from the analytics instance.
+     */
+    public void remove(Plugin plugin) {
+        analytics.remove(plugin);
+    }
+
+    /**
+     * Get the session ID.
+     *
+     * @return The session ID.
+     */
+    public Long getSessionId() {
+        return analytics.getSessionId();
+    }
+
+    /**
+     * Set the navigation destinations tracking.
+     *
+     * @param navController The NavController instance.
+     * @param activity      The activity instance.
+     */
+    public void setNavigationDestinationsTracking(NavController navController, Activity activity) {
+        analytics.setNavigationDestinationsTracking(navController, activity);
+    }
+
+    // Core
+
     /**
      * Make a track event.
-     * <p>
-     * Sample code:
-     *
-     * <pre>{@code
-     * javaCompat.track();
-     * }</pre>
      */
     public void track() {
         String name = "Sample track event";
@@ -87,12 +180,6 @@ public class JavaCompat {
 
     /**
      * Make a screen event.
-     * <p>
-     * Sample code:
-     *
-     * <pre>{@code
-     * javaCompat.screen();
-     * }</pre>
      */
     public void screen() {
         String screenName = "Sample screen event";
@@ -112,12 +199,6 @@ public class JavaCompat {
 
     /**
      * Make a group event.
-     * <p>
-     * Sample code:
-     *
-     * <pre>{@code
-     * javaCompat.group();
-     * }</pre>
      */
     public void group() {
         String groupId = "Sample group ID";
@@ -132,12 +213,6 @@ public class JavaCompat {
 
     /**
      * Make an identify event.
-     * <p>
-     * Sample code:
-     *
-     * <pre>{@code
-     * javaCompat.identify();
-     * }</pre>
      */
     public void identify() {
         String userId = "Sample user ID";
@@ -154,12 +229,6 @@ public class JavaCompat {
 
     /**
      * Make an alias event.
-     * <p>
-     * Sample code:
-     *
-     * <pre>{@code
-     * javaCompat.alias();
-     * }</pre>
      */
     public void alias() {
         String newId = "Sample alias";
@@ -170,6 +239,13 @@ public class JavaCompat {
         analytics.alias(newId, option);
         analytics.alias(newId, previousId);
         analytics.alias(newId, previousId, option);
+    }
+
+    /**
+     * Make the analytics instance shutdown.
+     */
+    public void shutdown() {
+        analytics.shutdown();
     }
 
     @NonNull
@@ -210,4 +286,10 @@ public class JavaCompat {
         ExternalId externalId2 = new ExternalId("externalId2", "value2");
         return Arrays.asList(externalId1, externalId2);
     }
+
+    @NonNull
+    private static Plugin getPlugin() {
+        return new CustomJavaPlugin();
+    }
 }
+
