@@ -100,14 +100,14 @@ class SessionConfigurationBuilder {
     /**
      * Sets whether to enable automatic session tracking.
      */
-    fun withAutomaticSessionTracking(enabled: Boolean) = apply {
+    fun setAutomaticSessionTracking(enabled: Boolean) = apply {
         automaticSessionTracking = enabled
     }
 
     /**
      * Sets the session timeout duration in milliseconds.
      */
-    fun withSessionTimeoutInMillis(timeoutInMillis: Long) = apply {
+    fun setSessionTimeoutInMillis(timeoutInMillis: Long) = apply {
         sessionTimeoutInMillis = timeoutInMillis
     }
 
