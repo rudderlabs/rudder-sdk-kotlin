@@ -11,7 +11,7 @@ import com.rudderstack.sdk.kotlin.android.javacompat.ConfigurationBuilder;
 import com.rudderstack.sdk.kotlin.android.javacompat.SessionConfigurationBuilder;
 import com.rudderstack.sdk.kotlin.core.internals.models.ExternalId;
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption;
-import com.rudderstack.sdk.kotlin.core.javacompat.JavaAnalytics;
+import com.rudderstack.sdk.kotlin.android.javacompat.JavaAnalytics;
 import com.rudderstack.sdk.kotlin.core.javacompat.RudderOptionBuilder;
 
 import java.util.Arrays;
@@ -49,18 +49,17 @@ public class JavaCompat {
         this.analytics = analytics;
     }
 
-    @VisibleForTesting
     @NonNull
-    public static JavaAnalytics analyticsFactory(@NonNull Application application, @NonNull String writeKey, @NonNull String dataPlaneUrl) {
+    private static JavaAnalytics analyticsFactory(@NonNull Application application, @NonNull String writeKey, @NonNull String dataPlaneUrl) {
         SessionConfiguration sessionConfiguration = new SessionConfigurationBuilder()
-                .withAutomaticSessionTracking(true)
-                .withSessionTimeoutInMillis(30)
+                .setAutomaticSessionTracking(true)
+                .setSessionTimeoutInMillis(30)
                 .build();
 
-        Configuration configuration = new ConfigurationBuilder(application, writeKey, dataPlaneUrl)
-                .withTrackApplicationLifecycleEvents(true)
-                .withSessionConfiguration(sessionConfiguration)
-                .withGzipEnabled(true)
+        Configuration configuration = (Configuration) new ConfigurationBuilder(application, writeKey, dataPlaneUrl)
+                .setTrackApplicationLifecycleEvents(true)
+                .setSessionConfiguration(sessionConfiguration)
+                .setGzipEnabled(true)
                 .build();
 
         return new JavaAnalytics(configuration);

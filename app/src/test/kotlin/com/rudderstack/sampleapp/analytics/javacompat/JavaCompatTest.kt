@@ -1,41 +1,26 @@
 package com.rudderstack.sampleapp.analytics.javacompat
 
-import android.app.Application
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
-import com.rudderstack.sdk.kotlin.core.javacompat.JavaAnalytics
+import com.rudderstack.sdk.kotlin.android.javacompat.JavaAnalytics
 import io.mockk.MockKAnnotations
 import io.mockk.confirmVerified
 import io.mockk.impl.annotations.MockK
-import io.mockk.spyk
 import io.mockk.verify
-import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-
-private const val WRITE_KEY = "test_write_key"
-private const val DATA_PLANE_URL = "https://test.rudderstack.com"
 
 class JavaCompatTest {
 
     @MockK
-    private lateinit var mockApplication: Application
+    private lateinit var mockJavaAnalytics: JavaAnalytics
 
-    private lateinit var javaAnalytics: JavaAnalytics
     private lateinit var javaCompat: JavaCompat
 
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this, relaxed = true)
 
-        javaAnalytics = spyk(JavaCompat.analyticsFactory(mockApplication, WRITE_KEY, DATA_PLANE_URL))
-        javaCompat = JavaCompat(javaAnalytics)
-    }
-
-    @Test
-    fun `when analytics is initialized, then it should be created with the correct parameters`() {
-        javaCompat = JavaCompat(mockApplication, WRITE_KEY, DATA_PLANE_URL)
-
-        assertNotNull(javaCompat)
+        javaCompat = JavaCompat(mockJavaAnalytics)
     }
 
     @Test
@@ -43,12 +28,12 @@ class JavaCompatTest {
         javaCompat.track()
 
         verify(exactly = 1) {
-            javaAnalytics.track(name = any<String>())
-            javaAnalytics.track(name = any<String>(), properties = any<Map<String, Any>>())
-            javaAnalytics.track(name = any<String>(), options = any<RudderOption>())
-            javaAnalytics.track(name = any<String>(), properties = any<Map<String, Any>>(), options = any<RudderOption>())
+            mockJavaAnalytics.track(name = any<String>())
+            mockJavaAnalytics.track(name = any<String>(), properties = any<Map<String, Any>>())
+            mockJavaAnalytics.track(name = any<String>(), options = any<RudderOption>())
+            mockJavaAnalytics.track(name = any<String>(), properties = any<Map<String, Any>>(), options = any<RudderOption>())
         }
-        confirmVerified(javaAnalytics)
+        confirmVerified(mockJavaAnalytics)
     }
 
     @Test
@@ -56,25 +41,25 @@ class JavaCompatTest {
         javaCompat.screen()
 
         verify(exactly = 1) {
-            javaAnalytics.screen(screenName = any<String>())
-            javaAnalytics.screen(screenName = any<String>(), category = any<String>())
-            javaAnalytics.screen(screenName = any<String>(), properties = any<Map<String, Any>>())
-            javaAnalytics.screen(screenName = any<String>(), options = any<RudderOption>())
-            javaAnalytics.screen(
+            mockJavaAnalytics.screen(screenName = any<String>())
+            mockJavaAnalytics.screen(screenName = any<String>(), category = any<String>())
+            mockJavaAnalytics.screen(screenName = any<String>(), properties = any<Map<String, Any>>())
+            mockJavaAnalytics.screen(screenName = any<String>(), options = any<RudderOption>())
+            mockJavaAnalytics.screen(
                 screenName = any<String>(),
                 properties = any<Map<String, Any>>(),
                 options = any<RudderOption>()
             )
-            javaAnalytics.screen(screenName = any<String>(), category = any<String>(), properties = any<Map<String, Any>>())
-            javaAnalytics.screen(screenName = any<String>(), category = any<String>(), options = any<RudderOption>())
-            javaAnalytics.screen(
+            mockJavaAnalytics.screen(screenName = any<String>(), category = any<String>(), properties = any<Map<String, Any>>())
+            mockJavaAnalytics.screen(screenName = any<String>(), category = any<String>(), options = any<RudderOption>())
+            mockJavaAnalytics.screen(
                 screenName = any<String>(),
                 category = any<String>(),
                 properties = any<Map<String, Any>>(),
                 options = any<RudderOption>()
             )
         }
-        confirmVerified(javaAnalytics)
+        confirmVerified(mockJavaAnalytics)
     }
 
     @Test
@@ -82,12 +67,12 @@ class JavaCompatTest {
         javaCompat.group()
 
         verify(exactly = 1) {
-            javaAnalytics.group(groupId = any<String>())
-            javaAnalytics.group(groupId = any<String>(), traits = any<Map<String, Any>>())
-            javaAnalytics.group(groupId = any<String>(), options = any<RudderOption>())
-            javaAnalytics.group(groupId = any<String>(), traits = any<Map<String, Any>>(), options = any<RudderOption>())
+            mockJavaAnalytics.group(groupId = any<String>())
+            mockJavaAnalytics.group(groupId = any<String>(), traits = any<Map<String, Any>>())
+            mockJavaAnalytics.group(groupId = any<String>(), options = any<RudderOption>())
+            mockJavaAnalytics.group(groupId = any<String>(), traits = any<Map<String, Any>>(), options = any<RudderOption>())
         }
-        confirmVerified(javaAnalytics)
+        confirmVerified(mockJavaAnalytics)
     }
 
     @Test
@@ -95,14 +80,14 @@ class JavaCompatTest {
         javaCompat.identify()
 
         verify(exactly = 1) {
-            javaAnalytics.identify(userId = any<String>())
-            javaAnalytics.identify(traits = any<Map<String, Any>>())
-            javaAnalytics.identify(userId = any<String>(), traits = any<Map<String, Any>>())
-            javaAnalytics.identify(userId = any<String>(), options = any<RudderOption>())
-            javaAnalytics.identify(traits = any<Map<String, Any>>(), options = any<RudderOption>())
-            javaAnalytics.identify(userId = any<String>(), traits = any<Map<String, Any>>(), options = any<RudderOption>())
+            mockJavaAnalytics.identify(userId = any<String>())
+            mockJavaAnalytics.identify(traits = any<Map<String, Any>>())
+            mockJavaAnalytics.identify(userId = any<String>(), traits = any<Map<String, Any>>())
+            mockJavaAnalytics.identify(userId = any<String>(), options = any<RudderOption>())
+            mockJavaAnalytics.identify(traits = any<Map<String, Any>>(), options = any<RudderOption>())
+            mockJavaAnalytics.identify(userId = any<String>(), traits = any<Map<String, Any>>(), options = any<RudderOption>())
         }
-        confirmVerified(javaAnalytics)
+        confirmVerified(mockJavaAnalytics)
     }
 
     @Test
@@ -110,11 +95,11 @@ class JavaCompatTest {
         javaCompat.alias()
 
         verify(exactly = 1) {
-            javaAnalytics.alias(newId = any<String>())
-            javaAnalytics.alias(newId = any<String>(), options = any<RudderOption>())
-            javaAnalytics.alias(newId = any<String>(), previousId = any<String>())
-            javaAnalytics.alias(newId = any<String>(), previousId = any<String>(), options = any<RudderOption>())
+            mockJavaAnalytics.alias(newId = any<String>())
+            mockJavaAnalytics.alias(newId = any<String>(), options = any<RudderOption>())
+            mockJavaAnalytics.alias(newId = any<String>(), previousId = any<String>())
+            mockJavaAnalytics.alias(newId = any<String>(), previousId = any<String>(), options = any<RudderOption>())
         }
-        confirmVerified(javaAnalytics)
+        confirmVerified(mockJavaAnalytics)
     }
 }
