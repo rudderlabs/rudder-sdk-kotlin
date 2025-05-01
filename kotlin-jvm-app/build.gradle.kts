@@ -13,4 +13,6 @@ kotlin {
 
 dependencies {
     implementation(project(":core"))
+
+    implementation(libs.androidx.annotation.jvm)
 }
