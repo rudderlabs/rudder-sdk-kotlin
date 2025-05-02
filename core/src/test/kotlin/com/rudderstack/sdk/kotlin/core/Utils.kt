@@ -17,6 +17,12 @@ import io.mockk.spyk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.add
+import kotlinx.serialization.json.buildJsonArray
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import java.io.BufferedReader
 
 const val ANONYMOUS_ID = "<anonymous-id>"
@@ -98,4 +104,90 @@ internal fun provideRudderOption() = RudderOption(
     integrations = provideSampleIntegrationsPayload(),
     customContext = provideSampleJsonPayload(),
     externalIds = provideSampleExternalIdsPayload(),
+)
+
+@OptIn(ExperimentalSerializationApi::class)
+internal fun provideJsonObject(): JsonObject = buildJsonObject {
+    // Basic primitives
+    put("stringKey", "stringValue")
+    put("intKey", 42)
+    put("doubleKey", 3.14)
+    put("booleanKey", true)
+    put("nullKey", null)
+
+    // Empty values
+    put("emptyString", "")
+    put("emptyArray", buildJsonArray {})
+    put("emptyObject", buildJsonObject {})
+
+    // Existing nested structure
+    put("level1", buildJsonObject {
+        put("level2", buildJsonArray {
+            add(buildJsonObject { put("name1", "item1") })
+            add(buildJsonObject { put("name2", "item2") })
+            add(buildJsonObject { put("name3", null) })
+        })
+    })
+
+    // Additional complex structures
+    put("arrayOfPrimitives", buildJsonArray {
+        add("string")
+        add(123)
+        add(false)
+        add(null)
+    })
+
+    // Deeply nested structure
+    put("deep", buildJsonObject {
+        put("level1", buildJsonObject {
+            put("level2", buildJsonObject {
+                put("level3", buildJsonArray {
+                    add(buildJsonObject {
+                        put("key", "value")
+                        put("number", 999)
+                    })
+                })
+            })
+        })
+    })
+}
+
+internal fun provideMap() = mapOf(
+    // Basic primitives
+    "stringKey" to "stringValue",
+    "intKey" to 42,
+    "doubleKey" to 3.14,
+    "booleanKey" to true,
+    "nullKey" to null,
+
+    // Empty values
+    "emptyString" to "",
+    "emptyArray" to emptyList<Any>(),
+    "emptyObject" to emptyMap<String, Any>(),
+
+    // Existing nested structure
+    "level1" to mapOf(
+        "level2" to listOf(
+            mapOf("name1" to "item1"),
+            mapOf("name2" to "item2"),
+            mapOf("name3" to null)
+        )
+    ),
+
+    // Additional complex structures
+    "arrayOfPrimitives" to listOf("string", 123, false, null),
+
+    // Deeply nested structure
+    "deep" to mapOf(
+        "level1" to mapOf(
+            "level2" to mapOf(
+                "level3" to listOf(
+                    mapOf(
+                        "key" to "value",
+                        "number" to 999
+                    )
+                )
+            )
+        )
+    )
 )

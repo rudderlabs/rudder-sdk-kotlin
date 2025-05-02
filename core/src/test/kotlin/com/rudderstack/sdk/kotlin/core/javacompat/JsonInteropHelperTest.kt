@@ -1,5 +1,7 @@
 package com.rudderstack.sdk.kotlin.core.javacompat
 
+import com.rudderstack.sdk.kotlin.core.provideJsonObject
+import com.rudderstack.sdk.kotlin.core.provideMap
 import kotlinx.serialization.ExperimentalSerializationApi
 import org.junit.jupiter.api.Test
 
@@ -37,7 +39,7 @@ class JsonInteropHelperTest {
     }
 
     @Test
-    fun `given map with nested map, when converted, then returns correct nested JsonObject`() {
+    fun `given map, with nested map, when converted, then returns correct nested JsonObject`() {
         val originalMap: Map<String, Any?> = mapOf(
             "topLevel" to "value",
             "mapKey" to mapOf(
@@ -63,7 +65,7 @@ class JsonInteropHelperTest {
     }
 
     @Test
-    fun `given map with list when converted then returns correct JsonObject with JsonArray`() {
+    fun `given map with list, when converted, then returns correct JsonObject with JsonArray`() {
         val originalMap: Map<String, Any> = mapOf(
             "listKey" to listOf(1, "two", true, null),
             "emptyList" to emptyList<Any>()
@@ -84,30 +86,12 @@ class JsonInteropHelperTest {
     }
 
     @Test
-    fun `given map with complex nested structure when converted then returns correct JsonObject`() {
-        val deeplyNested: Map<String, Any?> =
-            mapOf(
-                "level1" to mapOf(
-                    "level2" to listOf(
-                        mapOf("name1" to "item1"),
-                        mapOf("name2" to "item2"),
-                        mapOf("name3" to null)
-                    )
-                )
-            )
+    fun `given map with complex nested structure, when converted, then returns correct JsonObject`() {
+        val deeplyNested: Map<String, Any?> = provideMap()
 
         val actualJsonObject = JsonInteropHelper.fromMap(deeplyNested)
 
-        val expectedJson =
-            buildJsonObject {
-                put("level1", buildJsonObject {
-                    put("level2", buildJsonArray {
-                        add(buildJsonObject { put("name1", "item1") })
-                        add(buildJsonObject { put("name2", "item2") })
-                        add(buildJsonObject { put("name3", null) })
-                    })
-                })
-            }
+        val expectedJson = provideJsonObject()
         verifyResult(expectedJson.toString(), actualJsonObject.toString())
     }
 
@@ -122,7 +106,7 @@ class JsonInteropHelperTest {
     }
 
     @Test
-    fun `given map with unsupported type when converted then throws IllegalArgumentException`() {
+    fun `given map with unsupported type, when converted, then throws IllegalArgumentException`() {
         val mapWithUnsupportedType = mapOf(
             "invalidType" to Exception("test")
         )
