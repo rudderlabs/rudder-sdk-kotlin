@@ -321,7 +321,7 @@ public class JavaCompat {
 
     @NonNull
     private static Plugin getPlugin() {
-        return new CustomJavaPlugin();
+        return new JavaEventFilteringPlugin();
     }
 }
 
