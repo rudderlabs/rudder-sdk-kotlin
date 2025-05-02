@@ -14,8 +14,10 @@ import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.mockk
 import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import io.mockk.verify
 import kotlinx.serialization.json.JsonObject
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -40,6 +42,11 @@ class JavaAnalyticsTest {
         every { provideAnalyticsInstance(any()) } returns mockAnalytics
 
         javaAnalytics = JavaAnalytics(mockConfiguration)
+    }
+
+    @AfterEach
+    fun tearDown() {
+        unmockkStatic(::provideAnalyticsInstance)
     }
 
     @Test
