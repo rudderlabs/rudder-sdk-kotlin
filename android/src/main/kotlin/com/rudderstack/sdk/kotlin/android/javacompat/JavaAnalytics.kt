@@ -47,14 +47,14 @@ class JavaAnalytics private constructor(
     /**
      * Clears all user data and identifiers from the analytics instance
      */
-    fun reset() {
+    override fun reset() {
         analytics.reset()
     }
 
     /**
      * Forces immediate dispatch of any queued analytics events
      */
-    fun flush() {
+    override fun flush() {
         analytics.flush()
     }
 
@@ -68,14 +68,14 @@ class JavaAnalytics private constructor(
     /**
      * Registers a custom plugin to extend analytics functionality
      */
-    fun add(plugin: Plugin) {
+    override fun add(plugin: Plugin) {
         analytics.add(plugin)
     }
 
     /**
      * Removes a previously registered plugin from the analytics instance
      */
-    fun remove(plugin: Plugin) {
+    override fun remove(plugin: Plugin) {
         analytics.remove(plugin)
     }
 }
