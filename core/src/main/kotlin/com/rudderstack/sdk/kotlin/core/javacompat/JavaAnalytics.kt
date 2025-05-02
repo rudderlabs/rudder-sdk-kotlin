@@ -3,6 +3,7 @@ package com.rudderstack.sdk.kotlin.core.javacompat
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.Configuration
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
+import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.javacompat.JsonInteropHelper.fromMap
 import org.jetbrains.annotations.VisibleForTesting
 
@@ -23,6 +24,24 @@ open class JavaAnalytics protected constructor(
      * @param configuration The configuration to initialize the Analytics instance with.
      */
     constructor(configuration: Configuration) : this(provideAnalyticsInstance(configuration))
+
+    /**
+     * Get the anonymous ID.
+     */
+    val anonymousId: String?
+        get() = analytics.anonymousId
+
+    /**
+     * Get the user ID.
+     */
+    val userId: String?
+        get() = analytics.userId
+
+    /**
+     * Get the user traits.
+     */
+    val traits: Map<String, Any>?
+        get() = analytics.traits?.toMap()
 
     /**
      * Tracks an event with the specified name.
@@ -292,10 +311,38 @@ open class JavaAnalytics protected constructor(
     }
 
     /**
+     * Forces immediate dispatch of any queued analytics events
+     */
+    open fun flush() {
+        analytics.flush()
+    }
+
+    /**
      * Shuts down the analytics instance, releasing any resources and stopping event processing.
      */
     fun shutdown() {
         analytics.shutdown()
+    }
+
+    /**
+     * Registers a custom plugin to extend analytics functionality
+     */
+    open fun add(plugin: Plugin) {
+        analytics.add(plugin)
+    }
+
+    /**
+     * Removes a previously registered plugin from the analytics instance
+     */
+    open fun remove(plugin: Plugin) {
+        analytics.remove(plugin)
+    }
+
+    /**
+     * Clears all user data and identifiers from the analytics instance
+     */
+    open fun reset() {
+        analytics.reset()
     }
 }
 
