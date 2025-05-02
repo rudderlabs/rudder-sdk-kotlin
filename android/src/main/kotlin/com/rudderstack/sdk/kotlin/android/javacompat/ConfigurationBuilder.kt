@@ -9,6 +9,8 @@ import com.rudderstack.sdk.kotlin.android.Configuration.Companion.DEFAULT_TRACK_
 import com.rudderstack.sdk.kotlin.android.DEFAULT_SESSION_TIMEOUT_IN_MILLIS
 import com.rudderstack.sdk.kotlin.android.SessionConfiguration
 import com.rudderstack.sdk.kotlin.android.SessionConfiguration.Companion.DEFAULT_AUTOMATIC_SESSION_TRACKING
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
+import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPolicy
 import com.rudderstack.sdk.kotlin.core.javacompat.ConfigurationBuilder
 
 /**
@@ -64,6 +66,34 @@ class ConfigurationBuilder(
      */
     fun setSessionConfiguration(config: SessionConfiguration) = apply {
         sessionConfiguration = config
+    }
+
+    /**
+     * Sets the control plane URL.
+     */
+    override fun setControlPlaneUrl(url: String) = apply {
+        super.setControlPlaneUrl(url)
+    }
+
+    /**
+     * Sets the log level.
+     */
+    override fun setLogLevel(level: Logger.LogLevel) = apply {
+        super.setLogLevel(level)
+    }
+
+    /**
+     * Sets the flush policies.
+     */
+    override fun setFlushPolicies(policies: List<FlushPolicy>) = apply {
+        super.setFlushPolicies(policies)
+    }
+
+    /**
+     * Sets whether to enable GZIP compression.
+     */
+    override fun setGzipEnabled(enabled: Boolean) = apply {
+        super.setGzipEnabled(enabled)
     }
 
     /**

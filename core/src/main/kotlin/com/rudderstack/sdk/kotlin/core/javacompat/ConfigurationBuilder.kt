@@ -25,28 +25,28 @@ open class ConfigurationBuilder(
     /**
      * Sets the control plane URL.
      */
-    fun setControlPlaneUrl(url: String) = apply {
+    open fun setControlPlaneUrl(url: String) = apply {
         controlPlaneUrl = url
     }
 
     /**
      * Sets the log level.
      */
-    fun setLogLevel(level: Logger.LogLevel) = apply {
+    open fun setLogLevel(level: Logger.LogLevel) = apply {
         logLevel = level
     }
 
     /**
      * Sets the flush policies.
      */
-    fun setFlushPolicies(policies: List<FlushPolicy>) = apply {
+    open fun setFlushPolicies(policies: List<FlushPolicy>) = apply {
         flushPolicies = policies
     }
 
     /**
      * Sets whether to enable GZIP compression.
      */
-    fun setGzipEnabled(enabled: Boolean) = apply {
+    open fun setGzipEnabled(enabled: Boolean) = apply {
         gzipEnabled = enabled
     }
 

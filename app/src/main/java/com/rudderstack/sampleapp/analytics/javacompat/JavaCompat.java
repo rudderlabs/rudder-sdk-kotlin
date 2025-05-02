@@ -60,7 +60,7 @@ public class JavaCompat {
                 .setSessionTimeoutInMillis(30)
                 .build();
 
-        Configuration configuration = (Configuration) new ConfigurationBuilder(application, writeKey, dataPlaneUrl)
+        Configuration configuration = new ConfigurationBuilder(application, writeKey, dataPlaneUrl)
                 .setTrackApplicationLifecycleEvents(true)
                 .setSessionConfiguration(sessionConfiguration)
                 .setLogLevel(Logger.LogLevel.VERBOSE)
