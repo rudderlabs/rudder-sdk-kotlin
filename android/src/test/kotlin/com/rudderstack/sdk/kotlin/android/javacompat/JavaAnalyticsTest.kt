@@ -55,7 +55,7 @@ class JavaAnalyticsTest {
     }
 
     @Test
-    fun `when startSession is called, then it should call the corresponding method on Analytics`() {
+    fun `when session is started, then it should call the corresponding method on Analytics`() {
         javaAnalytics.startSession()
         javaAnalytics.startSession(sessionId = SESSION_ID)
 
@@ -67,7 +67,7 @@ class JavaAnalyticsTest {
     }
 
     @Test
-    fun `when endSession is called, then it should call the corresponding method on Analytics`() {
+    fun `when session is ended, then it should call the corresponding method on Analytics`() {
         javaAnalytics.endSession()
 
         verify { mockAnalytics.endSession() }

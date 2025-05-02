@@ -90,7 +90,7 @@ class ConfigurationBuilder(
 }
 
 /**
- * Builder for SessionConfiguration to enable easy construction from Java code.
+ * Builder for SessionConfiguration instances.
  */
 class SessionConfigurationBuilder {
 

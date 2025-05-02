@@ -18,41 +18,47 @@ class JavaAnalytics private constructor(
     constructor(configuration: Configuration) : this(provideAnalyticsInstance(configuration))
 
     /**
-     * Returns the current session identifier if a session is active, null otherwise
+     * Returns the current session ID.
+     *
+     * @return The current session ID, or null if no session is active.
      */
     val sessionId: Long?
         get() = analytics.sessionId
 
     /**
-     * Starts a new analytics session with an automatically generated session ID
+     * Starts a new session with the given optional session ID.
      */
     fun startSession() {
         analytics.startSession()
     }
 
     /**
-     * Starts a new analytics session with the specified custom session ID
+     * Starts a new session with the specified session ID
+     *
+     * @param sessionId The ID of the session to start.
      */
     fun startSession(sessionId: Long) {
         analytics.startSession(sessionId)
     }
 
     /**
-     * Ends the current analytics session if one is active
+     * Ends the current session.
      */
     fun endSession() {
         analytics.endSession()
     }
 
     /**
-     * Clears all user data and identifiers from the analytics instance
+     * Resets the user identity, clears the existing anonymous ID and
+     * generate a new one, also clears the user ID and traits.
      */
     override fun reset() {
         analytics.reset()
     }
 
     /**
-     * Forces immediate dispatch of any queued analytics events
+     * Flushes all pending events that are currently queued in the plugin chain.
+     * This method specifically targets the `RudderStackDataPlanePlugin` to initiate the flush operation.
      */
     override fun flush() {
         analytics.flush()
@@ -60,20 +66,27 @@ class JavaAnalytics private constructor(
 
     /**
      * Configures automatic screen event tracking for navigation destinations
+     *
+     * @param navController The NavController instance used for navigation.
+     * @param activity The Activity instance where the navigation occurs.
      */
     fun setNavigationDestinationsTracking(navController: NavController, activity: Activity) {
         analytics.setNavigationDestinationsTracking(navController, activity)
     }
 
     /**
-     * Registers a custom plugin to extend analytics functionality
+     * Adds a plugin to the plugin chain.
+     *
+     * @param plugin The plugin to be added to the plugin chain.
      */
     override fun add(plugin: Plugin) {
         analytics.add(plugin)
     }
 
     /**
-     * Removes a previously registered plugin from the analytics instance
+     * Removes a plugin from the plugin chain.
+     *
+     * @param plugin The plugin to be removed from the plugin chain.
      */
     override fun remove(plugin: Plugin) {
         analytics.remove(plugin)
