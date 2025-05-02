@@ -23,6 +23,9 @@ import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.skyscreamer.jsonassert.JSONAssert
 import java.io.BufferedReader
 
 const val ANONYMOUS_ID = "<anonymous-id>"
@@ -191,3 +194,34 @@ internal fun provideMap() = mapOf(
         )
     )
 )
+
+internal fun assertJsonContents(expected: String, actual: String) {
+    JSONAssert.assertEquals(expected, actual, true)
+}
+
+internal fun assertMapContents(expected: Map<String, Any?>, actual: Map<String, Any?>) {
+    assertNotNull(actual)
+    assertEquals(expected.size, actual.size)
+
+    expected.forEach { (key, expectedValue) ->
+        val actualValue = actual[key]
+        when {
+            expectedValue is Map<*, *> && actualValue is Map<*, *> -> {
+                @Suppress("UNCHECKED_CAST")
+                assertMapContents(expectedValue as Map<String, Any?>, actualValue as Map<String, Any?>)
+            }
+            expectedValue is List<*> && actualValue is List<*> -> {
+                assertEquals(expectedValue.size, actualValue.size)
+                expectedValue.zip(actualValue).forEachIndexed { index, (expItem, actItem) ->
+                    if (expItem is Map<*, *> && actItem is Map<*, *>) {
+                        @Suppress("UNCHECKED_CAST")
+                        assertMapContents(expItem as Map<String, Any?>, actItem as Map<String, Any?>)
+                    } else {
+                        assertEquals(expItem, actItem, "List items at index $index don't match")
+                    }
+                }
+            }
+            else -> assertEquals(expectedValue, actualValue, "Value for key '$key' doesn't match")
+        }
+    }
+}

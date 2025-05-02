@@ -1,5 +1,9 @@
 package com.rudderstack.sdk.kotlin.core.javacompat
 
+import com.rudderstack.sdk.kotlin.core.assertJsonContents
+import com.rudderstack.sdk.kotlin.core.assertMapContents
+import com.rudderstack.sdk.kotlin.core.javacompat.JsonInteropHelper.toJsonObject
+import com.rudderstack.sdk.kotlin.core.javacompat.JsonInteropHelper.toRawMap
 import com.rudderstack.sdk.kotlin.core.provideJsonObject
 import com.rudderstack.sdk.kotlin.core.provideMap
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -11,7 +15,6 @@ import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.junit.jupiter.api.assertThrows
-import org.skyscreamer.jsonassert.JSONAssert
 
 @OptIn(ExperimentalSerializationApi::class)
 class JsonInteropHelperTest {
@@ -26,7 +29,7 @@ class JsonInteropHelperTest {
             "nullKey" to null
         )
 
-        val actualJsonObject: JsonObject = JsonInteropHelper.fromMap(originalMap)
+        val actualJsonObject: JsonObject = originalMap.toJsonObject()
 
         val expectedJson = buildJsonObject {
             put("booleanKey", true)
@@ -35,7 +38,7 @@ class JsonInteropHelperTest {
             put("stringKey", "stringValue")
             put("nullKey", null)
         }
-        verifyResult(expectedJson.toString(), actualJsonObject.toString())
+        assertJsonContents(expectedJson.toString(), actualJsonObject.toString())
     }
 
     @Test
@@ -50,7 +53,7 @@ class JsonInteropHelperTest {
             "emptyMap" to emptyMap<String, Any>()
         )
 
-        val actualJsonObject = JsonInteropHelper.fromMap(originalMap)
+        val actualJsonObject = originalMap.toJsonObject()
 
         val expectedJson = buildJsonObject {
             put("topLevel", "value")
@@ -61,7 +64,7 @@ class JsonInteropHelperTest {
             })
             put("emptyMap", buildJsonObject {})
         }
-        verifyResult(expectedJson.toString(), actualJsonObject.toString())
+        assertJsonContents(expectedJson.toString(), actualJsonObject.toString())
     }
 
     @Test
@@ -71,7 +74,7 @@ class JsonInteropHelperTest {
             "emptyList" to emptyList<Any>()
         )
 
-        val actualJsonObject = JsonInteropHelper.fromMap(originalMap)
+        val actualJsonObject = originalMap.toJsonObject()
 
         val expectedJson = buildJsonObject {
             put("listKey", buildJsonArray {
@@ -82,27 +85,27 @@ class JsonInteropHelperTest {
             })
             put("emptyList", buildJsonArray {})
         }
-        verifyResult(expectedJson.toString(), actualJsonObject.toString())
+        assertJsonContents(expectedJson.toString(), actualJsonObject.toString())
     }
 
     @Test
     fun `given map with complex nested structure, when converted, then returns correct JsonObject`() {
         val deeplyNested: Map<String, Any?> = provideMap()
 
-        val actualJsonObject = JsonInteropHelper.fromMap(deeplyNested)
+        val actualJsonObject = deeplyNested.toJsonObject()
 
         val expectedJson = provideJsonObject()
-        verifyResult(expectedJson.toString(), actualJsonObject.toString())
+        assertJsonContents(expectedJson.toString(), actualJsonObject.toString())
     }
 
     @Test
     fun `given map with empty map, when converted, then returns correct JsonObject`() {
         val emptyMap: Map<String, Any> = emptyMap()
 
-        val actualJsonObject = JsonInteropHelper.fromMap(emptyMap)
+        val actualJsonObject = emptyMap.toJsonObject()
 
         val expectedJson = buildJsonObject {}
-        verifyResult(expectedJson.toString(), actualJsonObject.toString())
+        assertJsonContents(expectedJson.toString(), actualJsonObject.toString())
     }
 
     @Test
@@ -112,11 +115,17 @@ class JsonInteropHelperTest {
         )
 
         assertThrows<IllegalArgumentException> {
-            JsonInteropHelper.fromMap(mapWithUnsupportedType)
+            mapWithUnsupportedType.toJsonObject()
         }
     }
 
-    private fun verifyResult(expected: String, actual: String) {
-        JSONAssert.assertEquals(expected, actual, true)
+    @Test
+    fun `given JsonObject, when converted to map, then returns correct map`() {
+        val jsonObject = provideJsonObject()
+
+        val actualMap = jsonObject.toRawMap()
+
+        val expectedMap = provideMap()
+        assertMapContents(expectedMap, actualMap)
     }
 }
