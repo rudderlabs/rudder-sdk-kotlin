@@ -43,15 +43,18 @@ internal object JsonInteropHelper {
         is Boolean -> JsonPrimitive(value)
         is Number -> JsonPrimitive(value)
         is String -> JsonPrimitive(value)
+
         is Map<*, *> -> {
             val stringKeyMap = value.entries
                 .filter { it.key is String }
                 .associate { it.key as String to toJsonElement(it.value) }
             JsonObject(stringKeyMap)
         }
+
         is List<*> -> {
             JsonArray(value.map { toJsonElement(it) })
         }
+
         else -> throw IllegalArgumentException("Unsupported type: ${value::class}")
     }
 }

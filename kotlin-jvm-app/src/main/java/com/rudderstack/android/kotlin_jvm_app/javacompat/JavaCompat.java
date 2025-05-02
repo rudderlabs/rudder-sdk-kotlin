@@ -1,9 +1,11 @@
 package com.rudderstack.android.kotlin_jvm_app.javacompat;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
 import com.rudderstack.sdk.kotlin.core.Configuration;
+import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics;
 import com.rudderstack.sdk.kotlin.core.javacompat.ConfigurationBuilder;
 import com.rudderstack.sdk.kotlin.core.internals.models.ExternalId;
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption;
@@ -20,6 +22,12 @@ import java.util.Map;
  * This class provides a compatibility layer for Java analytics events.
  * <p>
  * The main method is at bottom. Use that to make events.
+ *
+ * <p>
+ * Sample code:
+ * <pre>{@code
+ * JavaCompat javaCompat = new JavaCompat(writeKey, dataPlaneUrl);
+ * }</pre>
  */
 public class JavaCompat {
 
@@ -45,12 +53,6 @@ public class JavaCompat {
 
     /**
      * Make a track event.
-     * <p>
-     * Sample code:
-     *
-     * <pre>{@code
-     * JavaCompat.track();
-     * }</pre>
      */
     public void track() {
         String name = "Sample track event";
@@ -65,12 +67,6 @@ public class JavaCompat {
 
     /**
      * Make a screen event.
-     * <p>
-     * Sample code:
-     *
-     * <pre>{@code
-     * JavaCompat.screen();
-     * }</pre>
      */
     public void screen() {
         String screenName = "Sample screen event";
@@ -90,12 +86,6 @@ public class JavaCompat {
 
     /**
      * Make a group event.
-     * <p>
-     * Sample code:
-     *
-     * <pre>{@code
-     * JavaCompat.group();
-     * }</pre>
      */
     public void group() {
         String groupId = "Sample group ID";
@@ -110,12 +100,6 @@ public class JavaCompat {
 
     /**
      * Make an identify event.
-     * <p>
-     * Sample code:
-     *
-     * <pre>{@code
-     * JavaCompat.identify();
-     * }</pre>
      */
     public void identify() {
         String userId = "Sample user ID";
@@ -132,12 +116,6 @@ public class JavaCompat {
 
     /**
      * Make an alias event.
-     * <p>
-     * Sample code:
-     *
-     * <pre>{@code
-     * JavaCompat.alias();
-     * }</pre>
      */
     public void alias() {
         String newId = "Sample alias";
@@ -150,6 +128,36 @@ public class JavaCompat {
         analytics.alias(newId, previousId, option);
     }
 
+    /**
+     * Get the anonymous ID.
+     *
+     * @return The anonymous ID.
+     */
+    @Nullable
+    public String getAnonymousId() {
+        return analytics.getAnonymousId();
+    }
+
+    /**
+     * Get the user ID.
+     *
+     * @return The user ID.
+     */
+    @Nullable
+    public String getUserId() {
+        return analytics.getUserId();
+    }
+
+    /**
+     * Get the user traits.
+     *
+     * @return The user traits.
+     */
+    @Nullable
+    public Map<String, Object> getTraits() {
+        return analytics.getTraits();
+    }
+
     public static void main(String[] args) {
         // Example usage
         JavaCompat javaCompat = new JavaCompat("your_write_key", "your_data_plane_url");
@@ -158,6 +166,10 @@ public class JavaCompat {
         javaCompat.group();
         javaCompat.identify();
         javaCompat.alias();
+
+        LoggerAnalytics.INSTANCE.verbose("JavaCompat: Anonymous ID: " + javaCompat.getAnonymousId());
+        LoggerAnalytics.INSTANCE.verbose("JavaCompat: User ID: " + javaCompat.getUserId());
+        LoggerAnalytics.INSTANCE.verbose("JavaCompat: User Traits: " + javaCompat.getTraits());
     }
 
     @NonNull

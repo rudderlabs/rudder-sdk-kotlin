@@ -205,4 +205,34 @@ class JavaCompatTest {
         }
         confirmVerified(mockJavaAnalytics)
     }
+
+    @Test
+    fun `when anonymousId is fetched, then it should be returned`() {
+        val anonymousId = "anonymousId"
+        every { mockJavaAnalytics.anonymousId } returns anonymousId
+
+        val actualAnonymousId = javaCompat.anonymousId
+
+        assertEquals(anonymousId, actualAnonymousId)
+    }
+
+    @Test
+    fun `when userId is fetched, then it should be returned`() {
+        val userId = "userId"
+        every { mockJavaAnalytics.userId } returns userId
+
+        val actualUserId = javaCompat.userId
+
+        assertEquals(userId, actualUserId)
+    }
+
+    @Test
+    fun `when traits is fetched, then it should be returned`() {
+        val traits: Map<String, Any> = mapOf("key-1" to "value-1")
+        every { mockJavaAnalytics.traits } returns traits
+
+        val actualTraits = javaCompat.traits
+
+        assertEquals(traits, actualTraits)
+    }
 }

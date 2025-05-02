@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.Application;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.navigation.NavController;
 
@@ -148,6 +149,7 @@ public class JavaCompat {
      *
      * @return The session ID.
      */
+    @Nullable
     public Long getSessionId() {
         return analytics.getSessionId();
     }
@@ -246,6 +248,36 @@ public class JavaCompat {
      */
     public void shutdown() {
         analytics.shutdown();
+    }
+
+    /**
+     * Get the anonymous ID.
+     *
+     * @return The anonymous ID.
+     */
+    @Nullable
+    public String getAnonymousId() {
+        return analytics.getAnonymousId();
+    }
+
+    /**
+     * Get the user ID.
+     *
+     * @return The user ID.
+     */
+    @Nullable
+    public String getUserId() {
+        return analytics.getUserId();
+    }
+
+    /**
+     * Get the user traits.
+     *
+     * @return The user traits.
+     */
+    @Nullable
+    public Map<String, Object> getTraits() {
+        return analytics.getTraits();
     }
 
     @NonNull
