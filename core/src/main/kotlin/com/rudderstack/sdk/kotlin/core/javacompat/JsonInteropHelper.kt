@@ -16,17 +16,14 @@ import kotlin.jvm.Throws
 internal object JsonInteropHelper {
 
     /**
-     * Converts a Map with String keys and Any values to a JsonObject.
-     *
-     * This static method is accessible from Java code to enable seamless conversion
-     * from Java Map objects to Kotlin's serializable JsonObject type.
+     * Converts a Map with String keys and Any? values to a JsonObject.
      *
      * @param map The map to convert to a JsonObject
      * @return A JsonObject representation of the input map
      */
     @JvmStatic
     @Throws(IllegalArgumentException::class)
-    internal fun fromMap(map: Map<String, Any>): JsonObject {
+    internal fun fromMap(map: Map<String, Any?>): JsonObject {
         val content = map.mapValues { (_, value) -> toJsonElement(value) }
         return JsonObject(content)
     }

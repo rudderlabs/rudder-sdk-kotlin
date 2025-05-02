@@ -40,7 +40,7 @@ open class JavaAnalytics protected constructor(
     /**
      * Get the user traits.
      */
-    val traits: Map<String, Any>?
+    val traits: Map<String, Any?>?
         get() = analytics.traits?.toMap()
 
     /**
@@ -58,7 +58,7 @@ open class JavaAnalytics protected constructor(
      * @param name The name of the event to track.
      * @param properties A map of properties associated with the event.
      */
-    fun track(name: String, properties: Map<String, Any>) {
+    fun track(name: String, properties: Map<String, Any?>) {
         analytics.track(name = name, properties = fromMap(properties))
     }
 
@@ -79,7 +79,7 @@ open class JavaAnalytics protected constructor(
      * @param properties A map of properties associated with the event.
      * @param options A [RudderOption] object to specify additional event options.
      */
-    fun track(name: String, properties: Map<String, Any>, options: RudderOption) {
+    fun track(name: String, properties: Map<String, Any?>, options: RudderOption) {
         analytics.track(name = name, properties = fromMap(properties), options = options)
     }
 
@@ -108,7 +108,7 @@ open class JavaAnalytics protected constructor(
      * @param screenName The name of the screen being viewed.
      * @param properties A map of additional properties associated with the screen view.
      */
-    fun screen(screenName: String, properties: Map<String, Any>) {
+    fun screen(screenName: String, properties: Map<String, Any?>) {
         analytics.screen(screenName = screenName, properties = fromMap(properties))
     }
 
@@ -129,7 +129,7 @@ open class JavaAnalytics protected constructor(
      * @param category The category of the screen.
      * @param properties A map of additional properties associated with the screen view.
      */
-    fun screen(screenName: String, category: String, properties: Map<String, Any>) {
+    fun screen(screenName: String, category: String, properties: Map<String, Any?>) {
         analytics.screen(screenName = screenName, category = category, properties = fromMap(properties))
     }
 
@@ -151,7 +151,7 @@ open class JavaAnalytics protected constructor(
      * @param properties A map of additional properties associated with the screen view.
      * @param options A [RudderOption] object to specify additional event options.
      */
-    fun screen(screenName: String, properties: Map<String, Any>, options: RudderOption) {
+    fun screen(screenName: String, properties: Map<String, Any?>, options: RudderOption) {
         analytics.screen(screenName = screenName, properties = fromMap(properties), options = options)
     }
 
@@ -163,7 +163,7 @@ open class JavaAnalytics protected constructor(
      * @param properties A map of additional properties associated with the screen view.
      * @param options A [RudderOption] object to specify additional event options.
      */
-    fun screen(screenName: String, category: String, properties: Map<String, Any>, options: RudderOption) {
+    fun screen(screenName: String, category: String, properties: Map<String, Any?>, options: RudderOption) {
         analytics.screen(screenName = screenName, category = category, properties = fromMap(properties), options = options)
     }
 
@@ -182,7 +182,7 @@ open class JavaAnalytics protected constructor(
      * @param groupId The unique identifier for the group.
      * @param traits A [RudderOption] object to specify additional event options.
      */
-    fun group(groupId: String, traits: Map<String, Any>) {
+    fun group(groupId: String, traits: Map<String, Any?>) {
         analytics.group(groupId = groupId, traits = fromMap(traits))
     }
 
@@ -203,7 +203,7 @@ open class JavaAnalytics protected constructor(
      * @param traits A map containing additional information about the group.
      * @param options A [RudderOption] object to specify additional event options.
      */
-    fun group(groupId: String, traits: Map<String, Any>, options: RudderOption) {
+    fun group(groupId: String, traits: Map<String, Any?>, options: RudderOption) {
         analytics.group(groupId = groupId, traits = fromMap(traits), options = options)
     }
 
@@ -221,7 +221,7 @@ open class JavaAnalytics protected constructor(
      *
      * @param traits A map of properties or characteristics associated with the current user.
      */
-    fun identify(traits: Map<String, Any>) {
+    fun identify(traits: Map<String, Any?>) {
         analytics.identify(traits = fromMap(traits))
     }
 
@@ -232,7 +232,7 @@ open class JavaAnalytics protected constructor(
      * @param userId The unique identifier for the user.
      * @param traits A map of properties or characteristics associated with the user.
      */
-    fun identify(userId: String, traits: Map<String, Any>) {
+    fun identify(userId: String, traits: Map<String, Any?>) {
         analytics.identify(userId = userId, traits = fromMap(traits))
     }
 
@@ -254,7 +254,7 @@ open class JavaAnalytics protected constructor(
      * @param traits A map of properties or characteristics associated with the current user.
      * @param options A [RudderOption] object to specify additional event options.
      */
-    fun identify(traits: Map<String, Any>, options: RudderOption) {
+    fun identify(traits: Map<String, Any?>, options: RudderOption) {
         analytics.identify(traits = fromMap(traits), options = options)
     }
 
@@ -266,7 +266,7 @@ open class JavaAnalytics protected constructor(
      * @param traits A map of properties or characteristics associated with the user.
      * @param options A [RudderOption] object to specify additional event options.
      */
-    fun identify(userId: String, traits: Map<String, Any>, options: RudderOption) {
+    fun identify(userId: String, traits: Map<String, Any?>, options: RudderOption) {
         analytics.identify(userId = userId, traits = fromMap(traits), options = options)
     }
 

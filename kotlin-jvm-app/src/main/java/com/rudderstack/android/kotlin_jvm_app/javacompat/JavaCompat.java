@@ -180,6 +180,7 @@ public class JavaCompat {
         value.put("isActive", true);
         value.put("scores", Arrays.asList(10, 20, 30));
         value.put("details", Map.of("city", "Delhi", "zip", 12345));
+        value.put("isNull", null);
 
         return value;
     }
