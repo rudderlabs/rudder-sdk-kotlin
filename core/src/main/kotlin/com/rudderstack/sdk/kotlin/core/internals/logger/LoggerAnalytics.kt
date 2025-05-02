@@ -1,5 +1,6 @@
 package com.rudderstack.sdk.kotlin.core.internals.logger
 
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger.Companion.DEFAULT_LOG_LEVEL
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 
 /**
@@ -8,12 +9,17 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
  * logging across different environments.
  *
  * ### Setup
- * Use the `setLogger` method to configure the logger instance, specify a log level and optionally set a tag.:
+ * Use the `setLogger` method to configure the logger instance:
  *
  * ```kotlin
- * LoggerAnalytics.setup(logger = AndroidLogger(), level = configuration.logLevel, tag = "MyTag")
+ * LoggerAnalytics.setup(logger = AndroidLogger())
  * // Or for Kotlin environments
- * LoggerAnalytics.setup(logger = KotlinLogger(), level = configuration.logLevel, tag = "MyTag")
+ * LoggerAnalytics.setup(logger = KotlinLogger())
+ * ```
+ * Use `logLevel` to set the desired log level:
+ *
+ * ```kotlin
+ * LoggerAnalytics.logLevel = Logger.LogLevel.VERBOSE
  * ```
  *
  * ### Usage
@@ -31,22 +37,34 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
  * and clarity for debugging and tracking events across SDK modules.
  */
 object LoggerAnalytics {
+
     private var logger: Logger? = null
-    private var logLevel: Logger.LogLevel = Logger.DEFAULT_LOG_LEVEL
-        @Synchronized private set
+
+    /**
+     * The log level for the logger. This determines the minimum severity of messages that will be logged.
+     */
+    var logLevel: Logger.LogLevel = DEFAULT_LOG_LEVEL
+        @Synchronized set
 
         @Synchronized get
 
     /**
-     * Sets the logger instance and log level for the SDK.
-     *
-     * @param logger The logger instance to use (e.g., `AndroidLogger` or `KotlinLogger`).
-     * @param logLevel The log level to activate for the logger, defining the minimum severity of logs to display.
+     * Sets the logger instance if null.
      */
     @InternalRudderApi
-    fun setup(logger: Logger, logLevel: Logger.LogLevel) {
+    fun setLoggerIfNull(logger: Logger) {
+        if (this.logger == null) {
+            this.logger = logger
+        }
+    }
+
+    /**
+     * Sets the logger instance. This method allows you to set a custom logger for the SDK.
+     *
+     * @param logger The logger instance to set.
+     */
+    fun setLogger(logger: Logger) {
         this.logger = logger
-        this.logLevel = logLevel
     }
 
     /**

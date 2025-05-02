@@ -29,6 +29,11 @@ object RudderAnalyticsUtils {
      * @param application The Android Application instance
      */
     fun initialize(application: Application) {
+        // setting the LogLevel
+        LoggerAnalytics.logLevel = Logger.LogLevel.VERBOSE
+        // setting the logger if needed
+        // LoggerAnalytics.setLogger(MyCustomLogger())
+
         analytics = Analytics(
             configuration = Configuration(
                 trackApplicationLifecycleEvents = true,
@@ -40,7 +45,6 @@ object RudderAnalyticsUtils {
                     sessionTimeoutInMillis = 3000,
                 ),
                 gzipEnabled = true,
-                logLevel = Logger.LogLevel.VERBOSE,
             )
         )
         analytics.add(sampleIntegrationPlugin())

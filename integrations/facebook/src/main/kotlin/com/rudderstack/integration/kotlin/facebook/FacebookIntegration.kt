@@ -48,7 +48,7 @@ class FacebookIntegration : StandardIntegration, IntegrationPlugin() {
         facebookAppEventsLogger ?: run {
             destinationConfig.parseConfig<FacebookDestinationConfig>()
                 .let { config ->
-                    if (analytics.configuration.logLevel <= Logger.LogLevel.DEBUG) {
+                    if (LoggerAnalytics.logLevel <= Logger.LogLevel.DEBUG) {
                         FacebookSdk.setIsDebugEnabled(true)
                         FacebookSdk.addLoggingBehavior(LoggingBehavior.APP_EVENTS)
                     }

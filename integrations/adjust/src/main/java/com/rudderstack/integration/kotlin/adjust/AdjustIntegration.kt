@@ -48,7 +48,7 @@ class AdjustIntegration : StandardIntegration, IntegrationPlugin(), ActivityLife
                 adjustInstance = initAdjust(
                     application = analytics.application,
                     appToken = config.appToken,
-                    logLevel = analytics.configuration.logLevel,
+                    logLevel = LoggerAnalytics.logLevel,
                 )
                 (analytics as? Analytics)?.addLifecycleObserver(this)
                 LoggerAnalytics.verbose("AdjustIntegration: Adjust SDK initialized.")
