@@ -3,7 +3,7 @@ package com.rudderstack.sdk.kotlin.core.javacompat
 import com.rudderstack.sdk.kotlin.core.internals.models.ExternalId
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
-import com.rudderstack.sdk.kotlin.core.javacompat.JsonInteropHelper.fromMap
+import com.rudderstack.sdk.kotlin.core.javacompat.JsonInteropHelper.toJsonObject
 import kotlinx.serialization.json.JsonObject
 
 /**
@@ -25,7 +25,7 @@ class RudderOptionBuilder {
      * @return This RudderOptionBuilder instance for method chaining
      */
     fun setIntegrations(integrations: Map<String, Any>): RudderOptionBuilder {
-        this.integrations = fromMap(integrations)
+        this.integrations = integrations.toJsonObject()
         return this
     }
 
@@ -47,7 +47,7 @@ class RudderOptionBuilder {
      * @return This RudderOptionBuilder instance for method chaining
      */
     fun setCustomContext(customContext: Map<String, Any>): RudderOptionBuilder {
-        this.customContext = fromMap(customContext)
+        this.customContext = customContext.toJsonObject()
         return this
     }
 
