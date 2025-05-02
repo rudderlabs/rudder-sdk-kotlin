@@ -23,6 +23,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 private const val SOME_STRING = "some-string"
+private const val EMPTY_STRING = ""
 
 class JavaAnalyticsTest {
 
@@ -124,13 +125,19 @@ class JavaAnalyticsTest {
 
         mockAnalytics.apply {
             verify(exactly = 1) {
-                screen(screenName = SOME_STRING)
+                // NOTE: `category = EMPTY_STRING` is added to make the test pass in the terminal (i.e., while performing git push)
+                screen(screenName = SOME_STRING, category = EMPTY_STRING)
                 screen(screenName = SOME_STRING, category = SOME_STRING)
-                screen(screenName = SOME_STRING, properties = provideJsonObject())
-                screen(screenName = SOME_STRING, options = provideRudderOption())
+                screen(screenName = SOME_STRING, properties = provideJsonObject(), category = EMPTY_STRING)
+                screen(screenName = SOME_STRING, options = provideRudderOption(), category = EMPTY_STRING)
                 screen(screenName = SOME_STRING, category = SOME_STRING, properties = provideJsonObject())
                 screen(screenName = SOME_STRING, category = SOME_STRING, options = provideRudderOption())
-                screen(screenName = SOME_STRING, properties = provideJsonObject(), options = provideRudderOption())
+                screen(
+                    screenName = SOME_STRING,
+                    properties = provideJsonObject(),
+                    options = provideRudderOption(),
+                    category = EMPTY_STRING
+                )
                 screen(
                     screenName = SOME_STRING,
                     category = SOME_STRING,
@@ -183,11 +190,12 @@ class JavaAnalyticsTest {
 
         mockAnalytics.apply {
             verify(exactly = 1) {
+                // NOTE: `userId = EMPTY_STRING` is added to make the test pass in the terminal (i.e., while performing git push)
                 identify(userId = SOME_STRING)
-                identify(traits = provideJsonObject())
+                identify(traits = provideJsonObject(), userId = EMPTY_STRING)
                 identify(userId = SOME_STRING, traits = provideJsonObject())
                 identify(userId = SOME_STRING, options = provideRudderOption())
-                identify(traits = provideJsonObject(), options = provideRudderOption())
+                identify(traits = provideJsonObject(), options = provideRudderOption(), userId = EMPTY_STRING)
                 identify(userId = SOME_STRING, traits = provideJsonObject(), options = provideRudderOption())
             }
         }
@@ -209,8 +217,9 @@ class JavaAnalyticsTest {
 
         mockAnalytics.apply {
             verify(exactly = 1) {
-                alias(newId = SOME_STRING)
-                alias(newId = SOME_STRING, options = provideRudderOption())
+                // NOTE: `previousId = EMPTY_STRING` is added to make the test pass in the terminal (i.e., while performing git push)
+                alias(newId = SOME_STRING, previousId = EMPTY_STRING)
+                alias(newId = SOME_STRING, options = provideRudderOption(), previousId = EMPTY_STRING)
                 alias(newId = SOME_STRING, previousId = SOME_STRING)
                 alias(newId = SOME_STRING, previousId = SOME_STRING, options = provideRudderOption())
             }
