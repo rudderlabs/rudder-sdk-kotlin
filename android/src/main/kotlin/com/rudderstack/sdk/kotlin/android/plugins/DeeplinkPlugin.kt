@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Intent
 import android.net.ParseException
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleObserver
 import com.rudderstack.sdk.kotlin.android.storage.CheckBuildVersionUseCase
@@ -16,6 +17,7 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import com.rudderstack.sdk.kotlin.android.Analytics as AndroidAnalytics
 import com.rudderstack.sdk.kotlin.android.Configuration as AndroidConfiguration
+import androidx.core.net.toUri
 
 internal const val REFERRING_APPLICATION_KEY = "referring_application"
 internal const val URL_KEY = "url"
@@ -64,7 +66,7 @@ internal class DeeplinkPlugin : Plugin, ActivityLifecycleObserver {
     }
 
     private fun Activity.getReferrerString(): String? {
-        return if (CheckBuildVersionUseCase.isAndroidVersionLollipopAndAbove()) {
+        return if (CheckBuildVersionUseCase.isAndroidVersionAtLeast(Build.VERSION_CODES.LOLLIPOP_MR1)) {
             this.referrer?.toString()
         } else {
             getReferrerCompatible(this)?.toString()
@@ -81,7 +83,7 @@ internal class DeeplinkPlugin : Plugin, ActivityLifecycleObserver {
             referrerUri = intent.getStringExtra("android.intent.extra.REFERRER_NAME")?.let {
                 // Try parsing the referrer URL; if it's invalid, return null
                 try {
-                    Uri.parse(it)
+                    it.toUri()
                 } catch (ignored: ParseException) {
                     null
                 }

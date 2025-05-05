@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.Application
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.android.storage.CheckBuildVersionUseCase
 import com.rudderstack.sdk.kotlin.android.utils.addLifecycleObserver
@@ -67,7 +68,7 @@ class DeeplinkPluginTest {
         )
         every { (mockAnalytics as AndroidAnalytics).addLifecycleObserver(plugin) } just Runs
         mockkObject(CheckBuildVersionUseCase)
-        every { CheckBuildVersionUseCase.isAndroidVersionLollipopAndAbove() } returns true
+        every { CheckBuildVersionUseCase.isAndroidVersionAtLeast(Build.VERSION_CODES.LOLLIPOP_MR1) } returns true
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -137,7 +138,7 @@ class DeeplinkPluginTest {
     fun `given trackDeepLinks is enabled and api level is 21, when onActivityCreated is called, then Deeplink opened event called with correct properties`() =
         runTest {
             val trackingEnabled = true
-            every { CheckBuildVersionUseCase.isAndroidVersionLollipopAndAbove() } returns false
+            every { CheckBuildVersionUseCase.isAndroidVersionAtLeast(Build.VERSION_CODES.LOLLIPOP_MR1) } returns false
             val mockConfiguration = mockk<Configuration> {
                 every { application } returns mockApplication
                 every { trackDeepLinks } returns trackingEnabled

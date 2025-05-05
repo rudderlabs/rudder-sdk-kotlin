@@ -1,7 +1,9 @@
 package com.rudderstack.sdk.kotlin.android.storage
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
+import android.os.Build
 import androidx.core.content.edit
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.storage.KeyValueStorage
@@ -47,14 +49,13 @@ internal class SharedPrefsStore(
         put(key, value)
     }
 
+    @SuppressLint("NewApi")
     @UseWithCaution
     override fun delete() {
-        val isDeleted = if (CheckBuildVersionUseCase.isAndroidVersionNAndAbove()) {
+        val isDeleted = if (CheckBuildVersionUseCase.isAndroidVersionAtLeast(Build.VERSION_CODES.N)) {
             context.deleteSharedPreferences(prefsName)
         } else {
-            File(context.getSharedPreferencesFilePath(prefsName))
-                .takeIf { file -> file.exists() }
-                ?.delete() ?: false
+            File(context.getSharedPreferencesFilePath(prefsName)).takeIf { file -> file.exists() }?.delete() ?: false
         }
         LoggerAnalytics.debug("Attempt to delete shared preferences successful: $isDeleted")
     }
