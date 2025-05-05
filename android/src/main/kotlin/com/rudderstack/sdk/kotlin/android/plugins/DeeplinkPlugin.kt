@@ -6,6 +6,7 @@ import android.net.ParseException
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import androidx.core.net.toUri
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleObserver
 import com.rudderstack.sdk.kotlin.android.storage.CheckBuildVersionUseCase
 import com.rudderstack.sdk.kotlin.android.utils.addLifecycleObserver
@@ -17,7 +18,6 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import com.rudderstack.sdk.kotlin.android.Analytics as AndroidAnalytics
 import com.rudderstack.sdk.kotlin.android.Configuration as AndroidConfiguration
-import androidx.core.net.toUri
 
 internal const val REFERRING_APPLICATION_KEY = "referring_application"
 internal const val URL_KEY = "url"
@@ -76,7 +76,13 @@ internal class DeeplinkPlugin : Plugin, ActivityLifecycleObserver {
     private fun getReferrerCompatible(activity: Activity): Uri? {
         var referrerUri: Uri?
         val intent = activity.intent
-        referrerUri = intent.getParcelableExtra(Intent.EXTRA_REFERRER)
+
+        referrerUri = if (CheckBuildVersionUseCase.isAndroidVersionAtLeast(Build.VERSION_CODES.TIRAMISU)) {
+            intent.getParcelableExtra(Intent.EXTRA_REFERRER, Uri::class.java)
+        } else {
+            @Suppress("DEPRECATION")
+            intent.getParcelableExtra(Intent.EXTRA_REFERRER)
+        }
 
         if (referrerUri == null) {
             // Intent.EXTRA_REFERRER_NAME
