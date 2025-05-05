@@ -1,6 +1,5 @@
 package com.rudderstack.sdk.kotlin.android.storage
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
 import android.os.Build
@@ -49,7 +48,6 @@ internal class SharedPrefsStore(
         put(key, value)
     }
 
-    @SuppressLint("NewApi")
     @UseWithCaution
     override fun delete() {
         val isDeleted = if (CheckBuildVersionUseCase.isAndroidVersionAtLeast(Build.VERSION_CODES.N)) {
