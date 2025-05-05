@@ -16,6 +16,7 @@ import com.rudderstack.integration.kotlin.braze.Utility.readFileAsJsonObject
 import com.rudderstack.sdk.kotlin.android.utils.application
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
+import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
 import io.mockk.MockKAnnotations
 import io.mockk.clearMocks
@@ -75,7 +76,8 @@ class BrazeIntegrationTest {
         every { initBrazeConfig() } returns mockBrazeConfigBuilder
 
         // LogLevel
-        every { mockAnalytics.configuration.logLevel } returns Logger.LogLevel.VERBOSE
+        mockkObject(LoggerAnalytics)
+        every { LoggerAnalytics.logLevel } returns Logger.LogLevel.VERBOSE
 
         // Braze
         mockkObject(Braze)

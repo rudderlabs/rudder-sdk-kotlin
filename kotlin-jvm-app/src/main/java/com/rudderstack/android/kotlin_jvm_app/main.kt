@@ -13,11 +13,11 @@ import java.util.Date
 private lateinit var analytics: Analytics
 
 fun main() {
+    LoggerAnalytics.logLevel = Logger.LogLevel.VERBOSE
     analytics = Analytics(
         configuration = Configuration(
             writeKey = "<WRITE KEY>",
             dataPlaneUrl = "<DATA PLANE URL>",
-            logLevel = Logger.LogLevel.VERBOSE,
             gzipEnabled = DEFAULT_GZIP_STATUS,
         )
     )
