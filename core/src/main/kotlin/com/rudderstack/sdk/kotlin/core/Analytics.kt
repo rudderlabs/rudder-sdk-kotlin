@@ -92,7 +92,7 @@ open class Analytics protected constructor(
 
     private fun runForBaseTypeOnly() {
         if (this::class == Analytics::class) {
-            LoggerAnalytics.setLoggerIfNull(logger = KotlinLogger())
+            LoggerAnalytics.setPlatformLogger(logger = KotlinLogger())
             connectivityState.dispatch(ConnectivityState.SetDefaultStateAction())
             setupSourceConfig()
         }

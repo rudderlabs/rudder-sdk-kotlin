@@ -52,7 +52,7 @@ object LoggerAnalytics {
      * Sets the logger instance if null.
      */
     @InternalRudderApi
-    fun setLoggerIfNull(logger: Logger) {
+    fun setPlatformLogger(logger: Logger) {
         if (this.logger == null) {
             this.logger = logger
         }
