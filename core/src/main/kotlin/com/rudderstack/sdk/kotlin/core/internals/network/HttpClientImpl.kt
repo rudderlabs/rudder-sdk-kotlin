@@ -200,15 +200,15 @@ internal class HttpClientImpl private constructor(
                 is UnknownHostException,
                 is NoRouteToHostException,
                 is SocketTimeoutException -> {
-                    Result.Failure(error = NetworkErrorStatus.ERROR_NETWORK_UNAVAILABLE)
+                    Result.Failure(error = NetworkErrorStatus.ErrorNetworkUnavailable)
                 }
 
                 is IOException -> {
-                    Result.Failure(error = NetworkErrorStatus.ERROR_RETRY)
+                    Result.Failure(error = NetworkErrorStatus.ErrorRetry())
                 }
 
                 else -> {
-                    Result.Failure(error = NetworkErrorStatus.ERROR_UNKNOWN)
+                    Result.Failure(error = NetworkErrorStatus.ErrorUnknown)
                 }
             }
         } finally {

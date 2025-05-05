@@ -296,7 +296,7 @@ class EventUploadTest {
         every { doesFileExist(singleFilePath) } returns true
         every { readFileAsString(singleFilePath) } returns unprocessedBatch
         every { mockHttpClient.sendData(any()) } returns Result.Failure(
-            error = NetworkErrorStatus.ERROR_400,
+            error = NetworkErrorStatus.Error400,
         )
 
         processMessage()
@@ -313,7 +313,7 @@ class EventUploadTest {
         }
         // Mock the behavior for HttpClient
         every { mockHttpClient.sendData(batchPayload) } returns Result.Failure(
-            error = NetworkErrorStatus.ERROR_404,
+            error = NetworkErrorStatus.Error404,
         )
 
         processMessage()
@@ -341,7 +341,7 @@ class EventUploadTest {
         every { doesFileExist(singleFilePath) } returns true
         every { readFileAsString(singleFilePath) } returns unprocessedBatch
         every { mockHttpClient.sendData(any()) } returns Result.Failure(
-            error = NetworkErrorStatus.ERROR_413,
+            error = NetworkErrorStatus.Error413,
         )
 
         processMessage()
@@ -357,7 +357,7 @@ class EventUploadTest {
         every { doesFileExist(singleFilePath) } returns true
         every { readFileAsString(singleFilePath) } returns unprocessedBatch
         every { mockHttpClient.sendData(any()) } returns Result.Failure(
-            error = NetworkErrorStatus.ERROR_401,
+            error = NetworkErrorStatus.Error401,
         )
 
         processMessage()
@@ -393,7 +393,7 @@ class EventUploadTest {
         every { mockHttpClient.sendData(any()) } answers {
             callCount++
             when {
-                callCount <= maxAttempt -> Result.Failure(NetworkErrorStatus.ERROR_UNKNOWN)
+                callCount <= maxAttempt -> Result.Failure(NetworkErrorStatus.ErrorUnknown)
                 // This else block is needed to stop the infinite loop
                 else -> Result.Success("Ok")
             }

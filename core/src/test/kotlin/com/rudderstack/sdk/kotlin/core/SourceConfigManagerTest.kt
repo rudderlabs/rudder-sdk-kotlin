@@ -139,7 +139,7 @@ class SourceConfigManagerTest {
     fun `given connection is available but network request fails, when source config is fetched, then it is neither stored nor any of the observer is notified`() =
         runTest(testDispatcher) {
             every { httpClient.getData() } returns Result.Failure(
-                error = NetworkErrorStatus.ERROR_RETRY,
+                error = NetworkErrorStatus.ErrorRetry(),
             )
 
             sourceConfigManager.refreshSourceConfigAndNotifyObservers()
@@ -172,7 +172,7 @@ class SourceConfigManagerTest {
     fun `given sourceConfig api return 400 response code, when source config is fetched, then invalid write key process in initiated`() =
         runTest(testDispatcher) {
             every { httpClient.getData() } returns Result.Failure(
-                error = NetworkErrorStatus.ERROR_400,
+                error = NetworkErrorStatus.Error400,
             )
 
             sourceConfigManager.refreshSourceConfigAndNotifyObservers()
@@ -248,12 +248,12 @@ class SourceConfigManagerTest {
 
         @JvmStatic
         fun provideSourceConfigErrorStatus() = listOf(
-            Arguments.of(NetworkErrorStatus.ERROR_401),
-            Arguments.of(NetworkErrorStatus.ERROR_404),
-            Arguments.of(NetworkErrorStatus.ERROR_413),
-            Arguments.of(NetworkErrorStatus.ERROR_RETRY),
-            Arguments.of(NetworkErrorStatus.ERROR_UNKNOWN),
-            Arguments.of(NetworkErrorStatus.ERROR_NETWORK_UNAVAILABLE)
+            Arguments.of(NetworkErrorStatus.Error401),
+            Arguments.of(NetworkErrorStatus.Error404),
+            Arguments.of(NetworkErrorStatus.Error413),
+            Arguments.of(NetworkErrorStatus.ErrorRetry()),
+            Arguments.of(NetworkErrorStatus.ErrorUnknown),
+            Arguments.of(NetworkErrorStatus.ErrorNetworkUnavailable)
         )
     }
 }
