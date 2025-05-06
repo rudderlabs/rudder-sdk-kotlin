@@ -4,7 +4,6 @@ import com.rudderstack.sdk.kotlin.core.Configuration
 import com.rudderstack.sdk.kotlin.core.Configuration.Companion.DEFAULT_CONTROL_PLANE_URL
 import com.rudderstack.sdk.kotlin.core.Configuration.Companion.DEFAULT_FLUSH_POLICIES
 import com.rudderstack.sdk.kotlin.core.Configuration.Companion.DEFAULT_GZIP_STATUS
-import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPolicy
 
 /**
@@ -18,7 +17,6 @@ open class ConfigurationBuilder(
 ) {
 
     private var controlPlaneUrl: String = DEFAULT_CONTROL_PLANE_URL
-    private var logLevel: Logger.LogLevel = Logger.DEFAULT_LOG_LEVEL
     private var gzipEnabled: Boolean = DEFAULT_GZIP_STATUS
     private var flushPolicies: List<FlushPolicy> = DEFAULT_FLUSH_POLICIES
 
@@ -27,13 +25,6 @@ open class ConfigurationBuilder(
      */
     open fun setControlPlaneUrl(url: String) = apply {
         controlPlaneUrl = url
-    }
-
-    /**
-     * Sets the log level.
-     */
-    open fun setLogLevel(level: Logger.LogLevel) = apply {
-        logLevel = level
     }
 
     /**
@@ -58,7 +49,6 @@ open class ConfigurationBuilder(
             writeKey = writeKey,
             dataPlaneUrl = dataPlaneUrl,
             controlPlaneUrl = controlPlaneUrl,
-            logLevel = logLevel,
             flushPolicies = flushPolicies,
             gzipEnabled = gzipEnabled
         )

@@ -99,7 +99,6 @@ class ConfigurationBuilderTest {
             .setCollectDeviceId(false)
             .setSessionConfiguration(customSessionConfig)
             .setControlPlaneUrl(TEST_CONTROL_PLANE_URL)
-            .setLogLevel(Logger.LogLevel.NONE)
             .setFlushPolicies(customPolicies)
             .setGzipEnabled(false)
             .build()
@@ -114,7 +113,6 @@ class ConfigurationBuilderTest {
             writeKey = TEST_WRITE_KEY,
             dataPlaneUrl = TEST_DATA_PLANE_URL,
             controlPlaneUrl = TEST_CONTROL_PLANE_URL,
-            logLevel = Logger.LogLevel.NONE,
             flushPolicies = customPolicies,
             gzipEnabled = false,
         )

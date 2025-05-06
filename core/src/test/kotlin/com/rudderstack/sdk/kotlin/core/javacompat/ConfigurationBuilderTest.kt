@@ -35,7 +35,6 @@ class ConfigurationBuilderTest {
             assertEquals(TEST_WRITE_KEY, it.writeKey)
             assertEquals(TEST_DATA_PLANE_URL, it.dataPlaneUrl)
             assertEquals(DEFAULT_CONTROL_PLANE_URL, it.controlPlaneUrl)
-            assertEquals(Logger.DEFAULT_LOG_LEVEL, it.logLevel)
             assertEquals(DEFAULT_FLUSH_POLICIES, it.flushPolicies)
             assertEquals(DEFAULT_GZIP_STATUS, it.gzipEnabled)
         }
@@ -46,13 +45,6 @@ class ConfigurationBuilderTest {
         val config = configurationBuilder.setControlPlaneUrl(TEST_CONTROL_PLANE_URL).build()
 
         assertEquals(TEST_CONTROL_PLANE_URL, config.controlPlaneUrl)
-    }
-
-    @Test
-    fun `when setLogLevel is set with a custom level, then logLevel should be updated`() {
-        val config = configurationBuilder.setLogLevel(Logger.LogLevel.VERBOSE).build()
-
-        assertEquals(Logger.LogLevel.VERBOSE, config.logLevel)
     }
 
     @Test
@@ -77,7 +69,6 @@ class ConfigurationBuilderTest {
 
         val actualConfiguration = configurationBuilder
             .setControlPlaneUrl(TEST_CONTROL_PLANE_URL)
-            .setLogLevel(Logger.LogLevel.NONE)
             .setFlushPolicies(customPolicies)
             .setGzipEnabled(false)
             .build()
@@ -86,7 +77,6 @@ class ConfigurationBuilderTest {
             writeKey = TEST_WRITE_KEY,
             dataPlaneUrl = TEST_DATA_PLANE_URL,
             controlPlaneUrl = TEST_CONTROL_PLANE_URL,
-            logLevel = Logger.LogLevel.NONE,
             flushPolicies = customPolicies,
             gzipEnabled = false,
         )
@@ -95,7 +85,6 @@ class ConfigurationBuilderTest {
             assertEquals(expectedConfiguration.writeKey, writeKey)
             assertEquals(expectedConfiguration.dataPlaneUrl, dataPlaneUrl)
             assertEquals(expectedConfiguration.controlPlaneUrl, controlPlaneUrl)
-            assertEquals(expectedConfiguration.logLevel, logLevel)
             assertEquals(expectedConfiguration.flushPolicies, flushPolicies)
             assertEquals(expectedConfiguration.gzipEnabled, gzipEnabled)
         }
