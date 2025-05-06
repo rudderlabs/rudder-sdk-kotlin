@@ -235,7 +235,7 @@ class Analytics(
     }
 
     private fun setup() {
-        setLogger(logger = AndroidLogger())
+        LoggerAnalytics.setPlatformLogger(logger = AndroidLogger())
         add(AndroidConnectivityObserverPlugin(connectivityState))
         add(DeviceInfoPlugin())
         add(AppInfoPlugin())

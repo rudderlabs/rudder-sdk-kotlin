@@ -199,9 +199,9 @@ class AnalyticsTest {
         }
 
     @Test
-    fun `when SDK is initialised, then AndroidLogger with default log level should be set`() {
+    fun `when SDK is initialised, then AndroidLogger should be set`() {
         verify(exactly = 1) {
-            LoggerAnalytics.setup(any<AndroidLogger>(), LogLevel.NONE)
+            LoggerAnalytics.setPlatformLogger(any<AndroidLogger>())
         }
     }
 

@@ -56,7 +56,7 @@ class BrazeIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
         braze ?: run {
             destinationConfig.parse<RudderBrazeConfig>()?.let { config ->
                 this.brazeConfig = config
-                initBraze(analytics.application, config, analytics.configuration.logLevel).also {
+                initBraze(analytics.application, config, LoggerAnalytics.logLevel).also {
                     braze = it
                     setUserAlias()
                 }

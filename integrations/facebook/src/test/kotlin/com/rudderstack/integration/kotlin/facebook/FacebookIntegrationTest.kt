@@ -10,6 +10,7 @@ import com.rudderstack.sdk.kotlin.android.Analytics
 import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.core.ecommerce.ECommerceEvents
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
+import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.ScreenEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
@@ -268,9 +269,9 @@ class FacebookIntegrationTest {
 
     @Test
     fun `when logLevel in configuration is debug, then logging is enabled for facebook sdk`() {
-        every { mockAnalytics.configuration } returns mockk<Configuration>(relaxed = true) {
-            every { logLevel } returns Logger.LogLevel.DEBUG
-        }
+        mockkObject(LoggerAnalytics)
+        every { LoggerAnalytics.logLevel } returns Logger.LogLevel.DEBUG
+        every { mockAnalytics.configuration } returns mockk<Configuration>(relaxed = true)
 
         createFacebookIntegration()
 
@@ -282,9 +283,9 @@ class FacebookIntegrationTest {
 
     @Test
     fun `when logLevel in configuration is verbose, then logging is enabled for facebook sdk`() {
-        every { mockAnalytics.configuration } returns mockk<Configuration>(relaxed = true) {
-            every { logLevel } returns Logger.LogLevel.VERBOSE
-        }
+        mockkObject(LoggerAnalytics)
+        every { LoggerAnalytics.logLevel } returns Logger.LogLevel.VERBOSE
+        every { mockAnalytics.configuration } returns mockk<Configuration>(relaxed = true)
 
         createFacebookIntegration()
 
@@ -296,9 +297,9 @@ class FacebookIntegrationTest {
 
     @Test
     fun `when logLevel in configuration is info, then logging is not enabled for facebook sdk`() {
-        every { mockAnalytics.configuration } returns mockk<Configuration>(relaxed = true) {
-            every { logLevel } returns Logger.LogLevel.INFO
-        }
+        mockkObject(LoggerAnalytics)
+        every { LoggerAnalytics.logLevel } returns Logger.LogLevel.INFO
+        every { mockAnalytics.configuration } returns mockk<Configuration>(relaxed = true)
 
         createFacebookIntegration()
 

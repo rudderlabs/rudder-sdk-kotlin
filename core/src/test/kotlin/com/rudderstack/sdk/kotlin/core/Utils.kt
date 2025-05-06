@@ -84,7 +84,8 @@ private fun String.cleanJsonString(): String {
 }
 
 fun setupLogger(logger: Logger, level: Logger.LogLevel = Logger.LogLevel.VERBOSE) {
-    LoggerAnalytics.setup(logger = logger, logLevel = level)
+    LoggerAnalytics.setPlatformLogger(logger = logger)
+    LoggerAnalytics.logLevel = level
 }
 
 // As Mockk doesn't seems to support spying on lambda function, we need to create a class for the same.
