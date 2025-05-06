@@ -286,6 +286,10 @@ public class JavaCompat {
         return analytics.getTraits();
     }
 
+    public void setCustomLogger(Logger customLogger) {
+        LoggerAnalytics.INSTANCE.setLogger(customLogger);
+    }
+
     @NonNull
     private static Map<String, Object> getMap() {
         Map<String, Object> value = new HashMap<>();
