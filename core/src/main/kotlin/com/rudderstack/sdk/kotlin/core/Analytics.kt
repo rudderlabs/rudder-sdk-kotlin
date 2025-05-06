@@ -1,7 +1,6 @@
 package com.rudderstack.sdk.kotlin.core
 
 import com.rudderstack.sdk.kotlin.core.internals.logger.KotlinLogger
-import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.AliasEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
@@ -93,7 +92,7 @@ open class Analytics protected constructor(
 
     private fun runForBaseTypeOnly() {
         if (this::class == Analytics::class) {
-            setLogger(logger = KotlinLogger())
+            LoggerAnalytics.setPlatformLogger(logger = KotlinLogger())
             connectivityState.dispatch(ConnectivityState.SetDefaultStateAction())
             setupSourceConfig()
         }
@@ -107,19 +106,6 @@ open class Analytics protected constructor(
             fetchCachedSourceConfigAndNotifyObservers()
             refreshSourceConfigAndNotifyObservers()
         }
-    }
-
-    /**
-     * Configures the logger for analytics with a specified `Logger` instance.
-     *
-     * This function sets up the `LoggerAnalytics` with the provided `logger` instance,
-     * applying the log level specified in the configuration.
-     *
-     * @param logger The `Logger` instance to use for logging. Defaults to an instance of `KotlinLogger`.
-     */
-    fun setLogger(logger: Logger) {
-        if (!isAnalyticsActive()) return
-        LoggerAnalytics.setup(logger = logger, logLevel = configuration.logLevel)
     }
 
     /**

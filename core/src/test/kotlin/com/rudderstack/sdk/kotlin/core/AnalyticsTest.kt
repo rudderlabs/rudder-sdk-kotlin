@@ -211,9 +211,9 @@ class AnalyticsTest {
     }
 
     @Test
-    fun `when SDK is initialised, then KotlinLogger and default log level should be set`() {
+    fun `when SDK is initialised, then KotlinLogger should be set`() {
         verify(exactly = 1) {
-            LoggerAnalytics.setup(any<KotlinLogger>(), LogLevel.NONE)
+            LoggerAnalytics.setPlatformLogger(any<KotlinLogger>())
         }
     }
 
