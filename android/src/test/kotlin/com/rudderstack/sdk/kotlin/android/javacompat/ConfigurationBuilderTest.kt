@@ -4,7 +4,7 @@ import android.app.Application
 import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.android.utils.provideSessionConfiguration
 import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPolicy
-import com.rudderstack.sdk.kotlin.core.provideListOfFlushPolicies
+import com.rudderstack.sdk.kotlin.core.provideDefaultFlushPolicies
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
@@ -35,7 +35,7 @@ class ConfigurationBuilderTest {
         MockKAnnotations.init(this, relaxed = true)
 
         mockkStatic("com.rudderstack.sdk.kotlin.core.ConfigurationKt")
-        every { provideListOfFlushPolicies() } returns mockPolicies
+        every { provideDefaultFlushPolicies() } returns mockPolicies
 
         configurationBuilder = ConfigurationBuilder(
             mockApplication,

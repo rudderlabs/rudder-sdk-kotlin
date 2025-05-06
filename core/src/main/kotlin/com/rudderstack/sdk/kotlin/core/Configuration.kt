@@ -45,7 +45,7 @@ open class Configuration @JvmOverloads constructor(
          * which define the conditions under which events are flushed to the server.
          */
         val DEFAULT_FLUSH_POLICIES: List<FlushPolicy>
-            get() = provideListOfFlushPolicies()
+            get() = provideDefaultFlushPolicies()
     }
 }
 
@@ -55,7 +55,7 @@ open class Configuration @JvmOverloads constructor(
  * @return A list of flush policies, including `CountFlushPolicy`, `FrequencyFlushPolicy`, and `StartupFlushPolicy`.
  */
 @VisibleForTesting
-fun provideListOfFlushPolicies() = listOf(
+fun provideDefaultFlushPolicies() = listOf(
     CountFlushPolicy(),
     FrequencyFlushPolicy(),
     StartupFlushPolicy(),
