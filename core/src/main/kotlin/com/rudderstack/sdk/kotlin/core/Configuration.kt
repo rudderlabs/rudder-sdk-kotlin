@@ -27,6 +27,7 @@ open class Configuration @JvmOverloads constructor(
 ) {
 
     companion object {
+
         /**
          * The default status of GZIP compression for network requests.
          * If true, GZIP is enabled; if false, it is disabled.
@@ -42,10 +43,11 @@ open class Configuration @JvmOverloads constructor(
          * The default flush policies for `CountFlushPolicy` and `FrequencyFlushPolicy`,
          * which define the conditions under which events are flushed to the server.
          */
-        val DEFAULT_FLUSH_POLICIES: List<FlushPolicy> = listOf(
-            CountFlushPolicy(),
-            FrequencyFlushPolicy(),
-            StartupFlushPolicy(),
-        )
+        val DEFAULT_FLUSH_POLICIES: List<FlushPolicy>
+            get() = listOf(
+                CountFlushPolicy(),
+                FrequencyFlushPolicy(),
+                StartupFlushPolicy(),
+            )
     }
 }
