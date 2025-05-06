@@ -3,10 +3,12 @@ package com.rudderstack.sdk.kotlin.android.javacompat
 import android.app.Application
 import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.android.utils.provideSessionConfiguration
-import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPolicy
+import com.rudderstack.sdk.kotlin.core.provideListOfFlushPolicies
 import io.mockk.MockKAnnotations
+import io.mockk.every
 import io.mockk.impl.annotations.MockK
+import io.mockk.mockkStatic
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -23,11 +25,17 @@ class ConfigurationBuilderTest {
     @MockK
     private lateinit var mockApplication: Application
 
+    @MockK
+    private lateinit var mockPolicies: List<FlushPolicy>
+
     private lateinit var configurationBuilder: ConfigurationBuilder
 
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this, relaxed = true)
+
+        mockkStatic("com.rudderstack.sdk.kotlin.core.ConfigurationKt")
+        every { provideListOfFlushPolicies() } returns mockPolicies
 
         configurationBuilder = ConfigurationBuilder(
             mockApplication,

@@ -7,6 +7,7 @@ import com.rudderstack.sdk.kotlin.core.internals.policies.CountFlushPolicy
 import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPolicy
 import com.rudderstack.sdk.kotlin.core.internals.policies.FrequencyFlushPolicy
 import com.rudderstack.sdk.kotlin.core.internals.policies.StartupFlushPolicy
+import org.jetbrains.annotations.VisibleForTesting
 
 /**
  * The `Configuration` class is used to configure the SDK's settings for network communication, logging, data storage, and more.
@@ -44,10 +45,18 @@ open class Configuration @JvmOverloads constructor(
          * which define the conditions under which events are flushed to the server.
          */
         val DEFAULT_FLUSH_POLICIES: List<FlushPolicy>
-            get() = listOf(
-                CountFlushPolicy(),
-                FrequencyFlushPolicy(),
-                StartupFlushPolicy(),
-            )
+            get() = provideListOfFlushPolicies()
     }
 }
+
+/**
+ * Provides a list of default flush policies used for sending events to the data plane.
+ *
+ * @return A list of flush policies, including `CountFlushPolicy`, `FrequencyFlushPolicy`, and `StartupFlushPolicy`.
+ */
+@VisibleForTesting
+fun provideListOfFlushPolicies() = listOf(
+    CountFlushPolicy(),
+    FrequencyFlushPolicy(),
+    StartupFlushPolicy(),
+)
