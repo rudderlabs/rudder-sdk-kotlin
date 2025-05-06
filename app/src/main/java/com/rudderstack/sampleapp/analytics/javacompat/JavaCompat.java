@@ -13,6 +13,7 @@ import com.rudderstack.sdk.kotlin.android.SessionConfiguration;
 import com.rudderstack.sdk.kotlin.android.javacompat.ConfigurationBuilder;
 import com.rudderstack.sdk.kotlin.android.javacompat.SessionConfigurationBuilder;
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger;
+import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics;
 import com.rudderstack.sdk.kotlin.core.internals.models.ExternalId;
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption;
 import com.rudderstack.sdk.kotlin.android.javacompat.JavaAnalytics;
@@ -55,6 +56,8 @@ public class JavaCompat {
 
     @NonNull
     private static JavaAnalytics analyticsFactory(@NonNull Application application, @NonNull String writeKey, @NonNull String dataPlaneUrl) {
+        LoggerAnalytics.INSTANCE.setLogLevel(Logger.LogLevel.VERBOSE);
+
         SessionConfiguration sessionConfiguration = new SessionConfigurationBuilder()
                 .setAutomaticSessionTracking(true)
                 .setSessionTimeoutInMillis(30)
@@ -63,11 +66,14 @@ public class JavaCompat {
         Configuration configuration = new ConfigurationBuilder(application, writeKey, dataPlaneUrl)
                 .setTrackApplicationLifecycleEvents(true)
                 .setSessionConfiguration(sessionConfiguration)
-                .setLogLevel(Logger.LogLevel.VERBOSE)
                 .setGzipEnabled(true)
                 .build();
 
-        return new JavaAnalytics(configuration);
+
+        JavaAnalytics javaAnalytics = new JavaAnalytics(configuration);
+        LoggerAnalytics.INSTANCE.verbose("SampleApp: Initializing JavaAnalytics with writeKey: " + writeKey + " and dataPlaneUrl: " + dataPlaneUrl);
+
+        return javaAnalytics;
     }
 
     // Android
