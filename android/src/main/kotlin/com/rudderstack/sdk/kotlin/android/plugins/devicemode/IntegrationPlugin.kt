@@ -95,7 +95,7 @@ abstract class IntegrationPlugin : EventPlugin {
     //  There should be no side effect of calling this method multiple times with same SourceConfig.
     internal fun initDestination(sourceConfig: SourceConfig) {
         isDestinationConfigured(sourceConfig)?.let { destinationConfig ->
-            initSafelyAndNotifyCallbacks(destinationConfig)
+            safelyInitOrUpdateAndNotify(destinationConfig)
         }
     }
 
@@ -108,7 +108,7 @@ abstract class IntegrationPlugin : EventPlugin {
                 val errorMessage = "Destination $key is disabled in dashboard. " +
                     "No events will be sent to this destination."
                 LoggerAnalytics.warn("IntegrationPlugin: $errorMessage")
-                setFailureConfigAndNotifyCallbacks(IllegalStateException(errorMessage))
+                safelyUpdateOnFailureAndNotify(IllegalStateException(errorMessage))
                 return null
             }
             return configDestination.destinationConfig
@@ -116,7 +116,7 @@ abstract class IntegrationPlugin : EventPlugin {
             val errorMessage = "Destination $key not found in the source config. " +
                 "No events will be sent to this destination."
             LoggerAnalytics.warn("IntegrationPlugin: $errorMessage")
-            setFailureConfigAndNotifyCallbacks(IllegalStateException(errorMessage))
+            safelyUpdateOnFailureAndNotify(IllegalStateException(errorMessage))
             return null
         }
     }
@@ -192,36 +192,68 @@ abstract class IntegrationPlugin : EventPlugin {
         }
     }
 
-    private fun initSafelyAndNotifyCallbacks(destinationConfig: JsonObject) {
+    private fun safelyInitOrUpdateAndNotify(destinationConfig: JsonObject) {
+        if (getDestinationInstance() == null) {
+            safelyCreateAndNotify(destinationConfig)
+        } else {
+            safelyUpdateAndNotify(destinationConfig)
+        }
+    }
+
+    private fun safelyCreateAndNotify(destinationConfig: JsonObject) {
         safelyExecute(
             block = {
-                if (getDestinationInstance() == null) {
-                    create(destinationConfig)
-                }
+                create(destinationConfig)
                 LoggerAnalytics.debug("IntegrationPlugin: Destination $key created successfully.")
-                setSuccessConfigAndNotifyCallbacks(destinationConfig)
+                this.isDestinationReady = true
+                notifyCallbacks(Result.Success(Unit))
             },
             onException = { exception ->
-                LoggerAnalytics.error("IntegrationPlugin: Error: ${exception.message} initializing destination $key.")
-                setFailureConfigAndNotifyCallbacks(exception)
+                LoggerAnalytics.error("IntegrationPlugin: Error: ${exception.message} creating destination $key.")
+                this.isDestinationReady = false
+                notifyCallbacks(Result.Failure(exception))
             }
         )
     }
 
-    private fun setFailureConfigAndNotifyCallbacks(throwable: Throwable) {
-        if (isStandardIntegration) {
-            update(emptyJsonObject)
-        }
-        this.isDestinationReady = false
-        notifyCallbacks(Result.Failure(throwable))
+    private fun safelyUpdateOnFailureAndNotify(throwable: Throwable) {
+        safelyUpdateAndApplyBlock(
+            destinationConfig = emptyJsonObject,
+            block = {
+                LoggerAnalytics.debug("IntegrationPlugin: Destination $key updated with empty destinationConfig.")
+                this.isDestinationReady = false
+                notifyCallbacks(Result.Failure(throwable))
+            }
+        )
     }
 
-    private fun setSuccessConfigAndNotifyCallbacks(destinationConfig: JsonObject) {
-        if (isStandardIntegration) {
-            update(destinationConfig)
-        }
-        this.isDestinationReady = true
-        notifyCallbacks(Result.Success(Unit))
+    private fun safelyUpdateAndNotify(destinationConfig: JsonObject) {
+        safelyUpdateAndApplyBlock(
+            destinationConfig = destinationConfig,
+            block = {
+                LoggerAnalytics.debug(
+                    "IntegrationPlugin: Destination $key updated with destinationConfig: $destinationConfig."
+                )
+                this.isDestinationReady = true
+                notifyCallbacks(Result.Success(Unit))
+            }
+        )
+    }
+
+    private fun safelyUpdateAndApplyBlock(destinationConfig: JsonObject, block: () -> Unit) {
+        safelyExecute(
+            block = {
+                if (isStandardIntegration) {
+                    update(destinationConfig)
+                    block()
+                }
+            },
+            onException = { exception ->
+                LoggerAnalytics.error("IntegrationPlugin: Error: ${exception.message} updating destination $key.")
+                this.isDestinationReady = false
+                notifyCallbacks(Result.Failure(exception))
+            }
+        )
     }
 
     private fun notifyCallbacks(destinationResult: DestinationResult) {
