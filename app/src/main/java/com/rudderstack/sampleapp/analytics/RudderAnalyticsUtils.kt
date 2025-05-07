@@ -2,6 +2,7 @@ package com.rudderstack.sampleapp.analytics
 
 import android.app.Application
 import com.rudderstack.android.sampleapp.BuildConfig
+import com.rudderstack.sampleapp.analytics.customlogger.CustomTimberLogger
 import com.rudderstack.sampleapp.analytics.customplugins.AndroidAdvertisingIdPlugin
 import com.rudderstack.sampleapp.analytics.customplugins.AndroidAdvertisingIdPlugin.Companion.isAdvertisingLibraryAvailable
 import com.rudderstack.sampleapp.analytics.customplugins.SampleCustomIntegrationPlugin
@@ -31,8 +32,8 @@ object RudderAnalyticsUtils {
     fun initialize(application: Application) {
         // setting the LogLevel
         LoggerAnalytics.logLevel = Logger.LogLevel.VERBOSE
-        // setting the logger if needed
-        // LoggerAnalytics.setLogger(MyCustomLogger())
+        // setting a custom logger
+         LoggerAnalytics.setLogger(CustomTimberLogger())
 
         analytics = Analytics(
             configuration = Configuration(
