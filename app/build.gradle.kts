@@ -110,6 +110,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     // adding play services to generate advertising id
     implementation(libs.play.services.ads)
+    implementation(libs.timber)
 
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.kotlinx.coroutines.test)
