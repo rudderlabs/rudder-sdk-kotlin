@@ -131,7 +131,8 @@ fun ButtonsTemplateTwo(viewModel: MainViewModel) {
                 MainViewModelState.AnalyticsState.Reset
             ),
             listOf(
-                MainViewModelState.AnalyticsState.NavigateToScreens,
+                MainViewModelState.AnalyticsState.Shutdown,
+                MainViewModelState.AnalyticsState.NavigateToScreens
             )
         )
         buttonRows.forEach { row ->
