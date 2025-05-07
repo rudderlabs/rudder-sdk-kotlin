@@ -142,17 +142,20 @@ jobs:
         if: always()
         uses: slackapi/slack-github-action@b0fa283ad8fea605de13dc3f449259339835fc52  # v2.1.0
         with:
-          status: ${{ job.status }}
-          fields: repo,commit,author,action,eventName,ref,workflow,job,took
-          channel: '#sdk-ci-mobile'
-          webhook_type: 'INCOMING_WEBHOOK'
-          text: |
-            Branch Validation ${{ job.status == 'success' && 'passed ✅' || 'failed ❌' }}
-            Repository: ${{ github.repository }}
-            Branch: ${{ github.ref_name }}
-            Commit: ${{ github.event.head_commit.message }}
-            By: ${{ github.actor }}
-            Link: https://github.com/${{ github.repository }}/commit/${{ github.sha }}
+          payload: |
+            {
+              "text": "Branch Validation ${{ job.status == 'success' && 'passed ✅' || 'failed ❌' }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Branch Validation ${{ job.status == 'success' && 'passed ✅' || 'failed ❌' }}*\nRepository: ${{ github.repository }}\nBranch: ${{ github.ref_name }}\nCommit: ${{ github.event.head_commit.message }}\nBy: ${{ github.actor }}\n<https://github.com/${{ github.repository }}/commit/${{ github.sha }}|View Commit>"
+                  }
+                }
+              ]
+            }
+          webhook-type: incoming-webhook
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
