@@ -33,7 +33,7 @@ object RudderAnalyticsUtils {
         // setting the LogLevel
         LoggerAnalytics.logLevel = Logger.LogLevel.VERBOSE
         // setting a custom logger
-         LoggerAnalytics.setLogger(CustomTimberLogger())
+        LoggerAnalytics.setLogger(CustomTimberLogger())
 
         analytics = Analytics(
             configuration = Configuration(
@@ -63,7 +63,7 @@ object RudderAnalyticsUtils {
 
             override suspend fun intercept(event: Event): Event? {
                 if (event is TrackEvent && event.event == "Track Event 1") {
-                    LoggerAnalytics.debug("SampleAmplitudePlugin: dropping event")
+                    LoggerAnalytics.debug("SampleCustomIntegrationPlugin: dropping event")
                     return null
                 }
                 return event
@@ -72,10 +72,10 @@ object RudderAnalyticsUtils {
         sampleIntegrationPlugin.onDestinationReady { _, destinationResult ->
             when (destinationResult) {
                 is Result.Success ->
-                    LoggerAnalytics.debug("SampleAmplitudePlugin: destination ready")
+                    LoggerAnalytics.debug("SampleCustomIntegrationPlugin: destination ready")
 
                 is Result.Failure ->
-                    LoggerAnalytics.debug("SampleAmplitudePlugin: destination failed to initialise: ${destinationResult.error.message}.")
+                    LoggerAnalytics.debug("SampleCustomIntegrationPlugin: destination failed to initialise: ${destinationResult.error.message}.")
             }
         }
         return sampleIntegrationPlugin
