@@ -145,6 +145,7 @@ jobs:
           status: ${{ job.status }}
           fields: repo,commit,author,action,eventName,ref,workflow,job,took
           channel: '#sdk-ci-mobile'
+          webhook_type: 'INCOMING_WEBHOOK'
           text: |
             Branch Validation ${{ job.status == 'success' && 'passed ✅' || 'failed ❌' }}
             Repository: ${{ github.repository }}
