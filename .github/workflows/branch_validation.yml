@@ -1,0 +1,158 @@
+name: Branch Validation
+
+on:
+  push:
+    branches:
+      - '**'        # Match all branches
+      - '!main'     # Exclude main branch
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for detecting changes
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle  # This enables Gradle caching
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Check Gradle build scripts dependencies are sorted
+        run: ./gradlew buildEnvironment --dry-run
+
+      - name: Find affected modules
+        id: affected-modules
+        run: |
+          # Determine the base commit to compare against
+          if git merge-base --is-ancestor origin/develop HEAD; then
+            # If current branch is derived from develop
+            BASE_BRANCH="origin/develop"
+          else
+            # Otherwise use the most recent ancestor
+            BASE_BRANCH=$(git merge-base HEAD origin/main || git merge-base HEAD origin/develop || echo "HEAD~1")
+          fi
+          
+          echo "Comparing against base: $BASE_BRANCH"
+          
+          CHANGED_FILES=$(git diff --name-only $BASE_BRANCH...HEAD)
+          
+          # Create a list of affected modules
+          AFFECTED_MODULES=""
+          
+          # Check for changes in each module directory
+          for dir in core android integrations/*; do
+            if [ -d "$dir" ] && echo "$CHANGED_FILES" | grep -q "^$dir/"; then
+              MODULE_PATH=$(echo $dir | sed 's/\//:/')
+              if [ -z "$AFFECTED_MODULES" ]; then
+                AFFECTED_MODULES=":$MODULE_PATH"
+              else
+                AFFECTED_MODULES="$AFFECTED_MODULES,:$MODULE_PATH"
+              fi
+              echo "$dir=true" >> $GITHUB_OUTPUT
+            else
+              if [ -d "$dir" ]; then
+                echo "$dir=false" >> $GITHUB_OUTPUT
+              fi
+            fi
+          done
+          
+          echo "affected_modules=$AFFECTED_MODULES" >> $GITHUB_OUTPUT
+          echo "Affected modules: $AFFECTED_MODULES"
+
+      - name: Run Detekt on affected modules
+        run: |
+          AFFECTED_MODULES="${{ steps.affected-modules.outputs.affected_modules }}"
+          if [ -n "$AFFECTED_MODULES" ]; then
+            IFS=',' read -ra MODULES <<< "$AFFECTED_MODULES"
+            for module in "${MODULES[@]}"; do
+              echo "Running detekt for $module"
+              ./gradlew ${module}:detekt
+            done
+          else
+            echo "No modules affected, skipping detekt"
+          fi
+
+      - name: Run Android Lint on affected modules
+        run: |
+          AFFECTED_MODULES="${{ steps.affected-modules.outputs.affected_modules }}"
+          if [ -n "$AFFECTED_MODULES" ]; then
+            IFS=',' read -ra MODULES <<< "$AFFECTED_MODULES"
+            for module in "${MODULES[@]}"; do
+              # Skip core module for lint
+              if [[ "$module" != ":core" ]]; then
+                echo "Running lint for $module"
+                ./gradlew ${module}:lint
+              fi
+            done
+          else
+            echo "No modules affected, skipping lint"
+          fi
+
+      - name: Run SonarCloud Analysis
+        uses: sonarsource/sonarqube-scan-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL || 'https://sonarcloud.io' }}
+
+      - name: Run tests on affected modules
+        run: |
+          AFFECTED_MODULES="${{ steps.affected-modules.outputs.affected_modules }}"
+          if [ -n "$AFFECTED_MODULES" ]; then
+            IFS=',' read -ra MODULES <<< "$AFFECTED_MODULES"
+            for module in "${MODULES[@]}"; do
+              echo "Running tests for $module"
+              ./gradlew ${module}:test
+            done
+          else
+            echo "No modules affected, skipping tests"
+          fi
+
+      - name: Build affected modules
+        run: |
+          AFFECTED_MODULES="${{ steps.affected-modules.outputs.affected_modules }}"
+          if [ -n "$AFFECTED_MODULES" ]; then
+            IFS=',' read -ra MODULES <<< "$AFFECTED_MODULES"
+            for module in "${MODULES[@]}"; do
+              echo "Building $module"
+              ./gradlew ${module}:build
+            done
+          else
+            echo "No modules affected, skipping build"
+          fi
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: |
+            **/build/reports/tests/
+            **/build/reports/detekt/
+            **/build/reports/lint-results*.html
+
+      - name: Notify Slack
+        if: always()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,commit,author,action,eventName,ref,workflow,job,took
+          channel: '#sdk-ci-mobile'
+          text: |
+            Branch Validation ${{ job.status == 'success' && 'passed ✅' || 'failed ❌' }}
+            Repository: ${{ github.repository }}
+            Branch: ${{ github.ref_name }}
+            Commit: ${{ github.event.head_commit.message }}
+            By: ${{ github.actor }}
+            Link: https://github.com/${{ github.repository }}/commit/${{ github.sha }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
