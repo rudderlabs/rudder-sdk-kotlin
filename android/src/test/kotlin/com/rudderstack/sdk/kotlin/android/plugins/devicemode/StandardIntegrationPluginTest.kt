@@ -155,6 +155,41 @@ class StandardIntegrationPluginTest {
         }
 
     @Test
+    fun `given an integration plugin for which update throws an exception, when plugin is updated, then integration moves to not ready state`() = runTest {
+        val exception = Exception("Test exception")
+        val sourceConfigWithAnotherCorrectApiKey = LenientJson.decodeFromString<SourceConfig>(
+            readFileAsString(pathToSourceConfigWithAnotherCorrectApiKey)
+        )
+        val plugin = object : StandardIntegration, IntegrationPlugin() {
+            override val key: String
+                get() = "MockDestination"
+            private var destinationSdk: MockDestinationSdk? = null
+
+            override fun create(destinationConfig: JsonObject) {
+                if (destinationSdk == null) {
+                    destinationSdk = MockDestinationSdk.initialise("testApiKey")
+                }
+            }
+
+            override fun update(destinationConfig: JsonObject) {
+                throw exception
+            }
+
+            override fun getDestinationInstance(): Any? {
+                return destinationSdk
+            }
+        }
+        plugin.setup(mockAnalytics)
+        plugin.initDestination(sourceConfigWithCorrectApiKey)
+
+        assertTrue(plugin.isDestinationReady)
+
+        plugin.initDestination(sourceConfigWithAnotherCorrectApiKey)
+
+        assertFalse(plugin.isDestinationReady)
+    }
+
+    @Test
     fun `given an initialised integration, when plugin is updated with a sourceConfig, then destinationConfig in integration is updated`() =
         runTest {
             val sourceConfigWithAnotherCorrectApiKey = LenientJson.decodeFromString<SourceConfig>(
@@ -462,6 +497,20 @@ class StandardIntegrationPluginTest {
 
             verify(exactly = 1) { customPlugin.teardown() }
         }
+
+    @Test
+    fun `when an integration is initialized again with different sourceConfig, then update is called only once`() {
+        runTest {
+            val sourceConfigWithAnotherCorrectApiKey = LenientJson.decodeFromString<SourceConfig>(
+                readFileAsString(pathToSourceConfigWithAnotherCorrectApiKey)
+            )
+            plugin.initDestination(sourceConfigWithCorrectApiKey)
+
+            plugin.initDestination(sourceConfigWithAnotherCorrectApiKey)
+
+            verify(exactly = 1) { plugin.update(any()) }
+        }
+    }
 
     private fun mockInitialiseSdk() {
         every { plugin.initialiseMockSdk(match { it.contains(apiKeyRegex) }) } throws IllegalArgumentException("Invalid API key")

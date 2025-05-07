@@ -4,6 +4,7 @@ import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.utils.MockCustomIntegrationPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.utils.MockDestinationSdk
 import com.rudderstack.sdk.kotlin.android.utils.mockAnalytics
+import com.rudderstack.sdk.kotlin.android.utils.readFileAsString
 import com.rudderstack.sdk.kotlin.core.internals.models.AliasEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.GroupEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
@@ -11,6 +12,7 @@ import com.rudderstack.sdk.kotlin.core.internals.models.ScreenEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
+import com.rudderstack.sdk.kotlin.core.internals.utils.LenientJson
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import io.mockk.every
 import io.mockk.mockk
@@ -204,6 +206,19 @@ class CustomIntegrationPluginTest {
             plugin.initDestination(sourceConfig)
 
             verify(exactly = 1) { callback.invoke(null, ofType(Result.Failure::class) as DestinationResult) }
+        }
+
+    @Test
+    fun `when an integration is initialized again with different sourceConfig, then update is not called`() =
+        runTest {
+            val sourceConfigWithAnotherCorrectApiKey = LenientJson.decodeFromString<SourceConfig>(
+                readFileAsString(pathToSourceConfigWithAnotherCorrectApiKey)
+            )
+            plugin.initDestination(sourceConfig)
+
+            plugin.initDestination(sourceConfigWithAnotherCorrectApiKey)
+
+            verify(exactly = 0) { plugin.update(any()) }
         }
 
     private fun mockInitialiseSdk() {
