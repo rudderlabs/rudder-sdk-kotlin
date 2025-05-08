@@ -55,21 +55,21 @@ class SampleCustomIntegrationPlugin : IntegrationPlugin() {
 class SampleDestinationSdk private constructor(private val key: String) {
 
     fun track(event: String, properties: Map<String, Any>) {
-        LoggerAnalytics.debug("SampleAmplitudeSdk: track event $event with properties $properties")
+        LoggerAnalytics.debug("SampleDestinationSdk: track event $event with properties $properties")
     }
 
     fun flush() {
-        LoggerAnalytics.debug("SampleAmplitudeSdk: flush")
+        LoggerAnalytics.debug("SampleDestinationSdk: flush")
     }
 
     fun reset() {
-        LoggerAnalytics.debug("SampleAmplitudeSdk: reset")
+        LoggerAnalytics.debug("SampleDestinationSdk: reset")
     }
 
     companion object {
 
         fun create(key: String): SampleDestinationSdk {
-            // Create Amplitude SDK instance
+            // Create SampleDestinationSdk SDK instance
             return runBlocking {
                 // simulate a delay in creation
                 delay(1000)
