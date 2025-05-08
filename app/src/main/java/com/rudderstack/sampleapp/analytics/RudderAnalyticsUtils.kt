@@ -48,8 +48,9 @@ object RudderAnalyticsUtils {
                 gzipEnabled = true,
             )
         )
-        analytics.add(sampleIntegrationPlugin())
-        //analytics.add(AdjustIntegration())
+//        analytics.add(sampleIntegrationPlugin())
+//        analytics.add(BrazeIntegration()) // requires a minSDK version of 25
+//        analytics.add(AdjustIntegration())
     }
 
     /**
