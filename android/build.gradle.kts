@@ -38,9 +38,7 @@ android {
     compileSdk = RudderStackBuildConfig.Android.COMPILE_SDK
 
     buildFeatures {
-        buildFeatures {
-            buildConfig = true
-        }
+        buildConfig = true
     }
 
     defaultConfig {
