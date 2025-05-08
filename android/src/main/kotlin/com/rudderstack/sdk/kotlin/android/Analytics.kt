@@ -120,6 +120,10 @@ class Analytics(
         integrationsManagementPlugin.reset()
     }
 
+    /**
+     * Flushes all pending events that are currently queued in the plugin chain.
+     * This method specifically targets the `RudderStackDataPlanePlugin` to initiate the flush operation.
+     */
     override fun flush() {
         if (!isAnalyticsActive()) return
 
