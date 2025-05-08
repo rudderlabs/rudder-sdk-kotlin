@@ -18,7 +18,7 @@ nexus = "2.0.0"
 adjust-android = "5.1.0"
 firebase-bom = "[32.2.2, 33.8.0)"
 facebook-android-sdk = "18.0.1"
-android-sdk-ui = "34.0.0" #braze
+android-sdk-ui = "35.0.0" #braze
 
 #sample application dependencies
 activity-compose = "1.10.1"
