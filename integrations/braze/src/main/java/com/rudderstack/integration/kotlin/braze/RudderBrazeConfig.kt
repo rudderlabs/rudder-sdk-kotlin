@@ -93,6 +93,7 @@ private object CustomEndpointSerializer : KSerializer<String> {
         "US-08" to "sdk.iad-08.braze.com",
         "EU-01" to "sdk.fra-01.braze.eu",
         "EU-02" to "sdk.fra-02.braze.eu",
+        "AU-01" to "sdk.au-01.braze.com",
     )
 
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("customEndpoint", PrimitiveKind.STRING)
