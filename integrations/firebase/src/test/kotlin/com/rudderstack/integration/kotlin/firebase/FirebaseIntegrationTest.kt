@@ -77,7 +77,7 @@ class FirebaseIntegrationTest {
         verify(exactly = 1) {
             mockFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SCREEN_VIEW, mockBundle)
         }
-        verifyParamsInBundle( FirebaseAnalytics.Param.SCREEN_NAME to screenName)
+        verifyParamsInBundle(FirebaseAnalytics.Param.SCREEN_NAME to screenName)
     }
 
     @Test
@@ -197,7 +197,10 @@ class FirebaseIntegrationTest {
         verify(exactly = 1) { mockFirebaseAnalytics.logEvent(expectedEvent, mockBundle) }
         verifyParamsInBundle(*expectedParams.toTypedArray())
         verify(exactly = 1) {
-            mockBundle.putParcelableArrayList(FirebaseAnalytics.Param.ITEMS, ArrayList(List(numberOfProducts) { mockBundle }))
+            mockBundle.putParcelableArrayList(
+                FirebaseAnalytics.Param.ITEMS,
+                ArrayList(List(numberOfProducts) { mockBundle })
+            )
         }
     }
 
@@ -243,9 +246,12 @@ class FirebaseIntegrationTest {
             ),
             Arguments.of(
                 ECommerceEvents.CART_SHARED,
-                buildJsonObject { put("cart_id", "123") },
+                buildJsonObject {
+                    put("cart_id", "123")
+                    put("share_via", "sms")
+                },
                 FirebaseAnalytics.Event.SHARE,
-                listOf(FirebaseAnalytics.Param.ITEM_ID to "123"),
+                listOf(FirebaseAnalytics.Param.ITEM_ID to "123", FirebaseAnalytics.Param.METHOD to "sms"),
             ),
             Arguments.of(
                 ECommerceEvents.CART_SHARED,
@@ -255,9 +261,15 @@ class FirebaseIntegrationTest {
             ),
             Arguments.of(
                 ECommerceEvents.PROMOTION_VIEWED,
-                buildJsonObject { put("name", "someName") },
+                buildJsonObject {
+                    put("name", "someName")
+                    put("coupon", "someCoupon")
+                },
                 FirebaseAnalytics.Event.VIEW_PROMOTION,
-                listOf(FirebaseAnalytics.Param.PROMOTION_NAME to "someName"),
+                listOf(
+                    FirebaseAnalytics.Param.PROMOTION_NAME to "someName",
+                    FirebaseAnalytics.Param.COUPON to "someCoupon"
+                ),
             ),
             Arguments.of(
                 ECommerceEvents.PRODUCT_CLICKED,
@@ -358,13 +370,15 @@ class FirebaseIntegrationTest {
                     put("name", "Test Product")
                     put("price", 49.99)
                     put("currency", "USD")
+                    put("category", "Electronics")
                 },
                 FirebaseAnalytics.Event.VIEW_ITEM,
                 listOf(
                     FirebaseAnalytics.Param.CURRENCY to "USD",
                     FirebaseAnalytics.Param.ITEM_ID to "prod_123",
                     FirebaseAnalytics.Param.ITEM_NAME to "Test Product",
-                    FirebaseAnalytics.Param.PRICE to 49.99
+                    FirebaseAnalytics.Param.PRICE to 49.99,
+                    FirebaseAnalytics.Param.ITEM_CATEGORY to "Electronics"
                 )
             ),
             Arguments.of(
