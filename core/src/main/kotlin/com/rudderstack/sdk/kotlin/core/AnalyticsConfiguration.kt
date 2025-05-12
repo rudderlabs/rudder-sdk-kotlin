@@ -87,7 +87,7 @@ private class AnalyticsConfigurationImpl(
         CoroutineScope(analyticsJob + handler)
     }
     override val analyticsDispatcher: CoroutineDispatcher = Dispatchers.IO
-    override val storageDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(2)
+    override val storageDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(1)
     override val networkDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(1)
     override val integrationsDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(1)
 
