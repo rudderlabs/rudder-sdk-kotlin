@@ -2,6 +2,10 @@ package com.rudderstack.sampleapp.analytics.customplugins
 
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.IntegrationPlugin
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.models.AliasEvent
+import com.rudderstack.sdk.kotlin.core.internals.models.GroupEvent
+import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
+import com.rudderstack.sdk.kotlin.core.internals.models.ScreenEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -43,6 +47,22 @@ class SampleCustomIntegrationPlugin : IntegrationPlugin() {
         destinationSdk?.track(payload.event, payload.properties)
     }
 
+    override fun screen(payload: ScreenEvent) {
+        destinationSdk?.screen(payload.screenName, payload.properties)
+    }
+
+    override fun group(payload: GroupEvent) {
+        destinationSdk?.group(payload.groupId, payload.traits)
+    }
+
+    override fun identify(payload: IdentifyEvent) {
+        destinationSdk?.identifyUser(payload.userId, analytics.traits ?: emptyMap())
+    }
+
+    override fun alias(payload: AliasEvent) {
+        destinationSdk?.aliasUser(payload.userId, payload.previousId)
+    }
+
     override fun flush() {
         destinationSdk?.flush()
     }
@@ -56,6 +76,22 @@ class SampleDestinationSdk private constructor(private val key: String) {
 
     fun track(event: String, properties: Map<String, Any>) {
         LoggerAnalytics.debug("SampleDestinationSdk: track event $event with properties $properties")
+    }
+
+    fun screen(screenName: String, properties: Map<String, Any>) {
+        LoggerAnalytics.debug("SampleDestinationSdk: screen event $screenName with properties $properties")
+    }
+
+    fun group(groupId: String, traits: Map<String, Any>) {
+        LoggerAnalytics.debug("SampleDestinationSdk: group event $groupId with traits $traits")
+    }
+
+    fun identifyUser(userId: String, traits: Map<String, Any>) {
+        LoggerAnalytics.debug("SampleDestinationSdk: identify user $userId with traits $traits")
+    }
+
+    fun aliasUser(userId: String, previousId: String) {
+        LoggerAnalytics.debug("SampleDestinationSdk: alias user $userId with previous ID $previousId")
     }
 
     fun flush() {
