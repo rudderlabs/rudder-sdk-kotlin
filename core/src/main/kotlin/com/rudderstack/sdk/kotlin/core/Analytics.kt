@@ -217,7 +217,7 @@ open class Analytics protected constructor(
                 newTraits = traits,
             )
         )
-        analyticsScope.launch {
+        analyticsScope.launch(storageDispatcher) {
             userIdentityState.value.storeUserIdAndTraits(
                 storage = storage
             )
@@ -252,7 +252,7 @@ open class Analytics protected constructor(
         userIdentityState.dispatch(
             SetUserIdForAliasEvent(newId = newId)
         )
-        analyticsScope.launch {
+        analyticsScope.launch(storageDispatcher) {
             userIdentityState.value.storeUserId(storage = storage)
         }
 
@@ -360,7 +360,7 @@ open class Analytics protected constructor(
         if (!isAnalyticsActive()) return
 
         userIdentityState.dispatch(ResetUserIdentityAction)
-        analyticsScope.launch {
+        analyticsScope.launch(storageDispatcher) {
             userIdentityState.value.resetUserIdentity(
                 storage = storage,
             )
