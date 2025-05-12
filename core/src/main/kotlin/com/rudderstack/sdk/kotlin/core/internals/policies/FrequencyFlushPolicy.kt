@@ -33,7 +33,7 @@ class FrequencyFlushPolicy(private var flushIntervalInMillis: Long = DEFAULT_FLU
         if (!jobStarted) {
             jobStarted = true
 
-            flushJob = analytics.analyticsScope.launch(analytics.storageDispatcher) {
+            flushJob = analytics.analyticsScope.launch(analytics.analyticsDispatcher) {
                 if (flushIntervalInMillis > 0) {
                     do {
                         delay(flushIntervalInMillis)
