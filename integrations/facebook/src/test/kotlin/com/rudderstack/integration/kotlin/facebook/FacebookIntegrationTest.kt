@@ -37,6 +37,8 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
+import java.math.BigDecimal
+import java.util.Currency
 
 private const val pathToSourceConfigWithLimitedDataUseDisabled =
     "facebookconfig/facebook_config_with_limited_data_use_disabled.json"
@@ -220,6 +222,26 @@ class FacebookIntegrationTest {
                 state = "state",
                 zip = "12345",
                 country = "country",
+            )
+        }
+    }
+
+    @Test
+    fun `given order completed e-commerce event, when track called, then logPurchase gets called with appropriate params`() {
+        createFacebookIntegration()
+
+        val trackEvent = TrackEvent(ECommerceEvents.ORDER_COMPLETED, buildJsonObject {
+            put("revenue", 100)
+            put("currency", "INR")
+        })
+
+        facebookIntegration.track(trackEvent)
+
+        verify(exactly = 1) {
+            mockFacebookEventsLogger.logPurchase(
+                purchaseAmount = BigDecimal.valueOf(100.0),
+                currency = Currency.getInstance("INR"),
+                parameters = mockBundle
             )
         }
     }
