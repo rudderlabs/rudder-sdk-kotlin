@@ -1,5 +1,6 @@
 package com.rudderstack.sdk.kotlin.android.connectivity
 
+import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -59,6 +60,7 @@ internal class AndroidConnectivityObserverPlugin(
     }
 
     // Suppressing deprecation warning as we need to support lower API levels.
+    @SuppressLint("MissingPermission")
     @Suppress("DEPRECATION")
     @Throws(RuntimeException::class)
     private fun registerConnectivityObserver() {
@@ -105,6 +107,7 @@ internal fun createNetworkCallback(connectivityState: State<Boolean>) = object :
 // Suppressing deprecation warning as we need to support lower API levels.
 @Suppress("DEPRECATION")
 internal fun createBroadcastReceiver(connectivityState: State<Boolean>) = object : BroadcastReceiver() {
+    @SuppressLint("MissingPermission")
     override fun onReceive(context: Context, intent: Intent?) {
         (context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).activeNetworkInfo?.let {
             when (it.isConnected) {
