@@ -215,7 +215,6 @@ open class Analytics protected constructor(
             SetUserIdAndTraitsAction(
                 newUserId = userId,
                 newTraits = traits,
-                analytics = this
             )
         )
         analyticsScope.launch {
