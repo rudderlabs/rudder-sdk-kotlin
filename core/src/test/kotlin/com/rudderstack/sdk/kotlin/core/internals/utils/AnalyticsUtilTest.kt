@@ -48,6 +48,7 @@ class AnalyticsUtilTest {
             every { analyticsScope } returns testScope
             every { analyticsDispatcher } returns testDispatcher
             every { fileStorageDispatcher } returns testDispatcher
+            every { keyValueStorageDispatcher } returns testDispatcher
             every { networkDispatcher } returns testDispatcher
 
             every { storage } returns mockStorage
@@ -58,6 +59,7 @@ class AnalyticsUtilTest {
     }
 
     @Test
+    @OptIn(UseWithCaution::class)
     fun `when handleInvalidWriteKey is called, then shutdown analytics and set isInvalidWriteKey to true`() {
         mockAnalytics.handleInvalidWriteKey()
 

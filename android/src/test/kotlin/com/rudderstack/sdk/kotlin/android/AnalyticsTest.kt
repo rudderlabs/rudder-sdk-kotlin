@@ -93,6 +93,7 @@ class AnalyticsTest {
             every { analyticsScope } returns testScope
             every { analyticsDispatcher } returns testDispatcher
             every { fileStorageDispatcher } returns testDispatcher
+            every { keyValueStorageDispatcher } returns testDispatcher
             every { networkDispatcher } returns testDispatcher
             every { integrationsDispatcher } returns testDispatcher
             every { storage } returns mockStorage
