@@ -1,7 +1,6 @@
 package com.rudderstack.sdk.kotlin.core
 
 import com.rudderstack.sdk.kotlin.core.internals.logger.KotlinLogger
-import com.rudderstack.sdk.kotlin.core.internals.logger.Logger.LogLevel
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.Properties
@@ -107,7 +106,7 @@ class AnalyticsTest {
         mockAnalyticsConfiguration.apply {
             every { analyticsScope } returns testScope
             every { analyticsDispatcher } returns testDispatcher
-            every { storageDispatcher } returns testDispatcher
+            every { fileStorageDispatcher } returns testDispatcher
             every { networkDispatcher } returns testDispatcher
 
             // Mock SourceConfig

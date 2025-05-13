@@ -47,7 +47,7 @@ class AnalyticsUtilTest {
         mockAnalyticsConfiguration.apply {
             every { analyticsScope } returns testScope
             every { analyticsDispatcher } returns testDispatcher
-            every { storageDispatcher } returns testDispatcher
+            every { fileStorageDispatcher } returns testDispatcher
             every { networkDispatcher } returns testDispatcher
 
             every { storage } returns mockStorage

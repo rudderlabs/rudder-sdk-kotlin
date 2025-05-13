@@ -36,7 +36,7 @@ fun mockAnalytics(testScope: TestScope, testDispatcher: TestDispatcher): Analyti
     val mock = mockk<Analytics>(relaxed = true)
     every { mock.analyticsScope } returns testScope
     every { mock.analyticsDispatcher } returns testDispatcher
-    every { mock.storageDispatcher } returns testDispatcher
+    every { mock.fileStorageDispatcher } returns testDispatcher
     every { mock.networkDispatcher } returns testDispatcher
     return mock
 }

@@ -9,7 +9,6 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 import java.io.BufferedReader
-import java.io.File
 
 fun mockAnalytics(testScope: TestScope, testDispatcher: TestDispatcher): Analytics {
     val mockAnalytics = mockk<Analytics>(relaxed = true)
@@ -17,7 +16,7 @@ fun mockAnalytics(testScope: TestScope, testDispatcher: TestDispatcher): Analyti
     mockAnalytics.also {
         every { it.analyticsScope } returns testScope
         every { it.analyticsDispatcher } returns testDispatcher
-        every { it.storageDispatcher } returns testDispatcher
+        every { it.fileStorageDispatcher } returns testDispatcher
         every { it.networkDispatcher } returns testDispatcher
         every { it.integrationsDispatcher } returns testDispatcher
     }

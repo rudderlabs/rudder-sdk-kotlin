@@ -35,9 +35,14 @@ interface AnalyticsConfiguration {
     val analyticsDispatcher: CoroutineDispatcher
 
     /**
-     * Dispatcher for storage related tasks.
+     * Dispatcher for file storage related tasks. It is used when events are stored/removed from files or when rollover is performed.
      */
-    val storageDispatcher: CoroutineDispatcher
+    val fileStorageDispatcher: CoroutineDispatcher
+
+    /**
+     * Dispatcher for key-value storage related tasks.
+     */
+    val keyValueStorageDispatcher: CoroutineDispatcher
 
     /**
      * Dispatcher for network related tasks.
@@ -87,7 +92,8 @@ private class AnalyticsConfigurationImpl(
         CoroutineScope(analyticsJob + handler)
     }
     override val analyticsDispatcher: CoroutineDispatcher = Dispatchers.IO
-    override val storageDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(1)
+    override val fileStorageDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(1)
+    override val keyValueStorageDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(1)
     override val networkDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(1)
     override val integrationsDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(1)
 
