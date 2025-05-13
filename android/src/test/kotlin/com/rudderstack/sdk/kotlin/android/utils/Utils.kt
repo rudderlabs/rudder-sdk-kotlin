@@ -21,7 +21,8 @@ fun mockAnalytics(testScope: TestScope, testDispatcher: TestDispatcher): Analyti
     mockAnalytics.also {
         every { it.analyticsScope } returns testScope
         every { it.analyticsDispatcher } returns testDispatcher
-        every { it.storageDispatcher } returns testDispatcher
+        every { it.fileStorageDispatcher } returns testDispatcher
+        every { it.keyValueStorageDispatcher } returns testDispatcher
         every { it.networkDispatcher } returns testDispatcher
         every { it.integrationsDispatcher } returns testDispatcher
     }

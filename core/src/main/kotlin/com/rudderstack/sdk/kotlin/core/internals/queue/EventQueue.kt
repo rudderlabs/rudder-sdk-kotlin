@@ -95,7 +95,7 @@ internal class EventQueue(
     }
 
     @Suppress("TooGenericExceptionCaught")
-    private fun write() = analytics.analyticsScope.launch(analytics.storageDispatcher) {
+    private fun write() = analytics.analyticsScope.launch(analytics.fileStorageDispatcher) {
         for (queueMessage in writeChannel) {
             val isFlushSignal = (queueMessage.type == QueueMessage.QueueMessageType.FLUSH_SIGNAL)
 
@@ -124,7 +124,7 @@ internal class EventQueue(
     private suspend fun updateAnonymousIdAndRolloverIfNeeded(queueMessage: QueueMessage) {
         val currentEventAnonymousId = queueMessage.event?.anonymousId ?: String.empty()
         if (currentEventAnonymousId != lastEventAnonymousId) {
-            withContext(analytics.storageDispatcher) {
+            withContext(analytics.keyValueStorageDispatcher) {
                 // rollover when last and current anonymousId are different
                 storage.rollover()
                 lastEventAnonymousId = currentEventAnonymousId

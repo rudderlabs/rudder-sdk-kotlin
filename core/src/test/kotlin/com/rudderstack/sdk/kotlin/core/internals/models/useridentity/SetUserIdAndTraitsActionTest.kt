@@ -34,13 +34,12 @@ class SetUserIdAndTraitsActionTest {
         runTest {
             val userIdentityState = provideUserIdentityInitialState()
 
-            val result = SetUserIdAndTraitsAction(USER_1, TRAITS_1, mockAnalytics)
+            val result = SetUserIdAndTraitsAction(USER_1, TRAITS_1)
                 .reduce(userIdentityState)
             testDispatcher.scheduler.advanceUntilIdle()
 
             val expected = provideUserIdentityStateAfterFirstIdentifyEventIsMade()
             assert(expected == result)
-            verifyUserIdChangedBehaviour()
         }
 
     @Test
@@ -48,7 +47,7 @@ class SetUserIdAndTraitsActionTest {
         runTest {
             val userIdentityState = provideUserIdentityStateAfterFirstIdentifyEventIsMade()
 
-            val result = SetUserIdAndTraitsAction(USER_1, TRAITS_2, mockAnalytics)
+            val result = SetUserIdAndTraitsAction(USER_1, TRAITS_2)
                 .reduce(userIdentityState)
             testDispatcher.scheduler.advanceUntilIdle()
 
@@ -61,7 +60,7 @@ class SetUserIdAndTraitsActionTest {
         runTest {
             val userIdentityState = provideUserIdentityStateAfterFirstIdentifyEventIsMade()
 
-            val result = SetUserIdAndTraitsAction(USER_1, TRAITS_1_OVERLAP, mockAnalytics)
+            val result = SetUserIdAndTraitsAction(USER_1, TRAITS_1_OVERLAP)
                 .reduce(userIdentityState)
             testDispatcher.scheduler.advanceUntilIdle()
 
@@ -74,13 +73,12 @@ class SetUserIdAndTraitsActionTest {
         runTest {
             val userIdentityState = provideUserIdentityStateAfterFirstIdentifyEventIsMade()
 
-            val result = SetUserIdAndTraitsAction(USER_2, TRAITS_2, mockAnalytics)
+            val result = SetUserIdAndTraitsAction(USER_2, TRAITS_2)
                 .reduce(userIdentityState)
             testDispatcher.scheduler.advanceUntilIdle()
 
             val expected = provideUserIdentityAfterSecondIdentifyEventIsMade()
             assert(expected == result)
-            verifyUserIdChangedBehaviour()
         }
 
     @Test
@@ -93,11 +91,6 @@ class SetUserIdAndTraitsActionTest {
             mockAnalytics.storage.write(StorageKeys.USER_ID, USER_1)
             mockAnalytics.storage.write(StorageKeys.TRAITS, LenientJson.encodeToString(TRAITS_1))
         }
-    }
-
-    private fun verifyUserIdChangedBehaviour() {
-        coVerify { mockAnalytics.storage.remove(StorageKeys.USER_ID) }
-        coVerify { mockAnalytics.storage.remove(StorageKeys.TRAITS) }
     }
 }
 
