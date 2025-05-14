@@ -83,7 +83,7 @@ internal class EventUpload(
     }
 
     private suspend fun prepareForUpload() {
-        withContext(analytics.storageDispatcher) {
+        withContext(analytics.fileStorageDispatcher) {
             storage.rollover()
         }
     }

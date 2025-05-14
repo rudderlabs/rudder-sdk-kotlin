@@ -7,7 +7,6 @@ import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLif
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ProcessLifecycleManagementPlugin
 import com.rudderstack.sdk.kotlin.android.utils.getMonotonicCurrentTime
 import com.rudderstack.sdk.kotlin.core.AnalyticsConfiguration
-import com.rudderstack.sdk.kotlin.core.internals.logger.Logger.LogLevel
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
@@ -93,7 +92,8 @@ class AnalyticsTest {
         mockAnalyticsConfiguration.apply {
             every { analyticsScope } returns testScope
             every { analyticsDispatcher } returns testDispatcher
-            every { storageDispatcher } returns testDispatcher
+            every { fileStorageDispatcher } returns testDispatcher
+            every { keyValueStorageDispatcher } returns testDispatcher
             every { networkDispatcher } returns testDispatcher
             every { integrationsDispatcher } returns testDispatcher
             every { storage } returns mockStorage
