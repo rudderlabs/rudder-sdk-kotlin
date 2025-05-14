@@ -21,8 +21,6 @@
 
 The Kotlin SDK enables you to track customer event data from your Android or Kotlin JVM applications and send it to your configured destinations via RudderStack.
 
-**Be aware that this SDK supports only a limited set of Rudderstack's features.**
-
 ---
 
 ## Table of Contents
