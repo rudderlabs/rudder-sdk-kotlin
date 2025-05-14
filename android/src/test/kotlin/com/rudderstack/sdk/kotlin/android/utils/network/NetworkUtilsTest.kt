@@ -4,9 +4,9 @@ import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.verify
-import org.junit.Assert.assertEquals
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 class NetworkUtilsTest {
 
@@ -16,7 +16,7 @@ class NetworkUtilsTest {
     @MockK
     private lateinit var mockDefaultNetworkUtils: DefaultNetworkUtils
 
-    @Before
+    @BeforeEach
     fun setup() {
         MockKAnnotations.init(this, relaxed = true)
     }
@@ -120,5 +120,14 @@ class NetworkUtilsTest {
         val isBluetoothEnabled = networkUtils.isBluetoothEnabled()
 
         assertEquals(expectedBluetoothStatus, isBluetoothEnabled)
+    }
+
+    @Test
+    fun `when teardown is called, then network callback utils teardown is called`() {
+        val networkUtils = NetworkUtils(mockNetworkCallbackUtils, mockDefaultNetworkUtils)
+
+        networkUtils.teardown()
+
+        verify { mockNetworkCallbackUtils.teardown() }
     }
 }

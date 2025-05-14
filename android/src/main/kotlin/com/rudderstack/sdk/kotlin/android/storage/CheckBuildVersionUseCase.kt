@@ -1,24 +1,16 @@
 package com.rudderstack.sdk.kotlin.android.storage
 
-import android.annotation.SuppressLint
 import android.os.Build
-import androidx.annotation.ChecksSdkIntAtLeast
 
-internal class CheckBuildVersionUseCase {
+internal object CheckBuildVersionUseCase {
 
     /**
-     * @return true, if user has a device with Android 7 (API level 24) or higher
-     * @return false, if user has a device with Android API level less than 24
+     * Checks if the current Android version is at least the specified SDK level.
+     *
+     * @param sdkLevel The minimum SDK level to check against
+     * @return true if the device is running on at least the specified SDK level
      */
-    @ChecksSdkIntAtLeast(api = Build.VERSION_CODES.N)
-    @SuppressLint("ObsoleteSdkInt")
-    fun isAndroidVersionNougatAndAbove(): Boolean {
-        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.N
-    }
-
-    @ChecksSdkIntAtLeast(api = Build.VERSION_CODES.LOLLIPOP_MR1)
-    @SuppressLint("ObsoleteSdkInt")
-    fun isAndroidVersionLollipopAndAbove(): Boolean {
-        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1
+    internal fun isAndroidVersionAtLeast(sdkLevel: Int): Boolean {
+        return Build.VERSION.SDK_INT >= sdkLevel
     }
 }

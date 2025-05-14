@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.Application
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.android.storage.CheckBuildVersionUseCase
 import com.rudderstack.sdk.kotlin.android.utils.addLifecycleObserver
@@ -17,6 +18,8 @@ import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.just
 import io.mockk.mockk
+import io.mockk.mockkObject
+import io.mockk.unmockkObject
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -28,9 +31,9 @@ import kotlinx.coroutines.test.setMain
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import org.junit.After
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import com.rudderstack.sdk.kotlin.android.Analytics as AndroidAnalytics
 
 class DeeplinkPluginTest {
@@ -46,18 +49,15 @@ class DeeplinkPluginTest {
     @MockK
     private lateinit var mockActivity: Activity
 
-    @MockK
-    private lateinit var mockCheckBuildVersionUseCase: CheckBuildVersionUseCase
-
     private lateinit var plugin: DeeplinkPlugin
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    @Before
+    @BeforeEach
     fun setup() {
         MockKAnnotations.init(this, relaxed = true)
         Dispatchers.setMain(testDispatcher)
 
-        plugin = DeeplinkPlugin(mockCheckBuildVersionUseCase)
+        plugin = DeeplinkPlugin()
         every { mockAnalytics.track(any<String>(), any<JsonObject>(), any<RudderOption>()) } returns Unit
 
         every { mockActivity.intent.data } returns mockUri()
@@ -67,13 +67,15 @@ class DeeplinkPluginTest {
             host = "testApplication"
         )
         every { (mockAnalytics as AndroidAnalytics).addLifecycleObserver(plugin) } just Runs
-        every { mockCheckBuildVersionUseCase.isAndroidVersionLollipopAndAbove() } returns true
+        mockkObject(CheckBuildVersionUseCase)
+        every { CheckBuildVersionUseCase.isAndroidVersionAtLeast(Build.VERSION_CODES.LOLLIPOP_MR1) } returns true
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    @After
+    @AfterEach
     fun teardown() {
         Dispatchers.resetMain()
+        unmockkObject(CheckBuildVersionUseCase)
     }
 
     @Test
@@ -136,7 +138,7 @@ class DeeplinkPluginTest {
     fun `given trackDeepLinks is enabled and api level is 21, when onActivityCreated is called, then Deeplink opened event called with correct properties`() =
         runTest {
             val trackingEnabled = true
-            every { mockCheckBuildVersionUseCase.isAndroidVersionLollipopAndAbove() } returns false
+            every { CheckBuildVersionUseCase.isAndroidVersionAtLeast(Build.VERSION_CODES.LOLLIPOP_MR1) } returns false
             val mockConfiguration = mockk<Configuration> {
                 every { application } returns mockApplication
                 every { trackDeepLinks } returns trackingEnabled

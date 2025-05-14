@@ -1,9 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Required: Allows access to the internet for network communication -->
     <uses-permission android:name="android.permission.INTERNET"/>
-    <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
+
+    <!-- Optional: Allows access to track both WiFi and Cellular state -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Optional: Grants access only to track WiFi state if the above permission is not used -->
+    <!--<uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/> -->
+
+    <!-- Optional: Required for Bluetooth functionality: Allows access to track Bluetooth state -->
     <uses-permission android:name="android.permission.BLUETOOTH"/>
+
+    <!-- Optional: Required for advertising features: Allows access to track the advertising ID -->
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
 
     <application
         android:name="com.rudderstack.sampleapp.MyApplication"
@@ -15,7 +26,7 @@
         android:theme="@style/Theme.RudderAndroidSample"
         tools:replace="android:theme">
         <activity
-            android:name="com.rudderstack.sampleapp.mainview.MainActivity"
+            android:name="com.rudderstack.sampleapp.MainActivity"
             android:exported="true"
             android:label="@string/title_activity_main"
             android:theme="@style/Theme.RudderAndroidSample">

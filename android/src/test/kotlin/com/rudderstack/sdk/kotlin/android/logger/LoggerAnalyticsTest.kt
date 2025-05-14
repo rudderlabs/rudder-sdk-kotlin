@@ -9,12 +9,12 @@ import io.mockk.mockkStatic
 import io.mockk.spyk
 import io.mockk.verify
 import io.mockk.verifyOrder
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 class LoggerAnalyticsTest {
 
-    @Before
+    @BeforeEach
     fun setup() {
         mockkStatic(Log::class)
         every { Log.v(any(), any<String>()) } returns 0
@@ -27,7 +27,8 @@ class LoggerAnalyticsTest {
     @Test
     fun `given android logger is provided and log level is VERBOSE, when all types of logs are called, then it should log all types of logs`() {
         val logger = spyk(AndroidLogger())
-        LoggerAnalytics.setup(logger = logger, logLevel = Logger.LogLevel.VERBOSE)
+        LoggerAnalytics.setLogger(logger = logger)
+        LoggerAnalytics.logLevel = Logger.LogLevel.VERBOSE
 
         LoggerAnalytics.verbose("Verbose log")
         LoggerAnalytics.debug("Debug log")
@@ -47,7 +48,8 @@ class LoggerAnalyticsTest {
     @Test
     fun `given android logger is provided and log level is INFO, when all types of logs are called, then it should log only INFO, WARN and ERROR logs`() {
         val logger = spyk(AndroidLogger())
-        LoggerAnalytics.setup(logger = logger, logLevel = Logger.LogLevel.INFO)
+        LoggerAnalytics.setLogger(logger = logger)
+        LoggerAnalytics.logLevel = Logger.LogLevel.INFO
 
         LoggerAnalytics.verbose("Verbose log")
         LoggerAnalytics.debug("Debug log")
@@ -70,7 +72,8 @@ class LoggerAnalyticsTest {
     @Test
     fun `given android logger is provided and log level is NONE, when all types of logs are called, then it should not log any logs`() {
         val logger = spyk(AndroidLogger())
-        LoggerAnalytics.setup(logger = logger, logLevel = Logger.LogLevel.NONE)
+        LoggerAnalytics.setLogger(logger = logger)
+        LoggerAnalytics.logLevel = Logger.LogLevel.NONE
 
         LoggerAnalytics.verbose("Verbose log")
         LoggerAnalytics.debug("Debug log")

@@ -3,14 +3,15 @@ package com.rudderstack.sdk.kotlin.core.internals.logger
 import io.mockk.spyk
 import io.mockk.verify
 import io.mockk.verifyOrder
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 class LoggerAnalyticsTest {
 
     @Test
     fun `given kotlin logger is provided and log level is VERBOSE, when all types of logs are called, then it should log all types of logs`() {
         val logger = spyk(KotlinLogger())
-        LoggerAnalytics.setup(logger = logger, logLevel = Logger.LogLevel.VERBOSE)
+        LoggerAnalytics.setLogger(logger)
+        LoggerAnalytics.logLevel = Logger.LogLevel.VERBOSE
 
         LoggerAnalytics.verbose("Verbose log")
         LoggerAnalytics.debug("Debug log")
@@ -30,7 +31,8 @@ class LoggerAnalyticsTest {
     @Test
     fun `given kotlin logger is provided and log level is INFO, when all types of logs are called, then it should log only INFO, WARN and ERROR logs`() {
         val logger = spyk(KotlinLogger())
-        LoggerAnalytics.setup(logger = logger, logLevel = Logger.LogLevel.INFO)
+        LoggerAnalytics.setLogger(logger)
+        LoggerAnalytics.logLevel = Logger.LogLevel.INFO
 
         LoggerAnalytics.verbose("Verbose log")
         LoggerAnalytics.debug("Debug log")
@@ -53,7 +55,8 @@ class LoggerAnalyticsTest {
     @Test
     fun `given kotlin logger is provided and log level is NONE, when all types of logs are called, then it should not log any logs`() {
         val logger = spyk(KotlinLogger())
-        LoggerAnalytics.setup(logger = logger, logLevel = Logger.LogLevel.NONE)
+        LoggerAnalytics.setLogger(logger)
+        LoggerAnalytics.logLevel = Logger.LogLevel.NONE
 
         LoggerAnalytics.verbose("Verbose log")
         LoggerAnalytics.debug("Debug log")

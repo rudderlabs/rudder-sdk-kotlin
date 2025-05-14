@@ -1,17 +1,25 @@
 package com.rudderstack.sdk.kotlin.core.internals.logger
 
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger.Companion.DEFAULT_LOG_LEVEL
+import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
+
 /**
  * `LoggerAnalytics` is a singleton class that manages the logging instance for the SDK, supporting configurable
  * logger types and log levels. It allows setting up either an Android or Kotlin logger, providing consistent
  * logging across different environments.
  *
  * ### Setup
- * Use the `setLogger` method to configure the logger instance, specify a log level and optionally set a tag.:
+ * Use the `setLogger` method to configure the logger instance:
  *
  * ```kotlin
- * LoggerAnalytics.setup(logger = AndroidLogger(), level = configuration.logLevel, tag = "MyTag")
+ * LoggerAnalytics.setup(logger = AndroidLogger())
  * // Or for Kotlin environments
- * LoggerAnalytics.setup(logger = KotlinLogger(), level = configuration.logLevel, tag = "MyTag")
+ * LoggerAnalytics.setup(logger = KotlinLogger())
+ * ```
+ * Use `logLevel` to set the desired log level:
+ *
+ * ```kotlin
+ * LoggerAnalytics.logLevel = Logger.LogLevel.VERBOSE
  * ```
  *
  * ### Usage
@@ -29,23 +37,34 @@ package com.rudderstack.sdk.kotlin.core.internals.logger
  * and clarity for debugging and tracking events across SDK modules.
  */
 object LoggerAnalytics {
-    private lateinit var logger: Logger
-    private var logLevel: Logger.LogLevel = Logger.DEFAULT_LOG_LEVEL
-        @Synchronized private set
+
+    private var logger: Logger? = null
+
+    /**
+     * The log level for the logger. This determines the minimum severity of messages that will be logged.
+     */
+    var logLevel: Logger.LogLevel = DEFAULT_LOG_LEVEL
+        @Synchronized set
 
         @Synchronized get
 
     /**
-     * Sets the logger instance and log level for the SDK.
-     *
-     * @param logger The logger instance to use (e.g., `AndroidLogger` or `KotlinLogger`).
-     * @param logLevel The log level to activate for the logger, defining the minimum severity of logs to display.
-     * @param tag A string tag to associate with all log messages. It is optional and defaults to `Rudder-Analytics`.
+     * Sets the logger instance if null.
      */
-    fun setup(logger: Logger, logLevel: Logger.LogLevel, tag: String = TAG) {
-        LoggerAnalytics.logger = logger
-        LoggerAnalytics.logLevel = logLevel
-        LoggerAnalytics.logger.setTag(tag)
+    @InternalRudderApi
+    fun setPlatformLogger(logger: Logger) {
+        if (this.logger == null) {
+            this.logger = logger
+        }
+    }
+
+    /**
+     * Sets the logger instance. This method allows you to set a custom logger for the SDK.
+     *
+     * @param logger The logger instance to set.
+     */
+    fun setLogger(logger: Logger) {
+        this.logger = logger
     }
 
     /**
@@ -55,7 +74,7 @@ object LoggerAnalytics {
      */
     fun verbose(log: String) {
         if (Logger.LogLevel.VERBOSE >= logLevel) {
-            logger.verbose(log)
+            logger?.verbose(log)
         }
     }
 
@@ -66,7 +85,7 @@ object LoggerAnalytics {
      */
     fun debug(log: String) {
         if (Logger.LogLevel.DEBUG >= logLevel) {
-            logger.debug(log)
+            logger?.debug(log)
         }
     }
 
@@ -77,7 +96,7 @@ object LoggerAnalytics {
      */
     fun info(log: String) {
         if (Logger.LogLevel.INFO >= logLevel) {
-            logger.info(log)
+            logger?.info(log)
         }
     }
 
@@ -88,7 +107,7 @@ object LoggerAnalytics {
      */
     fun warn(log: String) {
         if (Logger.LogLevel.WARN >= logLevel) {
-            logger.warn(log)
+            logger?.warn(log)
         }
     }
 
@@ -100,7 +119,7 @@ object LoggerAnalytics {
      */
     fun error(log: String, throwable: Throwable? = null) {
         if (Logger.LogLevel.ERROR >= logLevel) {
-            logger.error(log, throwable)
+            logger?.error(log, throwable)
         }
     }
 }

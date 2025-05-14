@@ -1,31 +1,50 @@
 [versions]
 
-activity-compose = "1.9.3"
+#sdk dependencies
 agp = "8.7.2"
-android-core-ktx = "1.15.0"
-foundation = "1.7.5"
+android-core-ktx = "1.16.0"
+detekt = "1.23.6"
 json-assert = "1.5.0"
-junit = "4.13.2"
+junit-bom = "5.11.4"
 kotlin = "1.9.0"
 kotlinx-coroutines-core = "1.8.0"
 kotlinx-serialization-json = "1.5.1"
+mockk = "1.13.10"
 lifecycle-process = "2.8.7"
-lifecycle-viewmodel-compose = "2.8.7"
-material = "1.12.0"
-material-version = "1.7.5"
-mockk = "1.13.7"
-detekt = "1.23.6"
-navigation = "2.8.4"
-play-services-ads = "23.5.0"
-ui = "1.7.5"
+navigation = "2.8.9"
 nexus = "2.0.0"
 
+#integration dependencies
+adjust-android = "5.1.0"
+firebase-bom = "[32.2.2, 33.8.0)"
+facebook-android-sdk = "18.0.1"
+android-sdk-ui = "35.0.0" #braze
+
+#sample application dependencies
+activity-compose = "1.10.1"
+foundation = "1.7.8"
+lifecycle-viewmodel-compose = "2.8.7"
+material3-android = "1.3.2"
+navigation-compose = "2.8.9"
+play-services-ads = "23.5.0"
+annotation-jvm = "1.9.1"
+
+timber = "5.0.1"
+ui = "1.7.8"
+
 [libraries]
+android-sdk-ui = { module = "com.braze:android-sdk-ui", version.ref = "android-sdk-ui" }
+adjust-android = { module = "com.adjust.sdk:adjust-android", version.ref = "adjust-android" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activity-compose" }
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle-viewmodel-compose" }
-androidx-material = { module = "androidx.compose.material:material", version.ref = "material-version" }
+androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigation-compose" }
+firebase-analytics = { module = "com.google.firebase:firebase-analytics" }
+firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebase-bom" }
+facebook-android = { module = "com.facebook.android:facebook-android-sdk", version.ref = "facebook-android-sdk" }
 foundation = { module = "androidx.compose.foundation:foundation", version.ref = "foundation" }
-junit = { group = "junit", name = "junit", version.ref = "junit" }
+junit-bom = { module = "org.junit:junit-bom", version.ref = "junit-bom" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
+junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines-core" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinx-coroutines-core" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization-json" }
@@ -33,14 +52,16 @@ android-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "
 detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
 json-assert = { group = "org.skyscreamer", name = "jsonassert", version.ref = "json-assert" }
 lifecycle-process = { module = "androidx.lifecycle:lifecycle-process", version.ref = "lifecycle-process" }
-material = { module = "com.google.android.material:material", version.ref = "material" }
 mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
 mockk-agent = { group = "io.mockk", name = "mockk-agent-jvm", version.ref = "mockk" }
 navigation-runtime = { module = "androidx.navigation:navigation-runtime", version.ref = "navigation" }
 play-services-ads = { module = "com.google.android.gms:play-services-ads", version.ref = "play-services-ads" }
+timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
 ui = { module = "androidx.compose.ui:ui", version.ref = "ui" }
 ui-tooling = { module = "androidx.compose.ui:ui-tooling", version.ref = "ui" }
 ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview", version.ref = "ui" }
+androidx-material3-android = { group = "androidx.compose.material3", name = "material3-android", version.ref = "material3-android" }
+androidx-annotation-jvm = { group = "androidx.annotation", name = "annotation-jvm", version.ref = "annotation-jvm" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -1,13 +1,18 @@
 package com.rudderstack.sdk.kotlin.android.utils
 
 import android.net.Uri
+import com.rudderstack.sdk.kotlin.android.DEFAULT_SESSION_TIMEOUT_IN_MILLIS
+import com.rudderstack.sdk.kotlin.android.SessionConfiguration
+import com.rudderstack.sdk.kotlin.android.SessionConfiguration.Companion.DEFAULT_AUTOMATIC_SESSION_TRACKING
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.spyk
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.TestScope
+import java.io.BufferedReader
 import com.rudderstack.sdk.kotlin.android.Analytics as AndroidAnalytics
 
 fun mockAnalytics(testScope: TestScope, testDispatcher: TestDispatcher): Analytics {
@@ -16,8 +21,10 @@ fun mockAnalytics(testScope: TestScope, testDispatcher: TestDispatcher): Analyti
     mockAnalytics.also {
         every { it.analyticsScope } returns testScope
         every { it.analyticsDispatcher } returns testDispatcher
-        every { it.storageDispatcher } returns testDispatcher
+        every { it.fileStorageDispatcher } returns testDispatcher
+        every { it.keyValueStorageDispatcher } returns testDispatcher
         every { it.networkDispatcher } returns testDispatcher
+        every { it.integrationsDispatcher } returns testDispatcher
     }
 
     return mockAnalytics
@@ -65,5 +72,33 @@ fun mockUri(
 }
 
 fun setupLogger(logger: Logger, level: Logger.LogLevel = Logger.LogLevel.VERBOSE) {
-    LoggerAnalytics.setup(logger = logger, logLevel = level)
+    LoggerAnalytics.setLogger(logger = logger)
+    LoggerAnalytics.logLevel = level
+}
+
+// As Mockk doesn't seems to support spying on lambda function, we need to create a class for the same.
+class Block {
+
+    fun execute() {
+        // Do nothing
+    }
+}
+
+fun provideSpyBlock(): Block {
+    return spyk(Block())
+}
+
+fun Any.readFileAsString(fileName: String): String {
+    val inputStream = this::class.java.classLoader?.getResourceAsStream(fileName)
+    return inputStream?.bufferedReader()?.use(BufferedReader::readText) ?: ""
+}
+
+fun provideSessionConfiguration(
+    automaticSessionTracking: Boolean = DEFAULT_AUTOMATIC_SESSION_TRACKING,
+    sessionTimeoutInMillis: Long = DEFAULT_SESSION_TIMEOUT_IN_MILLIS,
+): SessionConfiguration {
+    return SessionConfiguration(
+        automaticSessionTracking = automaticSessionTracking,
+        sessionTimeoutInMillis = sessionTimeoutInMillis
+    )
 }

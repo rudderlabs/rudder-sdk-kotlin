@@ -10,12 +10,13 @@ import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.spyk
+import io.mockk.verify
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import org.skyscreamer.jsonassert.JSONAssert
 
 private const val NETWORK_KEY = "network"
@@ -42,7 +43,7 @@ class NetworkInfoPluginTest {
 
     private lateinit var networkInfoPlugin: NetworkInfoPlugin
 
-    @Before
+    @BeforeEach
     fun setup() {
         MockKAnnotations.init(this, relaxed = true)
 
@@ -85,6 +86,13 @@ class NetworkInfoPluginTest {
             actual.toString(),
             true
         )
+    }
+
+    @Test
+    fun `when teardown is called, then network utils teardown is called`() = runTest {
+        networkInfoPlugin.teardown()
+
+        verify { mockNetworkUtils.teardown() }
     }
 }
 

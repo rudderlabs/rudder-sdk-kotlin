@@ -4,10 +4,7 @@ import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 
 /**
- * Reads the value from the storage for the given key and returns it.
- *
- * This function currently used to read the `Traits` and `ExternalIds` from the storage
- * and convert them to the respective types and return them.
+ * Retrieves the value from storage for the given key, converts it to the appropriate type, and returns it.
  *
  * @param key The key to read the value for.
  * @param defaultValue The default value to return if the key is not found.

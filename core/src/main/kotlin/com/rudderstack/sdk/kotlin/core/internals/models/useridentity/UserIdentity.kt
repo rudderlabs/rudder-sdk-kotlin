@@ -1,9 +1,8 @@
 package com.rudderstack.sdk.kotlin.core.internals.models.useridentity
 
-import com.rudderstack.sdk.kotlin.core.internals.models.ExternalId
-import com.rudderstack.sdk.kotlin.core.internals.models.RudderTraits
+import com.rudderstack.sdk.kotlin.core.internals.models.Traits
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
-import com.rudderstack.sdk.kotlin.core.internals.statemanagement.FlowAction
+import com.rudderstack.sdk.kotlin.core.internals.statemanagement.StateAction
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
@@ -26,16 +25,11 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.readValuesOrDefault
  *
  * @property traits A collection of traits associated with the user. Traits are key-value pairs that can be used
  * to store additional information about a user, such as their name, email, or other properties.
- *
- * @property externalIds A list of external identifiers associated with the user. External IDs are used to track
- * users across different systems and platforms. Each external ID is a key-value pair that includes an ID type
- * and a value.
  */
 data class UserIdentity(
     val anonymousId: String,
     val userId: String,
-    val traits: RudderTraits,
-    val externalIds: List<ExternalId> = emptyList(),
+    val traits: Traits,
 ) {
 
     companion object {
@@ -44,22 +38,12 @@ data class UserIdentity(
             anonymousId = storage.readString(StorageKeys.ANONYMOUS_ID, defaultVal = generateUUID()),
             userId = storage.readString(StorageKeys.USER_ID, defaultVal = String.empty()),
             traits = storage.readValuesOrDefault(key = StorageKeys.TRAITS, defaultValue = emptyJsonObject),
-            externalIds = storage.readValuesOrDefault(key = StorageKeys.EXTERNAL_IDS, defaultValue = emptyList()),
         )
-    }
-
-    internal sealed interface UserIdentityAction : FlowAction<UserIdentity>
-
-    internal class SetAnonymousIdAction(
-        private val anonymousId: String
-    ) : UserIdentityAction {
-
-        override fun reduce(currentState: UserIdentity): UserIdentity {
-            return currentState.copy(anonymousId = anonymousId)
-        }
     }
 
     internal suspend fun storeAnonymousId(storage: Storage) {
         storage.write(StorageKeys.ANONYMOUS_ID, anonymousId)
     }
+
+    internal sealed interface UserIdentityAction : StateAction<UserIdentity>
 }

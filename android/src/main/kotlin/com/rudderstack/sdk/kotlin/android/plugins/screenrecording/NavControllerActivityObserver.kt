@@ -4,7 +4,6 @@ import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
-import com.rudderstack.sdk.kotlin.android.state.NavContext
 import com.rudderstack.sdk.kotlin.android.utils.runOnMainThread
 import kotlinx.coroutines.DelicateCoroutinesApi
 import java.util.concurrent.atomic.AtomicBoolean
@@ -22,24 +21,19 @@ internal class NavControllerActivityObserver(
 
     private val isActivityGettingCreated = AtomicBoolean(true)
 
-    fun find(navContext: NavContext) = navContext == this.navContext
+    internal fun find(navContext: NavContext) = navContext == this.navContext
 
     override fun onStart(owner: LifecycleOwner) {
         if (!isActivityGettingCreated.getAndSet(false)) {
-            val currentController = navContext.navController
-            val currentDestination = currentController.currentDestination
+            val currentDestination = navContext.navController.currentDestination
             if (currentDestination != null) {
-                plugin.onDestinationChanged(
-                    controller = currentController,
-                    destination = currentDestination,
-                    arguments = null
-                )
+                plugin.makeAutomaticScreenEvent(currentDestination)
             }
         }
     }
 
     override fun onDestroy(owner: LifecycleOwner) {
-        plugin.navContextState.dispatch(NavContext.RemoveNavContextAction(navContext))
+        plugin.removeContextAndObserver(navContext)
     }
 
     internal fun removeObserver() {

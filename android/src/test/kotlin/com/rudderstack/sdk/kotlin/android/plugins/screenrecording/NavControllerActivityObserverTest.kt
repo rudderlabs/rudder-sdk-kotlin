@@ -3,9 +3,8 @@ package com.rudderstack.sdk.kotlin.android.plugins.screenrecording
 import androidx.activity.ComponentActivity
 import androidx.navigation.NavDestination
 import com.rudderstack.sdk.kotlin.core.Analytics
-import com.rudderstack.sdk.kotlin.android.state.NavContext
 import com.rudderstack.sdk.kotlin.android.utils.mockAnalytics
-import com.rudderstack.sdk.kotlin.core.internals.statemanagement.FlowState
+import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import io.mockk.MockKAnnotations
 import io.mockk.Runs
 import io.mockk.every
@@ -22,9 +21,9 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import org.junit.After
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class NavControllerActivityObserverTest {
@@ -42,13 +41,13 @@ class NavControllerActivityObserverTest {
     private lateinit var mockActivity: ComponentActivity
 
     @MockK
-    private lateinit var mockNavContextState: FlowState<Set<NavContext>>
+    private lateinit var mockNavContextState: State<Set<NavContext>>
 
     private lateinit var mockAnalytics: Analytics
 
     private lateinit var observer: NavControllerActivityObserver
 
-    @Before
+    @BeforeEach
     fun setup() {
         MockKAnnotations.init(this, relaxed = true)
         Dispatchers.setMain(testDispatcher)
@@ -58,27 +57,26 @@ class NavControllerActivityObserverTest {
         every { mockNavContext.callingActivity } returns mockActivity
         every { mockActivity.lifecycle } returns mockk(relaxed = true)
         every { mockActivity.lifecycle.addObserver(any()) } just Runs
-        every { mockPlugin.navContextState } returns mockNavContextState
         every { mockPlugin.analytics } returns mockAnalytics
         every { mockNavContextState.dispatch(any()) } just Runs
 
         observer = NavControllerActivityObserver(mockPlugin, mockNavContext)
     }
 
-    @After
+    @AfterEach
     fun tearDown() {
         Dispatchers.resetMain()
         unmockkAll()
     }
 
     @Test
-    fun `given observer is just created, when onStart called, then OnDestinationChanged is not called`() {
+    fun `given observer is just created, when onStart called, then no automatic screen event is made`() {
         val mockDestination = mockk<NavDestination>(relaxed = true)
         every { mockNavContext.navController.currentDestination } returns mockDestination
 
         observer.onStart(mockActivity)
 
-        verify(exactly = 0) { mockPlugin.onDestinationChanged(mockNavContext.navController, mockDestination, any()) }
+        verify(exactly = 0) { mockPlugin.makeAutomaticScreenEvent(mockDestination) }
     }
 
     @Test
@@ -100,24 +98,20 @@ class NavControllerActivityObserverTest {
     }
 
     @Test
-    fun `given observer already created, when onStart called again, then OnDestinationChanged is not called again`() {
+    fun `given observer already created, when onStart called again, then automatic screen is made once`() {
         val mockDestination = mockk<NavDestination>(relaxed = true)
         every { mockNavContext.navController.currentDestination } returns mockDestination
 
         observer.onStart(mockActivity)
         observer.onStart(mockActivity)
 
-        verify(exactly = 1) { mockPlugin.onDestinationChanged(mockNavContext.navController, mockDestination, any()) }
+        verify(exactly = 1) { mockPlugin.makeAutomaticScreenEvent(mockDestination) }
     }
 
     @Test
-    fun `given observer, when onDestroyed called, then RemoveNavContextAction dispatched`() {
+    fun `given observer, when onDestroyed called, then context and observer removed from plugin`() {
         observer.onDestroy(mockActivity)
 
-        verify {
-            mockNavContextState.dispatch(
-                match { it is NavContext.RemoveNavContextAction && it.navContext == mockNavContext }
-            )
-        }
+        verify(exactly = 1) { mockPlugin.removeContextAndObserver(mockNavContext) }
     }
 }

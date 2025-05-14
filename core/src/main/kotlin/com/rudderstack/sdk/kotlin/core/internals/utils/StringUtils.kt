@@ -5,6 +5,7 @@ import java.util.Locale
 import java.util.UUID
 
 private const val EMPTY_STRING = ""
+private const val UNDERSCORE_SEPARATOR = "_"
 
 /**
  * Encodes the string to a Base64 encoded string.
@@ -14,7 +15,7 @@ private const val EMPTY_STRING = ""
  *
  * @return The Base64 encoded representation of the string.
  */
-fun String.encodeToBase64(): String {
+internal fun String.encodeToBase64(): String {
     val formattedString = String.format(Locale.US, "%s:", this)
     val bytes = formattedString.toByteArray(Charsets.UTF_8)
     return bytes.encodeToBase64()
@@ -29,6 +30,7 @@ fun String.encodeToBase64(): String {
  * @param writeKey The write key to be appended to the string.
  * @return The formatted string suitable for use as an Android SharedPreferences key.
  */
+@InternalRudderApi
 fun String.toAndroidPrefsKey(writeKey: String): String {
     return "$this-$writeKey"
 }
@@ -43,7 +45,7 @@ fun String.toAndroidPrefsKey(writeKey: String): String {
  * @param suffix The suffix to append to the string.
  * @return The formatted properties file name.
  */
-fun String.toPropertiesFileName(prefix: String, suffix: String): String {
+internal fun String.toPropertiesFileName(prefix: String, suffix: String): String {
     return "$prefix-$this$suffix"
 }
 
@@ -55,7 +57,7 @@ fun String.toPropertiesFileName(prefix: String, suffix: String): String {
  * @param directory The directory path to prepend to the string.
  * @return The resulting file directory path.
  */
-fun String.toFileDirectory(directory: String): String {
+internal fun String.toFileDirectory(directory: String): String {
     return "$directory$this"
 }
 
@@ -67,7 +69,7 @@ fun String.toFileDirectory(directory: String): String {
  *
  * @return A list of parsed file paths.
  */
-fun String?.parseFilePaths(): List<String> {
+internal fun String?.parseFilePaths(): List<String> {
     return if (this.isNullOrEmpty()) {
         emptyList()
     } else {
@@ -82,7 +84,18 @@ fun String?.parseFilePaths(): List<String> {
  *
  * @return An empty string.
  */
+@InternalRudderApi
 fun String.Companion.empty(): String = EMPTY_STRING
+
+/**
+ * Provides an underscore separator constant.
+ *
+ * This companion object extension function returns an underscore separator (`"_"`).
+ *
+ * @return An underscore separator as a string.
+ */
+@InternalRudderApi
+fun String.Companion.underscoreSeparator(): String = UNDERSCORE_SEPARATOR
 
 /**
  * Validates and formats a base URL by ensuring it ends with a slash (`/`).
@@ -91,12 +104,27 @@ fun String.Companion.empty(): String = EMPTY_STRING
  *
  * @return The validated base URL with a trailing slash.
  */
-val String.validatedBaseUrl
+internal val String.validatedBaseUrl
     get() = if (this.endsWith('/')) this.removeSuffix("/") else this
 
 /**
  * Generates a random UUID.
  */
+@InternalRudderApi
 fun generateUUID(): String {
     return UUID.randomUUID().toString()
+}
+
+/**
+ * Appends the provided write key to the directory name using an underscore separator (`_`).
+ *
+ * This extension function formats the directory name by appending the given
+ * write key using an underscore separator.
+ *
+ * @param writeKey The write key to be appended to the directory name.
+ * @return The formatted directory name.
+ */
+@InternalRudderApi
+fun String.appendWriteKey(writeKey: String): String {
+    return "$this${String.underscoreSeparator()}$writeKey"
 }

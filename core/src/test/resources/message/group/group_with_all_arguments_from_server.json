@@ -22,6 +22,16 @@
   "type": "group",
   "messageId": "<message-id>",
   "context": {
+    "externalId": [
+      {
+        "type": "key-1",
+        "id": "value-1"
+      },
+      {
+        "type": "key-2",
+        "id": "value-2"
+      }
+    ],
     "key-1": "String value",
     "key-2": 123,
     "key-3": true,
@@ -38,10 +48,7 @@
       true,
       123.456
     ],
-    "key-11": {},
-    "traits": {
-      "anonymousId": "<anonymous-id>"
-    }
+    "key-11": {}
   },
   "originalTimestamp": "<original-timestamp>",
   "sentAt": "{{ RSA_DEF_SENT_AT_TS }}",

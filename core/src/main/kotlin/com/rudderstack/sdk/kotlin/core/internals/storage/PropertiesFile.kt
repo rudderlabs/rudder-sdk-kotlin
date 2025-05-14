@@ -1,6 +1,7 @@
 package com.rudderstack.sdk.kotlin.core.internals.storage
 
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
 import com.rudderstack.sdk.kotlin.core.internals.utils.toPropertiesFileName
 import java.io.File
 import java.io.FileInputStream
@@ -22,7 +23,7 @@ internal class PropertiesFile(
      * Loads properties from the file. If the file does not exist or fails to load, it creates a new file.
      */
     @Suppress("TooGenericExceptionCaught")
-    fun load() {
+    internal fun load() {
         if (propsFile.exists()) {
             try {
                 FileInputStream(propsFile).use {
@@ -102,9 +103,16 @@ internal class PropertiesFile(
         properties.clear()
     }
 
-    fun remove(key: String): Boolean {
+    internal fun remove(key: String): Boolean {
         properties.remove(key)
         save()
         return true
+    }
+
+    @UseWithCaution
+    override fun delete() {
+        propsFile.deleteRecursively().let { isDeleted ->
+            LoggerAnalytics.info("Attempt to delete properties file successful: $isDeleted")
+        }
     }
 }

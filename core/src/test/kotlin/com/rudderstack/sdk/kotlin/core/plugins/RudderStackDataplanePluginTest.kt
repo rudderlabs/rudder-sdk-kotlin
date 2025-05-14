@@ -5,6 +5,7 @@ import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.queue.EventQueue
 import com.rudderstack.sdk.kotlin.core.mockAnalytics
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.unmockkAll
@@ -17,13 +18,15 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+
+private const val ANONYMOUS_ID = "anonymousId"
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class RudderStackDataplanePluginTest {
+
     private val testDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
 
@@ -31,11 +34,12 @@ class RudderStackDataplanePluginTest {
     private lateinit var mockEventQueue: EventQueue
     private lateinit var plugin: RudderStackDataplanePlugin
 
-    @Before
+    @BeforeEach
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         mockAnalytics = mockAnalytics(testScope, testDispatcher)
         mockEventQueue = mockk(relaxed = true)
+        every { mockAnalytics.userIdentityState.value.anonymousId } returns ANONYMOUS_ID
 
         plugin = spyk(RudderStackDataplanePlugin())
 
@@ -43,19 +47,18 @@ class RudderStackDataplanePluginTest {
         plugin.eventQueue = mockEventQueue
     }
 
-    @After
+    @AfterEach
     fun tearDown() {
         Dispatchers.resetMain()
         unmockkAll()
     }
 
     @Test
-    fun `given a track event, when track is called, then the event is enqueued and returned correctly`() {
+    fun `given a track event, when track is called, then the event is enqueued correctly`() {
         val trackMessage = mockk<TrackEvent>(relaxed = true)
 
-        val result = plugin.track(trackMessage)
+        plugin.track(trackMessage)
 
-        assertEquals(trackMessage, result)
         verify { mockEventQueue.put(trackMessage) }
     }
 

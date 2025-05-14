@@ -9,7 +9,7 @@ import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.UserIdentit
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.utils.encodeToString
 import com.rudderstack.sdk.kotlin.core.readFileTrimmed
-import org.junit.Test
+import org.junit.jupiter.api.Test
 import org.skyscreamer.jsonassert.JSONAssert
 
 private const val identifyEventsWithOnlyUserId = "message/identify/identify_events_with_only_user_id.json"
@@ -64,7 +64,7 @@ class IdentifyEventTest {
     @Test
     fun `given only options is passed, when identify event is made, then only options is set`() {
         val expectedJsonString = readFileTrimmed(identifyEventsWithOnlyOptions)
-        val userIdentityState: UserIdentity = provideUserIdentityState(externalIds = provideSampleExternalIdsPayload())
+        val userIdentityState: UserIdentity = provideUserIdentityState()
         val identifyEvent = IdentifyEvent(
             options = RudderOption(
                 integrations = provideSampleIntegrationsPayload(),
@@ -106,7 +106,6 @@ class IdentifyEventTest {
         val expectedJsonString = readFileTrimmed(identifyEventsWithOnlyUserIdAndOptions)
         val userIdentityState: UserIdentity = provideUserIdentityState(
             userId = USER_ID,
-            externalIds = provideSampleExternalIdsPayload()
         )
         val identifyEvent = IdentifyEvent(
             options = RudderOption(
@@ -130,7 +129,6 @@ class IdentifyEventTest {
         val expectedJsonString = readFileTrimmed(identifyEventsWithOnlyTraitsAndOptions)
         val userIdentityState: UserIdentity = provideUserIdentityState(
             traits = provideSampleJsonPayload(),
-            externalIds = provideSampleExternalIdsPayload()
         )
         val identifyEvent = IdentifyEvent(
             options = RudderOption(
@@ -155,7 +153,6 @@ class IdentifyEventTest {
         val userIdentityState: UserIdentity = provideUserIdentityState(
             userId = USER_ID,
             traits = provideSampleJsonPayload(),
-            externalIds = provideSampleExternalIdsPayload()
         )
         val identifyEvent = IdentifyEvent(
             options = RudderOption(
@@ -180,7 +177,6 @@ class IdentifyEventTest {
         val userIdentityState: UserIdentity = provideUserIdentityState(
             userId = USER_ID,
             traits = provideSampleJsonPayload(),
-            externalIds = provideSampleExternalIdsPayload()
         )
         val identifyEvent = IdentifyEvent(
             options = RudderOption(

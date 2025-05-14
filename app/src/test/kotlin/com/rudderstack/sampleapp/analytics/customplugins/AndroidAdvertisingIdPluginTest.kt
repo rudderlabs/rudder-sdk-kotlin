@@ -22,11 +22,11 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 private const val DEVICE = "device"
 private const val FAKE_ADVERTISING_ID = "fake-id"
@@ -46,7 +46,7 @@ class AndroidAdvertisingIdPluginTest {
     private val testDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
 
-    @Before
+    @BeforeEach
     fun setup() {
         Dispatchers.setMain(testDispatcher)
 
@@ -61,7 +61,7 @@ class AndroidAdvertisingIdPluginTest {
         every { mockApplication.applicationContext } returns mockContext
     }
 
-    @After
+    @AfterEach
     fun tearDown() {
         Dispatchers.resetMain()
     }

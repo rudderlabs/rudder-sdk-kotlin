@@ -15,6 +15,13 @@ val sampleRudderProperties = Properties().apply {
     }
 }
 
+tasks.withType<Test> {
+    useJUnitPlatform()
+    testLogging {
+        events("failed")
+    }
+}
+
 android {
     val composeCompilerVersion = RudderStackBuildConfig.Kotlin.COMPILER_EXTENSION_VERSION
     val androidCompileSdkVersion = RudderStackBuildConfig.Android.COMPILE_SDK
@@ -84,26 +91,35 @@ android {
 dependencies {
     implementation(project(":android"))
 
-    implementation(libs.material)
+    // RudderStack Integrations
+    implementation(project(":integrations:adjust"))
+    // implementation(project(":integrations:braze")) // This requires minimum Sdk version of 25 and above.
+
     //compose
     implementation(libs.ui)
     implementation(libs.ui.tooling.preview)
     implementation(libs.ui.tooling)
     implementation(libs.foundation)
     // Material Design
-    implementation(libs.androidx.material)
+    implementation(libs.androidx.material3.android)
+    // Navigation
+    implementation(libs.androidx.navigation.compose)
     // Integration with activities
     implementation(libs.androidx.activity.compose)
     // Integration with ViewModels
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     // adding play services to generate advertising id
     implementation(libs.play.services.ads)
+    implementation(libs.timber)
 
+    testImplementation(platform(libs.junit.bom))
     testImplementation(libs.kotlinx.coroutines.test)
-    testImplementation(libs.junit)
+    testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockk)
     testImplementation(libs.json.assert)
     testImplementation(libs.navigation.runtime)
+
+    testRuntimeOnly(libs.junit.jupiter.engine)
 }
 
 tasks.named("preBuild").configure {

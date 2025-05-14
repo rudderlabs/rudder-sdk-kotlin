@@ -18,9 +18,9 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import org.junit.After
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import com.rudderstack.sdk.kotlin.android.Analytics as AndroidAnalytics
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -41,7 +41,7 @@ class ActivityTrackingPluginTest {
     @MockK
     private lateinit var mockActivity: Activity
 
-    @Before
+    @BeforeEach
     fun setup() {
         MockKAnnotations.init(this, relaxed = true)
         Dispatchers.setMain(testDispatcher)
@@ -55,7 +55,7 @@ class ActivityTrackingPluginTest {
         every { mockConfig.trackActivities } returns true
     }
 
-    @After
+    @AfterEach
     fun tearDown() {
         unmockkAll()
         Dispatchers.resetMain()

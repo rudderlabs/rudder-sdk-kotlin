@@ -10,13 +10,14 @@ import com.rudderstack.sdk.kotlin.core.provideOnlyAnonymousIdState
 import com.rudderstack.sdk.kotlin.core.readFileTrimmed
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import org.junit.Assert.assertEquals
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
 
 private const val screenWithDefaultArguments = "message/screen/screen_with_default_arguments.json"
 private const val screenWithCategoryProperty = "message/screen/screen_with_category_property.json"
 private const val screenWithProperties = "message/screen/screen_with_properties.json"
 private const val screenWithIntegrationsOption = "message/screen/screen_with_integrations_option.json"
+private const val screenWithExternalIdsOption = "message/screen/screen_with_external_ids_option.json"
 private const val screenWithCustomContextsOption = "message/screen/screen_with_custom_contexts_option.json"
 private const val screenWithAllArguments = "message/screen/screen_with_all_arguments.json"
 private const val screenWithAllArgumentsFromServer = "message/screen/screen_with_all_arguments_from_server.json"
@@ -124,7 +125,7 @@ class ScreenEventTest {
 
     @Test
     fun `given screen event with externalIds option, when serialized, then it matches expected JSON`() {
-        val expectedJsonString = readFileTrimmed(screenWithDefaultArguments)
+        val expectedJsonString = readFileTrimmed(screenWithExternalIdsOption)
         val screenEvent = ScreenEvent(
             screenName = SCREEN_NAME,
             properties = provideDefaultScreenProperties(),

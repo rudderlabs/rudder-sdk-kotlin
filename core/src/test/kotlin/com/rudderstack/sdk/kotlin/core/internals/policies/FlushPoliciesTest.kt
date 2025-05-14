@@ -1,19 +1,34 @@
 package com.rudderstack.sdk.kotlin.core.internals.policies
 
 import com.rudderstack.sdk.kotlin.core.advanceTimeBy
+import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
+import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import io.mockk.coVerify
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import com.rudderstack.sdk.kotlin.core.mockAnalytics
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import io.mockk.every
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 class FlushPoliciesTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
     private val mockAnalytics = mockAnalytics(testScope, testDispatcher)
+
+    @BeforeEach
+    fun setup() {
+        every { mockAnalytics.sourceConfigState } returns State(
+            SourceConfig(
+                source = SourceConfig.initialState().source.copy(
+                    isSourceEnabled = true
+                )
+            )
+        )
+    }
 
     @Test
     fun `given only StartupFlushPolicy is enabled, when shouldFlush is called, then it should return true`() {

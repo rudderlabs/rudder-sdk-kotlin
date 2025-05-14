@@ -1,6 +1,7 @@
 package com.rudderstack.sdk.kotlin.core.internals.storage
 
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
+import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 
 /**
@@ -133,6 +134,18 @@ interface Storage {
      * @return An instance of [LibraryVersion] containing version details.
      */
     fun getLibraryVersion(): LibraryVersion
+
+    /**
+     * Deletes the storage being used by the implementation, along with any associated configuration.
+     *
+     * This operation permanently removes all stored data.
+     *
+     * Use this method with caution, as any data within the storage will be irretrievably lost.
+     *
+     * **Note**: It is recommended to use this API during shutdown to ensure storage is not removed abruptly, which could lead to unexpected errors.
+     */
+    @UseWithCaution
+    fun delete()
 }
 
 /**
@@ -168,6 +181,14 @@ enum class StorageKeys(val key: String) {
     ANONYMOUS_ID("anonymous_id"),
 
     /**
+     * Key for storing the last event anonymous id, which is required for processing the batch of events.
+     *
+     * **Note**: It can be different from [ANONYMOUS_ID].
+     *
+     */
+    LAST_EVENT_ANONYMOUS_ID("last_event_anonymous_id"),
+
+    /**
      *Key for storing the user id of the client.
      */
     USER_ID("user_id"),
@@ -176,11 +197,6 @@ enum class StorageKeys(val key: String) {
      *Key for storing the traits of the client.
      */
     TRAITS("traits"),
-
-    /**
-     * Key for storing the external ids.
-     */
-    EXTERNAL_IDS("external_ids"),
 
     /**
      * Key for storing the session id of the client.

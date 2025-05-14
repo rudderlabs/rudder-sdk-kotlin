@@ -1,6 +1,7 @@
 package com.rudderstack.sdk.kotlin.core.internals.storage
 
 import com.rudderstack.sdk.kotlin.core.internals.models.DEFAULT_SENT_AT_TIMESTAMP
+import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import com.rudderstack.sdk.kotlin.core.internals.utils.toFileDirectory
 import kotlinx.coroutines.sync.Semaphore
 import org.jetbrains.annotations.VisibleForTesting
@@ -23,6 +24,7 @@ internal const val TMP_SUFFIX = ".tmp"
  * @property keyValueStorage A [KeyValueStorage] instance for storing and retrieving file index information.
  */
 @Suppress("Detekt.TooManyFunctions")
+@InternalRudderApi
 class EventBatchFileManager(
     private val directory: File,
     private val writeKey: String,
@@ -90,7 +92,7 @@ class EventBatchFileManager(
      */
     fun read(): List<String> {
         val files = directory.listFiles { _, name ->
-            name.contains(writeKey) && !name.endsWith(TMP_SUFFIX)
+            !name.endsWith(TMP_SUFFIX)
         } ?: emptyArray()
         return files.map { it.absolutePath }
     }
@@ -153,7 +155,7 @@ class EventBatchFileManager(
     private fun currentFile(): File {
         if (curFile == null) {
             val index = keyValueStorage.getInt(fileIndexKey, 0)
-            curFile = File(directory, "$writeKey-$index$TMP_SUFFIX")
+            curFile = File(directory, "$index$TMP_SUFFIX")
         }
         return curFile!!
     }

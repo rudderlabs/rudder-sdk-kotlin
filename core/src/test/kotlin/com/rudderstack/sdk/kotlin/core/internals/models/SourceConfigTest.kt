@@ -1,7 +1,7 @@
 package com.rudderstack.sdk.kotlin.core.internals.models
 
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig.Companion.serializer
-import com.rudderstack.sdk.kotlin.core.internals.statemanagement.FlowState
+import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.LenientJson
@@ -13,10 +13,10 @@ import io.mockk.impl.annotations.MockK
 import io.mockk.unmockkAll
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
-import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 private const val ID = "<SOURCE_ID>"
 private const val NAME = "Android"
@@ -38,12 +38,12 @@ class SourceConfigTest {
     @MockK
     private lateinit var mockStorage: Storage
 
-    @Before
+    @BeforeEach
     fun setup() {
         MockKAnnotations.init(this, relaxed = true)
     }
 
-    @After
+    @AfterEach
     fun teardown() {
         unmockkAll()
     }
@@ -103,7 +103,7 @@ class SourceConfigTest {
 
     @Test
     fun `given an initial SourceConfig state, when UpdateAction called, then sourceConfig state is updated`() {
-        val sourceConfigFlowState = FlowState(SourceConfig.initialState())
+        val sourceConfigState = State(SourceConfig.initialState())
         val newSourceConfig = SourceConfig(
             source = RudderServerConfigSource(
                 sourceId = "newId",
@@ -115,9 +115,9 @@ class SourceConfigTest {
             )
         )
 
-        sourceConfigFlowState.dispatch(SourceConfig.UpdateAction(newSourceConfig))
+        sourceConfigState.dispatch(SourceConfig.UpdateAction(newSourceConfig))
 
-        assertEquals(newSourceConfig, sourceConfigFlowState.value)
+        assertEquals(newSourceConfig, sourceConfigState.value)
     }
 
     @Test

@@ -1,14 +1,16 @@
 package com.rudderstack.sdk.kotlin.core.internals.storage
 
+import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.storage.exception.PayloadTooLargeException
-import com.rudderstack.sdk.kotlin.core.internals.utils.toFileDirectory
+import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
+import com.rudderstack.sdk.kotlin.core.internals.utils.appendWriteKey
 import source.version.VersionConstants
 import java.io.File
 
 /**
  * The directory where the event files are stored.
  * */
-const val FILE_DIRECTORY = "/tmp/rudderstack-analytics-kotlin/"
+internal const val FILE_DIRECTORY = "/tmp/rudderstack-analytics-kotlin"
 private const val FILE_NAME = "events"
 
 /**
@@ -17,15 +19,15 @@ private const val FILE_NAME = "events"
  * This class handles storing, retrieving, and managing key-value pairs in files. It supports various data types for storage
  * and manages event files separately from properties files.
  *
- * @property writeKey The key used to create a unique storage directory.
+ * @param writeKey The key used to create a unique storage directory.
  */
 @Suppress("Detekt.TooManyFunctions")
 internal class BasicStorage(writeKey: String) : Storage {
 
     /**
-     * The directory where the storage files are kept, determined by the provided [writeKey].
+     * The directory where the storage files are kept, determined by the provided `writeKey`.
      */
-    private val storageDirectory = File(writeKey.toFileDirectory(FILE_DIRECTORY))
+    private val storageDirectory = File(FILE_DIRECTORY.appendWriteKey(writeKey))
 
     /**
      * The subdirectory within [storageDirectory] where event files are stored.
@@ -95,6 +97,7 @@ internal class BasicStorage(writeKey: String) : Storage {
 
     override fun close() {
         eventsFile.closeAndReset()
+        LoggerAnalytics.info("Storage closed")
     }
 
     override fun readInt(key: StorageKeys, defaultVal: Int): Int {
@@ -128,6 +131,14 @@ internal class BasicStorage(writeKey: String) : Storage {
             override fun getVersionName(): String = VersionConstants.VERSION_NAME
         }
     }
+
+    @UseWithCaution
+    override fun delete() {
+        propertiesFile.delete()
+        storageDirectory.deleteRecursively().let { isDeleted ->
+            LoggerAnalytics.info("Storage directory deleted: $isDeleted")
+        }
+    }
 }
 
 /**
@@ -136,6 +147,6 @@ internal class BasicStorage(writeKey: String) : Storage {
  * @param writeKey The key used to create a unique storage directory.
  * @return An instance of [BasicStorage] with the provided [writeKey].
  */
-fun provideBasicStorage(writeKey: String): Storage {
+internal fun provideBasicStorage(writeKey: String): Storage {
     return BasicStorage(writeKey = writeKey)
 }

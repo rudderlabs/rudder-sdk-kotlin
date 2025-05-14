@@ -8,11 +8,12 @@ import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.utils.encodeToString
 import com.rudderstack.sdk.kotlin.core.provideOnlyAnonymousIdState
 import com.rudderstack.sdk.kotlin.core.readFileTrimmed
-import org.junit.Assert.assertEquals
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
 
 private const val groupWithDefaultArguments = "message/group/group_with_default_arguments.json"
 private const val groupWithTraits = "message/group/group_with_traits.json"
+private const val groupWithExternalIdsOption = "message/group/group_with_external_ids_option.json"
 private const val groupWithIntegrationsOption = "message/group/group_with_integrations_option.json"
 private const val groupWithCustomContextsOption = "message/group/group_with_custom_contexts_option.json"
 private const val groupWithAllArguments = "message/group/group_with_all_arguments.json"
@@ -98,7 +99,7 @@ class GroupEventTest {
 
     @Test
     fun `given group  event with externalIds option, when serialized, then it matches expected JSON`() {
-        val expectedJsonString = readFileTrimmed(groupWithDefaultArguments)
+        val expectedJsonString = readFileTrimmed(groupWithExternalIdsOption)
         val groupEvent = GroupEvent(
             groupId = GROUP_ID,
             options = RudderOption(

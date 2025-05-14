@@ -2,17 +2,19 @@ package com.rudderstack.sdk.kotlin.android.storage
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.os.Build
 import androidx.core.content.edit
+import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.storage.KeyValueStorage
+import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
 import java.io.File
 
 internal class SharedPrefsStore(
     private val context: Context,
-    prefsName: String,
+    private val prefsName: String,
 ) : KeyValueStorage {
 
     private val preferences: SharedPreferences = context.getSharedPreferences(prefsName, Context.MODE_PRIVATE)
-    private val useCase: CheckBuildVersionUseCase = CheckBuildVersionUseCase()
 
     override fun getInt(key: String, defaultVal: Int): Int {
         return preferences.getInt(key, defaultVal)
@@ -46,20 +48,20 @@ internal class SharedPrefsStore(
         put(key, value)
     }
 
+    @UseWithCaution
+    override fun delete() {
+        val isDeleted = if (CheckBuildVersionUseCase.isAndroidVersionAtLeast(Build.VERSION_CODES.N)) {
+            context.deleteSharedPreferences(prefsName)
+        } else {
+            File(context.getSharedPreferencesFilePath(prefsName)).takeIf { file -> file.exists() }?.delete() ?: false
+        }
+        LoggerAnalytics.debug("Attempt to delete shared preferences successful: $isDeleted")
+    }
+
     override fun clear(key: String) {
         with(preferences.edit()) {
             remove(key)
             commit()
-        }
-    }
-
-    private fun delete(fileName: String) {
-        if (useCase.isAndroidVersionNougatAndAbove()) {
-            context.deleteSharedPreferences(fileName)
-        } else {
-            context.getSharedPreferences(fileName, Context.MODE_PRIVATE).edit().clear().apply()
-            val dir = File(context.applicationInfo.dataDir, "shared_prefs")
-            File(dir, "$fileName.xml").delete()
         }
     }
 
@@ -73,11 +75,16 @@ internal class SharedPrefsStore(
                 is Boolean -> putBoolean(key, value)
                 is Int -> putInt(key, value)
                 is Long -> putLong(key, value)
-                is Float -> putFloat(key, value)
                 is String -> putString(key, value)
+
                 else -> {
+                    LoggerAnalytics.error("SharedPrefsStore: ($key and $value) type is not supported.")
                 }
             }
         }
     }
+}
+
+private fun Context.getSharedPreferencesFilePath(prefsName: String): String {
+    return "${this.applicationInfo.dataDir}/shared_prefs/$prefsName.xml"
 }

@@ -2,7 +2,6 @@ package com.rudderstack.sdk.kotlin.android
 
 import android.app.Application
 import com.rudderstack.sdk.kotlin.core.Configuration
-import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPolicy
 
 internal const val DEFAULT_SESSION_TIMEOUT_IN_MILLIS = 300_000L
@@ -36,7 +35,6 @@ internal const val DEFAULT_SESSION_TIMEOUT_IN_MILLIS = 300_000L
  * @param writeKey The write key used to authenticate and send data to the backend. This field is required.
  * @param dataPlaneUrl The URL of the data plane to which events are sent. This field is required.
  * @param controlPlaneUrl The URL of the control plane, used for remote configuration management. Defaults to `DEFAULT_CONTROL_PLANE_URL`.
- * @param logLevel The log level used for SDK logging. By default, it uses the `DEBUG` log level.
  * @param flushPolicies A list of flush policies defining when and how events should be sent to the backend. Defaults to `DEFAULT_FLUSH_POLICIES`.
  * @param gzipEnabled Flag to enable or disable GZIP compression for network requests. Defaults to `DEFAULT_GZIP_STATUS`.
  *
@@ -52,27 +50,34 @@ internal const val DEFAULT_SESSION_TIMEOUT_IN_MILLIS = 300_000L
  *
  * This `Configuration` instance can then be used to initialize the `Analytics` object for RudderStack.
  *
- * @see com.rudderstack.kotlin.Configuration
+ * @see com.rudderstack.sdk.kotlin.core.Configuration
  */
 data class Configuration @JvmOverloads constructor(
     val application: Application,
-    val trackApplicationLifecycleEvents: Boolean = true,
-    val trackDeepLinks: Boolean = true,
-    val trackActivities: Boolean = false,
-    val collectDeviceId: Boolean = true,
+    val trackApplicationLifecycleEvents: Boolean = DEFAULT_TRACK_APPLICATION_LIFECYCLE_EVENTS,
+    val trackDeepLinks: Boolean = DEFAULT_TRACK_DEEP_LINKS,
+    val trackActivities: Boolean = DEFAULT_TRACK_ACTIVITIES,
+    val collectDeviceId: Boolean = DEFAULT_COLLECT_DEVICE_ID,
     val sessionConfiguration: SessionConfiguration = SessionConfiguration(),
     override val writeKey: String,
     override val dataPlaneUrl: String,
     override val controlPlaneUrl: String = DEFAULT_CONTROL_PLANE_URL,
-    override val logLevel: Logger.LogLevel = Logger.DEFAULT_LOG_LEVEL,
     override val flushPolicies: List<FlushPolicy> = DEFAULT_FLUSH_POLICIES,
     override val gzipEnabled: Boolean = DEFAULT_GZIP_STATUS
 ) : Configuration(
     writeKey = writeKey,
     dataPlaneUrl = dataPlaneUrl,
-    logLevel = logLevel,
     flushPolicies = flushPolicies,
-)
+) {
+
+    companion object {
+
+        internal const val DEFAULT_TRACK_APPLICATION_LIFECYCLE_EVENTS = true
+        internal const val DEFAULT_TRACK_DEEP_LINKS = true
+        internal const val DEFAULT_TRACK_ACTIVITIES = false
+        internal const val DEFAULT_COLLECT_DEVICE_ID = true
+    }
+}
 
 /**
  * Data class for configuring session tracking in analytics.
@@ -88,6 +93,12 @@ data class Configuration @JvmOverloads constructor(
  *
  */
 data class SessionConfiguration(
-    val automaticSessionTracking: Boolean = true,
+    val automaticSessionTracking: Boolean = DEFAULT_AUTOMATIC_SESSION_TRACKING,
     val sessionTimeoutInMillis: Long = DEFAULT_SESSION_TIMEOUT_IN_MILLIS,
-)
+) {
+
+    companion object {
+
+        internal const val DEFAULT_AUTOMATIC_SESSION_TRACKING = true
+    }
+}

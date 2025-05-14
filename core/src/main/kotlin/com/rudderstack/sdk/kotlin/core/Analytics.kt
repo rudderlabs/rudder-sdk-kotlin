@@ -1,7 +1,6 @@
 package com.rudderstack.sdk.kotlin.core
 
 import com.rudderstack.sdk.kotlin.core.internals.logger.KotlinLogger
-import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.AliasEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
@@ -9,27 +8,31 @@ import com.rudderstack.sdk.kotlin.core.internals.models.GroupEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.Properties
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
-import com.rudderstack.sdk.kotlin.core.internals.models.RudderTraits
 import com.rudderstack.sdk.kotlin.core.internals.models.ScreenEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
+import com.rudderstack.sdk.kotlin.core.internals.models.Traits
+import com.rudderstack.sdk.kotlin.core.internals.models.connectivity.ConnectivityState
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.ResetUserIdentityAction
+import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.SetUserIdAndTraitsAction
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.SetUserIdForAliasEvent
-import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.SetUserIdTraitsAndExternalIdsAction
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.UserIdentity
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.resetUserIdentity
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.storeUserId
-import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.storeUserIdTraitsAndExternalIds
+import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.storeUserIdAndTraits
 import com.rudderstack.sdk.kotlin.core.internals.platform.Platform
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.PluginChain
-import com.rudderstack.sdk.kotlin.core.internals.statemanagement.FlowState
+import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.storage.provideBasicStorage
+import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
+import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
 import com.rudderstack.sdk.kotlin.core.internals.utils.addNameAndCategoryToProperties
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import com.rudderstack.sdk.kotlin.core.internals.utils.isAnalyticsActive
+import com.rudderstack.sdk.kotlin.core.internals.utils.isSourceEnabled
 import com.rudderstack.sdk.kotlin.core.internals.utils.resolvePreferredPreviousId
 import com.rudderstack.sdk.kotlin.core.plugins.LibraryInfoPlugin
 import com.rudderstack.sdk.kotlin.core.plugins.RudderStackDataplanePlugin
@@ -37,6 +40,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
+import org.jetbrains.annotations.VisibleForTesting
 
 /**
  * The `Analytics` class is the core of the RudderStack SDK, responsible for tracking events,
@@ -51,13 +55,13 @@ import kotlinx.coroutines.launch
  * @constructor Primary constructor for creating an `Analytics` instance with a custom coroutine configuration.
  * @param configuration The configuration object that defines settings such as write key, data plane URL, logger, etc.
  * @param analyticsConfiguration The analytics configuration object that defines coroutine settings and some other variables.
- * @param userIdentityState The state flow for user identity management. Defaults to a new `FlowState` with the initial state.
+ * @param userIdentityState The state flow for user identity management. Defaults to a new [State] with the initial state.
  */
 @Suppress("TooManyFunctions")
 open class Analytics protected constructor(
     val configuration: Configuration,
     analyticsConfiguration: AnalyticsConfiguration,
-    internal val userIdentityState: FlowState<UserIdentity> = FlowState(
+    internal val userIdentityState: State<UserIdentity> = State(
         initialState = UserIdentity.initialState(
             analyticsConfiguration.storage
         )
@@ -66,7 +70,11 @@ open class Analytics protected constructor(
 
     private val pluginChain: PluginChain = PluginChain().also { it.analytics = this }
 
-    private val sourceConfigState = FlowState(initialState = SourceConfig.initialState())
+    /**
+     * The `sourceConfigState` is a [State] that manages the source configuration for the analytics instance.
+     */
+    @InternalRudderApi
+    val sourceConfigState = State(initialState = SourceConfig.initialState())
 
     private val processEventChannel: Channel<Event> = Channel(Channel.UNLIMITED)
     private var processEventJob: Job? = null
@@ -76,22 +84,28 @@ open class Analytics protected constructor(
         private set
 
     init {
+        runForBaseTypeOnly()
         processEvents()
         setup()
         storeAnonymousId()
     }
 
-    /**
-     * Configures the logger for analytics with a specified `Logger` instance.
-     *
-     * This function sets up the `LoggerAnalytics` with the provided `logger` instance,
-     * applying the log level specified in the configuration.
-     *
-     * @param logger The `Logger` instance to use for logging. Defaults to an instance of `KotlinLogger`.
-     */
-    fun setLogger(logger: Logger) {
-        if (!isAnalyticsActive()) return
-        LoggerAnalytics.setup(logger = logger, logLevel = configuration.logLevel)
+    private fun runForBaseTypeOnly() {
+        if (this::class == Analytics::class) {
+            LoggerAnalytics.setPlatformLogger(logger = KotlinLogger())
+            connectivityState.dispatch(ConnectivityState.SetDefaultStateAction())
+            setupSourceConfig()
+        }
+    }
+
+    protected fun setupSourceConfig() {
+        this.sourceConfigManager = provideSourceConfigManager(
+            analytics = this,
+            sourceConfigState = sourceConfigState
+        ).apply {
+            fetchCachedSourceConfigAndNotifyObservers()
+            refreshSourceConfigAndNotifyObservers()
+        }
     }
 
     /**
@@ -117,7 +131,7 @@ open class Analytics protected constructor(
      */
     @JvmOverloads
     fun track(name: String, properties: Properties = emptyJsonObject, options: RudderOption = RudderOption()) {
-        if (!isAnalyticsActive()) return
+        if (!isAnalyticsActive() || !isSourceEnabled()) return
 
         val event = TrackEvent(
             event = name,
@@ -145,7 +159,7 @@ open class Analytics protected constructor(
         properties: Properties = emptyJsonObject,
         options: RudderOption = RudderOption()
     ) {
-        if (!isAnalyticsActive()) return
+        if (!isAnalyticsActive() || !isSourceEnabled()) return
 
         val updatedProperties = addNameAndCategoryToProperties(screenName, category, properties)
 
@@ -164,12 +178,12 @@ open class Analytics protected constructor(
      * This function constructs a `GroupEvent` event and processes it through the plugin chain.
      *
      * @param groupId Group ID you want your user to attach to
-     * @param traits A [RudderTraits] object containing key-value pairs of event traits. Defaults to an empty JSON object.
+     * @param traits A [Traits] object containing key-value pairs of event traits. Defaults to an empty JSON object.
      * @param options A [RudderOption] object to specify additional event options. Defaults to an empty RudderOption object.
      */
     @JvmOverloads
-    fun group(groupId: String, traits: RudderTraits = emptyJsonObject, options: RudderOption = RudderOption()) {
-        if (!isAnalyticsActive()) return
+    fun group(groupId: String, traits: Traits = emptyJsonObject, options: RudderOption = RudderOption()) {
+        if (!isAnalyticsActive() || !isSourceEnabled()) return
 
         val event = GroupEvent(
             groupId = groupId,
@@ -186,30 +200,30 @@ open class Analytics protected constructor(
      * It also lets you record traits about the user like their name, email address, etc.
      *
      * @param userId The unique identifier for the user. Defaults to an empty string.
-     * @param traits A [RudderTraits] object containing key-value pairs of user traits. Defaults to an empty JSON object.
+     * @param traits A [Traits] object containing key-value pairs of user traits. Defaults to an empty JSON object.
      * @param options A [RudderOption] object to specify additional event options. Defaults to an empty RudderOption object.
      */
     @JvmOverloads
-    fun identify(
-        userId: String = String.empty(),
-        traits: RudderTraits = emptyJsonObject,
-        options: RudderOption = RudderOption()
-    ) {
+    fun identify(userId: String = String.empty(), traits: Traits = emptyJsonObject, options: RudderOption = RudderOption()) {
         if (!isAnalyticsActive()) return
 
+        if (!this.userId.isNullOrEmpty() && this.userId != userId) {
+            reset()
+        }
+
         userIdentityState.dispatch(
-            SetUserIdTraitsAndExternalIdsAction(
+            SetUserIdAndTraitsAction(
                 newUserId = userId,
                 newTraits = traits,
-                newExternalIds = options.externalIds,
-                analytics = this
             )
         )
-        analyticsScope.launch {
-            userIdentityState.value.storeUserIdTraitsAndExternalIds(
+        analyticsScope.launch(keyValueStorageDispatcher) {
+            userIdentityState.value.storeUserIdAndTraits(
                 storage = storage
             )
         }
+
+        if (!isSourceEnabled()) return
 
         val event = IdentifyEvent(
             options = options,
@@ -238,9 +252,11 @@ open class Analytics protected constructor(
         userIdentityState.dispatch(
             SetUserIdForAliasEvent(newId = newId)
         )
-        analyticsScope.launch {
+        analyticsScope.launch(keyValueStorageDispatcher) {
             userIdentityState.value.storeUserId(storage = storage)
         }
+
+        if (!isSourceEnabled()) return
 
         val event = AliasEvent(
             previousId = updatedPreviousId,
@@ -253,10 +269,10 @@ open class Analytics protected constructor(
 
     /**
      * Flushes all pending events that are currently queued in the plugin chain.
-     * This method specifically targets the `RudderStackDataplanePlugin` to initiate the flush operation.
+     * This method specifically targets the `RudderStackDataPlanePlugin` to initiate the flush operation.
      */
-    fun flush() {
-        if (!isAnalyticsActive()) return
+    open fun flush() {
+        if (!isAnalyticsActive() || !isSourceEnabled()) return
 
         this.pluginChain.applyClosure {
             if (it is RudderStackDataplanePlugin) {
@@ -285,7 +301,7 @@ open class Analytics protected constructor(
 
     private fun shutdownHook() {
         analyticsJob.invokeOnCompletion {
-            this@Analytics.storage.close()
+            closeAndCleanupStorage()
             LoggerAnalytics.info("Analytics shutdown completed.")
         }
         analyticsScope.launch {
@@ -295,21 +311,23 @@ open class Analytics protected constructor(
         }
     }
 
+    @OptIn(UseWithCaution::class)
+    private fun closeAndCleanupStorage() {
+        storage.run {
+            close()
+            if (isInvalidWriteKey) {
+                delete()
+            }
+        }
+    }
+
     /**
      * Sets up the initial plugin chain by adding the default plugins such as `PocPlugin`
-     * and `RudderStackDataplanePlugin`. This function is called during initialization.
+     * and `RudderStackDataPlanePlugin`. This function is called during initialization.
      */
     private fun setup() {
-        setLogger(logger = KotlinLogger())
         add(LibraryInfoPlugin())
         add(RudderStackDataplanePlugin())
-
-        analyticsScope.launch(analyticsDispatcher) {
-            SourceConfigManager(
-                analytics = this@Analytics,
-                sourceConfigState = sourceConfigState
-            ).fetchAndUpdateSourceConfig()
-        }
     }
 
     /**
@@ -317,53 +335,33 @@ open class Analytics protected constructor(
      *
      * @param plugin The plugin to be added to the plugin chain.
      */
-    fun add(plugin: Plugin) {
+    open fun add(plugin: Plugin) {
         if (!isAnalyticsActive()) return
 
         this.pluginChain.add(plugin)
     }
 
     /**
-     * Sets or updates the anonymous ID for the current user identity.
+     * Removes a plugin from the plugin chain.
      *
-     * The `setAnonymousId` method is used to update the `anonymousID` value within the `UserIdentityStore`.
-     * This ID is typically generated automatically to track users who have not yet been identified
-     * (e.g., before they log in or sign up). This function dispatches an action to modify the `UserIdentityState`,
-     * ensuring that the new ID is correctly stored and managed.
-     *
-     * @param anonymousId The new anonymous ID to be set for the current user. This ID should be a unique,
-     * non-null string used to represent the user anonymously.
+     * @param plugin The plugin to be removed from the plugin chain.
      */
-    fun setAnonymousId(anonymousId: String) {
+    open fun remove(plugin: Plugin) {
         if (!isAnalyticsActive()) return
 
-        userIdentityState.dispatch(UserIdentity.SetAnonymousIdAction(anonymousId))
-        storeAnonymousId()
+        this.pluginChain.remove(plugin)
     }
 
     /**
-     * The `getAnonymousId` method always retrieves the current anonymous ID.
+     * Resets the user identity, clears the existing anonymous ID and
+     * generate a new one, also clears the user ID and traits.
      */
-    fun getAnonymousId(): String? {
-        if (!isAnalyticsActive()) return null
-
-        return userIdentityState.value.anonymousId
-    }
-
-    /**
-     * Resets the user identity, clearing the user ID, traits, and external IDs.
-     * If clearAnonymousId is true, clears the existing anonymous ID and generate a new one.
-     *
-     * @param clearAnonymousId A boolean flag to determine whether to clear the anonymous ID. Defaults to false.
-     */
-    @JvmOverloads
-    open fun reset(clearAnonymousId: Boolean = false) {
+    open fun reset() {
         if (!isAnalyticsActive()) return
 
-        userIdentityState.dispatch(ResetUserIdentityAction(clearAnonymousId))
-        analyticsScope.launch {
+        userIdentityState.dispatch(ResetUserIdentityAction)
+        analyticsScope.launch(keyValueStorageDispatcher) {
             userIdentityState.value.resetUserIdentity(
-                clearAnonymousId = clearAnonymousId,
                 storage = storage,
             )
         }
@@ -385,11 +383,75 @@ open class Analytics protected constructor(
         }
     }
 
+    override fun getPlatformType(): PlatformType = PlatformType.Server
+
+    /**
+     * Get the stored anonymous ID.
+     *
+     * The `analyticsInstance.anonymousId` is used to update and get the `anonymousID` value.
+     * This ID is typically generated automatically to track users who have not yet been identified
+     * (e.g., before they log in or sign up).
+     *
+     * **Note**: This will return null if the [Analytics] instance is shut down.
+     *
+     * Get the anonymousId:
+     * ```kotlin
+     * val anonymousId = analyticsInstance.anonymousId
+     * ```
+     */
+    val anonymousId: String?
+        get() {
+            if (!isAnalyticsActive()) return null
+            return userIdentityState.value.anonymousId
+        }
+
+    /**
+     * Get the user ID.
+     *
+     * The `analyticsInstance.userId` is used to get the `userId` value.
+     * This ID is assigned when an identify event is made.
+     *
+     * This can return null if the analytics is shut down.
+     *
+     * Get the userId:
+     * ```kotlin
+     * val userId = analyticsInstance.userId
+     * ```
+     */
+    val userId: String?
+        get() {
+            if (!isAnalyticsActive()) return null
+            return userIdentityState.value.userId
+        }
+
+    /**
+     * Get the user traits.
+     *
+     * The `analyticsInstance.traits` is used to get the `traits` value.
+     * This traits is assigned when an identify event is made.
+     *
+     * This can return null if the analytics is shut down.
+     *
+     * Get the traits:
+     * ```kotlin
+     * val traits = analyticsInstance.traits
+     * ```
+     */
+    val traits: Traits?
+        get() {
+            if (!isAnalyticsActive()) return null
+            return userIdentityState.value.traits
+        }
+
     private fun storeAnonymousId() {
-        analyticsScope.launch(storageDispatcher) {
+        analyticsScope.launch(keyValueStorageDispatcher) {
             userIdentityState.value.storeAnonymousId(storage = storage)
         }
     }
-
-    override fun getPlatformType(): PlatformType = PlatformType.Server
 }
+
+@VisibleForTesting
+internal fun provideSourceConfigManager(analytics: Analytics, sourceConfigState: State<SourceConfig>) = SourceConfigManager(
+    analytics = analytics,
+    sourceConfigState = sourceConfigState
+)

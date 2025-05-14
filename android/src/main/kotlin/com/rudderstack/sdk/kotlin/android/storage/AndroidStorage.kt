@@ -3,17 +3,20 @@ package com.rudderstack.sdk.kotlin.android.storage
 import android.content.Context
 import com.rudderstack.sdk.kotlin.BuildConfig
 import com.rudderstack.sdk.kotlin.android.storage.exceptions.QueuedPayloadTooLargeException
+import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.storage.EventBatchFileManager
 import com.rudderstack.sdk.kotlin.core.internals.storage.KeyValueStorage
 import com.rudderstack.sdk.kotlin.core.internals.storage.LibraryVersion
 import com.rudderstack.sdk.kotlin.core.internals.storage.MAX_PAYLOAD_SIZE
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
+import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
+import com.rudderstack.sdk.kotlin.core.internals.utils.appendWriteKey
 import com.rudderstack.sdk.kotlin.core.internals.utils.toAndroidPrefsKey
 import java.io.File
 
 private const val RUDDER_PREFS = "rl_prefs"
-internal const val DIRECTORY_NAME = "rudder-android-store"
+private const val DIRECTORY_NAME = "rudder-android-store"
 
 internal class AndroidStorage(
     private val context: Context,
@@ -21,7 +24,8 @@ internal class AndroidStorage(
     private val rudderPrefsRepo: KeyValueStorage = SharedPrefsStore(context, RUDDER_PREFS.toAndroidPrefsKey(writeKey))
 ) : Storage {
 
-    private val storageDirectory: File = context.getDir(DIRECTORY_NAME, Context.MODE_PRIVATE)
+    private val storageDirectory: File =
+        context.getDir(DIRECTORY_NAME.appendWriteKey(writeKey), Context.MODE_PRIVATE)
     private val eventBatchFile = EventBatchFileManager(storageDirectory, writeKey, rudderPrefsRepo)
 
     override suspend fun write(key: StorageKeys, value: Boolean) {
@@ -68,6 +72,7 @@ internal class AndroidStorage(
 
     override fun close() {
         eventBatchFile.closeAndReset()
+        LoggerAnalytics.info("Storage closed")
     }
 
     override fun readInt(key: StorageKeys, defaultVal: Int): Int {
@@ -103,6 +108,14 @@ internal class AndroidStorage(
             override fun getBuildVersion(): String = android.os.Build.VERSION.SDK_INT.toString()
         }
     }
+
+    @UseWithCaution
+    override fun delete() {
+        rudderPrefsRepo.delete()
+        storageDirectory.deleteRecursively().let { isDeleted ->
+            LoggerAnalytics.info("Storage directory deleted: $isDeleted")
+        }
+    }
 }
 
 /**
@@ -112,7 +125,7 @@ internal class AndroidStorage(
  *  @param application The application context.
  *  @return An instance of [AndroidStorage].
  */
-fun provideAndroidStorage(writeKey: String, application: Context): Storage {
+internal fun provideAndroidStorage(writeKey: String, application: Context): Storage {
     return AndroidStorage(
         context = application,
         writeKey = writeKey,

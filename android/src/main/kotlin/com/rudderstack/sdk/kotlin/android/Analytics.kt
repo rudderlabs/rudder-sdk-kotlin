@@ -3,6 +3,7 @@ package com.rudderstack.sdk.kotlin.android
 import android.app.Activity
 import androidx.navigation.NavController
 import androidx.navigation.NavController.OnDestinationChangedListener
+import com.rudderstack.sdk.kotlin.android.connectivity.AndroidConnectivityObserverPlugin
 import com.rudderstack.sdk.kotlin.android.logger.AndroidLogger
 import com.rudderstack.sdk.kotlin.android.plugins.AndroidLifecyclePlugin
 import com.rudderstack.sdk.kotlin.android.plugins.AppInfoPlugin
@@ -13,22 +14,24 @@ import com.rudderstack.sdk.kotlin.android.plugins.NetworkInfoPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.OSInfoPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.ScreenInfoPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.TimezoneInfoPlugin
+import com.rudderstack.sdk.kotlin.android.plugins.devicemode.IntegrationPlugin
+import com.rudderstack.sdk.kotlin.android.plugins.devicemode.IntegrationsManagementPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleManagementPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ProcessLifecycleManagementPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.screenrecording.ActivityTrackingPlugin
+import com.rudderstack.sdk.kotlin.android.plugins.screenrecording.NavContext
 import com.rudderstack.sdk.kotlin.android.plugins.screenrecording.NavControllerTrackingPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.sessiontracking.DEFAULT_SESSION_ID
 import com.rudderstack.sdk.kotlin.android.plugins.sessiontracking.SessionTrackingPlugin
-import com.rudderstack.sdk.kotlin.android.state.NavContext
 import com.rudderstack.sdk.kotlin.android.storage.provideAndroidStorage
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.platform.Platform
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
-import com.rudderstack.sdk.kotlin.core.internals.statemanagement.FlowState
+import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.utils.isAnalyticsActive
+import com.rudderstack.sdk.kotlin.core.internals.utils.isSourceEnabled
 import com.rudderstack.sdk.kotlin.core.provideAnalyticsConfiguration
-import org.jetbrains.annotations.ApiStatus.Experimental
 
 private const val MIN_SESSION_ID_LENGTH = 10
 
@@ -57,7 +60,7 @@ private const val MIN_SESSION_ID_LENGTH = 10
  * val analytics = Analytics(configuration)
  * ```
  *
- * @see com.rudderstack.kotlin.Analytics
+ * @see com.rudderstack.sdk.kotlin.core.Analytics
  */
 class Analytics(
     configuration: Configuration,
@@ -69,13 +72,9 @@ class Analytics(
 ) {
 
     private var navControllerTrackingPlugin: NavControllerTrackingPlugin? = null
-
-    private val navContextState by lazy {
-        FlowState(NavContext.initialState())
-    }
-
     internal val activityLifecycleManagementPlugin = ActivityLifecycleManagementPlugin()
     internal val processLifecycleManagementPlugin = ProcessLifecycleManagementPlugin()
+    private val integrationsManagementPlugin = IntegrationsManagementPlugin()
     private val sessionTrackingPlugin = SessionTrackingPlugin()
 
     init {
@@ -93,8 +92,8 @@ class Analytics(
             LoggerAnalytics.error("Session Id should be at least $MIN_SESSION_ID_LENGTH digits.")
             return
         }
-        val newSessionId = sessionId ?: sessionTrackingPlugin.generateSessionId()
-        sessionTrackingPlugin.startSession(sessionId = newSessionId, isSessionManual = true)
+        val newSessionId = sessionId ?: sessionTrackingPlugin.sessionManager.generateSessionId()
+        sessionTrackingPlugin.sessionManager.startSession(sessionId = newSessionId, isSessionManual = true)
     }
 
     /**
@@ -103,31 +102,34 @@ class Analytics(
     fun endSession() {
         if (!isAnalyticsActive()) return
 
-        sessionTrackingPlugin.endSession()
+        sessionTrackingPlugin.sessionManager.endSession()
     }
 
     /**
-     * Returns the current session ID.
-     *
-     * @return The current session ID.
+     * Resets the user identity, clears the existing anonymous ID and
+     * generate a new one, also clears the user ID and traits.
      */
-    fun getSessionId(): Long? {
-        if (!isAnalyticsActive() || sessionTrackingPlugin.sessionId == DEFAULT_SESSION_ID) return null
+    override fun reset() {
+        if (!isAnalyticsActive()) return
+        super.reset()
 
-        return sessionTrackingPlugin.sessionId
+        sessionTrackingPlugin.sessionManager.refreshSession()
+
+        if (!isSourceEnabled()) return
+
+        integrationsManagementPlugin.reset()
     }
 
     /**
-     * Resets the user identity, clearing the user ID, traits, and external IDs.
-     * If clearAnonymousId is true, clears the existing anonymous ID and generate a new one.
-     *
-     * @param clearAnonymousId A boolean flag to determine whether to clear the anonymous ID. Defaults to false.
+     * Flushes all pending events that are currently queued in the plugin chain.
+     * This method specifically targets the `RudderStackDataPlanePlugin` to initiate the flush operation.
      */
-    override fun reset(clearAnonymousId: Boolean) {
+    override fun flush() {
         if (!isAnalyticsActive()) return
 
-        super.reset(clearAnonymousId)
-        sessionTrackingPlugin.refreshSession()
+        super.flush()
+
+        integrationsManagementPlugin.flush()
     }
 
     /**
@@ -178,31 +180,63 @@ class Analytics(
      * In case multiple [NavController]s are used, call this method for each of them.
      *
      * @param navController [NavController] to be tracked
-     * @param activity [Activity] of the [NavHostFragment] or the parent composable in which [navController] is instantiated.
+     * @param activity [Activity] of the `NavHostFragment` or the parent composable in which [navController] is instantiated.
      */
     @Synchronized
-    @Experimental
     fun setNavigationDestinationsTracking(navController: NavController, activity: Activity) {
         if (!isAnalyticsActive()) return
 
         if (navControllerTrackingPlugin == null) {
-            navControllerTrackingPlugin = NavControllerTrackingPlugin(navContextState).also {
+            navControllerTrackingPlugin = NavControllerTrackingPlugin().also {
                 add(it)
             }
         }
 
-        navContextState.dispatch(
-            action = NavContext.AddNavContextAction(
-                navContext = NavContext(
-                    navController = navController,
-                    callingActivity = activity
-                )
+        navControllerTrackingPlugin?.addContextAndObserver(
+            navContext = NavContext(
+                navController = navController,
+                callingActivity = activity
             )
         )
     }
 
+    /**
+     * Adds a plugin to the plugin chain. Plugins can modify, enrich, or process events before they are sent to the server.
+     *
+     * **Note**: This API is also used to add an [IntegrationPlugin] which represents device mode integrations.
+     *
+     * @param plugin The plugin to be added to the plugin chain.
+     */
+    override fun add(plugin: Plugin) {
+        if (!isAnalyticsActive()) return
+
+        if (plugin is IntegrationPlugin) {
+            integrationsManagementPlugin.addIntegration(plugin)
+        } else {
+            super.add(plugin)
+        }
+    }
+
+    /**
+     * Removes a plugin from the plugin chain.
+     *
+     * **Note**: This API is also used to remove an [IntegrationPlugin] which represents device mode integrations.
+     *
+     * @param plugin The plugin to be removed from the plugin chain.
+     */
+    override fun remove(plugin: Plugin) {
+        if (!isAnalyticsActive()) return
+
+        if (plugin is IntegrationPlugin) {
+            integrationsManagementPlugin.removeIntegration(plugin)
+        } else {
+            super.remove(plugin)
+        }
+    }
+
     private fun setup() {
-        setLogger(logger = AndroidLogger())
+        LoggerAnalytics.setPlatformLogger(logger = AndroidLogger())
+        add(AndroidConnectivityObserverPlugin(connectivityState))
         add(DeviceInfoPlugin())
         add(AppInfoPlugin())
         add(NetworkInfoPlugin())
@@ -211,6 +245,7 @@ class Analytics(
         add(ScreenInfoPlugin())
         add(TimezoneInfoPlugin())
         add(sessionTrackingPlugin)
+        add(integrationsManagementPlugin)
 
         // Add these plugins at last in chain
         add(AndroidLifecyclePlugin())
@@ -220,7 +255,19 @@ class Analytics(
         // adding lifecycle management plugins last so that lifecycle callbacks are invoked after all the observers in plugins are added.
         add(processLifecycleManagementPlugin)
         add(activityLifecycleManagementPlugin)
+
+        // Setup source config
+        setupSourceConfig()
     }
 
     override fun getPlatformType(): PlatformType = PlatformType.Mobile
+
+    /**
+     * Returns the current session ID.
+     */
+    val sessionId: Long?
+        get() {
+            if (!isAnalyticsActive() || sessionTrackingPlugin.sessionManager.sessionId == DEFAULT_SESSION_ID) return null
+            return sessionTrackingPlugin.sessionManager.sessionId
+        }
 }

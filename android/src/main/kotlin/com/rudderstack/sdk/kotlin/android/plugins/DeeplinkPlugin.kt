@@ -4,7 +4,9 @@ import android.app.Activity
 import android.content.Intent
 import android.net.ParseException
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import androidx.core.net.toUri
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleObserver
 import com.rudderstack.sdk.kotlin.android.storage.CheckBuildVersionUseCase
 import com.rudderstack.sdk.kotlin.android.utils.addLifecycleObserver
@@ -21,11 +23,9 @@ internal const val REFERRING_APPLICATION_KEY = "referring_application"
 internal const val URL_KEY = "url"
 internal const val DEEPLINK_OPENED_KEY = "Deep Link Opened"
 
-internal class DeeplinkPlugin(
-    private val checkBuildVersionUseCase: CheckBuildVersionUseCase = CheckBuildVersionUseCase()
-) : Plugin, ActivityLifecycleObserver {
+internal class DeeplinkPlugin : Plugin, ActivityLifecycleObserver {
 
-    override val pluginType: Plugin.PluginType = Plugin.PluginType.Manual
+    override val pluginType: Plugin.PluginType = Plugin.PluginType.Utility
 
     override lateinit var analytics: Analytics
 
@@ -66,7 +66,7 @@ internal class DeeplinkPlugin(
     }
 
     private fun Activity.getReferrerString(): String? {
-        return if (checkBuildVersionUseCase.isAndroidVersionLollipopAndAbove()) {
+        return if (CheckBuildVersionUseCase.isAndroidVersionAtLeast(Build.VERSION_CODES.LOLLIPOP_MR1)) {
             this.referrer?.toString()
         } else {
             getReferrerCompatible(this)?.toString()
@@ -76,14 +76,20 @@ internal class DeeplinkPlugin(
     private fun getReferrerCompatible(activity: Activity): Uri? {
         var referrerUri: Uri?
         val intent = activity.intent
-        referrerUri = intent.getParcelableExtra(Intent.EXTRA_REFERRER)
+
+        referrerUri = if (CheckBuildVersionUseCase.isAndroidVersionAtLeast(Build.VERSION_CODES.TIRAMISU)) {
+            intent.getParcelableExtra(Intent.EXTRA_REFERRER, Uri::class.java)
+        } else {
+            @Suppress("DEPRECATION")
+            intent.getParcelableExtra(Intent.EXTRA_REFERRER)
+        }
 
         if (referrerUri == null) {
             // Intent.EXTRA_REFERRER_NAME
             referrerUri = intent.getStringExtra("android.intent.extra.REFERRER_NAME")?.let {
                 // Try parsing the referrer URL; if it's invalid, return null
                 try {
-                    Uri.parse(it)
+                    it.toUri()
                 } catch (ignored: ParseException) {
                     null
                 }

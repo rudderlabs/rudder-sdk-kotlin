@@ -1,6 +1,8 @@
 package com.rudderstack.sdk.kotlin.core
 
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.models.connectivity.ConnectivityState
+import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import kotlinx.coroutines.CoroutineDispatcher
@@ -33,9 +35,14 @@ interface AnalyticsConfiguration {
     val analyticsDispatcher: CoroutineDispatcher
 
     /**
-     * Dispatcher for storage related tasks.
+     * Dispatcher for file storage related tasks. It is used when events are stored/removed from files or when rollover is performed.
      */
-    val storageDispatcher: CoroutineDispatcher
+    val fileStorageDispatcher: CoroutineDispatcher
+
+    /**
+     * Dispatcher for key-value storage related tasks.
+     */
+    val keyValueStorageDispatcher: CoroutineDispatcher
 
     /**
      * Dispatcher for network related tasks.
@@ -43,9 +50,33 @@ interface AnalyticsConfiguration {
     val networkDispatcher: CoroutineDispatcher
 
     /**
+     * Dispatcher for integrations related tasks.
+     */
+    val integrationsDispatcher: CoroutineDispatcher
+
+    /**
      * Job for analytics coroutines.
      */
     val analyticsJob: Job
+
+    /**
+     * State for connectivity.
+     */
+    val connectivityState: State<Boolean>
+
+    /**
+     * Source config manager.
+     */
+    var sourceConfigManager: SourceConfigManager
+
+    /**
+     * Indicates whether the configured write key is invalid.
+     *
+     * This property helps determine the validity of the write key used by the analytics module.
+     * When set to true, it means an invalid write key has been detected, which may halt or restrict analytics operations.
+     * Defaults to false.
+     */
+    var isInvalidWriteKey: Boolean
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -61,13 +92,22 @@ private class AnalyticsConfigurationImpl(
         CoroutineScope(analyticsJob + handler)
     }
     override val analyticsDispatcher: CoroutineDispatcher = Dispatchers.IO
-    override val storageDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(2)
+    override val fileStorageDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(1)
+    override val keyValueStorageDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(1)
     override val networkDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(1)
+    override val integrationsDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(1)
+
+    override val connectivityState: State<Boolean> = State(initialState = ConnectivityState.INITIAL_STATE)
+
+    override lateinit var sourceConfigManager: SourceConfigManager
+
+    override var isInvalidWriteKey: Boolean = false
 }
 
 /**
  * Get the analytics configuration.
  */
+@InternalRudderApi
 fun provideAnalyticsConfiguration(storage: Storage): AnalyticsConfiguration {
     return AnalyticsConfigurationImpl(storage)
 }

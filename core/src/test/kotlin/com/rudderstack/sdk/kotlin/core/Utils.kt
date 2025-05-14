@@ -3,24 +3,41 @@ package com.rudderstack.sdk.kotlin.core
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
+import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
+import com.rudderstack.sdk.kotlin.core.internals.models.provider.provideSampleExternalIdsPayload
+import com.rudderstack.sdk.kotlin.core.internals.models.provider.provideSampleIntegrationsPayload
+import com.rudderstack.sdk.kotlin.core.internals.models.provider.provideSampleJsonPayload
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.UserIdentity
 import com.rudderstack.sdk.kotlin.core.internals.policies.DEFAULT_FLUSH_INTERVAL_IN_MILLIS
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.spyk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.add
+import kotlinx.serialization.json.buildJsonArray
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.skyscreamer.jsonassert.JSONAssert
 import java.io.BufferedReader
 
 const val ANONYMOUS_ID = "<anonymous-id>"
+internal const val UUID = "c323f9d5-aa04-4305-ba8d-1eff5e99f468"
+internal const val MESSAGE_ID = "<message-id>"
 
 fun mockAnalytics(testScope: TestScope, testDispatcher: TestDispatcher): Analytics {
     val mock = mockk<Analytics>(relaxed = true)
     every { mock.analyticsScope } returns testScope
     every { mock.analyticsDispatcher } returns testDispatcher
-    every { mock.storageDispatcher } returns testDispatcher
+    every { mock.fileStorageDispatcher } returns testDispatcher
+    every { mock.keyValueStorageDispatcher } returns testDispatcher
     every { mock.networkDispatcher } returns testDispatcher
     return mock
 }
@@ -36,7 +53,6 @@ internal fun provideOnlyAnonymousIdState(): UserIdentity {
         anonymousId = ANONYMOUS_ID,
         userId = String.empty(),
         traits = emptyJsonObject,
-        externalIds = emptyList()
     )
 }
 
@@ -69,5 +85,145 @@ private fun String.cleanJsonString(): String {
 }
 
 fun setupLogger(logger: Logger, level: Logger.LogLevel = Logger.LogLevel.VERBOSE) {
-    LoggerAnalytics.setup(logger = logger, logLevel = level)
+    LoggerAnalytics.setPlatformLogger(logger = logger)
+    LoggerAnalytics.logLevel = level
+}
+
+// As Mockk doesn't seems to support spying on lambda function, we need to create a class for the same.
+internal class Block {
+
+    fun execute() {
+        // Do nothing
+    }
+
+    fun executeAndThrowException() {
+        throw Exception("Exception occurred")
+    }
+}
+
+internal fun provideSpyBlock(): Block {
+    return spyk(Block())
+}
+
+internal fun provideRudderOption() = RudderOption(
+    integrations = provideSampleIntegrationsPayload(),
+    customContext = provideSampleJsonPayload(),
+    externalIds = provideSampleExternalIdsPayload(),
+)
+
+@OptIn(ExperimentalSerializationApi::class)
+internal fun provideJsonObject(): JsonObject = buildJsonObject {
+    // Basic primitives
+    put("stringKey", "stringValue")
+    put("intKey", 42)
+    put("doubleKey", 3.14)
+    put("booleanKey", true)
+    put("nullKey", null)
+
+    // Empty values
+    put("emptyString", "")
+    put("emptyArray", buildJsonArray {})
+    put("emptyObject", buildJsonObject {})
+
+    // Existing nested structure
+    put("level1", buildJsonObject {
+        put("level2", buildJsonArray {
+            add(buildJsonObject { put("name1", "item1") })
+            add(buildJsonObject { put("name2", "item2") })
+            add(buildJsonObject { put("name3", null) })
+        })
+    })
+
+    // Additional complex structures
+    put("arrayOfPrimitives", buildJsonArray {
+        add("string")
+        add(123)
+        add(false)
+        add(null)
+    })
+
+    // Deeply nested structure
+    put("deep", buildJsonObject {
+        put("level1", buildJsonObject {
+            put("level2", buildJsonObject {
+                put("level3", buildJsonArray {
+                    add(buildJsonObject {
+                        put("key", "value")
+                        put("number", 999)
+                    })
+                })
+            })
+        })
+    })
+}
+
+internal fun provideMap() = mapOf(
+    // Basic primitives
+    "stringKey" to "stringValue",
+    "intKey" to 42,
+    "doubleKey" to 3.14,
+    "booleanKey" to true,
+    "nullKey" to null,
+
+    // Empty values
+    "emptyString" to "",
+    "emptyArray" to emptyList<Any>(),
+    "emptyObject" to emptyMap<String, Any>(),
+
+    // Existing nested structure
+    "level1" to mapOf(
+        "level2" to listOf(
+            mapOf("name1" to "item1"),
+            mapOf("name2" to "item2"),
+            mapOf("name3" to null)
+        )
+    ),
+
+    // Additional complex structures
+    "arrayOfPrimitives" to listOf("string", 123, false, null),
+
+    // Deeply nested structure
+    "deep" to mapOf(
+        "level1" to mapOf(
+            "level2" to mapOf(
+                "level3" to listOf(
+                    mapOf(
+                        "key" to "value",
+                        "number" to 999
+                    )
+                )
+            )
+        )
+    )
+)
+
+internal fun assertJsonContents(expected: String, actual: String) {
+    JSONAssert.assertEquals(expected, actual, true)
+}
+
+internal fun assertMapContents(expected: Map<String, Any?>, actual: Map<String, Any?>) {
+    assertNotNull(actual)
+    assertEquals(expected.size, actual.size)
+
+    expected.forEach { (key, expectedValue) ->
+        val actualValue = actual[key]
+        when {
+            expectedValue is Map<*, *> && actualValue is Map<*, *> -> {
+                @Suppress("UNCHECKED_CAST")
+                assertMapContents(expectedValue as Map<String, Any?>, actualValue as Map<String, Any?>)
+            }
+            expectedValue is List<*> && actualValue is List<*> -> {
+                assertEquals(expectedValue.size, actualValue.size)
+                expectedValue.zip(actualValue).forEachIndexed { index, (expItem, actItem) ->
+                    if (expItem is Map<*, *> && actItem is Map<*, *>) {
+                        @Suppress("UNCHECKED_CAST")
+                        assertMapContents(expItem as Map<String, Any?>, actItem as Map<String, Any?>)
+                    } else {
+                        assertEquals(expItem, actItem, "List items at index $index don't match")
+                    }
+                }
+            }
+            else -> assertEquals(expectedValue, actualValue, "Value for key '$key' doesn't match")
+        }
+    }
 }

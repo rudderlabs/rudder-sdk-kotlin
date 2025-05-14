@@ -1,8 +1,8 @@
 package com.rudderstack.sdk.kotlin.core.internals.utils
 
 import com.rudderstack.sdk.kotlin.core.internals.models.provider.provideUserIdentityState
-import org.junit.Assert.assertEquals
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
 
 private const val EMPTY_PREVIOUS_ID = ""
 private const val USER_ID = "user-id-1"

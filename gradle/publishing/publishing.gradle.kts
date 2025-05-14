@@ -26,8 +26,6 @@ configure<PublishingExtension> {
             artifactId = getModuleDetails().artifactId
             version = getVersionName()
 
-            println("RudderStack: Publishing following library to Maven Central: $groupId:$artifactId:$version")
-
             // Add the `aar` or `jar` file to the artifacts
             if (project.name == PLATFORM_ANDROID) {
                 artifact("$buildDir/outputs/aar/${project.name}-release.aar") {
@@ -98,9 +96,12 @@ configure<PublishingExtension> {
 }
 
 // Signing configuration
-plugins.withType<SigningPlugin>().configureEach {
-    extensions.configure<SigningExtension> {
-    }
+configure<SigningExtension> {
+    val signingKeyId = System.getenv("SIGNING_KEY_ID")
+    val signingKey = System.getenv("SIGNING_PRIVATE_KEY_BASE64")
+    val signingPassword = System.getenv("SIGNING_PASSWORD")
+    useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
+    sign(extensions.getByType<PublishingExtension>().publications)
 }
 
 tasks.getByName("publish") {

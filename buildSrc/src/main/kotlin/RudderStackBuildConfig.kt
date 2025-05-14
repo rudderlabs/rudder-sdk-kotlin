@@ -17,13 +17,21 @@ object RudderStackBuildConfig {
 
     object Version {
 
-        const val VERSION_NAME = "1.0.0-alpha.1"
-        const val VERSION_CODE = "1"
+        const val VERSION_NAME = "1.0.0"
+        const val VERSION_CODE = "2"
     }
 
     object PackageName {
 
         const val PACKAGE_NAME = "com.rudderstack.sdk.kotlin"
+
+        object Integrations {
+
+            const val BRAZE = "com.rudderstack.integration.kotlin.braze"
+            const val ADJUST = "com.rudderstack.integration.kotlin.adjust"
+            const val FIREBASE = "com.rudderstack.integration.kotlin.firebase"
+            const val FACEBOOK = "com.rudderstack.integration.kotlin.facebook"
+        }
     }
 
     object Kotlin {

@@ -10,12 +10,12 @@ import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
-import com.rudderstack.sdk.kotlin.core.internals.utils.empty
-import com.rudderstack.sdk.kotlin.core.internals.utils.putAll
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.put
@@ -27,13 +27,28 @@ private const val CLASS_FOR_NAME = "com.google.android.gms.ads.identifier.Advert
 private const val FIRE_LIMIT_AD_TRACKING = "limit_ad_tracking"
 private const val FIRE_ADVERTISING_ID = "advertising_id"
 
+/**
+ * A plugin that collects the advertising ID and ad tracking status.
+ *
+ * Add this plugin just after the SDK initialization to collect the advertising ID and ad tracking status.
+ *
+ * Add the plugin like this:
+ * ```
+ * analytics.add(AndroidAdvertisingIdPlugin())
+ * ```
+ *
+ * This will collect the advertising ID and ad tracking status and add it to the `event.context.device` payload of each events.
+ *
+ * @param scope The coroutine scope to run the async task to collect the advertising ID.
+ */
+@Suppress("UNCHECKED_CAST")
 class AndroidAdvertisingIdPlugin @OptIn(DelicateCoroutinesApi::class) constructor(private val scope: CoroutineScope = GlobalScope) : Plugin {
 
     override val pluginType = Plugin.PluginType.OnProcess
 
     override lateinit var analytics: Analytics
     private lateinit var application: Application
-    internal var advertisingId = String.empty()
+    internal var advertisingId = ""
     internal var adTrackingEnabled = true
 
     companion object {
@@ -69,7 +84,7 @@ class AndroidAdvertisingIdPlugin @OptIn(DelicateCoroutinesApi::class) constructo
 
                 is Result.Failure -> {
                     adTrackingEnabled = false
-                    advertisingId = String.empty()
+                    advertisingId = ""
                     LoggerAnalytics.error(log = "Failed to collect advertising ID: ${result.error.message}")
                 }
             }
@@ -131,5 +146,11 @@ class AndroidAdvertisingIdPlugin @OptIn(DelicateCoroutinesApi::class) constructo
 
     override suspend fun intercept(event: Event): Event {
         return attachAdvertisingId(event)
+    }
+}
+
+private fun JsonObjectBuilder.putAll(jsonObject: JsonObject) {
+    jsonObject.forEach { (key, value) ->
+        put(key, value)
     }
 }
