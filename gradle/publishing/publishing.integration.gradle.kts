@@ -32,7 +32,7 @@ configure<PublishingExtension> {
             println("Publishing: Integration: $groupId:$artifactId:$version")
 
             // Add the `aar` or `jar` file to the artifacts
-            artifact("$buildDir/outputs/aar/${project.name}-release.aar") {
+            artifact("${layout.buildDirectory.get()}/outputs/aar/${project.name}-release.aar") {
                 builtBy(tasks.getByName("assemble"))
             }
 
