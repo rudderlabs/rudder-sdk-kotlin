@@ -116,3 +116,5 @@ dependencies {
 
     testRuntimeOnly(libs.junit.jupiter.engine)
 }
+
+apply(from = rootProject.file("gradle/publishing/publishing.integration.gradle.kts"))
