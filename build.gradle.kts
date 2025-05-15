@@ -12,9 +12,9 @@ plugins {
 
 fun getVersionName(): String {
     return if (project.hasProperty("release")) {
-        RudderStackBuildConfig.Version.VERSION_NAME
+        RudderStackBuildConfig.AndroidAndCoreSDKs.VERSION_NAME
     } else {
-        "${RudderStackBuildConfig.Version.VERSION_NAME}-SNAPSHOT"
+        "${RudderStackBuildConfig.AndroidAndCoreSDKs.VERSION_NAME}-SNAPSHOT"
     }
 }
 

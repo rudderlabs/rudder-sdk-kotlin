@@ -8,9 +8,9 @@ fun getExtraString(name: String) = extra[name]?.toString()
 // If not release build add SNAPSHOT suffix
 fun getVersionName() =
     if (hasProperty("release"))
-        RudderStackBuildConfig.Version.VERSION_NAME
+        RudderStackBuildConfig.AndroidAndCoreSDKs.VERSION_NAME
     else
-        RudderStackBuildConfig.Version.VERSION_NAME + "-SNAPSHOT"
+        RudderStackBuildConfig.AndroidAndCoreSDKs.VERSION_NAME + "-SNAPSHOT"
 
 fun getModuleDetails(): ModuleConfig =
     if (project.name == PLATFORM_ANDROID) {
@@ -22,7 +22,7 @@ fun getModuleDetails(): ModuleConfig =
 configure<PublishingExtension> {
     publications {
         register<MavenPublication>("release") {
-            groupId = RudderStackBuildConfig.PackageName.PACKAGE_NAME
+            groupId = RudderStackBuildConfig.AndroidAndCoreSDKs.PACKAGE_NAME
             artifactId = getModuleDetails().artifactId
             version = getVersionName()
 

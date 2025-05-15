@@ -15,10 +15,44 @@ object RudderStackBuildConfig {
         const val MIN_SDK = 21
     }
 
-    object Version {
+    object AndroidAndCoreSDKs {
 
+        const val PACKAGE_NAME = "com.rudderstack.sdk.kotlin"
         const val VERSION_NAME = "1.0.0"
         const val VERSION_CODE = "2"
+    }
+
+    object Integrations {
+
+        const val PACKAGE_NAME = "com.rudderstack.integration.kotlin"
+
+        object Adjust : IntegrationModuleInfo {
+
+            override val moduleName: String = "adjust"
+            override val versionName: String = "1.0.0"
+            override val versionCode: String = "1"
+        }
+
+        object Braze : IntegrationModuleInfo {
+
+            override val moduleName: String = "braze"
+            override val versionName: String = "1.0.0"
+            override val versionCode: String = "1"
+        }
+
+        object Facebook : IntegrationModuleInfo {
+
+            override val moduleName: String = "facebook"
+            override val versionName: String = "1.0.0"
+            override val versionCode: String = "1"
+        }
+
+        object Firebase : IntegrationModuleInfo {
+
+            override val moduleName: String = "firebase"
+            override val versionName: String = "1.0.0"
+            override val versionCode: String = "1"
+        }
     }
 
     object PackageName {
@@ -37,12 +71,6 @@ object RudderStackBuildConfig {
     object Kotlin {
 
         const val COMPILER_EXTENSION_VERSION = "1.5.1"
-    }
-
-    object ReleaseInfo {
-
-        val VERSION_NAME = ""
-        val GROUP_NAME = ""
     }
 
     object POM {
@@ -88,4 +116,11 @@ interface ModuleConfig {
 
     val artifactId: String
     val pomPackaging: String
+}
+
+interface IntegrationModuleInfo {
+
+    val moduleName: String
+    val versionName: String
+    val versionCode: String
 }
