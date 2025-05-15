@@ -75,6 +75,12 @@ object RudderStackBuildConfig {
             override val artifactId = "core"
             override val pomPackaging = "jar"
         }
+
+        object Braze : ModuleConfig {
+
+            override val artifactId = "braze"
+            override val pomPackaging = "aar"
+        }
     }
 }
 
