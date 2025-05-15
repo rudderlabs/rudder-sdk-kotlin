@@ -55,19 +55,6 @@ object RudderStackBuildConfig {
         }
     }
 
-    object PackageName {
-
-        const val PACKAGE_NAME = "com.rudderstack.sdk.kotlin"
-
-        object Integrations {
-
-            const val BRAZE = "com.rudderstack.integration.kotlin.braze"
-            const val ADJUST = "com.rudderstack.integration.kotlin.adjust"
-            const val FIREBASE = "com.rudderstack.integration.kotlin.firebase"
-            const val FACEBOOK = "com.rudderstack.integration.kotlin.facebook"
-        }
-    }
-
     object Kotlin {
 
         const val COMPILER_EXTENSION_VERSION = "1.5.1"
@@ -123,4 +110,7 @@ interface IntegrationModuleInfo {
     val moduleName: String
     val versionName: String
     val versionCode: String
+
+    val namespace: String
+        get() = "${RudderStackBuildConfig.Integrations.PACKAGE_NAME}.$moduleName"
 }

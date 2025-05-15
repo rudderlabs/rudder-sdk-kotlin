@@ -28,7 +28,7 @@ tasks.withType<Test> {
 }
 
 android {
-    namespace = RudderStackBuildConfig.PackageName.Integrations.ADJUST
+    namespace = RudderStackBuildConfig.Integrations.Adjust.namespace
     compileSdk = RudderStackBuildConfig.Android.COMPILE_SDK
 
     defaultConfig {

@@ -62,7 +62,7 @@ tasks {
 
 
 android {
-    namespace = RudderStackBuildConfig.PackageName.Integrations.BRAZE
+    namespace = RudderStackBuildConfig.Integrations.Braze.namespace
     compileSdk = RudderStackBuildConfig.Android.COMPILE_SDK
 
     buildFeatures {

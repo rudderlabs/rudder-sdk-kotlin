@@ -33,7 +33,7 @@ tasks.withType<Test> {
 }
 
 android {
-    namespace = RudderStackBuildConfig.PackageName.Integrations.FACEBOOK
+    namespace = RudderStackBuildConfig.Integrations.Facebook.namespace
     compileSdk = RudderStackBuildConfig.Android.COMPILE_SDK
 
     defaultConfig {

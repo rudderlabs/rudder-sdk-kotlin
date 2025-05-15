@@ -32,7 +32,7 @@ tasks.withType<Test> {
 }
 
 android {
-    namespace = RudderStackBuildConfig.PackageName.Integrations.FIREBASE
+    namespace = RudderStackBuildConfig.Integrations.Firebase.namespace
     compileSdk = RudderStackBuildConfig.Android.COMPILE_SDK
 
     defaultConfig {
