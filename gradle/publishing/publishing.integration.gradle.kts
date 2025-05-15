@@ -1,7 +1,10 @@
 apply(plugin = "maven-publish")
 apply(plugin = "signing")
 
+private val PLATFORM_ADJUST = "adjust"
 private val PLATFORM_BRAZE = "braze"
+private val PLATFORM_FACEBOOK = "facebook"
+private val PLATFORM_FIREBASE = "firebase"
 
 fun getExtraString(name: String) = extra[name]?.toString()
 
@@ -11,7 +14,10 @@ fun getVersionName(integrationVersion: String) =
     else "$integrationVersion-SNAPSHOT"
 
 fun getIntegrationModuleInfo(projectName: String) = when (projectName) {
+    PLATFORM_ADJUST -> RudderStackBuildConfig.Integrations.Adjust
     PLATFORM_BRAZE -> RudderStackBuildConfig.Integrations.Braze
+    PLATFORM_FACEBOOK -> RudderStackBuildConfig.Integrations.Facebook
+    PLATFORM_FIREBASE -> RudderStackBuildConfig.Integrations.Firebase
     else -> throw IllegalArgumentException("Unknown module: $projectName")
 }
 
@@ -25,8 +31,6 @@ configure<PublishingExtension> {
             groupId = RudderStackBuildConfig.Integrations.PACKAGE_NAME
             artifactId =integrationModule.artifactId
             version = getVersionName(integrationModule.versionName)
-
-            println("Publishing: Integration: $groupId:$artifactId:$version")
 
             // Add the `aar` or `jar` file to the artifacts
             artifact("${layout.buildDirectory.get()}/outputs/aar/${project.name}-release.aar") {
