@@ -19,7 +19,6 @@ fun getVersionName(): String {
 }
 
 allprojects {
-    group = RudderStackBuildConfig.PackageName.PACKAGE_NAME
     version = getVersionName()
 }
 
