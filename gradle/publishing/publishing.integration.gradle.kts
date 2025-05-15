@@ -6,28 +6,25 @@ private val PLATFORM_BRAZE = "braze"
 fun getExtraString(name: String) = extra[name]?.toString()
 
 // If not release build add SNAPSHOT suffix
-fun getVersionName() =
-    if (hasProperty("release"))
-        "1.0.0"
-    else
-        "1.0.0-SNAPSHOT"
+fun getVersionName(integrationVersion: String) =
+    if (hasProperty("release")) integrationVersion
+    else "$integrationVersion-SNAPSHOT"
 
-fun getModuleDetails(): ModuleConfig = when (project.name) {
-    PLATFORM_BRAZE -> {
-        RudderStackBuildConfig.Modules.Braze
-    }
-
-    else -> {
-        throw IllegalArgumentException("Unknown module: ${project.name}")
-    }
+fun getIntegrationModuleInfo(projectName: String) = when (projectName) {
+    PLATFORM_BRAZE -> RudderStackBuildConfig.Integrations.Braze
+    else -> throw IllegalArgumentException("Unknown module: $projectName")
 }
 
 configure<PublishingExtension> {
     publications {
         register<MavenPublication>("release") {
-            groupId = "com.rudderstack.integration.kotlin"
-            artifactId = getModuleDetails().artifactId
-            version = getVersionName()
+            // Get integration module information
+            val integrationModule: IntegrationModuleInfo = getIntegrationModuleInfo(project.name)
+
+            // Configure Maven publication details
+            groupId = RudderStackBuildConfig.Integrations.PACKAGE_NAME
+            artifactId =integrationModule.artifactId
+            version = getVersionName(integrationModule.versionName)
 
             println("Publishing: Integration: $groupId:$artifactId:$version")
 
@@ -43,7 +40,7 @@ configure<PublishingExtension> {
             // Add pom configuration
             pom {
                 name.set(RudderStackBuildConfig.POM.NAME)
-                packaging = getModuleDetails().pomPackaging
+                packaging = integrationModule.pomPackaging
                 description.set(RudderStackBuildConfig.POM.DESCRIPTION)
                 url.set(RudderStackBuildConfig.POM.URL)
 

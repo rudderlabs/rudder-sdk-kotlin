@@ -20,6 +20,18 @@ object RudderStackBuildConfig {
         const val PACKAGE_NAME = "com.rudderstack.sdk.kotlin"
         const val VERSION_NAME = "1.0.0"
         const val VERSION_CODE = "2"
+
+        object AndroidPublishConfig : MavenPublishConfig {
+
+            override val artifactId = "android"
+            override val pomPackaging = "aar"
+        }
+
+        object CorePublishConfig : MavenPublishConfig {
+
+            override val artifactId = "core"
+            override val pomPackaging = "jar"
+        }
     }
 
     object Integrations {
@@ -31,6 +43,9 @@ object RudderStackBuildConfig {
             override val moduleName: String = "adjust"
             override val versionName: String = "1.0.0"
             override val versionCode: String = "1"
+
+            override val artifactId = "adjust"
+            override val pomPackaging = "aar"
         }
 
         object Braze : IntegrationModuleInfo {
@@ -38,6 +53,9 @@ object RudderStackBuildConfig {
             override val moduleName: String = "braze"
             override val versionName: String = "1.0.0"
             override val versionCode: String = "1"
+
+            override val artifactId = "braze"
+            override val pomPackaging = "aar"
         }
 
         object Facebook : IntegrationModuleInfo {
@@ -45,6 +63,9 @@ object RudderStackBuildConfig {
             override val moduleName: String = "facebook"
             override val versionName: String = "1.0.0"
             override val versionCode: String = "1"
+
+            override val artifactId = "facebook"
+            override val pomPackaging = "aar"
         }
 
         object Firebase : IntegrationModuleInfo {
@@ -52,6 +73,9 @@ object RudderStackBuildConfig {
             override val moduleName: String = "firebase"
             override val versionName: String = "1.0.0"
             override val versionCode: String = "1"
+
+            override val artifactId = "firebase"
+            override val pomPackaging = "aar"
         }
     }
 
@@ -77,35 +101,15 @@ object RudderStackBuildConfig {
         const val DEVELOPER_ID = "Rudderstack"
         const val DEVELOPER_NAME = "Rudderstack, Inc."
     }
-
-    object Modules {
-        object Android : ModuleConfig {
-
-            override val artifactId = "android"
-            override val pomPackaging = "aar"
-        }
-
-        object Core : ModuleConfig {
-
-            override val artifactId = "core"
-            override val pomPackaging = "jar"
-        }
-
-        object Braze : ModuleConfig {
-
-            override val artifactId = "braze"
-            override val pomPackaging = "aar"
-        }
-    }
 }
 
-interface ModuleConfig {
+interface MavenPublishConfig {
 
     val artifactId: String
     val pomPackaging: String
 }
 
-interface IntegrationModuleInfo {
+interface IntegrationModuleInfo : MavenPublishConfig {
 
     val moduleName: String
     val versionName: String

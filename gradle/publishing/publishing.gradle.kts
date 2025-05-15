@@ -12,11 +12,11 @@ fun getVersionName() =
     else
         RudderStackBuildConfig.AndroidAndCoreSDKs.VERSION_NAME + "-SNAPSHOT"
 
-fun getModuleDetails(): ModuleConfig =
+fun getModuleDetails(): MavenPublishConfig =
     if (project.name == PLATFORM_ANDROID) {
-        RudderStackBuildConfig.Modules.Android
+        RudderStackBuildConfig.AndroidAndCoreSDKs.AndroidPublishConfig
     } else {
-        RudderStackBuildConfig.Modules.Core
+        RudderStackBuildConfig.AndroidAndCoreSDKs.CorePublishConfig
     }
 
 configure<PublishingExtension> {
