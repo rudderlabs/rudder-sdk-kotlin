@@ -1,40 +1,40 @@
 apply(plugin = "maven-publish")
 apply(plugin = "signing")
 
-private val PLATFORM_ANDROID = "android"
+private val PLATFORM_ADJUST = "adjust"
+private val PLATFORM_BRAZE = "braze"
+private val PLATFORM_FACEBOOK = "facebook"
+private val PLATFORM_FIREBASE = "firebase"
 
 fun getExtraString(name: String) = extra[name]?.toString()
 
 // If not release build add SNAPSHOT suffix
-fun getVersionName() =
-    if (hasProperty("release"))
-        RudderStackBuildConfig.AndroidAndCoreSDKs.VERSION_NAME
-    else
-        RudderStackBuildConfig.AndroidAndCoreSDKs.VERSION_NAME + "-SNAPSHOT"
+fun getVersionName(integrationVersion: String) =
+    if (hasProperty("release")) integrationVersion
+    else "$integrationVersion-SNAPSHOT"
 
-fun getModuleDetails(): MavenPublishConfig =
-    if (project.name == PLATFORM_ANDROID) {
-        RudderStackBuildConfig.AndroidAndCoreSDKs.AndroidPublishConfig
-    } else {
-        RudderStackBuildConfig.AndroidAndCoreSDKs.CorePublishConfig
-    }
+fun getIntegrationModuleInfo(projectName: String) = when (projectName) {
+    PLATFORM_ADJUST -> RudderStackBuildConfig.Integrations.Adjust
+    PLATFORM_BRAZE -> RudderStackBuildConfig.Integrations.Braze
+    PLATFORM_FACEBOOK -> RudderStackBuildConfig.Integrations.Facebook
+    PLATFORM_FIREBASE -> RudderStackBuildConfig.Integrations.Firebase
+    else -> throw IllegalArgumentException("Unknown module: $projectName")
+}
 
 configure<PublishingExtension> {
     publications {
         register<MavenPublication>("release") {
-            groupId = RudderStackBuildConfig.AndroidAndCoreSDKs.PACKAGE_NAME
-            artifactId = getModuleDetails().artifactId
-            version = getVersionName()
+            // Get integration module information
+            val integrationModule: IntegrationModuleInfo = getIntegrationModuleInfo(project.name)
 
-            // Add the `aar` or `jar` file to the artifacts
-            if (project.name == PLATFORM_ANDROID) {
-                artifact("${layout.buildDirectory.get()}/outputs/aar/${project.name}-release.aar") {
-                    builtBy(tasks.getByName("assemble"))
-                }
-            } else {
-                artifact("${layout.buildDirectory.get()}/libs/${project.name}-${version}.jar") {
-                    builtBy(tasks.getByName("assemble"))
-                }
+            // Configure Maven publication details
+            groupId = RudderStackBuildConfig.Integrations.PACKAGE_NAME
+            artifactId =integrationModule.artifactId
+            version = getVersionName(integrationModule.versionName)
+
+            // Add the `aar` file to the artifacts
+            artifact("${layout.buildDirectory.get()}/outputs/aar/${project.name}-release.aar") {
+                builtBy(tasks.getByName("assemble"))
             }
 
             // Add sources and javadoc jars
@@ -44,7 +44,7 @@ configure<PublishingExtension> {
             // Add pom configuration
             pom {
                 name.set(RudderStackBuildConfig.POM.NAME)
-                packaging = getModuleDetails().pomPackaging
+                packaging = integrationModule.pomPackaging
                 description.set(RudderStackBuildConfig.POM.DESCRIPTION)
                 url.set(RudderStackBuildConfig.POM.URL)
 
