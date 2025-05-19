@@ -9,6 +9,11 @@ import com.rudderstack.sdk.kotlin.core.internals.models.ScreenEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.android.Analytics
+import com.rudderstack.sdk.kotlin.core.internals.models.Event
+import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
+import com.rudderstack.sdk.kotlin.core.internals.models.Traits
+import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.UserIdentity
+import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
@@ -20,6 +25,7 @@ import io.mockk.verify
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -102,6 +108,41 @@ class FirebaseIntegrationTest {
     }
 
     @Test
+    fun `given identify event with different traits, when identify is called, then setUserProperty is called with stringify values`() {
+        val traits = provideTraits()
+        every { mockAnalytics.traits } returns traits
+        val identifyEvent = provideIdentifyEvent()
+
+        firebaseIntegration.identify(identifyEvent)
+
+        mockFirebaseAnalytics.apply {
+            verify(exactly = 1) {
+                setUserProperty("birthday", "Mon May 19 15:40:31 IST 2025")
+                setUserProperty("email", "test@example.com")
+                setUserProperty("firstName", "First")
+                setUserProperty("lastName", "Last")
+                setUserProperty("phone", "1234567890")
+                setUserProperty("myByte", "100")
+                setUserProperty("myShort", "5000")
+                setUserProperty("myInt", "100000")
+                setUserProperty("myLong", "15000000000")
+                setUserProperty("myFloat", "5.75")
+                setUserProperty("myDouble", "19.99")
+                setUserProperty("f1", "35000.0")
+                setUserProperty("d1", "120000.0")
+                setUserProperty("isJavaFun", "true")
+                setUserProperty("greeting", "Hello World")
+                setUserProperty("intArr", "[1,2,3]")
+                setUserProperty("justArr", "[1,2,3,4]")
+                setUserProperty("key_with_hyphen", "value with hyphen")
+                val expectedAddress = "[{\"city\":\"Hyderabad\",\"state\":\"Telangana\",\"country\":\"India\",\"street\":\"Mig\"},{\"city\":\"Hyderabad\",\"state\":\"Telangana\",\"country\":\"India\",\"street\":\"Mig\"}]"
+                setUserProperty("address", expectedAddress.take(100))
+            }
+        }
+    }
+
+
+    @Test
     fun `when reset is called, then setUserId is called with null`() {
         firebaseIntegration.reset()
 
@@ -112,9 +153,10 @@ class FirebaseIntegrationTest {
     fun `given custom event without properties, when track is called with it, then logEvent method is called with proper event name`() {
         val event = "Test Event"
         val properties = emptyJsonObject
+
         firebaseIntegration.track(TrackEvent(event, properties))
 
-        verify(exactly = 1) { mockFirebaseAnalytics.logEvent("test_event", mockBundle) }
+        verify(exactly = 1) { mockFirebaseAnalytics.logEvent("Test_Event", mockBundle) }
         verifyBundleIsEmpty()
     }
 
@@ -131,7 +173,7 @@ class FirebaseIntegrationTest {
         firebaseIntegration.track(TrackEvent(event, properties))
 
         verify(exactly = 1) {
-            mockFirebaseAnalytics.logEvent("test_event", mockBundle)
+            mockFirebaseAnalytics.logEvent("Test_Event", mockBundle)
         }
         verifyParamsInBundle(
             "key1" to "value1",
@@ -560,4 +602,106 @@ class FirebaseIntegrationTest {
             )
         )
     }
+}
+
+private fun provideUserIdentity(
+    anonymousId: String = "<anonymousId>",
+    userId: String = "user_id_4",
+    traits: Traits = provideTraits(),
+) = UserIdentity(
+    anonymousId = anonymousId,
+    userId = userId,
+    traits = traits,
+)
+
+internal fun provideIdentifyEvent(
+    options: RudderOption = RudderOption(),
+    userIdentityState: UserIdentity = provideUserIdentity(),
+) = IdentifyEvent(
+    options = options,
+    userIdentityState = userIdentityState,
+).also {
+    it.applyMockedValues()
+    it.updateData(PlatformType.Mobile)
+}
+
+private fun Event.applyMockedValues() {
+    this.originalTimestamp = "<original-timestamp>"
+    this.context = emptyJsonObject
+    this.messageId = "<message-id>"
+}
+
+private fun provideTraits(): JsonObject {
+    // Creating Different Primitive types
+    val myByte: Byte = 100
+    val myShort: Short = 5000
+    val myInt = 100000
+    val myLong = 15000000000L
+    val myFloat = 5.75f
+    val myDouble = 19.99
+    val f1 = 35e3f
+    val d1 = 12E4
+    val isJavaFun = true
+    val greeting = "Hello World"
+
+    // Creating Different Object types
+    val map2 = HashMap<String, String>()
+    map2["key2"] = "value2"
+    val mutableMap2: MutableMap<String, String> = mutableMapOf()
+    mutableMap2["name"] = "Java World"
+    mutableMap2["city"] = "Delhi"
+
+    // Creating Different Array types in Kotlin
+    val address1 = buildJsonObject {
+        put("city", "Hyderabad")
+        put("state", "Telangana")
+        put("country", "India")
+        put("street", "Mig")
+    }
+    val address2 = buildJsonObject {
+        put("city", "Hyderabad")
+        put("state", "Telangana")
+        put("country", "India")
+        put("street", "Mig")
+    }
+    val addressesArray = buildJsonArray {
+        add(address1)
+        add(address2)
+    }
+    val arr = buildJsonArray {
+        add(1)
+        add(2)
+        add(3)
+    }
+    val justArr = buildJsonArray {
+        add(1)
+        add(2)
+        add(3)
+        add(4)
+    }
+
+    val traits = buildJsonObject {
+        put("birthday", "Mon May 19 15:40:31 IST 2025")
+        put("email", "test@example.com")
+        put("firstName", "First")
+        put("lastName", "Last")
+        put("phone", "1234567890")
+        put("myByte", myByte)
+        put("myShort", myShort)
+        put("myInt", myInt)
+        put("myLong", myLong)
+        put("myFloat", myFloat)
+        put("myDouble", myDouble)
+        put("f1", f1)
+        put("d1", d1)
+        put("isJavaFun", isJavaFun)
+        put("greeting", greeting)
+        // Inserting Array types into Traits
+        put("intArr", arr)
+        put("justArr", justArr)
+        put("key-with-hyphen", "value with hyphen")
+        put("address", addressesArray)
+    }
+
+    return traits
 }
