@@ -2,7 +2,6 @@ package com.rudderstack.integration.kotlin.adjust
 
 import android.app.Activity
 import android.app.Application
-import android.util.Log
 import androidx.annotation.VisibleForTesting
 import com.adjust.sdk.Adjust
 import com.adjust.sdk.AdjustConfig
@@ -27,6 +26,7 @@ import com.rudderstack.integration.kotlin.adjust.AdjustConfig as AdjustDestinati
 private const val ANONYMOUS_ID = "anonymousId"
 
 private const val USER_ID = "userId"
+private const val ADJUST_KEY = "Adjust"
 
 /**
  * AdjustIntegration is a plugin that sends events to the Adjust SDK.
@@ -35,7 +35,7 @@ private const val USER_ID = "userId"
 class AdjustIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifecycleObserver {
 
     override val key: String
-        get() = "Adjust"
+        get() = ADJUST_KEY
 
     private var adjustInstance: AdjustInstance? = null
 
@@ -160,28 +160,28 @@ private fun AdjustConfig.setLogLevel(logLevel: Logger.LogLevel) {
 
 private fun AdjustConfig.setAllListeners() {
     setOnAttributionChangedListener { attribution ->
-        Log.d("AdjustFactory", "Attribution callback called!")
-        Log.d("AdjustFactory", "Attribution: $attribution")
+        LoggerAnalytics.debug("Adjust: Attribution callback called!")
+        LoggerAnalytics.debug("Adjust: Attribution: $attribution")
     }
     setOnEventTrackingSucceededListener { adjustEventSuccess ->
-        Log.d("AdjustFactory", "Event success callback called!")
-        Log.d("AdjustFactory", "Event success data: $adjustEventSuccess")
+        LoggerAnalytics.debug("Adjust: Event success callback called!")
+        LoggerAnalytics.debug("Adjust: Event success data: $adjustEventSuccess")
     }
     setOnEventTrackingFailedListener { adjustEventFailure ->
-        Log.d("AdjustFactory", "Event failure callback called!")
-        Log.d("AdjustFactory", "Event failure data: $adjustEventFailure")
+        LoggerAnalytics.debug("Adjust: Event failure callback called!")
+        LoggerAnalytics.debug("Adjust: Event failure data: $adjustEventFailure")
     }
     setOnSessionTrackingSucceededListener { adjustSessionSuccess ->
-        Log.d("AdjustFactory", "Session success callback called!")
-        Log.d("AdjustFactory", "Session success data: $adjustSessionSuccess")
+        LoggerAnalytics.debug("Adjust: Session success callback called!")
+        LoggerAnalytics.debug("Adjust: Session success data: $adjustSessionSuccess")
     }
     setOnSessionTrackingFailedListener { adjustSessionFailure ->
-        Log.d("AdjustFactory", "Session failure callback called!")
-        Log.d("AdjustFactory", "Session failure data: $adjustSessionFailure")
+        LoggerAnalytics.debug("Adjust: Session failure callback called!")
+        LoggerAnalytics.debug("Adjust: Session failure data: $adjustSessionFailure")
     }
     setOnDeferredDeeplinkResponseListener { deeplink ->
-        Log.d("AdjustFactory", "Deferred deep link callback called!")
-        Log.d("AdjustFactory", "Deep link URL: $deeplink")
+        LoggerAnalytics.debug("Adjust: Deferred deep link callback called!")
+        LoggerAnalytics.debug("Adjust: Deep link URL: $deeplink")
         true
     }
 }

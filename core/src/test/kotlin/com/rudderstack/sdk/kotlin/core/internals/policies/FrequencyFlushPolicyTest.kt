@@ -6,6 +6,8 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import com.rudderstack.sdk.kotlin.core.mockAnalytics
 import kotlinx.coroutines.test.TestScope
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 
 class FrequencyFlushPolicyTest {
 
@@ -72,8 +74,8 @@ class FrequencyFlushPolicyTest {
     }
 
     @Test
-    fun `given flush interval is set to 1, when the policy is scheduled, then it should flush after the scheduled interval`() {
-        val flushInterval = 1L
+    fun `given flush interval is set to min value, when the policy is scheduled, then it should flush after the scheduled interval`() {
+        val flushInterval = DEFAULT_MIN_SLEEP_TIMEOUT_IN_MILLIS
         val frequencyFlushPolicy = FrequencyFlushPolicy(flushInterval)
 
         frequencyFlushPolicy.schedule(mockAnalytics)
@@ -97,9 +99,11 @@ class FrequencyFlushPolicyTest {
         }
     }
 
-    @Test
-    fun `given flush interval is set to 0, when the policy is scheduled, then it should flush after the default interval`() {
-        val flushInterval = 0L
+    @ParameterizedTest
+    @ValueSource(longs = [0L, -1L, 1L, 900L, 999L])
+    fun `given flush interval is set to value less than min value, when the policy is scheduled, then it should flush after the default interval`(
+        flushInterval: Long,
+    ) {
         val frequencyFlushPolicy = FrequencyFlushPolicy(flushInterval)
 
         frequencyFlushPolicy.schedule(mockAnalytics)

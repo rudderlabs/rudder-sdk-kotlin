@@ -8,31 +8,31 @@ fun getExtraString(name: String) = extra[name]?.toString()
 // If not release build add SNAPSHOT suffix
 fun getVersionName() =
     if (hasProperty("release"))
-        RudderStackBuildConfig.Version.VERSION_NAME
+        RudderStackBuildConfig.AndroidAndCoreSDKs.VERSION_NAME
     else
-        RudderStackBuildConfig.Version.VERSION_NAME + "-SNAPSHOT"
+        RudderStackBuildConfig.AndroidAndCoreSDKs.VERSION_NAME + "-SNAPSHOT"
 
-fun getModuleDetails(): ModuleConfig =
+fun getModuleDetails(): MavenPublishConfig =
     if (project.name == PLATFORM_ANDROID) {
-        RudderStackBuildConfig.Modules.Android
+        RudderStackBuildConfig.AndroidAndCoreSDKs.AndroidPublishConfig
     } else {
-        RudderStackBuildConfig.Modules.Core
+        RudderStackBuildConfig.AndroidAndCoreSDKs.CorePublishConfig
     }
 
 configure<PublishingExtension> {
     publications {
         register<MavenPublication>("release") {
-            groupId = RudderStackBuildConfig.PackageName.PACKAGE_NAME
+            groupId = RudderStackBuildConfig.AndroidAndCoreSDKs.PACKAGE_NAME
             artifactId = getModuleDetails().artifactId
             version = getVersionName()
 
             // Add the `aar` or `jar` file to the artifacts
             if (project.name == PLATFORM_ANDROID) {
-                artifact("$buildDir/outputs/aar/${project.name}-release.aar") {
+                artifact("${layout.buildDirectory.get()}/outputs/aar/${project.name}-release.aar") {
                     builtBy(tasks.getByName("assemble"))
                 }
             } else {
-                artifact("$buildDir/libs/${project.name}-${version}.jar") {
+                artifact("${layout.buildDirectory.get()}/libs/${project.name}-${version}.jar") {
                     builtBy(tasks.getByName("assemble"))
                 }
             }

@@ -36,6 +36,7 @@ private const val INSTALL_ATTRIBUTED = "Install Attributed"
 private const val ORDER_COMPLETED = "Order Completed"
 
 internal const val ALIAS_LABEL = "rudder_id"
+private const val BRAZE_KEY = "Braze"
 
 /**
  * BrazeIntegration is a plugin that sends events to the Braze SDK.
@@ -44,7 +45,7 @@ internal const val ALIAS_LABEL = "rudder_id"
 class BrazeIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifecycleObserver {
 
     override val key: String
-        get() = "Braze"
+        get() = BRAZE_KEY
 
     private var braze: Braze? = null
 

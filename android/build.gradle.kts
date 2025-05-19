@@ -34,13 +34,11 @@ tasks.withType<Test> {
 }
 
 android {
-    namespace = RudderStackBuildConfig.PackageName.PACKAGE_NAME
+    namespace = RudderStackBuildConfig.AndroidAndCoreSDKs.PACKAGE_NAME
     compileSdk = RudderStackBuildConfig.Android.COMPILE_SDK
 
     buildFeatures {
-        buildFeatures {
-            buildConfig = true
-        }
+        buildConfig = true
     }
 
     defaultConfig {
@@ -49,8 +47,8 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
 
-        buildConfigField("String", "VERSION_NAME", "\"${RudderStackBuildConfig.Version.VERSION_NAME}\"")
-        buildConfigField("int", "VERSION_CODE", RudderStackBuildConfig.Version.VERSION_CODE)
+        buildConfigField("String", "VERSION_NAME", "\"${RudderStackBuildConfig.AndroidAndCoreSDKs.VERSION_NAME}\"")
+        buildConfigField("int", "VERSION_CODE", RudderStackBuildConfig.AndroidAndCoreSDKs.VERSION_CODE)
     }
 
     buildTypes {

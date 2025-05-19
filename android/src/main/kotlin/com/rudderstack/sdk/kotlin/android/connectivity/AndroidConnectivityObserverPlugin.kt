@@ -108,6 +108,7 @@ internal fun createNetworkCallback(connectivityState: State<Boolean>) = object :
 @SuppressLint("MissingPermission")
 @Suppress("DEPRECATION")
 internal fun createBroadcastReceiver(connectivityState: State<Boolean>) = object : BroadcastReceiver() {
+    @SuppressLint("MissingPermission")
     override fun onReceive(context: Context, intent: Intent?) {
         (context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).activeNetworkInfo?.let {
             when (it.isConnected) {

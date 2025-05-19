@@ -132,7 +132,7 @@ class SourceConfigManager(
     }
 
     private suspend fun storeSourceConfig(sourceConfig: SourceConfig) {
-        withContext(analytics.storageDispatcher) {
+        withContext(analytics.keyValueStorageDispatcher) {
             LoggerAnalytics.verbose("Storing sourceConfig in storage.")
             sourceConfig.storeSourceConfig(analytics.storage)
         }

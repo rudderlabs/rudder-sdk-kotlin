@@ -49,7 +49,6 @@ object RudderAnalyticsUtils {
             )
         )
         analytics.add(sampleIntegrationPlugin())
-        //analytics.add(AdjustIntegration())
     }
 
     /**
