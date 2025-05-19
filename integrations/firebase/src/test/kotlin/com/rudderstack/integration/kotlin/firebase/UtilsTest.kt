@@ -20,7 +20,7 @@ class UtilsTest {
         jsonElement: Any?,
         expected: String,
     ) {
-        val result = getString(jsonElement as? JsonElement)
+        val result = getString(jsonElement as? JsonElement, maxLength = 100)
 
         assertEquals(expected, result)
     }
