@@ -136,7 +136,7 @@ class FirebaseIntegrationTest {
                 setUserProperty("justArr", "[1,2,3,4]")
                 setUserProperty("key_with_hyphen", "value with hyphen")
                 val expectedAddress = "[{\"city\":\"Hyderabad\",\"state\":\"Telangana\",\"country\":\"India\",\"street\":\"Mig\"},{\"city\":\"Hyderabad\",\"state\":\"Telangana\",\"country\":\"India\",\"street\":\"Mig\"}]"
-                setUserProperty("address", expectedAddress.take(100))
+                setUserProperty("address", expectedAddress.take(36))
             }
         }
     }

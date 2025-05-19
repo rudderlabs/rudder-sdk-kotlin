@@ -76,7 +76,7 @@ class FirebaseIntegration : StandardIntegration, IntegrationPlugin() {
                 .filterNot { it in IDENTIFY_RESERVED_KEYWORDS || it == USER_ID_KEY }
                 .forEach { key ->
                     val firebaseCompatibleKey = formatFirebaseKey(key)
-                    val value = getString(traits[key])
+                    val value = getString(traits[key], maxLength = MAX_TRAITS_VALUE_LENGTH)
                     firebaseAnalytics?.setUserProperty(firebaseCompatibleKey, value)
                 }
         }
@@ -234,7 +234,7 @@ class FirebaseIntegration : StandardIntegration, IntegrationPlugin() {
 
     private fun makeFirebaseEvent(firebaseEvent: String, params: Bundle, properties: JsonObject?) {
         attachAllCustomProperties(params, properties)
-        LoggerAnalytics.debug("FirebaseIntegration: Logged \"$firebaseEvent\" to Firebase and properties: $properties")
+        LoggerAnalytics.debug("FirebaseIntegration: Logged \"$firebaseEvent\" to Firebase")
         firebaseAnalytics?.logEvent(firebaseEvent, params)
     }
 }
