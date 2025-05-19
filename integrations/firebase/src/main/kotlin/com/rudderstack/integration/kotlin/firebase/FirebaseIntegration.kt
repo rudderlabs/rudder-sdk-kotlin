@@ -76,7 +76,7 @@ class FirebaseIntegration : StandardIntegration, IntegrationPlugin() {
                 .filterNot { it in IDENTIFY_RESERVED_KEYWORDS || it == USER_ID_KEY }
                 .forEach { key ->
                     val firebaseCompatibleKey = formatFirebaseKey(key)
-                    val value = getString(traits[key], maxLength = MAX_TRAITS_VALUE_LENGTH)
+                    val value = getString(value = traits[key], maxLength = MAX_TRAITS_VALUE_LENGTH)
                     firebaseAnalytics?.setUserProperty(firebaseCompatibleKey, value)
                 }
         }

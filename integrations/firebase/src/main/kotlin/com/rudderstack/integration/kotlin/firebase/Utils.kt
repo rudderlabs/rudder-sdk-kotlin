@@ -110,7 +110,7 @@ private fun isValidProperty(key: String, firebaseKey: String, properties: JsonOb
 private fun addPropertyToBundle(params: Bundle, firebaseKey: String, key: String, properties: JsonObject) {
     when {
         properties.isString(key) -> {
-            val value = getString(properties[key], maxLength = MAX_PROPERTY_VALUE_LENGTH)
+            val value = getString(value = properties[key], maxLength = MAX_PROPERTY_VALUE_LENGTH)
             params.putString(firebaseKey, value)
         }
 
