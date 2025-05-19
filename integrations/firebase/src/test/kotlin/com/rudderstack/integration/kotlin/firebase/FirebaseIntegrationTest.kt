@@ -9,11 +9,6 @@ import com.rudderstack.sdk.kotlin.core.internals.models.ScreenEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.android.Analytics
-import com.rudderstack.sdk.kotlin.core.internals.models.Event
-import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
-import com.rudderstack.sdk.kotlin.core.internals.models.Traits
-import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.UserIdentity
-import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
@@ -141,7 +136,6 @@ class FirebaseIntegrationTest {
         }
     }
 
-
     @Test
     fun `when reset is called, then setUserId is called with null`() {
         firebaseIntegration.reset()
@@ -191,6 +185,28 @@ class FirebaseIntegrationTest {
         firebaseIntegration.track(TrackEvent(event, properties))
 
         verify(exactly = 1) { mockFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.APP_OPEN, mockBundle) }
+        verifyBundleIsEmpty()
+    }
+
+    @Test
+    fun `given event name contains hyphen, when track is called, then logEvent is called with proper event name`() {
+        val event = "Event-Name-With-Hyphen"
+        val properties = emptyJsonObject
+
+        firebaseIntegration.track(TrackEvent(event, properties))
+
+        verify(exactly = 1) { mockFirebaseAnalytics.logEvent("Event_Name_With_Hyphen", mockBundle) }
+        verifyBundleIsEmpty()
+    }
+
+    @Test
+    fun `given event name contains spaces, when track is called, then logEvent is called with proper event name`() {
+        val event = "Event Name With Spaces"
+        val properties = emptyJsonObject
+
+        firebaseIntegration.track(TrackEvent(event, properties))
+
+        verify(exactly = 1) { mockFirebaseAnalytics.logEvent("Event_Name_With_Spaces", mockBundle) }
         verifyBundleIsEmpty()
     }
 
