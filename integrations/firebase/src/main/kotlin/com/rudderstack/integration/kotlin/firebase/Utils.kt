@@ -91,6 +91,7 @@ internal fun formatFirebaseKey(key: String): String {
     return key
         .trim()
         .replace(" ", "_")
+        .replace("-", "_")
         .take(MAX_KEY_LENGTH)
 }
 
