@@ -6,7 +6,6 @@ import com.rudderstack.sdk.kotlin.android.utils.getBoolean
 import com.rudderstack.sdk.kotlin.android.utils.getDouble
 import com.rudderstack.sdk.kotlin.android.utils.getInt
 import com.rudderstack.sdk.kotlin.android.utils.getLong
-import com.rudderstack.sdk.kotlin.android.utils.getString
 import com.rudderstack.sdk.kotlin.android.utils.isBoolean
 import com.rudderstack.sdk.kotlin.android.utils.isDouble
 import com.rudderstack.sdk.kotlin.android.utils.isInt
@@ -28,7 +27,7 @@ private const val MAX_VALUE_LENGTH = 100
 
 internal val IDENTIFY_RESERVED_KEYWORDS = listOf("age", "gender", "interest")
 
-internal val TRACK_RESERVED_KEYWORDS = listOf(
+internal val RESERVED_EVENTS_KEYWORDS = listOf(
     "product_id", "name", "category", "quantity", "price", "currency", "value", "revenue", "total",
     "tax", "shipping", "coupon", "cart_id", "payment_method", "query", "list_id", "promotion_id", "creative",
     "affiliation", "share_via", "order_id", ECommerceParamNames.PRODUCTS, FirebaseAnalytics.Param.SCREEN_NAME
@@ -104,12 +103,12 @@ internal fun attachAllCustomProperties(params: Bundle, properties: JsonObject?) 
 }
 
 private fun isValidProperty(key: String, firebaseKey: String, properties: JsonObject): Boolean {
-    return !(firebaseKey in TRACK_RESERVED_KEYWORDS || properties.isKeyEmpty(key))
+    return !(firebaseKey in RESERVED_EVENTS_KEYWORDS || properties.isKeyEmpty(key))
 }
 
 private fun addPropertyToBundle(params: Bundle, firebaseKey: String, key: String, properties: JsonObject) {
     when {
-        properties.isString(key) -> params.putString(firebaseKey, properties.getString(key).orEmpty().take(MAX_VALUE_LENGTH))
+        properties.isString(key) -> params.putString(firebaseKey, getString(properties[key]))
         properties.isInt(key) -> params.putInt(firebaseKey, properties.getInt(key) ?: 0)
         properties.isLong(key) -> params.putLong(firebaseKey, properties.getLong(key) ?: 0)
         properties.isDouble(key) -> params.putDouble(firebaseKey, properties.getDouble(key) ?: 0.0)
@@ -127,14 +126,18 @@ internal fun getBundle(): Bundle {
     return Bundle()
 }
 
-internal fun getString(value: JsonElement?): String = when (value) {
-    is JsonPrimitive -> value.content
-    is JsonArray, is JsonObject -> try {
-        Json.encodeToString(value)
-    } catch (e: Exception) {
-        LoggerAnalytics.error("FirebaseIntegration: Error while converting JsonElement to String.", e)
-        value.toString()
+internal fun getString(value: JsonElement?): String {
+    val stringValue = when (value) {
+        is JsonPrimitive -> value.content
+        is JsonArray, is JsonObject -> try {
+            Json.encodeToString(value)
+        } catch (e: Exception) {
+            LoggerAnalytics.error("FirebaseIntegration: Error while converting JsonElement to String.", e)
+            value.toString()
+        }
+
+        else -> value.toString()
     }
 
-    else -> value.toString()
+    return stringValue.take(MAX_VALUE_LENGTH)
 }
