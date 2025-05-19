@@ -15,8 +15,13 @@ import com.rudderstack.sdk.kotlin.android.utils.isLong
 import com.rudderstack.sdk.kotlin.android.utils.isString
 import com.rudderstack.sdk.kotlin.core.ecommerce.ECommerceEvents
 import com.rudderstack.sdk.kotlin.core.ecommerce.ECommerceParamNames
+import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
-import java.util.Locale
+import kotlinx.serialization.json.JsonPrimitive
 
 private const val MAX_KEY_LENGTH = 40
 private const val MAX_VALUE_LENGTH = 100
@@ -82,8 +87,8 @@ internal val PRODUCT_PROPERTIES_MAPPING = mapOf(
     "price" to FirebaseAnalytics.Param.PRICE
 )
 
-internal fun getTrimmedKey(key: String): String {
-    return key.lowercase(Locale.getDefault())
+internal fun formatFirebaseKey(key: String): String {
+    return key
         .trim()
         .replace(" ", "_")
         .take(MAX_KEY_LENGTH)
@@ -91,7 +96,7 @@ internal fun getTrimmedKey(key: String): String {
 
 internal fun attachAllCustomProperties(params: Bundle, properties: JsonObject?) {
     properties?.takeIf { it.isNotEmpty() }?.keys?.forEach { key ->
-        val firebaseKey = getTrimmedKey(key)
+        val firebaseKey = formatFirebaseKey(key)
         if (!isValidProperty(key, firebaseKey, properties)) return@forEach
         addPropertyToBundle(params, firebaseKey, key, properties)
     }
@@ -119,4 +124,16 @@ private fun addPropertyToBundle(params: Bundle, firebaseKey: String, key: String
 
 internal fun getBundle(): Bundle {
     return Bundle()
+}
+
+internal fun getString(value: JsonElement?): String = when (value) {
+    is JsonPrimitive -> value.content
+    is JsonArray, is JsonObject -> try {
+        Json.encodeToString(value)
+    } catch (e: Exception) {
+        LoggerAnalytics.error("FirebaseIntegration: Error while converting JsonElement to String.", e)
+        value.toString()
+    }
+
+    else -> value.toString()
 }

@@ -15,7 +15,6 @@ import com.rudderstack.sdk.kotlin.android.utils.isKeyEmpty
 import com.rudderstack.sdk.kotlin.core.ecommerce.ECommerceEvents
 import com.rudderstack.sdk.kotlin.core.ecommerce.ECommerceParamNames
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
-import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.ScreenEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
@@ -66,14 +65,21 @@ class FirebaseIntegration : StandardIntegration, IntegrationPlugin() {
     }
 
     override fun identify(payload: IdentifyEvent) {
-        firebaseAnalytics?.takeIf { payload.userId.isNotEmpty() }?.setUserId(payload.userId)
-
-        analytics.traits?.keys
-            ?.map(::getTrimmedKey)
-            ?.filterNot { it in IDENTIFY_RESERVED_KEYWORDS || it == USER_ID_KEY }
-            ?.forEach { key ->
-                firebaseAnalytics?.setUserProperty(key, analytics.traits?.getString(key))
+        payload.userId
+            .takeIf { it.isNotEmpty() }
+            ?.let {
+                firebaseAnalytics?.setUserId(it)
             }
+
+        analytics.traits?.also { traits ->
+            traits.keys
+                .filterNot { it in IDENTIFY_RESERVED_KEYWORDS || it == USER_ID_KEY }
+                .forEach { key ->
+                    val firebaseCompatibleKey = formatFirebaseKey(key)
+                    val value = getString(traits[key])
+                    firebaseAnalytics?.setUserProperty(firebaseCompatibleKey, value)
+                }
+        }
     }
 
     override fun screen(payload: ScreenEvent) {
@@ -135,7 +141,7 @@ class FirebaseIntegration : StandardIntegration, IntegrationPlugin() {
 
     private fun handleCustomEvent(eventName: String, properties: JsonObject?) {
         val params = getBundle()
-        val firebaseEvent: String = getTrimmedKey(eventName)
+        val firebaseEvent: String = formatFirebaseKey(eventName)
         makeFirebaseEvent(firebaseEvent, params, properties)
     }
 
