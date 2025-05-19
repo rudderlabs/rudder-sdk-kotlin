@@ -104,7 +104,7 @@ internal fun attachAllCustomProperties(params: Bundle, properties: JsonObject?) 
 }
 
 private fun isValidProperty(key: String, firebaseKey: String, properties: JsonObject): Boolean {
-    return !(firebaseKey in RESERVED_EVENTS_KEYWORDS || properties.isKeyEmpty(key))
+    return !(firebaseKey.lowercase() in RESERVED_EVENTS_KEYWORDS || properties.isKeyEmpty(key))
 }
 
 private fun addPropertyToBundle(params: Bundle, firebaseKey: String, key: String, properties: JsonObject) {
@@ -118,7 +118,7 @@ private fun addPropertyToBundle(params: Bundle, firebaseKey: String, key: String
         properties.isLong(key) -> params.putLong(firebaseKey, properties.getLong(key) ?: 0)
         properties.isDouble(key) -> params.putDouble(firebaseKey, properties.getDouble(key) ?: 0.0)
         properties.isBoolean(key) -> params.putBoolean(firebaseKey, properties.getBoolean(key) ?: false)
-        else -> properties[key]?.toString()?.takeIf { it.length <= MAX_PROPERTY_VALUE_LENGTH }?.let {
+        else -> properties[key]?.toString()?.take(MAX_PROPERTY_VALUE_LENGTH)?.let {
             params.putString(
                 firebaseKey,
                 it

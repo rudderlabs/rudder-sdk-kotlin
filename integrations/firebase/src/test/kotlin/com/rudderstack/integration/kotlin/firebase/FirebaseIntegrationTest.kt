@@ -633,13 +633,6 @@ private fun provideTraits(): JsonObject {
     val isJavaFun = true
     val greeting = "Hello World"
 
-    // Creating Different Object types
-    val map2 = HashMap<String, String>()
-    map2["key2"] = "value2"
-    val mutableMap2: MutableMap<String, String> = mutableMapOf()
-    mutableMap2["name"] = "Java World"
-    mutableMap2["city"] = "Delhi"
-
     // Creating Different Array types in Kotlin
     val address1 = buildJsonObject {
         put("city", "Hyderabad")
