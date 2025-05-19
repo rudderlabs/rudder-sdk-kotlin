@@ -111,7 +111,7 @@ class FirebaseIntegrationTest {
     fun `given identify event with different traits, when identify is called, then setUserProperty is called with stringify values`() {
         val traits = provideTraits()
         every { mockAnalytics.traits } returns traits
-        val identifyEvent = provideIdentifyEvent()
+        val identifyEvent = IdentifyEvent()
 
         firebaseIntegration.identify(identifyEvent)
 
@@ -602,33 +602,6 @@ class FirebaseIntegrationTest {
             )
         )
     }
-}
-
-private fun provideUserIdentity(
-    anonymousId: String = "<anonymousId>",
-    userId: String = "user_id_4",
-    traits: Traits = provideTraits(),
-) = UserIdentity(
-    anonymousId = anonymousId,
-    userId = userId,
-    traits = traits,
-)
-
-internal fun provideIdentifyEvent(
-    options: RudderOption = RudderOption(),
-    userIdentityState: UserIdentity = provideUserIdentity(),
-) = IdentifyEvent(
-    options = options,
-    userIdentityState = userIdentityState,
-).also {
-    it.applyMockedValues()
-    it.updateData(PlatformType.Mobile)
-}
-
-private fun Event.applyMockedValues() {
-    this.originalTimestamp = "<original-timestamp>"
-    this.context = emptyJsonObject
-    this.messageId = "<message-id>"
 }
 
 private fun provideTraits(): JsonObject {
