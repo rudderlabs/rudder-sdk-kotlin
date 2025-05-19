@@ -23,7 +23,8 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 
 private const val MAX_KEY_LENGTH = 40
-private const val MAX_VALUE_LENGTH = 100
+private const val MAX_PROPERTY_VALUE_LENGTH = 100
+internal const val MAX_TRAITS_VALUE_LENGTH = 36
 
 internal val IDENTIFY_RESERVED_KEYWORDS = listOf("age", "gender", "interest")
 
@@ -108,12 +109,16 @@ private fun isValidProperty(key: String, firebaseKey: String, properties: JsonOb
 
 private fun addPropertyToBundle(params: Bundle, firebaseKey: String, key: String, properties: JsonObject) {
     when {
-        properties.isString(key) -> params.putString(firebaseKey, getString(properties[key]))
+        properties.isString(key) -> {
+            val value = getString(properties[key], maxLength = MAX_PROPERTY_VALUE_LENGTH)
+            params.putString(firebaseKey, value)
+        }
+
         properties.isInt(key) -> params.putInt(firebaseKey, properties.getInt(key) ?: 0)
         properties.isLong(key) -> params.putLong(firebaseKey, properties.getLong(key) ?: 0)
         properties.isDouble(key) -> params.putDouble(firebaseKey, properties.getDouble(key) ?: 0.0)
         properties.isBoolean(key) -> params.putBoolean(firebaseKey, properties.getBoolean(key) ?: false)
-        else -> properties[key]?.toString()?.takeIf { it.length <= MAX_VALUE_LENGTH }?.let {
+        else -> properties[key]?.toString()?.takeIf { it.length <= MAX_PROPERTY_VALUE_LENGTH }?.let {
             params.putString(
                 firebaseKey,
                 it
@@ -126,7 +131,7 @@ internal fun getBundle(): Bundle {
     return Bundle()
 }
 
-internal fun getString(value: JsonElement?): String {
+internal fun getString(value: JsonElement?, maxLength: Int): String {
     val stringValue = when (value) {
         is JsonPrimitive -> value.content
         is JsonArray, is JsonObject -> try {
@@ -139,5 +144,5 @@ internal fun getString(value: JsonElement?): String {
         else -> value.toString()
     }
 
-    return stringValue.take(MAX_VALUE_LENGTH)
+    return stringValue.take(maxLength)
 }
