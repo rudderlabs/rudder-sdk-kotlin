@@ -20,6 +20,14 @@ dependencies {
 }
 ```
 
+## Supported Native Firebase Version
+
+This integration supports Google Firebase Analytics via the following Firebase BoM versions:
+
+```
+[32.2.2, 33.8.0)
+```
+
 ## Usage
 
 Initialize the RudderStack SDK and add the Firebase integration:

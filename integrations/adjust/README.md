@@ -16,6 +16,14 @@ dependencies {
 }
 ```
 
+## Supported Native Adjust Version
+
+This integration supports Adjust Android SDK version:
+
+```
+5.1.0
+```
+
 ## Usage
 
 Initialize the RudderStack SDK and add the Adjust integration:

@@ -16,6 +16,14 @@ dependencies {
 }
 ```
 
+## Supported Native Facebook SDK Version
+
+This integration supports Facebook Android SDK version:
+
+```
+18.0.1
+```
+
 ## Usage
 
 Initialize the RudderStack SDK and add the Facebook integration:
