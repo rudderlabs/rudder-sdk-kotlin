@@ -20,6 +20,7 @@ import io.mockk.verify
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -102,6 +103,40 @@ class FirebaseIntegrationTest {
     }
 
     @Test
+    fun `given identify event with different traits, when identify is called, then setUserProperty is called with stringify values`() {
+        val traits = provideTraits()
+        every { mockAnalytics.traits } returns traits
+        val identifyEvent = IdentifyEvent()
+
+        firebaseIntegration.identify(identifyEvent)
+
+        mockFirebaseAnalytics.apply {
+            verify(exactly = 1) {
+                setUserProperty("birthday", "Mon May 19 15:40:31 IST 2025")
+                setUserProperty("email", "test@example.com")
+                setUserProperty("firstName", "First")
+                setUserProperty("lastName", "Last")
+                setUserProperty("phone", "1234567890")
+                setUserProperty("myByte", "100")
+                setUserProperty("myShort", "5000")
+                setUserProperty("myInt", "100000")
+                setUserProperty("myLong", "15000000000")
+                setUserProperty("myFloat", "5.75")
+                setUserProperty("myDouble", "19.99")
+                setUserProperty("f1", "35000.0")
+                setUserProperty("d1", "120000.0")
+                setUserProperty("isJavaFun", "true")
+                setUserProperty("greeting", "Hello World")
+                setUserProperty("intArr", "[1,2,3]")
+                setUserProperty("justArr", "[1,2,3,4]")
+                setUserProperty("key_with_hyphen", "value with hyphen")
+                val expectedAddress = "[{\"city\":\"Hyderabad\",\"state\":\"Telangana\",\"country\":\"India\",\"street\":\"Mig\"},{\"city\":\"Hyderabad\",\"state\":\"Telangana\",\"country\":\"India\",\"street\":\"Mig\"}]"
+                setUserProperty("address", expectedAddress.take(36))
+            }
+        }
+    }
+
+    @Test
     fun `when reset is called, then setUserId is called with null`() {
         firebaseIntegration.reset()
 
@@ -112,9 +147,10 @@ class FirebaseIntegrationTest {
     fun `given custom event without properties, when track is called with it, then logEvent method is called with proper event name`() {
         val event = "Test Event"
         val properties = emptyJsonObject
+
         firebaseIntegration.track(TrackEvent(event, properties))
 
-        verify(exactly = 1) { mockFirebaseAnalytics.logEvent("test_event", mockBundle) }
+        verify(exactly = 1) { mockFirebaseAnalytics.logEvent("Test_Event", mockBundle) }
         verifyBundleIsEmpty()
     }
 
@@ -131,7 +167,7 @@ class FirebaseIntegrationTest {
         firebaseIntegration.track(TrackEvent(event, properties))
 
         verify(exactly = 1) {
-            mockFirebaseAnalytics.logEvent("test_event", mockBundle)
+            mockFirebaseAnalytics.logEvent("Test_Event", mockBundle)
         }
         verifyParamsInBundle(
             "key1" to "value1",
@@ -149,6 +185,28 @@ class FirebaseIntegrationTest {
         firebaseIntegration.track(TrackEvent(event, properties))
 
         verify(exactly = 1) { mockFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.APP_OPEN, mockBundle) }
+        verifyBundleIsEmpty()
+    }
+
+    @Test
+    fun `given event name contains hyphen, when track is called, then logEvent is called with proper event name`() {
+        val event = "Event-Name-With-Hyphen"
+        val properties = emptyJsonObject
+
+        firebaseIntegration.track(TrackEvent(event, properties))
+
+        verify(exactly = 1) { mockFirebaseAnalytics.logEvent("Event_Name_With_Hyphen", mockBundle) }
+        verifyBundleIsEmpty()
+    }
+
+    @Test
+    fun `given event name contains spaces, when track is called, then logEvent is called with proper event name`() {
+        val event = "Event Name With Spaces"
+        val properties = emptyJsonObject
+
+        firebaseIntegration.track(TrackEvent(event, properties))
+
+        verify(exactly = 1) { mockFirebaseAnalytics.logEvent("Event_Name_With_Spaces", mockBundle) }
         verifyBundleIsEmpty()
     }
 
@@ -560,4 +618,72 @@ class FirebaseIntegrationTest {
             )
         )
     }
+}
+
+private fun provideTraits(): JsonObject {
+    // Creating Different Primitive types
+    val myByte: Byte = 100
+    val myShort: Short = 5000
+    val myInt = 100000
+    val myLong = 15000000000L
+    val myFloat = 5.75f
+    val myDouble = 19.99
+    val f1 = 35e3f
+    val d1 = 12E4
+    val isJavaFun = true
+    val greeting = "Hello World"
+
+    // Creating Different Array types in Kotlin
+    val address1 = buildJsonObject {
+        put("city", "Hyderabad")
+        put("state", "Telangana")
+        put("country", "India")
+        put("street", "Mig")
+    }
+    val address2 = buildJsonObject {
+        put("city", "Hyderabad")
+        put("state", "Telangana")
+        put("country", "India")
+        put("street", "Mig")
+    }
+    val addressesArray = buildJsonArray {
+        add(address1)
+        add(address2)
+    }
+    val arr = buildJsonArray {
+        add(1)
+        add(2)
+        add(3)
+    }
+    val justArr = buildJsonArray {
+        add(1)
+        add(2)
+        add(3)
+        add(4)
+    }
+
+    val traits = buildJsonObject {
+        put("birthday", "Mon May 19 15:40:31 IST 2025")
+        put("email", "test@example.com")
+        put("firstName", "First")
+        put("lastName", "Last")
+        put("phone", "1234567890")
+        put("myByte", myByte)
+        put("myShort", myShort)
+        put("myInt", myInt)
+        put("myLong", myLong)
+        put("myFloat", myFloat)
+        put("myDouble", myDouble)
+        put("f1", f1)
+        put("d1", d1)
+        put("isJavaFun", isJavaFun)
+        put("greeting", greeting)
+        // Inserting Array types into Traits
+        put("intArr", arr)
+        put("justArr", justArr)
+        put("key-with-hyphen", "value with hyphen")
+        put("address", addressesArray)
+    }
+
+    return traits
 }

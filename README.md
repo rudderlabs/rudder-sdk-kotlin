@@ -30,6 +30,7 @@ The Kotlin SDK enables you to track customer event data from your Android or Kot
 - [**Initializing the SDK**](#initializing-the-sdk)
 - [**Identifying your users**](#identifying-users)
 - [**Tracking user actions**](#tracking-user-actions)
+- [**Integrations**](#integrations)
 - [**Contribute**](https://chatgpt.com/c/6761552e-6118-8001-bd2a-cee1d902a13c#contribute)
 - [**Contact us**](https://chatgpt.com/c/6761552e-6118-8001-bd2a-cee1d902a13c#contact-us)
 
@@ -130,7 +131,53 @@ analytics.track(
 )
 ```
 
----
+## Integrations
+
+RudderStack Kotlin SDK supports various third-party integrations that allow you to send your event data to external analytics and marketing platforms. These integrations are implemented as separate modules that you can include in your project as needed.
+
+### Available Integrations
+
+The following integrations are currently available:
+
+- [Firebase](integrations/firebase/README.md) - Send your event data to Google Firebase Analytics
+- [Adjust](integrations/adjust/README.md) - Track and attribute your mobile app installs and in-app events
+- [Braze](integrations/braze/README.md) - Send your event data to Braze for customer engagement
+- [Facebook](integrations/facebook/README.md) - Send your event data to Facebook for analytics and advertising
+
+### Using Integrations
+
+To use an integration, follow these steps:
+
+1. Add the integration dependency to your project's `build.gradle.kts` file
+2. Initialize the RudderStack SDK as usual
+3. Add the integration to your Analytics instance
+
+Example with multiple integrations:
+
+```kotlin
+class MyApplication : Application() {
+
+    lateinit var analytics: Analytics
+
+    override fun onCreate() {
+        super.onCreate()
+
+        // Initialize RudderStack SDK
+        analytics = Analytics(
+            configuration = Configuration(
+                writeKey = "<WRITE_KEY>",
+                application = this,
+                dataPlaneUrl = "<DATA_PLANE_URL>",
+            )
+        )
+
+        // Add integrations
+        analytics.addIntegration(FirebaseIntegration())
+        analytics.addIntegration(BrazeIntegration())
+        // Add more integrations as needed
+    }
+}
+```
 
 ## Contact us
 
