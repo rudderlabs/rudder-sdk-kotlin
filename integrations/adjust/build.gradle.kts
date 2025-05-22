@@ -28,7 +28,7 @@ tasks.withType<Test> {
 }
 
 android {
-    namespace = RudderStackBuildConfig.PackageName.Integrations.ADJUST
+    namespace = RudderStackBuildConfig.Integrations.Adjust.namespace
     compileSdk = RudderStackBuildConfig.Android.COMPILE_SDK
 
     defaultConfig {
@@ -56,9 +56,42 @@ android {
     }
 }
 
+// For generating SourcesJar and JavadocJar
+tasks {
+    val sourceFiles = (android.sourceSets["main"].kotlin as com.android.build.gradle.internal.api.DefaultAndroidSourceDirectorySet).srcDirs
+
+    register<Javadoc>("withJavadoc") {
+        isFailOnError = false
+
+        setSource(sourceFiles)
+
+        // add Android runtime classpath
+        android.bootClasspath.forEach { classpath += project.fileTree(it) }
+
+        // add classpath for all dependencies
+        android.libraryVariants.forEach { variant ->
+            variant.javaCompileProvider.get().classpath.files.forEach { file ->
+                classpath += project.fileTree(file)
+            }
+        }
+    }
+
+    register<Jar>("javadocJar") {
+        archiveClassifier.set("javadoc")
+        dependsOn(named("withJavadoc"))
+        val destination = named<Javadoc>("withJavadoc").get().destinationDir
+        from(destination)
+    }
+
+    register<Jar>("sourcesJar") {
+        archiveClassifier.set("sources")
+        from(sourceFiles)
+    }
+}
+
 dependencies {
-    // RudderStack Android module
-    api(project(":android"))
+    // RudderStack SDK
+    implementation(libs.rudder.android.sdk)
 
     // Adjust android SDK
     implementation(libs.adjust.android)
@@ -78,3 +111,5 @@ dependencies {
 
     testRuntimeOnly(libs.junit.jupiter.engine)
 }
+
+apply(from = rootProject.file("gradle/publishing/publishing.integration.gradle.kts"))

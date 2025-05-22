@@ -28,7 +28,7 @@ tasks.withType<Test> {
 }
 
 android {
-    namespace = RudderStackBuildConfig.PackageName.Integrations.BRAZE
+    namespace = RudderStackBuildConfig.Integrations.Braze.namespace
     compileSdk = RudderStackBuildConfig.Android.COMPILE_SDK
 
     buildFeatures {
@@ -61,8 +61,43 @@ android {
         jvmToolchain(RudderStackBuildConfig.Build.JVM_TOOLCHAIN)
     }
 }
+
+// For generating SourcesJar and JavadocJar
+tasks {
+    val sourceFiles = (android.sourceSets["main"].kotlin as com.android.build.gradle.internal.api.DefaultAndroidSourceDirectorySet).srcDirs
+
+    register<Javadoc>("withJavadoc") {
+        isFailOnError = false
+
+        setSource(sourceFiles)
+
+        // add Android runtime classpath
+        android.bootClasspath.forEach { classpath += project.fileTree(it) }
+
+        // add classpath for all dependencies
+        android.libraryVariants.forEach { variant ->
+            variant.javaCompileProvider.get().classpath.files.forEach { file ->
+                classpath += project.fileTree(file)
+            }
+        }
+    }
+
+    register<Jar>("javadocJar") {
+        archiveClassifier.set("javadoc")
+        dependsOn(named("withJavadoc"))
+        val destination = named<Javadoc>("withJavadoc").get().destinationDir
+        from(destination)
+    }
+
+    register<Jar>("sourcesJar") {
+        archiveClassifier.set("sources")
+        from(sourceFiles)
+    }
+}
+
 dependencies {
-    api(project(":android"))
+    // RudderStack SDK
+    implementation(libs.rudder.android.sdk)
 
     // detekt plugins
     detektPlugins(libs.detekt.formatting)
@@ -79,3 +114,5 @@ dependencies {
     testImplementation(libs.mockk.agent)
     testImplementation(libs.json.assert)
 }
+
+apply(from = rootProject.file("gradle/publishing/publishing.integration.gradle.kts"))
