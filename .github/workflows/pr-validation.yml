@@ -143,8 +143,89 @@ jobs:
             echo "No modules affected, skipping build"
           fi
 
-      - name: Build SDK AAR
-        run: ./gradlew assembleRelease
+      - name: Build Library Module AARs
+        id: build-aars
+        run: |
+          AFFECTED_MODULES="${{ steps.affected-modules.outputs.affected_modules }}"
+          if [ -n "$AFFECTED_MODULES" ]; then
+            echo "Building AAR files for affected library modules..."
+            IFS=',' read -ra MODULES <<< "$AFFECTED_MODULES"
+            BUILT_MODULES=""
+            MODULES_TO_BUILD=()
+
+            # First, collect all modules that need to be built
+            for module in "${MODULES[@]}"; do
+              # Only process library modules (exclude app module)
+              if [[ "$module" != ":app" ]]; then
+                MODULES_TO_BUILD+=("$module")
+              fi
+            done
+
+            # If core module is affected, also build android module (dependency)
+            CORE_AFFECTED=false
+            for module in "${MODULES_TO_BUILD[@]}"; do
+              if [[ "$module" == ":core" ]]; then
+                CORE_AFFECTED=true
+                break
+              fi
+            done
+
+            if [ "$CORE_AFFECTED" = true ]; then
+              # Check if android module is already in the list
+              ANDROID_IN_LIST=false
+              for module in "${MODULES_TO_BUILD[@]}"; do
+                if [[ "$module" == ":android" ]]; then
+                  ANDROID_IN_LIST=true
+                  break
+                fi
+              done
+
+              # Add android module if not already present
+              if [ "$ANDROID_IN_LIST" = false ]; then
+                echo "Core module affected - also building android module due to dependency"
+                MODULES_TO_BUILD+=(":android")
+              fi
+            fi
+
+            # Build all required modules
+            for module in "${MODULES_TO_BUILD[@]}"; do
+              echo "Building AAR/JAR for $module"
+              ./gradlew ${module}:assembleRelease
+
+              # Track which modules were built for artifact upload
+              if [ -z "$BUILT_MODULES" ]; then
+                BUILT_MODULES="$module"
+              else
+                BUILT_MODULES="$BUILT_MODULES,$module"
+              fi
+            done
+
+            echo "built_modules=$BUILT_MODULES" >> $GITHUB_OUTPUT
+            echo "has_artifacts=true" >> $GITHUB_OUTPUT
+
+            if [ -n "$BUILT_MODULES" ]; then
+              echo "Built modules: $BUILT_MODULES"
+              echo "Listing generated artifacts..."
+              find . -name "*.aar" -o -name "*-release.jar" | grep -E "(core|android|integrations)" | head -20
+            else
+              echo "No library modules were affected"
+              echo "has_artifacts=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "No modules affected, skipping AAR build"
+            echo "has_artifacts=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload Library AARs
+        if: steps.build-aars.outputs.has_artifacts == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: library-aars
+          path: |
+            core/build/libs/*-release.jar
+            android/build/outputs/aar/*-release.aar
+            integrations/*/build/outputs/aar/*-release.aar
+          retention-days: 30
       #
       #      - name: Build Sample App
       #        run: ./gradlew :app:assembleDebug
