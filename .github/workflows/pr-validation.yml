@@ -214,7 +214,7 @@ jobs:
             if [ -n "$BUILT_MODULES" ]; then
               echo "Built modules: $BUILT_MODULES"
               echo "Listing generated artifacts..."
-              find . -name "*.aar" -o -name "*-release.jar" | grep -E "(core|android|integrations)" | head -20
+              find . -name "*.aar" -o -name "*.jar" | grep -E "(core|android|integrations)" | head -20
             else
               echo "No library modules were affected"
               echo "has_artifacts=false" >> $GITHUB_OUTPUT
@@ -230,7 +230,7 @@ jobs:
         with:
           name: library-aars
           path: |
-            core/build/libs/*-release.jar
+            core/build/libs/*.jar
             android/build/outputs/aar/*-release.aar
             integrations/*/build/outputs/aar/*-release.aar
           retention-days: 30
