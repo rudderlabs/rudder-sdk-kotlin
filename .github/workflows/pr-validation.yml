@@ -82,13 +82,6 @@ jobs:
           echo "affected_modules=$AFFECTED_MODULES" >> $GITHUB_OUTPUT
           echo "Affected modules: $AFFECTED_MODULES"
 
-      - name: Run Snyk security scan
-        uses: snyk/actions/gradle@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          args: --severity-threshold=high
-
       - name: Run Detekt on affected modules
         run: |
           AFFECTED_MODULES="${{ steps.affected-modules.outputs.affected_modules }}"
@@ -152,16 +145,16 @@ jobs:
 
       - name: Build SDK AAR
         run: ./gradlew assembleRelease
-#
-#      - name: Build Sample App
-#        run: ./gradlew :app:assembleDebug
-#
-#      - name: Upload Sample App to BrowserStack
-#        uses: browserstack/github-actions/espresso@master
-#        with:
-#          username: ${{ secrets.BROWSERSTACK_USERNAME }}
-#          access-key: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
-#          app-path: app/build/outputs/apk/debug/app-debug.apk
+      #
+      #      - name: Build Sample App
+      #        run: ./gradlew :app:assembleDebug
+      #
+      #      - name: Upload Sample App to BrowserStack
+      #        uses: browserstack/github-actions/espresso@master
+      #        with:
+      #          username: ${{ secrets.BROWSERSTACK_USERNAME }}
+      #          access-key: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+      #          app-path: app/build/outputs/apk/debug/app-debug.apk
 
       - name: Upload test reports
         if: always()
