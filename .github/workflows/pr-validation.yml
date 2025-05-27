@@ -214,7 +214,7 @@ jobs:
             if [ -n "$BUILT_MODULES" ]; then
               echo "Built modules: $BUILT_MODULES"
               echo "Listing generated artifacts..."
-              find . -name "*.aar" -o -name "*-release.jar" | grep -E "(core|android|integrations)" | head -20
+              find . -name "*.aar" -o -name "*.jar" | grep -E "(core|android|integrations)" | head -20
             else
               echo "No library modules were affected"
               echo "has_artifacts=false" >> $GITHUB_OUTPUT
@@ -230,7 +230,7 @@ jobs:
         with:
           name: library-aars
           path: |
-            core/build/libs/*-release.jar
+            core/build/libs/*.jar
             android/build/outputs/aar/*-release.aar
             integrations/*/build/outputs/aar/*-release.aar
           retention-days: 30
@@ -267,9 +267,16 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*PR Validation ${{ job.status == 'success' && 'passed ✅' || 'failed ❌' }}*\nRepository: ${{ github.repository }}\nPR: #${{ github.event.number }} - ${{ github.event.pull_request.title }}\nBranch: ${{ github.head_ref }} → ${{ github.base_ref }}\nBy: ${{ github.actor }}\n<${{ github.event.pull_request.html_url }}|View PR>"
+                    "text": "*PR Validation ${{ job.status == 'success' && 'passed ✅' || 'failed ❌' }}*\n*Repository:* ${{ github.repository }}\n*PR:* #${{ github.event.number }} - ${{ github.event.pull_request.title }}\n*Branch:* ${{ github.head_ref }} → ${{ github.base_ref }}\n*By:* ${{ github.actor }}\n<${{ github.event.pull_request.html_url }}|View PR>"
                   }
-                }
+                }${{ steps.build-aars.outputs.has_artifacts == 'true' && format(',
+                {{
+                  "type": "section",
+                  "text": {{
+                    "type": "mrkdwn",
+                    "text": "📦 *Generated AARs/JARs:*\nBuilt modules: {0}\n<https://github.com/{1}/actions/runs/{2}|Download Library AARs>"
+                  }}
+                }}', steps.build-aars.outputs.built_modules, github.repository, github.run_id) || '' }}
               ]
             }
           webhook-type: incoming-webhook
