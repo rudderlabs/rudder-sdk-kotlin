@@ -67,9 +67,7 @@ class FirebaseIntegration : StandardIntegration, IntegrationPlugin() {
     override fun identify(payload: IdentifyEvent) {
         payload.userId
             .takeIf { it.isNotEmpty() }
-            ?.let {
-                firebaseAnalytics?.setUserId(it)
-            }
+            ?.let { firebaseAnalytics?.setUserId(it) }
 
         analytics.traits?.also { traits ->
             traits.keys
@@ -94,7 +92,6 @@ class FirebaseIntegration : StandardIntegration, IntegrationPlugin() {
 
     override fun track(payload: TrackEvent) {
         val eventName = payload.event.takeIf { it.isNotEmpty() } ?: return
-
         when (eventName) {
             APPLICATION_OPENED -> handleApplicationOpenedEvent(payload.properties)
             in ECOMMERCE_EVENTS_MAPPING -> handleECommerceEvent(eventName, payload.properties)
