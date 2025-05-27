@@ -61,7 +61,11 @@ import org.jetbrains.annotations.VisibleForTesting
 open class Analytics protected constructor(
     val configuration: Configuration,
     analyticsConfiguration: AnalyticsConfiguration,
-    internal val userIdentityState: State<UserIdentity> = State(initialState = UserIdentity.initialState(analyticsConfiguration.storage)),
+    internal val userIdentityState: State<UserIdentity> = State(
+        initialState = UserIdentity.initialState(
+            analyticsConfiguration.storage
+        )
+    ),
 ) : AnalyticsConfiguration by analyticsConfiguration, Platform {
 
     private val pluginChain: PluginChain = PluginChain().also { it.analytics = this }
@@ -82,8 +86,8 @@ open class Analytics protected constructor(
     init {
         runForBaseTypeOnly()
         processEvents()
-        setup()
         storeAnonymousId()
+        setup()
     }
 
     private fun runForBaseTypeOnly() {
