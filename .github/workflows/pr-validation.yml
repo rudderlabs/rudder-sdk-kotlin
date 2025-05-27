@@ -190,7 +190,15 @@ jobs:
             # Build all required modules
             for module in "${MODULES_TO_BUILD[@]}"; do
               echo "Building AAR/JAR for $module"
-              ./gradlew ${module}:assembleRelease
+
+              # Use correct build task based on module type
+              if [[ "$module" == ":core" ]]; then
+                # Core is a Kotlin/JVM module - use assemble task
+                ./gradlew ${module}:assemble
+              else
+                # Android modules (android, integrations) - use assembleRelease task
+                ./gradlew ${module}:assembleRelease
+              fi
 
               # Track which modules were built for artifact upload
               if [ -z "$BUILT_MODULES" ]; then
