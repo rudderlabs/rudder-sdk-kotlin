@@ -269,7 +269,14 @@ jobs:
                     "type": "mrkdwn",
                     "text": "*PR Validation ${{ job.status == 'success' && 'passed ✅' || 'failed ❌' }}*\nRepository: ${{ github.repository }}\nPR: #${{ github.event.number }} - ${{ github.event.pull_request.title }}\nBranch: ${{ github.head_ref }} → ${{ github.base_ref }}\nBy: ${{ github.actor }}\n<${{ github.event.pull_request.html_url }}|View PR>"
                   }
-                }
+                }${{ steps.build-aars.outputs.has_artifacts == 'true' && format(',
+                {{
+                  "type": "section",
+                  "text": {{
+                    "type": "mrkdwn",
+                    "text": "📦 *Generated AARs/JARs:*\nBuilt modules: {0}\n<https://github.com/{1}/actions/runs/{2}|Download Library AARs>"
+                  }}
+                }}', steps.build-aars.outputs.built_modules, github.repository, github.run_id) || '' }}
               ]
             }
           webhook-type: incoming-webhook
