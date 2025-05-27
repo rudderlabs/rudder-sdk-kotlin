@@ -14,14 +14,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          types:
-            - feat
-            - fix
-            - docs
-            - chore
-            - refactor
-            - test
-            - ci
+          types: |
+            feat
+            fix
+            docs
+            chore
+            refactor
+            test
+            ci
           requireScope: false
 
       - name: Checkout code
