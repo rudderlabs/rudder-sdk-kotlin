@@ -67,9 +67,7 @@ class FirebaseIntegration : StandardIntegration, IntegrationPlugin() {
     override fun identify(payload: IdentifyEvent) {
         payload.userId
             .takeIf { it.isNotEmpty() }
-            ?.let {
-                firebaseAnalytics?.setUserId(it)
-            }
+            ?.let { firebaseAnalytics?.setUserId(it) }
 
         analytics.traits?.also { traits ->
             traits.keys
