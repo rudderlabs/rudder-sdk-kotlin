@@ -1,0 +1,285 @@
+name: PR Validation
+
+on:
+  pull_request:
+    branches: [ "develop", "feat/*" ]
+    types: [ "opened", "reopened", "synchronize" ]
+
+jobs:
+  validate-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR title
+        uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            docs
+            chore
+            refactor
+            test
+            ci
+          requireScope: false
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for detecting changes
+
+      - name: Merge with target branch
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git fetch origin ${{ github.base_ref }}
+          git merge origin/${{ github.base_ref }}
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle  # This enables Gradle caching
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Check Gradle build scripts dependencies are sorted
+        run: ./gradlew buildEnvironment --dry-run
+
+      - name: Find affected modules
+        id: affected-modules
+        run: |
+          # Determine the base commit to compare against
+          BASE_BRANCH="origin/${{ github.base_ref }}"
+
+          echo "Comparing against base: $BASE_BRANCH"
+
+          CHANGED_FILES=$(git diff --name-only $BASE_BRANCH...HEAD)
+
+          # Create a list of affected modules
+          AFFECTED_MODULES=""
+
+          # Check for changes in each module directory
+          for dir in core android integrations/*; do
+            if [ -d "$dir" ] && echo "$CHANGED_FILES" | grep -q "^$dir/"; then
+              MODULE_PATH=$(echo $dir | sed 's/\//:/')
+              if [ -z "$AFFECTED_MODULES" ]; then
+                AFFECTED_MODULES=":$MODULE_PATH"
+              else
+                AFFECTED_MODULES="$AFFECTED_MODULES,:$MODULE_PATH"
+              fi
+              echo "$dir=true" >> $GITHUB_OUTPUT
+            else
+              if [ -d "$dir" ]; then
+                echo "$dir=false" >> $GITHUB_OUTPUT
+              fi
+            fi
+          done
+
+          echo "affected_modules=$AFFECTED_MODULES" >> $GITHUB_OUTPUT
+          echo "Affected modules: $AFFECTED_MODULES"
+
+      - name: Run Detekt on affected modules
+        run: |
+          AFFECTED_MODULES="${{ steps.affected-modules.outputs.affected_modules }}"
+          if [ -n "$AFFECTED_MODULES" ]; then
+            IFS=',' read -ra MODULES <<< "$AFFECTED_MODULES"
+            for module in "${MODULES[@]}"; do
+              echo "Running detekt for $module"
+              ./gradlew ${module}:detekt
+            done
+          else
+            echo "No modules affected, skipping detekt"
+          fi
+
+      - name: Run Android Lint on affected modules
+        run: |
+          AFFECTED_MODULES="${{ steps.affected-modules.outputs.affected_modules }}"
+          if [ -n "$AFFECTED_MODULES" ]; then
+            IFS=',' read -ra MODULES <<< "$AFFECTED_MODULES"
+            for module in "${MODULES[@]}"; do
+              # Skip core module for lint
+              if [[ "$module" != ":core" ]]; then
+                echo "Running lint for $module"
+                ./gradlew ${module}:lint
+              fi
+            done
+          else
+            echo "No modules affected, skipping lint"
+          fi
+
+      - name: Run SonarCloud Analysis
+        uses: SonarSource/sonarqube-scan-action@2500896589ef8f7247069a56136f8dc177c27ccf  # v5.2.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      - name: Run tests on affected modules
+        run: |
+          AFFECTED_MODULES="${{ steps.affected-modules.outputs.affected_modules }}"
+          if [ -n "$AFFECTED_MODULES" ]; then
+            IFS=',' read -ra MODULES <<< "$AFFECTED_MODULES"
+            for module in "${MODULES[@]}"; do
+              echo "Running tests for $module"
+              ./gradlew ${module}:test
+            done
+          else
+            echo "No modules affected, skipping tests"
+          fi
+
+      - name: Build affected modules
+        run: |
+          AFFECTED_MODULES="${{ steps.affected-modules.outputs.affected_modules }}"
+          if [ -n "$AFFECTED_MODULES" ]; then
+            IFS=',' read -ra MODULES <<< "$AFFECTED_MODULES"
+            for module in "${MODULES[@]}"; do
+              echo "Building $module"
+              ./gradlew ${module}:build
+            done
+          else
+            echo "No modules affected, skipping build"
+          fi
+
+      - name: Build Library Module AARs
+        id: build-aars
+        run: |
+          AFFECTED_MODULES="${{ steps.affected-modules.outputs.affected_modules }}"
+          if [ -n "$AFFECTED_MODULES" ]; then
+            echo "Building AAR files for affected library modules..."
+            IFS=',' read -ra MODULES <<< "$AFFECTED_MODULES"
+            BUILT_MODULES=""
+            MODULES_TO_BUILD=()
+
+            # First, collect all modules that need to be built
+            for module in "${MODULES[@]}"; do
+              # Only process library modules (exclude app module)
+              if [[ "$module" != ":app" ]]; then
+                MODULES_TO_BUILD+=("$module")
+              fi
+            done
+
+            # If core module is affected, also build android module (dependency)
+            CORE_AFFECTED=false
+            for module in "${MODULES_TO_BUILD[@]}"; do
+              if [[ "$module" == ":core" ]]; then
+                CORE_AFFECTED=true
+                break
+              fi
+            done
+
+            if [ "$CORE_AFFECTED" = true ]; then
+              # Check if android module is already in the list
+              ANDROID_IN_LIST=false
+              for module in "${MODULES_TO_BUILD[@]}"; do
+                if [[ "$module" == ":android" ]]; then
+                  ANDROID_IN_LIST=true
+                  break
+                fi
+              done
+
+              # Add android module if not already present
+              if [ "$ANDROID_IN_LIST" = false ]; then
+                echo "Core module affected - also building android module due to dependency"
+                MODULES_TO_BUILD+=(":android")
+              fi
+            fi
+
+            # Build all required modules
+            for module in "${MODULES_TO_BUILD[@]}"; do
+              echo "Building AAR/JAR for $module"
+
+              # Use correct build task based on module type
+              if [[ "$module" == ":core" ]]; then
+                # Core is a Kotlin/JVM module - use assemble task
+                ./gradlew ${module}:assemble
+              else
+                # Android modules (android, integrations) - use assembleRelease task
+                ./gradlew ${module}:assembleRelease
+              fi
+
+              # Track which modules were built for artifact upload
+              if [ -z "$BUILT_MODULES" ]; then
+                BUILT_MODULES="$module"
+              else
+                BUILT_MODULES="$BUILT_MODULES,$module"
+              fi
+            done
+
+            echo "built_modules=$BUILT_MODULES" >> $GITHUB_OUTPUT
+            echo "has_artifacts=true" >> $GITHUB_OUTPUT
+
+            if [ -n "$BUILT_MODULES" ]; then
+              echo "Built modules: $BUILT_MODULES"
+              echo "Listing generated artifacts..."
+              find . -name "*.aar" -o -name "*.jar" | grep -E "(core|android|integrations)" | head -20
+            else
+              echo "No library modules were affected"
+              echo "has_artifacts=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "No modules affected, skipping AAR build"
+            echo "has_artifacts=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload Library AARs
+        if: steps.build-aars.outputs.has_artifacts == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: library-aars
+          path: |
+            core/build/libs/*.jar
+            android/build/outputs/aar/*-release.aar
+            integrations/*/build/outputs/aar/*-release.aar
+          retention-days: 30
+      #
+      #      - name: Build Sample App
+      #        run: ./gradlew :app:assembleDebug
+      #
+      #      - name: Upload Sample App to BrowserStack
+      #        uses: browserstack/github-actions/espresso@master
+      #        with:
+      #          username: ${{ secrets.BROWSERSTACK_USERNAME }}
+      #          access-key: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+      #          app-path: app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: |
+            **/build/reports/tests/
+            **/build/reports/detekt/
+            **/build/reports/lint-results*.html
+
+      - name: Notify Slack
+        if: always()
+        uses: slackapi/slack-github-action@b0fa283ad8fea605de13dc3f449259339835fc52  # v2.1.0
+        with:
+          payload: |
+            {
+              "text": "PR Validation ${{ job.status == 'success' && 'passed ✅' || 'failed ❌' }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*PR Validation ${{ job.status == 'success' && 'passed ✅' || 'failed ❌' }}*\n*Repository:* ${{ github.repository }}\n*PR:* #${{ github.event.number }} - ${{ github.event.pull_request.title }}\n*Branch:* ${{ github.head_ref }} → ${{ github.base_ref }}\n*By:* ${{ github.actor }}\n<${{ github.event.pull_request.html_url }}|View PR>"
+                  }
+                }${{ steps.build-aars.outputs.has_artifacts == 'true' && format(',
+                {{
+                  "type": "section",
+                  "text": {{
+                    "type": "mrkdwn",
+                    "text": "📦 *Generated AARs/JARs:*\nBuilt modules: {0}\n<https://github.com/{1}/actions/runs/{2}|Download Library AARs>"
+                  }}
+                }}', steps.build-aars.outputs.built_modules, github.repository, github.run_id) || '' }}
+              ]
+            }
+          webhook-type: incoming-webhook
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
