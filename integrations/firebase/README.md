@@ -54,7 +54,7 @@ class MyApplication : Application() {
         )
         
         // Add Firebase integration
-        analytics.addIntegration(FirebaseIntegration())
+        analytics.add(FirebaseIntegration())
     }
 }
 ```
