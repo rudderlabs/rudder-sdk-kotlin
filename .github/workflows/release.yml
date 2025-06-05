@@ -1,0 +1,648 @@
+name: Android SDK Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 1.0.0)'
+        required: true
+        type: string
+      dry_run:
+        description: 'Dry run (no publishing or PR creation)'
+        type: boolean
+        default: false
+      skip_tests:
+        description: 'Skip running tests (not recommended for production releases)'
+        type: boolean
+        default: false
+  release:
+    types: [created]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      is_release_branch: ${{ steps.branch-check.outputs.is_release_branch }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check if running on release branch
+        id: branch-check
+        run: |
+          BRANCH_NAME="${{ github.ref_name }}"
+          echo "Current branch: $BRANCH_NAME"
+
+          if [[ "$BRANCH_NAME" =~ ^release/.* ]] || [[ "$BRANCH_NAME" =~ ^hotfix/.* ]]; then
+            echo "is_release_branch=true" >> $GITHUB_OUTPUT
+            echo "Running on release/hotfix branch: $BRANCH_NAME"
+          else
+            echo "is_release_branch=false" >> $GITHUB_OUTPUT
+            echo "Not running on release/hotfix branch: $BRANCH_NAME"
+          fi
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          elif [ "${{ github.event_name }}" = "release" ]; then
+            VERSION="${{ github.event.release.tag_name }}"
+            # Remove 'v' prefix if present
+            VERSION=${VERSION#v}
+          else
+            echo "Unsupported trigger event"
+            exit 1
+          fi
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Determined version: $VERSION"
+
+      - name: Validate version format
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          VERSION_PATTERN="^[0-9]+\.[0-9]+\.[0-9]+$"
+          if ! [[ $VERSION =~ $VERSION_PATTERN ]]; then
+            echo "Invalid version format. Must be in format X.Y.Z"
+            exit 1
+          fi
+          echo "Version format validated: $VERSION"
+
+      - name: Check for existing tag
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          if git tag -l "v$VERSION" | grep -q "v$VERSION"; then
+            echo "Tag v$VERSION already exists!"
+            exit 1
+          fi
+          echo "Tag does not exist, proceeding with release"
+
+  find-affected-modules:
+    needs: validate
+    runs-on: ubuntu-latest
+    outputs:
+      affected_modules: ${{ steps.affected-modules.outputs.affected_modules }}
+      has_affected_modules: ${{ steps.affected-modules.outputs.has_affected_modules }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Find affected modules
+        id: affected-modules
+        run: |
+          # For release branches, compare against develop branch
+          # For manual dispatch, compare against the base branch
+          if [ "${{ needs.validate.outputs.is_release_branch }}" = "true" ]; then
+            BASE_BRANCH="origin/develop"
+          else
+            # For manual releases, compare against develop or main
+            if git merge-base --is-ancestor origin/develop HEAD; then
+              BASE_BRANCH="origin/develop"
+            else
+              BASE_BRANCH="origin/main"
+            fi
+          fi
+
+          echo "Comparing against base: $BASE_BRANCH"
+
+          CHANGED_FILES=$(git diff --name-only $BASE_BRANCH...HEAD)
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+
+          # Create a list of affected modules
+          AFFECTED_MODULES=""
+
+          # Check for changes in each module directory
+          for dir in core android integrations/*; do
+            if [ -d "$dir" ] && echo "$CHANGED_FILES" | grep -q "^$dir/"; then
+              MODULE_PATH=$(echo $dir | sed 's/\//:/')
+              if [ -z "$AFFECTED_MODULES" ]; then
+                AFFECTED_MODULES=":$MODULE_PATH"
+              else
+                AFFECTED_MODULES="$AFFECTED_MODULES,:$MODULE_PATH"
+              fi
+              echo "$dir=true" >> $GITHUB_OUTPUT
+            else
+              if [ -d "$dir" ]; then
+                echo "$dir=false" >> $GITHUB_OUTPUT
+              fi
+            fi
+          done
+
+          if [ -n "$AFFECTED_MODULES" ]; then
+            echo "affected_modules=$AFFECTED_MODULES" >> $GITHUB_OUTPUT
+            echo "has_affected_modules=true" >> $GITHUB_OUTPUT
+            echo "Affected modules: $AFFECTED_MODULES"
+          else
+            echo "has_affected_modules=false" >> $GITHUB_OUTPUT
+            echo "No modules affected"
+          fi
+
+  bump-version:
+    needs: [validate, find-affected-modules]
+    if: needs.find-affected-modules.outputs.has_affected_modules == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Update version in RudderStackBuildConfig
+        run: |
+          VERSION="${{ needs.validate.outputs.version }}"
+          echo "Updating version to: $VERSION"
+
+          # Update the VERSION_NAME in RudderStackBuildConfig.kt
+          sed -i "s/const val VERSION_NAME = \".*\"/const val VERSION_NAME = \"$VERSION\"/" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt
+
+          # Verify the change
+          echo "Updated RudderStackBuildConfig.kt:"
+          grep "VERSION_NAME" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt
+
+      - name: Commit version bump
+        if: github.event.inputs.dry_run != 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add buildSrc/src/main/kotlin/RudderStackBuildConfig.kt
+          git commit -m "chore: bump version to ${{ needs.validate.outputs.version }}" || echo "No changes to commit"
+          git push
+
+  test:
+    needs: [validate, find-affected-modules, bump-version]
+    if: needs.find-affected-modules.outputs.has_affected_modules == 'true' && github.event.inputs.skip_tests != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-release-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-release-
+            ${{ runner.os }}-gradle-
+
+      - name: Run Detekt on affected modules
+        run: |
+          AFFECTED_MODULES="${{ needs.find-affected-modules.outputs.affected_modules }}"
+          if [ -n "$AFFECTED_MODULES" ]; then
+            IFS=',' read -ra MODULES <<< "$AFFECTED_MODULES"
+            for module in "${MODULES[@]}"; do
+              echo "Running detekt for $module"
+              ./gradlew ${module}:detekt
+            done
+          fi
+
+      - name: Run Android Lint on affected modules
+        run: |
+          AFFECTED_MODULES="${{ needs.find-affected-modules.outputs.affected_modules }}"
+          if [ -n "$AFFECTED_MODULES" ]; then
+            IFS=',' read -ra MODULES <<< "$AFFECTED_MODULES"
+            for module in "${MODULES[@]}"; do
+              # Skip core module for lint
+              if [[ "$module" != ":core" ]]; then
+                echo "Running lint for $module"
+                ./gradlew ${module}:lint
+              fi
+            done
+          fi
+
+      - name: Run unit tests on affected modules (Release mode)
+        run: |
+          AFFECTED_MODULES="${{ needs.find-affected-modules.outputs.affected_modules }}"
+          if [ -n "$AFFECTED_MODULES" ]; then
+            IFS=',' read -ra MODULES <<< "$AFFECTED_MODULES"
+            for module in "${MODULES[@]}"; do
+              echo "Running tests for $module in release mode"
+              ./gradlew ${module}:testReleaseUnitTest -Prelease || ./gradlew ${module}:test -Prelease
+            done
+          fi
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports-release
+          path: |
+            **/build/reports/tests/
+            **/build/reports/detekt/
+            **/build/reports/lint-results*.html
+          retention-days: 7
+
+  build-and-stage:
+    needs: [validate, find-affected-modules, bump-version, test]
+    if: always() && needs.find-affected-modules.outputs.has_affected_modules == 'true' && (needs.test.result == 'success' || needs.test.result == 'skipped')
+    runs-on: ubuntu-latest
+    environment: deployment
+    outputs:
+      built_modules: ${{ steps.build-aars.outputs.built_modules }}
+      has_artifacts: ${{ steps.build-aars.outputs.has_artifacts }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-release-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-release-
+            ${{ runner.os }}-gradle-
+
+      - name: Build Library Module AARs/JARs
+        id: build-aars
+        run: |
+          AFFECTED_MODULES="${{ needs.find-affected-modules.outputs.affected_modules }}"
+          echo "Building AAR/JAR files for affected library modules..."
+          IFS=',' read -ra MODULES <<< "$AFFECTED_MODULES"
+          BUILT_MODULES=""
+          MODULES_TO_BUILD=()
+
+          # First, collect all modules that need to be built (exclude app module)
+          for module in "${MODULES[@]}"; do
+            if [[ "$module" != ":app" ]]; then
+              MODULES_TO_BUILD+=("$module")
+            fi
+          done
+
+          # If core module is affected, also build android module (dependency)
+          CORE_AFFECTED=false
+          for module in "${MODULES_TO_BUILD[@]}"; do
+            if [[ "$module" == ":core" ]]; then
+              CORE_AFFECTED=true
+              break
+            fi
+          done
+
+          if [ "$CORE_AFFECTED" = true ]; then
+            # Check if android module is already in the list
+            ANDROID_IN_LIST=false
+            for module in "${MODULES_TO_BUILD[@]}"; do
+              if [[ "$module" == ":android" ]]; then
+                ANDROID_IN_LIST=true
+                break
+              fi
+            done
+
+            # Add android module if not already present
+            if [ "$ANDROID_IN_LIST" = false ]; then
+              echo "Core module affected - also building android module due to dependency"
+              MODULES_TO_BUILD+=(":android")
+            fi
+          fi
+
+          # Build all required modules in release mode
+          for module in "${MODULES_TO_BUILD[@]}"; do
+            echo "Building AAR/JAR for $module in release mode"
+
+            # Use correct build task based on module type
+            if [[ "$module" == ":core" ]]; then
+              # Core is a Kotlin/JVM module - use assemble task with release flag
+              ./gradlew ${module}:assemble -Prelease
+            else
+              # Android modules (android, integrations) - use assembleRelease task
+              ./gradlew ${module}:assembleRelease -Prelease
+            fi
+
+            # Track which modules were built for artifact upload
+            if [ -z "$BUILT_MODULES" ]; then
+              BUILT_MODULES="$module"
+            else
+              BUILT_MODULES="$BUILT_MODULES,$module"
+            fi
+          done
+
+          echo "built_modules=$BUILT_MODULES" >> $GITHUB_OUTPUT
+          echo "has_artifacts=true" >> $GITHUB_OUTPUT
+
+          if [ -n "$BUILT_MODULES" ]; then
+            echo "Built modules: $BUILT_MODULES"
+            echo "Listing generated artifacts..."
+            find . -name "*.aar" -o -name "*.jar" | grep -E "(core|android|integrations)" | head -20
+          fi
+
+      - name: Deploy staging version to Maven Staging
+        if: github.event.inputs.dry_run != 'true'
+        run: |
+          echo "Publishing staging version to Maven Staging..."
+          AFFECTED_MODULES="${{ needs.find-affected-modules.outputs.affected_modules }}"
+          IFS=',' read -ra MODULES <<< "$AFFECTED_MODULES"
+
+          # Publish each affected module to staging
+          for module in "${MODULES[@]}"; do
+            if [[ "$module" != ":app" ]]; then
+              echo "Publishing $module to staging"
+              ./gradlew ${module}:publish publishToSonatype -Prelease
+            fi
+          done
+
+          echo "Staging deployment completed"
+        env:
+          SIGNING_KEY_ID: ${{ secrets.SIGNING_KEY_ID }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+          ORG_GRADLE_PROJECT_sonatypeUsername: ${{ secrets.NEXUS_USERNAME }}
+          NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+          NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+          SONATYPE_STAGING_PROFILE_ID: ${{ secrets.SONATYPE_STAGING_PROFILE_ID }}
+          ORG_GRADLE_PROJECT_sonatypePassword: ${{ secrets.NEXUS_PASSWORD }}
+          SIGNING_PRIVATE_KEY_BASE64: ${{ secrets.SIGNING_PRIVATE_KEY_BASE64 }}
+
+      - name: Upload Library AARs/JARs
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts-v${{ needs.validate.outputs.version }}
+          path: |
+            core/build/libs/*.jar
+            android/build/outputs/aar/*-release.aar
+            integrations/*/build/outputs/aar/*-release.aar
+          retention-days: 30
+
+  create-release:
+    needs: [validate, find-affected-modules, build-and-stage]
+    if: needs.build-and-stage.outputs.has_artifacts == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      release_id: ${{ steps.create-release.outputs.id }}
+      release_url: ${{ steps.create-release.outputs.html_url }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download release artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-artifacts-v${{ needs.validate.outputs.version }}
+          path: ./artifacts
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          VERSION="${{ needs.validate.outputs.version }}"
+
+          # Try to find the previous tag
+          PREVIOUS_TAG=$(git tag --sort=-version:refname | grep -E "^v[0-9]+\.[0-9]+\.[0-9]+$" | head -1)
+
+          if [ -n "$PREVIOUS_TAG" ]; then
+            echo "Generating changelog from $PREVIOUS_TAG to HEAD"
+            CHANGELOG=$(git log --pretty=format:"- %s (%h)" $PREVIOUS_TAG..HEAD --no-merges)
+          else
+            echo "No previous tag found, generating changelog from first commit"
+            CHANGELOG=$(git log --pretty=format:"- %s (%h)" --no-merges)
+          fi
+
+          # Create changelog content
+          cat > changelog.md << EOF
+          ## What's Changed
+
+          $CHANGELOG
+
+          ## Affected Modules
+
+          ${{ needs.find-affected-modules.outputs.affected_modules }}
+
+          ## Built Artifacts
+
+          ${{ needs.build-and-stage.outputs.built_modules }}
+
+          **Full Changelog**: https://github.com/${{ github.repository }}/compare/$PREVIOUS_TAG...v$VERSION
+          EOF
+
+          echo "changelog_file=changelog.md" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        id: create-release
+        if: github.event.inputs.dry_run != 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Android SDK v${{ needs.validate.outputs.version }}"
+          tag_name: "v${{ needs.validate.outputs.version }}"
+          body_path: changelog.md
+          files: |
+            artifacts/**/*.aar
+            artifacts/**/*.jar
+          prerelease: true
+          draft: false
+          generate_release_notes: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Git Tag
+        if: github.event.inputs.dry_run != 'true'
+        run: |
+          VERSION="${{ needs.validate.outputs.version }}"
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git tag -a "v$VERSION" -m "Release v$VERSION"
+          git push origin "v$VERSION"
+
+  create-pull-requests:
+    needs: [validate, create-release]
+    if: needs.validate.outputs.is_release_branch == 'true' && github.event.inputs.dry_run != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create PR to main
+        id: pr-main
+        run: |
+          BRANCH_NAME="${{ github.ref_name }}"
+          VERSION="${{ needs.validate.outputs.version }}"
+
+          # Create PR to main
+          PR_TITLE="Release v$VERSION"
+          PR_BODY="## Release v$VERSION
+
+          This PR merges the release branch \`$BRANCH_NAME\` into \`main\`.
+
+          ### Release Details
+          - **Version**: v$VERSION
+          - **Release URL**: ${{ needs.create-release.outputs.release_url }}
+          - **Affected Modules**: ${{ needs.find-affected-modules.outputs.affected_modules }}
+
+          ### Changes
+          This release includes all changes from the \`$BRANCH_NAME\` branch.
+
+          **Auto-generated by GitHub Actions**"
+
+          gh pr create \
+            --title "$PR_TITLE" \
+            --body "$PR_BODY" \
+            --base main \
+            --head "$BRANCH_NAME" \
+            --label "release" \
+            --assignee "${{ github.actor }}" || echo "PR to main may already exist"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create PR to develop
+        id: pr-develop
+        run: |
+          BRANCH_NAME="${{ github.ref_name }}"
+          VERSION="${{ needs.validate.outputs.version }}"
+
+          # Create PR to develop
+          PR_TITLE="Backmerge v$VERSION to develop"
+          PR_BODY="## Backmerge v$VERSION to develop
+
+          This PR backmerges the release branch \`$BRANCH_NAME\` into \`develop\` to keep both branches in sync.
+
+          ### Release Details
+          - **Version**: v$VERSION
+          - **Release URL**: ${{ needs.create-release.outputs.release_url }}
+          - **Affected Modules**: ${{ needs.find-affected-modules.outputs.affected_modules }}
+
+          ### Purpose
+          This ensures that any release-specific changes (version bumps, etc.) are properly merged back into the develop branch.
+
+          **Auto-generated by GitHub Actions**"
+
+          gh pr create \
+            --title "$PR_TITLE" \
+            --body "$PR_BODY" \
+            --base develop \
+            --head "$BRANCH_NAME" \
+            --label "backmerge" \
+            --assignee "${{ github.actor }}" || echo "PR to develop may already exist"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  notify:
+    needs: [validate, find-affected-modules, build-and-stage, create-release, create-pull-requests]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Determine notification status
+        id: status
+        run: |
+          if [ "${{ needs.build-and-stage.result }}" = "success" ] && [ "${{ needs.create-release.result }}" = "success" ]; then
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "emoji=✅" >> $GITHUB_OUTPUT
+          else
+            echo "status=failure" >> $GITHUB_OUTPUT
+            echo "emoji=❌" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Notify Slack on Success
+        if: steps.status.outputs.status == 'success'
+        uses: slackapi/slack-github-action@v2.1.0
+        with:
+          payload: |
+            {
+              "text": "✅ Android SDK v${{ needs.validate.outputs.version }} released successfully!",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Android SDK Release Successful!* ✅\n*Version:* v${{ needs.validate.outputs.version }}\n*Repository:* ${{ github.repository }}\n*Branch:* ${{ github.ref_name }}\n*Triggered by:* ${{ github.actor }}\n${{ github.event.inputs.dry_run == 'true' && '*Mode:* Dry Run' || '*Mode:* Production Release' }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Affected Modules:*\n${{ needs.find-affected-modules.outputs.affected_modules }}\n\n*Built Artifacts:*\n${{ needs.build-and-stage.outputs.built_modules }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "<${{ needs.create-release.outputs.release_url }}|📦 View GitHub Release> | <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|🔗 View Workflow Run>"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+      - name: Notify Slack on Failure
+        if: steps.status.outputs.status == 'failure'
+        uses: slackapi/slack-github-action@v2.1.0
+        with:
+          payload: |
+            {
+              "text": "❌ Android SDK v${{ needs.validate.outputs.version }} release failed!",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Android SDK Release Failed!* ❌\n*Version:* v${{ needs.validate.outputs.version }}\n*Repository:* ${{ github.repository }}\n*Branch:* ${{ github.ref_name }}\n*Triggered by:* ${{ github.actor }}\n${{ github.event.inputs.dry_run == 'true' && '*Mode:* Dry Run' || '*Mode:* Production Release' }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Failed Jobs:*\n${{ needs.validate.result != 'success' && '• Validation\n' || '' }}${{ needs.find-affected-modules.result != 'success' && '• Find Affected Modules\n' || '' }}${{ needs.test.result == 'failure' && '• Tests\n' || '' }}${{ needs.build-and-stage.result != 'success' && '• Build & Stage\n' || '' }}${{ needs.create-release.result != 'success' && '• Create Release\n' || '' }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|🔗 View Workflow Run>"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
