@@ -463,17 +463,26 @@ jobs:
       - name: Create GitHub Release
         id: create-release
         if: github.event.inputs.dry_run != 'true'
-        uses: softprops/action-gh-release@v2
-        with:
-          name: "Android SDK v${{ needs.validate.outputs.version }}"
-          tag_name: "v${{ needs.validate.outputs.version }}"
-          body_path: changelog.md
-          files: |
-            artifacts/**/*.aar
-            artifacts/**/*.jar
-          prerelease: true
-          draft: false
-          generate_release_notes: false
+        run: |
+          VERSION="${{ needs.validate.outputs.version }}"
+
+          # Create release with GitHub CLI
+          RELEASE_OUTPUT=$(gh release create "v$VERSION" \
+            --title "Android SDK v$VERSION" \
+            --notes-file changelog.md \
+            --prerelease \
+            artifacts/**/*.aar artifacts/**/*.jar 2>&1)
+
+          echo "Release creation output:"
+          echo "$RELEASE_OUTPUT"
+
+          # Get release URL and ID
+          RELEASE_URL=$(gh release view "v$VERSION" --json url --jq '.url')
+          RELEASE_ID=$(gh release view "v$VERSION" --json id --jq '.id')
+
+          echo "id=$RELEASE_ID" >> $GITHUB_OUTPUT
+          echo "html_url=$RELEASE_URL" >> $GITHUB_OUTPUT
+          echo "Release created: $RELEASE_URL"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
