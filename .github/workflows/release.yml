@@ -588,7 +588,7 @@ jobs:
 
       - name: Notify Slack on Success
         if: steps.status.outputs.status == 'success'
-        uses: slackapi/slack-github-action@v2.1.0
+        uses: slackapi/slack-github-action@b0fa283ad8fea605de13dc3f449259339835fc52  # v2.1.0
         with:
           payload: |
             {
@@ -617,13 +617,14 @@ jobs:
                 }
               ]
             }
+          webhook-type: incoming-webhook
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Notify Slack on Failure
         if: steps.status.outputs.status == 'failure'
-        uses: slackapi/slack-github-action@v2.1.0
+        uses: slackapi/slack-github-action@b0fa283ad8fea605de13dc3f449259339835fc52  # v2.1.0
         with:
           payload: |
             {
@@ -652,6 +653,7 @@ jobs:
                 }
               ]
             }
+          webhook-type: incoming-webhook
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
