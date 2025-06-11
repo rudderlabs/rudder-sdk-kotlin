@@ -139,7 +139,6 @@ open class Analytics protected constructor(
             options = options,
             userIdentityState = userIdentityState.value,
         )
-
         processEventChannel.trySend(event)
     }
 
