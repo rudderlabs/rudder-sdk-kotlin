@@ -446,10 +446,10 @@ jobs:
               echo "No library modules were affected"
               echo "has_artifacts=false" >> $GITHUB_OUTPUT
             fi
-        else
-          echo "No modules affected, skipping AAR build"
-          echo "has_artifacts=false" >> $GITHUB_OUTPUT
-        fi
+          else
+            echo "No modules affected, skipping AAR build"
+            echo "has_artifacts=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Deploy staging version to Maven Staging
         if: github.event.inputs.dry_run != 'true'
