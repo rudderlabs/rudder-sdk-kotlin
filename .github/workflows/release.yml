@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to release (e.g., 1.0.0). If not provided, will auto-increment to next minor version'
+        description: 'Version to release (e.g., 1.0.0). If not provided, will auto-increment to next build version'
         required: false
         type: string
       dry_run:
@@ -54,8 +54,8 @@ jobs:
               VERSION="${{ github.event.inputs.version }}"
               echo "Using provided version: $VERSION"
             else
-              # Auto-determine next minor version
-              echo "No version provided, determining next minor version..."
+              # Auto-determine next build/patch version
+              echo "No version provided, determining next build version..."
 
               # Get current version from RudderStackBuildConfig.kt
               CURRENT_VERSION=$(grep "const val VERSION_NAME" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt | sed 's/.*"\([^"]*\)".*/\1/')
@@ -66,10 +66,10 @@ jobs:
               MINOR=$(echo $CURRENT_VERSION | cut -d. -f2)
               PATCH=$(echo $CURRENT_VERSION | cut -d. -f3)
 
-              # Increment minor version, reset patch to 0
-              NEW_MINOR=$((MINOR + 1))
-              VERSION="$MAJOR.$NEW_MINOR.0"
-              echo "Auto-determined next minor version: $VERSION"
+              # Increment patch/build version
+              NEW_PATCH=$((PATCH + 1))
+              VERSION="$MAJOR.$MINOR.$NEW_PATCH"
+              echo "Auto-determined next build version: $VERSION"
             fi
           elif [ "${{ github.event_name }}" = "release" ]; then
             VERSION="${{ github.event.release.tag_name }}"
@@ -214,9 +214,22 @@ jobs:
                 INTEGRATION_NAME=$(echo "$module" | sed 's/:integrations://')
                 echo "Updating integration module: $INTEGRATION_NAME"
 
-                # Find the integration object and update its versionName and versionCode
-                # Update versionName to match the release version
-                sed -i "/object ${INTEGRATION_NAME^} : IntegrationModuleInfo/,/override val versionName: String/ s/override val versionName: String = \".*\"/override val versionName: String = \"$VERSION\"/" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt
+                # Get current integration versionName and increment its build version
+                CURRENT_INTEGRATION_VERSION=$(grep -A 10 "object ${INTEGRATION_NAME^} : IntegrationModuleInfo" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt | grep "override val versionName: String" | sed 's/.*"\([^"]*\)".*/\1/')
+                if [ -n "$CURRENT_INTEGRATION_VERSION" ]; then
+                  # Parse integration version components (X.Y.Z)
+                  INT_MAJOR=$(echo $CURRENT_INTEGRATION_VERSION | cut -d. -f1)
+                  INT_MINOR=$(echo $CURRENT_INTEGRATION_VERSION | cut -d. -f2)
+                  INT_PATCH=$(echo $CURRENT_INTEGRATION_VERSION | cut -d. -f3)
+
+                  # Increment patch/build version for integration
+                  NEW_INT_PATCH=$((INT_PATCH + 1))
+                  NEW_INTEGRATION_VERSION="$INT_MAJOR.$INT_MINOR.$NEW_INT_PATCH"
+                  echo "Incrementing $INTEGRATION_NAME versionName from $CURRENT_INTEGRATION_VERSION to $NEW_INTEGRATION_VERSION"
+
+                  # Update versionName with incremented build version
+                  sed -i "/object ${INTEGRATION_NAME^} : IntegrationModuleInfo/,/override val versionName: String/ s/override val versionName: String = \".*\"/override val versionName: String = \"$NEW_INTEGRATION_VERSION\"/" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt
+                fi
 
                 # Get current integration versionCode and increment by 1
                 CURRENT_INTEGRATION_VERSION_CODE=$(grep -A 10 "object ${INTEGRATION_NAME^} : IntegrationModuleInfo" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt | grep "override val versionCode: String" | sed 's/.*"\([0-9]*\)".*/\1/')
@@ -362,73 +375,81 @@ jobs:
         id: build-aars
         run: |
           AFFECTED_MODULES="${{ needs.find-affected-modules.outputs.affected_modules }}"
-          echo "Building AAR/JAR files for affected library modules..."
-          IFS=',' read -ra MODULES <<< "$AFFECTED_MODULES"
-          BUILT_MODULES=""
-          MODULES_TO_BUILD=()
+          if [ -n "$AFFECTED_MODULES" ]; then
+            echo "Building AAR/JAR files for affected library modules..."
+            IFS=',' read -ra MODULES <<< "$AFFECTED_MODULES"
+            BUILT_MODULES=""
+            MODULES_TO_BUILD=()
 
-          # First, collect all modules that need to be built (exclude app module)
-          for module in "${MODULES[@]}"; do
-            if [[ "$module" != ":app" ]]; then
-              MODULES_TO_BUILD+=("$module")
-            fi
-          done
+            # First, collect all modules that need to be built (exclude app module)
+            for module in "${MODULES[@]}"; do
+              if [[ "$module" != ":app" ]]; then
+                MODULES_TO_BUILD+=("$module")
+              fi
+            done
 
-          # If core module is affected, also build android module (dependency)
-          CORE_AFFECTED=false
-          for module in "${MODULES_TO_BUILD[@]}"; do
-            if [[ "$module" == ":core" ]]; then
-              CORE_AFFECTED=true
-              break
-            fi
-          done
-
-          if [ "$CORE_AFFECTED" = true ]; then
-            # Check if android module is already in the list
-            ANDROID_IN_LIST=false
+            # If core module is affected, also build android module (dependency)
+            CORE_AFFECTED=false
             for module in "${MODULES_TO_BUILD[@]}"; do
-              if [[ "$module" == ":android" ]]; then
-                ANDROID_IN_LIST=true
+              if [[ "$module" == ":core" ]]; then
+                CORE_AFFECTED=true
                 break
               fi
             done
 
-            # Add android module if not already present
-            if [ "$ANDROID_IN_LIST" = false ]; then
-              echo "Core module affected - also building android module due to dependency"
-              MODULES_TO_BUILD+=(":android")
+            if [ "$CORE_AFFECTED" = true ]; then
+              # Check if android module is already in the list
+              ANDROID_IN_LIST=false
+              for module in "${MODULES_TO_BUILD[@]}"; do
+                if [[ "$module" == ":android" ]]; then
+                  ANDROID_IN_LIST=true
+                  break
+                fi
+              done
+
+              # Add android module if not already present
+              if [ "$ANDROID_IN_LIST" = false ]; then
+                echo "Core module affected - also building android module due to dependency"
+                MODULES_TO_BUILD+=(":android")
+              fi
             fi
-          fi
 
-          # Build all required modules in release mode
-          for module in "${MODULES_TO_BUILD[@]}"; do
-            echo "Building AAR/JAR for $module in release mode"
+            # Build all required modules in release mode
+            for module in "${MODULES_TO_BUILD[@]}"; do
+              echo "Building AAR/JAR for $module in release mode"
 
-            # Use correct build task based on module type
-            if [[ "$module" == ":core" ]]; then
-              # Core is a Kotlin/JVM module - use assemble task with release flag
-              ./gradlew ${module}:assemble -Prelease
+              # Use correct build task based on module type
+              if [[ "$module" == ":core" ]]; then
+                # Core is a Kotlin/JVM module - use assemble task with release flag
+                ./gradlew ${module}:assemble -Prelease
+              else
+                # Android modules (android, integrations) - use assembleRelease task
+                ./gradlew ${module}:assembleRelease -Prelease
+              fi
+
+              # Track which modules were built for artifact upload
+              if [ -z "$BUILT_MODULES" ]; then
+                BUILT_MODULES="$module"
+              else
+                BUILT_MODULES="$BUILT_MODULES,$module"
+              fi
+            done
+
+            echo "built_modules=$BUILT_MODULES" >> $GITHUB_OUTPUT
+
+            if [ -n "$BUILT_MODULES" ]; then
+              echo "has_artifacts=true" >> $GITHUB_OUTPUT
+              echo "Built modules: $BUILT_MODULES"
+              echo "Listing generated artifacts..."
+              find . -name "*.aar" -o -name "*.jar" | grep -E "(core|android|integrations)" | head -20
             else
-              # Android modules (android, integrations) - use assembleRelease task
-              ./gradlew ${module}:assembleRelease -Prelease
+              echo "No library modules were affected"
+              echo "has_artifacts=false" >> $GITHUB_OUTPUT
             fi
-
-            # Track which modules were built for artifact upload
-            if [ -z "$BUILT_MODULES" ]; then
-              BUILT_MODULES="$module"
-            else
-              BUILT_MODULES="$BUILT_MODULES,$module"
-            fi
-          done
-
-          echo "built_modules=$BUILT_MODULES" >> $GITHUB_OUTPUT
-          echo "has_artifacts=true" >> $GITHUB_OUTPUT
-
-          if [ -n "$BUILT_MODULES" ]; then
-            echo "Built modules: $BUILT_MODULES"
-            echo "Listing generated artifacts..."
-            find . -name "*.aar" -o -name "*.jar" | grep -E "(core|android|integrations)" | head -20
-          fi
+        else
+          echo "No modules affected, skipping AAR build"
+          echo "has_artifacts=false" >> $GITHUB_OUTPUT
+        fi
 
       - name: Deploy staging version to Maven Staging
         if: github.event.inputs.dry_run != 'true'
@@ -635,7 +656,12 @@ jobs:
     if: always()
     runs-on: ubuntu-latest
     steps:
-      - name: Determine notification status
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine notification status and module versions
         id: status
         run: |
           if [ "${{ needs.build-and-stage.result }}" = "success" ] && [ "${{ needs.create-release.result }}" = "success" ]; then
@@ -645,6 +671,56 @@ jobs:
             echo "status=failure" >> $GITHUB_OUTPUT
             echo "emoji=❌" >> $GITHUB_OUTPUT
           fi
+
+          # Extract module version information
+          AFFECTED_MODULES="${{ needs.find-affected-modules.outputs.affected_modules }}"
+          BUILT_MODULES="${{ needs.build-and-stage.outputs.built_modules }}"
+
+          MODULE_VERSIONS=""
+
+          if [ -n "$BUILT_MODULES" ]; then
+            # Get Core SDK version
+            CORE_VERSION=$(grep "const val VERSION_NAME" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt | sed 's/.*"\([^"]*\)".*/\1/')
+            CORE_VERSION_CODE=$(grep "const val VERSION_CODE" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt | sed 's/.*"\([0-9]*\)".*/\1/')
+
+            # Check if core or android modules were built
+            if [[ "$BUILT_MODULES" =~ ":core" ]] || [[ "$BUILT_MODULES" =~ ":android" ]]; then
+              MODULE_VERSIONS="📦 *Core SDK*: v$CORE_VERSION (build $CORE_VERSION_CODE)"
+            fi
+
+            # Check for integration modules
+            INTEGRATION_VERSIONS=""
+            IFS=',' read -ra MODULES <<< "$BUILT_MODULES"
+            for module in "${MODULES[@]}"; do
+              if [[ "$module" =~ ^:integrations: ]]; then
+                INTEGRATION_NAME=$(echo "$module" | sed 's/:integrations://')
+                INT_VERSION=$(grep -A 5 "object ${INTEGRATION_NAME^} : IntegrationModuleInfo" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt | grep "override val versionName: String" | sed 's/.*"\([^"]*\)".*/\1/')
+                INT_VERSION_CODE=$(grep -A 5 "object ${INTEGRATION_NAME^} : IntegrationModuleInfo" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt | grep "override val versionCode: String" | sed 's/.*"\([0-9]*\)".*/\1/')
+
+                if [ -n "$INT_VERSION" ]; then
+                  if [ -z "$INTEGRATION_VERSIONS" ]; then
+                    INTEGRATION_VERSIONS="📱 *${INTEGRATION_NAME^}*: v$INT_VERSION (build $INT_VERSION_CODE)"
+                  else
+                    INTEGRATION_VERSIONS="$INTEGRATION_VERSIONS\n📱 *${INTEGRATION_NAME^}*: v$INT_VERSION (build $INT_VERSION_CODE)"
+                  fi
+                fi
+              fi
+            done
+
+            # Combine all version information
+            if [ -n "$INTEGRATION_VERSIONS" ]; then
+              if [ -n "$MODULE_VERSIONS" ]; then
+                MODULE_VERSIONS="$MODULE_VERSIONS\n$INTEGRATION_VERSIONS"
+              else
+                MODULE_VERSIONS="$INTEGRATION_VERSIONS"
+              fi
+            fi
+          fi
+
+          # Set output for use in Slack notification
+          echo "module_versions<<EOF" >> $GITHUB_OUTPUT
+          echo -e "$MODULE_VERSIONS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Notify Slack on Success
         if: steps.status.outputs.status == 'success'
@@ -659,6 +735,13 @@ jobs:
                   "text": {
                     "type": "mrkdwn",
                     "text": "*Android SDK Release Successful!* ✅\n*Version:* v${{ needs.validate.outputs.version }}\n*Repository:* ${{ github.repository }}\n*Branch:* ${{ github.ref_name }}\n*Triggered by:* ${{ github.actor }}\n${{ github.event.inputs.dry_run == 'true' && '*Mode:* Dry Run' || '*Mode:* Production Release' }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Released Modules & Versions:*\n${{ steps.status.outputs.module_versions }}"
                   }
                 },
                 {
@@ -702,6 +785,13 @@ jobs:
                   "text": {
                     "type": "mrkdwn",
                     "text": "*Failed Jobs:*\n${{ needs.validate.result != 'success' && '• Validation\n' || '' }}${{ needs.find-affected-modules.result != 'success' && '• Find Affected Modules\n' || '' }}${{ needs.test.result == 'failure' && '• Tests\n' || '' }}${{ needs.build-and-stage.result != 'success' && '• Build & Stage\n' || '' }}${{ needs.create-release.result != 'success' && '• Create Release\n' || '' }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Affected Modules:*\n${{ needs.find-affected-modules.outputs.affected_modules || 'None detected' }}"
                   }
                 },
                 {
