@@ -38,7 +38,6 @@ class AdjustIntegration : StandardIntegration, IntegrationPlugin(), ActivityLife
         get() = ADJUST_KEY
 
     private var adjustInstance: AdjustInstance? = null
-
     private lateinit var eventToTokenMappings: List<EventToTokenMapping>
 
     public override fun create(destinationConfig: JsonObject) {
