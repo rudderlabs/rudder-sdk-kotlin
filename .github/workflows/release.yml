@@ -4,8 +4,8 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to release (e.g., 1.0.0)'
-        required: true
+        description: 'Version to release (e.g., 1.0.0). If not provided, will auto-increment to next minor version'
+        required: false
         type: string
       dry_run:
         description: 'Dry run (no publishing or PR creation)'
@@ -49,18 +49,40 @@ jobs:
         id: version
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION="${{ github.event.inputs.version }}"
+            if [ -n "${{ github.event.inputs.version }}" ]; then
+              # Use provided version
+              VERSION="${{ github.event.inputs.version }}"
+              echo "Using provided version: $VERSION"
+            else
+              # Auto-determine next minor version
+              echo "No version provided, determining next minor version..."
+
+              # Get current version from RudderStackBuildConfig.kt
+              CURRENT_VERSION=$(grep "const val VERSION_NAME" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt | sed 's/.*"\([^"]*\)".*/\1/')
+              echo "Current version in config: $CURRENT_VERSION"
+
+              # Parse version components (X.Y.Z)
+              MAJOR=$(echo $CURRENT_VERSION | cut -d. -f1)
+              MINOR=$(echo $CURRENT_VERSION | cut -d. -f2)
+              PATCH=$(echo $CURRENT_VERSION | cut -d. -f3)
+
+              # Increment minor version, reset patch to 0
+              NEW_MINOR=$((MINOR + 1))
+              VERSION="$MAJOR.$NEW_MINOR.0"
+              echo "Auto-determined next minor version: $VERSION"
+            fi
           elif [ "${{ github.event_name }}" = "release" ]; then
             VERSION="${{ github.event.release.tag_name }}"
             # Remove 'v' prefix if present
             VERSION=${VERSION#v}
+            echo "Using release tag version: $VERSION"
           else
             echo "Unsupported trigger event"
             exit 1
           fi
 
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Determined version: $VERSION"
+          echo "Final determined version: $VERSION"
 
       - name: Validate version format
         run: |
@@ -167,14 +189,52 @@ jobs:
       - name: Update version in RudderStackBuildConfig
         run: |
           VERSION="${{ needs.validate.outputs.version }}"
+          AFFECTED_MODULES="${{ needs.find-affected-modules.outputs.affected_modules }}"
           echo "Updating version to: $VERSION"
+          echo "Affected modules: $AFFECTED_MODULES"
 
           # Update the VERSION_NAME in RudderStackBuildConfig.kt
           sed -i "s/const val VERSION_NAME = \".*\"/const val VERSION_NAME = \"$VERSION\"/" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt
 
-          # Verify the change
+          # Get current VERSION_CODE and increment by 1
+          CURRENT_VERSION_CODE=$(grep "const val VERSION_CODE" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt | sed 's/.*"\([0-9]*\)".*/\1/')
+          NEW_VERSION_CODE=$((CURRENT_VERSION_CODE + 1))
+          echo "Incrementing VERSION_CODE from $CURRENT_VERSION_CODE to $NEW_VERSION_CODE"
+
+          # Update the VERSION_CODE in RudderStackBuildConfig.kt
+          sed -i "s/const val VERSION_CODE = \".*\"/const val VERSION_CODE = \"$NEW_VERSION_CODE\"/" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt
+
+          # Update integration module versions if they are affected
+          if [ -n "$AFFECTED_MODULES" ]; then
+            IFS=',' read -ra MODULES <<< "$AFFECTED_MODULES"
+            for module in "${MODULES[@]}"; do
+              # Check if this is an integration module
+              if [[ "$module" =~ ^:integrations: ]]; then
+                # Extract integration name (e.g., ":integrations:firebase" -> "firebase")
+                INTEGRATION_NAME=$(echo "$module" | sed 's/:integrations://')
+                echo "Updating integration module: $INTEGRATION_NAME"
+
+                # Find the integration object and update its versionName and versionCode
+                # Update versionName to match the release version
+                sed -i "/object ${INTEGRATION_NAME^} : IntegrationModuleInfo/,/override val versionName: String/ s/override val versionName: String = \".*\"/override val versionName: String = \"$VERSION\"/" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt
+
+                # Get current integration versionCode and increment by 1
+                CURRENT_INTEGRATION_VERSION_CODE=$(grep -A 10 "object ${INTEGRATION_NAME^} : IntegrationModuleInfo" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt | grep "override val versionCode: String" | sed 's/.*"\([0-9]*\)".*/\1/')
+                if [ -n "$CURRENT_INTEGRATION_VERSION_CODE" ]; then
+                  NEW_INTEGRATION_VERSION_CODE=$((CURRENT_INTEGRATION_VERSION_CODE + 1))
+                  echo "Incrementing $INTEGRATION_NAME versionCode from $CURRENT_INTEGRATION_VERSION_CODE to $NEW_INTEGRATION_VERSION_CODE"
+                  sed -i "/object ${INTEGRATION_NAME^} : IntegrationModuleInfo/,/override val versionCode: String/ s/override val versionCode: String = \".*\"/override val versionCode: String = \"$NEW_INTEGRATION_VERSION_CODE\"/" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt
+                fi
+              fi
+            done
+          fi
+
+          # Verify the changes
           echo "Updated RudderStackBuildConfig.kt:"
-          grep "VERSION_NAME" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt
+          echo "=== Core SDK versions ==="
+          grep -E "(VERSION_NAME|VERSION_CODE)" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt
+          echo "=== Integration versions ==="
+          grep -E "(versionName|versionCode)" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt
 
       - name: Commit version bump
         if: github.event.inputs.dry_run != 'true'
