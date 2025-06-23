@@ -14,7 +14,7 @@ generate_branch_payload() {
     local status="$1"
     local status_emoji
     
-    if [ "$status" = "success" ]; then
+    if [ "$status" = "success" ] || [ "$status" = "passed" ]; then
         status_emoji="✅"
     else
         status_emoji="❌"
@@ -43,7 +43,7 @@ generate_pr_payload() {
     local has_artifacts="$3"
     local status_emoji
     
-    if [ "$status" = "success" ]; then
+    if [ "$status" = "success" ] || [ "$status" = "passed" ]; then
         status_emoji="✅"
     else
         status_emoji="❌"
