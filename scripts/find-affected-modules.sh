@@ -15,18 +15,29 @@ set -e
 # Function to determine base branch
 determine_base_branch() {
     local provided_base="$1"
-    
+
     if [ -n "$provided_base" ]; then
-        echo "$provided_base"
+        # If provided base doesn't start with "origin/", add it
+        if [[ "$provided_base" != origin/* ]]; then
+            # Check if the remote branch exists
+            if git rev-parse --verify "origin/$provided_base" >/dev/null 2>&1; then
+                echo "origin/$provided_base"
+            else
+                echo "⚠️  Warning: origin/$provided_base not found, falling back to HEAD~1" >&2
+                echo "HEAD~1"
+            fi
+        else
+            echo "$provided_base"
+        fi
         return
     fi
-    
+
     # For PR context, use github.base_ref if available
     if [ -n "$GITHUB_BASE_REF" ]; then
         echo "origin/$GITHUB_BASE_REF"
         return
     fi
-    
+
     # For branch validation, use complex logic
     if git merge-base --is-ancestor origin/develop HEAD 2>/dev/null; then
         # If current branch is derived from develop
@@ -47,7 +58,11 @@ find_affected_modules() {
 
     # Get changed files
     local changed_files
-    changed_files=$(git diff --name-only "$base_branch...HEAD")
+    if ! changed_files=$(git diff --name-only "$base_branch...HEAD" 2>/dev/null); then
+        echo "⚠️  Failed to get diff against $base_branch, falling back to all modules"
+        # If git diff fails, consider all modules as affected
+        changed_files=$(find core android integrations/* -name "*.kt" -o -name "*.java" -o -name "*.gradle*" 2>/dev/null | head -10 || echo "core/dummy android/dummy")
+    fi
 
     echo "Changed files:"
     echo "$changed_files"
