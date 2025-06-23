@@ -1,4 +1,4 @@
-name: PR Validation (With Composite Action)
+name: PR Validation
 
 on:
   pull_request:

@@ -1,4 +1,4 @@
-name: Branch Validation (With Composite Action)
+name: Branch Validation
 
 on:
   push:
