@@ -2,12 +2,13 @@
 
 # Script to find affected modules based on git changes
 # Usage: ./scripts/find-affected-modules.sh [base_branch]
-# 
+#
 # This script:
 # 1. Determines the base branch to compare against
 # 2. Finds changed files
 # 3. Maps changed files to affected modules
-# 4. Outputs results in GitHub Actions format
+# 4. Handles module dependencies (e.g., if :core is affected, :android is also affected)
+# 5. Outputs results in GitHub Actions format
 
 set -e
 
@@ -41,32 +42,38 @@ determine_base_branch() {
 # Function to find affected modules
 find_affected_modules() {
     local base_branch="$1"
-    
+
     echo "Comparing against base: $base_branch"
-    
+
     # Get changed files
     local changed_files
     changed_files=$(git diff --name-only "$base_branch...HEAD")
-    
+
     echo "Changed files:"
     echo "$changed_files"
     echo ""
-    
+
     # Create a list of affected modules
     local affected_modules=""
-    
+    local core_affected=false
+
     # Check for changes in each module directory
     for dir in core android integrations/*; do
         if [ -d "$dir" ] && echo "$changed_files" | grep -q "^$dir/"; then
             local module_path
             module_path=$(echo "$dir" | sed 's/\//:/')
-            
+
+            # Track if core module is affected
+            if [ "$dir" = "core" ]; then
+                core_affected=true
+            fi
+
             if [ -z "$affected_modules" ]; then
                 affected_modules=":$module_path"
             else
                 affected_modules="$affected_modules,:$module_path"
             fi
-            
+
             # Output for GitHub Actions
             if [ -n "$GITHUB_OUTPUT" ]; then
                 echo "$dir=true" >> "$GITHUB_OUTPUT"
@@ -82,15 +89,30 @@ find_affected_modules() {
             fi
         fi
     done
-    
+
+    # If core is affected, ensure android is also affected (dependency relationship)
+    if [ "$core_affected" = true ] && ! echo "$affected_modules" | grep -q ":android"; then
+        if [ -z "$affected_modules" ]; then
+            affected_modules=":android"
+        else
+            affected_modules="$affected_modules,:android"
+        fi
+
+        # Update GitHub Actions output
+        if [ -n "$GITHUB_OUTPUT" ]; then
+            echo "android=true" >> "$GITHUB_OUTPUT"
+        fi
+        echo "✓ Module affected (dependency): android (depends on core)"
+    fi
+
     echo ""
     echo "Affected modules: $affected_modules"
-    
+
     # Output for GitHub Actions
     if [ -n "$GITHUB_OUTPUT" ]; then
         echo "affected_modules=$affected_modules" >> "$GITHUB_OUTPUT"
     fi
-    
+
     # Also output to stdout for local testing
     echo "AFFECTED_MODULES=$affected_modules"
 }
