@@ -79,16 +79,16 @@ determine_modules_to_build() {
 # Function to build a single module
 build_module() {
     local module="$1"
-    
+
     echo "Building AAR/JAR for $module"
-    
+
     # Use correct build task based on module type
     if [[ "$module" == ":core" ]]; then
         # Core is a Kotlin/JVM module - use assemble task
-        ./gradlew "${module}:assemble"
+        ./gradlew "${module}:assemble" $GRADLE_OPTS
     else
         # Android modules (android, integrations) - use assembleRelease task
-        ./gradlew "${module}:assembleRelease"
+        ./gradlew "${module}:assembleRelease" $GRADLE_OPTS
     fi
 }
 
