@@ -1,0 +1,45 @@
+name: Branch Validation
+
+on:
+  push:
+    branches:
+      - '**'        # Match all branches
+      - '!main'     # Exclude main branch
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for detecting changes
+
+      - name: Setup and Validate
+        id: validate
+        uses: ./.github/actions/setup-and-validate
+        with:
+          run_aar_build: 'false'
+          sonar_token: ${{ secrets.SONAR_TOKEN }}
+
+      - name: Notify Slack
+        if: always()
+        run: |
+          chmod +x scripts/send-slack-notification.sh
+          
+          # Determine status
+          if [ "${{ job.status }}" = "success" ]; then
+            STATUS="passed"
+          else
+            STATUS="failed"
+          fi
+          
+          # Set environment variables for the script
+          export GITHUB_REPOSITORY="${{ github.repository }}"
+          export GITHUB_REF_NAME="${{ github.ref_name }}"
+          export GITHUB_EVENT_HEAD_COMMIT_MESSAGE="${{ github.event.head_commit.message }}"
+          export GITHUB_ACTOR="${{ github.actor }}"
+          export GITHUB_SHA="${{ github.sha }}"
+          export SLACK_WEBHOOK_URL="${{ secrets.SLACK_WEBHOOK_URL }}"
+          
+          ./scripts/send-slack-notification.sh "branch" "$STATUS"
