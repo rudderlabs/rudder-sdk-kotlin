@@ -1,11 +1,6 @@
 apply(plugin = "maven-publish")
 apply(plugin = "signing")
 
-private val PLATFORM_ADJUST = "adjust"
-private val PLATFORM_BRAZE = "braze"
-private val PLATFORM_FACEBOOK = "facebook"
-private val PLATFORM_FIREBASE = "firebase"
-
 fun getExtraString(name: String) = extra[name]?.toString()
 
 // If not release build add SNAPSHOT suffix
@@ -13,12 +8,8 @@ fun getVersionName(integrationVersion: String) =
     if (hasProperty("release")) integrationVersion
     else "$integrationVersion-SNAPSHOT"
 
-fun getIntegrationModuleInfo(projectName: String) = when (projectName) {
-    PLATFORM_ADJUST -> RudderStackBuildConfig.Integrations.Adjust
-    PLATFORM_BRAZE -> RudderStackBuildConfig.Integrations.Braze
-    PLATFORM_FACEBOOK -> RudderStackBuildConfig.Integrations.Facebook
-    PLATFORM_FIREBASE -> RudderStackBuildConfig.Integrations.Firebase
-    else -> throw IllegalArgumentException("Unknown module: $projectName")
+fun getIntegrationModuleInfo(projectName: String): IntegrationModuleInfo {
+    return RudderStackBuildConfig.Integrations.getByModuleName(projectName)
 }
 
 configure<PublishingExtension> {
@@ -33,7 +24,7 @@ configure<PublishingExtension> {
             version = getVersionName(integrationModule.versionName)
 
             // Add the `aar` file to the artifacts
-            artifact("${layout.buildDirectory.get()}/outputs/aar/${project.name}-release.aar") {
+            artifact("${layout.buildDirectory.get()}/outputs/aar/${project.name}-release-${integrationModule.versionName}.aar") {
                 builtBy(tasks.getByName("assemble"))
             }
 

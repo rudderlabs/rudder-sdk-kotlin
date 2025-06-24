@@ -28,7 +28,7 @@ configure<PublishingExtension> {
 
             // Add the `aar` or `jar` file to the artifacts
             if (project.name == PLATFORM_ANDROID) {
-                artifact("${layout.buildDirectory.get()}/outputs/aar/${project.name}-release.aar") {
+                artifact("${layout.buildDirectory.get()}/outputs/aar/${project.name}-release-${version}.aar") {
                     builtBy(tasks.getByName("assemble"))
                 }
             } else {

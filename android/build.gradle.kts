@@ -57,6 +57,15 @@ android {
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
+
+    // Configure AAR filename to include version
+    libraryVariants.all {
+        outputs.all {
+            val outputImpl = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
+            val versionName = RudderStackBuildConfig.AndroidAndCoreSDKs.VERSION_NAME
+            outputImpl.outputFileName = "${project.name}-${buildType.name}-${versionName}.aar"
+        }
+    }
     compileOptions {
         sourceCompatibility = RudderStackBuildConfig.Build.JAVA_VERSION
         targetCompatibility = RudderStackBuildConfig.Build.JAVA_VERSION

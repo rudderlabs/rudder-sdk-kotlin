@@ -77,6 +77,27 @@ object RudderStackBuildConfig {
             override val artifactId = "firebase"
             override val pomPackaging = "aar"
         }
+
+        /**
+         * Dynamically get integration module info by module name.
+         * This avoids hardcoding integration names in build scripts.
+         */
+        fun getByModuleName(moduleName: String): IntegrationModuleInfo {
+            return when (moduleName) {
+                Adjust.moduleName -> Adjust
+                Braze.moduleName -> Braze
+                Facebook.moduleName -> Facebook
+                Firebase.moduleName -> Firebase
+                else -> throw IllegalArgumentException("Unknown integration module: $moduleName")
+            }
+        }
+
+        /**
+         * Get all available integration modules.
+         */
+        val allModules: List<IntegrationModuleInfo> = listOf(
+            Adjust, Braze, Facebook, Firebase
+        )
     }
 
     object Kotlin {
