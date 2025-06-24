@@ -41,12 +41,16 @@ update_core_version() {
 # Function to update integration module version
 update_integration_version() {
     local integration_name="$1"
-    
+
     echo "Updating integration module: $integration_name"
-    
+
+    # Capitalize first letter of integration name (portable way)
+    local capitalized_name
+    capitalized_name=$(echo "$integration_name" | awk '{print toupper(substr($0,1,1)) tolower(substr($0,2))}')
+
     # Get current integration versionName and increment its build version
     local current_integration_version
-    current_integration_version=$(grep -A 10 "object ${integration_name^} : IntegrationModuleInfo" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt | grep "override val versionName: String" | sed 's/.*"\([^"]*\)".*/\1/')
+    current_integration_version=$(grep -A 10 "object $capitalized_name : IntegrationModuleInfo" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt | grep "override val versionName: String" | sed 's/.*"\([^"]*\)".*/\1/')
     
     if [ -n "$current_integration_version" ]; then
         # Parse integration version components (X.Y.Z)
@@ -62,23 +66,23 @@ update_integration_version() {
         
         # Update versionName with incremented build version
         if [[ "$OSTYPE" == "darwin"* ]]; then
-            sed -i '' "/object ${integration_name^} : IntegrationModuleInfo/,/override val versionName: String/ s/override val versionName: String = \".*\"/override val versionName: String = \"$new_integration_version\"/" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt
+            sed -i '' "/object $capitalized_name : IntegrationModuleInfo/,/override val versionName: String/ s/override val versionName: String = \".*\"/override val versionName: String = \"$new_integration_version\"/" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt
         else
-            sed -i "/object ${integration_name^} : IntegrationModuleInfo/,/override val versionName: String/ s/override val versionName: String = \".*\"/override val versionName: String = \"$new_integration_version\"/" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt
+            sed -i "/object $capitalized_name : IntegrationModuleInfo/,/override val versionName: String/ s/override val versionName: String = \".*\"/override val versionName: String = \"$new_integration_version\"/" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt
         fi
     fi
     
     # Get current integration versionCode and increment by 1
     local current_integration_version_code
-    current_integration_version_code=$(grep -A 10 "object ${integration_name^} : IntegrationModuleInfo" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt | grep "override val versionCode: String" | sed 's/.*"\([0-9]*\)".*/\1/')
-    
+    current_integration_version_code=$(grep -A 10 "object $capitalized_name : IntegrationModuleInfo" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt | grep "override val versionCode: String" | sed 's/.*"\([0-9]*\)".*/\1/')
+
     if [ -n "$current_integration_version_code" ]; then
         local new_integration_version_code=$((current_integration_version_code + 1))
         echo "Incrementing $integration_name versionCode from $current_integration_version_code to $new_integration_version_code"
         if [[ "$OSTYPE" == "darwin"* ]]; then
-            sed -i '' "/object ${integration_name^} : IntegrationModuleInfo/,/override val versionCode: String/ s/override val versionCode: String = \".*\"/override val versionCode: String = \"$new_integration_version_code\"/" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt
+            sed -i '' "/object $capitalized_name : IntegrationModuleInfo/,/override val versionCode: String/ s/override val versionCode: String = \".*\"/override val versionCode: String = \"$new_integration_version_code\"/" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt
         else
-            sed -i "/object ${integration_name^} : IntegrationModuleInfo/,/override val versionCode: String/ s/override val versionCode: String = \".*\"/override val versionCode: String = \"$new_integration_version_code\"/" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt
+            sed -i "/object $capitalized_name : IntegrationModuleInfo/,/override val versionCode: String/ s/override val versionCode: String = \".*\"/override val versionCode: String = \"$new_integration_version_code\"/" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt
         fi
     fi
 }
