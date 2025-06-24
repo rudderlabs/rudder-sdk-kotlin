@@ -13,20 +13,29 @@ set -e
 # Function to update core SDK version
 update_core_version() {
     local version="$1"
-    
+
     echo "Updating core SDK version to: $version"
-    
+
     # Update the VERSION_NAME in RudderStackBuildConfig.kt
-    sed -i "s/const val VERSION_NAME = \".*\"/const val VERSION_NAME = \"$version\"/" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt
-    
+    # Use different sed syntax for macOS vs Linux
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        sed -i '' "s/const val VERSION_NAME = \".*\"/const val VERSION_NAME = \"$version\"/" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt
+    else
+        sed -i "s/const val VERSION_NAME = \".*\"/const val VERSION_NAME = \"$version\"/" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt
+    fi
+
     # Get current VERSION_CODE and increment by 1
     local current_version_code
     current_version_code=$(grep "const val VERSION_CODE" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt | sed 's/.*"\([0-9]*\)".*/\1/')
     local new_version_code=$((current_version_code + 1))
     echo "Incrementing VERSION_CODE from $current_version_code to $new_version_code"
-    
+
     # Update the VERSION_CODE in RudderStackBuildConfig.kt
-    sed -i "s/const val VERSION_CODE = \".*\"/const val VERSION_CODE = \"$new_version_code\"/" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        sed -i '' "s/const val VERSION_CODE = \".*\"/const val VERSION_CODE = \"$new_version_code\"/" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt
+    else
+        sed -i "s/const val VERSION_CODE = \".*\"/const val VERSION_CODE = \"$new_version_code\"/" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt
+    fi
 }
 
 # Function to update integration module version
@@ -52,7 +61,11 @@ update_integration_version() {
         echo "Incrementing $integration_name versionName from $current_integration_version to $new_integration_version"
         
         # Update versionName with incremented build version
-        sed -i "/object ${integration_name^} : IntegrationModuleInfo/,/override val versionName: String/ s/override val versionName: String = \".*\"/override val versionName: String = \"$new_integration_version\"/" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            sed -i '' "/object ${integration_name^} : IntegrationModuleInfo/,/override val versionName: String/ s/override val versionName: String = \".*\"/override val versionName: String = \"$new_integration_version\"/" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt
+        else
+            sed -i "/object ${integration_name^} : IntegrationModuleInfo/,/override val versionName: String/ s/override val versionName: String = \".*\"/override val versionName: String = \"$new_integration_version\"/" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt
+        fi
     fi
     
     # Get current integration versionCode and increment by 1
@@ -62,7 +75,11 @@ update_integration_version() {
     if [ -n "$current_integration_version_code" ]; then
         local new_integration_version_code=$((current_integration_version_code + 1))
         echo "Incrementing $integration_name versionCode from $current_integration_version_code to $new_integration_version_code"
-        sed -i "/object ${integration_name^} : IntegrationModuleInfo/,/override val versionCode: String/ s/override val versionCode: String = \".*\"/override val versionCode: String = \"$new_integration_version_code\"/" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            sed -i '' "/object ${integration_name^} : IntegrationModuleInfo/,/override val versionCode: String/ s/override val versionCode: String = \".*\"/override val versionCode: String = \"$new_integration_version_code\"/" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt
+        else
+            sed -i "/object ${integration_name^} : IntegrationModuleInfo/,/override val versionCode: String/ s/override val versionCode: String = \".*\"/override val versionCode: String = \"$new_integration_version_code\"/" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt
+        fi
     fi
 }
 
