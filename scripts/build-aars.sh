@@ -85,10 +85,10 @@ build_module() {
     # Use correct build task based on module type
     if [[ "$module" == ":core" ]]; then
         # Core is a Kotlin/JVM module - use assemble task
-        ./gradlew "${module}:assemble" $GRADLE_OPTS
+        ./gradlew "${module}:assemble" ${GRADLE_EXTRA_ARGS:-}
     else
         # Android modules (android, integrations) - use assembleRelease task
-        ./gradlew "${module}:assembleRelease" $GRADLE_OPTS
+        ./gradlew "${module}:assembleRelease" ${GRADLE_EXTRA_ARGS:-}
     fi
 }
 

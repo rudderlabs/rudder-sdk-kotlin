@@ -183,8 +183,8 @@ jobs:
 
           # Build AARs using existing script with release flag
           if [ -n "$AFFECTED_MODULES" ]; then
-            # Override the build function to use release mode
-            export GRADLE_OPTS="-Prelease"
+            # Set extra gradle arguments for release mode
+            export GRADLE_EXTRA_ARGS="-Prelease"
             ./scripts/build-aars.sh "$AFFECTED_MODULES"
           else
             echo "No modules affected, skipping AAR build"
