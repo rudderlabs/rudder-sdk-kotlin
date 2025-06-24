@@ -26,11 +26,11 @@ determine_release_status() {
 create_release_message() {
     local version="$1"
     local status="$2"
-    
+
     if [ "$status" = "passed" ]; then
-        echo "✅ Android SDK v$version released successfully!"
+        echo "Kotlin SDK v$version released successfully"
     else
-        echo "❌ Android SDK v$version release failed!"
+        echo "Kotlin SDK v$version release failed"
     fi
 }
 
@@ -38,49 +38,50 @@ create_release_message() {
 get_module_versions() {
     local affected_modules="$1"
     local built_modules="$2"
-    
+
     if [ -z "$built_modules" ]; then
         echo ""
         return
     fi
-    
+
     local module_info=""
-    
+
     # Get Core SDK version if core or android modules were built
     if [[ "$built_modules" =~ ":core" ]] || [[ "$built_modules" =~ ":android" ]]; then
         local core_version core_version_code
         core_version=$(grep "const val VERSION_NAME" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt | sed 's/.*"\([^"]*\)".*/\1/' 2>/dev/null || echo "unknown")
         core_version_code=$(grep "const val VERSION_CODE" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt | sed 's/.*"\([0-9]*\)".*/\1/' 2>/dev/null || echo "unknown")
-        
-        module_info="📦 Core SDK: v$core_version (build $core_version_code)"
+
+        module_info="📦 *Kotlin SDK*: v$core_version (build $core_version_code)"
     fi
-    
+
     # Get integration module versions
     if [[ "$built_modules" =~ ":integrations:" ]]; then
         local integration_info=""
-        
+
         # Parse built modules to find integrations
         IFS=',' read -ra MODULES <<< "$built_modules"
         for module in "${MODULES[@]}"; do
             if [[ "$module" =~ ^:integrations: ]]; then
                 local integration_name
                 integration_name=$(echo "$module" | sed 's/:integrations://')
-                
+
                 # Get integration version (case-insensitive search)
-                local int_version int_version_code
-                int_version=$(grep -i -A 10 "object ${integration_name^} : IntegrationModuleInfo" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt | grep "override val versionName: String" | sed 's/.*"\([^"]*\)".*/\1/' 2>/dev/null || echo "unknown")
-                int_version_code=$(grep -i -A 10 "object ${integration_name^} : IntegrationModuleInfo" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt | grep "override val versionCode: String" | sed 's/.*"\([0-9]*\)".*/\1/' 2>/dev/null || echo "unknown")
-                
+                local int_version int_version_code integration_name_cap
+                integration_name_cap=$(echo "$integration_name" | sed 's/^./\U&/')
+                int_version=$(grep -i -A 10 "object $integration_name_cap : IntegrationModuleInfo" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt | grep "override val versionName: String" | sed 's/.*"\([^"]*\)".*/\1/' 2>/dev/null || echo "unknown")
+                int_version_code=$(grep -i -A 10 "object $integration_name_cap : IntegrationModuleInfo" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt | grep "override val versionCode: String" | sed 's/.*"\([0-9]*\)".*/\1/' 2>/dev/null || echo "unknown")
+
                 if [ "$int_version" != "unknown" ]; then
                     if [ -z "$integration_info" ]; then
-                        integration_info="📱 ${integration_name^}: v$int_version (build $int_version_code)"
+                        integration_info="📱 *$integration_name_cap Integration*: v$int_version (build $int_version_code)"
                     else
-                        integration_info="$integration_info\n📱 ${integration_name^}: v$int_version (build $int_version_code)"
+                        integration_info="$integration_info\n📱 *$integration_name_cap Integration*: v$int_version (build $int_version_code)"
                     fi
                 fi
             fi
         done
-        
+
         # Combine module info
         if [ -n "$integration_info" ]; then
             if [ -n "$module_info" ]; then
@@ -90,7 +91,7 @@ get_module_versions() {
             fi
         fi
     fi
-    
+
     echo -e "$module_info"
 }
 
@@ -100,13 +101,101 @@ validate_environment() {
         echo "⚠️  SLACK_WEBHOOK_URL not set, skipping Slack notification"
         return 1
     fi
-    
-    if ! command -v ./scripts/send-slack-notification.sh &> /dev/null; then
-        echo "❌ send-slack-notification.sh script not found"
+
+    if ! command -v curl &> /dev/null; then
+        echo "❌ curl command not found"
         return 1
     fi
-    
+
     echo "✅ Environment validation passed"
+}
+
+# Function to send custom release Slack notification
+send_release_slack_notification() {
+    local version="$1"
+    local status="$2"
+    local module_versions="$3"
+    local release_url="$4"
+
+    local emoji color title
+    if [ "$status" = "passed" ]; then
+        emoji="✅"
+        color="good"
+        title="Kotlin SDK v$version released successfully"
+    else
+        emoji="❌"
+        color="danger"
+        title="Kotlin SDK v$version release failed"
+    fi
+
+    # Create the Slack payload
+    local payload
+    payload=$(cat <<EOF
+{
+  "text": "$emoji $title",
+  "blocks": [
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "*$title* $emoji\n*Repository:* ${GITHUB_REPOSITORY:-unknown}\n*Branch:* ${GITHUB_REF_NAME:-unknown}\n*Triggered by:* ${GITHUB_ACTOR:-unknown}"
+      }
+    }
+EOF
+)
+
+    # Add module versions if available
+    if [ -n "$module_versions" ]; then
+        payload="$payload,
+    {
+      \"type\": \"section\",
+      \"text\": {
+        \"type\": \"mrkdwn\",
+        \"text\": \"*Released SDKs:*\n$module_versions\"
+      }
+    }"
+    fi
+
+    # Add release URL if available
+    if [ -n "$release_url" ]; then
+        payload="$payload,
+    {
+      \"type\": \"section\",
+      \"text\": {
+        \"type\": \"mrkdwn\",
+        \"text\": \"<$release_url|📦 View GitHub Release> | <https://github.com/${GITHUB_REPOSITORY:-unknown}/actions/runs/${GITHUB_RUN_ID:-unknown}|🔗 View Workflow Run>\"
+      }
+    }"
+    else
+        payload="$payload,
+    {
+      \"type\": \"section\",
+      \"text\": {
+        \"type\": \"mrkdwn\",
+        \"text\": \"<https://github.com/${GITHUB_REPOSITORY:-unknown}/actions/runs/${GITHUB_RUN_ID:-unknown}|🔗 View Workflow Run>\"
+      }
+    }"
+    fi
+
+    # Close the payload
+    payload="$payload
+  ]
+}"
+
+    echo "Sending Slack notification..."
+    echo "Payload preview: $title"
+
+    # Send to Slack
+    local response
+    response=$(curl -s -X POST -H 'Content-type: application/json' \
+        --data "$payload" \
+        "$SLACK_WEBHOOK_URL")
+
+    if [ "$response" = "ok" ]; then
+        echo "✅ Slack notification sent successfully"
+    else
+        echo "⚠️  Slack notification response: $response"
+    fi
 }
 
 # Main function
@@ -156,36 +245,10 @@ main() {
         echo "Module versions:"
         echo -e "$module_versions"
     fi
-    
-    # Set environment variables for the notification script
-    export GITHUB_REPOSITORY="${GITHUB_REPOSITORY:-unknown/unknown}"
-    export GITHUB_REF_NAME="${GITHUB_REF_NAME:-unknown}"
-    export GITHUB_EVENT_HEAD_COMMIT_MESSAGE="$release_message"
-    export GITHUB_ACTOR="${GITHUB_ACTOR:-unknown}"
-    export GITHUB_SHA="${GITHUB_SHA:-unknown}"
-    export GITHUB_RUN_ID="${GITHUB_RUN_ID:-unknown}"
-    
-    # Add release-specific information to the message if available
-    if [ -n "$module_versions" ]; then
-        export GITHUB_EVENT_HEAD_COMMIT_MESSAGE="$release_message
 
-Released Modules:
-$module_versions"
-    fi
-    
-    if [ -n "$release_url" ]; then
-        export GITHUB_EVENT_HEAD_COMMIT_MESSAGE="$GITHUB_EVENT_HEAD_COMMIT_MESSAGE
+    # Send custom release notification to Slack
+    send_release_slack_notification "$version" "$status" "$module_versions" "$release_url"
 
-Release: $release_url"
-    fi
-    
-    echo ""
-    echo "Calling send-slack-notification.sh..."
-    
-    # Use existing notification script with branch type
-    chmod +x scripts/send-slack-notification.sh
-    ./scripts/send-slack-notification.sh "branch" "$status"
-    
     echo "✅ Release notification sent successfully"
 }
 
