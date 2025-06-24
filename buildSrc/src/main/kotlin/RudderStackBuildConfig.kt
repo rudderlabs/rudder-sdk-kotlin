@@ -18,8 +18,8 @@ object RudderStackBuildConfig {
     object AndroidAndCoreSDKs {
 
         const val PACKAGE_NAME = "com.rudderstack.sdk.kotlin"
-        const val VERSION_NAME = "1.2.4-test"
-        const val VERSION_CODE = "3"
+        const val VERSION_NAME = "1.0.0"
+        const val VERSION_CODE = "2"
 
         object AndroidPublishConfig : MavenPublishConfig {
 
@@ -41,8 +41,8 @@ object RudderStackBuildConfig {
         object Adjust : IntegrationModuleInfo {
 
             override val moduleName: String = "adjust"
-            override val versionName: String = "1.0.1"
-            override val versionCode: String = "2"
+            override val versionName: String = "1.0.0"
+            override val versionCode: String = "1"
 
             override val artifactId = "adjust"
             override val pomPackaging = "aar"
