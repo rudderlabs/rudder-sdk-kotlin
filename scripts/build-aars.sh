@@ -47,28 +47,29 @@ determine_modules_to_build() {
         fi
     done
     
-    # If core module is affected, also build android module (dependency)
+    # If core OR android module is affected, ensure BOTH are built (they are released together)
     local core_affected=false
+    local android_affected=false
+
     for module in "${modules_to_build[@]}"; do
         if [[ "$module" == ":core" ]]; then
             core_affected=true
-            break
+        elif [[ "$module" == ":android" ]]; then
+            android_affected=true
         fi
     done
-    
-    if [ "$core_affected" = true ]; then
-        # Check if android module is already in the list
-        local android_in_list=false
-        for module in "${modules_to_build[@]}"; do
-            if [[ "$module" == ":android" ]]; then
-                android_in_list=true
-                break
-            fi
-        done
-        
-        # Add android module if not already present
-        if [ "$android_in_list" = false ]; then
-            echo "Core module affected - also building android module due to dependency" >&2
+
+    # If either core or android is affected, ensure both are built
+    if [ "$core_affected" = true ] || [ "$android_affected" = true ]; then
+        # Ensure core is in the build list
+        if [ "$core_affected" = false ]; then
+            echo "Android module affected - also building core module (released together)" >&2
+            modules_to_build+=(":core")
+        fi
+
+        # Ensure android is in the build list
+        if [ "$android_affected" = false ]; then
+            echo "Core module affected - also building android module (released together)" >&2
             modules_to_build+=(":android")
         fi
     fi

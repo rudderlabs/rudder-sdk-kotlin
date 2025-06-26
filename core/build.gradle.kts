@@ -43,6 +43,12 @@ tasks {
         add("archives", sourcesJar)
         add("archives", javadocJar)
     }
+
+    // Configure JAR filename to include version
+    jar {
+        val versionName = RudderStackBuildConfig.AndroidAndCoreSDKs.VERSION_NAME
+        archiveFileName.set("${project.name}-${versionName}.jar")
+    }
 }
 
 // Task to generate a Kotlin file with version constants

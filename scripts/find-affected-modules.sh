@@ -105,19 +105,39 @@ find_affected_modules() {
         fi
     done
 
-    # If core is affected, ensure android is also affected (dependency relationship)
-    if [ "$core_affected" = true ] && ! echo "$affected_modules" | grep -q ":android"; then
-        if [ -z "$affected_modules" ]; then
-            affected_modules=":android"
-        else
-            affected_modules="$affected_modules,:android"
+    # If core OR android is affected, ensure BOTH are affected (they are released together)
+    local android_affected=false
+    if echo "$affected_modules" | grep -q ":android"; then
+        android_affected=true
+    fi
+
+    # If either core or android is affected, ensure both are included
+    if [ "$core_affected" = true ] || [ "$android_affected" = true ]; then
+        # Ensure core is in affected modules
+        if ! echo "$affected_modules" | grep -q ":core"; then
+            if [ -z "$affected_modules" ]; then
+                affected_modules=":core"
+            else
+                affected_modules="$affected_modules,:core"
+            fi
+            if [ -n "$GITHUB_OUTPUT" ]; then
+                echo "core=true" >> "$GITHUB_OUTPUT"
+            fi
+            echo "✓ Module affected (dependency): core (released together with android)"
         fi
 
-        # Update GitHub Actions output
-        if [ -n "$GITHUB_OUTPUT" ]; then
-            echo "android=true" >> "$GITHUB_OUTPUT"
+        # Ensure android is in affected modules
+        if ! echo "$affected_modules" | grep -q ":android"; then
+            if [ -z "$affected_modules" ]; then
+                affected_modules=":android"
+            else
+                affected_modules="$affected_modules,:android"
+            fi
+            if [ -n "$GITHUB_OUTPUT" ]; then
+                echo "android=true" >> "$GITHUB_OUTPUT"
+            fi
+            echo "✓ Module affected (dependency): android (released together with core)"
         fi
-        echo "✓ Module affected (dependency): android (depends on core)"
     fi
 
     echo ""

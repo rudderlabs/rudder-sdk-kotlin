@@ -41,6 +41,7 @@ update_core_version() {
 # Function to update integration module version
 update_integration_version() {
     local integration_name="$1"
+    local provided_version="$2"
 
     echo "Updating integration module: $integration_name"
 
@@ -48,30 +49,37 @@ update_integration_version() {
     local capitalized_name
     capitalized_name=$(echo "$integration_name" | awk '{print toupper(substr($0,1,1)) tolower(substr($0,2))}')
 
-    # Get current integration versionName and increment its build version
+    # Get current integration versionName
     local current_integration_version
     current_integration_version=$(grep -A 10 "object $capitalized_name : IntegrationModuleInfo" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt | grep "override val versionName: String" | sed 's/.*"\([^"]*\)".*/\1/')
-    
-    if [ -n "$current_integration_version" ]; then
-        # Parse integration version components (X.Y.Z)
+
+    local new_integration_version
+    if [ -n "$provided_version" ]; then
+        # Use provided version for integration (same as core/android)
+        new_integration_version="$provided_version"
+        echo "Setting $integration_name versionName to provided version: $new_integration_version"
+    elif [ -n "$current_integration_version" ]; then
+        # Auto-increment patch/build version for integration
         local int_major int_minor int_patch
         int_major=$(echo $current_integration_version | cut -d. -f1)
         int_minor=$(echo $current_integration_version | cut -d. -f2)
         int_patch=$(echo $current_integration_version | cut -d. -f3)
-        
-        # Increment patch/build version for integration
+
         local new_int_patch=$((int_patch + 1))
-        local new_integration_version="$int_major.$int_minor.$new_int_patch"
-        echo "Incrementing $integration_name versionName from $current_integration_version to $new_integration_version"
-        
-        # Update versionName with incremented build version
-        if [[ "$OSTYPE" == "darwin"* ]]; then
-            sed -i '' "/object $capitalized_name : IntegrationModuleInfo/,/override val versionName: String/ s/override val versionName: String = \".*\"/override val versionName: String = \"$new_integration_version\"/" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt
-        else
-            sed -i "/object $capitalized_name : IntegrationModuleInfo/,/override val versionName: String/ s/override val versionName: String = \".*\"/override val versionName: String = \"$new_integration_version\"/" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt
-        fi
+        new_integration_version="$int_major.$int_minor.$new_int_patch"
+        echo "Auto-incrementing $integration_name versionName from $current_integration_version to $new_integration_version"
+    else
+        echo "⚠️  Could not determine current version for $integration_name, skipping version update"
+        return
     fi
-    
+
+    # Update versionName
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        sed -i '' "/object $capitalized_name : IntegrationModuleInfo/,/override val versionName: String/ s/override val versionName: String = \".*\"/override val versionName: String = \"$new_integration_version\"/" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt
+    else
+        sed -i "/object $capitalized_name : IntegrationModuleInfo/,/override val versionName: String/ s/override val versionName: String = \".*\"/override val versionName: String = \"$new_integration_version\"/" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt
+    fi
+
     # Get current integration versionCode and increment by 1
     local current_integration_version_code
     current_integration_version_code=$(grep -A 10 "object $capitalized_name : IntegrationModuleInfo" buildSrc/src/main/kotlin/RudderStackBuildConfig.kt | grep "override val versionCode: String" | sed 's/.*"\([0-9]*\)".*/\1/')
@@ -87,10 +95,31 @@ update_integration_version() {
     fi
 }
 
+# Function to check if core or android modules are affected
+is_core_or_android_affected() {
+    local affected_modules="$1"
+
+    if echo "$affected_modules" | grep -q ":core" || echo "$affected_modules" | grep -q ":android"; then
+        echo "true"
+    else
+        echo "false"
+    fi
+}
+
 # Function to parse affected modules and update versions
 update_affected_modules() {
     local affected_modules="$1"
-    
+    local version="$2"
+
+    # Check if core or android modules are affected
+    local core_android_affected
+    core_android_affected=$(is_core_or_android_affected "$affected_modules")
+
+    if [ "$core_android_affected" = "true" ]; then
+        echo "Core or Android module affected - updating core SDK version"
+        update_core_version "$version"
+    fi
+
     if [ -n "$affected_modules" ]; then
         IFS=',' read -ra MODULES <<< "$affected_modules"
         for module in "${MODULES[@]}"; do
@@ -99,7 +128,7 @@ update_affected_modules() {
                 # Extract integration name (e.g., ":integrations:firebase" -> "firebase")
                 local integration_name
                 integration_name=$(echo "$module" | sed 's/:integrations://')
-                update_integration_version "$integration_name"
+                update_integration_version "$integration_name" "$version"
             fi
         done
     fi
@@ -148,12 +177,9 @@ main() {
     echo "Affected modules: $affected_modules"
     echo "Dry run: $dry_run"
     echo ""
-    
-    # Update core SDK version
-    update_core_version "$version"
-    
-    # Update integration module versions if they are affected
-    update_affected_modules "$affected_modules"
+
+    # Update affected module versions (includes core SDK if core/android affected)
+    update_affected_modules "$affected_modules" "$version"
     
     # Verify the changes
     verify_changes
