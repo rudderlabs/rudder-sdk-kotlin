@@ -31,8 +31,7 @@ The Kotlin SDK enables you to track customer event data from your Android or Kot
 - [**Identifying your users**](#identifying-users)
 - [**Tracking user actions**](#tracking-user-actions)
 - [**Integrations**](#integrations)
-- [**Contribute**](https://chatgpt.com/c/6761552e-6118-8001-bd2a-cee1d902a13c#contribute)
-- [**Contact us**](https://chatgpt.com/c/6761552e-6118-8001-bd2a-cee1d902a13c#contact-us)
+- [**Contact us**](#contact-us)
 
 ---
 
