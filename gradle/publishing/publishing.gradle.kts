@@ -76,7 +76,15 @@ configure<PublishingExtension> {
                     fun addDependency(dep: Dependency, scope: String) {
                         if (dep.group == null || dep.name == "unspecified" || dep.version == null) return
                         val dependencyNode = dependenciesNode.appendNode("dependency")
-                        dependencyNode.appendNode("groupId", dep.group)
+
+                        // Use the correct group ID for internal dependencies
+                        val groupId = if (dep.group == RudderStackBuildConfig.POM.NAME) {
+                            RudderStackBuildConfig.AndroidAndCoreSDKs.PACKAGE_NAME
+                        } else {
+                            dep.group
+                        }
+
+                        dependencyNode.appendNode("groupId", groupId)
                         dependencyNode.appendNode("artifactId", dep.name)
                         dependencyNode.appendNode("version", dep.version)
                         dependencyNode.appendNode("scope", scope)
