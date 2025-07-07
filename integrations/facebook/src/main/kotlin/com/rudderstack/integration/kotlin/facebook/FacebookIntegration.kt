@@ -31,7 +31,7 @@ private const val EMAIL_KEY = "email"
 private const val FIRST_NAME_KEY = "firstName"
 private const val LAST_NAME_KEY = "lastName"
 private const val PHONE_KEY = "phone"
-private const val DATE_OF_BIRTH_KEY = "dateOfBirth"
+private const val DATE_OF_BIRTH_KEY = "birthday"
 private const val GENDER_KEY = "gender"
 
 /**
