@@ -61,6 +61,7 @@ class FirebaseIntegrationTest {
 
         every { firebaseIntegration.provideFirebaseAnalyticsInstance() } returns mockFirebaseAnalytics
         firebaseIntegration.create(emptyJsonObject)
+
     }
 
     @AfterEach
