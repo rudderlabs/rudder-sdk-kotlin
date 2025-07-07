@@ -195,7 +195,7 @@ class FacebookIntegrationTest {
             put("firstName", "firstName")
             put("lastName", "lastName")
             put("phone", "phone")
-            put("dateOfBirth", "dateOfBirth")
+            put("birthday", "dateOfBirth")
             put("gender", "male")
             put("address", buildJsonObject {
                 put("city", "city")
