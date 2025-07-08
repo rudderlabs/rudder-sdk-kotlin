@@ -15,6 +15,7 @@ private val emptyJsonObject = JsonObject(emptyMap())
 
 class SetPushTokenPluginTest {
 
+
     @Test
     fun `given a push token, when it is set using custom plugin, then it is added in the payload`()
     = runTest {

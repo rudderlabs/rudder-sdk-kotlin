@@ -47,6 +47,7 @@ private const val pathToSourceConfigWithLimitedDataUseEnabled =
 
 class FacebookIntegrationTest {
 
+
     private val testDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
 
