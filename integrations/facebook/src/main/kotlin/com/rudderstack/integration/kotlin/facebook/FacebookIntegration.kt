@@ -31,7 +31,7 @@ private const val EMAIL_KEY = "email"
 private const val FIRST_NAME_KEY = "firstName"
 private const val LAST_NAME_KEY = "lastName"
 private const val PHONE_KEY = "phone"
-private const val DATE_OF_BIRTH_KEY = "birthday"
+private const val BIRTHDAY_KEY = "birthday"
 private const val GENDER_KEY = "gender"
 
 /**
@@ -100,7 +100,7 @@ class FacebookIntegration : StandardIntegration, IntegrationPlugin() {
             firstName = analytics.traits?.getString(FIRST_NAME_KEY),
             lastName = analytics.traits?.getString(LAST_NAME_KEY),
             phone = analytics.traits?.getString(PHONE_KEY),
-            dateOfBirth = analytics.traits?.getString(DATE_OF_BIRTH_KEY),
+            dateOfBirth = analytics.traits?.getString(BIRTHDAY_KEY),
             gender = analytics.traits?.getString(GENDER_KEY),
             city = address?.city,
             state = address?.state,
