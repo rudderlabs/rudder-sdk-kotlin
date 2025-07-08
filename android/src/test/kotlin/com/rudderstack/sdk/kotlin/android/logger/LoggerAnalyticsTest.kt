@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test
 
 class LoggerAnalyticsTest {
 
+
     @BeforeEach
     fun setup() {
         mockkStatic(Log::class)
