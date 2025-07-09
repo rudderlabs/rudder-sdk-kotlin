@@ -57,8 +57,6 @@ jobs:
       - name: Setup and Validate
         id: validate
         uses: ./.github/actions/setup-and-validate
-        with:
-          run_aar_build: 'false'
 
       - name: Notify Slack
         if: always()

@@ -6,22 +6,14 @@ inputs:
     description: 'Base branch to compare against for finding affected modules'
     required: false
     default: ''
-  run_aar_build:
-    description: 'Whether to build AAR/JAR files for library modules'
-    required: false
-    default: 'false'
+
 
 
 outputs:
   affected_modules:
     description: 'Comma-separated list of affected modules'
     value: ${{ steps.find-modules.outputs.affected_modules }}
-  built_modules:
-    description: 'Comma-separated list of built modules (for AAR generation)'
-    value: ${{ steps.build-aars.outputs.built_modules }}
-  has_artifacts:
-    description: 'Whether AAR/JAR artifacts were generated'
-    value: ${{ steps.build-aars.outputs.has_artifacts }}
+
 
 runs:
   using: 'composite'
@@ -73,14 +65,6 @@ runs:
       shell: bash
       run: |
         ./scripts/run-quality-checks.sh "${{ steps.find-modules.outputs.affected_modules }}" "build"
-
-    - name: Build Library Module AARs
-      id: build-aars
-      if: inputs.run_aar_build == 'true'
-      shell: bash
-      run: |
-        chmod +x scripts/build-aars.sh
-        ./scripts/build-aars.sh "${{ steps.find-modules.outputs.affected_modules }}"
 
     - name: Upload test reports
       if: always()
