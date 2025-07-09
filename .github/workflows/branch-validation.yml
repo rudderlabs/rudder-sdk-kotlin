@@ -3,8 +3,14 @@ name: Branch Validation
 on:
   push:
     branches:
-      - '**'        # Match all branches
-      - '!main'     # Exclude main branch
+      - 'develop'
+      - 'feat/*'
+      - 'fix/*'
+      - 'refactor/*'
+      - 'chore/*'
+      - 'release/*'
+      - 'hotfix/*'
+    # Removed catch-all pattern to avoid duplicate runs for PR branches
 
 jobs:
   # Lightweight code validation without artifacts
