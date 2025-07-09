@@ -56,10 +56,19 @@ find_affected_modules() {
 
     echo "Comparing against base: $base_branch"
 
-    # Get changed files
+    # Find the merge-base (common ancestor) to avoid issues with base branch moving ahead
+    local merge_base
+    if ! merge_base=$(git merge-base HEAD "$base_branch" 2>/dev/null); then
+        echo "⚠️  Failed to find merge-base with $base_branch, using direct comparison"
+        merge_base="$base_branch"
+    fi
+
+    echo "Using merge-base: $merge_base"
+
+    # Get changed files using merge-base for accurate comparison
     local changed_files
-    if ! changed_files=$(git diff --name-only "$base_branch...HEAD" 2>/dev/null); then
-        echo "⚠️  Failed to get diff against $base_branch, falling back to all modules"
+    if ! changed_files=$(git diff --name-only "$merge_base" HEAD 2>/dev/null); then
+        echo "⚠️  Failed to get diff against $merge_base, falling back to all modules"
         # If git diff fails, consider all modules as affected
         changed_files=$(find core android integrations/* -name "*.kt" -o -name "*.java" -o -name "*.gradle*" 2>/dev/null | head -10 || echo "core/dummy android/dummy")
     fi
