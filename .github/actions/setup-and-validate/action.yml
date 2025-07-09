@@ -10,10 +10,7 @@ inputs:
     description: 'Whether to build AAR/JAR files for library modules'
     required: false
     default: 'false'
-  sonar_token:
-    description: 'SonarCloud token for analysis'
-    required: false
-    default: ''
+
 
 outputs:
   affected_modules:
@@ -66,13 +63,6 @@ runs:
       shell: bash
       run: |
         ./scripts/run-quality-checks.sh "${{ steps.find-modules.outputs.affected_modules }}" "lint"
-
-    - name: Run SonarCloud Analysis
-      if: inputs.sonar_token != ''
-      uses: SonarSource/sonarqube-scan-action@2500896589ef8f7247069a56136f8dc177c27ccf
-      env:
-        GITHUB_TOKEN: ${{ github.token }}
-        SONAR_TOKEN: ${{ inputs.sonar_token }}
 
     - name: Run tests on affected modules
       shell: bash

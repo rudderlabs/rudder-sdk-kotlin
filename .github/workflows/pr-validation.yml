@@ -6,24 +6,37 @@ on:
     types: [ "opened", "reopened", "synchronize" ]
 
 jobs:
-  validate-pr:
+  # PR Title validation - runs in parallel and is required for success
+  pr-title-check:
+    name: PR Title Check
     runs-on: ubuntu-latest
     steps:
-      - name: Check PR title
-        uses: amannn/action-semantic-pull-request@v5
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          types: |
-            feat
-            fix
-            docs
-            chore
-            refactor
-            test
-            ci
-          requireScope: false
+      - name: Checkout code
+        uses: actions/checkout@v4
 
+      - name: Check PR Title
+        uses: ./.github/actions/pr-title-check
+
+  # SonarCloud analysis - runs in parallel, independent of other checks
+  sonarcloud-analysis:
+    name: SonarCloud Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for better analysis
+
+      - name: Run SonarCloud Analysis
+        uses: ./.github/actions/sonarcloud-analysis
+        with:
+          sonar_token: ${{ secrets.SONAR_TOKEN }}
+
+  # Main code validation with artifact building
+  code-validation:
+    name: Code Validation & Artifacts
+    runs-on: ubuntu-latest
+    steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
@@ -34,7 +47,7 @@ jobs:
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           git fetch origin ${{ github.base_ref }}
-          git merge origin/${{ github.base_ref }}
+          git merge origin/${{ github.base_ref }} --no-edit
 
       - name: Setup and Validate
         id: validate
@@ -42,7 +55,6 @@ jobs:
         with:
           base_branch: ${{ github.base_ref }}
           run_aar_build: 'true'
-          sonar_token: ${{ secrets.SONAR_TOKEN }}
 
       - name: Upload Library AARs
         if: steps.validate.outputs.has_artifacts == 'true'

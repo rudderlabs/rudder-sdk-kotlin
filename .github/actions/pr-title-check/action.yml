@@ -1,0 +1,14 @@
+name: 'PR Title Check'
+description: 'Validates PR title format using RudderLabs conventional commit standards'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Check PR title format
+      uses: rudderlabs/github-action-check-pr-title@v1.0.11
+
+    - name: PR Title Check Result
+      shell: bash
+      run: |
+        echo "✅ PR title follows RudderLabs conventional commit standards"
+        echo "PR title validation completed successfully"

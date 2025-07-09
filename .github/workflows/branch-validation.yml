@@ -7,7 +7,9 @@ on:
       - '!main'     # Exclude main branch
 
 jobs:
-  validate:
+  # Lightweight code validation without artifacts
+  code-validation:
+    name: Code Validation
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -20,7 +22,6 @@ jobs:
         uses: ./.github/actions/setup-and-validate
         with:
           run_aar_build: 'false'
-          sonar_token: ${{ secrets.SONAR_TOKEN }}
 
       - name: Notify Slack
         if: always()
@@ -43,3 +44,19 @@ jobs:
           export SLACK_WEBHOOK_URL="${{ secrets.SLACK_WEBHOOK_URL }}"
           
           ./scripts/send-slack-notification.sh "branch" "$STATUS"
+
+  # SonarCloud analysis for important branches
+  sonarcloud-analysis:
+    name: SonarCloud Analysis
+    runs-on: ubuntu-latest
+    if: contains(fromJson('["develop", "main"]'), github.ref_name)
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for better analysis
+
+      - name: Run SonarCloud Analysis
+        uses: ./.github/actions/sonarcloud-analysis
+        with:
+          sonar_token: ${{ secrets.SONAR_TOKEN }}
