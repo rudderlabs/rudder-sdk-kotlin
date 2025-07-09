@@ -28,7 +28,7 @@ generate_branch_payload() {
       "type": "section",
       "text": {
         "type": "mrkdwn",
-        "text": "*Branch Validation $status $status_emoji*\nRepository: $GITHUB_REPOSITORY\nBranch: $GITHUB_REF_NAME\nCommit: $GITHUB_EVENT_HEAD_COMMIT_MESSAGE\nBy: $GITHUB_ACTOR\n<https://github.com/$GITHUB_REPOSITORY/commit/$GITHUB_SHA|View Commit>"
+        "text": "*Branch Validation $status $status_emoji*\n*Repository:* $GITHUB_REPOSITORY\n*Branch:* $GITHUB_REF_NAME\n*Commit:* $GITHUB_EVENT_HEAD_COMMIT_MESSAGE\n*By:* $GITHUB_ACTOR\n<https://github.com/$GITHUB_REPOSITORY/commit/$GITHUB_SHA|View Commit>"
       }
     }
   ]
