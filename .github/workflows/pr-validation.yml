@@ -91,3 +91,23 @@ jobs:
           export SLACK_WEBHOOK_URL="${{ secrets.SLACK_WEBHOOK_URL }}"
           
           ./scripts/send-slack-notification.sh "pr" "$STATUS" "${{ steps.validate.outputs.built_modules }}" "${{ steps.validate.outputs.has_artifacts }}"
+
+  # Summary job that depends on all required jobs
+  pr-validation-summary:
+    name: PR Validation Summary
+    runs-on: ubuntu-latest
+    needs: [ pr-title-check, code-validation ]
+    if: always()
+    steps:
+      - name: Check all required jobs
+        run: |
+          echo "PR Title Check: ${{ needs.pr-title-check.result }}"
+          echo "Code Validation: ${{ needs.code-validation.result }}"
+
+          # Fail if any required job failed
+          if [[ "${{ needs.pr-title-check.result }}" != "success" || "${{ needs.code-validation.result }}" != "success" ]]; then
+            echo "❌ PR validation failed - one or more required checks failed"
+            exit 1
+          fi
+
+          echo "✅ All PR validation checks passed successfully"
