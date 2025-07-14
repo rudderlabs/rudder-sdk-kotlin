@@ -5,10 +5,23 @@ package com.rudderstack.integration.kotlin.appsflyer
 import com.appsflyer.AFInAppEventParameterName
 import com.appsflyer.AFInAppEventType
 import com.rudderstack.sdk.kotlin.android.utils.getArray
-import com.rudderstack.sdk.kotlin.android.utils.getString
 import com.rudderstack.sdk.kotlin.core.ecommerce.ECommerceEvents
 import com.rudderstack.sdk.kotlin.core.ecommerce.ECommerceParamNames
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.boolean
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.double
+import kotlinx.serialization.json.doubleOrNull
+import kotlinx.serialization.json.int
+import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.long
+import kotlinx.serialization.json.longOrNull
+
+internal const val CREATIVE = "creative"
 
 // Reserved keywords for filtering custom properties - equivalent to Java TRACK_RESERVED_KEYWORDS
 internal val TRACK_RESERVED_KEYWORDS = listOf(
@@ -20,6 +33,11 @@ internal val TRACK_RESERVED_KEYWORDS = listOf(
 )
 
 private const val FIRST_PURCHASE = "first_purchase"
+private const val REMOVE_FROM_CART = "remove_from_cart"
+private const val AF_ORDER_ID = "af_order_id"
+private const val PRODUCT_ID = "product_id"
+private const val CATEGORY = "category"
+private const val QUANTITY = "quantity"
 
 /**
  * Maps RudderStack event to AppsFlyer event name and properties
@@ -56,7 +74,7 @@ private fun getAppsFlyerEventName(
 }
 
 private fun handleProductsSearched(properties: JsonObject?, appsFlyerEventProps: MutableMap<String, Any>): String {
-    properties?.getString(ECommerceParamNames.QUERY)?.let { query ->
+    properties?.getTypedValue(ECommerceParamNames.QUERY)?.let { query ->
         appsFlyerEventProps[AFInAppEventParameterName.SEARCH_STRING] = query
     }
     return AFInAppEventType.SEARCH
@@ -79,7 +97,7 @@ private fun handleProductWishList(properties: JsonObject?, appsFlyerEventProps: 
 
 private fun handleProductAdded(properties: JsonObject?, appsFlyerEventProps: MutableMap<String, Any>): String {
     mapProductEvent(properties, appsFlyerEventProps)
-    properties?.getString(ECommerceParamNames.QUANTITY)?.let { quantity ->
+    properties?.getTypedValue(ECommerceParamNames.QUANTITY)?.let { quantity ->
         appsFlyerEventProps[AFInAppEventParameterName.QUANTITY] = quantity
     }
     return AFInAppEventType.ADD_TO_CART
@@ -101,13 +119,13 @@ private fun handleFirstPurchase(properties: JsonObject?, appsFlyerEventProps: Mu
 }
 
 private fun handleProductRemoved(properties: JsonObject?, appsFlyerEventProps: MutableMap<String, Any>): String {
-    properties?.getString(ECommerceParamNames.PRODUCT_ID)?.let { productId ->
+    properties?.getTypedValue(ECommerceParamNames.PRODUCT_ID)?.let { productId ->
         appsFlyerEventProps[AFInAppEventParameterName.CONTENT_ID] = productId
     }
-    properties?.getString(ECommerceParamNames.CATEGORY)?.let { category ->
+    properties?.getTypedValue(ECommerceParamNames.CATEGORY)?.let { category ->
         appsFlyerEventProps[AFInAppEventParameterName.CONTENT_TYPE] = category
     }
-    return "remove_from_cart"
+    return REMOVE_FROM_CART
 }
 
 private fun handlePromotionViewed(properties: JsonObject?, appsFlyerEventProps: MutableMap<String, Any>): String {
@@ -121,17 +139,17 @@ private fun handlePromotionClicked(properties: JsonObject?, appsFlyerEventProps:
 }
 
 private fun handleShared(properties: JsonObject?, appsFlyerEventProps: MutableMap<String, Any>): String {
-    properties?.getString(ECommerceParamNames.SHARE_MESSAGE)?.let { message ->
+    properties?.getTypedValue(ECommerceParamNames.SHARE_MESSAGE)?.let { message ->
         appsFlyerEventProps[AFInAppEventParameterName.DESCRIPTION] = message
     }
     return AFInAppEventType.SHARE
 }
 
 private fun handleProductReviewed(properties: JsonObject?, appsFlyerEventProps: MutableMap<String, Any>): String {
-    properties?.getString(ECommerceParamNames.PRODUCT_ID)?.let { productId ->
+    properties?.getTypedValue(ECommerceParamNames.PRODUCT_ID)?.let { productId ->
         appsFlyerEventProps[AFInAppEventParameterName.CONTENT_ID] = productId
     }
-    properties?.getString(ECommerceParamNames.RATING)?.let { rating ->
+    properties?.getTypedValue(ECommerceParamNames.RATING)?.let { rating ->
         appsFlyerEventProps[AFInAppEventParameterName.RATING_VALUE] = rating
     }
     return AFInAppEventType.RATE
@@ -141,16 +159,16 @@ private fun handleProductReviewed(properties: JsonObject?, appsFlyerEventProps: 
  * Maps basic product properties to AppsFlyer parameters
  */
 internal fun mapProductEvent(properties: JsonObject?, appsFlyerEventProps: MutableMap<String, Any>) {
-    properties?.getString(ECommerceParamNames.PRICE)?.let { price ->
+    properties?.getTypedValue(ECommerceParamNames.PRICE)?.let { price ->
         appsFlyerEventProps[AFInAppEventParameterName.PRICE] = price
     }
-    properties?.getString(ECommerceParamNames.PRODUCT_ID)?.let { productId ->
+    properties?.getTypedValue(ECommerceParamNames.PRODUCT_ID)?.let { productId ->
         appsFlyerEventProps[AFInAppEventParameterName.CONTENT_ID] = productId
     }
-    properties?.getString(ECommerceParamNames.CATEGORY)?.let { category ->
+    properties?.getTypedValue(ECommerceParamNames.CATEGORY)?.let { category ->
         appsFlyerEventProps[AFInAppEventParameterName.CONTENT_TYPE] = category
     }
-    properties?.getString(ECommerceParamNames.CURRENCY)?.let { currency ->
+    properties?.getTypedValue(ECommerceParamNames.CURRENCY)?.let { currency ->
         appsFlyerEventProps[AFInAppEventParameterName.CURRENCY] = currency
     }
 }
@@ -159,7 +177,7 @@ internal fun mapProductEvent(properties: JsonObject?, appsFlyerEventProps: Mutab
  * Maps product list viewed event properties to AppsFlyer parameters
  */
 internal fun mapProductListViewedEvent(properties: JsonObject?, appsFlyerEventProps: MutableMap<String, Any>) {
-    properties?.getString(ECommerceParamNames.CATEGORY)?.let { category ->
+    properties?.getTypedValue(ECommerceParamNames.CATEGORY)?.let { category ->
         appsFlyerEventProps[AFInAppEventParameterName.CONTENT_TYPE] = category
     }
 
@@ -169,10 +187,10 @@ internal fun mapProductListViewedEvent(properties: JsonObject?, appsFlyerEventPr
 private fun extractProductIds(properties: JsonObject?, appsFlyerEventProps: MutableMap<String, Any>) {
     val products = properties?.getArray(ECommerceParamNames.PRODUCTS) ?: return
 
-    val productIds = mutableListOf<String>()
+    val productIds = mutableListOf<Any>()
     products.forEach { product ->
         val productObj = product as? JsonObject ?: return@forEach
-        productObj.getString("product_id")?.let { productId ->
+        productObj.getTypedValue(PRODUCT_ID)?.let { productId ->
             productIds.add(productId)
         }
     }
@@ -186,10 +204,10 @@ private fun extractProductIds(properties: JsonObject?, appsFlyerEventProps: Muta
  * Maps checkout event properties to AppsFlyer parameters
  */
 internal fun mapCheckoutEvent(properties: JsonObject?, appsFlyerEventProps: MutableMap<String, Any>) {
-    properties?.getString(ECommerceParamNames.TOTAL)?.let { total ->
+    properties?.getTypedValue(ECommerceParamNames.TOTAL)?.let { total ->
         appsFlyerEventProps[AFInAppEventParameterName.PRICE] = total
     }
-    properties?.getString(ECommerceParamNames.CURRENCY)?.let { currency ->
+    properties?.getTypedValue(ECommerceParamNames.CURRENCY)?.let { currency ->
         appsFlyerEventProps[AFInAppEventParameterName.CURRENCY] = currency
     }
     handleProducts(properties, appsFlyerEventProps)
@@ -199,18 +217,18 @@ internal fun mapCheckoutEvent(properties: JsonObject?, appsFlyerEventProps: Muta
  * Maps order completed event properties to AppsFlyer parameters
  */
 internal fun mapOrderCompletedEvent(properties: JsonObject?, appsFlyerEventProps: MutableMap<String, Any>) {
-    properties?.getString(ECommerceParamNames.TOTAL)?.let { total ->
+    properties?.getTypedValue(ECommerceParamNames.TOTAL)?.let { total ->
         appsFlyerEventProps[AFInAppEventParameterName.PRICE] = total
     }
-    properties?.getString(ECommerceParamNames.REVENUE)?.let { revenue ->
+    properties?.getTypedValue(ECommerceParamNames.REVENUE)?.let { revenue ->
         appsFlyerEventProps[AFInAppEventParameterName.REVENUE] = revenue
     }
-    properties?.getString(ECommerceParamNames.CURRENCY)?.let { currency ->
+    properties?.getTypedValue(ECommerceParamNames.CURRENCY)?.let { currency ->
         appsFlyerEventProps[AFInAppEventParameterName.CURRENCY] = currency
     }
-    properties?.getString(ECommerceParamNames.ORDER_ID)?.let { orderId ->
+    properties?.getTypedValue(ECommerceParamNames.ORDER_ID)?.let { orderId ->
         appsFlyerEventProps[AFInAppEventParameterName.RECEIPT_ID] = orderId
-        appsFlyerEventProps["af_order_id"] = orderId
+        appsFlyerEventProps[AF_ORDER_ID] = orderId
     }
     handleProducts(properties, appsFlyerEventProps)
 }
@@ -219,10 +237,10 @@ internal fun mapOrderCompletedEvent(properties: JsonObject?, appsFlyerEventProps
  * Maps promotion event properties to AppsFlyer parameters
  */
 internal fun mapPromotionEvent(properties: JsonObject?, appsFlyerEventProps: MutableMap<String, Any>) {
-    properties?.getString(CREATIVE)?.let { creative ->
+    properties?.getTypedValue(CREATIVE)?.let { creative ->
         appsFlyerEventProps[AFInAppEventParameterName.AD_REVENUE_AD_TYPE] = creative
     }
-    properties?.getString(ECommerceParamNames.CURRENCY)?.let { currency ->
+    properties?.getTypedValue(ECommerceParamNames.CURRENCY)?.let { currency ->
         appsFlyerEventProps[AFInAppEventParameterName.CURRENCY] = currency
     }
 }
@@ -233,15 +251,15 @@ internal fun mapPromotionEvent(properties: JsonObject?, appsFlyerEventProps: Mut
 internal fun handleProducts(properties: JsonObject?, appsFlyerEventProps: MutableMap<String, Any>) {
     val products = properties?.getArray(ECommerceParamNames.PRODUCTS) ?: return
 
-    val productIds = mutableListOf<String>()
-    val categories = mutableListOf<String>()
-    val quantities = mutableListOf<String>()
+    val productIds = mutableListOf<Any>()
+    val categories = mutableListOf<Any>()
+    val quantities = mutableListOf<Any>()
 
     products.forEach { product ->
         val productObj = product as? JsonObject ?: return@forEach
-        productObj.getString("product_id")?.let { productIds.add(it) }
-        productObj.getString("category")?.let { categories.add(it) }
-        productObj.getString("quantity")?.let { quantities.add(it) }
+        productObj.getTypedValue(PRODUCT_ID)?.let { productIds.add(it) }
+        productObj.getTypedValue(CATEGORY)?.let { categories.add(it) }
+        productObj.getTypedValue(QUANTITY)?.let { quantities.add(it) }
     }
 
     setProductArrays(appsFlyerEventProps, productIds, categories, quantities)
@@ -249,9 +267,9 @@ internal fun handleProducts(properties: JsonObject?, appsFlyerEventProps: Mutabl
 
 private fun setProductArrays(
     props: MutableMap<String, Any>,
-    productIds: List<String>,
-    categories: List<String>,
-    quantities: List<String>
+    productIds: List<Any>,
+    categories: List<Any>,
+    quantities: List<Any>
 ) {
     if (productIds.isNotEmpty()) {
         props[AFInAppEventParameterName.CONTENT_ID] = productIds.toTypedArray()
@@ -275,10 +293,10 @@ internal fun attachAllCustomProperties(appsFlyerEventProps: MutableMap<String, A
     }
 }
 
-private fun processCustomProperty(key: String, value: Any?, appsFlyerEventProps: MutableMap<String, Any>) {
+private fun processCustomProperty(key: String, value: JsonElement?, appsFlyerEventProps: MutableMap<String, Any>) {
     if (shouldIncludeProperty(key, value)) {
-        val processedValue = processPropertyValue(value)
-        appsFlyerEventProps[key] = processedValue
+        val processedValue = extractValue(value)
+        appsFlyerEventProps[key] = processedValue ?: ""
     }
 }
 
@@ -286,29 +304,59 @@ private fun shouldIncludeProperty(key: String, value: Any?): Boolean {
     return key !in TRACK_RESERVED_KEYWORDS && key.isNotEmpty() && value != null
 }
 
-private fun processPropertyValue(value: Any?): String {
-    val stringValue = value.toString()
-    return if (stringValue.startsWith("\"") && stringValue.endsWith("\"")) {
-        stringValue.removeSurrounding("\"")
-    } else {
-        stringValue
+/**
+ * Extracts typed value from JsonElement while preserving data types for primitives.
+ * Complex objects (JsonObject) are stringified for AppsFlyer compatibility.
+ * Based on JsonInteropHelper.extractValue() for consistency.
+ */
+private fun extractValue(element: JsonElement?): Any? {
+    return when (element) {
+        JsonNull, null -> null
+
+        is JsonPrimitive -> when {
+            element.isString -> {
+                // Return the string content as-is for proper quote handling
+                element.content
+            }
+            element.booleanOrNull != null -> element.boolean
+            element.intOrNull != null -> element.int
+            element.longOrNull != null -> element.long
+            element.doubleOrNull != null -> element.double
+            else -> element.content
+        }
+
+        is JsonObject -> element.toString() // Stringify nested objects
+
+        is JsonArray -> element.map { extractValue(it) } // Convert to list for general use
     }
 }
 
 /**
- * Convert JsonObject properties to MutableMap for AppsFlyer compatibility
+ * Gets typed value from JsonObject property while preserving data types.
+ * This replaces getString() calls for type preservation.
+ */
+private fun JsonObject?.getTypedValue(key: String): Any? {
+    return this?.get(key)?.let { extractValue(it) }
+}
+
+/**
+ * Convert JsonObject properties to MutableMap for AppsFlyer compatibility.
+ * Preserves primitive data types but stringifies nested objects.
  */
 internal fun JsonObject?.toMutableMap(): MutableMap<String, Any> {
     val map = mutableMapOf<String, Any>()
     this?.keys?.forEach { key ->
-        val value = this[key]
-        if (value != null) {
-            // Convert JsonElement to appropriate type
-            map[key] = when {
-                value.toString().startsWith("\"") && value.toString().endsWith("\"") -> {
-                    value.toString().removeSurrounding("\"")
+        when (val value = this[key]) {
+            JsonNull, null -> { /* Skip null values */ }
+            is JsonPrimitive, is JsonArray -> {
+                val extractedValue = extractValue(value)
+                if (extractedValue != null) {
+                    map[key] = extractedValue
                 }
-                else -> value.toString()
+            }
+            is JsonObject -> {
+                // Stringify nested objects for AppsFlyer compatibility
+                map[key] = value.toString()
             }
         }
     }

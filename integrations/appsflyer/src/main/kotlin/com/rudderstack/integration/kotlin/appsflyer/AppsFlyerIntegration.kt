@@ -13,13 +13,16 @@ import kotlinx.serialization.json.JsonObject
 
 internal const val APPSFLYER_KEY = "AppsFlyer"
 
-internal const val CREATIVE = "creative"
 private const val USE_RICH_EVENT_NAME = "useRichEventName"
+private const val EMAIL = "email"
+private const val NAME = "name"
+private const val VIEWED = "Viewed"
+private const val SCREEN = "Screen"
+private const val SCREEN_EVENT = "screen"
 
 /**
  * AppsFlyer Integration Plugin. See [IntegrationPlugin] for more info.
  */
-@Suppress("TooManyFunctions")
 class AppsFlyerIntegration : StandardIntegration, IntegrationPlugin() {
 
     private var appsFlyerInstance: AppsFlyerLib? = null
@@ -38,7 +41,7 @@ class AppsFlyerIntegration : StandardIntegration, IntegrationPlugin() {
         extractConfiguration(destinationConfig)
     }
 
-    internal fun provideAppsFlyerInstance(): AppsFlyerLib {
+    internal fun provideAppsFlyerInstance(): AppsFlyerLib? {
         return AppsFlyerLib.getInstance()
     }
 
@@ -65,7 +68,7 @@ class AppsFlyerIntegration : StandardIntegration, IntegrationPlugin() {
 
         // Set user email from traits - equivalent to Java setUserEmails
         analytics.traits
-            ?.get("email")
+            ?.get(EMAIL)
             ?.getString()
             ?.takeIf { it.isNotEmpty() }
             ?.let { appsFlyerInstance?.setUserEmails(it) }
@@ -85,15 +88,15 @@ class AppsFlyerIntegration : StandardIntegration, IntegrationPlugin() {
         val screenName = if (isNewScreenEnabled) {
             // Rich event naming - equivalent to Java isNewScreenEnabled logic
             when {
-                payload.screenName.isNotEmpty() -> "Viewed ${payload.screenName} Screen"
-                payload.properties.getString("name")?.isNotEmpty() == true -> {
-                    "Viewed ${payload.properties.getString("name")} Screen"
+                payload.screenName.isNotEmpty() -> "$VIEWED ${payload.screenName} $SCREEN"
+                payload.properties.getString(NAME)?.isNotEmpty() == true -> {
+                    "$VIEWED ${payload.properties.getString(NAME)} $SCREEN"
                 }
-                else -> "Viewed Screen"
+                else -> "$VIEWED $SCREEN"
             }
         } else {
             // Simple screen event name - equivalent to Java default behavior
-            "screen"
+            SCREEN_EVENT
         }
 
         // Log screen event to AppsFlyer - equivalent to Java logEvent call
