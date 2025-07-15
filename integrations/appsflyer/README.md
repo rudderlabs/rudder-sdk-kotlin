@@ -14,7 +14,7 @@ This integration supports AppsFlyer Android SDK versions:
 
 ### 1. Add Dependency
 
-Add the AppsFlyer integration dependency to your app's `build.gradle.kts`:
+Add the AppsFlyer integration dependency and AppsFlyer dependency to your app's `build.gradle.kts`:
 
 ```kotlin
 dependencies {
@@ -23,7 +23,40 @@ dependencies {
     
     // Add the AppsFlyer integration
     implementation("com.rudderstack.sdk.kotlin:appsflyer:<latest_version>")
+
+    implementation ("com.appsflyer:af-android-sdk:<latest_version>")
 }
+```
+
+### 2. Initialise AppsFlyer SDK in Application Class
+
+Initialize Appsflyer SDK in the Application class before initializing the Rudder SDK as shown below
+
+```kotlin
+import com.appsflyer.AppsFlyerLib
+import com.appsflyer.AFLogger
+
+class MyApplication : Application() {
+
+    lateinit var analytics: Analytics
+
+    override fun onCreate() {
+        super.onCreate()
+
+        // Initialize AppsFlyer SDK
+        AppsFlyerLib.getInstance().init("<DEV_KEY>", null, this)
+        AppsFlyerLib.getInstance().setLogLevel(AFLogger.LogLevel.DEBUG)
+        AppsFlyerLib.getInstance().start(this)
+
+        // Initialize RudderStack SDK
+        //            ...
+
+        // Add AppsFlyer integration
+        //            ...
+    }
+}
+
+
 ```
 
 ### 2. Initialize the Integration
@@ -41,6 +74,9 @@ class MyApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+
+        // Initialize AppsFlyer SDK
+        // ... (as shown above)
         
         // Initialize RudderStack SDK
         analytics = Analytics(
