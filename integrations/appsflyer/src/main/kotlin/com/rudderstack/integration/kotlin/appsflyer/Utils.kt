@@ -257,9 +257,11 @@ internal fun handleProducts(properties: JsonObject?, appsFlyerEventProps: Mutabl
 
     products.forEach { product ->
         val productObj = product as? JsonObject ?: return@forEach
-        productObj.getTypedValue(PRODUCT_ID)?.let { productIds.add(it) }
-        productObj.getTypedValue(CATEGORY)?.let { categories.add(it) }
-        productObj.getTypedValue(QUANTITY)?.let { quantities.add(it) }
+        if (productObj.containsKey(PRODUCT_ID) && productObj.containsKey(CATEGORY) && productObj.containsKey(QUANTITY)) {
+            productObj.getTypedValue(PRODUCT_ID)?.let { productIds.add(it) }
+            productObj.getTypedValue(CATEGORY)?.let { categories.add(it) }
+            productObj.getTypedValue(QUANTITY)?.let { quantities.add(it) }
+        }
     }
 
     setProductArrays(appsFlyerEventProps, productIds, categories, quantities)
