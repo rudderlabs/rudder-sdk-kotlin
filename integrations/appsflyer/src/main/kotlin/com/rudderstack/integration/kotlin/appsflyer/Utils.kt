@@ -348,18 +348,9 @@ private fun JsonObject?.getTypedValue(key: String): Any? {
 internal fun JsonObject?.toMutableMap(): MutableMap<String, Any> {
     val map = mutableMapOf<String, Any>()
     this?.keys?.forEach { key ->
-        when (val value = this[key]) {
-            JsonNull, null -> { /* Skip null values */ }
-            is JsonPrimitive, is JsonArray -> {
-                val extractedValue = extractValue(value)
-                if (extractedValue != null) {
-                    map[key] = extractedValue
-                }
-            }
-            is JsonObject -> {
-                // Stringify nested objects for AppsFlyer compatibility
-                map[key] = value.toString()
-            }
+        val extractedValue = extractValue(this[key])
+        if (extractedValue != null) {
+            map[key] = extractedValue
         }
     }
     return map
