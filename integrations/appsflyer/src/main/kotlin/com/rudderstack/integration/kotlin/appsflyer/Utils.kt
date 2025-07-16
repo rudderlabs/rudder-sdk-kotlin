@@ -7,6 +7,7 @@ import com.appsflyer.AFInAppEventType
 import com.rudderstack.sdk.kotlin.android.utils.getArray
 import com.rudderstack.sdk.kotlin.core.ecommerce.ECommerceEvents
 import com.rudderstack.sdk.kotlin.core.ecommerce.ECommerceParamNames
+import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
@@ -298,12 +299,22 @@ internal fun attachAllCustomProperties(appsFlyerEventProps: MutableMap<String, A
 private fun processCustomProperty(key: String, value: JsonElement?, appsFlyerEventProps: MutableMap<String, Any>) {
     if (shouldIncludeProperty(key, value)) {
         val processedValue = extractValue(value)
-        appsFlyerEventProps[key] = processedValue ?: ""
+        appsFlyerEventProps[key] = processedValue ?: String.empty()
     }
 }
 
 private fun shouldIncludeProperty(key: String, value: Any?): Boolean {
     return key !in TRACK_RESERVED_KEYWORDS && key.isNotEmpty() && value != null
+}
+
+private fun JsonObject.toRawMap(): Map<String, Any?> {
+    val result = mutableMapOf<String, Any?>()
+
+    for ((key, jsonElement) in this) {
+        result[key] = extractValue(jsonElement)
+    }
+
+    return result
 }
 
 /**
@@ -327,7 +338,7 @@ private fun extractValue(element: JsonElement?): Any? {
             else -> element.content
         }
 
-        is JsonObject -> element.toString() // Stringify nested objects
+        is JsonObject -> element.toRawMap() // Stringify nested objects
 
         is JsonArray -> element.map { extractValue(it) } // Convert to list for general use
     }
@@ -335,7 +346,6 @@ private fun extractValue(element: JsonElement?): Any? {
 
 /**
  * Gets typed value from JsonObject property while preserving data types.
- * This replaces getString() calls for type preservation.
  */
 private fun JsonObject?.getTypedValue(key: String): Any? {
     return this?.get(key)?.let { extractValue(it) }

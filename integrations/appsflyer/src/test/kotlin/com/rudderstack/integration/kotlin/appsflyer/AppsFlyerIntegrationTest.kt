@@ -116,7 +116,7 @@ class AppsFlyerIntegrationTest {
         val screenEvent = ScreenEvent("Home", emptyJsonObject)
         appsFlyerIntegration.screen(screenEvent)
 
-        verify { mockAppsFlyerLib.logEvent(mockApplication, "screen", any<MutableMap<String, Any>>()) }
+        verify { mockAppsFlyerLib.logEvent(mockApplication, "screen", emptyMap()) }
     }
 
     @Test
@@ -127,7 +127,7 @@ class AppsFlyerIntegrationTest {
         val screenEvent = ScreenEvent("Home", emptyJsonObject)
         appsFlyerIntegration.screen(screenEvent)
 
-        verify { mockAppsFlyerLib.logEvent(mockApplication, "Viewed Home Screen", any<MutableMap<String, Any>>()) }
+        verify { mockAppsFlyerLib.logEvent(mockApplication, "Viewed Home Screen", emptyMap()) }
     }
 
     @Test
@@ -135,13 +135,16 @@ class AppsFlyerIntegrationTest {
         appsFlyerIntegration.create(emptyJsonObject)
         val properties = buildJsonObject {
             put(ECommerceParamNames.PRODUCT_ID, "prod123")
-            put(ECommerceParamNames.PRICE, "29.99")
+            put(ECommerceParamNames.PRICE, 29.99)
         }
         val trackEvent = TrackEvent(event = ECommerceEvents.PRODUCT_VIEWED, properties = properties)
 
         appsFlyerIntegration.track(trackEvent)
 
-        verify { mockAppsFlyerLib.logEvent(mockApplication, AFInAppEventType.CONTENT_VIEW, any<MutableMap<String, Any>>()) }
+        verify { mockAppsFlyerLib.logEvent(mockApplication, AFInAppEventType.CONTENT_VIEW, mapOf(
+            AFInAppEventParameterName.CONTENT_ID to "prod123",
+            AFInAppEventParameterName.PRICE to 29.99
+        )) }
     }
 
     @Test
@@ -152,7 +155,7 @@ class AppsFlyerIntegrationTest {
 
         appsFlyerIntegration.track(trackEvent)
 
-        verify { mockAppsFlyerLib.logEvent(mockApplication, "my_custom_event", any<MutableMap<String, Any>>()) }
+        verify { mockAppsFlyerLib.logEvent(mockApplication, "my_custom_event", emptyMap()) }
     }
 
     // ===== INTEGRATION BEHAVIOR TESTING =====
@@ -170,7 +173,12 @@ class AppsFlyerIntegrationTest {
 
         appsFlyerIntegration.track(trackEvent)
 
-        verify { mockAppsFlyerLib.logEvent(mockApplication, "test_event", any<MutableMap<String, Any>>()) }
+        verify { mockAppsFlyerLib.logEvent(mockApplication, "test_event", mapOf(
+            "string_prop" to "test_string",
+            "int_prop" to 42,
+            "double_prop" to 19.99,
+            "boolean_prop" to true
+        )) }
     }
 
     @Test
@@ -191,7 +199,13 @@ class AppsFlyerIntegrationTest {
 
         appsFlyerIntegration.track(trackEvent)
 
-        verify { mockAppsFlyerLib.logEvent(mockApplication, "complex_event", any<MutableMap<String, Any>>()) }
+        verify { mockAppsFlyerLib.logEvent(mockApplication, "complex_event", mapOf(
+            "simple_array" to listOf(1, 2, 3),
+            "nested_object" to mapOf(
+                "inner_key" to "inner_value",
+                "inner_number" to 123
+            )
+        )) }
     }
 
     // ===== EDGE CASES TESTING =====
@@ -230,7 +244,7 @@ class AppsFlyerIntegrationTest {
         val screenEvent = ScreenEvent("", properties)
         appsFlyerIntegration.screen(screenEvent)
 
-        verify { mockAppsFlyerLib.logEvent(mockApplication, "Viewed Settings Screen", any<MutableMap<String, Any>>()) }
+        verify { mockAppsFlyerLib.logEvent(mockApplication, "Viewed Settings Screen", mapOf("name" to "Settings")) }
     }
 
     @Test
@@ -241,7 +255,7 @@ class AppsFlyerIntegrationTest {
         val screenEvent = ScreenEvent("", emptyJsonObject)
         appsFlyerIntegration.screen(screenEvent)
 
-        verify { mockAppsFlyerLib.logEvent(mockApplication, "Viewed Screen", any<MutableMap<String, Any>>()) }
+        verify { mockAppsFlyerLib.logEvent(mockApplication, "Viewed Screen", emptyMap()) }
     }
 
     @Test
@@ -256,7 +270,11 @@ class AppsFlyerIntegrationTest {
 
         appsFlyerIntegration.track(trackEvent)
 
-        verify { mockAppsFlyerLib.logEvent(mockApplication, "special_chars", any<MutableMap<String, Any>>()) }
+        verify { mockAppsFlyerLib.logEvent(mockApplication, "special_chars", mapOf(
+            "key-with-hyphen" to "hyphen_value",
+            "key_with_underscore" to "underscore_value",
+            "key with spaces" to "spaces_value"
+        )) }
     }
 
     // ===== CONFIGURATION TESTING =====
@@ -274,7 +292,7 @@ class AppsFlyerIntegrationTest {
         // Verify new configuration is applied
         val screenEvent = ScreenEvent("Home", emptyJsonObject)
         appsFlyerIntegration.screen(screenEvent)
-        verify { mockAppsFlyerLib.logEvent(mockApplication, "Viewed Home Screen", any<MutableMap<String, Any>>()) }
+        verify { mockAppsFlyerLib.logEvent(mockApplication, "Viewed Home Screen", emptyMap()) }
     }
 
     @Test
@@ -285,7 +303,7 @@ class AppsFlyerIntegrationTest {
         appsFlyerIntegration.screen(screenEvent)
 
         // Should use default (simple naming)
-        verify { mockAppsFlyerLib.logEvent(mockApplication, "screen", any<MutableMap<String, Any>>()) }
+        verify { mockAppsFlyerLib.logEvent(mockApplication, "screen", emptyMap()) }
     }
 
     // ===== ERROR HANDLING =====
@@ -320,7 +338,10 @@ class AppsFlyerIntegrationTest {
 
         appsFlyerIntegration.track(trackEvent)
 
-        verify { mockAppsFlyerLib.logEvent(mockApplication, "mixed_props", any<MutableMap<String, Any>>()) }
+        verify { mockAppsFlyerLib.logEvent(mockApplication, "mixed_props", mapOf(
+            "custom_prop1" to "value1",
+            "custom_prop2" to "value2"
+        )) }
     }
 
     // ===== INTEGRATION FLOW TESTING =====
@@ -343,7 +364,9 @@ class AppsFlyerIntegrationTest {
 
         // Verify all calls were made
         verify { mockAppsFlyerLib.setCustomerUserId("user123") }
-        verify { mockAppsFlyerLib.logEvent(mockApplication, "purchase", any<MutableMap<String, Any>>()) }
-        verify { mockAppsFlyerLib.logEvent(mockApplication, "screen", any<MutableMap<String, Any>>()) }
+        verify { mockAppsFlyerLib.logEvent(mockApplication, "purchase", mapOf(
+            "amount" to "99.99"
+        )) }
+        verify { mockAppsFlyerLib.logEvent(mockApplication, "screen", emptyMap()) }
     }
 }
