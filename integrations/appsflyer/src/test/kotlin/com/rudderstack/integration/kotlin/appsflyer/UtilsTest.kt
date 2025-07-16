@@ -354,23 +354,6 @@ class UtilsTest {
     // ===== EXISTING TESTS CONTINUE =====
 
     @Test
-    fun `given JsonObject with quoted strings, when toMutableMap is called, then types are preserved`() {
-        val jsonObject = buildJsonObject {
-            put("string_prop", "value")
-            put("number_prop", 42)
-            put("long_prop", 15000000000L)
-            put("boolean_prop", true)
-        }
-
-        val map = jsonObject.toMutableMap()
-
-        assert(map["string_prop"] == "value")
-        assert(map["number_prop"] == 42)
-        assert(map["long_prop"] == 15000000000L)
-        assert(map["boolean_prop"] == true)
-    }
-
-    @Test
     fun `given null JsonObject, when toMutableMap is called, then returns empty map`() {
         val map = null.toMutableMap()
 
@@ -438,6 +421,10 @@ class UtilsTest {
             put("long_prop", 15000000000L)
             put("boolean_prop", true)
             put("double_prop", 19.99)
+            put("nested_object", buildJsonObject {
+                put("nested_key", "nested_value")
+                put("nested_number", 100)
+            })
         }
 
         val map = jsonObject.toMutableMap()
@@ -447,6 +434,10 @@ class UtilsTest {
         assert(map["long_prop"] == 15000000000L)
         assert(map["boolean_prop"] == true)
         assert(map["double_prop"] == 19.99)
+        assert(map["nested_object"] is Map<*, *>)
+        val nestedObject = map["nested_object"] as Map<*, *>
+        assert(nestedObject["nested_key"] == "nested_value")
+        assert(nestedObject["nested_number"] == 100)
     }
 
     @Test
