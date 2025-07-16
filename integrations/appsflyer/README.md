@@ -59,7 +59,7 @@ class MyApplication : Application() {
 
 ```
 
-### 2. Initialize the Integration
+### 3. Initialize the Integration
 
 Initialize the RudderStack SDK and add the AppsFlyer integration:
 
