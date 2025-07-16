@@ -32,12 +32,10 @@ class AppsFlyerIntegration : StandardIntegration, IntegrationPlugin() {
         get() = APPSFLYER_KEY
 
     public override fun create(destinationConfig: JsonObject) {
-        // Initialize AppsFlyer instance - equivalent to Java getUnderlyingInstance()
         if (appsFlyerInstance == null) {
             appsFlyerInstance = provideAppsFlyerInstance()
         }
 
-        // Extract configuration settings - equivalent to Java constructor logic
         extractConfiguration(destinationConfig)
     }
 
@@ -46,13 +44,10 @@ class AppsFlyerIntegration : StandardIntegration, IntegrationPlugin() {
     }
 
     private fun extractConfiguration(destinationConfig: JsonObject) {
-        // Extract useRichEventName setting - equivalent to Java constructor logic
         isNewScreenEnabled = destinationConfig.getBoolean(USE_RICH_EVENT_NAME) ?: false
     }
 
     override fun update(destinationConfig: JsonObject) {
-        // Update configuration without re-initialization - Kotlin-specific method
-        // Only update configuration settings, don't re-initialize AppsFlyer instance
         extractConfiguration(destinationConfig)
     }
 
@@ -61,12 +56,10 @@ class AppsFlyerIntegration : StandardIntegration, IntegrationPlugin() {
     }
 
     override fun identify(payload: IdentifyEvent) {
-        // Set customer user ID - equivalent to Java setCustomerUserId
         payload.userId
             .takeIf { it.isNotEmpty() }
             ?.let { appsFlyerInstance?.setCustomerUserId(it) }
 
-        // Set user email from traits - equivalent to Java setUserEmails
         analytics.traits
             ?.get(EMAIL)
             ?.getString()
@@ -77,16 +70,13 @@ class AppsFlyerIntegration : StandardIntegration, IntegrationPlugin() {
     override fun track(payload: TrackEvent) {
         val (appsFlyerEventName, appsFlyerEventProps) = mapEventToAppsFlyer(payload.event, payload.properties)
 
-        // Attach all custom properties (filtering reserved keywords)
         attachAllCustomProperties(appsFlyerEventProps, payload.properties)
 
-        // Log event to AppsFlyer - equivalent to Java AppsFlyerLib.getInstance().logEvent()
         appsFlyerInstance?.logEvent(analytics.application, appsFlyerEventName, appsFlyerEventProps)
     }
 
     override fun screen(payload: ScreenEvent) {
         val screenName = if (isNewScreenEnabled) {
-            // Rich event naming - equivalent to Java isNewScreenEnabled logic
             when {
                 payload.screenName.isNotEmpty() -> "$VIEWED ${payload.screenName} $SCREEN"
                 payload.properties.getString(NAME)?.isNotEmpty() == true -> {
@@ -95,11 +85,9 @@ class AppsFlyerIntegration : StandardIntegration, IntegrationPlugin() {
                 else -> "$VIEWED $SCREEN"
             }
         } else {
-            // Simple screen event name - equivalent to Java default behavior
             SCREEN_EVENT
         }
 
-        // Log screen event to AppsFlyer - equivalent to Java logEvent call
         appsFlyerInstance?.logEvent(analytics.application, screenName, payload.properties.toMutableMap())
     }
 }

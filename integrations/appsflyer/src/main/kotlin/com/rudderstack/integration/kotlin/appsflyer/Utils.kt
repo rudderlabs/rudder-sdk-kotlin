@@ -24,7 +24,7 @@ import kotlinx.serialization.json.longOrNull
 
 internal const val CREATIVE = "creative"
 
-// Reserved keywords for filtering custom properties - equivalent to Java TRACK_RESERVED_KEYWORDS
+// Reserved keywords for filtering custom properties
 internal val TRACK_RESERVED_KEYWORDS = listOf(
     ECommerceParamNames.QUERY, ECommerceParamNames.PRICE, ECommerceParamNames.PRODUCT_ID,
     ECommerceParamNames.CATEGORY, ECommerceParamNames.CURRENCY, ECommerceParamNames.PRODUCTS,
@@ -327,10 +327,7 @@ private fun extractValue(element: JsonElement?): Any? {
         JsonNull, null -> null
 
         is JsonPrimitive -> when {
-            element.isString -> {
-                // Return the string content as-is for proper quote handling
-                element.content
-            }
+            element.isString -> element.content
             element.booleanOrNull != null -> element.boolean
             element.intOrNull != null -> element.int
             element.longOrNull != null -> element.long
@@ -338,9 +335,9 @@ private fun extractValue(element: JsonElement?): Any? {
             else -> element.content
         }
 
-        is JsonObject -> element.toRawMap() // Stringify nested objects
+        is JsonObject -> element.toRawMap()
 
-        is JsonArray -> element.map { extractValue(it) } // Convert to list for general use
+        is JsonArray -> element.map { extractValue(it) }
     }
 }
 
