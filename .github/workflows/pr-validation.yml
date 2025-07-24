@@ -2,7 +2,7 @@ name: PR Validation
 
 on:
   pull_request:
-    branches: [ "develop", "feat/*", "fix/*", "chore/*", "refactor/*", "release/*", "hotfix/*" ]
+    branches: [ "develop", "feat/*", "refactor/*", "release/*" ]
     types: [ "opened", "reopened", "synchronize" ]
 
 jobs:
