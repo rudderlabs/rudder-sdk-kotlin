@@ -4,6 +4,34 @@ import com.shiqi.quickjs.QuickJS
 
 class QuickJS {
 
+    fun transformJson(jsonInput: String): String {
+        val quickJS = QuickJS.Builder().build()
+        return quickJS.createJSRuntime().use { runtime ->
+            runtime.createJSContext().use { context ->
+                val transformScript = """
+                    function transformEvent(jsonString) {
+                        try {
+                            var eventData = JSON.parse(jsonString);
+                            if (eventData.event) {
+                                eventData.event = eventData.event + "_transform";
+                            }
+                            return JSON.stringify(eventData);
+                        } catch (e) {
+                            return jsonString;
+                        }
+                    }
+                """.trimIndent()
+                
+                // Evaluate the transformation function
+                context.evaluate(transformScript, "transform.js")
+                
+                // Execute the transformation with the input JSON
+                val transformCall = "transformEvent('${jsonInput.replace("'", "\\'")}')"
+                context.evaluate<String>(transformCall, "transform.js", String::class.java)
+            }
+        }
+    }
+
     fun process() {
         val quickJS = QuickJS.Builder().build()
         quickJS.createJSRuntime().use { runtime ->
