@@ -2,6 +2,7 @@ package com.rudderstack.sampleapp.analytics
 
 import android.app.Application
 import com.rudderstack.android.sampleapp.BuildConfig
+import com.rudderstack.dmt.QuickJS
 import com.rudderstack.sampleapp.analytics.customlogger.CustomTimberLogger
 import com.rudderstack.sampleapp.analytics.customplugins.AndroidAdvertisingIdPlugin
 import com.rudderstack.sampleapp.analytics.customplugins.AndroidAdvertisingIdPlugin.Companion.isAdvertisingLibraryAvailable
@@ -16,6 +17,7 @@ import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
+
 
 object RudderAnalyticsUtils {
 
@@ -49,6 +51,13 @@ object RudderAnalyticsUtils {
             )
         )
         analytics.add(sampleIntegrationPlugin())
+
+        setupQuickJS()
+    }
+
+    private fun setupQuickJS() {
+        val quickJS = QuickJS()
+        quickJS.process()
     }
 
     /**

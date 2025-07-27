@@ -12,7 +12,7 @@ object RudderStackBuildConfig {
     object Android {
 
         const val COMPILE_SDK = 35
-        const val MIN_SDK = 21
+        const val MIN_SDK = 22
     }
 
     object AndroidAndCoreSDKs {

@@ -120,6 +120,9 @@ dependencies {
     testImplementation(libs.navigation.runtime)
 
     testRuntimeOnly(libs.junit.jupiter.engine)
+
+    // QuickJS
+    implementation(project(":dmt"))
 }
 
 tasks.named("preBuild").configure {
