@@ -32,12 +32,12 @@ jobs:
         with:
           sonar_token: ${{ secrets.SONAR_TOKEN }}
 
-  # Main code validation with artifact building
-  code-validation:
-    name: Code Validation
+  # Setup and find affected modules
+  setup-and-find-modules:
+    name: Setup & Find Modules
     runs-on: ubuntu-latest
     outputs:
-      affected_modules: ${{ steps.validate.outputs.affected_modules }}
+      affected_modules: ${{ steps.setup.outputs.affected_modules }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -51,24 +51,119 @@ jobs:
           git fetch origin ${{ github.base_ref }}
           git merge origin/${{ github.base_ref }} --no-edit
 
-      - name: Setup and Validate
-        id: validate
-        uses: ./.github/actions/setup-and-validate
+      - name: Setup and Find Modules
+        id: setup
+        uses: ./.github/actions/setup-and-find-modules
         with:
           base_branch: ${{ github.base_ref }}
+
+  # Detekt static analysis - runs in parallel
+  detekt-check:
+    name: Detekt Check
+    runs-on: ubuntu-latest
+    needs: setup-and-find-modules
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Merge with target branch
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git fetch origin ${{ github.base_ref }}
+          git merge origin/${{ github.base_ref }} --no-edit
+
+      - name: Run Detekt
+        uses: ./.github/actions/detekt-check
+        with:
+          affected_modules: ${{ needs.setup-and-find-modules.outputs.affected_modules }}
+
+  # Android Lint - runs in parallel
+  lint-check:
+    name: Lint Check
+    runs-on: ubuntu-latest
+    needs: setup-and-find-modules
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Merge with target branch
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git fetch origin ${{ github.base_ref }}
+          git merge origin/${{ github.base_ref }} --no-edit
+
+      - name: Run Lint
+        uses: ./.github/actions/lint-check
+        with:
+          affected_modules: ${{ needs.setup-and-find-modules.outputs.affected_modules }}
+
+  # Unit tests - runs in parallel
+  test-check:
+    name: Test Check
+    runs-on: ubuntu-latest
+    needs: setup-and-find-modules
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Merge with target branch
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git fetch origin ${{ github.base_ref }}
+          git merge origin/${{ github.base_ref }} --no-edit
+
+      - name: Run Tests
+        uses: ./.github/actions/test-check
+        with:
+          affected_modules: ${{ needs.setup-and-find-modules.outputs.affected_modules }}
+
+  # Build modules after all quality checks pass
+  build-check:
+    name: Build Check
+    runs-on: ubuntu-latest
+    needs: [setup-and-find-modules, detekt-check, lint-check, test-check]
+    outputs:
+      affected_modules: ${{ steps.build.outputs.affected_modules }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Merge with target branch
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git fetch origin ${{ github.base_ref }}
+          git merge origin/${{ github.base_ref }} --no-edit
+
+      - name: Build Modules
+        id: build
+        uses: ./.github/actions/build-check
+        with:
+          affected_modules: ${{ needs.setup-and-find-modules.outputs.affected_modules }}
 
       - name: Notify Slack
         if: always()
         run: |
           chmod +x scripts/send-slack-notification.sh
-          
+
           # Determine status
           if [ "${{ job.status }}" = "success" ]; then
             STATUS="passed"
           else
             STATUS="failed"
           fi
-          
+
           # Set environment variables for the script
           export GITHUB_REPOSITORY="${{ github.repository }}"
           export GITHUB_EVENT_NUMBER="${{ github.event.number }}"
@@ -79,14 +174,14 @@ jobs:
           export GITHUB_EVENT_PR_HTML_URL="${{ github.event.pull_request.html_url }}"
           export GITHUB_RUN_ID="${{ github.run_id }}"
           export SLACK_WEBHOOK_URL="${{ secrets.SLACK_WEBHOOK_URL }}"
-          
+
           ./scripts/send-slack-notification.sh "pr" "$STATUS" "${{ needs.build-aars.outputs.built_modules }}" "${{ needs.build-aars.outputs.has_artifacts }}"
 
   # Build AARs and JARs for library modules
   build-aars:
     name: Build AARs & JARs
     runs-on: ubuntu-latest
-    needs: code-validation
+    needs: build-check
     outputs:
       built_modules: ${{ steps.build-aars.outputs.built_modules }}
       has_artifacts: ${{ steps.build-aars.outputs.has_artifacts }}
@@ -100,24 +195,28 @@ jobs:
         id: build-aars
         uses: ./.github/actions/build-aars
         with:
-          affected_modules: ${{ needs.code-validation.outputs.affected_modules }}
+          affected_modules: ${{ needs.build-check.outputs.affected_modules }}
 
   # Summary job that depends on all required jobs
   pr-validation-summary:
     name: PR Validation Summary
     runs-on: ubuntu-latest
-    needs: [pr-title-check, code-validation, sonarcloud-analysis, build-aars]
+    needs: [pr-title-check, setup-and-find-modules, detekt-check, lint-check, test-check, build-check, sonarcloud-analysis, build-aars]
     if: always()
     steps:
       - name: Check all required jobs
         run: |
           echo "PR Title Check: ${{ needs.pr-title-check.result }}"
-          echo "Code Validation: ${{ needs.code-validation.result }}"
+          echo "Setup & Find Modules: ${{ needs.setup-and-find-modules.result }}"
+          echo "Detekt Check: ${{ needs.detekt-check.result }}"
+          echo "Lint Check: ${{ needs.lint-check.result }}"
+          echo "Test Check: ${{ needs.test-check.result }}"
+          echo "Build Check: ${{ needs.build-check.result }}"
           echo "SonarCloud Analysis: ${{ needs.sonarcloud-analysis.result }}"
           echo "Build AARs: ${{ needs.build-aars.result }}"
 
           # Fail if any required job failed
-          if [[ "${{ needs.pr-title-check.result }}" != "success" || "${{ needs.code-validation.result }}" != "success" || "${{ needs.sonarcloud-analysis.result }}" != "success" || "${{ needs.build-aars.result }}" != "success" ]]; then
+          if [[ "${{ needs.pr-title-check.result }}" != "success" || "${{ needs.setup-and-find-modules.result }}" != "success" || "${{ needs.detekt-check.result }}" != "success" || "${{ needs.lint-check.result }}" != "success" || "${{ needs.test-check.result }}" != "success" || "${{ needs.build-check.result }}" != "success" || "${{ needs.sonarcloud-analysis.result }}" != "success" || "${{ needs.build-aars.result }}" != "success" ]]; then
             echo "❌ PR validation failed - one or more required checks failed"
             exit 1
           fi
