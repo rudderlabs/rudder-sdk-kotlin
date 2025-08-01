@@ -10,6 +10,7 @@ on:
       - 'chore/*'
       - 'release/*'
       - 'hotfix/*'
+      - 'ci/*'
     # Removed catch-all pattern to avoid duplicate runs for PR branches
 
 jobs:
