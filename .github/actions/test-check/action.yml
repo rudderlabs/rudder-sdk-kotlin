@@ -3,8 +3,9 @@ description: 'Run unit tests on affected modules'
 
 inputs:
   affected_modules:
-    description: 'Comma-separated list of affected modules'
-    required: true
+    description: 'Comma-separated list of affected modules (optional - runs on all modules if not provided)'
+    required: false
+    default: ''
 
 runs:
   using: 'composite'
@@ -24,7 +25,12 @@ runs:
       shell: bash
       run: |
         chmod +x scripts/run-quality-checks.sh
-        ./scripts/run-quality-checks.sh "${{ inputs.affected_modules }}" "test"
+        if [ -n "${{ inputs.affected_modules }}" ]; then
+          ./scripts/run-quality-checks.sh "${{ inputs.affected_modules }}" "test"
+        else
+          # Run on all modules when no affected modules specified
+          ./gradlew test
+        fi
 
     - name: Upload test reports
       if: always()

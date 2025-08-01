@@ -3,8 +3,9 @@ description: 'Run Detekt static analysis on affected modules'
 
 inputs:
   affected_modules:
-    description: 'Comma-separated list of affected modules'
-    required: true
+    description: 'Comma-separated list of affected modules (optional - runs on all modules if not provided)'
+    required: false
+    default: ''
 
 runs:
   using: 'composite'
@@ -24,7 +25,12 @@ runs:
       shell: bash
       run: |
         chmod +x scripts/run-quality-checks.sh
-        ./scripts/run-quality-checks.sh "${{ inputs.affected_modules }}" "detekt"
+        if [ -n "${{ inputs.affected_modules }}" ]; then
+          ./scripts/run-quality-checks.sh "${{ inputs.affected_modules }}" "detekt"
+        else
+          # Run on all modules when no affected modules specified
+          ./gradlew detekt
+        fi
 
     - name: Upload Detekt reports
       if: always()

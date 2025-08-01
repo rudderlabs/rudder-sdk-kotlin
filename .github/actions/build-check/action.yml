@@ -3,13 +3,9 @@ description: 'Build affected modules after quality checks pass'
 
 inputs:
   affected_modules:
-    description: 'Comma-separated list of affected modules'
-    required: true
-
-outputs:
-  affected_modules:
-    description: 'Comma-separated list of affected modules (pass-through)'
-    value: ${{ inputs.affected_modules }}
+    description: 'Comma-separated list of affected modules (optional - runs on all modules if not provided)'
+    required: false
+    default: ''
 
 runs:
   using: 'composite'
@@ -29,4 +25,9 @@ runs:
       shell: bash
       run: |
         chmod +x scripts/run-quality-checks.sh
-        ./scripts/run-quality-checks.sh "${{ inputs.affected_modules }}" "build"
+        if [ -n "${{ inputs.affected_modules }}" ]; then
+          ./scripts/run-quality-checks.sh "${{ inputs.affected_modules }}" "build"
+        else
+          # Run on all modules when no affected modules specified
+          ./gradlew build
+        fi

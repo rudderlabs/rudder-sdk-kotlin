@@ -3,8 +3,9 @@ description: 'Builds AAR/JAR files for library modules and uploads them as artif
 
 inputs:
   affected_modules:
-    description: 'Comma-separated list of affected modules'
-    required: true
+    description: 'Comma-separated list of affected modules (optional - builds all library modules if not provided)'
+    required: false
+    default: ''
 
 outputs:
   built_modules:

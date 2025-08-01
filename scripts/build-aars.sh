@@ -101,11 +101,10 @@ main() {
     echo ""
     
     if [ -z "$affected_modules" ]; then
-        echo "No modules affected, skipping AAR build"
-        if [ -n "$GITHUB_OUTPUT" ]; then
-            echo "has_artifacts=false" >> "$GITHUB_OUTPUT"
-        fi
-        return 0
+        echo "No specific modules provided, building all library modules"
+        affected_modules=":core,:android,:integrations:adjust,:integrations:firebase,:integrations:facebook,:integrations:braze"
+        echo "Building modules: $affected_modules"
+        echo ""
     fi
     
     # Parse modules into array
