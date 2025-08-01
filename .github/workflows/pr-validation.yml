@@ -6,114 +6,107 @@ on:
     types: [ "opened", "reopened", "synchronize" ]
 
 jobs:
-  # PR Title validation - runs in parallel and is required for success
-  pr-title-check:
-    name: PR Title Check
+  # Combined PR validation - all checks run sequentially in a single job
+  pr-validation:
+    name: PR Validation
     runs-on: ubuntu-latest
     steps:
+      # Single checkout with full history for all checks
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history needed for SonarCloud and merge validation
 
+      # Single merge operation for all subsequent checks
+      - name: Merge with target branch
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git fetch origin ${{ github.base_ref }}
+          git merge origin/${{ github.base_ref }} --no-edit
+
+      # Step 1: PR Title Check
       - name: Check PR Title
         uses: ./.github/actions/pr-title-check
 
-  # SonarCloud analysis - runs in parallel, independent of other checks
-  sonarcloud-analysis:
-    name: SonarCloud Analysis
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      # Single JDK setup for all Java/Gradle-based checks
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
         with:
-          fetch-depth: 0  # Shallow clones should be disabled for better analysis
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      # Step 2: SonarCloud Analysis
+      - name: Cache SonarCloud packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
 
       - name: Run SonarCloud Analysis
-        uses: ./.github/actions/sonarcloud-analysis
-        with:
-          sonar_token: ${{ secrets.SONAR_TOKEN }}
+        uses: SonarSource/sonarqube-scan-action@2500896589ef8f7247069a56136f8dc177c27ccf
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-  # Detekt static analysis - runs in parallel
-  detekt-check:
-    name: Detekt Check
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Merge with target branch
+      - name: SonarCloud Analysis Result
         run: |
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
-          git fetch origin ${{ github.base_ref }}
-          git merge origin/${{ github.base_ref }} --no-edit
+          echo "✅ SonarCloud analysis completed"
+          echo "Check the SonarCloud dashboard for detailed results"
 
+      # Step 3: Detekt Check
       - name: Run Detekt
-        uses: ./.github/actions/detekt-check
-
-  # Android Lint - runs in parallel
-  lint-check:
-    name: Lint Check
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Merge with target branch
         run: |
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
-          git fetch origin ${{ github.base_ref }}
-          git merge origin/${{ github.base_ref }} --no-edit
+          chmod +x scripts/run-quality-checks.sh
+          ./gradlew detekt
 
-      - name: Run Lint
-        uses: ./.github/actions/lint-check
-
-  # Unit tests - runs in parallel
-  test-check:
-    name: Test Check
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Upload Detekt reports
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          fetch-depth: 0
+          name: detekt-reports-${{ github.run_id }}
+          path: |
+            **/build/reports/detekt/
 
-      - name: Merge with target branch
+      # Step 4: Lint Check
+      - name: Run Android Lint
         run: |
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
-          git fetch origin ${{ github.base_ref }}
-          git merge origin/${{ github.base_ref }} --no-edit
+          chmod +x scripts/run-quality-checks.sh
+          ./gradlew lint
 
+      - name: Upload Lint reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-reports-${{ github.run_id }}
+          path: |
+            **/build/reports/lint-results*.html
+
+      # Step 5: Test Check
       - name: Run Tests
-        uses: ./.github/actions/test-check
-
-  # Build modules after all quality checks pass
-  build-check:
-    name: Build Check
-    runs-on: ubuntu-latest
-    needs: [detekt-check, lint-check, test-check]
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Merge with target branch
         run: |
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
-          git fetch origin ${{ github.base_ref }}
-          git merge origin/${{ github.base_ref }} --no-edit
+          chmod +x scripts/run-quality-checks.sh
+          ./gradlew test
 
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports-${{ github.run_id }}
+          path: |
+            **/build/reports/tests/
+
+      # Step 6: Build Check
       - name: Build Modules
-        id: build
-        uses: ./.github/actions/build-check
+        run: |
+          chmod +x scripts/run-quality-checks.sh
+          ./gradlew build
 
+      # Slack notification
       - name: Notify Slack
         if: always()
         run: |
@@ -138,27 +131,3 @@ jobs:
           export SLACK_WEBHOOK_URL="${{ secrets.SLACK_WEBHOOK_URL }}"
 
           ./scripts/send-slack-notification.sh "pr" "$STATUS" "" ""
-
-  # Summary job that depends on all required jobs
-  pr-validation-summary:
-    name: PR Validation Summary
-    runs-on: ubuntu-latest
-    needs: [pr-title-check, detekt-check, lint-check, test-check, build-check, sonarcloud-analysis]
-    if: always()
-    steps:
-      - name: Check all required jobs
-        run: |
-          echo "PR Title Check: ${{ needs.pr-title-check.result }}"
-          echo "Detekt Check: ${{ needs.detekt-check.result }}"
-          echo "Lint Check: ${{ needs.lint-check.result }}"
-          echo "Test Check: ${{ needs.test-check.result }}"
-          echo "Build Check: ${{ needs.build-check.result }}"
-          echo "SonarCloud Analysis: ${{ needs.sonarcloud-analysis.result }}"
-
-          # Fail if any required job failed
-          if [[ "${{ needs.pr-title-check.result }}" != "success" || "${{ needs.detekt-check.result }}" != "success" || "${{ needs.lint-check.result }}" != "success" || "${{ needs.test-check.result }}" != "success" || "${{ needs.build-check.result }}" != "success" || "${{ needs.sonarcloud-analysis.result }}" != "success" ]]; then
-            echo "❌ PR validation failed - one or more required checks failed"
-            exit 1
-          fi
-
-          echo "✅ All PR validation checks passed successfully"
