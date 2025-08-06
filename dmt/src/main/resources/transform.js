@@ -1,6 +1,6 @@
-function transformEvent(eventData) {
-    if (eventData.event) {
-        eventData.event = eventData.event + "_transform";
+function transformEvent(event) {
+    if (event.event) {
+        event.event = event.event + "_transform";
     }
-    return eventData;
+    return event;
 }
