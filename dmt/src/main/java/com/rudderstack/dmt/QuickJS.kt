@@ -20,7 +20,7 @@ class QuickJS {
                 context.evaluate(transformScript, "transform.js")
                 
                 // Execute the transformation with the input JSON
-                val transformCall = "transformEvent('${jsonInput.replace("'", "\\'")}')"
+                val transformCall = "JSON.stringify(transformEvent('${jsonInput.replace("'", "\\'")}'))"
                 context.evaluate<String>(transformCall, "transform.js", String::class.java)
             }
         }

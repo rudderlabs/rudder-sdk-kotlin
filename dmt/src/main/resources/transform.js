@@ -4,7 +4,7 @@ function transformEvent(jsonString) {
         if (eventData.event) {
             eventData.event = eventData.event + "_transform";
         }
-        return JSON.stringify(eventData);
+        return eventData;
     } catch (e) {
         return jsonString;
     }
