@@ -217,6 +217,11 @@ enum class StorageKeys(val key: String) {
      * Key for storing the flag for session start.
      */
     IS_SESSION_START("is_session_start"),
+
+    /**
+     * Key for the live mobile transformation script.
+     */
+    DMT_SCRIPT("dmt_script"),
 }
 
 /**

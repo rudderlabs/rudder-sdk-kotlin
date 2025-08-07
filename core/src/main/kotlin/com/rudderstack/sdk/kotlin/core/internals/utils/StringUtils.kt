@@ -15,7 +15,8 @@ private const val UNDERSCORE_SEPARATOR = "_"
  *
  * @return The Base64 encoded representation of the string.
  */
-internal fun String.encodeToBase64(): String {
+@InternalRudderApi
+fun String.encodeToBase64(): String {
     val formattedString = String.format(Locale.US, "%s:", this)
     val bytes = formattedString.toByteArray(Charsets.UTF_8)
     return bytes.encodeToBase64()

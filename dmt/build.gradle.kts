@@ -1,6 +1,12 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
+
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
+}
+
+tasks.withType<KotlinJvmCompile>().configureEach {
+    compilerOptions.freeCompilerArgs.add("-opt-in=com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi")
 }
 
 android {
@@ -30,6 +36,7 @@ android {
 }
 
 dependencies {
+    implementation(project(":android"))
 
     implementation(libs.android.core.ktx)
     implementation(libs.androidx.appcompat)

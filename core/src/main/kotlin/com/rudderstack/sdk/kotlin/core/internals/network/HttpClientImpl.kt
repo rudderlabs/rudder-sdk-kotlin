@@ -2,6 +2,7 @@ package com.rudderstack.sdk.kotlin.core.internals.network
 
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.network.NetworkErrorStatus.Companion.toErrorStatus
+import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import com.rudderstack.sdk.kotlin.core.internals.utils.validatedBaseUrl
 import java.io.IOException
@@ -43,7 +44,8 @@ private const val DEFAULT_READ_TIMEOUT: Int = 20_000
  * @property customHeaders Additional HTTP headers to include in the request.
  * @property connectionFactory A factory responsible for creating instances of `HttpURLConnection`.
  */
-internal class HttpClientImpl private constructor(
+@InternalRudderApi
+class HttpClientImpl private constructor(
     override val baseUrl: String,
     override val endPoint: String,
     override val authHeaderString: String,
@@ -69,7 +71,8 @@ internal class HttpClientImpl private constructor(
          * @param connectionFactory A factory for creating `HttpURLConnection` instances. Defaults to `DefaultHttpURLConnectionFactory()`.
          * @return A configured `HttpClientImpl` instance for GET requests.
          */
-        internal fun createGetHttpClient(
+        @InternalRudderApi
+        fun createGetHttpClient(
             baseUrl: String,
             endPoint: String,
             authHeaderString: String,

@@ -2,11 +2,10 @@ package com.rudderstack.sampleapp.analytics
 
 import android.app.Application
 import com.rudderstack.android.sampleapp.BuildConfig
-import com.rudderstack.dmt.QuickJS
 import com.rudderstack.sampleapp.analytics.customlogger.CustomTimberLogger
 import com.rudderstack.sampleapp.analytics.customplugins.AndroidAdvertisingIdPlugin
 import com.rudderstack.sampleapp.analytics.customplugins.AndroidAdvertisingIdPlugin.Companion.isAdvertisingLibraryAvailable
-import com.rudderstack.sampleapp.analytics.customplugins.JsonTransformationPlugin
+import com.rudderstack.dmt.DeviceModeTransformerPlugin
 import com.rudderstack.sampleapp.analytics.customplugins.SampleCustomIntegrationPlugin
 import com.rudderstack.sdk.kotlin.android.Analytics
 import com.rudderstack.sdk.kotlin.android.Configuration
@@ -26,7 +25,7 @@ object RudderAnalyticsUtils {
 
     private val androidAdvertisingIdPlugin = AndroidAdvertisingIdPlugin()
     private val sampleIntegrationPlugin = SampleCustomIntegrationPlugin()
-    private val jsonTransformationPlugin = JsonTransformationPlugin()
+    private val deviceModeTransformerPlugin = DeviceModeTransformerPlugin()
 
     /**
      * Initializes the RudderStack Analytics SDK with the application context.
@@ -53,14 +52,7 @@ object RudderAnalyticsUtils {
             )
         )
         analytics.add(sampleIntegrationPlugin())
-        analytics.add(jsonTransformationPlugin)
-
-        setupQuickJS()
-    }
-
-    private fun setupQuickJS() {
-        val quickJS = QuickJS()
-        quickJS.process()
+        analytics.add(deviceModeTransformerPlugin)
     }
 
     /**
