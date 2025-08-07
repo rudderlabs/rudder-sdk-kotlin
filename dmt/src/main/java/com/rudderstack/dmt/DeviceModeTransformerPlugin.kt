@@ -26,7 +26,8 @@ class DeviceModeTransformerPlugin : Plugin {
 
     override suspend fun intercept(event: Event): Event? {
         return try {
-            transformScriptManager.transformEvent(event)
+            val transformedEvent = transformScriptManager.transformEvent(event)
+            transformedEvent
         } catch (e: Exception) {
             LoggerAnalytics.error("JsonTransformationPlugin: Error transforming event - ${e.message}")
             event

@@ -1,5 +1,6 @@
 package com.rudderstack.dmt
 
+import com.rudderstack.sdk.kotlin.android.utils.application
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
@@ -14,8 +15,11 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import com.rudderstack.sdk.kotlin.core.internals.utils.encodeToBase64
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
+import java.util.zip.GZIPInputStream
 
+// todo: remove this base url field
 private const val BASE_URL = "https://f0d1c3gv-3000.inc1.devtunnels.ms/"
 private const val DMT_ENDPOINT = "/file"
 private const val PLATFORM = "p"
@@ -32,11 +36,14 @@ internal class TransformScriptManager(
 
     private val jsScriptState: State<String> = State(initialState = fetchCachedJSScript())
 
+    private lateinit var convertorScript: String
+
     internal fun updateJSScriptAndNotify() {
         analytics.analyticsScope.launch(analytics.networkDispatcher) {
             downloadJSScript()?.let { script ->
-                storeJSScript(script)
-                notifyObservers(script)
+                val transformedScript = transformScript(script)
+                storeJSScript(transformedScript)
+                notifyObservers(transformedScript)
             }
         }
     }
@@ -78,6 +85,20 @@ internal class TransformScriptManager(
 
     private suspend fun storeJSScript(script: String) {
         analytics.storage.write(StorageKeys.DMT_SCRIPT, script)
+    }
+
+    private suspend fun transformScript(script: String): String {
+        return withContext(analytics.analyticsDispatcher) {
+            if (!::convertorScript.isInitialized) {
+                convertorScript = loadCompressedJS()
+            }
+            quickJSWrapper.convertScript(script, convertorScript)
+        }
+    }
+
+    private fun loadCompressedJS(): String {
+        val inputStream = GZIPInputStream(analytics.application.assets.open("babel.js.gz"))
+        return inputStream.bufferedReader().use { it.readText() }
     }
 }
 
