@@ -92,7 +92,7 @@ dependencies {
     implementation(project(":android"))
 
     // RudderStack Integrations
-    implementation(project(":integrations:adjust"))
+    // implementation(project(":integrations:adjust"))
     // implementation(project(":integrations:braze")) // This requires minimum Sdk version of 25 and above.
 
     //compose

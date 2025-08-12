@@ -171,8 +171,8 @@ class MyApplication : Application() {
         )
 
         // Add integrations
-        analytics.addIntegration(FirebaseIntegration())
-        analytics.addIntegration(BrazeIntegration())
+        analytics.add(FirebaseIntegration())
+        analytics.add(BrazeIntegration())
         // Add more integrations as needed
     }
 }

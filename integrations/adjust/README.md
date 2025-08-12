@@ -50,7 +50,7 @@ class MyApplication : Application() {
         )
         
         // Add Adjust integration
-        analytics.addIntegration(AdjustIntegration())
+        analytics.add(AdjustIntegration())
     }
 }
 ```

@@ -54,7 +54,7 @@ class MyApplication : Application() {
         )
         
         // Add Braze integration
-        analytics.addIntegration(BrazeIntegration())
+        analytics.add(BrazeIntegration())
     }
 }
 ```

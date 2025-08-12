@@ -50,7 +50,7 @@ class MyApplication : Application() {
         )
         
         // Add Facebook integration
-        analytics.addIntegration(FacebookIntegration())
+        analytics.add(FacebookIntegration())
     }
 }
 ```
