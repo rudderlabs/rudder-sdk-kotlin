@@ -61,8 +61,8 @@ object RudderStackBuildConfig {
         object Facebook : IntegrationModuleInfo {
 
             override val moduleName: String = "facebook"
-            override val versionName: String = "1.0.0"
-            override val versionCode: String = "1"
+            override val versionName: String = "1.0.1"
+            override val versionCode: String = "2"
 
             override val artifactId = "facebook"
             override val pomPackaging = "aar"
