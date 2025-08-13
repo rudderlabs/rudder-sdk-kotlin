@@ -27,6 +27,7 @@ tasks.register<Delete>("clean") {
 }
 
 nexusPublishing {
+    packageGroup.set("com.rudderstack")
     repositories {
         sonatype {
             username = System.getenv("NEXUS_USERNAME")
