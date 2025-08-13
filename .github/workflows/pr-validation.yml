@@ -48,13 +48,6 @@ jobs:
         with:
           fetch-depth: 0  # Fetch all history for detecting changes
 
-      - name: Merge with target branch
-        run: |
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
-          git fetch origin ${{ github.base_ref }}
-          git merge origin/${{ github.base_ref }} --no-edit
-
       - name: Setup and Find Modules
         id: setup
         uses: ./.github/actions/setup-and-find-modules
@@ -72,13 +65,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Merge with target branch
-        run: |
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
-          git fetch origin ${{ github.base_ref }}
-          git merge origin/${{ github.base_ref }} --no-edit
-
       - name: Run Detekt
         uses: ./.github/actions/detekt-check
         with:
@@ -95,13 +81,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Merge with target branch
-        run: |
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
-          git fetch origin ${{ github.base_ref }}
-          git merge origin/${{ github.base_ref }} --no-edit
-
       - name: Run Lint
         uses: ./.github/actions/lint-check
         with:
@@ -117,13 +96,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Merge with target branch
-        run: |
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
-          git fetch origin ${{ github.base_ref }}
-          git merge origin/${{ github.base_ref }} --no-edit
 
       - name: Run Tests
         uses: ./.github/actions/test-check
@@ -142,13 +114,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Merge with target branch
-        run: |
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
-          git fetch origin ${{ github.base_ref }}
-          git merge origin/${{ github.base_ref }} --no-edit
 
       - name: Build Modules
         id: build
