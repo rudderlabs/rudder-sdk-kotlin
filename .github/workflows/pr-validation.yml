@@ -2,7 +2,7 @@ name: PR Validation
 
 on:
   pull_request:
-    branches: [ "develop", "feat/*", "refactor/*", "release/*" ]
+    branches: [ "develop", "feat/*", "refactor/*", "release/*", "ci/*", "fix/*" ]
     types: [ "opened", "reopened", "synchronize", "edited" ]
 
 concurrency:
