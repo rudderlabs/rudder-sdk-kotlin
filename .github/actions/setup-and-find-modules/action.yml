@@ -1,0 +1,43 @@
+name: 'Setup and Find Modules'
+description: 'Common setup steps and module detection for Android CI/CD workflows'
+
+inputs:
+  base_branch:
+    description: 'Base branch to compare against for finding affected modules'
+    required: false
+    default: ''
+
+outputs:
+  affected_modules:
+    description: 'Comma-separated list of affected modules'
+    value: ${{ steps.find-modules.outputs.affected_modules }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: gradle
+
+    - name: Grant execute permission for gradlew
+      shell: bash
+      run: chmod +x gradlew
+
+    - name: Check Gradle build scripts dependencies are sorted
+      shell: bash
+      run: ./gradlew buildEnvironment --dry-run
+
+    - name: Find affected modules
+      id: find-modules
+      shell: bash
+      run: |
+        # Make script executable and run it
+        chmod +x scripts/find-affected-modules.sh
+        # Set GITHUB_BASE_REF if provided via base_branch input (for PR context)
+        if [ -n "${{ inputs.base_branch }}" ]; then
+          export GITHUB_BASE_REF="${{ inputs.base_branch }}"
+        fi
+        ./scripts/find-affected-modules.sh "${{ inputs.base_branch }}"
