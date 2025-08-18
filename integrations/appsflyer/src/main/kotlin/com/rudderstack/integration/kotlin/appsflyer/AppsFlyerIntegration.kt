@@ -68,9 +68,10 @@ class AppsFlyerIntegration : StandardIntegration, IntegrationPlugin() {
     }
 
     override fun track(payload: TrackEvent) {
-        val (appsFlyerEventName, appsFlyerEventProps) = mapEventToAppsFlyer(payload.event, payload.properties)
-
-        attachAllCustomProperties(appsFlyerEventProps, payload.properties)
+        val (appsFlyerEventName, appsFlyerEventProps) = mapEventToAppsFlyer(
+            eventName = payload.event,
+            properties = payload.properties
+        )
 
         appsFlyerInstance?.logEvent(analytics.application, appsFlyerEventName, appsFlyerEventProps)
     }

@@ -217,7 +217,7 @@ class UtilsTest {
     }
 
     @Test
-    fun `given properties with only reserved keywords, when attachAllCustomProperties is called, then no properties are added`() {
+    fun `given properties with only reserved keywords, when mapCustomPropertiesToAppsFlyer is called, then no properties are added`() {
         val properties = buildJsonObject {
             put(ECommerceParamNames.QUERY, "search_term")
             put(ECommerceParamNames.PRICE, 29.99)
@@ -234,7 +234,7 @@ class UtilsTest {
         }
         val eventProps = mutableMapOf<String, Any>()
 
-        attachAllCustomProperties(eventProps, properties)
+        mapCustomPropertiesToAppsFlyer(properties, eventProps)
 
         assert(eventProps.isEmpty()) {
             "Expected no properties to be added, but found: ${eventProps.keys}"
@@ -242,7 +242,7 @@ class UtilsTest {
     }
 
     @Test
-    fun `given properties with mix of reserved and custom keywords, when attachAllCustomProperties is called, then only custom properties are added`() {
+    fun `given properties with mix of reserved and custom keywords, when mapCustomPropertiesToAppsFlyer is called, then only custom properties are added`() {
         val properties = buildJsonObject {
             // Reserved keywords - should be filtered
             put(ECommerceParamNames.PRICE, 29.99)
@@ -259,7 +259,7 @@ class UtilsTest {
         }
         val eventProps = mutableMapOf<String, Any>()
 
-        attachAllCustomProperties(eventProps, properties)
+        mapCustomPropertiesToAppsFlyer(properties, eventProps)
 
         // Assert reserved keywords are NOT present
         TRACK_RESERVED_KEYWORDS.forEach { keyword ->
@@ -281,7 +281,7 @@ class UtilsTest {
     }
 
     @Test
-    fun `given properties with all reserved keywords individually, when attachAllCustomProperties is called, then each keyword is properly filtered`() {
+    fun `given properties with all reserved keywords individually, when mapCustomPropertiesToAppsFlyer is called, then each keyword is properly filtered`() {
         TRACK_RESERVED_KEYWORDS.forEach { keyword ->
             val properties = buildJsonObject {
                 put(keyword, "test_value")
@@ -289,7 +289,7 @@ class UtilsTest {
             }
             val eventProps = mutableMapOf<String, Any>()
 
-            attachAllCustomProperties(eventProps, properties)
+            mapCustomPropertiesToAppsFlyer(properties, eventProps)
 
             assert(!eventProps.containsKey(keyword)) {
                 "Reserved keyword '$keyword' should be filtered out"
@@ -304,7 +304,7 @@ class UtilsTest {
     }
 
     @Test
-    fun `given properties with products array containing reserved keywords, when attachAllCustomProperties is called, then reserved keywords in products are not filtered at top level`() {
+    fun `given properties with products array containing reserved keywords, when mapCustomPropertiesToAppsFlyer is called, then reserved keywords in products are not filtered at top level`() {
         val products = buildJsonArray {
             add(buildJsonObject {
                 put(ECommerceParamNames.PRODUCT_ID, "prod1") // This is inside products array, not top-level
@@ -317,7 +317,7 @@ class UtilsTest {
         }
         val eventProps = mutableMapOf<String, Any>()
 
-        attachAllCustomProperties(eventProps, properties)
+        mapCustomPropertiesToAppsFlyer(properties, eventProps)
 
         // The PRODUCTS key itself should be filtered as it's a reserved keyword
         assert(!eventProps.containsKey(ECommerceParamNames.PRODUCTS)) {
@@ -332,7 +332,7 @@ class UtilsTest {
     }
 
     @Test
-    fun `given properties with empty and null values along with reserved keywords, when attachAllCustomProperties is called, then reserved keywords are filtered but empty strings are preserved`() {
+    fun `given properties with empty and null values along with reserved keywords, when mapCustomPropertiesToAppsFlyer is called, then reserved keywords are filtered but empty strings are preserved`() {
         val properties = buildJsonObject {
             put(ECommerceParamNames.PRICE, 29.99) // Reserved keyword - should be filtered
             put("empty_string", "") // Empty value - should be preserved (only null values are filtered)
@@ -342,7 +342,7 @@ class UtilsTest {
         }
         val eventProps = mutableMapOf<String, Any>()
 
-        attachAllCustomProperties(eventProps, properties)
+        mapCustomPropertiesToAppsFlyer(properties, eventProps)
 
         assert(!eventProps.containsKey(ECommerceParamNames.PRICE))
         assert(!eventProps.containsKey(ECommerceParamNames.CURRENCY))

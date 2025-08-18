@@ -45,121 +45,105 @@ private const val QUANTITY = "quantity"
  */
 internal fun mapEventToAppsFlyer(eventName: String, properties: JsonObject?): Pair<String, MutableMap<String, Any>> {
     val appsFlyerEventProps = mutableMapOf<String, Any>()
-    val appsFlyerEventName = getAppsFlyerEventName(eventName, properties, appsFlyerEventProps)
+    mapPropertiesToAppsFlyer(eventName = eventName, properties = properties, appsFlyerEventProps = appsFlyerEventProps)
+
+    val appsFlyerEventName = getAppsFlyerEventName(eventName)
+
     return Pair(appsFlyerEventName, appsFlyerEventProps)
 }
 
+/**
+ * Determines the AppsFlyer event name for a given RudderStack event
+ */
 @Suppress("CyclomaticComplexMethod")
-private fun getAppsFlyerEventName(
-    eventName: String,
-    properties: JsonObject?,
-    appsFlyerEventProps: MutableMap<String, Any>
-): String {
+private fun getAppsFlyerEventName(eventName: String): String {
     return when (eventName) {
-        ECommerceEvents.PRODUCTS_SEARCHED -> handleProductsSearched(properties, appsFlyerEventProps)
-        ECommerceEvents.PRODUCT_VIEWED -> handleProductViewed(properties, appsFlyerEventProps)
-        ECommerceEvents.PRODUCT_LIST_VIEWED -> handleProductListViewed(properties, appsFlyerEventProps)
-        ECommerceEvents.PRODUCT_ADDED_TO_WISH_LIST -> handleProductWishList(properties, appsFlyerEventProps)
-        ECommerceEvents.PRODUCT_ADDED -> handleProductAdded(properties, appsFlyerEventProps)
-        ECommerceEvents.CHECKOUT_STARTED -> handleCheckoutStarted(properties, appsFlyerEventProps)
-        ECommerceEvents.ORDER_COMPLETED -> handleOrderCompleted(properties, appsFlyerEventProps)
-        FIRST_PURCHASE -> handleFirstPurchase(properties, appsFlyerEventProps)
-        ECommerceEvents.PRODUCT_REMOVED -> handleProductRemoved(properties, appsFlyerEventProps)
-        ECommerceEvents.PROMOTION_VIEWED -> handlePromotionViewed(properties, appsFlyerEventProps)
-        ECommerceEvents.PROMOTION_CLICKED -> handlePromotionClicked(properties, appsFlyerEventProps)
+        ECommerceEvents.PRODUCTS_SEARCHED -> AFInAppEventType.SEARCH
+        ECommerceEvents.PRODUCT_VIEWED -> AFInAppEventType.CONTENT_VIEW
+        ECommerceEvents.PRODUCT_LIST_VIEWED -> AFInAppEventType.LIST_VIEW
+        ECommerceEvents.PRODUCT_ADDED_TO_WISH_LIST -> AFInAppEventType.ADD_TO_WISH_LIST
+        ECommerceEvents.PRODUCT_ADDED -> AFInAppEventType.ADD_TO_CART
+        ECommerceEvents.CHECKOUT_STARTED -> AFInAppEventType.INITIATED_CHECKOUT
+        ECommerceEvents.ORDER_COMPLETED -> AFInAppEventType.PURCHASE
+        FIRST_PURCHASE -> FIRST_PURCHASE
+        ECommerceEvents.PRODUCT_REMOVED -> REMOVE_FROM_CART
+        ECommerceEvents.PROMOTION_VIEWED -> AFInAppEventType.AD_VIEW
+        ECommerceEvents.PROMOTION_CLICKED -> AFInAppEventType.AD_CLICK
         ECommerceEvents.PAYMENT_INFO_ENTERED -> AFInAppEventType.ADD_PAYMENT_INFO
-        ECommerceEvents.PRODUCT_SHARED, ECommerceEvents.CART_SHARED -> handleShared(properties, appsFlyerEventProps)
-        ECommerceEvents.PRODUCT_REVIEWED -> handleProductReviewed(properties, appsFlyerEventProps)
+        ECommerceEvents.PRODUCT_SHARED, ECommerceEvents.CART_SHARED -> AFInAppEventType.SHARE
+        ECommerceEvents.PRODUCT_REVIEWED -> AFInAppEventType.RATE
         else -> eventName.lowercase().replace(" ", "_")
     }
 }
 
-private fun handleProductsSearched(properties: JsonObject?, appsFlyerEventProps: MutableMap<String, Any>): String {
-    properties?.getTypedValue(ECommerceParamNames.QUERY)?.let { query ->
-        appsFlyerEventProps[AFInAppEventParameterName.SEARCH_STRING] = query
+/**
+ * Maps properties from RudderStack format to AppsFlyer format based on event type
+ */
+@Suppress("CyclomaticComplexMethod", "LongMethod")
+private fun mapPropertiesToAppsFlyer(
+    eventName: String,
+    properties: JsonObject?,
+    appsFlyerEventProps: MutableMap<String, Any>
+) {
+    when (eventName) {
+        ECommerceEvents.PRODUCTS_SEARCHED ->
+            properties?.getTypedValue(ECommerceParamNames.QUERY)?.let { query ->
+                appsFlyerEventProps[AFInAppEventParameterName.SEARCH_STRING] = query
+            }
+
+        ECommerceEvents.PRODUCT_VIEWED -> mapProductEvent(properties, appsFlyerEventProps)
+        ECommerceEvents.PRODUCT_LIST_VIEWED -> mapProductListViewedEvent(properties, appsFlyerEventProps)
+        ECommerceEvents.PRODUCT_ADDED_TO_WISH_LIST -> mapProductEvent(properties, appsFlyerEventProps)
+
+        ECommerceEvents.PRODUCT_ADDED -> {
+            mapProductEvent(properties, appsFlyerEventProps)
+            properties?.getTypedValue(ECommerceParamNames.QUANTITY)?.let { quantity ->
+                appsFlyerEventProps[AFInAppEventParameterName.QUANTITY] = quantity
+            }
+        }
+
+        ECommerceEvents.CHECKOUT_STARTED -> mapCheckoutEvent(properties, appsFlyerEventProps)
+        ECommerceEvents.ORDER_COMPLETED -> mapOrderCompletedEvent(properties, appsFlyerEventProps)
+        FIRST_PURCHASE -> mapOrderCompletedEvent(properties, appsFlyerEventProps)
+
+        ECommerceEvents.PRODUCT_REMOVED -> {
+            properties?.getTypedValue(ECommerceParamNames.PRODUCT_ID)?.let { productId ->
+                appsFlyerEventProps[AFInAppEventParameterName.CONTENT_ID] = productId
+            }
+            properties?.getTypedValue(ECommerceParamNames.CATEGORY)?.let { category ->
+                appsFlyerEventProps[AFInAppEventParameterName.CONTENT_TYPE] = category
+            }
+        }
+
+        ECommerceEvents.PROMOTION_VIEWED -> mapPromotionEvent(properties, appsFlyerEventProps)
+        ECommerceEvents.PROMOTION_CLICKED -> mapPromotionEvent(properties, appsFlyerEventProps)
+
+        ECommerceEvents.PRODUCT_SHARED, ECommerceEvents.CART_SHARED ->
+            properties?.getTypedValue(ECommerceParamNames.SHARE_MESSAGE)?.let { message ->
+                appsFlyerEventProps[AFInAppEventParameterName.DESCRIPTION] = message
+            }
+
+        ECommerceEvents.PRODUCT_REVIEWED -> {
+            properties?.getTypedValue(ECommerceParamNames.PRODUCT_ID)?.let { productId ->
+                appsFlyerEventProps[AFInAppEventParameterName.CONTENT_ID] = productId
+            }
+            properties?.getTypedValue(ECommerceParamNames.RATING)?.let { rating ->
+                appsFlyerEventProps[AFInAppEventParameterName.RATING_VALUE] = rating
+            }
+        }
+        // Custom events don't have specific property mapping logic
+        else -> {
+            // NO-OP
+        }
     }
-    return AFInAppEventType.SEARCH
-}
-
-private fun handleProductViewed(properties: JsonObject?, appsFlyerEventProps: MutableMap<String, Any>): String {
-    mapProductEvent(properties, appsFlyerEventProps)
-    return AFInAppEventType.CONTENT_VIEW
-}
-
-private fun handleProductListViewed(properties: JsonObject?, appsFlyerEventProps: MutableMap<String, Any>): String {
-    mapProductListViewedEvent(properties, appsFlyerEventProps)
-    return AFInAppEventType.LIST_VIEW
-}
-
-private fun handleProductWishList(properties: JsonObject?, appsFlyerEventProps: MutableMap<String, Any>): String {
-    mapProductEvent(properties, appsFlyerEventProps)
-    return AFInAppEventType.ADD_TO_WISH_LIST
-}
-
-private fun handleProductAdded(properties: JsonObject?, appsFlyerEventProps: MutableMap<String, Any>): String {
-    mapProductEvent(properties, appsFlyerEventProps)
-    properties?.getTypedValue(ECommerceParamNames.QUANTITY)?.let { quantity ->
-        appsFlyerEventProps[AFInAppEventParameterName.QUANTITY] = quantity
-    }
-    return AFInAppEventType.ADD_TO_CART
-}
-
-private fun handleCheckoutStarted(properties: JsonObject?, appsFlyerEventProps: MutableMap<String, Any>): String {
-    mapCheckoutEvent(properties, appsFlyerEventProps)
-    return AFInAppEventType.INITIATED_CHECKOUT
-}
-
-private fun handleOrderCompleted(properties: JsonObject?, appsFlyerEventProps: MutableMap<String, Any>): String {
-    mapOrderCompletedEvent(properties, appsFlyerEventProps)
-    return AFInAppEventType.PURCHASE
-}
-
-private fun handleFirstPurchase(properties: JsonObject?, appsFlyerEventProps: MutableMap<String, Any>): String {
-    mapOrderCompletedEvent(properties, appsFlyerEventProps)
-    return FIRST_PURCHASE
-}
-
-private fun handleProductRemoved(properties: JsonObject?, appsFlyerEventProps: MutableMap<String, Any>): String {
-    properties?.getTypedValue(ECommerceParamNames.PRODUCT_ID)?.let { productId ->
-        appsFlyerEventProps[AFInAppEventParameterName.CONTENT_ID] = productId
-    }
-    properties?.getTypedValue(ECommerceParamNames.CATEGORY)?.let { category ->
-        appsFlyerEventProps[AFInAppEventParameterName.CONTENT_TYPE] = category
-    }
-    return REMOVE_FROM_CART
-}
-
-private fun handlePromotionViewed(properties: JsonObject?, appsFlyerEventProps: MutableMap<String, Any>): String {
-    mapPromotionEvent(properties, appsFlyerEventProps)
-    return AFInAppEventType.AD_VIEW
-}
-
-private fun handlePromotionClicked(properties: JsonObject?, appsFlyerEventProps: MutableMap<String, Any>): String {
-    mapPromotionEvent(properties, appsFlyerEventProps)
-    return AFInAppEventType.AD_CLICK
-}
-
-private fun handleShared(properties: JsonObject?, appsFlyerEventProps: MutableMap<String, Any>): String {
-    properties?.getTypedValue(ECommerceParamNames.SHARE_MESSAGE)?.let { message ->
-        appsFlyerEventProps[AFInAppEventParameterName.DESCRIPTION] = message
-    }
-    return AFInAppEventType.SHARE
-}
-
-private fun handleProductReviewed(properties: JsonObject?, appsFlyerEventProps: MutableMap<String, Any>): String {
-    properties?.getTypedValue(ECommerceParamNames.PRODUCT_ID)?.let { productId ->
-        appsFlyerEventProps[AFInAppEventParameterName.CONTENT_ID] = productId
-    }
-    properties?.getTypedValue(ECommerceParamNames.RATING)?.let { rating ->
-        appsFlyerEventProps[AFInAppEventParameterName.RATING_VALUE] = rating
-    }
-    return AFInAppEventType.RATE
+    // handling custom properties
+    mapCustomPropertiesToAppsFlyer(properties, appsFlyerEventProps)
 }
 
 /**
  * Maps basic product properties to AppsFlyer parameters
  */
-internal fun mapProductEvent(properties: JsonObject?, appsFlyerEventProps: MutableMap<String, Any>) {
+private fun mapProductEvent(properties: JsonObject?, appsFlyerEventProps: MutableMap<String, Any>) {
     properties?.getTypedValue(ECommerceParamNames.PRICE)?.let { price ->
         appsFlyerEventProps[AFInAppEventParameterName.PRICE] = price
     }
@@ -177,7 +161,7 @@ internal fun mapProductEvent(properties: JsonObject?, appsFlyerEventProps: Mutab
 /**
  * Maps product list viewed event properties to AppsFlyer parameters
  */
-internal fun mapProductListViewedEvent(properties: JsonObject?, appsFlyerEventProps: MutableMap<String, Any>) {
+private fun mapProductListViewedEvent(properties: JsonObject?, appsFlyerEventProps: MutableMap<String, Any>) {
     properties?.getTypedValue(ECommerceParamNames.CATEGORY)?.let { category ->
         appsFlyerEventProps[AFInAppEventParameterName.CONTENT_TYPE] = category
     }
@@ -204,7 +188,7 @@ private fun extractProductIds(properties: JsonObject?, appsFlyerEventProps: Muta
 /**
  * Maps checkout event properties to AppsFlyer parameters
  */
-internal fun mapCheckoutEvent(properties: JsonObject?, appsFlyerEventProps: MutableMap<String, Any>) {
+private fun mapCheckoutEvent(properties: JsonObject?, appsFlyerEventProps: MutableMap<String, Any>) {
     properties?.getTypedValue(ECommerceParamNames.TOTAL)?.let { total ->
         appsFlyerEventProps[AFInAppEventParameterName.PRICE] = total
     }
@@ -217,7 +201,7 @@ internal fun mapCheckoutEvent(properties: JsonObject?, appsFlyerEventProps: Muta
 /**
  * Maps order completed event properties to AppsFlyer parameters
  */
-internal fun mapOrderCompletedEvent(properties: JsonObject?, appsFlyerEventProps: MutableMap<String, Any>) {
+private fun mapOrderCompletedEvent(properties: JsonObject?, appsFlyerEventProps: MutableMap<String, Any>) {
     properties?.getTypedValue(ECommerceParamNames.TOTAL)?.let { total ->
         appsFlyerEventProps[AFInAppEventParameterName.PRICE] = total
     }
@@ -237,7 +221,7 @@ internal fun mapOrderCompletedEvent(properties: JsonObject?, appsFlyerEventProps
 /**
  * Maps promotion event properties to AppsFlyer parameters
  */
-internal fun mapPromotionEvent(properties: JsonObject?, appsFlyerEventProps: MutableMap<String, Any>) {
+private fun mapPromotionEvent(properties: JsonObject?, appsFlyerEventProps: MutableMap<String, Any>) {
     properties?.getTypedValue(CREATIVE)?.let { creative ->
         appsFlyerEventProps[AFInAppEventParameterName.AD_REVENUE_AD_TYPE] = creative
     }
@@ -288,7 +272,7 @@ private fun setProductArrays(
 /**
  * Attaches all custom properties while filtering reserved keywords
  */
-internal fun attachAllCustomProperties(appsFlyerEventProps: MutableMap<String, Any>, properties: JsonObject?) {
+internal fun mapCustomPropertiesToAppsFlyer(properties: JsonObject?, appsFlyerEventProps: MutableMap<String, Any>) {
     properties?.let { props ->
         props.keys.forEach { key ->
             processCustomProperty(key, props[key], appsFlyerEventProps)
