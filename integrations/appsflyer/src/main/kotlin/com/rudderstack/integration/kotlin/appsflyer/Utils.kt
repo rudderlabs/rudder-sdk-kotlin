@@ -287,7 +287,7 @@ private fun processCustomProperty(key: String, value: JsonElement?, appsFlyerEve
     }
 }
 
-private fun shouldIncludeProperty(key: String, value: Any?): Boolean {
+private fun shouldIncludeProperty(key: String, value: JsonElement?): Boolean {
     return key !in TRACK_RESERVED_KEYWORDS && key.isNotEmpty() && value != null
 }
 
