@@ -1,20 +1,10 @@
-# AppsFlyer Integration for RudderStack Kotlin SDK
+# AppsFlyer Integration
 
 The AppsFlyer integration allows you to send your event data from RudderStack to AppsFlyer for mobile attribution and analytics. This integration supports all major RudderStack event types and automatically maps them to appropriate AppsFlyer events.
 
-## Supported Native AppsFlyer Version
+## Installation
 
-This integration supports AppsFlyer Android SDK versions:
-
-```
-[6.10.1, 7.0)
-```
-
-## Installation and Usage
-
-### 1. Add Dependency
-
-Add the AppsFlyer integration dependency and AppsFlyer dependency to your app's `build.gradle.kts`:
+Add the AppsFlyer Integration and AppsFlyer's dependencies to your app's `build.gradle.kts`:
 
 ```kotlin
 dependencies {
@@ -22,15 +12,24 @@ dependencies {
     implementation("com.rudderstack.sdk.kotlin:android:<latest_version>")
     
     // Add the AppsFlyer integration
-    implementation("com.rudderstack.sdk.kotlin:appsflyer:<latest_version>")
+    implementation("com.rudderstack.integration.kotlin:appsflyer:<latest_version>")
 
+    // AppsFlyer Android SDK
     implementation ("com.appsflyer:af-android-sdk:<latest_version>")
 }
 ```
 
-### 2. Initialise AppsFlyer SDK in Application Class
+## Supported Native AppsFlyer Version
 
-Initialize Appsflyer SDK in the Application class before initializing the Rudder SDK as shown below
+This integration supports AppsFlyer Android SDK version:
+
+```
+6.17.0
+```
+
+## Usage
+
+Initialize Appsflyer SDK in the Application class before initializing the Rudder SDK as shown below. Then, initialize the RudderStack SDK and add the AppsFlyer integration.
 
 ```kotlin
 import com.appsflyer.AppsFlyerLib
@@ -49,36 +48,6 @@ class MyApplication : Application() {
         AppsFlyerLib.getInstance().start(this)
 
         // Initialize RudderStack SDK
-        //            ...
-
-        // Add AppsFlyer integration
-        //            ...
-    }
-}
-
-
-```
-
-### 3. Initialize the Integration
-
-Initialize the RudderStack SDK and add the AppsFlyer integration:
-
-```kotlin
-import com.rudderstack.integration.kotlin.appsflyer.AppsFlyerIntegration
-import com.rudderstack.sdk.kotlin.android.Analytics
-import com.rudderstack.sdk.kotlin.android.Configuration
-
-class MyApplication : Application() {
-
-    lateinit var analytics: Analytics
-
-    override fun onCreate() {
-        super.onCreate()
-
-        // Initialize AppsFlyer SDK
-        // ... (as shown above)
-        
-        // Initialize RudderStack SDK
         analytics = Analytics(
             configuration = Configuration(
                 writeKey = "<WRITE_KEY>",
@@ -86,9 +55,11 @@ class MyApplication : Application() {
                 dataPlaneUrl = "<DATA_PLANE_URL>",
             )
         )
-        
+
         // Add AppsFlyer integration
         analytics.add(AppsFlyerIntegration())
     }
 }
+
+
 ```
