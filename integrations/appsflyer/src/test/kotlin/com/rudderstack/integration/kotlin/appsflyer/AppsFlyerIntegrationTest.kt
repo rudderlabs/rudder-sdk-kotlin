@@ -26,6 +26,7 @@ import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -67,7 +68,7 @@ class AppsFlyerIntegrationTest {
 
     @Test
     fun `given integration key, when key is accessed, then returns correct key`() {
-        assert(appsFlyerIntegration.key == APPSFLYER_KEY)
+        Assertions.assertEquals(APPSFLYER_KEY, appsFlyerIntegration.key)
     }
 
     @Test
@@ -77,7 +78,7 @@ class AppsFlyerIntegrationTest {
 
         val instance = appsFlyerIntegration.getDestinationInstance()
 
-        assert(instance == mockAppsFlyerLib)
+        Assertions.assertEquals(mockAppsFlyerLib, instance)
     }
 
     @Test
@@ -287,7 +288,7 @@ class AppsFlyerIntegrationTest {
         appsFlyerIntegration.update(buildJsonObject { put("useRichEventName", true) })
 
         // Verify instance is the same
-        assert(appsFlyerIntegration.getDestinationInstance() == originalInstance)
+        Assertions.assertEquals(originalInstance, appsFlyerIntegration.getDestinationInstance())
 
         // Verify new configuration is applied
         val screenEvent = ScreenEvent("Home", emptyJsonObject)

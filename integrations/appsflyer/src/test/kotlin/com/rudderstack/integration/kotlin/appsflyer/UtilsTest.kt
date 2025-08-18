@@ -8,6 +8,7 @@ import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.put
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
@@ -25,7 +26,7 @@ class UtilsTest {
     ) {
         val (eventName, _) = mapEventToAppsFlyer(rudderEvent, null)
 
-        assert(eventName == expectedAppsFlyerEvent)
+        Assertions.assertEquals(expectedAppsFlyerEvent, eventName)
     }
 
     @Test
@@ -34,7 +35,7 @@ class UtilsTest {
 
         val (eventName, _) = mapEventToAppsFlyer(customEvent, null)
 
-        assert(eventName == "my_custom_event")
+        Assertions.assertEquals("my_custom_event", eventName)
     }
 
     // ===== PROPERTY MAPPING TESTING =====
@@ -47,8 +48,8 @@ class UtilsTest {
 
         val (eventName, eventProps) = mapEventToAppsFlyer(ECommerceEvents.PRODUCTS_SEARCHED, properties)
 
-        assert(eventName == AFInAppEventType.SEARCH)
-        assert(eventProps[AFInAppEventParameterName.SEARCH_STRING] == "laptop")
+        Assertions.assertEquals(AFInAppEventType.SEARCH, eventName)
+        Assertions.assertEquals("laptop", eventProps[AFInAppEventParameterName.SEARCH_STRING])
     }
 
     @Test
@@ -62,11 +63,11 @@ class UtilsTest {
 
         val (eventName, eventProps) = mapEventToAppsFlyer(ECommerceEvents.PRODUCT_VIEWED, properties)
 
-        assert(eventName == AFInAppEventType.CONTENT_VIEW)
-        assert(eventProps[AFInAppEventParameterName.CONTENT_ID] == "prod123")
-        assert(eventProps[AFInAppEventParameterName.PRICE] == 29.99)
-        assert(eventProps[AFInAppEventParameterName.CONTENT_TYPE] == "Electronics")
-        assert(eventProps[AFInAppEventParameterName.CURRENCY] == "USD")
+        Assertions.assertEquals(AFInAppEventType.CONTENT_VIEW, eventName)
+        Assertions.assertEquals("prod123", eventProps[AFInAppEventParameterName.CONTENT_ID])
+        Assertions.assertEquals(29.99, eventProps[AFInAppEventParameterName.PRICE])
+        Assertions.assertEquals("Electronics", eventProps[AFInAppEventParameterName.CONTENT_TYPE])
+        Assertions.assertEquals("USD", eventProps[AFInAppEventParameterName.CURRENCY])
     }
 
     @Test
@@ -80,12 +81,12 @@ class UtilsTest {
 
         val (eventName, eventProps) = mapEventToAppsFlyer(ECommerceEvents.ORDER_COMPLETED, properties)
 
-        assert(eventName == AFInAppEventType.PURCHASE)
-        assert(eventProps[AFInAppEventParameterName.RECEIPT_ID] == "order123")
-        assert(eventProps["af_order_id"] == "order123")
-        assert(eventProps[AFInAppEventParameterName.PRICE] == 99.99)
-        assert(eventProps[AFInAppEventParameterName.REVENUE] == 89.99)
-        assert(eventProps[AFInAppEventParameterName.CURRENCY] == "USD")
+        Assertions.assertEquals(AFInAppEventType.PURCHASE, eventName)
+        Assertions.assertEquals("order123", eventProps[AFInAppEventParameterName.RECEIPT_ID])
+        Assertions.assertEquals("order123", eventProps["af_order_id"])
+        Assertions.assertEquals(99.99, eventProps[AFInAppEventParameterName.PRICE])
+        Assertions.assertEquals(89.99, eventProps[AFInAppEventParameterName.REVENUE])
+        Assertions.assertEquals("USD", eventProps[AFInAppEventParameterName.CURRENCY])
     }
 
     // ===== COMPREHENSIVE PROPERTY MAPPING TESTING =====
@@ -98,8 +99,8 @@ class UtilsTest {
 
         val (eventName, eventProps) = mapEventToAppsFlyer("first_purchase", properties)
 
-        assert(eventName == "first_purchase")
-        assert(eventProps[AFInAppEventParameterName.PRICE] == 49.99)
+        Assertions.assertEquals("first_purchase", eventName)
+        Assertions.assertEquals(49.99, eventProps[AFInAppEventParameterName.PRICE])
     }
 
     @Test
@@ -121,12 +122,12 @@ class UtilsTest {
 
         val (eventName, eventProps) = mapEventToAppsFlyer(ECommerceEvents.PRODUCT_LIST_VIEWED, properties)
 
-        assert(eventName == AFInAppEventType.LIST_VIEW)
-        assert(eventProps[AFInAppEventParameterName.CONTENT_TYPE] == "Electronics")
+        Assertions.assertEquals(AFInAppEventType.LIST_VIEW, eventName)
+        Assertions.assertEquals("Electronics", eventProps[AFInAppEventParameterName.CONTENT_TYPE])
         val contentList = eventProps[AFInAppEventParameterName.CONTENT_LIST] as Array<*>
-        assert(contentList.size == 2)
-        assert(contentList[0] == "prod1")
-        assert(contentList[1] == "prod2")
+        Assertions.assertEquals(2, contentList.size)
+        Assertions.assertEquals("prod1", contentList[0])
+        Assertions.assertEquals("prod2", contentList[1])
     }
 
     @Test
@@ -138,9 +139,9 @@ class UtilsTest {
 
         val (eventName, eventProps) = mapEventToAppsFlyer(ECommerceEvents.PROMOTION_VIEWED, properties)
 
-        assert(eventName == AFInAppEventType.AD_VIEW)
-        assert(eventProps[AFInAppEventParameterName.AD_REVENUE_AD_TYPE] == "banner_ad")
-        assert(eventProps[AFInAppEventParameterName.CURRENCY] == "USD")
+        Assertions.assertEquals(AFInAppEventType.AD_VIEW, eventName)
+        Assertions.assertEquals("banner_ad", eventProps[AFInAppEventParameterName.AD_REVENUE_AD_TYPE])
+        Assertions.assertEquals("USD", eventProps[AFInAppEventParameterName.CURRENCY])
     }
 
     @Test
@@ -151,8 +152,8 @@ class UtilsTest {
 
         val (eventName, eventProps) = mapEventToAppsFlyer(ECommerceEvents.PRODUCT_SHARED, properties)
 
-        assert(eventName == AFInAppEventType.SHARE)
-        assert(eventProps[AFInAppEventParameterName.DESCRIPTION] == "Check out this product!")
+        Assertions.assertEquals(AFInAppEventType.SHARE, eventName)
+        Assertions.assertEquals("Check out this product!", eventProps[AFInAppEventParameterName.DESCRIPTION])
     }
 
     @Test
@@ -164,9 +165,9 @@ class UtilsTest {
 
         val (eventName, eventProps) = mapEventToAppsFlyer(ECommerceEvents.PRODUCT_REVIEWED, properties)
 
-        assert(eventName == AFInAppEventType.RATE)
-        assert(eventProps[AFInAppEventParameterName.CONTENT_ID] == "prod123")
-        assert(eventProps[AFInAppEventParameterName.RATING_VALUE] == 4.5)
+        Assertions.assertEquals(AFInAppEventType.RATE, eventName)
+        Assertions.assertEquals("prod123", eventProps[AFInAppEventParameterName.CONTENT_ID])
+        Assertions.assertEquals(4.5, eventProps[AFInAppEventParameterName.RATING_VALUE])
     }
 
     @Test
@@ -179,10 +180,10 @@ class UtilsTest {
 
         val (eventName, eventProps) = mapEventToAppsFlyer(ECommerceEvents.PRODUCT_ADDED, properties)
 
-        assert(eventName == AFInAppEventType.ADD_TO_CART)
-        assert(eventProps[AFInAppEventParameterName.CONTENT_ID] == "prod123")
-        assert(eventProps[AFInAppEventParameterName.QUANTITY] == 2)
-        assert(eventProps[AFInAppEventParameterName.PRICE] == 29.99)
+        Assertions.assertEquals(AFInAppEventType.ADD_TO_CART, eventName)
+        Assertions.assertEquals("prod123", eventProps[AFInAppEventParameterName.CONTENT_ID])
+        Assertions.assertEquals(2, eventProps[AFInAppEventParameterName.QUANTITY])
+        Assertions.assertEquals(29.99, eventProps[AFInAppEventParameterName.PRICE])
     }
 
     // ===== TRACK_RESERVED_KEYWORDS TESTING =====
@@ -206,12 +207,12 @@ class UtilsTest {
         )
 
         expectedKeywords.forEach { keyword ->
-            assert(TRACK_RESERVED_KEYWORDS.contains(keyword)) {
+            Assertions.assertTrue(TRACK_RESERVED_KEYWORDS.contains(keyword)) {
                 "Expected '$keyword' to be in TRACK_RESERVED_KEYWORDS"
             }
         }
 
-        assert(TRACK_RESERVED_KEYWORDS.size == expectedKeywords.size) {
+        Assertions.assertEquals(expectedKeywords.size, TRACK_RESERVED_KEYWORDS.size) {
             "TRACK_RESERVED_KEYWORDS size mismatch. Expected ${expectedKeywords.size}, got ${TRACK_RESERVED_KEYWORDS.size}"
         }
     }
@@ -236,7 +237,7 @@ class UtilsTest {
 
         mapCustomPropertiesToAppsFlyer(properties, eventProps)
 
-        assert(eventProps.isEmpty()) {
+        Assertions.assertTrue(eventProps.isEmpty()) {
             "Expected no properties to be added, but found: ${eventProps.keys}"
         }
     }
@@ -263,19 +264,19 @@ class UtilsTest {
 
         // Assert reserved keywords are NOT present
         TRACK_RESERVED_KEYWORDS.forEach { keyword ->
-            assert(!eventProps.containsKey(keyword)) {
+            Assertions.assertFalse(eventProps.containsKey(keyword)) {
                 "Reserved keyword '$keyword' should not be present in eventProps"
             }
         }
 
         // Assert custom properties ARE present
-        assert(eventProps["custom_field"] == "custom_value")
-        assert(eventProps["user_preference"] == "dark_mode")
-        assert(eventProps["campaign_source"] == "email")
-        assert(eventProps["special_offer"] == true)
-        assert(eventProps["discount_amount"] == 5.00)
+        Assertions.assertEquals("custom_value", eventProps["custom_field"])
+        Assertions.assertEquals("dark_mode", eventProps["user_preference"])
+        Assertions.assertEquals("email", eventProps["campaign_source"])
+        Assertions.assertEquals(true, eventProps["special_offer"])
+        Assertions.assertEquals(5.00, eventProps["discount_amount"])
 
-        assert(eventProps.size == 5) {
+        Assertions.assertEquals(5, eventProps.size) {
             "Expected 5 custom properties, but found ${eventProps.size}"
         }
     }
@@ -291,13 +292,13 @@ class UtilsTest {
 
             mapCustomPropertiesToAppsFlyer(properties, eventProps)
 
-            assert(!eventProps.containsKey(keyword)) {
+            Assertions.assertFalse(eventProps.containsKey(keyword)) {
                 "Reserved keyword '$keyword' should be filtered out"
             }
-            assert(eventProps["custom_prop"] == "custom_value") {
+            Assertions.assertEquals("custom_value", eventProps["custom_prop"]) {
                 "Custom property should be included when testing keyword '$keyword'"
             }
-            assert(eventProps.size == 1) {
+            Assertions.assertEquals(1, eventProps.size) {
                 "Expected only 1 custom property when testing keyword '$keyword', but found ${eventProps.size}"
             }
         }
@@ -320,13 +321,13 @@ class UtilsTest {
         mapCustomPropertiesToAppsFlyer(properties, eventProps)
 
         // The PRODUCTS key itself should be filtered as it's a reserved keyword
-        assert(!eventProps.containsKey(ECommerceParamNames.PRODUCTS)) {
+        Assertions.assertFalse(eventProps.containsKey(ECommerceParamNames.PRODUCTS)) {
             "PRODUCTS should be filtered as it's a reserved keyword"
         }
-        assert(eventProps["custom_metadata"] == "test_value") {
+        Assertions.assertEquals("test_value", eventProps["custom_metadata"]) {
             "Custom property should be included"
         }
-        assert(eventProps.size == 1) {
+        Assertions.assertEquals(1, eventProps.size) {
             "Expected only 1 custom property, but found ${eventProps.size}"
         }
     }
@@ -344,11 +345,11 @@ class UtilsTest {
 
         mapCustomPropertiesToAppsFlyer(properties, eventProps)
 
-        assert(!eventProps.containsKey(ECommerceParamNames.PRICE))
-        assert(!eventProps.containsKey(ECommerceParamNames.CURRENCY))
-        assert(eventProps["empty_string"] == "") // Empty strings are preserved in current implementation
-        assert(eventProps["valid_prop"] == "valid_value")
-        assert(eventProps.size == 2) // valid_prop + empty_string
+        Assertions.assertFalse(eventProps.containsKey(ECommerceParamNames.PRICE))
+        Assertions.assertFalse(eventProps.containsKey(ECommerceParamNames.CURRENCY))
+        Assertions.assertEquals("", eventProps["empty_string"]) // Empty strings are preserved in current implementation
+        Assertions.assertEquals("valid_value", eventProps["valid_prop"])
+        Assertions.assertEquals(2, eventProps.size) // valid_prop + empty_string
     }
 
     // ===== EXISTING TESTS CONTINUE =====
@@ -357,7 +358,7 @@ class UtilsTest {
     fun `given null JsonObject, when toMutableMap is called, then returns empty map`() {
         val map = null.toMutableMap()
 
-        assert(map.isEmpty())
+        Assertions.assertTrue(map.isEmpty())
     }
 
     @Test
@@ -383,9 +384,9 @@ class UtilsTest {
 
         val productIds = eventProps[AFInAppEventParameterName.CONTENT_ID] as Array<*>
 
-        assert(productIds.size == 2)
-        assert(productIds.contains("prod1"))
-        assert(productIds.contains("prod2"))
+        Assertions.assertEquals(2, productIds.size)
+        Assertions.assertTrue(productIds.contains("prod1"))
+        Assertions.assertTrue(productIds.contains("prod2"))
     }
 
     companion object {
@@ -429,15 +430,15 @@ class UtilsTest {
 
         val map = jsonObject.toMutableMap()
 
-        assert(map["string_prop"] == "value")
-        assert(map["number_prop"] == 42)
-        assert(map["long_prop"] == 15000000000L)
-        assert(map["boolean_prop"] == true)
-        assert(map["double_prop"] == 19.99)
-        assert(map["nested_object"] is Map<*, *>)
+        Assertions.assertEquals("value", map["string_prop"])
+        Assertions.assertEquals(42, map["number_prop"])
+        Assertions.assertEquals(15000000000L, map["long_prop"])
+        Assertions.assertEquals(true, map["boolean_prop"])
+        Assertions.assertEquals(19.99, map["double_prop"])
+        Assertions.assertTrue(map["nested_object"] is Map<*, *>)
         val nestedObject = map["nested_object"] as Map<*, *>
-        assert(nestedObject["nested_key"] == "nested_value")
-        assert(nestedObject["nested_number"] == 100)
+        Assertions.assertEquals("nested_value", nestedObject["nested_key"])
+        Assertions.assertEquals(100, nestedObject["nested_number"])
     }
 
     @Test
@@ -457,13 +458,13 @@ class UtilsTest {
         val map = jsonObject.toMutableMap()
 
         val stringArray = map["string_array"] as List<*>
-        assert(stringArray.size == 2)
-        assert(stringArray[0] == "item1")
-        assert(stringArray[1] == "item2")
+        Assertions.assertEquals(2, stringArray.size)
+        Assertions.assertEquals("item1", stringArray[0])
+        Assertions.assertEquals("item2", stringArray[1])
 
         val numberArray = map["number_array"] as List<*>
-        assert(numberArray.size == 3)
-        assert(numberArray.containsAll(listOf(1, 2, 3)))
+        Assertions.assertEquals(3, numberArray.size)
+        Assertions.assertTrue(numberArray.containsAll(listOf(1, 2, 3)))
     }
 
     // ===== EDGE CASE TESTING =====
@@ -473,10 +474,10 @@ class UtilsTest {
         val (eventName1, eventProps1) = mapEventToAppsFlyer("custom_event", null)
         val (eventName2, eventProps2) = mapEventToAppsFlyer("custom_event", buildJsonObject { })
 
-        assert(eventName1 == "custom_event")
-        assert(eventProps1.isEmpty())
-        assert(eventName2 == "custom_event")
-        assert(eventProps2.isEmpty())
+        Assertions.assertEquals("custom_event", eventName1)
+        Assertions.assertTrue(eventProps1.isEmpty())
+        Assertions.assertEquals("custom_event", eventName2)
+        Assertions.assertTrue(eventProps2.isEmpty())
     }
 
     @Test
@@ -487,10 +488,10 @@ class UtilsTest {
 
         val (eventName, eventProps) = mapEventToAppsFlyer(ECommerceEvents.PRODUCT_VIEWED, properties)
 
-        assert(eventName == AFInAppEventType.CONTENT_VIEW)
+        Assertions.assertEquals(AFInAppEventType.CONTENT_VIEW, eventName)
         // Should not contain the mapping fields since they weren't provided
-        assert(!eventProps.containsKey(AFInAppEventParameterName.CONTENT_ID))
-        assert(!eventProps.containsKey(AFInAppEventParameterName.PRICE))
+        Assertions.assertFalse(eventProps.containsKey(AFInAppEventParameterName.CONTENT_ID))
+        Assertions.assertFalse(eventProps.containsKey(AFInAppEventParameterName.PRICE))
     }
 
     // ===== SPECIAL CHARACTER AND EVENT NAME TESTING =====
@@ -506,7 +507,7 @@ class UtilsTest {
 
         testCases.forEach { (input, expected) ->
             val (eventName, _) = mapEventToAppsFlyer(input, null)
-            assert(eventName == expected) { "Expected '$expected' but got '$eventName' for input '$input'" }
+            Assertions.assertEquals(expected, eventName) { "Expected '$expected' but got '$eventName' for input '$input'" }
         }
     }
 
@@ -534,9 +535,9 @@ class UtilsTest {
         handleProducts(properties, eventProps)
 
         val productIds = eventProps[AFInAppEventParameterName.CONTENT_ID] as Array<*>
-        assert(productIds.size == 2)
-        assert(productIds.contains("prod1"))
-        assert(productIds.contains("prod2"))
+        Assertions.assertEquals(2, productIds.size)
+        Assertions.assertTrue(productIds.contains("prod1"))
+        Assertions.assertTrue(productIds.contains("prod2"))
     }
 
 }
