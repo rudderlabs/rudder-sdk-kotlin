@@ -15,12 +15,14 @@ import com.rudderstack.sdk.kotlin.android.utils.isString
 import com.rudderstack.sdk.kotlin.core.ecommerce.ECommerceEvents
 import com.rudderstack.sdk.kotlin.core.ecommerce.ECommerceParamNames
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonObject
 
 private const val MAX_KEY_LENGTH = 40
 private const val MAX_PROPERTY_VALUE_LENGTH = 100
@@ -146,3 +148,12 @@ internal fun getString(value: JsonElement?, maxLength: Int): String {
 
     return stringValue.take(maxLength)
 }
+
+/**
+ * Extension property that safely accesses the traits JsonObject from an IdentifyEvent.
+ * Retrieves the "traits" object from the event's context and converts it to a JsonObject.
+ *
+ * @return JsonObject containing the traits if present in context, null otherwise
+ */
+internal val IdentifyEvent.traits: JsonObject?
+    get() = this.context["traits"]?.jsonObject
