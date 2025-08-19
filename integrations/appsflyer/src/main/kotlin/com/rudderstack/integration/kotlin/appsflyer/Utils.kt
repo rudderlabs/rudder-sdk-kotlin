@@ -8,7 +8,6 @@ import com.rudderstack.sdk.kotlin.android.utils.getArray
 import com.rudderstack.sdk.kotlin.core.ecommerce.ECommerceEvents
 import com.rudderstack.sdk.kotlin.core.ecommerce.ECommerceParamNames
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
-import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
@@ -285,7 +284,7 @@ internal fun mapCustomPropertiesToAppsFlyer(properties: JsonObject?, appsFlyerEv
 private fun processCustomProperty(key: String, value: JsonElement?, appsFlyerEventProps: MutableMap<String, Any>) {
     if (shouldIncludeProperty(key, value)) {
         val processedValue = extractValue(value)
-        appsFlyerEventProps[key] = processedValue ?: String.empty()
+        processedValue?.let { appsFlyerEventProps[key] = it }
     }
 }
 
