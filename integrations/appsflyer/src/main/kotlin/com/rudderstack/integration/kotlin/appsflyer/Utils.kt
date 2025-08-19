@@ -7,6 +7,7 @@ import com.appsflyer.AFInAppEventType
 import com.rudderstack.sdk.kotlin.android.utils.getArray
 import com.rudderstack.sdk.kotlin.core.ecommerce.ECommerceEvents
 import com.rudderstack.sdk.kotlin.core.ecommerce.ECommerceParamNames
+import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -19,6 +20,7 @@ import kotlinx.serialization.json.double
 import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.long
 import kotlinx.serialization.json.longOrNull
 
@@ -346,3 +348,12 @@ internal fun JsonObject?.toMutableMap(): MutableMap<String, Any> {
     }
     return map
 }
+
+/**
+ * Extension property that safely accesses the traits JsonObject from an IdentifyEvent.
+ * Retrieves the "traits" object from the event's context and converts it to a JsonObject.
+ *
+ * @return JsonObject containing the traits if present in context, null otherwise
+ */
+internal val IdentifyEvent.traits: JsonObject?
+    get() = this.context["traits"]?.jsonObject

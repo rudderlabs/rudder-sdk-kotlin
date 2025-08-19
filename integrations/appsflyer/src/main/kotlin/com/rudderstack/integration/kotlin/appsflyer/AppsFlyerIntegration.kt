@@ -60,7 +60,7 @@ class AppsFlyerIntegration : StandardIntegration, IntegrationPlugin() {
             .takeIf { it.isNotEmpty() }
             ?.let { appsFlyerInstance?.setCustomerUserId(it) }
 
-        analytics.traits
+        payload.traits
             ?.get(EMAIL)
             ?.getString()
             ?.takeIf { it.isNotEmpty() }
