@@ -5,6 +5,7 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.serialization.json.JsonObject
 
 fun mockAnalytics(testScope: TestScope, testDispatcher: TestDispatcher): Analytics {
     val mockAnalytics = mockk<Analytics>(relaxed = true)
@@ -18,4 +19,8 @@ fun mockAnalytics(testScope: TestScope, testDispatcher: TestDispatcher): Analyti
     }
 
     return mockAnalytics
+}
+
+infix fun JsonObject.mergeWithHigherPriorityTo(other: JsonObject): JsonObject {
+    return JsonObject(this.toMap() + other.toMap())
 }

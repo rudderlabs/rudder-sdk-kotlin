@@ -102,7 +102,9 @@ class AppsFlyerIntegrationTest {
         }
         val identifyEvent = IdentifyEvent()
         identifyEvent.userId = "user123"
-        every { mockAnalytics.traits } returns traits
+        identifyEvent.context = identifyEvent.context mergeWithHigherPriorityTo buildJsonObject {
+            put("traits", traits)
+        }
 
         appsFlyerIntegration.identify(identifyEvent)
 
@@ -227,7 +229,7 @@ class AppsFlyerIntegrationTest {
         appsFlyerIntegration.create(emptyJsonObject)
         val identifyEvent = IdentifyEvent()
         identifyEvent.userId = "user123"
-        every { mockAnalytics.traits } returns buildJsonObject {
+        identifyEvent.context = identifyEvent.context mergeWithHigherPriorityTo buildJsonObject {
             put("email", "")
         }
 
