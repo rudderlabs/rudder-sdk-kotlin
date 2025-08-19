@@ -48,6 +48,16 @@ object RudderStackBuildConfig {
             override val pomPackaging = "aar"
         }
 
+        object AppsFlyer : IntegrationModuleInfo {
+
+            override val moduleName: String = "appsflyer"
+            override val versionName: String = "1.0.0"
+            override val versionCode: String = "1"
+
+            override val artifactId = "appsflyer"
+            override val pomPackaging = "aar"
+        }
+
         object Braze : IntegrationModuleInfo {
 
             override val moduleName: String = "braze"

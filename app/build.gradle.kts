@@ -94,7 +94,7 @@ dependencies {
     // RudderStack Integrations
     // implementation(project(":integrations:adjust"))
     // implementation(project(":integrations:braze")) // This requires minimum Sdk version of 25 and above.
-
+    // implementation(project(":integrations:appsflyer"))
     //compose
     implementation(libs.ui)
     implementation(libs.ui.tooling.preview)
