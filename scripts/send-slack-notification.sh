@@ -73,7 +73,7 @@ EOF
       "type": "section",
       "text": {
         "type": "mrkdwn",
-        "text": "🚨 *Failed Checks:*\n$failed_checks\n\n💡 *Quick Fixes:*\n• **PR Title**: Use lowercase after colon (e.g., \`chore: fix issue\`)\n• **SonarCloud**: Address code quality/security issues\n• **Detekt/Lint**: Fix code style issues\n• **Tests**: Ensure all unit tests pass\n• **Build**: Check compilation errors\n\n<https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID|View Workflow Details>"
+        "text": "🚨 *Failed Checks:*\n$failed_checks\n\n<https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID|View Workflow Details>"
       }
     }
 EOF
