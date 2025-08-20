@@ -39,7 +39,7 @@ EOF
 # Function to generate PR validation payload
 generate_pr_payload() {
     local status="$1"
-    local built_modules="$2"
+    local failed_checks="$2"
     local has_artifacts="$3"
     local status_emoji
     
@@ -64,8 +64,25 @@ generate_pr_payload() {
 EOF
 )
     
-    # Add artifacts section if available
-    if [ "$has_artifacts" = "true" ] && [ -n "$built_modules" ]; then
+    # Add failure details section if there are failed checks
+    if [ "$status" = "failed" ] && [ -n "$failed_checks" ]; then
+        local failure_section
+        failure_section=$(cat << EOF
+,
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "🚨 *Failed Checks:*\n$failed_checks\n\n💡 *Quick Fixes:*\n• **PR Title**: Use lowercase after colon (e.g., \`chore: fix issue\`)\n• **SonarCloud**: Address code quality/security issues\n• **Detekt/Lint**: Fix code style issues\n• **Tests**: Ensure all unit tests pass\n• **Build**: Check compilation errors\n\n<https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID|View Workflow Details>"
+      }
+    }
+EOF
+)
+        base_payload="${base_payload}${failure_section}"
+    fi
+
+    # Add artifacts section if available (for successful builds)
+    if [ "$status" = "passed" ] && [ "$has_artifacts" = "true" ] && [ -n "$failed_checks" ]; then
         local artifacts_section
         artifacts_section=$(cat << EOF
 ,
@@ -73,7 +90,7 @@ EOF
       "type": "section",
       "text": {
         "type": "mrkdwn",
-        "text": "📦 *Generated AARs/JARs:*\nBuilt modules: $built_modules\n<https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID|Download Library AARs>"
+        "text": "📦 *Generated AARs/JARs:*\nBuilt modules: $failed_checks\n<https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID|Download Library AARs>"
       }
     }
 EOF
@@ -120,23 +137,23 @@ send_notification() {
 main() {
     local workflow_type="$1"
     local status="$2"
-    local built_modules="$3"
+    local failed_checks_or_modules="$3"
     local has_artifacts="$4"
-    
+
     echo "📢 Preparing Slack notification..."
     echo "Workflow type: $workflow_type"
     echo "Status: $status"
-    echo "Built modules: $built_modules"
+    echo "Failed checks/Built modules: $failed_checks_or_modules"
     echo "Has artifacts: $has_artifacts"
     echo ""
-    
+
     local payload
     case "$workflow_type" in
         "branch")
             payload=$(generate_branch_payload "$status")
             ;;
         "pr")
-            payload=$(generate_pr_payload "$status" "$built_modules" "$has_artifacts")
+            payload=$(generate_pr_payload "$status" "$failed_checks_or_modules" "$has_artifacts")
             ;;
         *)
             echo "❌ Unknown workflow type: $workflow_type"
