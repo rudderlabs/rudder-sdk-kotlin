@@ -81,8 +81,8 @@ object RudderStackBuildConfig {
         object Firebase : IntegrationModuleInfo {
 
             override val moduleName: String = "firebase"
-            override val versionName: String = "1.0.0"
-            override val versionCode: String = "1"
+            override val versionName: String = "1.0.1"
+            override val versionCode: String = "2"
 
             override val artifactId = "firebase"
             override val pomPackaging = "aar"
