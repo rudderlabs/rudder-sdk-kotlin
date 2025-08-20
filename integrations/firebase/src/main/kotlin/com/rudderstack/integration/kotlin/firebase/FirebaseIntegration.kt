@@ -71,7 +71,7 @@ class FirebaseIntegration : StandardIntegration, IntegrationPlugin() {
                 firebaseAnalytics?.setUserId(it)
             }
 
-        payload.traits?.onEach { (key, value) ->
+        payload.traits?.forEach { (key, value) ->
             if (key !in IDENTIFY_RESERVED_KEYWORDS && key != USER_ID_KEY) {
                 val firebaseCompatibleKey = formatFirebaseKey(key)
                 val stringValue = getString(value = value, maxLength = MAX_TRAITS_VALUE_LENGTH)
