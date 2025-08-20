@@ -197,6 +197,14 @@ jobs:
           # Pass failure information to the script (remove trailing newline)
           FAILED_CHECKS_CLEAN=$(echo -e "$FAILED_CHECKS" | sed 's/\\n$//')
           ./scripts/send-slack-notification.sh "pr" "$OVERALL_STATUS" "$FAILED_CHECKS_CLEAN" ""
+
+          # Fail the job if any required job failed
+          if [[ "$OVERALL_STATUS" == "failed" ]]; then
+            echo "❌ PR validation failed - one or more required checks failed"
+            exit 1
+          fi
+
+          echo "✅ All PR validation checks passed successfully"
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_EVENT_NUMBER: ${{ github.event.number }}
@@ -207,11 +215,3 @@ jobs:
           GITHUB_EVENT_PR_HTML_URL: ${{ github.event.pull_request.html_url }}
           GITHUB_RUN_ID: ${{ github.run_id }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-
-          # Fail the job if any required job failed
-          if [[ "$OVERALL_STATUS" == "failed" ]]; then
-            echo "❌ PR validation failed - one or more required checks failed"
-            exit 1
-          fi
-
-          echo "✅ All PR validation checks passed successfully"
