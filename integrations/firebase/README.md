@@ -12,7 +12,7 @@ dependencies {
     implementation("com.rudderstack.sdk.kotlin:android:<latest_version>")
     
     // Add the Firebase integration
-    implementation("com.rudderstack.sdk.kotlin:firebase:<latest_version>")
+    implementation("com.rudderstack.integration.kotlin:firebase:<latest_version>")
     
     // Required Firebase dependencies
     implementation(platform("com.google.firebase:firebase-bom:<latest_version>"))

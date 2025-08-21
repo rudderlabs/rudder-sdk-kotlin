@@ -5,6 +5,7 @@ private val PLATFORM_ADJUST = "adjust"
 private val PLATFORM_BRAZE = "braze"
 private val PLATFORM_FACEBOOK = "facebook"
 private val PLATFORM_FIREBASE = "firebase"
+private val PLATFORM_APPSFLYER = "appsflyer"
 
 fun getExtraString(name: String) = extra[name]?.toString()
 
@@ -18,6 +19,7 @@ fun getIntegrationModuleInfo(projectName: String) = when (projectName) {
     PLATFORM_BRAZE -> RudderStackBuildConfig.Integrations.Braze
     PLATFORM_FACEBOOK -> RudderStackBuildConfig.Integrations.Facebook
     PLATFORM_FIREBASE -> RudderStackBuildConfig.Integrations.Firebase
+    PLATFORM_APPSFLYER -> RudderStackBuildConfig.Integrations.AppsFlyer
     else -> throw IllegalArgumentException("Unknown module: $projectName")
 }
 

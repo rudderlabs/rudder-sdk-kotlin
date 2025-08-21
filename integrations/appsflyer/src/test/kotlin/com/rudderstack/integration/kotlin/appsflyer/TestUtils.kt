@@ -1,4 +1,4 @@
-package com.rudderstack.integration.kotlin.firebase
+package com.rudderstack.integration.kotlin.appsflyer
 
 import com.rudderstack.sdk.kotlin.android.Analytics
 import io.mockk.every
@@ -24,4 +24,3 @@ fun mockAnalytics(testScope: TestScope, testDispatcher: TestDispatcher): Analyti
 infix fun JsonObject.mergeWithHigherPriorityTo(other: JsonObject): JsonObject {
     return JsonObject(this.toMap() + other.toMap())
 }
-

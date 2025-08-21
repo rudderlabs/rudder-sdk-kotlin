@@ -71,14 +71,12 @@ class FirebaseIntegration : StandardIntegration, IntegrationPlugin() {
                 firebaseAnalytics?.setUserId(it)
             }
 
-        analytics.traits?.also { traits ->
-            traits.keys
-                .filterNot { it in IDENTIFY_RESERVED_KEYWORDS || it == USER_ID_KEY }
-                .forEach { key ->
-                    val firebaseCompatibleKey = formatFirebaseKey(key)
-                    val value = getString(value = traits[key], maxLength = MAX_TRAITS_VALUE_LENGTH)
-                    firebaseAnalytics?.setUserProperty(firebaseCompatibleKey, value)
-                }
+        payload.traits?.forEach { (key, value) ->
+            if (key !in IDENTIFY_RESERVED_KEYWORDS && key != USER_ID_KEY) {
+                val firebaseCompatibleKey = formatFirebaseKey(key)
+                val stringValue = getString(value = value, maxLength = MAX_TRAITS_VALUE_LENGTH)
+                firebaseAnalytics?.setUserProperty(firebaseCompatibleKey, stringValue)
+            }
         }
     }
 

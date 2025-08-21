@@ -93,7 +93,9 @@ class FirebaseIntegrationTest {
         }
         val identifyEvent = IdentifyEvent()
         identifyEvent.userId = userId
-        every { mockAnalytics.traits } returns traits
+        identifyEvent.context = identifyEvent.context mergeWithHigherPriorityTo buildJsonObject {
+            put("traits", traits)
+        }
 
         firebaseIntegration.identify(identifyEvent)
 
@@ -105,8 +107,10 @@ class FirebaseIntegrationTest {
     @Test
     fun `given identify event with different traits, when identify is called, then setUserProperty is called with stringify values`() {
         val traits = provideTraits()
-        every { mockAnalytics.traits } returns traits
         val identifyEvent = IdentifyEvent()
+        identifyEvent.context = identifyEvent.context mergeWithHigherPriorityTo buildJsonObject {
+            put("traits", traits)
+        }
 
         firebaseIntegration.identify(identifyEvent)
 
