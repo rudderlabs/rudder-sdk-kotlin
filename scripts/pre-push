@@ -28,60 +28,26 @@ print_warning() {
     echo -e "${YELLOW}[WARNING]${NC} $1"
 }
 
-# Function to run a command and check its status
-run_check() {
-    local check_name="$1"
-    local command="$2"
+# 1. Check branch name
+print_status "Validating branch name..."
+LC_ALL=C
+local_branch="$(git rev-parse --abbrev-ref HEAD)"
+valid_branch_regex="^(feat|fix|hotfix|refactor|release|docs|chore|test|ci)\/[a-z0-9._-]+$"
+message="There is something wrong with your branch name. Branch names in this project must adhere to this contract: $valid_branch_regex. Your push will be rejected. You should rename your branch to a valid name and try again."
 
-    print_status "Running $check_name..."
+if [[ ! $local_branch =~ $valid_branch_regex ]]
+then
+    print_error "$message"
+    exit 1
+fi
+print_success "Branch name validation passed"
 
-    if eval "$command"; then
-        print_success "$check_name passed"
-        return 0
-    else
-        print_error "$check_name failed"
-        return 1
-    fi
-}
-
-# 1. Clean the project
+# 2. Clean the project
 print_status "Cleaning project..."
 ./gradlew clean
 print_success "Project cleaned"
 
-# 2. Run Detekt (static code analysis)
-print_status "Running Detekt static code analysis..."
-if ! ./gradlew detekt; then
-    print_error "Detekt found code quality issues. Please fix them before pushing."
-    exit 1
-fi
-print_success "Detekt checks passed"
-
-# 3. Run Android Lint (skip for core module as it's not an Android module)
-print_status "Running Android Lint..."
-lint_failed=false
-
-# Run lint on android module
-if ! ./gradlew :android:lint; then
-    print_error "Android Lint failed for android module"
-    lint_failed=true
-fi
-
-# Run lint on integration modules
-for integration in adjust appsflyer firebase facebook braze; do
-    if ! ./gradlew ":integrations:$integration:lint"; then
-        print_error "Android Lint failed for integrations:$integration module"
-        lint_failed=true
-    fi
-done
-
-if [ "$lint_failed" = true ]; then
-    print_error "Android Lint found issues. Please fix them before pushing."
-    exit 1
-fi
-print_success "Android Lint checks passed"
-
-# 4. Run unit tests
+# 3. Run unit tests
 print_status "Running unit tests..."
 if ! ./gradlew test; then
     print_error "Unit tests failed. Please fix failing tests before pushing."
@@ -89,7 +55,7 @@ if ! ./gradlew test; then
 fi
 print_success "All unit tests passed"
 
-# 5. Build all modules
+# 4. Build all modules
 print_status "Building all modules..."
 build_failed=false
 

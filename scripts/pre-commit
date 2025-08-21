@@ -1,23 +1,43 @@
 #!/bin/bash
 
-echo "Running lint check..."
-./gradlew detekt
+set -e  # Exit on any error
 
-if [ $? -ne 0 ]; then
-    echo "Detekt failed, please fix the issues before committing."
+echo "🚀 Running pre-commit checks..."
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Function to print colored output
+print_status() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
+
+print_success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
+
+print_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+# 1. Run Detekt
+print_status "Running Detekt static code analysis..."
+if ! ./gradlew detekt; then
+    print_error "Detekt found code quality issues. Please fix them before committing."
     exit 1
 fi
+print_success "Detekt checks passed"
 
-# check branch name
-LC_ALL=C
-local_branch="$(git rev-parse --abbrev-ref HEAD)"
-valid_branch_regex="^(feat|fix|hotfix|refactor|release|docs|chore|test|ci)\/[a-z0-9._-]+$"
-message="There is something wrong with your branch name. Branch names in this project must adhere to this contract: $valid_branch_regex. Your commit will be rejected. You should rename your branch to a valid name and try again."
-
-if [[ ! $local_branch =~ $valid_branch_regex ]]
-then
-    echo "$message"
+# 2. Run Android Lint
+print_status "Running Android Lint..."
+if ! ./gradlew :android:lint; then
+    print_error "Android Lint found issues. Please fix them before committing."
     exit 1
 fi
+print_success "Android Lint checks passed"
 
+print_success "🎉 All pre-commit checks passed! Ready to commit."
 exit 0
