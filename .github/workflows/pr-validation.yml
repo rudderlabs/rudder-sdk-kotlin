@@ -121,30 +121,9 @@ jobs:
         with:
           affected_modules: ${{ needs.setup-and-find-modules.outputs.affected_modules }}
 
-      - name: Notify Slack
-        if: always()
-        run: |
-          chmod +x scripts/send-slack-notification.sh
 
-          # Determine status
-          if [ "${{ job.status }}" = "success" ]; then
-            STATUS="passed"
-          else
-            STATUS="failed"
-          fi
 
-          # Set environment variables for the script
-          export GITHUB_REPOSITORY="${{ github.repository }}"
-          export GITHUB_EVENT_NUMBER="${{ github.event.number }}"
-          export GITHUB_EVENT_PR_TITLE="${{ github.event.pull_request.title }}"
-          export GITHUB_HEAD_REF="${{ github.head_ref }}"
-          export GITHUB_BASE_REF="${{ github.base_ref }}"
-          export GITHUB_ACTOR="${{ github.actor }}"
-          export GITHUB_EVENT_PR_HTML_URL="${{ github.event.pull_request.html_url }}"
-          export GITHUB_RUN_ID="${{ github.run_id }}"
-          export SLACK_WEBHOOK_URL="${{ secrets.SLACK_WEBHOOK_URL }}"
 
-          ./scripts/send-slack-notification.sh "pr" "$STATUS" "" ""
 
   # Summary job that depends on all required jobs
   pr-validation-summary:
@@ -153,8 +132,12 @@ jobs:
     needs: [pr-title-check, setup-and-find-modules, detekt-check, lint-check, test-check, build-check, sonarcloud-analysis]
     if: always()
     steps:
-      - name: Check all required jobs
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check all required jobs and send Slack notification
         run: |
+          echo "=== PR Validation Summary ==="
           echo "PR Title Check: ${{ needs.pr-title-check.result }}"
           echo "Setup & Find Modules: ${{ needs.setup-and-find-modules.result }}"
           echo "Detekt Check: ${{ needs.detekt-check.result }}"
@@ -162,11 +145,73 @@ jobs:
           echo "Test Check: ${{ needs.test-check.result }}"
           echo "Build Check: ${{ needs.build-check.result }}"
           echo "SonarCloud Analysis: ${{ needs.sonarcloud-analysis.result }}"
+          echo "============================="
 
-          # Fail if any required job failed
-          if [[ "${{ needs.pr-title-check.result }}" != "success" || "${{ needs.setup-and-find-modules.result }}" != "success" || "${{ needs.detekt-check.result }}" != "success" || "${{ needs.lint-check.result }}" != "success" || "${{ needs.test-check.result }}" != "success" || "${{ needs.build-check.result }}" != "success" || "${{ needs.sonarcloud-analysis.result }}" != "success" ]]; then
+          # Determine overall status and collect failure details
+          FAILED_CHECKS=""
+          OVERALL_STATUS="passed"
+
+          if [[ "${{ needs.pr-title-check.result }}" != "success" ]]; then
+            FAILED_CHECKS="${FAILED_CHECKS}• PR Title Check (${{ needs.pr-title-check.result }}) - Check title format follows conventional commits\n"
+            OVERALL_STATUS="failed"
+          fi
+
+          if [[ "${{ needs.sonarcloud-analysis.result }}" != "success" ]]; then
+            FAILED_CHECKS="${FAILED_CHECKS}• SonarCloud Analysis (${{ needs.sonarcloud-analysis.result }}) - Code quality issues detected\n"
+            OVERALL_STATUS="failed"
+          fi
+
+          if [[ "${{ needs.setup-and-find-modules.result }}" != "success" ]]; then
+            FAILED_CHECKS="${FAILED_CHECKS}• Setup & Find Modules (${{ needs.setup-and-find-modules.result }}) - Environment setup failed\n"
+            OVERALL_STATUS="failed"
+          fi
+
+          if [[ "${{ needs.detekt-check.result }}" != "success" ]]; then
+            FAILED_CHECKS="${FAILED_CHECKS}• Detekt Check (${{ needs.detekt-check.result }}) - Code style issues detected\n"
+            OVERALL_STATUS="failed"
+          fi
+
+          if [[ "${{ needs.lint-check.result }}" != "success" ]]; then
+            FAILED_CHECKS="${FAILED_CHECKS}• Lint Check (${{ needs.lint-check.result }}) - Android lint issues detected\n"
+            OVERALL_STATUS="failed"
+          fi
+
+          if [[ "${{ needs.test-check.result }}" != "success" ]]; then
+            FAILED_CHECKS="${FAILED_CHECKS}• Test Check (${{ needs.test-check.result }}) - Unit tests failed\n"
+            OVERALL_STATUS="failed"
+          fi
+
+          if [[ "${{ needs.build-check.result }}" != "success" ]]; then
+            FAILED_CHECKS="${FAILED_CHECKS}• Build Check (${{ needs.build-check.result }}) - Build failed\n"
+            OVERALL_STATUS="failed"
+          fi
+
+          echo "Overall Status: $OVERALL_STATUS"
+          if [[ "$OVERALL_STATUS" == "failed" ]]; then
+            echo -e "Failed Checks:\n$FAILED_CHECKS"
+          fi
+
+          # Send Slack notification
+          chmod +x scripts/send-slack-notification.sh
+
+          # Pass failure information to the script (remove trailing newline)
+          FAILED_CHECKS_CLEAN=$(echo -e "$FAILED_CHECKS" | sed 's/\\n$//')
+          ./scripts/send-slack-notification.sh "pr" "$OVERALL_STATUS" "$FAILED_CHECKS_CLEAN" ""
+
+          # Fail the job if any required job failed
+          if [[ "$OVERALL_STATUS" == "failed" ]]; then
             echo "❌ PR validation failed - one or more required checks failed"
             exit 1
           fi
 
           echo "✅ All PR validation checks passed successfully"
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_EVENT_NUMBER: ${{ github.event.number }}
+          GITHUB_EVENT_PR_TITLE: ${{ github.event.pull_request.title }}
+          GITHUB_HEAD_REF: ${{ github.head_ref }}
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_EVENT_PR_HTML_URL: ${{ github.event.pull_request.html_url }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
