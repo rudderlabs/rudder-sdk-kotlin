@@ -1,4 +1,3 @@
-import java.io.ByteArrayOutputStream
 import java.io.FileInputStream
 import java.util.Properties
 
@@ -123,72 +122,4 @@ dependencies {
     testRuntimeOnly(libs.junit.jupiter.engine)
 }
 
-tasks.register("setupGitHooks") {
-    description = "Configure Git to use hooks from scripts directory"
-    group = "setup"
 
-    doLast {
-        // Check current hooks path configuration
-        val currentHooksPath = try {
-            val output = ByteArrayOutputStream()
-            exec {
-                commandLine("git", "config", "--get", "core.hooksPath")
-                standardOutput = output
-                isIgnoreExitValue = true
-            }
-            output.toString().trim()
-        } catch (e: Exception) {
-            ""
-        }
-
-        when {
-            currentHooksPath == "scripts" -> {
-                println("✅ Git hooks already configured correctly")
-            }
-            currentHooksPath.isEmpty() -> {
-                // Configure Git to use scripts directory for hooks
-                exec {
-                    commandLine("git", "config", "core.hooksPath", "scripts")
-                }
-                println("🔧 Configured Git to use scripts/ directory for hooks")
-            }
-            else -> {
-                println("⚠️ Git hooks path is currently set to: $currentHooksPath")
-                println("💡 To use project hooks, run: git config core.hooksPath scripts")
-            }
-        }
-
-        // Make hook scripts executable
-        val hookFiles = listOf("pre-commit", "pre-push", "commit-msg")
-        hookFiles.forEach { hookName ->
-            val hookFile = file("${rootProject.rootDir}/scripts/$hookName")
-            if (hookFile.exists()) {
-                hookFile.setExecutable(true)
-                println("📋 Made $hookName executable")
-            } else {
-                println("⚠️ Hook file not found: scripts/$hookName")
-            }
-        }
-
-        // Clean up old copied hooks if they exist
-        val oldHooksDir = file("${rootProject.rootDir}/.git/hooks")
-        hookFiles.forEach { hookName ->
-            val oldHookFile = File(oldHooksDir, hookName)
-            if (oldHookFile.exists() && !oldHookFile.readText().contains("#!/bin/bash")) {
-                // Only delete if it looks like our copied hook (not a custom hook)
-                val scriptContent = file("${rootProject.rootDir}/scripts/$hookName").readText()
-                if (oldHookFile.readText() == scriptContent) {
-                    oldHookFile.delete()
-                    println("🧹 Removed old copied hook: .git/hooks/$hookName")
-                }
-            }
-        }
-
-        println("✅ Git hooks setup complete!")
-    }
-}
-
-// Auto-run setup on build to ensure hooks are configured
-tasks.named("build") {
-    dependsOn("setupGitHooks")
-}
