@@ -106,7 +106,7 @@ jobs:
   build-check:
     name: Build Check
     runs-on: ubuntu-latest
-    needs: [setup-and-find-modules, detekt-check, lint-check, test-check]
+    needs: [ setup-and-find-modules, detekt-check, lint-check, test-check ]
     outputs:
       affected_modules: ${{ steps.build.outputs.affected_modules }}
     steps:
@@ -129,7 +129,7 @@ jobs:
   pr-validation-summary:
     name: PR Validation Summary
     runs-on: ubuntu-latest
-    needs: [pr-title-check, setup-and-find-modules, detekt-check, lint-check, test-check, build-check, sonarcloud-analysis]
+    needs: [ pr-title-check, setup-and-find-modules, detekt-check, lint-check, test-check, build-check, sonarcloud-analysis ]
     if: always()
     steps:
       - name: Checkout code

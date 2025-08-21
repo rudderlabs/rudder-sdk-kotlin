@@ -1,13 +1,123 @@
 #!/bin/bash
 
-echo "Running unit tests..."
+set -e  # Exit on any error
 
-./gradlew clean # First clean the project
-./gradlew test # Run the tests
+echo "🚀 Running pre-push checks..."
 
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
 
-status=$?
+# Function to print colored output
+print_status() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
 
-# return 1 exit code if running checks fails
-[ $status -ne 0 ] && exit 1
+print_success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
+
+print_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+print_warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
+
+# Function to run a command and check its status
+run_check() {
+    local check_name="$1"
+    local command="$2"
+
+    print_status "Running $check_name..."
+
+    if eval "$command"; then
+        print_success "$check_name passed"
+        return 0
+    else
+        print_error "$check_name failed"
+        return 1
+    fi
+}
+
+# 1. Clean the project
+print_status "Cleaning project..."
+./gradlew clean
+print_success "Project cleaned"
+
+# 2. Run Detekt (static code analysis)
+print_status "Running Detekt static code analysis..."
+if ! ./gradlew detekt; then
+    print_error "Detekt found code quality issues. Please fix them before pushing."
+    exit 1
+fi
+print_success "Detekt checks passed"
+
+# 3. Run Android Lint (skip for core module as it's not an Android module)
+print_status "Running Android Lint..."
+lint_failed=false
+
+# Run lint on android module
+if ! ./gradlew :android:lint; then
+    print_error "Android Lint failed for android module"
+    lint_failed=true
+fi
+
+# Run lint on integration modules
+for integration in adjust appsflyer firebase facebook braze; do
+    if ! ./gradlew ":integrations:$integration:lint"; then
+        print_error "Android Lint failed for integrations:$integration module"
+        lint_failed=true
+    fi
+done
+
+if [ "$lint_failed" = true ]; then
+    print_error "Android Lint found issues. Please fix them before pushing."
+    exit 1
+fi
+print_success "Android Lint checks passed"
+
+# 4. Run unit tests
+print_status "Running unit tests..."
+if ! ./gradlew test; then
+    print_error "Unit tests failed. Please fix failing tests before pushing."
+    exit 1
+fi
+print_success "All unit tests passed"
+
+# 5. Build all modules
+print_status "Building all modules..."
+build_failed=false
+
+# Build core module (Kotlin/JVM)
+if ! ./gradlew :core:assemble; then
+    print_error "Build failed for core module"
+    build_failed=true
+fi
+
+# Build android module
+if ! ./gradlew :android:assembleRelease; then
+    print_error "Build failed for android module"
+    build_failed=true
+fi
+
+# Build integration modules
+for integration in adjust appsflyer firebase facebook braze; do
+    if ! ./gradlew ":integrations:$integration:assembleRelease"; then
+        print_error "Build failed for integrations:$integration module"
+        build_failed=true
+    fi
+done
+
+if [ "$build_failed" = true ]; then
+    print_error "Build failed for one or more modules. Please fix build issues before pushing."
+    exit 1
+fi
+print_success "All modules built successfully"
+
+print_success "🎉 All pre-push checks passed! Ready to push."
 exit 0
