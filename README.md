@@ -31,6 +31,7 @@ The Kotlin SDK enables you to track customer event data from your Android or Kot
 - [**Identifying your users**](#identifying-users)
 - [**Tracking user actions**](#tracking-user-actions)
 - [**Integrations**](#integrations)
+- [**Development**](#development)
 - [**Contact us**](#contact-us)
 
 ---
@@ -177,6 +178,71 @@ class MyApplication : Application() {
     }
 }
 ```
+
+---
+
+## Development
+
+### Setting up the Development Environment
+
+After cloning the repository, set up Git hooks for code quality enforcement:
+
+```bash
+./gradlew setupGitHooks
+```
+
+This configures Git to use the project's hooks from the `scripts/` directory, which will:
+- Run Detekt static analysis before commits
+- Run Android Lint before commits
+- Validate branch naming conventions before pushes
+- Run full test suite and build validation before pushes
+- Enforce conventional commit message format
+
+### Git Hooks
+
+The project uses Git hooks to maintain code quality:
+
+- **pre-commit**: Runs Detekt and Android Lint
+- **pre-push**: Validates branch names, runs tests, and builds all modules
+- **commit-msg**: Enforces conventional commit message format
+
+#### Branch Naming Convention
+Branches must follow the pattern: `type/description`
+
+Supported types: `feat`, `fix`, `hotfix`, `refactor`, `release`, `docs`, `chore`, `test`, `ci`
+
+Examples:
+- `feat/user-authentication`
+- `fix/crash-on-startup`
+- `refactor/analytics-client`
+
+#### Commit Message Convention
+Commit messages must follow conventional commit format:
+
+```
+type(scope)?: description
+
+Examples:
+- feat: add user authentication
+- fix(android): resolve crash on startup
+- docs: update README with setup instructions
+```
+
+### Building the Project
+
+```bash
+# Build all modules
+./gradlew build
+
+# Run tests
+./gradlew test
+
+# Run code quality checks
+./gradlew detekt
+./gradlew :android:lint
+```
+
+---
 
 ## Contact us
 

@@ -42,21 +42,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import org.jetbrains.annotations.VisibleForTesting
 
-/**
- * The `Analytics` class is the core of the RudderStack SDK, responsible for tracking events,
- * managing plugins, and handling the analytics lifecycle. It is designed to be highly customizable
- * with configurable coroutine scopes and dispatchers, and it supports a variety of plugins for
- * extensibility.
- *
- * This class handles the entire event processing flow from event creation to processing and sending.
- * It initializes with a `Configuration` object and optionally allows for custom coroutine
- * configurations via the `CoroutineConfiguration` interface.
- *
- * @constructor Primary constructor for creating an `Analytics` instance with a custom coroutine configuration.
- * @param configuration The configuration object that defines settings such as write key, data plane URL, logger, etc.
- * @param analyticsConfiguration The analytics configuration object that defines coroutine settings and some other variables.
- * @param userIdentityState The state flow for user identity management. Defaults to a new [State] with the initial state.
- */
+
 @Suppress("TooManyFunctions")
 open class Analytics protected constructor(
     val configuration: Configuration,
