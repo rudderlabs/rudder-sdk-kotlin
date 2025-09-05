@@ -14,6 +14,7 @@ import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.Traits
 import com.rudderstack.sdk.kotlin.core.internals.models.connectivity.ConnectivityState
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
+import com.rudderstack.sdk.kotlin.core.internals.models.reset.ResetOptions
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.ResetUserIdentityAction
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.SetUserIdAndTraitsAction
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.SetUserIdForAliasEvent
@@ -355,14 +356,17 @@ open class Analytics protected constructor(
     /**
      * Resets the user identity, clears the existing anonymous ID and
      * generate a new one, also clears the user ID and traits.
+     *
+     * @param options Reset options to control which data to reset
      */
-    open fun reset() {
+    open fun reset(options: ResetOptions = ResetOptions()) {
         if (!isAnalyticsActive()) return
 
-        userIdentityState.dispatch(ResetUserIdentityAction)
+        userIdentityState.dispatch(ResetUserIdentityAction(options))
         analyticsScope.launch(keyValueStorageDispatcher) {
             userIdentityState.value.resetUserIdentity(
                 storage = storage,
+                options = options
             )
         }
     }

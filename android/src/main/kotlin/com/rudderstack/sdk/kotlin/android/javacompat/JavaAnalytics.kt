@@ -4,6 +4,7 @@ import android.app.Activity
 import androidx.navigation.NavController
 import com.rudderstack.sdk.kotlin.android.Analytics
 import com.rudderstack.sdk.kotlin.android.Configuration
+import com.rudderstack.sdk.kotlin.core.internals.models.reset.ResetOptions
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.javacompat.JavaAnalytics
 import org.jetbrains.annotations.VisibleForTesting
@@ -48,12 +49,16 @@ class JavaAnalytics private constructor(
         analytics.endSession()
     }
 
+    override fun reset() {
+        analytics.reset()
+    }
+
     /**
      * Resets the user identity, clears the existing anonymous ID and
      * generate a new one, also clears the user ID and traits.
      */
-    override fun reset() {
-        analytics.reset()
+    override fun reset(options: ResetOptions) {
+        analytics.reset(options)
     }
 
     /**

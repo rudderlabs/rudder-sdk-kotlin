@@ -26,12 +26,15 @@ import com.rudderstack.sdk.kotlin.android.plugins.sessiontracking.SessionTrackin
 import com.rudderstack.sdk.kotlin.android.storage.provideAndroidStorage
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.models.reset.ResetOptions
 import com.rudderstack.sdk.kotlin.core.internals.platform.Platform
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.utils.isAnalyticsActive
 import com.rudderstack.sdk.kotlin.core.internals.utils.isSourceEnabled
 import com.rudderstack.sdk.kotlin.core.provideAnalyticsConfiguration
+import com.rudderstack.sdk.kotlin.android.models.reset.ResetEntries as AndroidResetEntry
+import com.rudderstack.sdk.kotlin.android.models.reset.ResetOptions as AndroidResetOption
 
 private const val MIN_SESSION_ID_LENGTH = 10
 
@@ -108,12 +111,24 @@ class Analytics(
     /**
      * Resets the user identity, clears the existing anonymous ID and
      * generate a new one, also clears the user ID and traits.
+     *
+     * @param options Android-specific reset options to control which data to reset
      */
-    override fun reset() {
+    override fun reset(options: ResetOptions) {
         if (!isAnalyticsActive()) return
-        super.reset()
 
-        sessionTrackingPlugin.sessionManager.refreshSession()
+        if (options !is AndroidResetOption) {
+            LoggerAnalytics.debug("The options should be of type Android ResetOption.")
+        }
+        if (options.entries !is AndroidResetEntry) {
+            LoggerAnalytics.debug("The entries in ResetOption should be of type Android ResetEntry.")
+        }
+
+        super.reset(options)
+
+        if ((options.entries as? AndroidResetEntry)?.session != false) {
+            sessionTrackingPlugin.sessionManager.refreshSession()
+        }
 
         if (!isSourceEnabled()) return
 

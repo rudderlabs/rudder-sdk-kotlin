@@ -3,6 +3,7 @@ package com.rudderstack.sdk.kotlin.core.javacompat
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.Configuration
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
+import com.rudderstack.sdk.kotlin.core.internals.models.reset.ResetOptions
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.javacompat.JsonInteropHelper.toJsonObject
 import com.rudderstack.sdk.kotlin.core.javacompat.JsonInteropHelper.toRawMap
@@ -349,6 +350,15 @@ open class JavaAnalytics protected constructor(
      */
     open fun reset() {
         analytics.reset()
+    }
+
+    /**
+     * Clears user data and identifiers from the analytics instance with specific options
+     *
+     * @param options The reset options that specify which data entries should be reset
+     */
+    open fun reset(options: ResetOptions) {
+        analytics.reset(options = options)
     }
 }
 
