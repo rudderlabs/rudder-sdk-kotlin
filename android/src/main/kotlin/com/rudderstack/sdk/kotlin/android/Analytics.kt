@@ -120,9 +120,6 @@ class Analytics(
         if (options !is AndroidResetOption) {
             LoggerAnalytics.debug("The options should be of type Android ResetOption.")
         }
-        if (options.entries !is AndroidResetEntry) {
-            LoggerAnalytics.debug("The entries in ResetOption should be of type Android ResetEntry.")
-        }
 
         super.reset(options)
 

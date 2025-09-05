@@ -13,8 +13,17 @@ import com.rudderstack.sdk.kotlin.core.internals.models.reset.ResetEntries
  * @property session Flag indicating whether to reset the session data. Defaults to true.
  */
 data class ResetEntries @JvmOverloads constructor(
-    override val anonymousId: Boolean = true,
-    override val userId: Boolean = true,
-    override val traits: Boolean = true,
-    val session: Boolean = true,
-) : ResetEntries()
+    override val anonymousId: Boolean = DEFAULT_ANONYMOUS_ID,
+    override val userId: Boolean = DEFAULT_USER_ID,
+    override val traits: Boolean = DEFAULT_TRAITS,
+    val session: Boolean = DEFAULT_SESSION,
+) : ResetEntries() {
+
+    companion object {
+
+        /**
+         * Default status of resetting the user session.
+         */
+        internal const val DEFAULT_SESSION = true
+    }
+}
