@@ -267,7 +267,7 @@ class JavaAnalyticsTest {
     fun `when reset is called, then it should call the reset method on Analytics`() {
         javaAnalytics.reset()
 
-        verify(exactly = 1) { mockAnalytics.reset() }
+        verify(exactly = 1) { mockAnalytics.reset(any()) }
         confirmVerified(mockAnalytics)
     }
 }

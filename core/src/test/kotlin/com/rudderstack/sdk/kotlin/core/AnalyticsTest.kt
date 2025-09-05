@@ -187,7 +187,7 @@ class AnalyticsTest {
         analytics.identify(userId = USER_ID, traits = TRAITS)
         analytics.identify(userId = "new-user-id", traits = TRAITS)
 
-        verify(exactly = 1) { analytics.reset() }
+        verify(exactly = 1) { analytics.reset(any()) }
     }
 
     @Test
