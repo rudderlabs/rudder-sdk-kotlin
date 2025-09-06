@@ -10,6 +10,9 @@ import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.connectivity.ConnectivityState
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.models.provider.provideSampleJsonPayload
+import com.rudderstack.sdk.kotlin.core.internals.models.reset.ResetEntries
+import com.rudderstack.sdk.kotlin.core.internals.models.reset.ResetOptions
+import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.ResetUserIdentityAction
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.storage.LibraryVersion
@@ -453,6 +456,225 @@ class AnalyticsTest {
 
         assertEquals(String.empty(), userId)
         assertEquals(emptyJsonObject, traits)
+    }
+
+    @Test
+    fun `given SDK is ready, when reset is called with default ResetOptions, then all user data should be reset`() {
+        analytics.identify(userId = USER_ID, traits = TRAITS)
+        val originalAnonymousId = analytics.anonymousId
+
+        analytics.reset(ResetOptions())
+
+        val userId = analytics.userId
+        val traits = analytics.traits
+        val anonymousId = analytics.anonymousId
+
+        assertEquals(String.empty(), userId)
+        assertEquals(emptyJsonObject, traits)
+        assertTrue(anonymousId != originalAnonymousId) // AnonymousId should be regenerated
+    }
+
+    @Test
+    fun `given user data exists, when reset is called with only anonymousId enabled, then only anonymousId should be reset`() {
+        analytics.identify(userId = USER_ID, traits = TRAITS)
+        val originalAnonymousId = analytics.anonymousId
+        val resetOptions = ResetOptions(
+            entries = ResetEntries(
+                anonymousId = true,
+                userId = false,
+                traits = false
+            )
+        )
+
+        analytics.reset(resetOptions)
+
+        val userId = analytics.userId
+        val traits = analytics.traits
+        val anonymousId = analytics.anonymousId
+
+        assertEquals(USER_ID, userId) // Should remain unchanged
+        assertEquals(TRAITS, traits) // Should remain unchanged
+        assertTrue(anonymousId != originalAnonymousId) // Should be regenerated
+    }
+
+    @Test
+    fun `given user data exists, when reset is called with only userId enabled, then only userId should be reset`() {
+        analytics.identify(userId = USER_ID, traits = TRAITS)
+        val originalAnonymousId = analytics.anonymousId
+        val resetOptions = ResetOptions(
+            entries = ResetEntries(
+                anonymousId = false,
+                userId = true,
+                traits = false
+            )
+        )
+
+        analytics.reset(resetOptions)
+
+        val userId = analytics.userId
+        val traits = analytics.traits
+        val anonymousId = analytics.anonymousId
+
+        assertEquals(String.empty(), userId) // Should be reset
+        assertEquals(TRAITS, traits) // Should remain unchanged
+        assertEquals(originalAnonymousId, anonymousId) // Should remain unchanged
+    }
+
+    @Test
+    fun `given user data exists, when reset is called with only traits enabled, then only traits should be reset`() {
+        analytics.identify(userId = USER_ID, traits = TRAITS)
+        val originalAnonymousId = analytics.anonymousId
+        val resetOptions = ResetOptions(
+            entries = ResetEntries(
+                anonymousId = false,
+                userId = false,
+                traits = true
+            )
+        )
+
+        analytics.reset(resetOptions)
+
+        val userId = analytics.userId
+        val traits = analytics.traits
+        val anonymousId = analytics.anonymousId
+
+        assertEquals(USER_ID, userId) // Should remain unchanged
+        assertEquals(emptyJsonObject, traits) // Should be reset
+        assertEquals(originalAnonymousId, anonymousId) // Should remain unchanged
+    }
+
+    @Test
+    fun `given user data exists, when reset is called with anonymousId and userId enabled but traits disabled, then anonymousId and userId should reset but traits should remain`() {
+        analytics.identify(userId = USER_ID, traits = TRAITS)
+        val originalAnonymousId = analytics.anonymousId
+        val resetOptions = ResetOptions(
+            entries = ResetEntries(
+                anonymousId = true,
+                userId = true,
+                traits = false
+            )
+        )
+
+        analytics.reset(resetOptions)
+
+        val userId = analytics.userId
+        val traits = analytics.traits
+        val anonymousId = analytics.anonymousId
+
+        assertEquals(String.empty(), userId) // Should be reset
+        assertEquals(TRAITS, traits) // Should remain unchanged
+        assertTrue(anonymousId != originalAnonymousId) // Should be regenerated
+    }
+
+    @Test
+    fun `given user data exists, when reset is called with all flags disabled, then no user data should be reset`() {
+        analytics.identify(userId = USER_ID, traits = TRAITS)
+        val originalAnonymousId = analytics.anonymousId
+        val resetOptions = ResetOptions(
+            entries = ResetEntries(
+                anonymousId = false,
+                userId = false,
+                traits = false
+            )
+        )
+
+        analytics.reset(resetOptions)
+
+        val userId = analytics.userId
+        val traits = analytics.traits
+        val anonymousId = analytics.anonymousId
+
+        assertEquals(USER_ID, userId) // Should remain unchanged
+        assertEquals(TRAITS, traits) // Should remain unchanged
+        assertEquals(originalAnonymousId, anonymousId) // Should remain unchanged
+    }
+
+    @Test
+    fun `given SDK is shutdown, when reset is called with custom options, then no reset should occur`() {
+        analytics.identify(userId = USER_ID, traits = TRAITS)
+
+        analytics.shutdown()
+        analytics.reset(ResetOptions())
+
+        val userId = analytics.userId
+        val traits = analytics.traits
+        val anonymousId = analytics.anonymousId
+
+        assertNull(userId) // Should be null after shutdown
+        assertNull(traits) // Should be null after shutdown
+        assertNull(anonymousId) // Should be null after shutdown
+    }
+
+    @Test
+    fun `given no user data exists, when reset is called with custom options, then only anonymousId should change`() {
+        val originalAnonymousId = analytics.anonymousId
+        val resetOptions = ResetOptions(
+            entries = ResetEntries(
+                anonymousId = true,
+                userId = true,
+                traits = true
+            )
+        )
+
+        analytics.reset(resetOptions)
+
+        val userId = analytics.userId
+        val traits = analytics.traits
+        val anonymousId = analytics.anonymousId
+
+        assertEquals(String.empty(), userId) // Should remain empty
+        assertEquals(emptyJsonObject, traits) // Should remain empty
+        assertTrue(anonymousId != originalAnonymousId) // Should be regenerated
+    }
+
+    @Test
+    fun `given custom ResetOptions, when reset is called, then user identity should change according to options`() {
+        analytics.identify(userId = USER_ID, traits = TRAITS)
+        val originalAnonymousId = analytics.anonymousId
+        val resetOptions = ResetOptions(
+            entries = ResetEntries(
+                anonymousId = true,
+                userId = false,
+                traits = true
+            )
+        )
+
+        analytics.reset(resetOptions)
+
+        val userId = analytics.userId
+        val traits = analytics.traits
+        val anonymousId = analytics.anonymousId
+
+        // Verify user identity changed according to options
+        assertEquals(USER_ID, userId) // Should remain unchanged (flag is false)
+        assertEquals(emptyJsonObject, traits) // Should be reset (flag is true)
+        assertTrue(anonymousId != originalAnonymousId) // Should be regenerated (flag is true)
+    }
+
+    @Test
+    fun `given custom ResetOptions, when reset is called, then storage operations should respect the option flags`() = runTest(testDispatcher) {
+        analytics.identify(userId = USER_ID, traits = TRAITS)
+        val resetOptions = ResetOptions(
+            entries = ResetEntries(
+                anonymousId = false,
+                userId = true,
+                traits = false
+            )
+        )
+        clearMocks(mockStorage)
+
+        analytics.reset(resetOptions)
+        
+        testDispatcher.scheduler.runCurrent()
+        disableSource()
+
+        // Verify storage operations respect the flags
+        // Should NOT write anonymousId because flag is false
+        coVerify(exactly = 0) { mockStorage.write(StorageKeys.ANONYMOUS_ID, any<String>()) }
+        // Should remove userId because flag is true
+        coVerify(exactly = 1) { mockStorage.remove(StorageKeys.USER_ID) }
+        // Should NOT remove traits because flag is false
+        coVerify(exactly = 0) { mockStorage.remove(StorageKeys.TRAITS) }
     }
 
     @Test

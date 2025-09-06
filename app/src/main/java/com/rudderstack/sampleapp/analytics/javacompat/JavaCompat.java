@@ -11,7 +11,11 @@ import androidx.navigation.NavController;
 import com.rudderstack.sdk.kotlin.android.Configuration;
 import com.rudderstack.sdk.kotlin.android.SessionConfiguration;
 import com.rudderstack.sdk.kotlin.android.javacompat.ConfigurationBuilder;
+import com.rudderstack.sdk.kotlin.android.javacompat.ResetEntriesBuilder;
+import com.rudderstack.sdk.kotlin.android.javacompat.ResetOptionsBuilder;
 import com.rudderstack.sdk.kotlin.android.javacompat.SessionConfigurationBuilder;
+import com.rudderstack.sdk.kotlin.android.models.reset.ResetEntries;
+import com.rudderstack.sdk.kotlin.android.models.reset.ResetOptions;
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger;
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics;
 import com.rudderstack.sdk.kotlin.core.internals.models.ExternalId;
@@ -19,10 +23,6 @@ import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption;
 import com.rudderstack.sdk.kotlin.android.javacompat.JavaAnalytics;
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin;
 import com.rudderstack.sdk.kotlin.core.javacompat.RudderOptionBuilder;
-import com.rudderstack.sdk.kotlin.core.javacompat.ResetEntriesBuilder;
-import com.rudderstack.sdk.kotlin.core.javacompat.ResetOptionsBuilder;
-import com.rudderstack.sdk.kotlin.core.internals.models.reset.ResetEntries;
-import com.rudderstack.sdk.kotlin.core.internals.models.reset.ResetOptions;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -118,12 +118,14 @@ public class JavaCompat {
      * @param resetUserId Whether to reset the user ID
      * @param resetAnonymousId Whether to reset the anonymous ID
      * @param resetTraits Whether to reset user traits
+     * @param resetSession Whether to reset user session
      */
-    public void resetWithOptions(boolean resetUserId, boolean resetAnonymousId, boolean resetTraits) {
+    public void resetWithOptions(boolean resetUserId, boolean resetAnonymousId, boolean resetTraits, boolean resetSession) {
         ResetEntries resetEntries = new ResetEntriesBuilder()
                 .setUserId(resetUserId)
                 .setAnonymousId(resetAnonymousId)
                 .setTraits(resetTraits)
+                .setSession(resetSession)
                 .build();
         
         ResetOptions resetOptions = new ResetOptionsBuilder()

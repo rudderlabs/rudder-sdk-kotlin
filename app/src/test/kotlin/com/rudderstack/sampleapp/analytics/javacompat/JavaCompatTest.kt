@@ -5,7 +5,7 @@ import androidx.navigation.NavController
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
 import com.rudderstack.sdk.kotlin.android.javacompat.JavaAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
-import com.rudderstack.sdk.kotlin.core.internals.models.reset.ResetOptions
+import com.rudderstack.sdk.kotlin.android.models.reset.ResetOptions
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import io.mockk.MockKAnnotations
@@ -72,7 +72,7 @@ class JavaCompatTest {
     fun `when resetWithOptions is called with all true, then it should call reset with correct options`() {
         val resetOptionsSlot = slot<ResetOptions>()
         
-        javaCompat.resetWithOptions(true, true, true)
+        javaCompat.resetWithOptions(true, true, true, true)
 
         verify(exactly = 1) {
             mockJavaAnalytics.reset(capture(resetOptionsSlot))
@@ -82,6 +82,7 @@ class JavaCompatTest {
         assertEquals(true, capturedOptions.entries.userId)
         assertEquals(true, capturedOptions.entries.anonymousId)
         assertEquals(true, capturedOptions.entries.traits)
+        assertEquals(true, capturedOptions.entries.session)
         
         confirmVerified(mockJavaAnalytics)
     }
@@ -90,7 +91,7 @@ class JavaCompatTest {
     fun `when resetWithOptions is called with all false, then it should call reset with correct options`() {
         val resetOptionsSlot = slot<ResetOptions>()
         
-        javaCompat.resetWithOptions(false, false, false)
+        javaCompat.resetWithOptions(false, false, false, false)
 
         verify(exactly = 1) {
             mockJavaAnalytics.reset(capture(resetOptionsSlot))
@@ -100,6 +101,7 @@ class JavaCompatTest {
         assertEquals(false, capturedOptions.entries.userId)
         assertEquals(false, capturedOptions.entries.anonymousId)
         assertEquals(false, capturedOptions.entries.traits)
+        assertEquals(false, capturedOptions.entries.session)
         
         confirmVerified(mockJavaAnalytics)
     }
@@ -108,7 +110,7 @@ class JavaCompatTest {
     fun `when resetWithOptions is called with mixed values, then it should call reset with correct options`() {
         val resetOptionsSlot = slot<ResetOptions>()
         
-        javaCompat.resetWithOptions(true, false, true)
+        javaCompat.resetWithOptions(true, false, true, false)
 
         verify(exactly = 1) {
             mockJavaAnalytics.reset(capture(resetOptionsSlot))
@@ -118,6 +120,7 @@ class JavaCompatTest {
         assertEquals(true, capturedOptions.entries.userId)
         assertEquals(false, capturedOptions.entries.anonymousId)
         assertEquals(true, capturedOptions.entries.traits)
+        assertEquals(false, capturedOptions.entries.session)
         
         confirmVerified(mockJavaAnalytics)
     }
@@ -282,7 +285,7 @@ class JavaCompatTest {
         val anonymousId = "anonymousId"
         every { mockJavaAnalytics.anonymousId } returns anonymousId
 
-        val actualAnonymousId = javaCompat.anonymousId
+        val actualAnonymousId = javaCompat.getAnonymousId()
 
         assertEquals(anonymousId, actualAnonymousId)
     }
@@ -292,7 +295,7 @@ class JavaCompatTest {
         val userId = "userId"
         every { mockJavaAnalytics.userId } returns userId
 
-        val actualUserId = javaCompat.userId
+        val actualUserId = javaCompat.getUserId()
 
         assertEquals(userId, actualUserId)
     }
@@ -302,7 +305,7 @@ class JavaCompatTest {
         val traits: Map<String, Any> = mapOf("key-1" to "value-1")
         every { mockJavaAnalytics.traits } returns traits
 
-        val actualTraits = javaCompat.traits
+        val actualTraits = javaCompat.getTraits()
 
         assertEquals(traits, actualTraits)
     }

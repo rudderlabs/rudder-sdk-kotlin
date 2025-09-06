@@ -2,6 +2,8 @@ package com.rudderstack.sdk.kotlin.android
 
 import android.app.Application
 import com.rudderstack.sdk.kotlin.android.logger.AndroidLogger
+import com.rudderstack.sdk.kotlin.android.models.reset.ResetEntries as AndroidResetEntries
+import com.rudderstack.sdk.kotlin.android.models.reset.ResetOptions as AndroidResetOptions
 import com.rudderstack.sdk.kotlin.android.plugins.DeviceInfoPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleManagementPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ProcessLifecycleManagementPlugin
@@ -12,6 +14,8 @@ import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
+import com.rudderstack.sdk.kotlin.core.internals.models.reset.ResetEntries
+import com.rudderstack.sdk.kotlin.core.internals.models.reset.ResetOptions
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
@@ -34,6 +38,8 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
@@ -45,6 +51,8 @@ private const val DEFAULT_SESSION_ID: Long = 1234567890L
 private const val NEW_SESSION_ID: Long = 9876543210L
 private const val TRACK_EVENT_NAME = "Track event 1"
 private const val NEW_EVENT_NAME = "New Event Name"
+private const val USER_ID = "test-user-id"
+private val TRAITS = buildJsonObject { put("name", "Test User"); put("email", "test@example.com") }
 
 class AnalyticsTest {
 
@@ -163,6 +171,153 @@ class AnalyticsTest {
         analytics.reset()
 
         assertEquals(NEW_SESSION_ID, analytics.sessionId)
+    }
+
+    @Test
+    fun `given user data and session exist, when reset is called with Android ResetOptions with all flags enabled, then all data including session should be reset`() {
+        // Setup initial state with user data
+        analytics.identify(userId = USER_ID, traits = TRAITS)
+        val originalAnonymousId = analytics.anonymousId
+        val originalSessionId = analytics.sessionId
+        
+        every { DateTimeUtils.getSystemCurrentTime() } returns NEW_SESSION_ID.toMilliSeconds()
+        val resetOptions = AndroidResetOptions(
+            entries = AndroidResetEntries(
+                anonymousId = true,
+                userId = true,
+                traits = true,
+                session = true
+            )
+        )
+
+        analytics.reset(resetOptions)
+
+        // Verify all data was reset
+        val newAnonymousId = analytics.anonymousId
+        val newUserId = analytics.userId
+        val newTraits = analytics.traits
+        val newSessionId = analytics.sessionId
+        
+        assertTrue(newAnonymousId != originalAnonymousId) // AnonymousId should be regenerated
+        assertEquals("", newUserId) // UserId should be empty
+        assertEquals(emptyJsonObject, newTraits) // Traits should be empty
+        assertEquals(NEW_SESSION_ID, newSessionId) // Session should be refreshed
+        assertTrue(newSessionId != originalSessionId)
+    }
+
+    @Test
+    fun `given active session, when reset is called with session flag disabled, then session should remain unchanged`() {
+        // Setup initial state with user data
+        analytics.identify(userId = USER_ID, traits = TRAITS)
+        val originalAnonymousId = analytics.anonymousId
+        val originalSessionId = analytics.sessionId
+        
+        val resetOptions = AndroidResetOptions(
+            entries = AndroidResetEntries(
+                anonymousId = true,
+                userId = true,
+                traits = true,
+                session = false
+            )
+        )
+
+        analytics.reset(resetOptions)
+
+        // Verify core data was reset but session remained unchanged
+        val newAnonymousId = analytics.anonymousId
+        val newUserId = analytics.userId
+        val newTraits = analytics.traits
+        val newSessionId = analytics.sessionId
+        
+        assertTrue(newAnonymousId != originalAnonymousId) // AnonymousId should be regenerated
+        assertEquals("", newUserId) // UserId should be empty
+        assertEquals(emptyJsonObject, newTraits) // Traits should be empty
+        assertEquals(originalSessionId, newSessionId) // Session should remain unchanged
+    }
+
+    @Test
+    fun `given core ResetOptions is passed, when reset is called, then debug warning should be logged about using Android ResetOptions`() {
+        val coreResetOptions = ResetOptions(
+            entries = ResetEntries(
+                anonymousId = true,
+                userId = true,
+                traits = true
+            )
+        )
+
+        analytics.reset(coreResetOptions)
+
+        verify(exactly = 1) {
+            LoggerAnalytics.debug("The options should be of type Android ResetOption.")
+        }
+    }
+
+    @Test
+    fun `given Android ResetOptions is passed, when reset is called, then no warning should be logged`() {
+        val androidResetOptions = AndroidResetOptions(
+            entries = AndroidResetEntries(
+                anonymousId = true,
+                userId = true,
+                traits = true,
+                session = true
+            )
+        )
+
+        analytics.reset(androidResetOptions)
+
+        verify(exactly = 0) {
+            LoggerAnalytics.debug("The options should be of type Android ResetOption.")
+        }
+    }
+    
+    @Test
+    fun `given mixed Android flags, when reset is called, then only enabled flags should be processed`() {
+        // Setup initial state with user data
+        analytics.identify(userId = USER_ID, traits = TRAITS)
+        val originalAnonymousId = analytics.anonymousId
+        val originalUserId = analytics.userId
+        val originalTraits = analytics.traits
+        val originalSessionId = analytics.sessionId
+        
+        val resetOptions = AndroidResetOptions(
+            entries = AndroidResetEntries(
+                anonymousId = false,
+                userId = false,
+                traits = false,
+                session = false
+            )
+        )
+
+        analytics.reset(resetOptions)
+
+        // Verify no data was changed when all flags are false
+        val newAnonymousId = analytics.anonymousId
+        val newUserId = analytics.userId
+        val newTraits = analytics.traits
+        val newSessionId = analytics.sessionId
+        
+        assertEquals(originalAnonymousId, newAnonymousId) // AnonymousId should remain unchanged
+        assertEquals(originalUserId, newUserId) // UserId should remain unchanged
+        assertEquals(originalTraits, newTraits) // Traits should remain unchanged
+        assertEquals(originalSessionId, newSessionId) // Session should remain unchanged
+    }
+
+    @Test
+    fun `given SDK is not active, when reset with Android options is called, then no reset operations should occur`() {
+        analytics.shutdown()
+        val resetOptions = AndroidResetOptions(
+            entries = AndroidResetEntries(
+                anonymousId = true,
+                userId = true,
+                traits = true,
+                session = true
+            )
+        )
+
+        analytics.reset(resetOptions)
+
+        // After shutdown, sessionId should be null
+        assertNull(analytics.sessionId)
     }
 
     @Test
