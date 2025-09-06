@@ -5,6 +5,7 @@ import androidx.navigation.NavController
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
 import com.rudderstack.sdk.kotlin.android.javacompat.JavaAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
+import com.rudderstack.sdk.kotlin.core.internals.models.reset.ResetOptions
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import io.mockk.MockKAnnotations
@@ -12,6 +13,7 @@ import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.mockk
+import io.mockk.slot
 import io.mockk.spyk
 import io.mockk.verify
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -63,6 +65,60 @@ class JavaCompatTest {
         verify(exactly = 1) {
             mockJavaAnalytics.reset()
         }
+        confirmVerified(mockJavaAnalytics)
+    }
+
+    @Test
+    fun `when resetWithOptions is called with all true, then it should call reset with correct options`() {
+        val resetOptionsSlot = slot<ResetOptions>()
+        
+        javaCompat.resetWithOptions(true, true, true)
+
+        verify(exactly = 1) {
+            mockJavaAnalytics.reset(capture(resetOptionsSlot))
+        }
+        
+        val capturedOptions = resetOptionsSlot.captured
+        assertEquals(true, capturedOptions.entries.userId)
+        assertEquals(true, capturedOptions.entries.anonymousId)
+        assertEquals(true, capturedOptions.entries.traits)
+        
+        confirmVerified(mockJavaAnalytics)
+    }
+
+    @Test
+    fun `when resetWithOptions is called with all false, then it should call reset with correct options`() {
+        val resetOptionsSlot = slot<ResetOptions>()
+        
+        javaCompat.resetWithOptions(false, false, false)
+
+        verify(exactly = 1) {
+            mockJavaAnalytics.reset(capture(resetOptionsSlot))
+        }
+        
+        val capturedOptions = resetOptionsSlot.captured
+        assertEquals(false, capturedOptions.entries.userId)
+        assertEquals(false, capturedOptions.entries.anonymousId)
+        assertEquals(false, capturedOptions.entries.traits)
+        
+        confirmVerified(mockJavaAnalytics)
+    }
+
+    @Test
+    fun `when resetWithOptions is called with mixed values, then it should call reset with correct options`() {
+        val resetOptionsSlot = slot<ResetOptions>()
+        
+        javaCompat.resetWithOptions(true, false, true)
+
+        verify(exactly = 1) {
+            mockJavaAnalytics.reset(capture(resetOptionsSlot))
+        }
+        
+        val capturedOptions = resetOptionsSlot.captured
+        assertEquals(true, capturedOptions.entries.userId)
+        assertEquals(false, capturedOptions.entries.anonymousId)
+        assertEquals(true, capturedOptions.entries.traits)
+        
         confirmVerified(mockJavaAnalytics)
     }
 
