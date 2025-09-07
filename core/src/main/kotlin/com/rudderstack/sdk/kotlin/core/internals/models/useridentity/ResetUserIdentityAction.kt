@@ -34,12 +34,10 @@ internal suspend fun UserIdentity.resetUserIdentity(storage: Storage, options: R
     if (options.entries.anonymousId) {
         storage.write(StorageKeys.ANONYMOUS_ID, this.anonymousId)
     }
-    storage.apply {
-        if (options.entries.userId) {
-            remove(StorageKeys.USER_ID)
-        }
-        if (options.entries.traits) {
-            remove(StorageKeys.TRAITS)
-        }
+    if (options.entries.userId) {
+        storage.remove(StorageKeys.USER_ID)
+    }
+    if (options.entries.traits) {
+        storage.remove(StorageKeys.TRAITS)
     }
 }
