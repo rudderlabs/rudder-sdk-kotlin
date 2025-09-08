@@ -285,7 +285,7 @@ class JavaCompatTest {
         val anonymousId = "anonymousId"
         every { mockJavaAnalytics.anonymousId } returns anonymousId
 
-        val actualAnonymousId = javaCompat.getAnonymousId()
+        val actualAnonymousId = javaCompat.anonymousId
 
         assertEquals(anonymousId, actualAnonymousId)
     }
@@ -295,7 +295,7 @@ class JavaCompatTest {
         val userId = "userId"
         every { mockJavaAnalytics.userId } returns userId
 
-        val actualUserId = javaCompat.getUserId()
+        val actualUserId = javaCompat.userId
 
         assertEquals(userId, actualUserId)
     }
@@ -305,7 +305,7 @@ class JavaCompatTest {
         val traits: Map<String, Any> = mapOf("key-1" to "value-1")
         every { mockJavaAnalytics.traits } returns traits
 
-        val actualTraits = javaCompat.getTraits()
+        val actualTraits = javaCompat.traits
 
         assertEquals(traits, actualTraits)
     }

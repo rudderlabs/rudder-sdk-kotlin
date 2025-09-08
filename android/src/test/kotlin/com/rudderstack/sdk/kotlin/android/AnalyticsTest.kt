@@ -42,6 +42,7 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -275,16 +276,16 @@ class AnalyticsTest {
         // Setup initial state with user data
         analytics.identify(userId = USER_ID, traits = TRAITS)
         val originalAnonymousId = analytics.anonymousId
-        val originalUserId = analytics.userId
         val originalTraits = analytics.traits
         val originalSessionId = analytics.sessionId
-        
+
+        every { DateTimeUtils.getSystemCurrentTime() } returns NEW_SESSION_ID.toMilliSeconds()
         val resetOptions = AndroidResetOptions(
             entries = AndroidResetEntries(
                 anonymousId = false,
-                userId = false,
+                userId = true,
                 traits = false,
-                session = false
+                session = true
             )
         )
 
@@ -297,9 +298,9 @@ class AnalyticsTest {
         val newSessionId = analytics.sessionId
         
         assertEquals(originalAnonymousId, newAnonymousId) // AnonymousId should remain unchanged
-        assertEquals(originalUserId, newUserId) // UserId should remain unchanged
+        assertEquals("", newUserId) // UserId should be cleared
         assertEquals(originalTraits, newTraits) // Traits should remain unchanged
-        assertEquals(originalSessionId, newSessionId) // Session should remain unchanged
+        assertTrue(newSessionId != originalSessionId) // Session should change
     }
 
     @Test
