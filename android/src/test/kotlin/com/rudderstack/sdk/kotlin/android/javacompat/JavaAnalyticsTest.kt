@@ -4,6 +4,7 @@ import android.app.Activity
 import androidx.navigation.NavController
 import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.android.Analytics
+import com.rudderstack.sdk.kotlin.android.models.reset.ResetOptions
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import io.mockk.MockKAnnotations
 import io.mockk.confirmVerified
@@ -79,6 +80,16 @@ class JavaAnalyticsTest {
         javaAnalytics.reset()
 
         verify { mockAnalytics.reset(any()) }
+        confirmVerified(mockAnalytics)
+    }
+
+    @Test
+    fun `when reset is called with options, then it should call the corresponding method on Analytics`() {
+        val options = ResetOptions()
+
+        javaAnalytics.reset(options)
+
+        verify { mockAnalytics.reset(options) }
         confirmVerified(mockAnalytics)
     }
 
