@@ -10,34 +10,35 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.generateUUID
 internal class ResetUserIdentityAction(val options: ResetOptions) : UserIdentity.UserIdentityAction {
 
     override fun reduce(currentState: UserIdentity): UserIdentity {
-        return currentState.copy(
-            anonymousId = if (options.entries.anonymousId) {
-                generateUUID()
-            } else {
-                currentState.anonymousId
-            },
-            userId = if (options.entries.userId) {
-                String.empty()
-            } else {
-                currentState.userId
-            },
-            traits = if (options.entries.traits) {
-                emptyJsonObject
-            } else {
-                currentState.traits
-            }
-        )
+        return with(options.entries) {
+            currentState.copy(
+                anonymousId = when {
+                    anonymousId -> generateUUID()
+                    else -> currentState.anonymousId
+                },
+                userId = when {
+                    userId -> String.empty()
+                    else -> currentState.userId
+                },
+                traits = when {
+                    traits -> emptyJsonObject
+                    else -> currentState.traits
+                }
+            )
+        }
     }
 }
 
 internal suspend fun UserIdentity.resetUserIdentity(storage: Storage, options: ResetOptions) {
-    if (options.entries.anonymousId) {
-        storage.write(StorageKeys.ANONYMOUS_ID, this.anonymousId)
-    }
-    if (options.entries.userId) {
-        storage.remove(StorageKeys.USER_ID)
-    }
-    if (options.entries.traits) {
-        storage.remove(StorageKeys.TRAITS)
+    storage.apply {
+        if (options.entries.anonymousId) {
+            write(StorageKeys.ANONYMOUS_ID, this@resetUserIdentity.anonymousId)
+        }
+        if (options.entries.userId) {
+            remove(StorageKeys.USER_ID)
+        }
+        if (options.entries.traits) {
+            remove(StorageKeys.TRAITS)
+        }
     }
 }
