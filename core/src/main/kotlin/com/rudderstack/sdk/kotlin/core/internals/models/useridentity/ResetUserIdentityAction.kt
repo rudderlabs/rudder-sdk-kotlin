@@ -1,16 +1,16 @@
 package com.rudderstack.sdk.kotlin.core.internals.models.useridentity
 
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
-import com.rudderstack.sdk.kotlin.core.internals.models.reset.ResetOptions
+import com.rudderstack.sdk.kotlin.core.internals.models.reset.ResetEntries
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import com.rudderstack.sdk.kotlin.core.internals.utils.generateUUID
 
-internal class ResetUserIdentityAction(val options: ResetOptions) : UserIdentity.UserIdentityAction {
+internal class ResetUserIdentityAction(private val entries: ResetEntries) : UserIdentity.UserIdentityAction {
 
     override fun reduce(currentState: UserIdentity): UserIdentity {
-        return with(options.entries) {
+        return with(entries) {
             currentState.copy(
                 anonymousId = when {
                     anonymousId -> generateUUID()
@@ -29,15 +29,15 @@ internal class ResetUserIdentityAction(val options: ResetOptions) : UserIdentity
     }
 }
 
-internal suspend fun UserIdentity.resetUserIdentity(storage: Storage, options: ResetOptions) {
+internal suspend fun UserIdentity.resetUserIdentity(storage: Storage, entries: ResetEntries) {
     storage.apply {
-        if (options.entries.anonymousId) {
+        if (entries.anonymousId) {
             write(StorageKeys.ANONYMOUS_ID, this@resetUserIdentity.anonymousId)
         }
-        if (options.entries.userId) {
+        if (entries.userId) {
             remove(StorageKeys.USER_ID)
         }
-        if (options.entries.traits) {
+        if (entries.traits) {
             remove(StorageKeys.TRAITS)
         }
     }

@@ -36,10 +36,10 @@ class ResetUserIdentityActionTest {
     }
 
     @Test
-    fun `given some value is present in the user identity, when reset user identity action is performed with default options, then it should reset all values`() {
+    fun `given some value is present in the user identity, when reset user identity action is performed with default entries, then it should reset all values`() {
         val userIdentityState = provideUserIdentityStateAfterFirstIdentifyEventIsMade()
 
-        val result = ResetUserIdentityAction(ResetOptions())
+        val result = ResetUserIdentityAction(ResetOptions().entries)
             .reduce(userIdentityState)
 
         val expected = provideUserIdentityState(anonymousId = NEW_ANONYMOUS_ID)
@@ -47,10 +47,10 @@ class ResetUserIdentityActionTest {
     }
 
     @Test
-    fun `given empty user identity, when reset user identity action is performed with default options, then it should reset only anonymous ID`() {
+    fun `given empty user identity, when reset user identity action is performed with default entries, then it should reset only anonymous ID`() {
         val userIdentityState = provideUserIdentityState()
 
-        val result = ResetUserIdentityAction(ResetOptions())
+        val result = ResetUserIdentityAction(ResetOptions().entries)
             .reduce(userIdentityState)
 
         val expected = provideUserIdentityState(anonymousId = NEW_ANONYMOUS_ID)
@@ -62,7 +62,7 @@ class ResetUserIdentityActionTest {
         val userIdentityState = provideUserIdentityStateAfterFirstIdentifyEventIsMade()
         val resetOptions = ResetOptions(ResetEntries(anonymousId = true, userId = false, traits = false))
 
-        val result = ResetUserIdentityAction(resetOptions)
+        val result = ResetUserIdentityAction(resetOptions.entries)
             .reduce(userIdentityState)
 
         val expected = UserIdentity(
@@ -78,7 +78,7 @@ class ResetUserIdentityActionTest {
         val userIdentityState = provideUserIdentityStateAfterFirstIdentifyEventIsMade()
         val resetOptions = ResetOptions(ResetEntries(anonymousId = false, userId = true, traits = false))
 
-        val result = ResetUserIdentityAction(resetOptions)
+        val result = ResetUserIdentityAction(resetOptions.entries)
             .reduce(userIdentityState)
 
         val expected = UserIdentity(
@@ -94,7 +94,7 @@ class ResetUserIdentityActionTest {
         val userIdentityState = provideUserIdentityStateAfterFirstIdentifyEventIsMade()
         val resetOptions = ResetOptions(ResetEntries(anonymousId = false, userId = false, traits = true))
 
-        val result = ResetUserIdentityAction(resetOptions)
+        val result = ResetUserIdentityAction(resetOptions.entries)
             .reduce(userIdentityState)
 
         val expected = UserIdentity(
@@ -106,11 +106,11 @@ class ResetUserIdentityActionTest {
     }
 
     @Test
-    fun `given user identity with values, when reset user identity action is performed with all flags disabled, then nothing should be reset`() {
+    fun `given user identity with values, when reset user identity action is performed with all entries disabled, then nothing should be reset`() {
         val userIdentityState = provideUserIdentityStateAfterFirstIdentifyEventIsMade()
         val resetOptions = ResetOptions(ResetEntries(anonymousId = false, userId = false, traits = false))
 
-        val result = ResetUserIdentityAction(resetOptions)
+        val result = ResetUserIdentityAction(resetOptions.entries)
             .reduce(userIdentityState)
 
         val expected = provideUserIdentityStateAfterFirstIdentifyEventIsMade()
@@ -118,11 +118,11 @@ class ResetUserIdentityActionTest {
     }
 
     @Test
-    fun `when reset user identity action is performed with default options, then it should reset all values in storage`() =
+    fun `when reset user identity action is performed with default entries, then it should reset all values in storage`() =
         runTest {
             val userIdentityState = provideUserIdentityState(anonymousId = NEW_ANONYMOUS_ID)
 
-            userIdentityState.resetUserIdentity(storage = mockAnalytics.storage, options = ResetOptions())
+            userIdentityState.resetUserIdentity(storage = mockAnalytics.storage, entries = ResetOptions().entries)
             testDispatcher.scheduler.advanceUntilIdle()
 
             coVerify {
@@ -138,7 +138,7 @@ class ResetUserIdentityActionTest {
             val userIdentityState = provideUserIdentityState(anonymousId = NEW_ANONYMOUS_ID)
             val resetOptions = ResetOptions(ResetEntries(anonymousId = true, userId = false, traits = false))
 
-            userIdentityState.resetUserIdentity(storage = mockAnalytics.storage, options = resetOptions)
+            userIdentityState.resetUserIdentity(storage = mockAnalytics.storage, entries = resetOptions.entries)
             testDispatcher.scheduler.advanceUntilIdle()
 
             coVerify {
@@ -152,7 +152,7 @@ class ResetUserIdentityActionTest {
             val userIdentityState = provideUserIdentityState(anonymousId = NEW_ANONYMOUS_ID)
             val resetOptions = ResetOptions(ResetEntries(anonymousId = false, userId = true, traits = false))
 
-            userIdentityState.resetUserIdentity(storage = mockAnalytics.storage, options = resetOptions)
+            userIdentityState.resetUserIdentity(storage = mockAnalytics.storage, entries = resetOptions.entries)
             testDispatcher.scheduler.advanceUntilIdle()
 
             coVerify {
@@ -166,7 +166,7 @@ class ResetUserIdentityActionTest {
             val userIdentityState = provideUserIdentityState(anonymousId = NEW_ANONYMOUS_ID)
             val resetOptions = ResetOptions(ResetEntries(anonymousId = false, userId = false, traits = true))
 
-            userIdentityState.resetUserIdentity(storage = mockAnalytics.storage, options = resetOptions)
+            userIdentityState.resetUserIdentity(storage = mockAnalytics.storage, entries = resetOptions.entries)
             testDispatcher.scheduler.advanceUntilIdle()
 
             coVerify {

@@ -372,11 +372,11 @@ open class Analytics protected constructor(
     open fun reset(options: ResetOptions = ResetOptions()) {
         if (!isAnalyticsActive()) return
 
-        userIdentityState.dispatch(ResetUserIdentityAction(options))
+        userIdentityState.dispatch(ResetUserIdentityAction(options.entries))
         analyticsScope.launch(keyValueStorageDispatcher) {
             userIdentityState.value.resetUserIdentity(
                 storage = storage,
-                options = options
+                entries = options.entries
             )
         }
     }
