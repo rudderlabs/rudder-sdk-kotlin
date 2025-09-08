@@ -346,16 +346,30 @@ open class JavaAnalytics protected constructor(
     }
 
     /**
-     * Clears all user data and identifiers from the analytics instance
+     * Resets the user identity to its initial state.
+     *
+     * This method performs a complete reset by default:
+     * - Generates a new anonymous ID
+     * - Clears the user ID
+     * - Clears user traits
      */
     open fun reset() {
         analytics.reset()
     }
 
     /**
-     * Clears user data and identifiers from the analytics instance with specific options
+     * Resets the user identity with selective control over which data to reset.
      *
-     * @param options The reset options that specify which data entries should be reset
+     * By default, [reset] clears all user data, but this method overload allows you to override
+     * that behavior using the provided options.
+     *
+     * @param options [ResetOptions] that override the default reset behavior.
+     *                The `ResetEntries` configuration within these options allows
+     *                selective control over which data entries are reset:
+     *                - `anonymousId`: When true, generates a new anonymous ID
+     *                - `userId`: When true, clears the user ID
+     *                - `traits`: When true, clears user traits
+     *                Each flag overrides the default behavior of resetting all data.
      */
     open fun reset(options: ResetOptions) {
         analytics.reset(options = options)

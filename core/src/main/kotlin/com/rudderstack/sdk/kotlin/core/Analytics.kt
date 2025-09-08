@@ -354,10 +354,20 @@ open class Analytics protected constructor(
     }
 
     /**
-     * Resets the user identity, clears the existing anonymous ID and
-     * generate a new one, also clears the user ID and traits.
+     * Resets the user identity to its initial state.
      *
-     * @param options Reset options to control which data to reset
+     * By default, this method:
+     * - Generates a new anonymous ID (clears the existing one)
+     * - Clears the user ID (sets it to empty string)
+     * - Clears user traits (resets to empty JSON object)
+     *
+     * @param options Optional [ResetOptions] to override the default reset behavior.
+     *                When provided, the `ResetEntries` configuration within these options
+     *                allows selective control over which data entries are reset:
+     *                - `anonymousId`: Controls whether to generate a new anonymous ID
+     *                - `userId`: Controls whether to clear the user ID
+     *                - `traits`: Controls whether to clear user traits
+     *                If not provided, defaults to resetting all user data.
      */
     open fun reset(options: ResetOptions = ResetOptions()) {
         if (!isAnalyticsActive()) return

@@ -109,10 +109,22 @@ class Analytics(
     }
 
     /**
-     * Resets the user identity, clears the existing anonymous ID and
-     * generate a new one, also clears the user ID and traits.
+     * Resets the user identity to its initial state with Android-specific functionality.
      *
-     * @param options Android-specific reset options to control which data to reset
+     * By default, this method:
+     * - Generates a new anonymous ID (clears the existing one)
+     * - Clears the user ID (sets it to empty string)
+     * - Clears user traits (resets to empty JSON object)
+     * - Refreshes the user session (Android-specific behavior)
+     *
+     * @param options Android-specific [ResetOptions] to override the default reset behavior.
+     *                When provided, the `ResetEntries` configuration within these options
+     *                allows selective control over which data entries are reset:
+     *                - `anonymousId`: Controls whether to generate a new anonymous ID
+     *                - `userId`: Controls whether to clear the user ID
+     *                - `traits`: Controls whether to clear user traits
+     *                - `session`: Controls whether to refresh the session (Android-specific)
+     *                These options override the default behavior of resetting all user data.
      */
     override fun reset(options: ResetOptions) {
         if (!isAnalyticsActive()) return
