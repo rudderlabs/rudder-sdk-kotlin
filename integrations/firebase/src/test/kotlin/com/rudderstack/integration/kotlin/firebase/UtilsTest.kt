@@ -1,4 +1,11 @@
 import com.rudderstack.integration.kotlin.firebase.getString
+import com.rudderstack.integration.kotlin.firebase.attachPropertiesForStandardEvents
+import com.rudderstack.integration.kotlin.firebase.attachPropertiesForCustomEvents
+import android.os.Bundle
+import io.mockk.MockKAnnotations
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonPrimitive
@@ -7,12 +14,26 @@ import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
 import java.util.stream.Stream
 
 class UtilsTest {
+
+    private lateinit var mockBundle: Bundle
+
+    @BeforeEach
+    fun setup() {
+        MockKAnnotations.init(this)
+        mockBundle = mockk(relaxed = true)
+        every { mockBundle.putString(any(), any()) } returns Unit
+        every { mockBundle.putInt(any(), any()) } returns Unit
+        every { mockBundle.putDouble(any(), any()) } returns Unit
+        every { mockBundle.putBoolean(any(), any()) } returns Unit
+    }
 
     @ParameterizedTest
     @MethodSource("provideJsonElementsForGetString")
@@ -23,6 +44,84 @@ class UtilsTest {
         val result = getString(jsonElement as? JsonElement, maxLength = 100)
 
         assertEquals(expected, result)
+    }
+
+    @Test
+    fun `when attachPropertiesForStandardEvents is called with reserved keywords, then reserved keywords should be filtered out`() {
+        val properties = buildJsonObject {
+            put("product_id", "product123") // Reserved keyword
+            put("name", "Test Product") // Reserved keyword
+            put("custom_property", "custom_value") // Non-reserved property
+        }
+
+        attachPropertiesForStandardEvents(mockBundle, properties)
+
+        // Verify reserved keywords are NOT added to bundle
+        verify(exactly = 0) { mockBundle.putString("product_id", any()) }
+        verify(exactly = 0) { mockBundle.putString("name", any()) }
+        
+        // Verify non-reserved property IS added to bundle
+        verify(exactly = 1) { mockBundle.putString("custom_property", "custom_value") }
+    }
+
+    @Test
+    fun `when attachPropertiesForCustomEvents is called with reserved keywords, then all keywords should be included`() {
+        val properties = buildJsonObject {
+            put("product_id", "product456") // Reserved keyword
+            put("name", "Test Product") // Reserved keyword
+            put("custom_property", "custom_value") // Non-reserved property
+        }
+
+        attachPropertiesForCustomEvents(mockBundle, properties)
+
+        // Verify ALL properties are added to bundle (including reserved keywords)
+        verify(exactly = 1) { mockBundle.putString("product_id", "product456") }
+        verify(exactly = 1) { mockBundle.putString("name", "Test Product") }
+        verify(exactly = 1) { mockBundle.putString("custom_property", "custom_value") }
+    }
+
+    @Test
+    fun `when attachPropertiesForStandardEvents is called with empty properties, then no properties should be added`() {
+        val properties = buildJsonObject { }
+
+        attachPropertiesForStandardEvents(mockBundle, properties)
+
+        verify(exactly = 0) { mockBundle.putString(any(), any()) }
+        verify(exactly = 0) { mockBundle.putInt(any(), any()) }
+        verify(exactly = 0) { mockBundle.putDouble(any(), any()) }
+        verify(exactly = 0) { mockBundle.putBoolean(any(), any()) }
+    }
+
+    @Test
+    fun `when attachPropertiesForCustomEvents is called with empty properties, then no properties should be added`() {
+        val properties = buildJsonObject { }
+
+        attachPropertiesForCustomEvents(mockBundle, properties)
+
+        verify(exactly = 0) { mockBundle.putString(any(), any()) }
+        verify(exactly = 0) { mockBundle.putInt(any(), any()) }
+        verify(exactly = 0) { mockBundle.putDouble(any(), any()) }
+        verify(exactly = 0) { mockBundle.putBoolean(any(), any()) }
+    }
+
+    @Test
+    fun `when attachPropertiesForStandardEvents is called with null properties, then no properties should be added`() {
+        attachPropertiesForStandardEvents(mockBundle, null)
+
+        verify(exactly = 0) { mockBundle.putString(any(), any()) }
+        verify(exactly = 0) { mockBundle.putInt(any(), any()) }
+        verify(exactly = 0) { mockBundle.putDouble(any(), any()) }
+        verify(exactly = 0) { mockBundle.putBoolean(any(), any()) }
+    }
+
+    @Test
+    fun `when attachPropertiesForCustomEvents is called with null properties, then no properties should be added`() {
+        attachPropertiesForCustomEvents(mockBundle, null)
+
+        verify(exactly = 0) { mockBundle.putString(any(), any()) }
+        verify(exactly = 0) { mockBundle.putInt(any(), any()) }
+        verify(exactly = 0) { mockBundle.putDouble(any(), any()) }
+        verify(exactly = 0) { mockBundle.putBoolean(any(), any()) }
     }
 
     companion object {
