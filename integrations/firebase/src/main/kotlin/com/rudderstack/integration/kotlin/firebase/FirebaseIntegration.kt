@@ -84,7 +84,7 @@ class FirebaseIntegration : StandardIntegration, IntegrationPlugin() {
         if (payload.screenName.isNotEmpty()) {
             getBundle().apply {
                 putString(FirebaseAnalytics.Param.SCREEN_NAME, payload.screenName)
-                attachAllCustomProperties(this, payload.properties)
+                attachPropertiesForCustomEvents(this, payload.properties)
                 firebaseAnalytics?.logEvent(FirebaseAnalytics.Event.SCREEN_VIEW, this)
             }
         }
@@ -140,7 +140,10 @@ class FirebaseIntegration : StandardIntegration, IntegrationPlugin() {
     private fun handleCustomEvent(eventName: String, properties: JsonObject?) {
         val params = getBundle()
         val firebaseEvent: String = formatFirebaseKey(eventName)
-        makeFirebaseEvent(firebaseEvent, params, properties)
+        // Use property attachment without reserved keyword validation for custom events
+        attachPropertiesForCustomEvents(params, properties)
+        LoggerAnalytics.debug("FirebaseIntegration: Logged \"$firebaseEvent\" to Firebase")
+        firebaseAnalytics?.logEvent(firebaseEvent, params)
     }
 
     private fun addConstantParamsForECommerceEvent(params: Bundle, eventName: String) {
@@ -231,7 +234,7 @@ class FirebaseIntegration : StandardIntegration, IntegrationPlugin() {
     }
 
     private fun makeFirebaseEvent(firebaseEvent: String, params: Bundle, properties: JsonObject?) {
-        attachAllCustomProperties(params, properties)
+        attachPropertiesForStandardEvents(params, properties)
         LoggerAnalytics.debug("FirebaseIntegration: Logged \"$firebaseEvent\" to Firebase")
         firebaseAnalytics?.logEvent(firebaseEvent, params)
     }
