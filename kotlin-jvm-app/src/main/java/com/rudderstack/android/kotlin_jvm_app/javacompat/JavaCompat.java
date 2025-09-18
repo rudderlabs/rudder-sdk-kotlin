@@ -11,6 +11,10 @@ import com.rudderstack.sdk.kotlin.core.internals.models.ExternalId;
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption;
 import com.rudderstack.sdk.kotlin.core.javacompat.JavaAnalytics;
 import com.rudderstack.sdk.kotlin.core.javacompat.RudderOptionBuilder;
+import com.rudderstack.sdk.kotlin.core.javacompat.ResetEntriesBuilder;
+import com.rudderstack.sdk.kotlin.core.javacompat.ResetOptionsBuilder;
+import com.rudderstack.sdk.kotlin.core.internals.models.reset.ResetEntries;
+import com.rudderstack.sdk.kotlin.core.internals.models.reset.ResetOptions;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -129,6 +133,34 @@ public class JavaCompat {
     }
 
     /**
+     * Make a RESET call.
+     */
+    public void reset() {
+        analytics.reset();
+    }
+
+    /**
+     * Partial reset with custom configuration.
+     *
+     * @param resetUserId Whether to reset the user ID
+     * @param resetAnonymousId Whether to reset the anonymous ID
+     * @param resetTraits Whether to reset user traits
+     */
+    public void resetWithOptions(boolean resetUserId, boolean resetAnonymousId, boolean resetTraits) {
+        ResetEntries resetEntries = new ResetEntriesBuilder()
+                .setUserId(resetUserId)
+                .setAnonymousId(resetAnonymousId)
+                .setTraits(resetTraits)
+                .build();
+        
+        ResetOptions resetOptions = new ResetOptionsBuilder()
+                .setEntries(resetEntries)
+                .build();
+                
+        analytics.reset(resetOptions);
+    }
+
+    /**
      * Get the anonymous ID.
      *
      * @return The anonymous ID.
@@ -166,6 +198,8 @@ public class JavaCompat {
         javaCompat.group();
         javaCompat.identify();
         javaCompat.alias();
+        javaCompat.reset();
+        javaCompat.resetWithOptions(true, false, true);
 
         LoggerAnalytics.INSTANCE.verbose("JavaCompat: Anonymous ID: " + javaCompat.getAnonymousId());
         LoggerAnalytics.INSTANCE.verbose("JavaCompat: User ID: " + javaCompat.getUserId());

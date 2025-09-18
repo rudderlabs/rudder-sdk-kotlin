@@ -8,6 +8,8 @@ import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Properties
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
 import com.rudderstack.sdk.kotlin.core.internals.models.Traits
+import com.rudderstack.sdk.kotlin.core.internals.models.reset.ResetEntries
+import com.rudderstack.sdk.kotlin.core.internals.models.reset.ResetOptions
 import java.util.Date
 
 private lateinit var analytics: Analytics
@@ -56,5 +58,12 @@ fun trackMessageKotlinAPI(analytics: Analytics) {
         traits = Traits(emptyMap()),
         options = RudderOption()
     )
+
+    analytics.reset()
+
+    analytics.reset(options = ResetOptions(
+        entries = ResetEntries(anonymousId = false, userId = true)
+    ))
+
     LoggerAnalytics.debug("Message sent")
 }

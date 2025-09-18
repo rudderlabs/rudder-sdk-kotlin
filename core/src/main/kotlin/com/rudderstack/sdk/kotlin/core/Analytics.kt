@@ -14,6 +14,7 @@ import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.Traits
 import com.rudderstack.sdk.kotlin.core.internals.models.connectivity.ConnectivityState
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
+import com.rudderstack.sdk.kotlin.core.internals.models.reset.ResetOptions
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.ResetUserIdentityAction
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.SetUserIdAndTraitsAction
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.SetUserIdForAliasEvent
@@ -353,16 +354,29 @@ open class Analytics protected constructor(
     }
 
     /**
-     * Resets the user identity, clears the existing anonymous ID and
-     * generate a new one, also clears the user ID and traits.
+     * Resets the user identity to its initial state.
+     *
+     * By default, this method:
+     * - Generates a new anonymous ID (clears the existing one)
+     * - Clears the user ID (sets it to empty string)
+     * - Clears user traits (resets to empty JSON object)
+     *
+     * @param options Optional [ResetOptions] to override the default reset behavior.
+     *                When provided, the `ResetEntries` configuration within these options
+     *                allows selective control over which data entries are reset:
+     *                - `anonymousId`: Controls whether to generate a new anonymous ID
+     *                - `userId`: Controls whether to clear the user ID
+     *                - `traits`: Controls whether to clear user traits
+     *                If not provided, defaults to resetting all user data.
      */
-    open fun reset() {
+    open fun reset(options: ResetOptions = ResetOptions()) {
         if (!isAnalyticsActive()) return
 
-        userIdentityState.dispatch(ResetUserIdentityAction)
+        userIdentityState.dispatch(ResetUserIdentityAction(options.entries))
         analyticsScope.launch(keyValueStorageDispatcher) {
             userIdentityState.value.resetUserIdentity(
                 storage = storage,
+                entries = options.entries
             )
         }
     }

@@ -18,8 +18,8 @@ object RudderStackBuildConfig {
     object AndroidAndCoreSDKs {
 
         const val PACKAGE_NAME = "com.rudderstack.sdk.kotlin"
-        const val VERSION_NAME = "1.0.0"
-        const val VERSION_CODE = "2"
+        const val VERSION_NAME = "1.1.0-beta.1"
+        const val VERSION_CODE = "3"
 
         object AndroidPublishConfig : MavenPublishConfig {
 
