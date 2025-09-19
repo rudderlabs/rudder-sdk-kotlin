@@ -1,6 +1,5 @@
 import com.rudderstack.integration.kotlin.firebase.getString
-import com.rudderstack.integration.kotlin.firebase.attachPropertiesForStandardEvents
-import com.rudderstack.integration.kotlin.firebase.attachPropertiesForCustomEvents
+import com.rudderstack.integration.kotlin.firebase.attachAllCustomProperties
 import android.os.Bundle
 import io.mockk.MockKAnnotations
 import io.mockk.every
@@ -47,14 +46,14 @@ class UtilsTest {
     }
 
     @Test
-    fun `when attachPropertiesForStandardEvents is called with reserved keywords, then reserved keywords should be filtered out`() {
+    fun `when attachAllCustomProperties is called with reserved keywords for ecommerce events, then reserved keywords should be filtered out`() {
         val properties = buildJsonObject {
             put("product_id", "product123") // Reserved keyword
             put("name", "Test Product") // Reserved keyword
             put("custom_property", "custom_value") // Non-reserved property
         }
 
-        attachPropertiesForStandardEvents(mockBundle, properties)
+        attachAllCustomProperties(mockBundle, properties, isEcommerceEvent = true)
 
         // Verify reserved keywords are NOT added to bundle
         verify(exactly = 0) { mockBundle.putString("product_id", any()) }
@@ -65,14 +64,14 @@ class UtilsTest {
     }
 
     @Test
-    fun `when attachPropertiesForCustomEvents is called with reserved keywords, then all keywords should be included`() {
+    fun `when attachAllCustomProperties is called with reserved keywords for non-ecommerce events, then all keywords should be included`() {
         val properties = buildJsonObject {
             put("product_id", "product456") // Reserved keyword
             put("name", "Test Product") // Reserved keyword
             put("custom_property", "custom_value") // Non-reserved property
         }
 
-        attachPropertiesForCustomEvents(mockBundle, properties)
+        attachAllCustomProperties(mockBundle, properties, isEcommerceEvent = false)
 
         // Verify ALL properties are added to bundle (including reserved keywords)
         verify(exactly = 1) { mockBundle.putString("product_id", "product456") }
@@ -81,10 +80,10 @@ class UtilsTest {
     }
 
     @Test
-    fun `when attachPropertiesForStandardEvents is called with empty properties, then no properties should be added`() {
+    fun `when attachAllCustomProperties is called with empty properties, then no properties should be added`() {
         val properties = buildJsonObject { }
 
-        attachPropertiesForStandardEvents(mockBundle, properties)
+        attachAllCustomProperties(mockBundle, properties, isEcommerceEvent = true)
 
         verify(exactly = 0) { mockBundle.putString(any(), any()) }
         verify(exactly = 0) { mockBundle.putInt(any(), any()) }
@@ -93,10 +92,10 @@ class UtilsTest {
     }
 
     @Test
-    fun `when attachPropertiesForCustomEvents is called with empty properties, then no properties should be added`() {
+    fun `when attachAllCustomProperties is called with empty properties for non-ecommerce events, then no properties should be added`() {
         val properties = buildJsonObject { }
 
-        attachPropertiesForCustomEvents(mockBundle, properties)
+        attachAllCustomProperties(mockBundle, properties, isEcommerceEvent = false)
 
         verify(exactly = 0) { mockBundle.putString(any(), any()) }
         verify(exactly = 0) { mockBundle.putInt(any(), any()) }
@@ -105,8 +104,8 @@ class UtilsTest {
     }
 
     @Test
-    fun `when attachPropertiesForStandardEvents is called with null properties, then no properties should be added`() {
-        attachPropertiesForStandardEvents(mockBundle, null)
+    fun `when attachAllCustomProperties is called with null properties, then no properties should be added`() {
+        attachAllCustomProperties(mockBundle, null, isEcommerceEvent = true)
 
         verify(exactly = 0) { mockBundle.putString(any(), any()) }
         verify(exactly = 0) { mockBundle.putInt(any(), any()) }
@@ -115,8 +114,8 @@ class UtilsTest {
     }
 
     @Test
-    fun `when attachPropertiesForCustomEvents is called with null properties, then no properties should be added`() {
-        attachPropertiesForCustomEvents(mockBundle, null)
+    fun `when attachAllCustomProperties is called with null properties for non-ecommerce events, then no properties should be added`() {
+        attachAllCustomProperties(mockBundle, null, isEcommerceEvent = false)
 
         verify(exactly = 0) { mockBundle.putString(any(), any()) }
         verify(exactly = 0) { mockBundle.putInt(any(), any()) }

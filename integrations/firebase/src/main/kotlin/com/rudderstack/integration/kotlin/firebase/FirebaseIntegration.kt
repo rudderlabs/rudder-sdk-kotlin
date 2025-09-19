@@ -84,7 +84,7 @@ class FirebaseIntegration : StandardIntegration, IntegrationPlugin() {
         if (payload.screenName.isNotEmpty()) {
             getBundle().apply {
                 putString(FirebaseAnalytics.Param.SCREEN_NAME, payload.screenName)
-                attachPropertiesForCustomEvents(this, payload.properties)
+                attachAllCustomProperties(this, payload.properties, false)
                 firebaseAnalytics?.logEvent(FirebaseAnalytics.Event.SCREEN_VIEW, this)
             }
         }
@@ -107,7 +107,12 @@ class FirebaseIntegration : StandardIntegration, IntegrationPlugin() {
     private fun handleApplicationOpenedEvent(properties: JsonObject?) {
         val firebaseEvent = FirebaseAnalytics.Event.APP_OPEN
         val params = getBundle()
-        makeFirebaseEvent(firebaseEvent, params, properties)
+        makeFirebaseEvent(
+            firebaseEvent = firebaseEvent,
+            params = params,
+            properties = properties,
+            isEcommerceEvent = false
+        )
     }
 
     private fun handleECommerceEvent(eventName: String, properties: JsonObject?) {
@@ -134,16 +139,23 @@ class FirebaseIntegration : StandardIntegration, IntegrationPlugin() {
             handleECommerceEventProperties(params, properties, firebaseEvent)
         }
 
-        makeFirebaseEvent(firebaseEvent, params, properties)
+        makeFirebaseEvent(
+            firebaseEvent = firebaseEvent,
+            params = params,
+            properties = properties,
+            isEcommerceEvent = true
+        )
     }
 
     private fun handleCustomEvent(eventName: String, properties: JsonObject?) {
         val params = getBundle()
         val firebaseEvent: String = formatFirebaseKey(eventName)
-        // Use property attachment without reserved keyword validation for custom events
-        attachPropertiesForCustomEvents(params, properties)
-        LoggerAnalytics.debug("FirebaseIntegration: Logged \"$firebaseEvent\" to Firebase")
-        firebaseAnalytics?.logEvent(firebaseEvent, params)
+        makeFirebaseEvent(
+            firebaseEvent = firebaseEvent,
+            params = params,
+            properties = properties,
+            isEcommerceEvent = false
+        )
     }
 
     private fun addConstantParamsForECommerceEvent(params: Bundle, eventName: String) {
@@ -233,8 +245,13 @@ class FirebaseIntegration : StandardIntegration, IntegrationPlugin() {
         }
     }
 
-    private fun makeFirebaseEvent(firebaseEvent: String, params: Bundle, properties: JsonObject?) {
-        attachPropertiesForStandardEvents(params, properties)
+    private fun makeFirebaseEvent(
+        firebaseEvent: String,
+        params: Bundle,
+        properties: JsonObject?,
+        isEcommerceEvent: Boolean
+    ) {
+        attachAllCustomProperties(params, properties, isEcommerceEvent)
         LoggerAnalytics.debug("FirebaseIntegration: Logged \"$firebaseEvent\" to Firebase")
         firebaseAnalytics?.logEvent(firebaseEvent, params)
     }

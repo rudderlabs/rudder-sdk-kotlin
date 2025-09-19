@@ -250,13 +250,13 @@ class FirebaseIntegrationTest {
     }
 
     @Test
-    fun `given Application Opened event with reserved keyword properties, when track is called, then reserved keywords should be filtered out`() {
+    fun `given Application Opened event with reserved keyword properties, when track is called, then reserved keywords should be included`() {
         val event = "Application Opened"
         val properties = buildJsonObject {
-            put("product_id", "product789") // Reserved keyword - should be filtered
-            put("name", "App Name") // Reserved keyword - should be filtered
-            put("category", "mobile") // Reserved keyword - should be filtered
-            put("value", 0.0) // Reserved keyword - should be filtered
+            put("product_id", "product789") // Reserved keyword - should now be included
+            put("name", "App Name") // Reserved keyword - should now be included
+            put("category", "mobile") // Reserved keyword - should now be included
+            put("value", 0.0) // Reserved keyword - should now be included
             put("custom_app_property", "app_value") // Non-reserved property - should be included
         }
 
@@ -264,13 +264,14 @@ class FirebaseIntegrationTest {
 
         verify(exactly = 1) { mockFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.APP_OPEN, mockBundle) }
         
-        // Only non-reserved properties should be included
+        // ALL properties should be included (including reserved keywords)
         verifyParamsInBundle(
+            "product_id" to "product789",
+            "name" to "App Name", 
+            "category" to "mobile",
+            "value" to 0.0,
             "custom_app_property" to "app_value"
         )
-        
-        // Verify reserved keywords are NOT in the bundle
-        verifyParamsNotInBundle("product_id", "name", "category", "value")
     }
 
     @Test
