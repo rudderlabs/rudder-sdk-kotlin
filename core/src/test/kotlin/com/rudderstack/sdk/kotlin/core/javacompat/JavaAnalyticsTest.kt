@@ -4,6 +4,7 @@ import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.Configuration
 import com.rudderstack.sdk.kotlin.core.assertMapContents
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
+import com.rudderstack.sdk.kotlin.core.internals.models.reset.ResetOptions
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.provideJsonObject
 import com.rudderstack.sdk.kotlin.core.provideMap
@@ -267,7 +268,17 @@ class JavaAnalyticsTest {
     fun `when reset is called, then it should call the reset method on Analytics`() {
         javaAnalytics.reset()
 
-        verify(exactly = 1) { mockAnalytics.reset() }
+        verify(exactly = 1) { mockAnalytics.reset(any()) }
+        confirmVerified(mockAnalytics)
+    }
+
+    @Test
+    fun `when reset is called with options, then it should call the reset method with options on Analytics`() {
+        val options = ResetOptions()
+
+        javaAnalytics.reset(options)
+
+        verify(exactly = 1) { mockAnalytics.reset(options = options) }
         confirmVerified(mockAnalytics)
     }
 }
