@@ -30,6 +30,7 @@ private const val VERSION = "v"
 private const val BUILD_VERSION = "bv"
 private const val ANDROID = "android"
 private const val KOTLIN = "kotlin"
+private const val WRITE_KEY = "writeKey"
 
 private const val SOURCE_CONFIG_RETRY_ATTEMPT = 5
 
@@ -161,6 +162,7 @@ private fun Analytics.getQuery() = when (getPlatformType()) {
         mapOf(
             PLATFORM to ANDROID,
             VERSION to this.storage.getLibraryVersion().getVersionName(),
+            WRITE_KEY to this.configuration.writeKey,
             BUILD_VERSION to this.storage.getLibraryVersion().getBuildVersion()
         )
     }
@@ -169,6 +171,7 @@ private fun Analytics.getQuery() = when (getPlatformType()) {
         mapOf(
             PLATFORM to KOTLIN,
             VERSION to this.storage.getLibraryVersion().getVersionName(),
+            WRITE_KEY to this.configuration.writeKey,
         )
     }
 }
