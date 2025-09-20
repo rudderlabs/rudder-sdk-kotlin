@@ -117,6 +117,7 @@ object LoggerAnalytics {
      * @param log The message to log.
      * @param throwable An optional exception to log alongside the error message.
      */
+    @JvmOverloads
     fun error(log: String, throwable: Throwable? = null) {
         if (Logger.LogLevel.ERROR >= logLevel) {
             logger?.error(log, throwable)
