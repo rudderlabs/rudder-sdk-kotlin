@@ -157,7 +157,8 @@ private fun Analytics.createGetHttpClientFactory(): HttpClient {
     )
 }
 
-private fun Analytics.getQuery() = when (getPlatformType()) {
+@VisibleForTesting
+internal fun Analytics.getQuery() = when (getPlatformType()) {
     PlatformType.Mobile -> {
         mapOf(
             PLATFORM to ANDROID,
