@@ -161,6 +161,18 @@ public class JavaCompat {
     }
 
     /**
+     * Log examples for different log levels.
+     */
+    public void logExamples() {
+        LoggerAnalytics.INSTANCE.verbose("JavaCompat: This is a verbose log");
+        LoggerAnalytics.INSTANCE.debug("JavaCompat: This is a debug log");
+        LoggerAnalytics.INSTANCE.info("JavaCompat: This is an info log");
+        LoggerAnalytics.INSTANCE.warn("JavaCompat: This is a warn log");
+        LoggerAnalytics.INSTANCE.error("JavaCompat: This is an error log");
+        LoggerAnalytics.INSTANCE.error("JavaCompat: This is an error log with exception", new Exception("Sample exception"));
+    }
+
+    /**
      * Get the anonymous ID.
      *
      * @return The anonymous ID.
@@ -200,6 +212,7 @@ public class JavaCompat {
         javaCompat.alias();
         javaCompat.reset();
         javaCompat.resetWithOptions(true, false, true);
+        javaCompat.logExamples();
 
         LoggerAnalytics.INSTANCE.verbose("JavaCompat: Anonymous ID: " + javaCompat.getAnonymousId());
         LoggerAnalytics.INSTANCE.verbose("JavaCompat: User ID: " + javaCompat.getUserId());
