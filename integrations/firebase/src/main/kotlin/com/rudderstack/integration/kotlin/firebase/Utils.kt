@@ -97,16 +97,14 @@ internal fun formatFirebaseKey(key: String): String {
         .take(MAX_KEY_LENGTH)
 }
 
-internal fun attachAllCustomProperties(params: Bundle, properties: JsonObject?) {
+internal fun attachAllCustomProperties(params: Bundle, properties: JsonObject?, isEcommerceEvent: Boolean) {
     properties?.takeIf { it.isNotEmpty() }?.keys?.forEach { key ->
         val firebaseKey = formatFirebaseKey(key)
-        if (!isValidProperty(key, firebaseKey, properties)) return@forEach
+        if ((isEcommerceEvent && firebaseKey.lowercase() in RESERVED_EVENTS_KEYWORDS) || properties.isKeyEmpty(key)) {
+            return@forEach
+        }
         addPropertyToBundle(params, firebaseKey, key, properties)
     }
-}
-
-private fun isValidProperty(key: String, firebaseKey: String, properties: JsonObject): Boolean {
-    return !(firebaseKey.lowercase() in RESERVED_EVENTS_KEYWORDS || properties.isKeyEmpty(key))
 }
 
 private fun addPropertyToBundle(params: Bundle, firebaseKey: String, key: String, properties: JsonObject) {

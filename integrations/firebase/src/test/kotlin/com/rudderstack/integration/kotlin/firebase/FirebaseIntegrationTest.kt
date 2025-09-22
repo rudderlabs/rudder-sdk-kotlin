@@ -82,6 +82,35 @@ class FirebaseIntegrationTest {
     }
 
     @Test
+    fun `given screen event with reserved keyword properties, when screen is called, then properties should be included in bundle`() {
+        val screenName = "ProductScreen"
+        val properties = buildJsonObject {
+            put("product_id", "product456") // Reserved keyword
+            put("name", "Product Name") // Reserved keyword
+            put("category", "shoes") // Reserved keyword
+            put("value", 149.99) // Reserved keyword
+            put("currency", "EUR") // Reserved keyword
+            put("custom_screen_prop", "screen_value") // Non-reserved property
+        }
+
+        firebaseIntegration.screen(ScreenEvent(screenName, properties))
+
+        verify(exactly = 1) {
+            mockFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SCREEN_VIEW, mockBundle)
+        }
+        // All properties should be included since screen events don't filter reserved keywords
+        verifyParamsInBundle(
+            FirebaseAnalytics.Param.SCREEN_NAME to screenName,
+            "product_id" to "product456",
+            "name" to "Product Name",
+            "category" to "shoes",
+            "value" to 149.99,
+            "currency" to "EUR",
+            "custom_screen_prop" to "screen_value"
+        )
+    }
+
+    @Test
     fun `given identify event, when identify is called, then setUserId and setUserProperty are called with correct values`() {
         val userId = "user123"
         val email = "test@example.com"
@@ -182,6 +211,34 @@ class FirebaseIntegrationTest {
     }
 
     @Test
+    fun `given custom event with reserved keyword properties, when track is called, then properties should be included in bundle`() {
+        val event = "Custom Event"
+        val properties = buildJsonObject {
+            put("product_id", "product123") // Reserved keyword
+            put("name", "Test Product") // Reserved keyword
+            put("category", "electronics") // Reserved keyword
+            put("price", 99.99) // Reserved keyword
+            put("currency", "USD") // Reserved keyword
+            put("custom_property", "custom_value") // Non-reserved property
+        }
+
+        firebaseIntegration.track(TrackEvent(event, properties))
+
+        verify(exactly = 1) {
+            mockFirebaseAnalytics.logEvent("Custom_Event", mockBundle)
+        }
+        // All properties should be included since custom events don't filter reserved keywords
+        verifyParamsInBundle(
+            "product_id" to "product123",
+            "name" to "Test Product",
+            "category" to "electronics",
+            "price" to 99.99,
+            "currency" to "USD",
+            "custom_property" to "custom_value"
+        )
+    }
+
+    @Test
     fun `given Application Opened event, when track is called with it, then logEvent method is called with proper fields`() {
         val event = "Application Opened"
         val properties = emptyJsonObject
@@ -190,6 +247,31 @@ class FirebaseIntegrationTest {
 
         verify(exactly = 1) { mockFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.APP_OPEN, mockBundle) }
         verifyBundleIsEmpty()
+    }
+
+    @Test
+    fun `given Application Opened event with reserved keyword properties, when track is called, then reserved keywords should be included`() {
+        val event = "Application Opened"
+        val properties = buildJsonObject {
+            put("product_id", "product789") // Reserved keyword - should now be included
+            put("name", "App Name") // Reserved keyword - should now be included
+            put("category", "mobile") // Reserved keyword - should now be included
+            put("value", 0.0) // Reserved keyword - should now be included
+            put("custom_app_property", "app_value") // Non-reserved property - should be included
+        }
+
+        firebaseIntegration.track(TrackEvent(event, properties))
+
+        verify(exactly = 1) { mockFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.APP_OPEN, mockBundle) }
+        
+        // ALL properties should be included (including reserved keywords)
+        verifyParamsInBundle(
+            "product_id" to "product789",
+            "name" to "App Name", 
+            "category" to "mobile",
+            "value" to 0.0,
+            "custom_app_property" to "app_value"
+        )
     }
 
     @Test
@@ -266,6 +348,30 @@ class FirebaseIntegrationTest {
         }
     }
 
+    @Test
+    fun `given ecommerce event with mixed properties, when track is called, then it should use standard property validation`() {
+        val event = ECommerceEvents.PRODUCTS_SEARCHED // Use an e-commerce event that doesn't involve product arrays
+        val properties = buildJsonObject {
+            put("query", "search term") // This should be mapped to search_term
+            put("custom_search_prop", "search_value") // Non-reserved property - should be included
+            put("products", "should_be_filtered") // Reserved keyword that should be filtered
+        }
+
+        firebaseIntegration.track(TrackEvent(event, properties))
+
+        verify(exactly = 1) { mockFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SEARCH, mockBundle) }
+        
+        // E-commerce events should still filter reserved keywords through standard validation
+        // "query" gets mapped to SEARCH_TERM via ECOMMERCE_PROPERTY_MAPPING
+        verifyParamsInBundle(
+            FirebaseAnalytics.Param.SEARCH_TERM to "search term",
+            "custom_search_prop" to "search_value"
+        )
+        
+        // Reserved keyword "products" should be filtered out
+        verifyParamsNotInBundle("products")
+    }
+
     private fun verifyParamsInBundle(
         vararg values: Pair<String, Any>
     ) {
@@ -287,6 +393,17 @@ class FirebaseIntegrationTest {
             mockBundle.putBoolean(any(), any())
             mockBundle.putParcelableArray(any(), any())
             mockBundle.putParcelableArrayList(any(), any())
+        }
+    }
+
+    private fun verifyParamsNotInBundle(vararg keys: String) {
+        keys.forEach { key ->
+            verify(exactly = 0) { 
+                mockBundle.putString(key, any())
+                mockBundle.putInt(key, any())
+                mockBundle.putDouble(key, any())
+                mockBundle.putBoolean(key, any())
+            }
         }
     }
 
