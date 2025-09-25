@@ -51,16 +51,12 @@ tasks.register("setupGitHooks") {
             currentHooksPath == "scripts" -> {
                 println("✅ Git hooks already configured correctly")
             }
-            currentHooksPath.isEmpty() -> {
-                // Configure Git to use scripts directory for hooks
+            else -> {
+                // Always configure to use scripts directory
                 exec {
                     commandLine("git", "config", "core.hooksPath", "scripts")
                 }
                 println("🔧 Configured Git to use scripts/ directory for hooks")
-            }
-            else -> {
-                println("⚠️ Git hooks path is currently set to: $currentHooksPath")
-                println("💡 To use project hooks, run: git config core.hooksPath scripts")
             }
         }
 
