@@ -76,20 +76,6 @@ tasks.register("setupGitHooks") {
             }
         }
 
-        // Clean up old copied hooks if they exist
-        val oldHooksDir = file(".git/hooks")
-        hookFiles.forEach { hookName ->
-            val oldHookFile = File(oldHooksDir, hookName)
-            if (oldHookFile.exists() && !oldHookFile.readText().contains("#!/bin/bash")) {
-                // Only delete if it looks like our copied hook (not a custom hook)
-                val scriptContent = file("scripts/$hookName").readText()
-                if (oldHookFile.readText() == scriptContent) {
-                    oldHookFile.delete()
-                    println("🧹 Removed old copied hook: .git/hooks/$hookName")
-                }
-            }
-        }
-
         println("✅ Git hooks setup complete!")
     }
 }
