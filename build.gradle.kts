@@ -30,7 +30,7 @@ tasks.register<Delete>("clean") {
 
 // Git Hooks Setup - Project-wide development tooling
 tasks.register("setupGitHooks") {
-    description = "Configure Git to use hooks from scripts directory"
+    description = "Configure Git to use hooks from scripts/git-hooks directory"
     group = "setup"
 
     doLast {
@@ -48,27 +48,27 @@ tasks.register("setupGitHooks") {
         }
 
         when {
-            currentHooksPath == "scripts" -> {
+            currentHooksPath == "scripts/git-hooks" -> {
                 println("✅ Git hooks already configured correctly")
             }
             else -> {
-                // Always configure to use scripts directory
+                // Always configure to use scripts/git-hooks directory
                 exec {
-                    commandLine("git", "config", "core.hooksPath", "scripts")
+                    commandLine("git", "config", "core.hooksPath", "scripts/git-hooks")
                 }
-                println("🔧 Configured Git to use scripts/ directory for hooks")
+                println("🔧 Configured Git to use scripts/git-hooks/ directory for hooks")
             }
         }
 
         // Make hook scripts executable
         val hookFiles = listOf("pre-commit", "pre-push", "commit-msg")
         hookFiles.forEach { hookName ->
-            val hookFile = file("scripts/$hookName")
+            val hookFile = file("scripts/git-hooks/$hookName")
             if (hookFile.exists()) {
                 hookFile.setExecutable(true)
                 println("📋 Made $hookName executable")
             } else {
-                println("⚠️ Hook file not found: scripts/$hookName")
+                println("⚠️ Hook file not found: scripts/git-hooks/$hookName")
             }
         }
 
