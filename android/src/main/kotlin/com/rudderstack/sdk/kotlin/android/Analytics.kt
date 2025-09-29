@@ -26,12 +26,15 @@ import com.rudderstack.sdk.kotlin.android.plugins.sessiontracking.SessionTrackin
 import com.rudderstack.sdk.kotlin.android.storage.provideAndroidStorage
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.models.reset.ResetOptions
 import com.rudderstack.sdk.kotlin.core.internals.platform.Platform
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.utils.isAnalyticsActive
 import com.rudderstack.sdk.kotlin.core.internals.utils.isSourceEnabled
 import com.rudderstack.sdk.kotlin.core.provideAnalyticsConfiguration
+import com.rudderstack.sdk.kotlin.android.models.reset.ResetEntries as AndroidResetEntry
+import com.rudderstack.sdk.kotlin.android.models.reset.ResetOptions as AndroidResetOption
 
 private const val MIN_SESSION_ID_LENGTH = 10
 
@@ -106,14 +109,35 @@ class Analytics(
     }
 
     /**
-     * Resets the user identity, clears the existing anonymous ID and
-     * generate a new one, also clears the user ID and traits.
+     * Resets the user identity to its initial state with Android-specific functionality.
+     *
+     * By default, this method:
+     * - Generates a new anonymous ID (clears the existing one)
+     * - Clears the user ID (sets it to empty string)
+     * - Clears user traits (resets to empty JSON object)
+     * - Refreshes the user session (Android-specific behavior)
+     *
+     * @param options Android-specific [ResetOptions] to override the default reset behavior.
+     *                When provided, the `ResetEntries` configuration within these options
+     *                allows selective control over which data entries are reset:
+     *                - `anonymousId`: Controls whether to generate a new anonymous ID
+     *                - `userId`: Controls whether to clear the user ID
+     *                - `traits`: Controls whether to clear user traits
+     *                - `session`: Controls whether to refresh the session (Android-specific)
+     *                These options override the default behavior of resetting all user data.
      */
-    override fun reset() {
+    override fun reset(options: ResetOptions) {
         if (!isAnalyticsActive()) return
-        super.reset()
 
-        sessionTrackingPlugin.sessionManager.refreshSession()
+        if (options !is AndroidResetOption) {
+            LoggerAnalytics.debug("The options should be of type Android ResetOptions.")
+        }
+
+        super.reset(options)
+
+        if ((options.entries as? AndroidResetEntry)?.session != false) {
+            sessionTrackingPlugin.sessionManager.refreshSession()
+        }
 
         if (!isSourceEnabled()) return
 

@@ -18,8 +18,18 @@ object RudderStackBuildConfig {
     object AndroidAndCoreSDKs {
 
         const val PACKAGE_NAME = "com.rudderstack.sdk.kotlin"
-        const val VERSION_NAME = "1.0.0"
-        const val VERSION_CODE = "2"
+        const val VERSION_NAME = "1.1.0"
+        const val VERSION_CODE = "4"
+
+        object AndroidLibraryInfo : LibraryInfo {
+
+            override val name: String = "$PACKAGE_NAME.android"
+        }
+
+        object CoreLibraryInfo : LibraryInfo {
+
+            override val name: String = "$PACKAGE_NAME.core"
+        }
 
         object AndroidPublishConfig : MavenPublishConfig {
 
@@ -81,8 +91,8 @@ object RudderStackBuildConfig {
         object Firebase : IntegrationModuleInfo {
 
             override val moduleName: String = "firebase"
-            override val versionName: String = "1.0.1"
-            override val versionCode: String = "2"
+            override val versionName: String = "1.1.0"
+            override val versionCode: String = "3"
 
             override val artifactId = "firebase"
             override val pomPackaging = "aar"
@@ -111,6 +121,11 @@ object RudderStackBuildConfig {
         const val DEVELOPER_ID = "Rudderstack"
         const val DEVELOPER_NAME = "Rudderstack, Inc."
     }
+}
+
+interface LibraryInfo {
+
+    val name: String
 }
 
 interface MavenPublishConfig {

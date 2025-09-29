@@ -49,6 +49,7 @@ android {
 
         buildConfigField("String", "VERSION_NAME", "\"${RudderStackBuildConfig.AndroidAndCoreSDKs.VERSION_NAME}\"")
         buildConfigField("int", "VERSION_CODE", RudderStackBuildConfig.AndroidAndCoreSDKs.VERSION_CODE)
+        buildConfigField("String", "LIBRARY_NAME", "\"${RudderStackBuildConfig.AndroidAndCoreSDKs.AndroidLibraryInfo.name}\"")
     }
 
     buildTypes {

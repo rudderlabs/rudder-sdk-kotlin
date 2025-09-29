@@ -142,6 +142,7 @@ The following integrations are currently available:
 - [Adjust](integrations/adjust/README.md) - Track and attribute your mobile app installs and in-app events
 - [Braze](integrations/braze/README.md) - Send your event data to Braze for customer engagement
 - [Facebook](integrations/facebook/README.md) - Send your event data to Facebook for analytics and advertising
+- [AppsFlyer](integrations/appsflyer/README.md) - Send your event data to AppsFlyer for analytics
 
 ### Using Integrations
 

@@ -12,6 +12,7 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.MockBackOffPolicy
 import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import com.rudderstack.sdk.kotlin.core.internals.utils.handleInvalidWriteKey
+import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import io.mockk.CapturingSlot
 import io.mockk.MockKAnnotations
 import io.mockk.coEvery
@@ -34,6 +35,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
+import org.junit.jupiter.api.Assertions.assertEquals
 
 private const val downloadedSourceConfig = "config/source_config_with_single_destination.json"
 
@@ -242,6 +244,43 @@ class SourceConfigManagerTest {
         backgroundScope.launch {
             flowCollectorSlot.captured.emit(true)
         }.also { testDispatcher.scheduler.runCurrent() }
+    }
+
+    @Test
+    fun `given mobile platform, when getQuery is called, then it should contain correct query params`() = runTest(testDispatcher) {
+        val testWriteKey = "test-write-key-12345"
+        val testVersion = "1.0.0"
+        val testBuildVersion = "100"
+        
+        every { analytics.getPlatformType() } returns PlatformType.Mobile
+        every { analytics.configuration.writeKey } returns testWriteKey
+        every { analytics.storage.getLibraryVersion().getVersionName() } returns testVersion
+        every { analytics.storage.getLibraryVersion().getBuildVersion() } returns testBuildVersion
+
+        val query = analytics.getQuery()
+
+        assertEquals("android", query["p"])
+        assertEquals(testVersion, query["v"])
+        assertEquals(testWriteKey, query["writeKey"])
+        assertEquals(testBuildVersion, query["bv"])
+        assertEquals(4, query.size)
+    }
+
+    @Test
+    fun `given server platform, when getQuery is called, then it should contain correct query params`() = runTest(testDispatcher) {
+        val testWriteKey = "test-write-key-67890"
+        val testVersion = "2.0.0"
+        
+        every { analytics.getPlatformType() } returns PlatformType.Server
+        every { analytics.configuration.writeKey } returns testWriteKey
+        every { analytics.storage.getLibraryVersion().getVersionName() } returns testVersion
+
+        val query = analytics.getQuery()
+
+        assertEquals("kotlin", query["p"])
+        assertEquals(testVersion, query["v"])
+        assertEquals(testWriteKey, query["writeKey"])
+        assertEquals(3, query.size)
     }
 
     companion object {
