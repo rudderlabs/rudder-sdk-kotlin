@@ -224,14 +224,15 @@ enum class StorageKeys(val key: String) {
  * Provides methods to retrieve platform-specific details, version name, version code,
  * and to convert this information into a map format.
  */
+@InternalRudderApi
 interface LibraryVersion {
 
     /**
-     * Returns the package name of the library.
+     * Returns the name of the library.
      *
-     * @return The package name as a [String].
+     * @return The name as a [String].
      */
-    fun getPackageName(): String
+    fun getLibraryName(): String
 
     /**
      * Returns the version name of the library.
