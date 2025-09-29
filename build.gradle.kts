@@ -61,15 +61,16 @@ tasks.register("setupGitHooks") {
         }
 
         // Make hook scripts executable
-        val hookFiles = listOf("pre-commit", "pre-push", "commit-msg")
-        hookFiles.forEach { hookName ->
-            val hookFile = file("scripts/git-hooks/$hookName")
-            if (hookFile.exists()) {
-                hookFile.setExecutable(true)
-                println("📋 Made $hookName executable")
-            } else {
-                println("⚠️ Hook file not found: scripts/git-hooks/$hookName")
+        val hooksDir = file("scripts/git-hooks")
+        if (hooksDir.exists() && hooksDir.isDirectory) {
+            hooksDir.listFiles()?.forEach { hookFile ->
+                if (hookFile.isFile) {
+                    hookFile.setExecutable(true)
+                    println("📋 Made ${hookFile.name} executable")
+                }
             }
+        } else {
+            println("⚠️ Hooks directory not found: scripts/git-hooks")
         }
 
         println("✅ Git hooks setup complete!")
