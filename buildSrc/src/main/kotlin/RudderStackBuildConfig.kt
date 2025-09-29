@@ -21,6 +21,16 @@ object RudderStackBuildConfig {
         const val VERSION_NAME = "1.0.0"
         const val VERSION_CODE = "2"
 
+        object AndroidLibraryInfo : LibraryInfo {
+
+            override val name: String = "$PACKAGE_NAME.android"
+        }
+
+        object CoreLibraryInfo : LibraryInfo {
+
+            override val name: String = "$PACKAGE_NAME.core"
+        }
+
         object AndroidPublishConfig : MavenPublishConfig {
 
             override val artifactId = "android"
@@ -111,6 +121,11 @@ object RudderStackBuildConfig {
         const val DEVELOPER_ID = "Rudderstack"
         const val DEVELOPER_NAME = "Rudderstack, Inc."
     }
+}
+
+interface LibraryInfo {
+
+    val name: String
 }
 
 interface MavenPublishConfig {

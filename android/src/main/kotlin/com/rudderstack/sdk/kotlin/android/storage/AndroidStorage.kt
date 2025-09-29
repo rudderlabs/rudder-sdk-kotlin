@@ -101,7 +101,7 @@ internal class AndroidStorage(
 
     override fun getLibraryVersion(): LibraryVersion {
         return object : LibraryVersion {
-            override fun getPackageName(): String = BuildConfig.LIBRARY_PACKAGE_NAME
+            override fun getPackageName(): String = BuildConfig.LIBRARY_NAME
 
             override fun getVersionName(): String = BuildConfig.VERSION_NAME
 
