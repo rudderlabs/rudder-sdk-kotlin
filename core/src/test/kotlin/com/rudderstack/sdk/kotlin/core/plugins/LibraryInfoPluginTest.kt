@@ -105,12 +105,12 @@ private fun provideEvent(): Event = TrackEvent(
 
 private fun provideLibraryVersion(platform: PlatformType): LibraryVersion = when (platform) {
     PlatformType.Mobile -> object : LibraryVersion {
-        override fun getPackageName(): String = ANDROID_LIBRARY_NAME
+        override fun getLibraryName(): String = ANDROID_LIBRARY_NAME
         override fun getVersionName(): String = ANDROID_LIBRARY_VERSION
     }
 
     PlatformType.Server -> object : LibraryVersion {
-        override fun getPackageName(): String = KOTLIN_LIBRARY_NAME
+        override fun getLibraryName(): String = KOTLIN_LIBRARY_NAME
         override fun getVersionName(): String = KOTLIN_LIBRARY_VERSION
     }
 }

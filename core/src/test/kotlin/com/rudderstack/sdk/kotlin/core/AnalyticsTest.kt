@@ -845,7 +845,7 @@ private fun provideConfiguration() =
 
 private fun provideLibraryVersion(): LibraryVersion {
     return object : LibraryVersion {
-        override fun getPackageName(): String = "com.rudderstack.kotlin.sdk"
+        override fun getLibraryName(): String = "com.rudderstack.kotlin.sdk"
         override fun getVersionName(): String = "1.0.0"
     }
 }
