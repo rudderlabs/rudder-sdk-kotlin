@@ -31,6 +31,7 @@ The Kotlin SDK enables you to track customer event data from your Android or Kot
 - [**Identifying your users**](#identifying-users)
 - [**Tracking user actions**](#tracking-user-actions)
 - [**Integrations**](#integrations)
+- [**Development**](#development)
 - [**Contact us**](#contact-us)
 
 ---
@@ -178,6 +179,73 @@ class MyApplication : Application() {
     }
 }
 ```
+
+---
+
+## Development
+
+This section provides information for developers contributing to the RudderStack Kotlin SDK.
+
+### Git Hooks
+
+The project includes automated git hooks to maintain code quality and enforce development standards. These hooks run automatically during git operations to catch issues early.
+
+#### Available Hooks
+
+- **pre-commit**: Runs before each commit
+  - Executes Detekt static code analysis
+  - Runs Android Lint on affected modules
+  - Prevents commits if quality checks fail
+
+- **pre-push**: Runs before each push
+  - Validates branch naming conventions (e.g., `feat/feature-name`, `fix/bug-name`)
+  - Runs a clean build to ensure code compiles
+  - Prevents pushes if validation fails
+
+- **commit-msg**: Runs when creating commit messages
+  - Validates commit message format using conventional commits
+  - Enforces format: `type(scope): description` (e.g., `feat: add new analytics feature`)
+  - Supported types: `feat`, `fix`, `refactor`, `perf`, `style`, `test`, `docs`, `chore`, `build`, `ci`, `revert`
+
+#### Enabling Git Hooks
+
+The git hooks are automatically configured when you build the project, but you can also enable them manually:
+
+```bash
+# Option 1: Use the Gradle task (recommended)
+./gradlew setupGitHooks
+
+# Option 2: Manual setup
+git config core.hooksPath scripts
+chmod +x scripts/pre-commit scripts/pre-push scripts/commit-msg
+```
+
+#### Branch Naming Convention
+
+When creating branches, follow this naming pattern:
+```
+<type>/<description>
+
+Examples:
+feat/user-authentication
+fix/memory-leak-issue
+refactor/analytics-core
+docs/update-readme
+```
+
+#### Commit Message Convention
+
+Follow conventional commit format:
+```
+<type>(<scope>): <description>
+
+Examples:
+feat(android): add user identification support
+fix(core): resolve memory leak in event processing
+docs: update installation instructions
+```
+
+---
 
 ## Contact us
 
