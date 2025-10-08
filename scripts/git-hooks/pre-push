@@ -1,0 +1,147 @@
+#!/bin/bash
+
+set -e  # Exit on any error
+
+echo "🚀 Running pre-push checks..."
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Function to print colored output
+print_status() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
+
+print_success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
+
+print_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+print_warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
+
+# Helper function to format module names for display
+format_module_display() {
+    # Convert :module1,:module2:submodule format to clean display
+    # Remove leading colon and add proper spacing after commas
+    echo "$1" | sed 's/^://' | sed 's/,:/, /g'
+}
+
+# 1. Check branch name
+print_status "Validating branch name..."
+LC_ALL=C
+local_branch="$(git rev-parse --abbrev-ref HEAD)"
+valid_branch_regex="^(feat|fix|hotfix|refactor|release|docs|chore|test|ci)\/[a-z0-9._-]+$"
+message="There is something wrong with your branch name. Branch names in this project must adhere to this contract: $valid_branch_regex. Your push will be rejected. You should rename your branch to a valid name and try again."
+
+if [[ ! $local_branch =~ $valid_branch_regex ]]
+then
+    print_error "$message"
+    exit 1
+fi
+print_success "✅ Branch name validation passed"
+
+# 2. Clean the project
+print_status "Cleaning project..."
+./gradlew clean --quiet
+print_success "✅ Project cleaned"
+
+# 3. Find affected modules
+print_status "Analyzing changed files..."
+AFFECTED_OUTPUT=$(sh scripts/find-affected-modules.sh 2>&1)
+
+# Extract affected modules from output
+AFFECTED_MODULES=$(echo "$AFFECTED_OUTPUT" | grep "AFFECTED_MODULES=" | cut -d'=' -f2)
+
+# Check if no modules are affected and exit early
+if [ -z "$AFFECTED_MODULES" ]; then
+    # Check if the script ran successfully but no modules were affected
+    if echo "$AFFECTED_OUTPUT" | grep -q "Module detection complete"; then
+        print_success "✅ Only CI/documentation files changed - no source modules affected"
+        echo ""
+        print_success "🎉 All pre-push checks passed! Ready to push."
+        echo "⚡ Fast-tracked: No testing or building required!"
+        exit 0
+    else
+        print_error "Failed to determine affected modules. find-affected-modules.sh script did not complete successfully."
+        print_error "Script output:"
+        echo "$AFFECTED_OUTPUT"
+        print_error "Please check the script and fix any issues before pushing."
+        exit 1
+    fi
+fi
+
+# Preprocess affected modules for steps 4 and 5
+MODULE_COUNT=$(echo "$AFFECTED_MODULES" | tr ',' '\n' | wc -l | xargs)
+MODULE_NAMES=$(format_module_display "$AFFECTED_MODULES")
+TEST_TASKS=""
+BUILD_TASKS=""
+
+IFS=',' read -ra MODULES <<< "$AFFECTED_MODULES"
+for module in "${MODULES[@]}"; do
+    # Remove leading colon
+    module_clean=$(echo "$module" | sed 's/^://')
+    if [ -n "$module_clean" ]; then
+        TEST_TASKS="$TEST_TASKS $module_clean:test"
+
+        # Determine the appropriate build task based on module
+        if [ "$module_clean" = "core" ]; then
+            BUILD_TASKS="$BUILD_TASKS :core:assemble"
+        elif [ "$module_clean" = "android" ]; then
+            BUILD_TASKS="$BUILD_TASKS :android:assembleRelease"
+        elif [[ "$module_clean" == integrations:* ]]; then
+            BUILD_TASKS="$BUILD_TASKS :$module_clean:assembleRelease"
+        else
+            print_warning "Unknown module format: $module_clean, using generic assemble task"
+            BUILD_TASKS="$BUILD_TASKS :$module_clean:assemble"
+        fi
+    fi
+done
+
+# Trim leading spaces from task strings
+TEST_TASKS=$(echo "$TEST_TASKS" | sed 's/^ //')
+BUILD_TASKS=$(echo "$BUILD_TASKS" | sed 's/^ //')
+
+print_success "Detected changes in: $MODULE_NAMES"
+
+# 4. Build affected modules
+if [ -n "$BUILD_TASKS" ]; then
+    print_status "Building $MODULE_COUNT module(s): $MODULE_NAMES"
+
+    echo ""  # Visual separation
+
+    if ! ./gradlew $BUILD_TASKS --quiet; then
+        echo ""  # Visual separation
+        print_error "❌ Build failed! Please fix build errors before pushing."
+        exit 1
+    fi
+
+    echo ""  # Visual separation
+    print_success "✅ All modules built successfully"
+fi
+
+# 5. Run unit tests for affected modules
+if [ -n "$TEST_TASKS" ]; then
+    print_status "Testing $MODULE_COUNT module(s): $MODULE_NAMES"
+
+    echo ""  # Add visual separation from gradle output
+    if ! ./gradlew $TEST_TASKS --quiet; then
+        print_error "❌ Tests failed! Please fix failing tests before pushing."
+        exit 1
+    fi
+    echo ""  # Add visual separation
+
+    print_success "✅ All tests passed"
+fi
+
+echo ""
+print_success "🎉 All pre-push checks passed! Ready to push."
+exit 0
