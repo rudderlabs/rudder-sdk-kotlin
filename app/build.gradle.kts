@@ -121,32 +121,3 @@ dependencies {
 
     testRuntimeOnly(libs.junit.jupiter.engine)
 }
-
-tasks.named("preBuild").configure {
-    doFirst {
-        val oldCommitFile = file("${rootProject.rootDir}/.git/hooks/pre-commit")
-        val oldPushFile = file("${rootProject.rootDir}/.git/hooks/pre-push")
-        val oldCommitMessageFile = file("${rootProject.rootDir}/.git/hooks/commit-msg")
-        val newCommitFile = file("${rootProject.rootDir}/scripts/pre-commit")
-        val newPushFile = file("${rootProject.rootDir}/scripts/pre-push")
-        val newCommitMessageFile = file("${rootProject.rootDir}/scripts/commit-msg")
-        if (
-            oldCommitFile.length() != newCommitFile.length() ||
-            oldPushFile.length() != newPushFile.length() ||
-            oldCommitMessageFile.length() != newCommitMessageFile.length()
-        ) {
-            oldCommitFile.delete()
-            oldPushFile.delete()
-            oldCommitMessageFile.delete()
-            println("Old hooks are deleted.")
-
-            copy {
-                from("${rootProject.rootDir}/scripts/")
-                into("${rootProject.rootDir}/.git/hooks/")
-                // to make the git hook executable
-                fileMode = "0777".toInt(8)
-            }
-            println("New hooks are copied.")
-        }
-    }
-}
