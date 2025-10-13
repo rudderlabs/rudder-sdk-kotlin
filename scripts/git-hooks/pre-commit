@@ -1,0 +1,43 @@
+#!/bin/bash
+
+set -e  # Exit on any error
+
+echo "🚀 Running pre-commit checks..."
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Function to print colored output
+print_status() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
+
+print_success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
+
+print_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+# 1. Run Detekt
+print_status "Running Detekt static code analysis..."
+if ! ./gradlew detekt; then
+    print_error "Detekt found code quality issues. Please fix them before committing."
+    exit 1
+fi
+print_success "Detekt checks passed"
+
+# 2. Run Android Lint
+print_status "Running Android Lint..."
+if ! ./gradlew :android:lint; then
+    print_error "Android Lint found issues. Please fix them before committing."
+    exit 1
+fi
+print_success "Android Lint checks passed"
+
+print_success "🎉 All pre-commit checks passed! Ready to commit."
+exit 0
