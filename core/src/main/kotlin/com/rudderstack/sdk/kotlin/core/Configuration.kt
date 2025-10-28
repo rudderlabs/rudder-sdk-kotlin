@@ -3,6 +3,7 @@ package com.rudderstack.sdk.kotlin.core
 import com.rudderstack.sdk.kotlin.core.Configuration.Companion.DEFAULT_CONTROL_PLANE_URL
 import com.rudderstack.sdk.kotlin.core.Configuration.Companion.DEFAULT_FLUSH_POLICIES
 import com.rudderstack.sdk.kotlin.core.Configuration.Companion.DEFAULT_GZIP_STATUS
+import com.rudderstack.sdk.kotlin.core.internals.models.reset.ResetOptions
 import com.rudderstack.sdk.kotlin.core.internals.policies.CountFlushPolicy
 import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPolicy
 import com.rudderstack.sdk.kotlin.core.internals.policies.FrequencyFlushPolicy
@@ -18,6 +19,7 @@ import org.jetbrains.annotations.VisibleForTesting
  * @property controlPlaneUrl The URL of the control plane for fetching configuration settings. Defaults to [DEFAULT_CONTROL_PLANE_URL].
  * @property gzipEnabled A flag indicating whether GZIP compression is enabled for network requests. Defaults to [DEFAULT_GZIP_STATUS].
  * @property flushPolicies A list of flush policies that determine when to flush events to the data plane. Defaults to [DEFAULT_FLUSH_POLICIES].
+ * @property defaultResetOptions The default value for the [ResetOptions] to be passed to the `reset` API call. Defaults to [DEFAULT_RESET_OPTIONS].
  */
 open class Configuration @JvmOverloads constructor(
     open val writeKey: String,
@@ -25,6 +27,7 @@ open class Configuration @JvmOverloads constructor(
     open val controlPlaneUrl: String = DEFAULT_CONTROL_PLANE_URL,
     open val gzipEnabled: Boolean = DEFAULT_GZIP_STATUS,
     open val flushPolicies: List<FlushPolicy> = DEFAULT_FLUSH_POLICIES,
+    open val defaultResetOptions: ResetOptions = DEFAULT_RESET_OPTIONS
 ) {
 
     companion object {
@@ -46,6 +49,11 @@ open class Configuration @JvmOverloads constructor(
          */
         val DEFAULT_FLUSH_POLICIES: List<FlushPolicy>
             get() = provideDefaultFlushPolicies()
+
+        /**
+         * The default value for `defaultResetOptions` which define the default `ResetOptions` passed to the `reset` API calls in the SDK.
+         */
+        internal val DEFAULT_RESET_OPTIONS: ResetOptions = ResetOptions()
     }
 }
 

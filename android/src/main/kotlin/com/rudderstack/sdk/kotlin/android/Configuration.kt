@@ -3,6 +3,7 @@ package com.rudderstack.sdk.kotlin.android
 import android.app.Application
 import com.rudderstack.sdk.kotlin.core.Configuration
 import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPolicy
+import com.rudderstack.sdk.kotlin.android.models.reset.ResetOptions as AndroidResetOptions
 
 internal const val DEFAULT_SESSION_TIMEOUT_IN_MILLIS = 300_000L
 
@@ -37,6 +38,7 @@ internal const val DEFAULT_SESSION_TIMEOUT_IN_MILLIS = 300_000L
  * @param controlPlaneUrl The URL of the control plane, used for remote configuration management. Defaults to `DEFAULT_CONTROL_PLANE_URL`.
  * @param flushPolicies A list of flush policies defining when and how events should be sent to the backend. Defaults to `DEFAULT_FLUSH_POLICIES`.
  * @param gzipEnabled Flag to enable or disable GZIP compression for network requests. Defaults to `DEFAULT_GZIP_STATUS`.
+ * @param defaultResetOptions The default value for the [AndroidResetOptions] to be passed to the `reset` API call. Defaults to [DEFAULT_RESET_OPTIONS].
  *
  * ## Example
  * ```kotlin
@@ -63,7 +65,8 @@ data class Configuration @JvmOverloads constructor(
     override val dataPlaneUrl: String,
     override val controlPlaneUrl: String = DEFAULT_CONTROL_PLANE_URL,
     override val flushPolicies: List<FlushPolicy> = DEFAULT_FLUSH_POLICIES,
-    override val gzipEnabled: Boolean = DEFAULT_GZIP_STATUS
+    override val gzipEnabled: Boolean = DEFAULT_GZIP_STATUS,
+    override val defaultResetOptions: AndroidResetOptions = DEFAULT_RESET_OPTIONS
 ) : Configuration(
     writeKey = writeKey,
     dataPlaneUrl = dataPlaneUrl,
@@ -76,6 +79,7 @@ data class Configuration @JvmOverloads constructor(
         internal const val DEFAULT_TRACK_DEEP_LINKS = true
         internal const val DEFAULT_TRACK_ACTIVITIES = false
         internal const val DEFAULT_COLLECT_DEVICE_ID = true
+        internal val DEFAULT_RESET_OPTIONS = AndroidResetOptions()
     }
 }
 
