@@ -209,7 +209,7 @@ open class Analytics protected constructor(
         if (!isAnalyticsActive()) return
 
         if (!this.userId.isNullOrEmpty() && this.userId != userId) {
-            reset()
+            reset(options = configuration.defaultResetOptions)
         }
 
         userIdentityState.dispatch(
@@ -369,7 +369,7 @@ open class Analytics protected constructor(
      *                - `traits`: Controls whether to clear user traits
      *                If not provided, defaults to resetting all user data.
      */
-    open fun reset(options: ResetOptions = ResetOptions()) {
+    open fun reset(options: ResetOptions = configuration.defaultResetOptions) {
         if (!isAnalyticsActive()) return
 
         userIdentityState.dispatch(ResetUserIdentityAction(options.entries))
