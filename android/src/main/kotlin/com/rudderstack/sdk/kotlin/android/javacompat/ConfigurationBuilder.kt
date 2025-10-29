@@ -9,8 +9,10 @@ import com.rudderstack.sdk.kotlin.android.Configuration.Companion.DEFAULT_TRACK_
 import com.rudderstack.sdk.kotlin.android.DEFAULT_SESSION_TIMEOUT_IN_MILLIS
 import com.rudderstack.sdk.kotlin.android.SessionConfiguration
 import com.rudderstack.sdk.kotlin.android.SessionConfiguration.Companion.DEFAULT_AUTOMATIC_SESSION_TRACKING
+import com.rudderstack.sdk.kotlin.core.internals.models.reset.ResetOptions
 import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPolicy
 import com.rudderstack.sdk.kotlin.core.javacompat.ConfigurationBuilder
+import kotlin.apply
 
 /**
  * Builder class for creating Configuration instances.
@@ -86,6 +88,13 @@ class ConfigurationBuilder(
      */
     override fun setGzipEnabled(enabled: Boolean) = apply {
         super.setGzipEnabled(enabled)
+    }
+
+    /**
+     * Sets the default reset options for reset API calls.
+     */
+    override fun setDefaultResetOptions(options: ResetOptions) = apply {
+        super.setDefaultResetOptions(options)
     }
 
     /**

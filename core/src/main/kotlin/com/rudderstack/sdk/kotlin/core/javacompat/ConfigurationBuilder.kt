@@ -4,6 +4,8 @@ import com.rudderstack.sdk.kotlin.core.Configuration
 import com.rudderstack.sdk.kotlin.core.Configuration.Companion.DEFAULT_CONTROL_PLANE_URL
 import com.rudderstack.sdk.kotlin.core.Configuration.Companion.DEFAULT_FLUSH_POLICIES
 import com.rudderstack.sdk.kotlin.core.Configuration.Companion.DEFAULT_GZIP_STATUS
+import com.rudderstack.sdk.kotlin.core.Configuration.Companion.DEFAULT_RESET_OPTIONS
+import com.rudderstack.sdk.kotlin.core.internals.models.reset.ResetOptions
 import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPolicy
 
 /**
@@ -19,6 +21,7 @@ open class ConfigurationBuilder(
     private var controlPlaneUrl: String = DEFAULT_CONTROL_PLANE_URL
     private var gzipEnabled: Boolean = DEFAULT_GZIP_STATUS
     private var flushPolicies: List<FlushPolicy> = DEFAULT_FLUSH_POLICIES
+    private var defaultResetOptions: ResetOptions = DEFAULT_RESET_OPTIONS
 
     /**
      * Sets the control plane URL.
@@ -39,6 +42,13 @@ open class ConfigurationBuilder(
      */
     open fun setGzipEnabled(enabled: Boolean) = apply {
         gzipEnabled = enabled
+    }
+
+    /**
+     * Sets the default reset options for reset API calls.
+     */
+    open fun setDefaultResetOptions(options: ResetOptions) = apply {
+        defaultResetOptions = options
     }
 
     /**

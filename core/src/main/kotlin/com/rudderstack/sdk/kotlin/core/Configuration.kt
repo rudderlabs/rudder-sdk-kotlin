@@ -53,7 +53,7 @@ open class Configuration @JvmOverloads constructor(
         /**
          * The default value for `defaultResetOptions` which define the default `ResetOptions` passed to the `reset` API calls in the SDK.
          */
-        internal val DEFAULT_RESET_OPTIONS: ResetOptions = ResetOptions()
+        val DEFAULT_RESET_OPTIONS: ResetOptions = ResetOptions()
     }
 }
 
