@@ -79,7 +79,7 @@ tasks.register("setupGitHooks") {
 
 // Auto-run setup when any subproject builds
 subprojects {
-    tasks.matching { it.name == "build" }.configureEach {
+    tasks.matching { it.name == "build" || it.name.startsWith("assemble") }.configureEach {
         dependsOn(rootProject.tasks.named("setupGitHooks"))
     }
 }
