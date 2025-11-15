@@ -39,6 +39,7 @@ private const val pathToBrazeConfigWithDeDupeDisabled = "config/braze_config_wit
 private const val pathToNewBrazeConfig = "config/new_braze_config.json"
 private const val pathToBrazeConfigWithAndroidApiKey = "config/braze_config_with_android_api_key.json"
 private const val pathToBrazeConfigWithFlagDisabled = "config/braze_config_with_flag_disabled.json"
+private const val pathToBrazeConfigWithBlankAndroidApiKey = "config/braze_config_with_blank_android_api_key.json"
 
 private const val INSTALL_ATTRIBUTED = "Install Attributed"
 
@@ -485,6 +486,19 @@ class BrazeIntegrationTest {
 
         verify(exactly = 1) {
             mockBrazeConfigBuilder.setApiKey("someAppKey")
+        }
+    }
+
+    @Test
+    fun `given platform-specific key is enabled but androidApiKey is blank, when integration is initialised, then legacy appKey should be used as fallback`() {
+        val configWithBlankAndroidKey: JsonObject = readFileAsJsonObject(pathToBrazeConfigWithBlankAndroidApiKey)
+        val apiKeySlot = slot<String>()
+        every { mockBrazeConfigBuilder.setApiKey(capture(apiKeySlot)) } returns mockBrazeConfigBuilder
+
+        brazeIntegration.create(configWithBlankAndroidKey)
+
+        verify(exactly = 1) {
+            mockBrazeConfigBuilder.setApiKey("legacyAppKey")
         }
     }
 

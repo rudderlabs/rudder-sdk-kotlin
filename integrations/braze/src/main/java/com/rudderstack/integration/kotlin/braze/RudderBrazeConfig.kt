@@ -21,7 +21,8 @@ private const val BRAZE_EXTERNAL_ID = "brazeExternalId"
 /**
  * Data class representing the configuration for Braze Integration.
  *
- * @property apiKey The API key for Braze. Used as fallback when platform-specific keys are not configured.
+ * @property apiKey The API key for Braze (serialized as "appKey" for backward compatibility).
+ *                  Used as fallback when platform-specific keys are not configured.
  * @property androidApiKey The Android-specific API key for Braze. Takes precedence when usePlatformSpecificApiKeys is true.
  * @property usePlatformSpecificApiKeys Flag to enable platform-specific API key resolution.
  * @property customEndpoint The custom endpoint for the data center. Must not be empty or blank.
@@ -52,10 +53,16 @@ internal data class RudderBrazeConfig(
      * Falls back to the legacy apiKey otherwise.
      */
     internal val resolvedApiKey: String
-        get() = if (usePlatformSpecificApiKeys && !androidApiKey.isNullOrBlank()) {
-            androidApiKey
-        } else {
-            apiKey
+        get() = when {
+            usePlatformSpecificApiKeys && !androidApiKey.isNullOrBlank() -> androidApiKey
+            usePlatformSpecificApiKeys -> {
+                LoggerAnalytics.warn(
+                    "BrazeIntegration: usePlatformSpecificApiKeys is enabled but androidApiKey is not configured. " +
+                        "Falling back to legacy appKey."
+                )
+                apiKey
+            }
+            else -> apiKey
         }
 
     init {
