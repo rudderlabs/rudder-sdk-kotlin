@@ -58,7 +58,7 @@ internal data class RudderBrazeConfig(
             usePlatformSpecificApiKeys -> {
                 LoggerAnalytics.warn(
                     "BrazeIntegration: usePlatformSpecificApiKeys is enabled but androidApiKey is not configured. " +
-                        "Falling back to legacy appKey."
+                        "Falling back to legacy apiKey."
                 )
                 apiKey
             }
