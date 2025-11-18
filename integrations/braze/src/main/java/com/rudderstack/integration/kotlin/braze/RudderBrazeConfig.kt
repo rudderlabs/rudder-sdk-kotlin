@@ -57,8 +57,8 @@ internal data class RudderBrazeConfig(
             usePlatformSpecificApiKeys && !androidApiKey.isNullOrBlank() -> androidApiKey
             usePlatformSpecificApiKeys -> {
                 LoggerAnalytics.warn(
-                    "BrazeIntegration: usePlatformSpecificApiKeys is enabled but androidApiKey is not configured. " +
-                        "Falling back to legacy apiKey."
+                    "BrazeIntegration: Configured to use platform-specific API keys but Android API key is not valid. " +
+                            "Falling back to the default API key."
                 )
                 apiKey
             }
@@ -66,7 +66,7 @@ internal data class RudderBrazeConfig(
         }
 
     init {
-        require(resolvedApiKey.isNotBlank()) { "apiKey cannot be empty or blank" }
+        require(resolvedApiKey.isNotBlank()) { "Invalid API key. Aborting Braze initialization." }
         require(customEndpoint.isNotBlank()) { "dataCenter cannot be empty or blank" }
     }
 
