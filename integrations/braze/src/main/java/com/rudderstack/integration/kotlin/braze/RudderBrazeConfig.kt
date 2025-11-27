@@ -21,17 +21,25 @@ private const val BRAZE_EXTERNAL_ID = "brazeExternalId"
 /**
  * Data class representing the configuration for Braze Integration.
  *
- * @property apiKey The API key for Braze. Must not be empty or blank.
+ * @property apiKey The API key for Braze (serialized as "appKey" for backward compatibility).
+ *                  Used as fallback when platform-specific keys are not configured.
+ * @property androidApiKey The Android-specific API key for Braze. Takes precedence when usePlatformSpecificApiKeys is true.
+ * @property usePlatformSpecificApiKeys Flag to enable platform-specific API key resolution.
  * @property customEndpoint The custom endpoint for the data center. Must not be empty or blank.
  * @property supportDedup Flag indicating whether deduplication is supported.
  * @property connectionMode The mode of connection, either HYBRID or DEVICE.
  *
- * @throws IllegalArgumentException if apiKey or customEndpoint is empty or blank.
+ * @throws IllegalArgumentException if resolved apiKey or customEndpoint is empty or blank.
  */
 @Serializable
 internal data class RudderBrazeConfig(
+    // We cannot change the legacy "appKey" field to "apiKey".
     @SerialName("appKey")
     val apiKey: String,
+    @SerialName("androidApiKey")
+    val androidApiKey: String? = null,
+    @SerialName("usePlatformSpecificApiKeys")
+    val usePlatformSpecificApiKeys: Boolean = false,
     @Serializable(with = CustomEndpointSerializer::class)
     @SerialName("dataCenter")
     val customEndpoint: String,
@@ -39,8 +47,26 @@ internal data class RudderBrazeConfig(
     val connectionMode: ConnectionMode,
 ) {
 
+    /**
+     * Resolves the API key to use based on platform-specific configuration.
+     * Prefers androidApiKey when usePlatformSpecificApiKeys is enabled and androidApiKey is not blank.
+     * Falls back to the legacy apiKey otherwise.
+     */
+    internal val resolvedApiKey: String
+        get() = when {
+            usePlatformSpecificApiKeys && !androidApiKey.isNullOrBlank() -> androidApiKey
+            usePlatformSpecificApiKeys -> {
+                LoggerAnalytics.error(
+                    "BrazeIntegration: Configured to use platform-specific API keys but Android API key is not valid. " +
+                        "Falling back to the default API key."
+                )
+                apiKey
+            }
+            else -> apiKey
+        }
+
     init {
-        require(apiKey.isNotBlank()) { "appKey cannot be empty or blank" }
+        require(resolvedApiKey.isNotBlank()) { "Invalid API key. Aborting Braze initialization." }
         require(customEndpoint.isNotBlank()) { "dataCenter cannot be empty or blank" }
     }
 
