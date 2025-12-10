@@ -3,7 +3,6 @@ package com.rudderstack.sdk.kotlin.core.internals.utils
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
-import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 
 /**
  * Checks if the analytics instance is active.
@@ -28,7 +27,7 @@ fun Analytics.isAnalyticsActive(): Boolean {
 fun Analytics.isSourceEnabled(): Boolean {
     // TODO: Return the state if the platform is mobile.
 //    if (getPlatformType() == PlatformType.Mobile) {
-        return sourceConfigState.value.source.isSourceEnabled
+    return sourceConfigState.value.source.isSourceEnabled
 //    }
 //    return true
 }
@@ -72,6 +71,6 @@ internal fun Analytics.handleInvalidWriteKey() {
 internal fun Analytics.disableSource() {
     // TODO: Disable source only when the platform type is mobile
 //    if (getPlatformType() == PlatformType.Mobile) {
-        sourceConfigState.dispatch(SourceConfig.DisableSourceAction())
+    sourceConfigState.dispatch(SourceConfig.DisableSourceAction())
 //    }
 }
