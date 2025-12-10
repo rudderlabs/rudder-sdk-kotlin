@@ -2,7 +2,6 @@ package com.rudderstack.sdk.kotlin.core.internals.queue
 
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
-import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.network.EventUploadResult
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClient
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClientImpl
@@ -19,6 +18,7 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
 import com.rudderstack.sdk.kotlin.core.internals.utils.createIfInactive
 import com.rudderstack.sdk.kotlin.core.internals.utils.createNewIfClosed
 import com.rudderstack.sdk.kotlin.core.internals.utils.createUnlimitedCapacityChannel
+import com.rudderstack.sdk.kotlin.core.internals.utils.disableSource
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import com.rudderstack.sdk.kotlin.core.internals.utils.encodeToBase64
 import com.rudderstack.sdk.kotlin.core.internals.utils.generateUUID
@@ -179,7 +179,7 @@ internal class EventUpload(
                         "Stopping the events upload process until the source is enabled again."
                 )
                 cancel()
-                analytics.sourceConfigState.dispatch(SourceConfig.DisableSourceAction())
+                analytics.disableSource()
             }
 
             NonRetryAbleEventUploadError.ERROR_413 -> {
