@@ -26,11 +26,10 @@ fun Analytics.isAnalyticsActive(): Boolean {
  */
 @InternalRudderApi
 fun Analytics.isSourceEnabled(): Boolean {
-    // TODO: Return the state if the platform is mobile.
-//    if (getPlatformType() == PlatformType.Mobile) {
+    if (getPlatformType() == PlatformType.Mobile) {
         return sourceConfigState.value.source.isSourceEnabled
-//    }
-//    return true
+    }
+    return true
 }
 
 /**
@@ -70,8 +69,7 @@ internal fun Analytics.handleInvalidWriteKey() {
  * When the source is disabled, the SDK will reject subsequent tracking operations.
  */
 internal fun Analytics.disableSource() {
-    // TODO: Disable source only when the platform type is mobile
-//    if (getPlatformType() == PlatformType.Mobile) {
+    if (getPlatformType() == PlatformType.Mobile) {
         sourceConfigState.dispatch(SourceConfig.DisableSourceAction())
-//    }
+    }
 }

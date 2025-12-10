@@ -3,6 +3,7 @@ package com.rudderstack.sdk.kotlin.core
 import com.rudderstack.sdk.kotlin.core.internals.logger.KotlinLogger
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
+import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.models.Properties
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
@@ -12,7 +13,6 @@ import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.models.provider.provideSampleJsonPayload
 import com.rudderstack.sdk.kotlin.core.internals.models.reset.ResetEntries
 import com.rudderstack.sdk.kotlin.core.internals.models.reset.ResetOptions
-import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.ResetUserIdentityAction
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.storage.LibraryVersion
@@ -231,10 +231,28 @@ class AnalyticsTest {
     }
 
     @Test
-    fun `when SDK is initialised, then SourceConfigManager should be initialised and source config observers should be notified`() {
-        assertNotNull(analytics.sourceConfigManager)
-        assertEquals(mockSourceConfigManager, analytics.sourceConfigManager)
+    fun `given platform type is mobile, when SDK is initialised, then SourceConfigManager should be initialised and source config observers should be notified`() {
+        // Create a mobile platform analytics instance
+        val mobileAnalytics = object : Analytics(configuration = configuration) {
+            override fun getPlatformType(): PlatformType = PlatformType.Mobile
+
+            init {
+                setupSourceConfig()
+            }
+        }
+
+        assertNotNull(mobileAnalytics.sourceConfigManager)
+        assertEquals(mockSourceConfigManager, mobileAnalytics.sourceConfigManager)
         verify(exactly = 1) {
+            mockSourceConfigManager.fetchCachedSourceConfigAndNotifyObservers()
+            mockSourceConfigManager.refreshSourceConfigAndNotifyObservers()
+        }
+    }
+
+    @Test
+    fun `when SDK is initialised, then SourceConfigManager should NOT be initialised for server-side SDK`() {
+        verify(exactly = 0) {
+            provideSourceConfigManager(any(), any())
             mockSourceConfigManager.fetchCachedSourceConfigAndNotifyObservers()
             mockSourceConfigManager.refreshSourceConfigAndNotifyObservers()
         }

@@ -95,10 +95,10 @@ open class Analytics protected constructor(
         if (this::class == Analytics::class) {
             LoggerAnalytics.setPlatformLogger(logger = KotlinLogger())
             connectivityState.dispatch(ConnectivityState.SetDefaultStateAction())
-            setupSourceConfig()
         }
     }
 
+    // This should be invoked only if the platform type is mobile
     protected fun setupSourceConfig() {
         this.sourceConfigManager = provideSourceConfigManager(
             analytics = this,
