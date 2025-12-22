@@ -174,6 +174,18 @@ internal class SessionManager(
         return sessionId == DEFAULT_SESSION_ID || isSessionManual || hasSessionTimedOut()
     }
 
+    /**
+     * Determines whether the current session has expired.
+     *
+     * A session is considered timed out if the elapsed time since the last recorded
+     * activity exceeds the configured session timeout.
+     *
+     * This method uses monotonic time (time since last boot). If the current monotonic
+     * time is less than or equal to the last activity time, it indicates a device reboot.
+     * In such cases, the session is treated as expired.
+     *
+     * @return `true` if the session has timed out or a reboot is detected, `false` otherwise.
+     */
     private fun hasSessionTimedOut(): Boolean {
         val timeDifference = getMonotonicCurrentTime() - lastActivityTime
         return timeDifference > sessionTimeout || timeDifference <= 0
