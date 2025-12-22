@@ -295,6 +295,54 @@ class SessionManagerTest {
         verifyDetachObservers()
     }
 
+    @Test
+    fun `given automatic session enabled and the system is restarted, when app is launched, then new session starts`() =
+        runTest(testDispatcher) {
+            val automaticSessionTrackingEnabled = true
+            val initialSessionId = 1234567890L
+            val currentTime = System.currentTimeMillis()
+            mockCurrentMonotonicTime(50_000) // the current event is made 50 seconds after the system is restarted
+            mockSystemCurrentTime(currentTime)
+            mockStorage.write(StorageKeys.SESSION_ID, initialSessionId)
+            mockStorage.write(StorageKeys.IS_SESSION_MANUAL, false)
+            mockStorage.write(
+                StorageKeys.LAST_ACTIVITY_TIME,
+                currentTime - 600_000L
+            ) // Last event was 10 mins ago
+
+            sessionManagerSetup(
+                automaticSessionTracking = automaticSessionTrackingEnabled,
+                sessionTimeoutInMillis = 300_000L
+            )
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            assertNotEquals(initialSessionId, mockStorage.readLong(StorageKeys.SESSION_ID, 0L))
+            assertEquals(currentTime / 1000, mockStorage.readLong(StorageKeys.SESSION_ID, 0L))
+            assertFalse(mockStorage.readBoolean(StorageKeys.IS_SESSION_MANUAL, false))
+        }
+
+    @Test
+    fun `given automatic session enabled and the system is restarted, when app is foregrounded, then new session starts`() =
+        runTest(testDispatcher) {
+            val automaticSessionTrackingEnabled = true
+            val previousSessionId = 1234567890L
+            val currentTime = System.currentTimeMillis()
+            mockCurrentMonotonicTime(50_000) // the current event is made 50 seconds after the system is restarted
+            mockStorage.write(StorageKeys.IS_SESSION_MANUAL, false)
+            mockStorage.write(StorageKeys.SESSION_ID, previousSessionId)
+            mockStorage.write(StorageKeys.LAST_ACTIVITY_TIME, currentTime - 600_000L) // Last event was 10 mins ago
+
+            sessionManagerSetup(
+                automaticSessionTracking = automaticSessionTrackingEnabled,
+                sessionTimeoutInMillis = 300_000L
+            )
+            sessionManager.checkAndStartSessionOnForeground() // app is foregrounded
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            assertNotEquals(previousSessionId, mockStorage.readLong(StorageKeys.SESSION_ID, 0L))
+            assertFalse(mockStorage.readBoolean(StorageKeys.IS_SESSION_MANUAL, false))
+        }
+
     private fun sessionManagerSetup(
         automaticSessionTracking: Boolean = true,
         sessionTimeoutInMillis: Long = 300_000L

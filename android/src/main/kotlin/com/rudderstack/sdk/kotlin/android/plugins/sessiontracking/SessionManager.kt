@@ -175,7 +175,8 @@ internal class SessionManager(
     }
 
     private fun hasSessionTimedOut(): Boolean {
-        return getMonotonicCurrentTime() - lastActivityTime > sessionTimeout
+        val timeDifference = getMonotonicCurrentTime() - lastActivityTime
+        return timeDifference > sessionTimeout || timeDifference <= 0
     }
 
     internal fun generateSessionId(): Long {
