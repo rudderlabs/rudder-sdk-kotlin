@@ -106,7 +106,7 @@ internal class LegacyExtractor(private val legacyPrefs: SharedPreferencesManager
             },
             formatter = { "autoSessionTracking=$it" }
         )
-        val userId = extractUserId(traitsJson, expandedValues)
+        val userId = extractUserId(expandedValues)
 
         MigrationLogger.info("Extraction complete")
 
@@ -152,23 +152,18 @@ internal class LegacyExtractor(private val legacyPrefs: SharedPreferencesManager
      *
      * @return The extracted user ID if found, null otherwise
      */
-    private fun extractUserId(
-        traitsJson: String?,
-        expandedValues: Set<MigratableValue>
-    ): String? {
+    private fun extractUserId(expandedValues: Set<MigratableValue>): String? {
         if (!expandedValues.contains(MigratableValue.USER_ID)) return null
 
+        val traitsJson = legacyPrefs.getString(MigrationConstants.Legacy.TRAITS_KEY)
         if (traitsJson != null) {
             val extractedUserId = extractUserIdFromTraits(traitsJson)
             if (extractedUserId != null) {
                 MigrationLogger.debug("Found ${MigratableValue.USER_ID}: ${extractedUserId.take(10)}")
                 return extractedUserId
-            } else {
-                MigrationLogger.debug("Missing: ${MigratableValue.USER_ID}")
             }
-        } else {
-            MigrationLogger.debug("Missing: ${MigratableValue.USER_ID}")
         }
+        MigrationLogger.debug("Missing: ${MigratableValue.USER_ID}")
         return null
     }
 
