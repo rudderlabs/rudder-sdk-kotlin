@@ -180,8 +180,6 @@ internal class DataTransformer {
      *
      * @param legacyTimestamp Wall-clock timestamp from legacy SDK (epoch ms)
      * @return Monotonic timestamp for new SDK, or null if conversion not possible (reboot detected)
-     *
-     * @see IMPLEMENTATION_GUIDE.md for detailed documentation
      */
     private fun convertLastActivityTime(legacyTimestamp: Long?): Long? {
         if (legacyTimestamp == null) return null
