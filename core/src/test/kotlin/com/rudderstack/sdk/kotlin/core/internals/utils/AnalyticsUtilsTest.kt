@@ -126,16 +126,15 @@ class AnalyticsUtilsTest {
         assertTrue(result)
     }
 
-    // TODO: Uncomment this
-//    @Test
-//    fun `given server platform with source disabled, when isSourceEnabled is called, then it should return true`() {
-//        analytics = createAnalyticsWithPlatform(PlatformType.Server)
-//        disableSourceConfig()
-//
-//        val result = analytics.isSourceEnabled()
-//
-//        assertTrue(result) // Server always returns true
-//    }
+    @Test
+    fun `given server platform with source disabled, when isSourceEnabled is called, then it should return true`() {
+        analytics = createAnalyticsWithPlatform(PlatformType.Server)
+        disableSourceConfig()
+
+        val result = analytics.isSourceEnabled()
+
+        assertTrue(result) // Server always returns true
+    }
 
     @Test
     fun `given mobile platform with source disabled, when isSourceEnabled is called, then it should return false`() {
@@ -162,19 +161,18 @@ class AnalyticsUtilsTest {
         }
     }
 
-    // TODO: Uncomment this
-//    @Test
-//    fun `given server platform with source disabled, when isSourceEnabledWithLogging is called, then it should return true without logging`() {
-//        analytics = createAnalyticsWithPlatform(PlatformType.Server)
-//        disableSourceConfig()
-//
-//        val result = analytics.isSourceEnabledWithLogging()
-//
-//        assertTrue(result) // Server always returns true
-//        verify(exactly = 0) {
-//            LoggerAnalytics.error("Source is disabled. This operation is not allowed.")
-//        }
-//    }
+    @Test
+    fun `given server platform with source disabled, when isSourceEnabledWithLogging is called, then it should return true without logging`() {
+        analytics = createAnalyticsWithPlatform(PlatformType.Server)
+        disableSourceConfig()
+
+        val result = analytics.isSourceEnabledWithLogging()
+
+        assertTrue(result) // Server always returns true
+        verify(exactly = 0) {
+            LoggerAnalytics.error("Source is disabled. This operation is not allowed.")
+        }
+    }
 
     @Test
     fun `given mobile platform with source disabled, when isSourceEnabledWithLogging is called, then it should return false and log error`() {
@@ -189,15 +187,14 @@ class AnalyticsUtilsTest {
         }
     }
 
-    // TODO: Uncomment this
-//    @Test
-//    fun `given server platform, when disableSource is called, then source should remain enabled`() {
-//        analytics = createAnalyticsWithPlatform(PlatformType.Server)
-//
-//        analytics.disableSource()
-//
-//        assertTrue(analytics.isSourceEnabled()) // Server platform should not be affected
-//    }
+    @Test
+    fun `given server platform, when disableSource is called, then source should remain enabled`() {
+        analytics = createAnalyticsWithPlatform(PlatformType.Server)
+
+        analytics.disableSource()
+
+        assertTrue(analytics.isSourceEnabled()) // Server platform should not be affected
+    }
 
     @Test
     fun `given mobile platform, when disableSource is called, then source should be disabled`() {
