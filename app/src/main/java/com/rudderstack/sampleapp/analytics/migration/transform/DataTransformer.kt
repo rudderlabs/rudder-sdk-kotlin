@@ -1,7 +1,6 @@
 package com.abhishek.sanitykotlin.migration.transform
 
 import android.os.SystemClock
-import com.abhishek.sanitykotlin.migration.MigratableValue
 import com.abhishek.sanitykotlin.migration.MigrationConstants
 import com.abhishek.sanitykotlin.migration.MigrationLogger
 import com.abhishek.sanitykotlin.migration.model.LegacyData
