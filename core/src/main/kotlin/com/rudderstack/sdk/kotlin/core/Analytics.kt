@@ -33,7 +33,7 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
 import com.rudderstack.sdk.kotlin.core.internals.utils.addNameAndCategoryToProperties
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import com.rudderstack.sdk.kotlin.core.internals.utils.isAnalyticsActive
-import com.rudderstack.sdk.kotlin.core.internals.utils.isSourceEnabled
+import com.rudderstack.sdk.kotlin.core.internals.utils.isSourceEnabledWithLogging
 import com.rudderstack.sdk.kotlin.core.internals.utils.resolvePreferredPreviousId
 import com.rudderstack.sdk.kotlin.core.plugins.LibraryInfoPlugin
 import com.rudderstack.sdk.kotlin.core.plugins.RudderStackDataplanePlugin
@@ -95,10 +95,10 @@ open class Analytics protected constructor(
         if (this::class == Analytics::class) {
             LoggerAnalytics.setPlatformLogger(logger = KotlinLogger())
             connectivityState.dispatch(ConnectivityState.SetDefaultStateAction())
-            setupSourceConfig()
         }
     }
 
+    // This should be invoked only if the platform type is mobile
     protected fun setupSourceConfig() {
         this.sourceConfigManager = provideSourceConfigManager(
             analytics = this,
@@ -132,7 +132,7 @@ open class Analytics protected constructor(
      */
     @JvmOverloads
     fun track(name: String, properties: Properties = emptyJsonObject, options: RudderOption = RudderOption()) {
-        if (!isAnalyticsActive() || !isSourceEnabled()) return
+        if (!isAnalyticsActive() || !isSourceEnabledWithLogging()) return
 
         val event = TrackEvent(
             event = name,
@@ -160,7 +160,7 @@ open class Analytics protected constructor(
         properties: Properties = emptyJsonObject,
         options: RudderOption = RudderOption()
     ) {
-        if (!isAnalyticsActive() || !isSourceEnabled()) return
+        if (!isAnalyticsActive() || !isSourceEnabledWithLogging()) return
 
         val updatedProperties = addNameAndCategoryToProperties(screenName, category, properties)
 
@@ -184,7 +184,7 @@ open class Analytics protected constructor(
      */
     @JvmOverloads
     fun group(groupId: String, traits: Traits = emptyJsonObject, options: RudderOption = RudderOption()) {
-        if (!isAnalyticsActive() || !isSourceEnabled()) return
+        if (!isAnalyticsActive() || !isSourceEnabledWithLogging()) return
 
         val event = GroupEvent(
             groupId = groupId,
@@ -224,7 +224,7 @@ open class Analytics protected constructor(
             )
         }
 
-        if (!isSourceEnabled()) return
+        if (!isSourceEnabledWithLogging()) return
 
         val event = IdentifyEvent(
             options = options,
@@ -257,7 +257,7 @@ open class Analytics protected constructor(
             userIdentityState.value.storeUserId(storage = storage)
         }
 
-        if (!isSourceEnabled()) return
+        if (!isSourceEnabledWithLogging()) return
 
         val event = AliasEvent(
             previousId = updatedPreviousId,
@@ -273,7 +273,7 @@ open class Analytics protected constructor(
      * This method specifically targets the `RudderStackDataPlanePlugin` to initiate the flush operation.
      */
     open fun flush() {
-        if (!isAnalyticsActive() || !isSourceEnabled()) return
+        if (!isAnalyticsActive() || !isSourceEnabledWithLogging()) return
 
         this.pluginChain.applyClosure {
             if (it is RudderStackDataplanePlugin) {

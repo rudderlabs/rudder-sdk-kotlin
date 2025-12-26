@@ -5,7 +5,7 @@ runs:
   using: 'composite'
   steps:
     - name: Check PR title format
-      uses: rudderlabs/github-action-check-pr-title@v1.0.11
+      uses: rudderlabs/github-action-check-pr-title@0a83071336f7d6417249629f67a64530fcecda2e # v1.0.11
 
     - name: PR Title Check Result
       shell: bash
