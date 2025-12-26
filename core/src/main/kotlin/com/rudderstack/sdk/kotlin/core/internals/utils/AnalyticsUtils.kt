@@ -2,6 +2,7 @@ package com.rudderstack.sdk.kotlin.core.internals.utils
 
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 
 /**
  * Checks if the analytics instance is active.
@@ -16,11 +17,31 @@ fun Analytics.isAnalyticsActive(): Boolean {
 }
 
 /**
- * Checks if the source is enabled.
+ * Checks if the source is enabled for the current platform.
+ * For mobile platforms, returns the source enabled state from configuration.
+ * For non-mobile platforms, always returns true.
+ *
+ * @return true if source is enabled or platform is not mobile, false otherwise
  */
 @InternalRudderApi
 fun Analytics.isSourceEnabled(): Boolean {
-    if (!sourceConfigState.value.source.isSourceEnabled) {
+    // TODO: Return the state if the platform is mobile.
+//    if (getPlatformType() == PlatformType.Mobile) {
+    return sourceConfigState.value.source.isSourceEnabled
+//    }
+//    return true
+}
+
+/**
+ * Checks if the source is enabled and logs an error if it's disabled.
+ * This method should be used when you want to validate the source state
+ * and provide diagnostic logging.
+ *
+ * @return true if source is enabled or platform is not mobile, false otherwise
+ */
+@InternalRudderApi
+fun Analytics.isSourceEnabledWithLogging(): Boolean {
+    if (!isSourceEnabled()) {
         LoggerAnalytics.error("Source is disabled. This operation is not allowed.")
         return false
     }
@@ -39,4 +60,17 @@ fun Analytics.isSourceEnabled(): Boolean {
 internal fun Analytics.handleInvalidWriteKey() {
     isInvalidWriteKey = true
     shutdown()
+}
+
+/**
+ * Disables the source for mobile platforms, preventing any events from being sent to RudderStack.
+ * This operation only applies to mobile platforms and has no effect on other platform types.
+ *
+ * When the source is disabled, the SDK will reject subsequent tracking operations.
+ */
+internal fun Analytics.disableSource() {
+    // TODO: Disable source only when the platform type is mobile
+//    if (getPlatformType() == PlatformType.Mobile) {
+    sourceConfigState.dispatch(SourceConfig.DisableSourceAction())
+//    }
 }
