@@ -37,9 +37,9 @@ import java.math.BigDecimal
 private const val pathToBrazeConfig = "config/braze_config.json"
 private const val pathToBrazeConfigWithDeDupeDisabled = "config/braze_config_with_deDupe_disabled.json"
 private const val pathToNewBrazeConfig = "config/new_braze_config.json"
-private const val pathToBrazeConfigWithAndroidApiKey = "config/braze_config_with_android_api_key.json"
+private const val pathToBrazeConfigWithAndroidAppIdentifierKey = "config/braze_config_with_android_app_identifier_key.json"
 private const val pathToBrazeConfigWithFlagDisabled = "config/braze_config_with_flag_disabled.json"
-private const val pathToBrazeConfigWithBlankAndroidApiKey = "config/braze_config_with_blank_android_api_key.json"
+private const val pathToBrazeConfigWithBlankAndroidAppIdentifierKey = "config/braze_config_with_blank_android_app_identifier_key.json"
 
 private const val INSTALL_ATTRIBUTED = "Install Attributed"
 
@@ -452,12 +452,12 @@ class BrazeIntegrationTest {
     }
 
     @Test
-    fun `given platform-specific key is enabled and androidApiKey is present, when integration is initialised, then androidApiKey should be used`() {
-        val configWithAndroidAppKey: JsonObject = readFileAsJsonObject(pathToBrazeConfigWithAndroidApiKey)
-        val apiKeySlot = slot<String>()
-        every { mockBrazeConfigBuilder.setApiKey(capture(apiKeySlot)) } returns mockBrazeConfigBuilder
+    fun `given platform-specific key is enabled and androidAppIdentifierKey is present, when integration is initialised, then androidAppIdentifierKey should be used`() {
+        val configWithAndroidAppIdentifierKey: JsonObject = readFileAsJsonObject(pathToBrazeConfigWithAndroidAppIdentifierKey)
+        val appIdentifierKeySlot = slot<String>()
+        every { mockBrazeConfigBuilder.setApiKey(capture(appIdentifierKeySlot)) } returns mockBrazeConfigBuilder
 
-        brazeIntegration.create(configWithAndroidAppKey)
+        brazeIntegration.create(configWithAndroidAppIdentifierKey)
 
         verify(exactly = 1) {
             mockBrazeConfigBuilder.setApiKey("androidSpecificApiKey")
@@ -467,8 +467,8 @@ class BrazeIntegrationTest {
     @Test
     fun `given platform-specific key flag is disabled, when integration is initialised, then legacy appKey should be used`() {
         val configWithFlagDisabled: JsonObject = readFileAsJsonObject(pathToBrazeConfigWithFlagDisabled)
-        val apiKeySlot = slot<String>()
-        every { mockBrazeConfigBuilder.setApiKey(capture(apiKeySlot)) } returns mockBrazeConfigBuilder
+        val appIdentifierKeySlot = slot<String>()
+        every { mockBrazeConfigBuilder.setApiKey(capture(appIdentifierKeySlot)) } returns mockBrazeConfigBuilder
 
         brazeIntegration.create(configWithFlagDisabled)
 
@@ -478,9 +478,9 @@ class BrazeIntegrationTest {
     }
 
     @Test
-    fun `given platform-specific key is enabled but androidApiKey is missing, when integration is initialised, then legacy appKey should be used as fallback`() {
-        val apiKeySlot = slot<String>()
-        every { mockBrazeConfigBuilder.setApiKey(capture(apiKeySlot)) } returns mockBrazeConfigBuilder
+    fun `given platform-specific key is enabled but androidAppIdentifierKey is missing, when integration is initialised, then legacy appKey should be used as fallback`() {
+        val appIdentifierKeySlot = slot<String>()
+        every { mockBrazeConfigBuilder.setApiKey(capture(appIdentifierKeySlot)) } returns mockBrazeConfigBuilder
 
         brazeIntegration.create(mockBrazeIntegrationConfig)
 
@@ -490,12 +490,12 @@ class BrazeIntegrationTest {
     }
 
     @Test
-    fun `given platform-specific key is enabled but androidApiKey is blank, when integration is initialised, then legacy appKey should be used as fallback`() {
-        val configWithBlankAndroidKey: JsonObject = readFileAsJsonObject(pathToBrazeConfigWithBlankAndroidApiKey)
-        val apiKeySlot = slot<String>()
-        every { mockBrazeConfigBuilder.setApiKey(capture(apiKeySlot)) } returns mockBrazeConfigBuilder
+    fun `given platform-specific key is enabled but androidAppIdentifierKey is blank, when integration is initialised, then legacy appKey should be used as fallback`() {
+        val configWithBlankAndroidAppIdentifierKey: JsonObject = readFileAsJsonObject(pathToBrazeConfigWithBlankAndroidAppIdentifierKey)
+        val appIdentifierKeySlot = slot<String>()
+        every { mockBrazeConfigBuilder.setApiKey(capture(appIdentifierKeySlot)) } returns mockBrazeConfigBuilder
 
-        brazeIntegration.create(configWithBlankAndroidKey)
+        brazeIntegration.create(configWithBlankAndroidAppIdentifierKey)
 
         verify(exactly = 1) {
             mockBrazeConfigBuilder.setApiKey("legacyAppKey")
