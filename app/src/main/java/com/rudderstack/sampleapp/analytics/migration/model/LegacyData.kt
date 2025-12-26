@@ -1,4 +1,4 @@
-package com.abhishek.sanitykotlin.migration.model
+package com.rudderstack.sampleapp.analytics.migration.model
 
 /**
  * Represents data extracted from the legacy `rudder-sdk-android` SharedPreferences.

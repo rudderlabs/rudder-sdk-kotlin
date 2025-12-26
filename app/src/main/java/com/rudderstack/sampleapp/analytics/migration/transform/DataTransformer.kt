@@ -1,10 +1,10 @@
-package com.abhishek.sanitykotlin.migration.transform
+package com.rudderstack.sampleapp.analytics.migration.transform
 
 import android.os.SystemClock
-import com.abhishek.sanitykotlin.migration.MigrationConstants
-import com.abhishek.sanitykotlin.migration.MigrationLogger
-import com.abhishek.sanitykotlin.migration.model.LegacyData
-import com.abhishek.sanitykotlin.migration.model.TransformedData
+import com.rudderstack.sampleapp.analytics.migration.MigrationConstants
+import com.rudderstack.sampleapp.analytics.migration.MigrationLogger
+import com.rudderstack.sampleapp.analytics.migration.model.LegacyData
+import com.rudderstack.sampleapp.analytics.migration.model.TransformedData
 import org.json.JSONObject
 
 /**

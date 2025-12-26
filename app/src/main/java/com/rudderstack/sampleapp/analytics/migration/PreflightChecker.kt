@@ -1,4 +1,4 @@
-package com.abhishek.sanitykotlin.migration
+package com.rudderstack.sampleapp.analytics.migration
 
 /**
  * Centralized validation utility for migration preflight checks.

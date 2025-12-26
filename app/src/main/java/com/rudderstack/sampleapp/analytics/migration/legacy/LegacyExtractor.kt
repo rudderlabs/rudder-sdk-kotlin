@@ -1,10 +1,10 @@
-package com.abhishek.sanitykotlin.migration.legacy
+package com.rudderstack.sampleapp.analytics.migration.legacy
 
-import com.abhishek.sanitykotlin.migration.MigratableValue
-import com.abhishek.sanitykotlin.migration.MigrationConstants
-import com.abhishek.sanitykotlin.migration.MigrationLogger
-import com.abhishek.sanitykotlin.migration.SharedPreferencesManager
-import com.abhishek.sanitykotlin.migration.model.LegacyData
+import com.rudderstack.sampleapp.analytics.migration.MigratableValue
+import com.rudderstack.sampleapp.analytics.migration.MigrationConstants
+import com.rudderstack.sampleapp.analytics.migration.MigrationLogger
+import com.rudderstack.sampleapp.analytics.migration.SharedPreferencesManager
+import com.rudderstack.sampleapp.analytics.migration.model.LegacyData
 import org.json.JSONObject
 
 /**

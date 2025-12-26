@@ -1,4 +1,4 @@
-package com.abhishek.sanitykotlin.migration.model
+package com.rudderstack.sampleapp.analytics.migration.model
 
 /**
  * Represents data transformed from legacy format to new SDK format, ready for writing.

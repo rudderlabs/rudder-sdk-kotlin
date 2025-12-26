@@ -1,9 +1,9 @@
-package com.abhishek.sanitykotlin.migration.newAndroidSdk
+package com.rudderstack.sampleapp.analytics.migration.newAndroidSdk
 
-import com.abhishek.sanitykotlin.migration.MigrationConstants
-import com.abhishek.sanitykotlin.migration.MigrationLogger
-import com.abhishek.sanitykotlin.migration.SharedPreferencesManager
-import com.abhishek.sanitykotlin.migration.model.TransformedData
+import com.rudderstack.sampleapp.analytics.migration.MigrationConstants
+import com.rudderstack.sampleapp.analytics.migration.MigrationLogger
+import com.rudderstack.sampleapp.analytics.migration.SharedPreferencesManager
+import com.rudderstack.sampleapp.analytics.migration.model.TransformedData
 
 /**
  * Handles writing data to new `rudder-sdk-kotlin` SharedPreferences.

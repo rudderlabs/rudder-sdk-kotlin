@@ -1,12 +1,12 @@
-package com.abhishek.sanitykotlin.migration
+package com.rudderstack.sampleapp.analytics.migration
 
 import android.content.Context
-import com.abhishek.sanitykotlin.migration.legacy.LegacyCleaner
-import com.abhishek.sanitykotlin.migration.legacy.LegacyExtractor
-import com.abhishek.sanitykotlin.migration.model.LegacyData
-import com.abhishek.sanitykotlin.migration.model.TransformedData
-import com.abhishek.sanitykotlin.migration.newAndroidSdk.NewAndroidSdkWriter
-import com.abhishek.sanitykotlin.migration.transform.DataTransformer
+import com.rudderstack.sampleapp.analytics.migration.legacy.LegacyCleaner
+import com.rudderstack.sampleapp.analytics.migration.legacy.LegacyExtractor
+import com.rudderstack.sampleapp.analytics.migration.model.LegacyData
+import com.rudderstack.sampleapp.analytics.migration.model.TransformedData
+import com.rudderstack.sampleapp.analytics.migration.newAndroidSdk.NewAndroidSdkWriter
+import com.rudderstack.sampleapp.analytics.migration.transform.DataTransformer
 
 /**
  * Main facade for migrating SharedPreferences data from legacy `rudder-sdk-android`
@@ -31,8 +31,8 @@ import com.abhishek.sanitykotlin.migration.transform.DataTransformer
  * ## Usage Example
  *
  * ```kotlin
- * import com.abhishek.sanitykotlin.migration.Migration
- * import com.abhishek.sanitykotlin.migration.MigratableValue
+ * import com.rudderstack.sampleapp.analytics.migration.Migration
+ * import com.rudderstack.sampleapp.analytics.migration.MigratableValue
  *
  * // IMPORTANT: Create Migration instance BEFORE SDK initialization
  * class MyApplication : Application() {

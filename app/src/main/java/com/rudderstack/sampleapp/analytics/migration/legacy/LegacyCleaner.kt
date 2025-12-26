@@ -1,7 +1,7 @@
-package com.abhishek.sanitykotlin.migration.legacy
+package com.rudderstack.sampleapp.analytics.migration.legacy
 
-import com.abhishek.sanitykotlin.migration.MigrationLogger
-import com.abhishek.sanitykotlin.migration.SharedPreferencesManager
+import com.rudderstack.sampleapp.analytics.migration.MigrationLogger
+import com.rudderstack.sampleapp.analytics.migration.SharedPreferencesManager
 
 /**
  * Handles cleanup of legacy `rudder-sdk-android` SharedPreferences.

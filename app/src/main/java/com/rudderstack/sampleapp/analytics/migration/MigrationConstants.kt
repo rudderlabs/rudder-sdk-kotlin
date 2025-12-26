@@ -1,4 +1,4 @@
-package com.abhishek.sanitykotlin.migration
+package com.rudderstack.sampleapp.analytics.migration
 
 /**
  * Constants for SharedPreferences migration from legacy `rudder-sdk-android`

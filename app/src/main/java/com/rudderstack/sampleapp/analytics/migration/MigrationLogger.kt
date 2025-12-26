@@ -1,4 +1,4 @@
-package com.abhishek.sanitykotlin.migration
+package com.rudderstack.sampleapp.analytics.migration
 
 import android.util.Log
 

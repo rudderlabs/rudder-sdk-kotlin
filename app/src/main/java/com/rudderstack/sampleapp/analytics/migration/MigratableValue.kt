@@ -1,4 +1,4 @@
-package com.abhishek.sanitykotlin.migration
+package com.rudderstack.sampleapp.analytics.migration
 
 /**
  * Enum representing values that can be migrated from the legacy `rudder-sdk-android`
