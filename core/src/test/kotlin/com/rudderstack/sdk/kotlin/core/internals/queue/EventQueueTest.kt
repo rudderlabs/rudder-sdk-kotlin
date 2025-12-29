@@ -5,6 +5,7 @@ import com.rudderstack.sdk.kotlin.core.internals.logger.KotlinLogger
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.models.provider.provideEvent
+import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPoliciesFacade
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
@@ -282,7 +283,7 @@ class EventQueueTest {
     }
 
     @Test
-    fun `given default flush policies are enabled but source is disabled, when events are made, the flush call is never triggered`() {
+    fun `given default flush policies are enabled but source is disabled and platform type is mobile, when events are made, then the flush call is never triggered`() {
         val mockEvent: Event = mockk(relaxed = true)
         val jsonString = """{"type":"track","event":"Test Event"}"""
         every { eventQueue.stringifyBaseEvent(mockEvent) } returns jsonString
@@ -300,6 +301,7 @@ class EventQueueTest {
                 )
             )
         )
+        every { mockAnalytics.getPlatformType() } returns PlatformType.Mobile
 
         // Execute messageQueue actions
         eventQueue.start()
@@ -336,6 +338,40 @@ class EventQueueTest {
 
         // no flush call is triggered
         coVerify(exactly = 0) {
+            mockFlushPoliciesFacade.reset()
+            mockEventUpload.flush()
+        }
+    }
+
+    @Test
+    fun `given default flush policies are enabled but source is disabled and platform type is server, when events are made, then the flush call is triggered`() {
+        val mockEvent: Event = mockk(relaxed = true)
+        val jsonString = """{"type":"track","event":"Test Event"}"""
+        every { eventQueue.stringifyBaseEvent(mockEvent) } returns jsonString
+        // Mock the behavior for StartupFlushPolicy
+        every { mockFlushPoliciesFacade.shouldFlush() } returns true
+        every { mockAnalytics.sourceConfigState } returns State(
+            SourceConfig(
+                source = SourceConfig.initialState().source.copy(isSourceEnabled = false)
+            )
+        )
+        every { mockAnalytics.sourceConfigState } returns State(
+            SourceConfig(
+                source = SourceConfig.initialState().source.copy(
+                    isSourceEnabled = false
+                )
+            )
+        )
+        every { mockAnalytics.getPlatformType() } returns PlatformType.Server
+
+        // Execute messageQueue actions
+        eventQueue.start()
+
+        // Make the first event
+        eventQueue.put(mockEvent)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify(exactly = 1) {
             mockFlushPoliciesFacade.reset()
             mockEventUpload.flush()
         }

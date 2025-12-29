@@ -56,7 +56,7 @@ data class SourceConfig(
     }
 
     /**
-     * Action to disable the source.
+     * Action to disable the source. Use [Analytics.disableSource()] to trigger this action.
      */
     internal class DisableSourceAction : StateAction<SourceConfig> {
 
