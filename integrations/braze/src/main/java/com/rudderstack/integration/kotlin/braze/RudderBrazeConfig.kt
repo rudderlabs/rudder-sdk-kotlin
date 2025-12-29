@@ -183,17 +183,19 @@ internal data class StandardProperties(
  *
  * @property productId The unique identifier for the product. Maps to "product_id" in JSON.
  * @property price The price of the product.
+ * @property quantity The quantity of the product. Defaults to 1 if not provided.
  */
 @Serializable
 internal data class Product(
     @SerialName("product_id") val productId: String? = null,
     @Serializable(with = BigDecimalSerializer::class)
     val price: BigDecimal? = null,
+    val quantity: Int = 1,
 ) {
 
     companion object {
 
-        internal fun getKeysAsList(): List<String> = listOf("product_id", "price")
+        internal fun getKeysAsList(): List<String> = listOf("product_id", "price", "quantity")
     }
 
     internal fun isNotEmpty(): Boolean {

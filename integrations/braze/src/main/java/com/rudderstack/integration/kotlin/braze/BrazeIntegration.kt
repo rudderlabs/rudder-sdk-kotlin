@@ -140,6 +140,7 @@ class BrazeIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
                         productId = it.productId,
                         currencyCode = currency,
                         price = it.price,
+                        quantity = it.quantity,
                         properties = initBrazeProperties(customProperties),
                     )
                     LoggerAnalytics.verbose(

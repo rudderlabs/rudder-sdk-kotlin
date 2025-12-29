@@ -8,6 +8,7 @@ import com.braze.models.outgoing.BrazeProperties
 import com.rudderstack.integration.kotlin.braze.Utility.getCampaignObject
 import com.rudderstack.integration.kotlin.braze.Utility.getCustomProperties
 import com.rudderstack.integration.kotlin.braze.Utility.getOrderCompletedProperties
+import com.rudderstack.integration.kotlin.braze.Utility.getOrderCompletedPropertiesWithoutQuantity
 import com.rudderstack.integration.kotlin.braze.Utility.getSlightDifferentStandardAndCustomTraits
 import com.rudderstack.integration.kotlin.braze.Utility.provideIdentifyEvent
 import com.rudderstack.integration.kotlin.braze.Utility.provideTrackEvent
@@ -207,16 +208,39 @@ class BrazeIntegrationTest {
                 productId = "10011",
                 currencyCode = "USD",
                 price = BigDecimal("100.11"),
+                quantity = 2,
                 properties = any<BrazeProperties>()
             )
             mockBrazeInstance.logPurchase(
                 productId = "20022",
                 currencyCode = "USD",
                 price = BigDecimal("200.22"),
+                quantity = 3,
                 properties = any<BrazeProperties>()
             )
         }
         assertEquals(getCustomProperties(), customPropertiesSlot.captured)
+    }
+
+    @Test
+    fun `given the event is Order Completed and quantity is not provided, when it is made, then default quantity of 1 is used`() {
+        brazeIntegration.create(mockBrazeIntegrationConfig)
+        val trackEvent = provideTrackEvent(
+            eventName = ORDER_COMPLETED,
+            properties = getOrderCompletedPropertiesWithoutQuantity(),
+        )
+
+        brazeIntegration.track(trackEvent)
+
+        verify(exactly = 1) {
+            mockBrazeInstance.logPurchase(
+                productId = "10011",
+                currencyCode = "USD",
+                price = BigDecimal("100.11"),
+                quantity = 1,
+                properties = any<BrazeProperties>()
+            )
+        }
     }
 
     @Test

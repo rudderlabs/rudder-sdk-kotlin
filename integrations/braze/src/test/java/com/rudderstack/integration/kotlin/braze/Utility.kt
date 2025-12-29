@@ -88,12 +88,28 @@ internal object Utility {
                 add(buildJsonObject {
                     put("product_id", "10011")
                     put("price", 100.11)
+                    put("quantity", 2)
                     put("Product-Key-1", "Product-Value-1")
                 })
                 add(buildJsonObject {
                     put("product_id", "20022")
                     put("price", 200.22)
+                    put("quantity", 3)
                     put("Product-Key-2", "Product-Value-2")
+                })
+            }
+        )
+    }
+
+    internal fun getOrderCompletedPropertiesWithoutQuantity(): JsonObject = buildJsonObject {
+        put("key1", "value1")
+        put("key2", "value2")
+        put(
+            "products", buildJsonArray {
+                add(buildJsonObject {
+                    put("product_id", "10011")
+                    put("price", 100.11)
+                    put("Product-Key-1", "Product-Value-1")
                 })
             }
         )
