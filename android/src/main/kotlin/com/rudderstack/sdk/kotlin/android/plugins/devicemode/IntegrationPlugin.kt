@@ -209,7 +209,7 @@ abstract class IntegrationPlugin : EventPlugin {
                 notifyCallbacks(Result.Success(Unit))
             },
             onException = { exception ->
-                LoggerAnalytics.error("IntegrationPlugin: Error: ${exception.message} creating destination $key.")
+                LoggerAnalytics.error("IntegrationPlugin: Failed to create destination $key. Error: ${exception.message}")
                 this.isDestinationReady = false
                 notifyCallbacks(Result.Failure(exception))
             }
@@ -249,7 +249,7 @@ abstract class IntegrationPlugin : EventPlugin {
                 }
             },
             onException = { exception ->
-                LoggerAnalytics.error("IntegrationPlugin: Error: ${exception.message} updating destination $key.")
+                LoggerAnalytics.error("IntegrationPlugin: Failed to update destination $key. Error: ${exception.message}")
                 this.isDestinationReady = false
                 notifyCallbacks(Result.Failure(exception))
             }
