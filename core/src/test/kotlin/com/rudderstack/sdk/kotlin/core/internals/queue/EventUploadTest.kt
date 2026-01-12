@@ -111,8 +111,6 @@ class EventUploadTest {
             )
         )
 
-        mockkStatic(::readFileAsString, ::doesFileExist)
-
         mockkObject(DateTimeUtils)
         every { DateTimeUtils.now() } returns mockCurrentTime
 
@@ -131,26 +129,14 @@ class EventUploadTest {
     }
 
     @Test
-    fun `test readFileAsString reads file correctly`() {
-        val filePath = "test_file_path"
-        val fileContent = "test content"
-
-        every { readFileAsString(filePath) } returns fileContent
-
-        val result = readFileAsString(filePath)
-
-        assertEquals(fileContent, result)
-    }
-
-    @Test
     fun `given multiple batch is ready to be sent to the server and server returns success, when flush is called, then all the batches are sent to the server and removed from the storage`() =
         runTest {
             val unprocessedBatch = readFileTrimmed(unprocessedBatchWithTwoEvents)
             val processedBatch = readFileTrimmed(processedBatchWithTwoEvents)
             prepareMultipleBatch()
-            // Mock messageQueue file reading
+            // Mock batch content reading
             filePaths.forEach { path ->
-                every { readFileAsString(path) } returns unprocessedBatch
+                every { mockStorage.readBatchContent(path) } returns unprocessedBatch
             }
             // Mock the behavior for HttpClient
             every { mockHttpClient.sendData(any()) } returns Result.Success("Ok")
@@ -169,8 +155,8 @@ class EventUploadTest {
     @Test
     fun `given batches of events with different anonymousIds, when they are uploaded, then header is updated for each batch with different anonymousId`() {
         prepareMultipleBatch()
-        every { readFileAsString(filePaths[0]) } returns batchPayload1
-        every { readFileAsString(filePaths[1]) } returns batchPayload2
+        every { mockStorage.readBatchContent(filePaths[0]) } returns batchPayload1
+        every { mockStorage.readBatchContent(filePaths[1]) } returns batchPayload2
         every { eventUpload.getAnonymousIdFromBatch(batchPayload1) } returns anonymousId1
         every { eventUpload.getAnonymousIdFromBatch(batchPayload2) } returns anonymousId2
         // Mock the behavior for HttpClient
@@ -199,8 +185,7 @@ class EventUploadTest {
         coEvery {
             mockStorage.readString(StorageKeys.EVENT, String.empty())
         } returns fileUrlList
-        every { doesFileExist(any()) } returns true
-        every { readFileAsString(filePaths[0]) } returns batchPayload
+        every { mockStorage.readBatchContent(filePaths[0]) } returns batchPayload
 
         // Mock the behavior for HttpClient
         every { mockHttpClient.sendData(batchPayload) } returns Result.Success("Ok")
@@ -279,7 +264,7 @@ class EventUploadTest {
         prepareMultipleBatch()
         val exception = Exception("File not found")
         filePaths.forEach { path ->
-            every { readFileAsString(path) } throws exception
+            every { mockStorage.readBatchContent(path) } throws exception
         }
 
         processMessage()
@@ -293,8 +278,7 @@ class EventUploadTest {
     fun `given server returns 400, when flush is called, then the batch is removed from the storage`() = runTest {
         val unprocessedBatch = readFileTrimmed(unprocessedBatchWithTwoEvents)
         every { mockStorage.readString(StorageKeys.EVENT, String.empty()) } returns singleFilePath
-        every { doesFileExist(singleFilePath) } returns true
-        every { readFileAsString(singleFilePath) } returns unprocessedBatch
+        every { mockStorage.readBatchContent(singleFilePath) } returns unprocessedBatch
         every { mockHttpClient.sendData(any()) } returns Result.Failure(
             error = NetworkErrorStatus.Error400,
         )
@@ -307,9 +291,9 @@ class EventUploadTest {
     @Test
     fun `given server returns source is disabled as error, when flush is called, then the upload queue is stopped`() {
         prepareMultipleBatch()
-        // Mock messageQueue file reading
+        // Mock batch content reading
         filePaths.forEach { path ->
-            every { readFileAsString(path) } returns batchPayload
+            every { mockStorage.readBatchContent(path) } returns batchPayload
         }
         // Mock the behavior for HttpClient
         every { mockHttpClient.sendData(batchPayload) } returns Result.Failure(
@@ -338,8 +322,7 @@ class EventUploadTest {
     fun `given server returns 413, when flush is called, then the batch is removed from the storage`() = runTest {
         val unprocessedBatch = readFileTrimmed(unprocessedBatchWithTwoEvents)
         every { mockStorage.readString(StorageKeys.EVENT, String.empty()) } returns singleFilePath
-        every { doesFileExist(singleFilePath) } returns true
-        every { readFileAsString(singleFilePath) } returns unprocessedBatch
+        every { mockStorage.readBatchContent(singleFilePath) } returns unprocessedBatch
         every { mockHttpClient.sendData(any()) } returns Result.Failure(
             error = NetworkErrorStatus.Error413,
         )
@@ -354,8 +337,7 @@ class EventUploadTest {
     fun `given server returns 401, when flush is called, then the invalid write key process is initiated`() = runTest {
         val unprocessedBatch = readFileTrimmed(unprocessedBatchWithTwoEvents)
         every { mockStorage.readString(StorageKeys.EVENT, String.empty()) } returns singleFilePath
-        every { doesFileExist(singleFilePath) } returns true
-        every { readFileAsString(singleFilePath) } returns unprocessedBatch
+        every { mockStorage.readBatchContent(singleFilePath) } returns unprocessedBatch
         every { mockHttpClient.sendData(any()) } returns Result.Failure(
             error = NetworkErrorStatus.Error401,
         )
@@ -375,17 +357,13 @@ class EventUploadTest {
         coEvery {
             mockStorage.readString(StorageKeys.EVENT, String.empty())
         } returns fileUrlList
-
-        // Mock file existence check
-        every { doesFileExist(any()) } returns true
     }
 
     private fun prepareSingleBatch(batchPayload: String) {
         coEvery {
             mockStorage.readString(StorageKeys.EVENT, String.empty())
         } returns singleFilePath
-        every { doesFileExist(any()) } returns true
-        every { readFileAsString(singleFilePath) } returns batchPayload
+        every { mockStorage.readBatchContent(singleFilePath) } returns batchPayload
     }
 
     private fun simulateRetryAbleError(maxAttempt: Int = MAX_ATTEMPT) {
