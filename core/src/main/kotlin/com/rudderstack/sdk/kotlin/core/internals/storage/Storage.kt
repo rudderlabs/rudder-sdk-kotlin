@@ -162,6 +162,7 @@ interface Storage {
  *
  * @property key
  */
+@InternalRudderApi
 enum class StorageKeys(val key: String) {
 
     /**
