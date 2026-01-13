@@ -1,0 +1,138 @@
+package com.rudderstack.sdk.kotlin.core.internals.storage.inmemory
+
+import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.storage.LibraryVersion
+import com.rudderstack.sdk.kotlin.core.internals.storage.MAX_PAYLOAD_SIZE
+import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
+import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
+import com.rudderstack.sdk.kotlin.core.internals.storage.exception.PayloadTooLargeException
+import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
+import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
+import source.version.VersionConstants
+
+/**
+ * Implementation of the [com.rudderstack.sdk.kotlin.core.internals.storage.Storage] interface that provides an in-memory storage mechanism.
+ *
+ * This class handles storing, retrieving, and managing key-value pairs and event batches
+ * entirely in memory without any file system interactions. All data is ephemeral and will
+ * be lost when the process terminates.
+ *
+ * This storage is ideal for server-side SDK deployments where persistence is not required.
+ *
+ * @param writeKey The key used to identify this storage instance.
+ */
+@Suppress("Detekt.TooManyFunctions")
+@InternalRudderApi
+internal class InMemoryStorage(writeKey: String) : Storage {
+
+    /**
+     * In-memory key-value storage for non-event data.
+     */
+    private val kvStorage = InMemoryKeyValueStorage()
+
+    /**
+     * In-memory batch manager for event data.
+     */
+    private val batchManager = InMemoryBatchManager(writeKey, kvStorage)
+
+    override suspend fun write(key: StorageKeys, value: Boolean) {
+        if (key != StorageKeys.EVENT) {
+            kvStorage.save(key.key, value)
+        }
+    }
+
+    override suspend fun write(key: StorageKeys, value: String) {
+        if (key == StorageKeys.EVENT) {
+            if (value.length < MAX_PAYLOAD_SIZE) {
+                batchManager.storeEvent(value)
+            } else {
+                throw PayloadTooLargeException()
+            }
+        } else {
+            kvStorage.save(key.key, value)
+        }
+    }
+
+    override suspend fun write(key: StorageKeys, value: Int) {
+        if (key != StorageKeys.EVENT) {
+            kvStorage.save(key.key, value)
+        }
+    }
+
+    override suspend fun write(key: StorageKeys, value: Long) {
+        if (key != StorageKeys.EVENT) {
+            kvStorage.save(key.key, value)
+        }
+    }
+
+    override suspend fun remove(key: StorageKeys) {
+        kvStorage.clear(key.key)
+    }
+
+    override fun remove(filePath: String) {
+        batchManager.remove(filePath)
+    }
+
+    override suspend fun rollover() {
+        batchManager.rollover()
+    }
+
+    override fun close() {
+        batchManager.closeAndReset()
+        LoggerAnalytics.info("InMemoryStorage closed")
+    }
+
+    override fun readInt(key: StorageKeys, defaultVal: Int): Int {
+        return kvStorage.getInt(key.key, defaultVal)
+    }
+
+    override fun readBoolean(key: StorageKeys, defaultVal: Boolean): Boolean {
+        return kvStorage.getBoolean(key.key, defaultVal)
+    }
+
+    override fun readLong(key: StorageKeys, defaultVal: Long): Long {
+        return kvStorage.getLong(key.key, defaultVal)
+    }
+
+    override fun readString(key: StorageKeys, defaultVal: String): String {
+        return if (key == StorageKeys.EVENT) {
+            batchManager.read().joinToString()
+        } else {
+            kvStorage.getString(key.key, defaultVal)
+        }
+    }
+
+    override fun readFileList(): List<String> {
+        return batchManager.read()
+    }
+
+    override fun readBatchContent(batchRef: String): String? {
+        return batchManager.readContent(batchRef)
+    }
+
+    override fun getLibraryVersion(): LibraryVersion {
+        return object : LibraryVersion {
+            override fun getLibraryName(): String = VersionConstants.LIBRARY_NAME
+
+            override fun getVersionName(): String = VersionConstants.VERSION_NAME
+        }
+    }
+
+    @UseWithCaution
+    override fun delete() {
+        batchManager.closeAndReset()
+        batchManager.read().forEach { batchManager.remove(it) }
+        kvStorage.delete()
+        LoggerAnalytics.info("InMemoryStorage deleted")
+    }
+}
+
+/**
+ * Provides an instance of [InMemoryStorage] with the given [writeKey].
+ *
+ * @param writeKey The key used to identify the storage instance.
+ * @return An instance of [InMemoryStorage] with the provided [writeKey].
+ */
+internal fun provideInMemoryStorage(writeKey: String): Storage {
+    return InMemoryStorage(writeKey = writeKey)
+}
