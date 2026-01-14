@@ -22,13 +22,13 @@ internal class InMemoryFile(val name: String) {
     /**
      * The current length of the content stored in this file.
      */
-    val length: Int
+    internal val length: Int
         get() = buffer.length
 
     /**
      * Returns the name without the temporary suffix.
      */
-    val nameWithoutExtension: String
+    internal val nameWithoutExtension: String
         get() = name.removeSuffix(TMP_SUFFIX)
 
     /**
@@ -36,14 +36,14 @@ internal class InMemoryFile(val name: String) {
      *
      * @return `true` if the file exists, `false` otherwise.
      */
-    fun exists(): Boolean = created
+    internal fun exists(): Boolean = created
 
     /**
      * Creates a new file if it does not already exist.
      *
      * @return `true` if the file was created, `false` if it already existed.
      */
-    fun createNewFile(): Boolean {
+    internal fun createNewFile(): Boolean {
         if (created) return false
         created = true
         return true
@@ -54,7 +54,7 @@ internal class InMemoryFile(val name: String) {
      *
      * @param content The content to append.
      */
-    fun append(content: String) {
+    internal fun append(content: String) {
         buffer.append(content)
     }
 
@@ -63,5 +63,5 @@ internal class InMemoryFile(val name: String) {
      *
      * @return The complete content stored in this file.
      */
-    fun readText(): String = buffer.toString()
+    internal fun readText(): String = buffer.toString()
 }

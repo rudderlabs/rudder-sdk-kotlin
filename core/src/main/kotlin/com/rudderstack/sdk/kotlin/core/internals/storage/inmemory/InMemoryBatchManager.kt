@@ -8,7 +8,6 @@ import com.rudderstack.sdk.kotlin.core.internals.storage.TMP_SUFFIX
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import com.rudderstack.sdk.kotlin.core.internals.utils.toFileDirectory
 import kotlinx.coroutines.sync.Semaphore
-import org.jetbrains.annotations.VisibleForTesting
 import java.util.concurrent.ConcurrentHashMap
 
 internal const val BATCH_INDEX = "rudderstack.event.batch.index."
@@ -56,7 +55,7 @@ internal class InMemoryBatchManager(
      *
      * @param eventPayload The event payload to be stored.
      */
-    suspend fun storeEvent(eventPayload: String) = withLock {
+    internal suspend fun storeEvent(eventPayload: String) = withLock {
         var newFile = false
         var file = currentFile()
 
@@ -83,7 +82,7 @@ internal class InMemoryBatchManager(
      *
      * @return A list of file names for completed batches.
      */
-    fun read(): List<String> {
+    internal fun read(): List<String> {
         return files.keys().toList().filter { !it.endsWith(TMP_SUFFIX) }
     }
 
@@ -93,7 +92,7 @@ internal class InMemoryBatchManager(
      * @param filePath The file name to remove.
      * @return `true` if the file existed and was removed, `false` otherwise.
      */
-    fun remove(filePath: String): Boolean {
+    internal fun remove(filePath: String): Boolean {
         return files.remove(filePath) != null
     }
 
@@ -103,7 +102,7 @@ internal class InMemoryBatchManager(
      * @param filePath The file name to read.
      * @return The batch content as a String, or null if the file does not exist.
      */
-    fun readContent(filePath: String): String? {
+    internal fun readContent(filePath: String): String? {
         return files[filePath]?.readText()
     }
 
@@ -111,7 +110,7 @@ internal class InMemoryBatchManager(
      * Completes the current batch file and prepares for the next batch.
      * Appends the closing suffix with sentAt timestamp and renames the file.
      */
-    suspend fun rollover() = withLock {
+    internal suspend fun rollover() = withLock {
         finish()
     }
 
@@ -128,8 +127,7 @@ internal class InMemoryBatchManager(
      *
      * @param file The file to start writing to.
      */
-    @VisibleForTesting
-    internal fun start(file: InMemoryFile) {
+    private fun start(file: InMemoryFile) {
         files[file.name] = file
         writeToFile(BATCH_PREFIX, file)
     }
@@ -137,8 +135,7 @@ internal class InMemoryBatchManager(
     /**
      * Completes the current batch file with a timestamp and renames it.
      */
-    @VisibleForTesting
-    internal fun finish() {
+    private fun finish() {
         val file = currentFile()
         if (!file.exists()) return
         val contents = "$BATCH_SENT_AT_SUFFIX$DEFAULT_SENT_AT_TIMESTAMP\"}"
@@ -181,14 +178,14 @@ internal class InMemoryBatchManager(
     /**
      * Closes the current file reference without finalizing it.
      */
-    fun closeAndReset() {
+    internal fun closeAndReset() {
         reset()
     }
 
     /**
      * Deletes all batch files and resets the current file reference.
      */
-    fun delete() {
+    internal fun delete() {
         files.clear()
         reset()
     }
