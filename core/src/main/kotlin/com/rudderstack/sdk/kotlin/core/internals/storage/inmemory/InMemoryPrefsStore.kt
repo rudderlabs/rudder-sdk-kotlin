@@ -7,13 +7,15 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * An in-memory implementation of [com.rudderstack.sdk.kotlin.core.internals.storage.KeyValueStorage] that uses a [java.util.concurrent.ConcurrentHashMap] for thread-safe storage.
+ * An in-memory implementation of [KeyValueStorage] that provides a preferences-like storage mechanism.
  *
- * This implementation stores all values in memory and does not persist data across sessions.
- * It is useful for testing purposes or when persistence is not required.
+ * This implementation uses a [ConcurrentHashMap] for thread-safe storage and stores all values
+ * in memory without persisting data across sessions.
+ *
+ * Useful for server-side SDK deployments or testing purposes where persistence is not required.
  */
 @InternalRudderApi
-internal class InMemoryKeyValueStorage : KeyValueStorage {
+internal class InMemoryPrefsStore : KeyValueStorage {
 
     private val storage = ConcurrentHashMap<String, Any>()
 
@@ -56,6 +58,6 @@ internal class InMemoryKeyValueStorage : KeyValueStorage {
     @UseWithCaution
     override fun delete() {
         storage.clear()
-        LoggerAnalytics.info("InMemoryKeyValueStorage deleted")
+        LoggerAnalytics.info("InMemoryPrefsStore deleted")
     }
 }

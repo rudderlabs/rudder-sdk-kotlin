@@ -1,6 +1,7 @@
 package com.rudderstack.sdk.kotlin.core.internals.storage.inmemory
 
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.storage.KeyValueStorage
 import com.rudderstack.sdk.kotlin.core.internals.storage.LibraryVersion
 import com.rudderstack.sdk.kotlin.core.internals.storage.MAX_PAYLOAD_SIZE
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
@@ -20,24 +21,23 @@ import source.version.VersionConstants
  * This storage is ideal for server-side SDK deployments where persistence is not required.
  *
  * @param writeKey The key used to identify this storage instance.
+ * @param prefsStore The key-value storage for non-event data.
  */
 @Suppress("Detekt.TooManyFunctions")
 @InternalRudderApi
-internal class InMemoryStorage(writeKey: String) : Storage {
-
-    /**
-     * In-memory key-value storage for non-event data.
-     */
-    private val kvStorage = InMemoryKeyValueStorage()
+internal class InMemoryStorage(
+    writeKey: String,
+    private val prefsStore: KeyValueStorage = InMemoryPrefsStore()
+) : Storage {
 
     /**
      * In-memory batch manager for event data.
      */
-    private val batchManager = InMemoryBatchManager(writeKey, kvStorage)
+    private val batchManager = InMemoryBatchManager(writeKey, prefsStore)
 
     override suspend fun write(key: StorageKeys, value: Boolean) {
         if (key != StorageKeys.EVENT) {
-            kvStorage.save(key.key, value)
+            prefsStore.save(key.key, value)
         }
     }
 
@@ -49,24 +49,24 @@ internal class InMemoryStorage(writeKey: String) : Storage {
                 throw PayloadTooLargeException()
             }
         } else {
-            kvStorage.save(key.key, value)
+            prefsStore.save(key.key, value)
         }
     }
 
     override suspend fun write(key: StorageKeys, value: Int) {
         if (key != StorageKeys.EVENT) {
-            kvStorage.save(key.key, value)
+            prefsStore.save(key.key, value)
         }
     }
 
     override suspend fun write(key: StorageKeys, value: Long) {
         if (key != StorageKeys.EVENT) {
-            kvStorage.save(key.key, value)
+            prefsStore.save(key.key, value)
         }
     }
 
     override suspend fun remove(key: StorageKeys) {
-        kvStorage.clear(key.key)
+        prefsStore.clear(key.key)
     }
 
     override fun remove(filePath: String) {
@@ -83,22 +83,22 @@ internal class InMemoryStorage(writeKey: String) : Storage {
     }
 
     override fun readInt(key: StorageKeys, defaultVal: Int): Int {
-        return kvStorage.getInt(key.key, defaultVal)
+        return prefsStore.getInt(key.key, defaultVal)
     }
 
     override fun readBoolean(key: StorageKeys, defaultVal: Boolean): Boolean {
-        return kvStorage.getBoolean(key.key, defaultVal)
+        return prefsStore.getBoolean(key.key, defaultVal)
     }
 
     override fun readLong(key: StorageKeys, defaultVal: Long): Long {
-        return kvStorage.getLong(key.key, defaultVal)
+        return prefsStore.getLong(key.key, defaultVal)
     }
 
     override fun readString(key: StorageKeys, defaultVal: String): String {
         return if (key == StorageKeys.EVENT) {
             batchManager.read().joinToString()
         } else {
-            kvStorage.getString(key.key, defaultVal)
+            prefsStore.getString(key.key, defaultVal)
         }
     }
 
@@ -122,7 +122,7 @@ internal class InMemoryStorage(writeKey: String) : Storage {
     override fun delete() {
         batchManager.closeAndReset()
         batchManager.read().forEach { batchManager.remove(it) }
-        kvStorage.delete()
+        prefsStore.delete()
         LoggerAnalytics.info("InMemoryStorage deleted")
     }
 }
