@@ -30,10 +30,7 @@ internal class InMemoryStorage(
     private val prefsStore: KeyValueStorage = InMemoryPrefsStore()
 ) : Storage {
 
-    /**
-     * In-memory batch manager for event data.
-     */
-    private val batchManager = InMemoryBatchManager(writeKey, prefsStore)
+    private val eventBatchFile = InMemoryBatchManager(writeKey, prefsStore)
 
     override suspend fun write(key: StorageKeys, value: Boolean) {
         if (key != StorageKeys.EVENT) {
@@ -44,7 +41,7 @@ internal class InMemoryStorage(
     override suspend fun write(key: StorageKeys, value: String) {
         if (key == StorageKeys.EVENT) {
             if (value.length < MAX_PAYLOAD_SIZE) {
-                batchManager.storeEvent(value)
+                eventBatchFile.storeEvent(value)
             } else {
                 throw PayloadTooLargeException()
             }
@@ -70,15 +67,15 @@ internal class InMemoryStorage(
     }
 
     override fun remove(filePath: String) {
-        batchManager.remove(filePath)
+        eventBatchFile.remove(filePath)
     }
 
     override suspend fun rollover() {
-        batchManager.rollover()
+        eventBatchFile.rollover()
     }
 
     override fun close() {
-        batchManager.closeAndReset()
+        eventBatchFile.closeAndReset()
         LoggerAnalytics.info("InMemoryStorage closed")
     }
 
@@ -96,18 +93,18 @@ internal class InMemoryStorage(
 
     override fun readString(key: StorageKeys, defaultVal: String): String {
         return if (key == StorageKeys.EVENT) {
-            batchManager.read().joinToString()
+            eventBatchFile.read().joinToString()
         } else {
             prefsStore.getString(key.key, defaultVal)
         }
     }
 
     override fun readFileList(): List<String> {
-        return batchManager.read()
+        return eventBatchFile.read()
     }
 
     override fun readBatchContent(batchRef: String): String? {
-        return batchManager.readContent(batchRef)
+        return eventBatchFile.readContent(batchRef)
     }
 
     override fun getLibraryVersion(): LibraryVersion {
@@ -120,8 +117,8 @@ internal class InMemoryStorage(
 
     @UseWithCaution
     override fun delete() {
-        batchManager.closeAndReset()
-        batchManager.read().forEach { batchManager.remove(it) }
+        eventBatchFile.closeAndReset()
+        eventBatchFile.read().forEach { eventBatchFile.remove(it) }
         prefsStore.delete()
         LoggerAnalytics.info("InMemoryStorage deleted")
     }
