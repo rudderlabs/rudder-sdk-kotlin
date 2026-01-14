@@ -3,23 +3,11 @@ package com.rudderstack.sdk.kotlin.core
 import com.rudderstack.sdk.kotlin.core.Configuration.Companion.DEFAULT_CONTROL_PLANE_URL
 import com.rudderstack.sdk.kotlin.core.Configuration.Companion.DEFAULT_FLUSH_POLICIES
 import com.rudderstack.sdk.kotlin.core.Configuration.Companion.DEFAULT_GZIP_STATUS
-import com.rudderstack.sdk.kotlin.core.Configuration.Companion.DEFAULT_STORAGE_TYPE
 import com.rudderstack.sdk.kotlin.core.internals.policies.CountFlushPolicy
 import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPolicy
 import com.rudderstack.sdk.kotlin.core.internals.policies.FrequencyFlushPolicy
 import com.rudderstack.sdk.kotlin.core.internals.policies.StartupFlushPolicy
 import org.jetbrains.annotations.VisibleForTesting
-
-/**
- * Storage type for analytics data persistence.
- */
-enum class StorageType {
-    /** Ephemeral storage - data lost on process termination. Default for server-side. */
-    IN_MEMORY,
-
-    /** File-based persistent storage. Required for client-side (Android). */
-    FILE
-}
 
 /**
  * The `Configuration` class is used to configure the SDK's settings for network communication, logging, data storage, and more.
@@ -38,7 +26,7 @@ open class Configuration @JvmOverloads constructor(
     open val controlPlaneUrl: String = DEFAULT_CONTROL_PLANE_URL,
     open val gzipEnabled: Boolean = DEFAULT_GZIP_STATUS,
     open val flushPolicies: List<FlushPolicy> = DEFAULT_FLUSH_POLICIES,
-    open val storageType: StorageType = StorageType.IN_MEMORY,
+    open val storageType: StorageType = DEFAULT_STORAGE_TYPE,
 ) {
 
     companion object {
@@ -80,3 +68,14 @@ fun provideDefaultFlushPolicies() = listOf(
     FrequencyFlushPolicy(),
     StartupFlushPolicy(),
 )
+
+/**
+ * Storage type for analytics data persistence.
+ */
+enum class StorageType {
+    /** Ephemeral storage - data lost on process termination. Default for server-side. */
+    IN_MEMORY,
+
+    /** File-based persistent storage. */
+    FILE
+}
