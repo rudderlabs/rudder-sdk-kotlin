@@ -117,9 +117,8 @@ internal class InMemoryStorage(
 
     @UseWithCaution
     override fun delete() {
-        eventBatchFile.closeAndReset()
-        eventBatchFile.read().forEach { eventBatchFile.remove(it) }
         prefsStore.delete()
+        eventBatchFile.delete()
         LoggerAnalytics.info("InMemoryStorage deleted")
     }
 }

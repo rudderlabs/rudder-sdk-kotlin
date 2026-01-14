@@ -186,6 +186,14 @@ internal class InMemoryBatchManager(
     }
 
     /**
+     * Deletes all batch files and resets the current file reference.
+     */
+    fun delete() {
+        files.clear()
+        reset()
+    }
+
+    /**
      * Acquires a lock, executes the provided block, and releases the lock.
      *
      * @param block The block of code to execute within the lock.
