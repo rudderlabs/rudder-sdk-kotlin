@@ -79,11 +79,15 @@ internal class InMemoryBatchManager(
 
     /**
      * Reads the list of completed batch file names (without .tmp suffix).
+     * Files are sorted by their numeric batch index to ensure correct upload order.
      *
-     * @return A list of file names for completed batches.
+     * @return A list of file names for completed batches, sorted by batch index.
      */
     internal fun read(): List<String> {
-        return files.keys().toList().filter { !it.endsWith(TMP_SUFFIX) }
+        return files.keys()
+            .toList()
+            .filter { !it.endsWith(TMP_SUFFIX) }
+            .sortedBy { it.toIntOrNull() ?: Int.MAX_VALUE }
     }
 
     /**
