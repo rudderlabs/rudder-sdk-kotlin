@@ -38,12 +38,12 @@ internal class InMemoryBatchManager(
     /**
      * Storage for event batches. Keys are batch identifiers (with or without .tmp suffix).
      */
-    private val batches = ConcurrentHashMap<String, StringBuilder>()
+    private val files = ConcurrentHashMap<String, InMemoryFile>()
 
     /**
      * The current batch file being written to.
      */
-    private var curFile: String? = null
+    private var curFile: InMemoryFile? = null
 
     /**
      * A semaphore to control concurrent access to batch operations.
@@ -51,8 +51,8 @@ internal class InMemoryBatchManager(
     private val semaphore = Semaphore(1)
 
     /**
-     * Stores an event payload in the current batch. If the current batch exceeds the maximum
-     * batch size, it is finalized and a new batch is started.
+     * Stores an event payload in the current batch file. If the current file exceeds the maximum
+     * batch size, it is finalized and a new file is started.
      *
      * @param eventPayload The event payload to be stored.
      */
@@ -60,15 +60,16 @@ internal class InMemoryBatchManager(
         var newFile = false
         var file = currentFile()
 
-        if (!batches.containsKey(file)) {
+        if (!file.exists()) {
+            file.createNewFile()
             start(file)
             newFile = true
         }
 
-        val batchLength = batches[file]?.length ?: 0
-        if (batchLength > MAX_BATCH_SIZE) {
+        if (file.length > MAX_BATCH_SIZE) {
             finish()
             file = currentFile()
+            file.createNewFile()
             start(file)
             newFile = true
         }
@@ -78,37 +79,37 @@ internal class InMemoryBatchManager(
     }
 
     /**
-     * Reads the list of completed batch keys (without .tmp suffix).
+     * Reads the list of completed batch file names (without .tmp suffix).
      *
-     * @return A list of batch keys for completed batches.
+     * @return A list of file names for completed batches.
      */
     fun read(): List<String> {
-        return batches.keys().toList().filter { !it.endsWith(TMP_SUFFIX) }
+        return files.keys().toList().filter { !it.endsWith(TMP_SUFFIX) }
     }
 
     /**
-     * Removes a specific batch from storage.
+     * Removes a specific batch file from storage.
      *
-     * @param batchRef The batch key to remove.
-     * @return `true` if the batch existed and was removed, `false` otherwise.
+     * @param filePath The file name to remove.
+     * @return `true` if the file existed and was removed, `false` otherwise.
      */
-    fun remove(batchRef: String): Boolean {
-        return batches.remove(batchRef) != null
+    fun remove(filePath: String): Boolean {
+        return files.remove(filePath) != null
     }
 
     /**
-     * Reads the content of a batch.
+     * Reads the content of a batch file.
      *
-     * @param batchRef The batch key to read.
-     * @return The batch content as a String, or null if the batch does not exist.
+     * @param filePath The file name to read.
+     * @return The batch content as a String, or null if the file does not exist.
      */
-    fun readContent(batchRef: String): String? {
-        return batches[batchRef]?.toString()
+    fun readContent(filePath: String): String? {
+        return files[filePath]?.readText()
     }
 
     /**
-     * Completes the current batch and prepares for the next batch.
-     * Appends the closing suffix with sentAt timestamp and renames the batch key.
+     * Completes the current batch file and prepares for the next batch.
+     * Appends the closing suffix with sentAt timestamp and renames the file.
      */
     suspend fun rollover() = withLock {
         finish()
@@ -128,8 +129,8 @@ internal class InMemoryBatchManager(
      * @param file The file to start writing to.
      */
     @VisibleForTesting
-    internal fun start(file: String) {
-        batches[file] = StringBuilder()
+    internal fun start(file: InMemoryFile) {
+        files[file.name] = file
         writeToFile(BATCH_PREFIX, file)
     }
 
@@ -139,11 +140,11 @@ internal class InMemoryBatchManager(
     @VisibleForTesting
     internal fun finish() {
         val file = currentFile()
-        val batch = batches[file] ?: return
+        if (!file.exists()) return
         val contents = "$BATCH_SENT_AT_SUFFIX$DEFAULT_SENT_AT_TIMESTAMP\"}"
         writeToFile(contents, file)
-        batches.remove(file)
-        batches[file.removeSuffix(TMP_SUFFIX)] = batch
+        files.remove(file.name)
+        files[file.nameWithoutExtension] = file
         incrementFileIndex()
         reset()
     }
@@ -153,33 +154,32 @@ internal class InMemoryBatchManager(
      *
      * @return The current batch file.
      */
-    private fun currentFile(): String {
-        if (curFile == null) {
+    private fun currentFile(): InMemoryFile {
+        return curFile ?: run {
             val index = keyValueStorage.getInt(fileIndexKey, 0)
-            curFile = "$index$TMP_SUFFIX"
+            InMemoryFile("$index$TMP_SUFFIX").also { curFile = it }
         }
-        return curFile ?: ""
     }
 
     /**
-     * Writes the given content to the specified file, appending to the existing content if the file is already open.
+     * Writes the given content to the specified file, appending to the existing content.
      *
      * @param content The content to write.
      * @param file The file to write to.
      */
-    private fun writeToFile(content: String, file: String) {
-        batches[file]?.append(content)
+    private fun writeToFile(content: String, file: InMemoryFile) {
+        file.append(content)
     }
 
     /**
-     * Resets the state of the current batch key reference.
+     * Resets the current file reference.
      */
     private fun reset() {
         curFile = null
     }
 
     /**
-     * Closes the current batch reference without finalizing it.
+     * Closes the current file reference without finalizing it.
      */
     fun closeAndReset() {
         reset()
