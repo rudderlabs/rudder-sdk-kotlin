@@ -31,9 +31,9 @@ internal class InMemoryBatchManager(
 ) {
 
     /**
-     * The key used to store the index of the current batch.
+     * The key used to store the index of the current batch file.
      */
-    private val batchIndexKey = writeKey.toFileDirectory(BATCH_INDEX)
+    private val fileIndexKey = writeKey.toFileDirectory(BATCH_INDEX)
 
     /**
      * Storage for event batches. Keys are batch identifiers (with or without .tmp suffix).
@@ -41,9 +41,9 @@ internal class InMemoryBatchManager(
     private val batches = ConcurrentHashMap<String, StringBuilder>()
 
     /**
-     * Current batch key reference (with .tmp suffix).
+     * The current batch file being written to.
      */
-    private var curBatchKey: String? = null
+    private var curFile: String? = null
 
     /**
      * A semaphore to control concurrent access to batch operations.
@@ -58,23 +58,23 @@ internal class InMemoryBatchManager(
      */
     suspend fun storeEvent(eventPayload: String) = withLock {
         var newFile = false
-        var batchKey = currentBatchKey()
+        var file = currentFile()
 
-        if (!batches.containsKey(batchKey)) {
-            start(batchKey)
+        if (!batches.containsKey(file)) {
+            start(file)
             newFile = true
         }
 
-        val batchLength = batches[batchKey]?.length ?: 0
+        val batchLength = batches[file]?.length ?: 0
         if (batchLength > MAX_BATCH_SIZE) {
             finish()
-            batchKey = currentBatchKey()
-            start(batchKey)
+            file = currentFile()
+            start(file)
             newFile = true
         }
 
         val contents = if (newFile) eventPayload else ",$eventPayload"
-        writeToBatch(contents, batchKey)
+        writeToFile(contents, file)
     }
 
     /**
@@ -115,67 +115,67 @@ internal class InMemoryBatchManager(
     }
 
     /**
-     * Increments the index used to name batches.
+     * Increments the index used to name batch files.
      */
-    private fun incrementBatchIndex() {
-        val index = keyValueStorage.getInt(batchIndexKey, 0)
-        keyValueStorage.save(batchIndexKey, index + 1)
+    private fun incrementFileIndex() {
+        val index = keyValueStorage.getInt(fileIndexKey, 0)
+        keyValueStorage.save(fileIndexKey, index + 1)
     }
 
     /**
-     * Starts a new batch with the batch prefix.
+     * Starts a new batch file with the batch prefix.
      *
-     * @param batchKey The batch key to start writing to.
+     * @param file The file to start writing to.
      */
     @VisibleForTesting
-    internal fun start(batchKey: String) {
-        batches[batchKey] = StringBuilder()
-        writeToBatch(BATCH_PREFIX, batchKey)
+    internal fun start(file: String) {
+        batches[file] = StringBuilder()
+        writeToFile(BATCH_PREFIX, file)
     }
 
     /**
-     * Completes the current batch with a timestamp and renames it.
+     * Completes the current batch file with a timestamp and renames it.
      */
     @VisibleForTesting
     internal fun finish() {
-        val batchKey = currentBatchKey()
-        val batch = batches[batchKey] ?: return
+        val file = currentFile()
+        val batch = batches[file] ?: return
         val contents = "$BATCH_SENT_AT_SUFFIX$DEFAULT_SENT_AT_TIMESTAMP\"}"
-        writeToBatch(contents, batchKey)
-        batches.remove(batchKey)
-        batches[batchKey.removeSuffix(TMP_SUFFIX)] = batch
-        incrementBatchIndex()
+        writeToFile(contents, file)
+        batches.remove(file)
+        batches[file.removeSuffix(TMP_SUFFIX)] = batch
+        incrementFileIndex()
         reset()
     }
 
     /**
-     * Returns the current batch key, creating it if necessary.
+     * Returns the current batch file, creating it if necessary.
      *
-     * @return The current batch key.
+     * @return The current batch file.
      */
-    private fun currentBatchKey(): String {
-        if (curBatchKey == null) {
-            val index = keyValueStorage.getInt(batchIndexKey, 0)
-            curBatchKey = "$index$TMP_SUFFIX"
+    private fun currentFile(): String {
+        if (curFile == null) {
+            val index = keyValueStorage.getInt(fileIndexKey, 0)
+            curFile = "$index$TMP_SUFFIX"
         }
-        return curBatchKey ?: ""
+        return curFile ?: ""
     }
 
     /**
-     * Writes the given content to the specified batch.
+     * Writes the given content to the specified file, appending to the existing content if the file is already open.
      *
      * @param content The content to write.
-     * @param batchKey The batch key to write to.
+     * @param file The file to write to.
      */
-    private fun writeToBatch(content: String, batchKey: String) {
-        batches[batchKey]?.append(content)
+    private fun writeToFile(content: String, file: String) {
+        batches[file]?.append(content)
     }
 
     /**
      * Resets the state of the current batch key reference.
      */
     private fun reset() {
-        curBatchKey = null
+        curFile = null
     }
 
     /**
