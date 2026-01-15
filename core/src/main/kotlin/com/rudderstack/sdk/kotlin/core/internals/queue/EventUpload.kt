@@ -32,7 +32,6 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.annotations.VisibleForTesting
-import java.io.File
 import kotlin.coroutines.coroutineContext
 
 private const val BATCH_ENDPOINT = "/v1/batch"
@@ -92,14 +91,14 @@ internal class EventUpload(
     private suspend fun processAndUploadEvent() {
         val fileUrlList = storage.readString(StorageKeys.EVENT, String.empty()).parseFilePaths()
         for (filePath in fileUrlList) {
-            if (!doesFileExist(filePath)) continue
             // ensureActive will help in cancelling the coroutine
             coroutineContext.ensureActive()
 
             try {
-                readFileAsString(filePath)
-                    .also { batch -> updateAnonymousIdHeaderIfChanged(batch) }
-                    .let { batch -> uploadEvents(batch, filePath) }
+                storage.readBatchContent(filePath)?.let { batch ->
+                    updateAnonymousIdHeaderIfChanged(batch)
+                    uploadEvents(batch, filePath)
+                }
             } catch (e: CancellationException) {
                 LoggerAnalytics.error("Job was cancelled. Stopping the upload process.", e)
                 throw e
@@ -205,15 +204,4 @@ internal class EventUpload(
         }
         uploadChannel.cancel()
     }
-}
-
-@VisibleForTesting
-internal fun doesFileExist(filePath: String): Boolean {
-    val file = File(filePath)
-    return file.exists()
-}
-
-@VisibleForTesting
-internal fun readFileAsString(filePath: String): String {
-    return File(filePath).readText()
 }

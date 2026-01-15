@@ -124,6 +124,10 @@ internal class BasicStorage(writeKey: String) : Storage {
         return eventsFile.read()
     }
 
+    override fun readBatchContent(batchRef: String): String? {
+        return eventsFile.readContent(batchRef)
+    }
+
     override fun getLibraryVersion(): LibraryVersion {
         return object : LibraryVersion {
             override fun getLibraryName(): String = VersionConstants.LIBRARY_NAME

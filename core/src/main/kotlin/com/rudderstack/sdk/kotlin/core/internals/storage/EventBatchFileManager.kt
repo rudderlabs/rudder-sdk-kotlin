@@ -108,6 +108,18 @@ class EventBatchFileManager(
     }
 
     /**
+     * Reads the content of a batch file.
+     *
+     * @param filePath The path of the batch file to read.
+     * @return The batch content as a String, or null if the file does not exist.
+     */
+    fun readContent(filePath: String): String? {
+        return File(filePath).takeIf {
+            it.exists()
+        }?.readText()
+    }
+
+    /**
      * Completes the current batch file and prepares for the next batch. Renames the file and increments the file index.
      */
     suspend fun rollover() = withLock {
