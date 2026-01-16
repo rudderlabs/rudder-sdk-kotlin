@@ -103,7 +103,12 @@ class EventBatchFileManager(
         } ?: emptyArray()
 
         val orderedFiles = when (platformType) {
-            PlatformType.Server -> files.sortedBy { it.nameWithoutExtension.toIntOrNull() ?: Int.MAX_VALUE }
+            PlatformType.Server ->
+                files
+                    .map { file -> file to (file.nameWithoutExtension.toIntOrNull() ?: Int.MAX_VALUE) }
+                    .sortedBy { (_, index) -> index }
+                    .map { (file, _) -> file }
+
             PlatformType.Mobile -> files.toList()
         }
         return orderedFiles.map { it.absolutePath }
