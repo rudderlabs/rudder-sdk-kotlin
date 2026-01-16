@@ -118,7 +118,7 @@ open class Analytics protected constructor(
     constructor(configuration: Configuration) : this(
         configuration = configuration,
         analyticsConfiguration = provideAnalyticsConfiguration(
-            storage = provideBasicStorage(configuration.writeKey)
+            storage = provideBasicStorage(configuration.writeKey, PlatformType.Server)
         )
     )
 

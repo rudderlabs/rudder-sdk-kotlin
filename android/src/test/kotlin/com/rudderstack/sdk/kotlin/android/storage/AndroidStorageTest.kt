@@ -1,6 +1,7 @@
 package com.rudderstack.sdk.kotlin.android.storage
 
 import android.content.Context
+import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.storage.MAX_PAYLOAD_SIZE
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import io.mockk.mockk
@@ -24,7 +25,7 @@ class AndroidStorageTest {
         mockContext = mockk<Context>(relaxed = true)
         keyValueStorage = mockk<SharedPrefsStore>(relaxed = true)
         directory = mockk<File>(relaxed = true)
-        storage = AndroidStorage(mockContext, writeKey, keyValueStorage)
+        storage = AndroidStorage(mockContext, writeKey, PlatformType.Mobile, keyValueStorage)
     }
 
     @Test

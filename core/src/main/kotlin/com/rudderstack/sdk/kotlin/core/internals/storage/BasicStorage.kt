@@ -1,6 +1,7 @@
 package com.rudderstack.sdk.kotlin.core.internals.storage
 
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.storage.exception.PayloadTooLargeException
 import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
 import com.rudderstack.sdk.kotlin.core.internals.utils.appendWriteKey
@@ -20,9 +21,10 @@ private const val FILE_NAME = "events"
  * and manages event files separately from properties files.
  *
  * @param writeKey The key used to create a unique storage directory.
+ * @param platformType The platform type used for event file ordering behaviour.
  */
 @Suppress("Detekt.TooManyFunctions")
-internal class BasicStorage(writeKey: String) : Storage {
+internal class BasicStorage(writeKey: String, platformType: PlatformType) : Storage {
 
     /**
      * The directory where the storage files are kept, determined by the provided `writeKey`.
@@ -43,9 +45,10 @@ internal class BasicStorage(writeKey: String) : Storage {
      * Manages event batch files, including storing and reading events.
      */
     private val eventsFile = EventBatchFileManager(
-        eventStorageDirectory,
-        writeKey,
-        propertiesFile
+        directory = eventStorageDirectory,
+        writeKey = writeKey,
+        keyValueStorage = propertiesFile,
+        platformType = platformType,
     )
 
     init {
@@ -142,11 +145,12 @@ internal class BasicStorage(writeKey: String) : Storage {
 }
 
 /**
- * Provides an instance of [BasicStorage] with the given [writeKey].
+ * Provides an instance of [BasicStorage] with the given [writeKey] and [platformType].
  *
  * @param writeKey The key used to create a unique storage directory.
- * @return An instance of [BasicStorage] with the provided [writeKey].
+ * @param platformType The platform type used for event file ordering behaviour.
+ * @return An instance of [BasicStorage] with the provided [writeKey] and [platformType].
  */
-internal fun provideBasicStorage(writeKey: String): Storage {
-    return BasicStorage(writeKey = writeKey)
+internal fun provideBasicStorage(writeKey: String, platformType: PlatformType): Storage {
+    return BasicStorage(writeKey = writeKey, platformType = platformType)
 }

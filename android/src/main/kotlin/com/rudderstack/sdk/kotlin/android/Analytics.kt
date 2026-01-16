@@ -70,7 +70,7 @@ class Analytics(
 ) : Platform, Analytics(
     configuration,
     analyticsConfiguration = provideAnalyticsConfiguration(
-        storage = provideAndroidStorage(configuration.writeKey, configuration.application)
+        storage = provideAndroidStorage(configuration.writeKey, configuration.application, PlatformType.Mobile)
     )
 ) {
 

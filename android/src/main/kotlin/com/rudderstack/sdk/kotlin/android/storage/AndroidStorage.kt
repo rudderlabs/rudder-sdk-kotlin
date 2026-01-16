@@ -4,6 +4,7 @@ import android.content.Context
 import com.rudderstack.sdk.kotlin.BuildConfig
 import com.rudderstack.sdk.kotlin.android.storage.exceptions.QueuedPayloadTooLargeException
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.storage.EventBatchFileManager
 import com.rudderstack.sdk.kotlin.core.internals.storage.KeyValueStorage
 import com.rudderstack.sdk.kotlin.core.internals.storage.LibraryVersion
@@ -21,12 +22,18 @@ private const val DIRECTORY_NAME = "rudder-android-store"
 internal class AndroidStorage(
     private val context: Context,
     private val writeKey: String,
+    platformType: PlatformType,
     private val rudderPrefsRepo: KeyValueStorage = SharedPrefsStore(context, RUDDER_PREFS.toAndroidPrefsKey(writeKey))
 ) : Storage {
 
     private val storageDirectory: File =
         context.getDir(DIRECTORY_NAME.appendWriteKey(writeKey), Context.MODE_PRIVATE)
-    private val eventBatchFile = EventBatchFileManager(storageDirectory, writeKey, rudderPrefsRepo)
+    private val eventBatchFile = EventBatchFileManager(
+        directory = storageDirectory,
+        writeKey = writeKey,
+        keyValueStorage = rudderPrefsRepo,
+        platformType = platformType,
+    )
 
     override suspend fun write(key: StorageKeys, value: Boolean) {
         if (key != StorageKeys.EVENT) {
@@ -121,13 +128,15 @@ internal class AndroidStorage(
 /**
  * Provides an instance of [AndroidStorage] for use in the SDK.
  *
- *  @param writeKey The write key used to identify the storage location.
- *  @param application The application context.
- *  @return An instance of [AndroidStorage].
+ * @param writeKey The write key used to identify the storage location.
+ * @param application The application context.
+ * @param platformType The platform type used for event file ordering behaviour.
+ * @return An instance of [AndroidStorage].
  */
-internal fun provideAndroidStorage(writeKey: String, application: Context): Storage {
+internal fun provideAndroidStorage(writeKey: String, application: Context, platformType: PlatformType): Storage {
     return AndroidStorage(
         context = application,
         writeKey = writeKey,
+        platformType = platformType,
     )
 }
