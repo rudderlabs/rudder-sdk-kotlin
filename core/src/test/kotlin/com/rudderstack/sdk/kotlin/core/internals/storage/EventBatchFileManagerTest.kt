@@ -1,6 +1,7 @@
 package com.rudderstack.sdk.kotlin.core.internals.storage
 
 import com.rudderstack.sdk.kotlin.core.internals.models.DEFAULT_SENT_AT_TIMESTAMP
+import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.utils.appendWriteKey
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -26,7 +27,12 @@ class EventBatchFileManagerTest {
 
     @BeforeEach
     fun setup() {
-        eventBatchFileManager = EventBatchFileManager(directory, writeKey, keyValueStorage)
+        eventBatchFileManager = EventBatchFileManager(
+            directory = directory,
+            writeKey = writeKey,
+            keyValueStorage = keyValueStorage,
+            platformType = PlatformType.Server,
+        )
     }
 
     @AfterEach
@@ -168,7 +174,12 @@ class EventBatchFileManagerTest {
 
     @Test
     fun `given an empty list, when read is executed then no messages are stored`() {
-        val file = EventBatchFileManager(directory, writeKey, keyValueStorage)
+        val file = EventBatchFileManager(
+            directory = directory,
+            writeKey = writeKey,
+            keyValueStorage = keyValueStorage,
+            platformType = PlatformType.Server,
+        )
         assertTrue(file.read().isEmpty())
     }
 
@@ -198,8 +209,18 @@ class EventBatchFileManagerTest {
         val writeKey1 = "123"
         val writeKey2 = "qwerty"
 
-        val file1 = EventBatchFileManager(directory, writeKey1, keyValueStorage)
-        val file2 = EventBatchFileManager(directory, writeKey2, keyValueStorage)
+        val file1 = EventBatchFileManager(
+            directory = directory,
+            writeKey = writeKey1,
+            keyValueStorage = keyValueStorage,
+            platformType = PlatformType.Server,
+        )
+        val file2 = EventBatchFileManager(
+            directory = directory,
+            writeKey = writeKey2,
+            keyValueStorage = keyValueStorage,
+            platformType = PlatformType.Server,
+        )
 
         file1.storeEvent(provideMessagePayload())
         file2.storeEvent(provideMessagePayload())
@@ -220,6 +241,62 @@ class EventBatchFileManagerTest {
         eventBatchFileManager.remove(list[0])
 
         assertFalse(File(list[0]).exists())
+    }
+
+    @Test
+    fun `given multiple batch files exist and platformType is Server, when read is called, then files are returned sorted by numeric index`() {
+        // Create files in non-sequential order to simulate file system not preserving order
+        val file5 = provideFile(directory, "5")
+        val file2 = provideFile(directory, "2")
+        val file10 = provideFile(directory, "10")
+        val file1 = provideFile(directory, "1")
+        file5.writeText("content5")
+        file2.writeText("content2")
+        file10.writeText("content10")
+        file1.writeText("content1")
+        val sortingFileManager = EventBatchFileManager(
+            directory = directory,
+            writeKey = writeKey,
+            keyValueStorage = keyValueStorage,
+            platformType = PlatformType.Server,
+        )
+
+        val files = sortingFileManager.read()
+
+        assertEquals(4, files.size)
+        assertTrue(files[0].endsWith("/1"))
+        assertTrue(files[1].endsWith("/2"))
+        assertTrue(files[2].endsWith("/5"))
+        assertTrue(files[3].endsWith("/10"))
+    }
+
+    @Test
+    fun `given multiple batch files exist and platformType is Mobile, when read is called, then files are returned in file system order`() {
+        // Create files in non-sequential order
+        val file5 = provideFile(directory, "5")
+        val file2 = provideFile(directory, "2")
+        val file10 = provideFile(directory, "10")
+        val file1 = provideFile(directory, "1")
+        file5.writeText("content5")
+        file2.writeText("content2")
+        file10.writeText("content10")
+        file1.writeText("content1")
+        val nonSortingFileManager = EventBatchFileManager(
+            directory = directory,
+            writeKey = writeKey,
+            keyValueStorage = keyValueStorage,
+            platformType = PlatformType.Mobile,
+        )
+
+        val files = nonSortingFileManager.read()
+
+        // When platformType is Mobile, files are returned in file system order (not sorted by numeric index)
+        assertEquals(4, files.size)
+        // We cannot assert specific order as it depends on file system, but we verify all files are present
+        assertTrue(files.any { it.endsWith("/1") })
+        assertTrue(files.any { it.endsWith("/2") })
+        assertTrue(files.any { it.endsWith("/5") })
+        assertTrue(files.any { it.endsWith("/10") })
     }
 }
 

@@ -121,7 +121,7 @@ open class Analytics protected constructor(
         analyticsConfiguration = provideAnalyticsConfiguration(
             storage = when (configuration.storageType) {
                 StorageType.IN_MEMORY -> provideInMemoryStorage(configuration.writeKey)
-                StorageType.FILE -> provideBasicStorage(configuration.writeKey)
+                StorageType.FILE -> provideBasicStorage(configuration.writeKey, PlatformType.Server)
             }
         )
     )

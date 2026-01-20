@@ -5,9 +5,8 @@ import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.network.EventUploadResult
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClient
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClientImpl
-import com.rudderstack.sdk.kotlin.core.internals.network.NonRetryAbleError
 import com.rudderstack.sdk.kotlin.core.internals.network.NonRetryAbleEventUploadError
-import com.rudderstack.sdk.kotlin.core.internals.network.RetryAbleError
+import com.rudderstack.sdk.kotlin.core.internals.network.RetryAbleEventUploadError
 import com.rudderstack.sdk.kotlin.core.internals.network.Success
 import com.rudderstack.sdk.kotlin.core.internals.network.formatStatusCodeMessage
 import com.rudderstack.sdk.kotlin.core.internals.network.toEventUploadResult
@@ -139,21 +138,21 @@ internal class EventUpload(
                     cleanup(filePath)
                 }
 
-                is RetryAbleError -> {
+                is RetryAbleEventUploadError -> {
                     LoggerAnalytics.debug("EventUpload: ${result.formatStatusCodeMessage()}. Retry able error occurred.")
                     maxAttemptsWithBackoff.delayWithBackoff()
                 }
 
-                is NonRetryAbleError -> {
+                is NonRetryAbleEventUploadError -> {
                     maxAttemptsWithBackoff.reset()
                     handleNonRetryAbleError(result, filePath)
                 }
             }
-        } while (result is RetryAbleError)
+        } while (result is RetryAbleEventUploadError)
     }
 
     @OptIn(UseWithCaution::class)
-    private fun handleNonRetryAbleError(status: NonRetryAbleError, filePath: String) {
+    private fun handleNonRetryAbleError(status: NonRetryAbleEventUploadError, filePath: String) {
         when (status) {
             NonRetryAbleEventUploadError.ERROR_400 -> {
                 LoggerAnalytics.error(

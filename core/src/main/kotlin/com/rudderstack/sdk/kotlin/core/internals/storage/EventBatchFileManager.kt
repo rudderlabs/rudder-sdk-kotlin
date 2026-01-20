@@ -1,6 +1,7 @@
 package com.rudderstack.sdk.kotlin.core.internals.storage
 
 import com.rudderstack.sdk.kotlin.core.internals.models.DEFAULT_SENT_AT_TIMESTAMP
+import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import com.rudderstack.sdk.kotlin.core.internals.utils.toFileDirectory
 import kotlinx.coroutines.sync.Semaphore
@@ -22,13 +23,17 @@ internal const val TMP_SUFFIX = ".tmp"
  * @property directory The directory where batch files are stored.
  * @property writeKey A unique key used to name and identify batch files.
  * @property keyValueStorage A [KeyValueStorage] instance for storing and retrieving file index information.
+ * @property platformType The platform type (Mobile/Server) used to determine file ordering behaviour. Server-side
+ * environments require sorting by numeric index as file system ordering is not guaranteed, whilst Android's native
+ * file storage preserves order.
  */
 @Suppress("Detekt.TooManyFunctions")
 @InternalRudderApi
 class EventBatchFileManager(
     private val directory: File,
     private val writeKey: String,
-    private val keyValueStorage: KeyValueStorage
+    private val keyValueStorage: KeyValueStorage,
+    private val platformType: PlatformType,
 ) {
 
     /**
@@ -87,6 +92,8 @@ class EventBatchFileManager(
 
     /**
      * Reads the list of batch files in the directory that are associated with the given write key.
+     * For [PlatformType.Server], files are sorted by their numeric batch index to ensure correct upload order.
+     * For [PlatformType.Mobile], files are returned in file system order as Android preserves order.
      *
      * @return A list of file paths for the batch files.
      */
@@ -94,7 +101,17 @@ class EventBatchFileManager(
         val files = directory.listFiles { _, name ->
             !name.endsWith(TMP_SUFFIX)
         } ?: emptyArray()
-        return files.map { it.absolutePath }
+
+        val orderedFiles = when (platformType) {
+            PlatformType.Server ->
+                files
+                    .map { file -> file to (file.nameWithoutExtension.toIntOrNull() ?: Int.MAX_VALUE) }
+                    .sortedBy { (_, index) -> index }
+                    .map { (file, _) -> file }
+
+            PlatformType.Mobile -> files.toList()
+        }
+        return orderedFiles.map { it.absolutePath }
     }
 
     /**

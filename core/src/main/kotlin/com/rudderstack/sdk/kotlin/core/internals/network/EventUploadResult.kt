@@ -26,21 +26,11 @@ internal sealed interface EventUploadError : EventUploadResult {
 }
 
 /**
- * `RetryAbleError` is a sealed interface representing an event upload error that can be retried.
- */
-internal sealed interface RetryAbleError : EventUploadError
-
-/**
- * `NonRetryAbleError` is a sealed interface representing an event upload error that cannot be retried.
- */
-internal sealed interface NonRetryAbleError : EventUploadError
-
-/**
- * `RetryAbleEventUploadError` is an sealed class representing the different types of retry able event upload errors.
+ * `RetryAbleEventUploadError` is a sealed class representing the different types of retry able event upload errors.
  *
  * @property statusCode The HTTP status code associated with the error, if available.
  */
-internal sealed class RetryAbleEventUploadError(override val statusCode: Int? = null) : RetryAbleError {
+internal sealed class RetryAbleEventUploadError(override val statusCode: Int? = null) : EventUploadError {
 
     /**
      * `ErrorRetry` represents a retry able error with a specific HTTP status code.
@@ -66,7 +56,7 @@ internal sealed class RetryAbleEventUploadError(override val statusCode: Int? = 
  *  @property ERROR_404 An error indicating that the resource was not found (e.g., the source is disabled).
  *  @property ERROR_413 An error indicating that the payload size exceeds the maximum allowed limit.
  */
-internal enum class NonRetryAbleEventUploadError(override val statusCode: Int) : NonRetryAbleError {
+internal enum class NonRetryAbleEventUploadError(override val statusCode: Int) : EventUploadError {
 
     ERROR_400(statusCode = HTTP_400),
     ERROR_401(statusCode = HTTP_401),
