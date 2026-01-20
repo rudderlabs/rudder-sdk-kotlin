@@ -18,6 +18,7 @@ import org.jetbrains.annotations.VisibleForTesting
  * @property controlPlaneUrl The URL of the control plane for fetching configuration settings. Defaults to [DEFAULT_CONTROL_PLANE_URL].
  * @property gzipEnabled A flag indicating whether GZIP compression is enabled for network requests. Defaults to [DEFAULT_GZIP_STATUS].
  * @property flushPolicies A list of flush policies that determine when to flush events to the data plane. Defaults to [DEFAULT_FLUSH_POLICIES].
+ * @property storageType The storage type for analytics data persistence. Defaults to [DEFAULT_STORAGE_TYPE].
  */
 open class Configuration @JvmOverloads constructor(
     open val writeKey: String,
@@ -25,6 +26,7 @@ open class Configuration @JvmOverloads constructor(
     open val controlPlaneUrl: String = DEFAULT_CONTROL_PLANE_URL,
     open val gzipEnabled: Boolean = DEFAULT_GZIP_STATUS,
     open val flushPolicies: List<FlushPolicy> = DEFAULT_FLUSH_POLICIES,
+    open val storageType: StorageType = DEFAULT_STORAGE_TYPE,
 ) {
 
     companion object {
@@ -46,6 +48,12 @@ open class Configuration @JvmOverloads constructor(
          */
         val DEFAULT_FLUSH_POLICIES: List<FlushPolicy>
             get() = provideDefaultFlushPolicies()
+
+        /**
+         * The default storage type for analytics data.
+         * IN_MEMORY is the default for server-side SDK deployments.
+         */
+        val DEFAULT_STORAGE_TYPE: StorageType = StorageType.IN_MEMORY
     }
 }
 
@@ -60,3 +68,14 @@ fun provideDefaultFlushPolicies() = listOf(
     FrequencyFlushPolicy(),
     StartupFlushPolicy(),
 )
+
+/**
+ * Storage type for analytics data persistence.
+ */
+enum class StorageType {
+    /** Ephemeral storage - data lost on process termination. Default for server-side. */
+    IN_MEMORY,
+
+    /** File-based persistent storage. */
+    FILE
+}

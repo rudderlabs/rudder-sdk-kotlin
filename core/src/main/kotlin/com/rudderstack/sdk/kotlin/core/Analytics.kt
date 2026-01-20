@@ -27,6 +27,7 @@ import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.PluginChain
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
+import com.rudderstack.sdk.kotlin.core.internals.storage.inmemory.provideInMemoryStorage
 import com.rudderstack.sdk.kotlin.core.internals.storage.provideBasicStorage
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
@@ -118,7 +119,10 @@ open class Analytics protected constructor(
     constructor(configuration: Configuration) : this(
         configuration = configuration,
         analyticsConfiguration = provideAnalyticsConfiguration(
-            storage = provideBasicStorage(configuration.writeKey)
+            storage = when (configuration.storageType) {
+                StorageType.IN_MEMORY -> provideInMemoryStorage(configuration.writeKey)
+                StorageType.FILE -> provideBasicStorage(configuration.writeKey)
+            }
         )
     )
 
