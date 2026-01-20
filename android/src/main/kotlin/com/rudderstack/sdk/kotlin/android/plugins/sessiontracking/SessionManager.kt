@@ -4,6 +4,7 @@ import com.rudderstack.sdk.kotlin.android.DEFAULT_SESSION_TIMEOUT_IN_MILLIS
 import com.rudderstack.sdk.kotlin.android.SessionConfiguration
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleObserver
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ProcessLifecycleObserver
+import com.rudderstack.sdk.kotlin.android.storage.CheckBuildVersionUseCase
 import com.rudderstack.sdk.kotlin.android.utils.addLifecycleObserver
 import com.rudderstack.sdk.kotlin.android.utils.getMonotonicCurrentTime
 import com.rudderstack.sdk.kotlin.android.utils.removeLifecycleObserver
@@ -12,6 +13,7 @@ import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.utils.DateTimeUtils
+import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -19,6 +21,7 @@ import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 import kotlin.properties.Delegates
 import com.rudderstack.sdk.kotlin.android.Analytics as AndroidAnalytics
+import com.rudderstack.sdk.kotlin.android.Configuration as AndroidConfiguration
 
 @Suppress("TooManyFunctions")
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -58,6 +61,7 @@ internal class SessionManager(
                 checkAndStartSessionOnLaunch()
                 attachSessionTrackingObservers()
             }
+
             !isSessionManual -> endSession()
             else -> Unit
         }
@@ -115,6 +119,13 @@ internal class SessionManager(
         sessionInfo.dispatch(SessionInfo.UpdateLastActivityTimeAction(lastActivityTime))
         withSessionDispatcher {
             sessionInfo.value.storeLastActivityTime(lastActivityTime, storage)
+        }
+    }
+
+    internal fun updateBootId(bootId: String) {
+        sessionInfo.dispatch(SessionInfo.UpdateBootIdAction(bootId))
+        withSessionDispatcher {
+            sessionInfo.value.storeBootId(bootId, storage)
         }
     }
 
@@ -186,12 +197,49 @@ internal class SessionManager(
      *
      * @return `true` if the session has timed out or a reboot is detected, `false` otherwise.
      */
-    private fun hasSessionTimedOut(): Boolean {
+    private fun hasSessionTimedOut(): Boolean = checkAndUpdateBootId() || hasTimeExpired()
+
+    internal fun generateSessionId(): Long {
+        return TimeUnit.MILLISECONDS.toSeconds(DateTimeUtils.getSystemCurrentTime())
+    }
+
+    private fun hasTimeExpired(): Boolean {
         val timeDifference = getMonotonicCurrentTime() - lastActivityTime
         return timeDifference > sessionTimeout || timeDifference <= 0
     }
 
-    internal fun generateSessionId(): Long {
-        return TimeUnit.MILLISECONDS.toSeconds(DateTimeUtils.getSystemCurrentTime())
+    private fun checkAndUpdateBootId(): Boolean {
+        // Check if Boot ID changed (Device Reboot)
+        val currentBootId = getDeviceBootId()
+        val storedBootId = sessionInfo.value.bootId
+
+        if (currentBootId != storedBootId) {
+            LoggerAnalytics.verbose(
+                "SessionManager: Device reboot detected. Boot ID changed from $storedBootId to $currentBootId"
+            )
+            updateBootId(currentBootId)
+            return true
+        }
+
+        return false
+    }
+
+    /**
+     * Generates a unique identifier for the current boot session.
+     */
+    private fun getDeviceBootId(): String {
+        val context =
+            (analytics.configuration as? AndroidConfiguration)?.application?.applicationContext ?: return String.empty()
+
+        return if (CheckBuildVersionUseCase.isAndroidVersionAtLeast(android.os.Build.VERSION_CODES.N)) {
+            // Reliable boot count for API 24+
+            android.provider.Settings.Global.getString(
+                context.contentResolver,
+                android.provider.Settings.Global.BOOT_COUNT
+            ) ?: String.empty()
+        } else {
+            // Fallback for API < 24: return empty string as we can't reliably get boot ID
+            String.empty()
+        }
     }
 }
