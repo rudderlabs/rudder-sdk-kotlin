@@ -100,13 +100,8 @@ internal class PropertiesFile(
     }
 
     override fun clear(key: String) {
-        properties.clear()
-    }
-
-    internal fun remove(key: String): Boolean {
         properties.remove(key)
         save()
-        return true
     }
 
     @UseWithCaution

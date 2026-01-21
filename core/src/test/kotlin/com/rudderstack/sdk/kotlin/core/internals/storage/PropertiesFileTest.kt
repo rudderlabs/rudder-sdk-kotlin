@@ -1,5 +1,6 @@
 package com.rudderstack.sdk.kotlin.core.internals.storage
 
+import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -73,11 +74,44 @@ class PropertiesFileTest {
     }
 
     @Test
-    fun `given an int value when the value is removed,test the default value is  returned`() {
+    fun `given an int value when the value is cleared, the default value is returned`() {
         propertiesFile.save("int", 1)
-        propertiesFile.remove("int")
+        propertiesFile.clear("int")
 
         assertEquals(propertiesFile.getInt("int", 0), 0)
+    }
+
+    @Test
+    fun `given multiple values stored, when clear is called for one key, only that key is removed`() {
+        propertiesFile.save("key1", "value1")
+        propertiesFile.save("key2", "value2")
+
+        propertiesFile.clear("key1")
+
+        assertEquals(String.empty(), propertiesFile.getString("key1", String.empty()))
+        assertEquals("value2", propertiesFile.getString("key2", String.empty()))
+    }
+
+    @Test
+    fun `given a value stored, when clear is called and file is reloaded, the value remains cleared`() {
+        propertiesFile.save("key", "value")
+
+        propertiesFile.clear("key")
+        // Create new instance to force reload from file
+        val reloadedFile = PropertiesFile(directory, "123")
+        reloadedFile.load()
+
+        assertEquals("default", reloadedFile.getString("key", "default"))
+    }
+
+    @Test
+    fun `given no value stored, when clear is called, no exception is thrown`() {
+        // Should not throw
+        propertiesFile.clear("nonExistentKey")
+
+        // Other operations should still work
+        propertiesFile.save("otherKey", "value")
+        assertEquals("value", propertiesFile.getString("otherKey", String.empty()))
     }
 
 }
