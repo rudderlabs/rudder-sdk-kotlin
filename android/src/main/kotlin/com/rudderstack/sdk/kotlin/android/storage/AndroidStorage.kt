@@ -2,8 +2,11 @@ package com.rudderstack.sdk.kotlin.android.storage
 
 import android.content.Context
 import com.rudderstack.sdk.kotlin.BuildConfig
+import com.rudderstack.sdk.kotlin.android.Configuration
+import com.rudderstack.sdk.kotlin.android.migration.OldToV7Migration
 import com.rudderstack.sdk.kotlin.android.storage.exceptions.QueuedPayloadTooLargeException
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.migration.MigrationManager
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.storage.EventBatchFileManager
 import com.rudderstack.sdk.kotlin.core.internals.storage.KeyValueStorage
@@ -14,6 +17,7 @@ import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
 import com.rudderstack.sdk.kotlin.core.internals.utils.appendWriteKey
 import com.rudderstack.sdk.kotlin.core.internals.utils.toAndroidPrefsKey
+import kotlinx.coroutines.runBlocking
 import java.io.File
 
 private const val RUDDER_PREFS = "rl_prefs"
@@ -133,15 +137,32 @@ internal class AndroidStorage(
 /**
  * Provides an instance of [AndroidStorage] for use in the SDK.
  *
- * @param writeKey The write key used to identify the storage location.
- * @param application The application context.
+ * @param configuration The [Configuration] object containing SDK configuration by client.
  * @param platformType The platform type used for event file ordering behaviour.
  * @return An instance of [AndroidStorage].
  */
-internal fun provideAndroidStorage(writeKey: String, application: Context, platformType: PlatformType): Storage {
-    return AndroidStorage(
-        context = application,
-        writeKey = writeKey,
-        platformType = platformType,
+internal fun provideAndroidStorage(configuration: Configuration, platformType: PlatformType): Storage {
+    val storage = AndroidStorage(
+        context = configuration.application,
+        writeKey = configuration.writeKey,
+        platformType = platformType
     )
+
+    val migrationList = listOf(
+        OldToV7Migration(sessionConfiguration = configuration.sessionConfiguration)
+        // Add future migrations here ...
+    )
+
+    val manager = MigrationManager(
+        storage = storage,
+        targetSchemaVersion = BuildConfig.VERSION_CODE,
+        migrations = migrationList
+    )
+
+    runBlocking {
+        // migrations need to be performed in a blocking manner before the storage is provided to the Analytics instance
+        manager.performMigrations()
+    }
+
+    return storage
 }

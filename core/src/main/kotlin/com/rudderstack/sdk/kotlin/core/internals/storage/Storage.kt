@@ -227,6 +227,11 @@ enum class StorageKeys(val key: String) {
      * Key for storing the flag for session start.
      */
     IS_SESSION_START("is_session_start"),
+
+    /**
+     * Key for storing the data schema version used in migrations.
+     */
+    DATA_SCHEMA_VERSION("data_schema_version"),
 }
 
 /**

@@ -1,10 +1,13 @@
 package com.rudderstack.sdk.kotlin.core.internals.storage
 
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.migration.Migration
+import com.rudderstack.sdk.kotlin.core.internals.migration.MigrationManager
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.storage.exception.PayloadTooLargeException
 import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
 import com.rudderstack.sdk.kotlin.core.internals.utils.appendWriteKey
+import kotlinx.coroutines.runBlocking
 import source.version.VersionConstants
 import java.io.File
 
@@ -156,5 +159,22 @@ internal class BasicStorage(writeKey: String, platformType: PlatformType) : Stor
  * @return An instance of [BasicStorage] with the provided [writeKey] and [platformType].
  */
 internal fun provideBasicStorage(writeKey: String, platformType: PlatformType): Storage {
-    return BasicStorage(writeKey = writeKey, platformType = platformType)
+    val storage = BasicStorage(writeKey = writeKey, platformType = platformType)
+
+    val migrationList = listOf<Migration>(
+        // Add future migrations here ...
+    )
+
+    val manager = MigrationManager(
+        storage = storage,
+        targetSchemaVersion = VersionConstants.VERSION_CODE.toInt(),
+        migrations = migrationList
+    )
+
+    runBlocking {
+        // migrations need to be performed in a blocking manner before the storage is provided to the Analytics instance
+        manager.performMigrations()
+    }
+
+    return storage
 }
