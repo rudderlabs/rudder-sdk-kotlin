@@ -10,18 +10,24 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 interface Migration {
 
     /**
-     * The version number this migration starts from.
+     * The older version for the migration.
      */
-    val fromVersion: Int
+    val oldVersion: Int
 
     /**
-     * The version number this migration upgrades to.
+     * The newer version for the migration.
      */
-    val toVersion: Int
+    val newVersion: Int
 
     /**
-     * Executes the migration logic.
+     * Executes the migration logic from old version to new version.
      * @param storage The storage instance to read/write data.
      */
-    suspend fun migrate(storage: Storage)
+    suspend fun migrateOldToNew(storage: Storage)
+
+    /**
+     * Executes the migration logic from new version to old version.
+     * @param storage The storage instance to read/write data.
+     */
+    suspend fun migrateNewToOld(storage: Storage)
 }

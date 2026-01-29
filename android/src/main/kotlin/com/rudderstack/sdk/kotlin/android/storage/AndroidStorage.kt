@@ -3,7 +3,7 @@ package com.rudderstack.sdk.kotlin.android.storage
 import android.content.Context
 import com.rudderstack.sdk.kotlin.BuildConfig
 import com.rudderstack.sdk.kotlin.android.Configuration
-import com.rudderstack.sdk.kotlin.android.migration.OldToV7Migration
+import com.rudderstack.sdk.kotlin.android.migration.V6ToV7Migration
 import com.rudderstack.sdk.kotlin.android.storage.exceptions.QueuedPayloadTooLargeException
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.migration.MigrationManager
@@ -149,7 +149,7 @@ internal fun provideAndroidStorage(configuration: Configuration, platformType: P
     )
 
     val migrationList = listOf(
-        OldToV7Migration(sessionConfiguration = configuration.sessionConfiguration)
+        V6ToV7Migration(sessionConfiguration = configuration.sessionConfiguration)
         // Add future migrations here ...
     )
 
