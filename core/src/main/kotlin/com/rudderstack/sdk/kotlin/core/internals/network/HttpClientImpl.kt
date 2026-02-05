@@ -13,6 +13,7 @@ import java.net.URL
 import java.net.UnknownHostException
 import java.util.Locale
 import java.util.zip.GZIPOutputStream
+import javax.net.ssl.SSLException
 
 private const val CONTENT_TYPE = "Content-Type"
 private const val APPLICATION_JSON = "application/json"
@@ -196,10 +197,14 @@ internal class HttpClientImpl private constructor(
         } catch (e: Exception) {
             LoggerAnalytics.error("Network error: ${e.message}", e)
             when (e) {
+                is SocketTimeoutException -> {
+                    Result.Failure(error = NetworkErrorStatus.ErrorTimeout)
+                }
+
                 is ConnectException,
                 is UnknownHostException,
                 is NoRouteToHostException,
-                is SocketTimeoutException -> {
+                is SSLException -> {
                     Result.Failure(error = NetworkErrorStatus.ErrorNetworkUnavailable)
                 }
 

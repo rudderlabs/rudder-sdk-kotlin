@@ -89,7 +89,8 @@ internal class EventUploadResultTest {
         fun retryAbleErrorMappings(): Stream<Arguments> = Stream.of(
             Arguments.of(NetworkErrorStatus.ErrorRetry(), RetryAbleEventUploadError.ErrorRetry()),
             Arguments.of(NetworkErrorStatus.ErrorNetworkUnavailable, RetryAbleEventUploadError.ErrorNetworkUnavailable),
-            Arguments.of(NetworkErrorStatus.ErrorUnknown, RetryAbleEventUploadError.ErrorUnknown)
+            Arguments.of(NetworkErrorStatus.ErrorUnknown, RetryAbleEventUploadError.ErrorUnknown),
+            Arguments.of(NetworkErrorStatus.ErrorTimeout, RetryAbleEventUploadError.ErrorTimeout),
         )
 
         @JvmStatic
@@ -112,7 +113,8 @@ internal class EventUploadResultTest {
         fun getListOfRetryAbleErrors(): Stream<Arguments> = Stream.of(
             Arguments.of(RetryAbleEventUploadError.ErrorRetry()),
             Arguments.of(RetryAbleEventUploadError.ErrorNetworkUnavailable),
-            Arguments.of(RetryAbleEventUploadError.ErrorUnknown)
+            Arguments.of(RetryAbleEventUploadError.ErrorUnknown),
+            Arguments.of(RetryAbleEventUploadError.ErrorTimeout),
         )
     }
 }

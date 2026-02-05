@@ -103,7 +103,8 @@ class SourceConfigManager(
             NetworkErrorStatus.Error413,
             is NetworkErrorStatus.ErrorRetry,
             NetworkErrorStatus.ErrorUnknown,
-            NetworkErrorStatus.ErrorNetworkUnavailable -> {
+            NetworkErrorStatus.ErrorNetworkUnavailable,
+            NetworkErrorStatus.ErrorTimeout -> {
                 LoggerAnalytics.debug(
                     "SourceConfigManager: ${error.formatStatusCodeMessage()}. Retrying to fetch SourceConfig."
                 )

@@ -44,6 +44,11 @@ internal sealed class RetryAbleEventUploadError(override val statusCode: Int? = 
     internal data object ErrorNetworkUnavailable : RetryAbleEventUploadError(null)
 
     /**
+     * `ErrorTimeout` represents a retry able error that occurs when a request times out.
+     */
+    internal data object ErrorTimeout : RetryAbleEventUploadError(null)
+
+    /**
      * `ErrorUnknown` represents an unknown but retry able error.
      */
     internal data object ErrorUnknown : RetryAbleEventUploadError(null)
@@ -78,6 +83,7 @@ internal fun NetworkResult.toEventUploadResult(): EventUploadResult {
             when (val error = this.error) {
                 is NetworkErrorStatus.ErrorRetry -> RetryAbleEventUploadError.ErrorRetry(error.statusCode)
                 NetworkErrorStatus.ErrorNetworkUnavailable -> RetryAbleEventUploadError.ErrorNetworkUnavailable
+                NetworkErrorStatus.ErrorTimeout -> RetryAbleEventUploadError.ErrorTimeout
                 NetworkErrorStatus.ErrorUnknown -> RetryAbleEventUploadError.ErrorUnknown
                 NetworkErrorStatus.Error400 -> NonRetryAbleEventUploadError.ERROR_400
                 NetworkErrorStatus.Error401 -> NonRetryAbleEventUploadError.ERROR_401

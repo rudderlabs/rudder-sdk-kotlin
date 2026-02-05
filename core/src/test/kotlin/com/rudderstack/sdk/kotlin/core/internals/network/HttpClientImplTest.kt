@@ -18,7 +18,10 @@ import java.io.IOException
 import java.net.ConnectException
 import java.net.HttpURLConnection
 import java.net.MalformedURLException
+import java.net.SocketTimeoutException
 import java.net.UnknownHostException
+import javax.net.ssl.SSLException
+import javax.net.ssl.SSLHandshakeException
 
 private const val WRONG_BASE_URL = "<wrong-url>"
 private const val SUCCESS_RESPONSE = "Success Response"
@@ -315,6 +318,51 @@ class HttpClientImplTest {
             result,
             NetworkErrorStatus.ErrorUnknown
         )
+    }
+
+    @Test
+    fun `given socket timeout exception is thrown, when sendData is called, then return timeout error`() {
+        every { mockConnection.connect() } throws SocketTimeoutException()
+
+        val result = postHttpClient.sendData(REQUEST_BODY)
+
+        assertFailure(result, NetworkErrorStatus.ErrorTimeout)
+    }
+
+    @Test
+    fun `given socket timeout exception is thrown, when getData is called, then return timeout error`() {
+        every { mockConnection.connect() } throws SocketTimeoutException()
+
+        val result = getHttpClient.getData()
+
+        assertFailure(result, NetworkErrorStatus.ErrorTimeout)
+    }
+
+    @Test
+    fun `given SSL exception is thrown, when sendData is called, then return network unavailable error`() {
+        every { mockConnection.connect() } throws SSLException("SSL connection failed")
+
+        val result = postHttpClient.sendData(REQUEST_BODY)
+
+        assertFailure(result, NetworkErrorStatus.ErrorNetworkUnavailable)
+    }
+
+    @Test
+    fun `given SSL handshake exception is thrown, when sendData is called, then return network unavailable error`() {
+        every { mockConnection.connect() } throws SSLHandshakeException("Handshake failed")
+
+        val result = postHttpClient.sendData(REQUEST_BODY)
+
+        assertFailure(result, NetworkErrorStatus.ErrorNetworkUnavailable)
+    }
+
+    @Test
+    fun `given SSL exception is thrown, when getData is called, then return network unavailable error`() {
+        every { mockConnection.connect() } throws SSLException("SSL connection failed")
+
+        val result = getHttpClient.getData()
+
+        assertFailure(result, NetworkErrorStatus.ErrorNetworkUnavailable)
     }
 
     private fun assertSuccess(result: NetworkResult) {

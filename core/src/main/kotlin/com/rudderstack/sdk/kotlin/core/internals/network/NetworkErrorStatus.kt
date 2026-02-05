@@ -55,6 +55,11 @@ sealed class NetworkErrorStatus(open val statusCode: Int?) {
     data object ErrorNetworkUnavailable : NetworkErrorStatus(null)
 
     /**
+     * Indicates a retry able error that happens when a request times out.
+     */
+    data object ErrorTimeout : NetworkErrorStatus(null)
+
+    /**
      * Indicates an unknown but retry able error.
      */
     data object ErrorUnknown : NetworkErrorStatus(null)
