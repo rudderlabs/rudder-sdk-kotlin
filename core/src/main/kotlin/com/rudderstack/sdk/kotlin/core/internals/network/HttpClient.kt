@@ -63,9 +63,10 @@ interface HttpClient {
      * Sends data to the server using a POST request.
      *
      * @param body The body of the POST request as a [String].
+     * @param additionalHeaders Additional headers to include in the request (e.g., retry headers). Defaults to empty.
      * @return A [Result] containing the response data as a [String], or an error message if the request fails.
      */
-    fun sendData(body: String): NetworkResult
+    fun sendData(body: String, additionalHeaders: Map<String, String> = emptyMap()): NetworkResult
 }
 
 /**

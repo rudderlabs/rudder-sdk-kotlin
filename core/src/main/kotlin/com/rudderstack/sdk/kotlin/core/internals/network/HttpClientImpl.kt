@@ -163,13 +163,14 @@ internal class HttpClientImpl private constructor(
      * headers, and the provided request body, and then reads the response.
      *
      * @param body The body of the POST request to be sent.
+     * @param additionalHeaders Additional headers to be included in the request alongside the base headers.
      * @return `Result<String>` containing the response data or an error.
      */
-    override fun sendData(body: String): NetworkResult {
+    override fun sendData(body: String, additionalHeaders: Map<String, String>): NetworkResult {
         val url = createURL(baseUrl, endPoint)
         return connectionFactory.createConnection(url, headers)
             .useConnection {
-                setupPostConnection(body)
+                setupPostConnection(body, additionalHeaders)
             }
     }
 
@@ -221,18 +222,22 @@ internal class HttpClientImpl private constructor(
         }
     }
 
-    private fun HttpURLConnection.setupPostConnection(body: String) = apply {
-        doOutput = true
-        setChunkedStreamingMode(0)
-        setRequestProperty(CONTENT_TYPE, APPLICATION_JSON)
-        setRequestProperty(ANONYMOUS_ID_HEADER, postConfig.anonymousIdHeaderString)
-        if (postConfig.isGZIPEnabled) {
-            setRequestProperty(CONTENT_ENCODING, GZIP)
-            GZIPOutputStream(outputStream).writeBodyToStream(body)
-        } else {
-            outputStream.writeBodyToStream(body)
+    private fun HttpURLConnection.setupPostConnection(body: String, additionalHeaders: Map<String, String> = emptyMap()) =
+        apply {
+            doOutput = true
+            setChunkedStreamingMode(0)
+            additionalHeaders.forEach { (key, value) ->
+                setRequestProperty(key, value)
+            }
+            setRequestProperty(CONTENT_TYPE, APPLICATION_JSON)
+            setRequestProperty(ANONYMOUS_ID_HEADER, postConfig.anonymousIdHeaderString)
+            if (postConfig.isGZIPEnabled) {
+                setRequestProperty(CONTENT_ENCODING, GZIP)
+                GZIPOutputStream(outputStream).writeBodyToStream(body)
+            } else {
+                outputStream.writeBodyToStream(body)
+            }
         }
-    }
 
     private fun HttpURLConnection.constructResponse(): NetworkResult = when (responseCode) {
         in OK_RESPONSE_CODE..SUCCESSFUL_TRANSACTION_CODE -> Result.Success(

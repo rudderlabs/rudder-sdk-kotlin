@@ -118,3 +118,62 @@ internal class EventUploadResultTest {
         )
     }
 }
+
+internal class RetryAbleEventUploadErrorExtensionsTest {
+
+    @ParameterizedTest
+    @MethodSource("serverErrorCases")
+    fun `given ErrorRetry with status code, when toRetryReason is called, then returns server-statusCode`(
+        statusCode: Int,
+        expectedReason: String,
+    ) {
+        val error = RetryAbleEventUploadError.ErrorRetry(statusCode)
+
+        val result = error.toRetryReason()
+
+        assertEquals(expectedReason, result)
+    }
+
+    @Test
+    fun `given ErrorRetry with null status code, when toRetryReason is called, then returns client-network`() {
+        val error = RetryAbleEventUploadError.ErrorRetry(null)
+
+        val result = error.toRetryReason()
+
+        assertEquals("client-network", result)
+    }
+
+    @Test
+    fun `given ErrorNetworkUnavailable, when toRetryReason is called, then returns client-network`() {
+        val result = RetryAbleEventUploadError.ErrorNetworkUnavailable.toRetryReason()
+
+        assertEquals("client-network", result)
+    }
+
+    @Test
+    fun `given ErrorTimeout, when toRetryReason is called, then returns client-timeout`() {
+        val result = RetryAbleEventUploadError.ErrorTimeout.toRetryReason()
+
+        assertEquals("client-timeout", result)
+    }
+
+    @Test
+    fun `given ErrorUnknown, when toRetryReason is called, then returns client-unknown`() {
+        val result = RetryAbleEventUploadError.ErrorUnknown.toRetryReason()
+
+        assertEquals("client-unknown", result)
+    }
+
+    companion object {
+
+        @JvmStatic
+        fun serverErrorCases() = listOf(
+            Arguments.of(500, "server-500"),
+            Arguments.of(502, "server-502"),
+            Arguments.of(503, "server-503"),
+            Arguments.of(429, "server-429"),
+            Arguments.of(504, "server-504"),
+            Arguments.of(511, "server-511"),
+        )
+    }
+}
