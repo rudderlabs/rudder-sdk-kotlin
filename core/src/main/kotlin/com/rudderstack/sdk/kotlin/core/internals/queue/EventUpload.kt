@@ -53,6 +53,7 @@ internal class EventUpload(
         )
     },
     private val maxAttemptsWithBackoff: MaxAttemptsWithBackoff = MaxAttemptsWithBackoff(),
+    private val retryHeadersProvider: RetryHeadersProvider = RetryHeadersProviderImpl(analytics.storage),
 ) {
 
     private var lastBatchAnonymousId = String.empty()
@@ -125,26 +126,30 @@ internal class EventUpload(
     }
 
     private suspend fun uploadEvents(batchPayload: String, filePath: String) {
+        val batchId = storage.getBatchId(filePath)
         var result: EventUploadResult
         do {
             val updatedPayload = JsonSentAtUpdater.updateSentAt(batchPayload)
             LoggerAnalytics.verbose("Batch Payload: $updatedPayload")
-            result = httpClientFactory.sendData(updatedPayload).toEventUploadResult()
+            val currentTimestampInMillis = System.currentTimeMillis()
+            val retryHeaders = retryHeadersProvider.getHeaders(batchId, currentTimestampInMillis)
+            result = httpClientFactory.sendData(updatedPayload, retryHeaders).toEventUploadResult()
 
             when (result) {
                 is Success -> {
                     LoggerAnalytics.debug("Event uploaded successfully. Server response: ${result.response}")
-                    maxAttemptsWithBackoff.reset()
+                    resetRetryState()
                     cleanup(filePath)
                 }
 
                 is RetryAbleEventUploadError -> {
                     LoggerAnalytics.debug("EventUpload: ${result.formatStatusCodeMessage()}. Retry able error occurred.")
+                    retryHeadersProvider.recordFailure(batchId, currentTimestampInMillis, result)
                     maxAttemptsWithBackoff.delayWithBackoff()
                 }
 
                 is NonRetryAbleEventUploadError -> {
-                    maxAttemptsWithBackoff.reset()
+                    resetRetryState()
                     handleNonRetryAbleError(result, filePath)
                 }
             }
@@ -188,6 +193,11 @@ internal class EventUpload(
                 cleanup(filePath)
             }
         }
+    }
+
+    private suspend fun resetRetryState() {
+        retryHeadersProvider.clear()
+        maxAttemptsWithBackoff.reset()
     }
 
     private fun cleanup(filePath: String) {
