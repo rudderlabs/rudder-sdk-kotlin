@@ -63,7 +63,6 @@ class EventUploadRetryHeadersTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this, relaxed = true)
-        Dispatchers.setMain(testDispatcher)
 
         every { mockAnalytics.storage } returns mockStorage
         coEvery { mockStorage.close() } just runs
