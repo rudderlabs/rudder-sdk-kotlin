@@ -73,6 +73,7 @@ internal class RetryHeadersProviderImpl(
     }
 
     override suspend fun clear() {
+        LoggerAnalytics.verbose("Clearing retry metadata from storage")
         storage.remove(StorageKeys.RETRY_METADATA)
     }
 
