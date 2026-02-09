@@ -55,7 +55,7 @@ internal class RetryHeadersProviderImpl(
         )
     }
 
-    override suspend fun recordFailure(batchId: Int, timestampInMillis: Long, error: RetryAbleEventUploadError,) {
+    override suspend fun recordFailure(batchId: Int, timestampInMillis: Long, error: RetryAbleEventUploadError) {
         val newAttempt = getMetadataForBatch(batchId)
             ?.let { it.attempt + 1 }
             ?: FIRST_ATTEMPT

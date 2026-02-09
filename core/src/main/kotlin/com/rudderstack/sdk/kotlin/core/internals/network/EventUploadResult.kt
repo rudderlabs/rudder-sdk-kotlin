@@ -114,6 +114,7 @@ internal fun EventUploadError.formatStatusCodeMessage(): String {
  * @return Retry reason string in the format expected by the backend
  */
 internal fun RetryAbleEventUploadError.toRetryReason(): String = when (this) {
+    // Null statusCode means no HTTP response was received, indicating a client-side network failure
     is RetryAbleEventUploadError.ErrorRetry -> statusCode?.let { "$RETRY_REASON_SERVER_PREFIX$it" }
         ?: RETRY_REASON_CLIENT_NETWORK
     is RetryAbleEventUploadError.ErrorTimeout -> RETRY_REASON_CLIENT_TIMEOUT
