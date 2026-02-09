@@ -78,10 +78,17 @@ internal class RetryHeadersProviderImpl(
     }
 
     private fun getMetadataForBatch(batchId: Int): RetryMetadata? {
-        return storage.readString(StorageKeys.RETRY_METADATA, String.empty())
+        val metadata = storage.readString(StorageKeys.RETRY_METADATA, String.empty())
             .takeIf { it.isNotEmpty() }
             ?.toRetryMetadata()
-            ?.takeIf { it.batchId == batchId }
+            ?: return null
+
+        return if (metadata.batchId == batchId) {
+            metadata
+        } else {
+            LoggerAnalytics.verbose("Discarding stale retry metadata: batchId mismatch")
+            null
+        }
     }
 }
 
