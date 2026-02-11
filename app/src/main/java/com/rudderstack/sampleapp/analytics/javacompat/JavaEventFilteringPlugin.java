@@ -20,7 +20,15 @@ public class JavaEventFilteringPlugin implements Plugin {
     private Analytics analytics;
     private static final Plugin.PluginType pluginType = Plugin.PluginType.OnProcess;
 
-    List<String> listOfEventsToBeFiltered;
+    private final List<String> listOfEventsToBeFiltered;
+
+    public JavaEventFilteringPlugin() {
+        this(List.of("Application Opened", "Application Backgrounded"));
+    }
+
+    public JavaEventFilteringPlugin(List<String> eventsToFilter) {
+        this.listOfEventsToBeFiltered = eventsToFilter;
+    }
 
     @Override
     public void setAnalytics(@NonNull Analytics analytics) {
@@ -30,14 +38,13 @@ public class JavaEventFilteringPlugin implements Plugin {
     @Override
     public void setup(@NonNull Analytics analytics) {
         this.analytics = analytics;
-        listOfEventsToBeFiltered = List.of("Application Opened", "Application Backgrounded");
     }
 
     @Nullable
     @Override
     public Object intercept(@NonNull Event event, @NonNull Continuation<? super Event> $completion) {
         if (event instanceof TrackEvent && listOfEventsToBeFiltered.contains(((TrackEvent) event).getEvent())) {
-            LoggerAnalytics.INSTANCE.verbose("EventFilteringPlugin: Event " + ((TrackEvent) event).getEvent() + " is filtered out");
+            LoggerAnalytics.INSTANCE.verbose("EventFilteringPlugin: Event \"" + ((TrackEvent) event).getEvent() + "\" is filtered out.");
             return null;
         }
 
@@ -57,7 +64,5 @@ public class JavaEventFilteringPlugin implements Plugin {
     }
 
     @Override
-    public void teardown() {
-        listOfEventsToBeFiltered = null;
-    }
+    public void teardown() { }
 }
