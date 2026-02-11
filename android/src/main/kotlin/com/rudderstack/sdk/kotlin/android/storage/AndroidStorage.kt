@@ -111,7 +111,7 @@ internal class AndroidStorage(
         return eventBatchFile.readContent(batchRef)
     }
 
-    override fun getBatchId(filePath: String): Int = File(filePath).name.toIntOrNull() ?: 0
+    override fun getBatchId(batchRef: String): Int = File(batchRef).name.toIntOrNull() ?: 0
 
     override fun getLibraryVersion(): LibraryVersion {
         return object : LibraryVersion {

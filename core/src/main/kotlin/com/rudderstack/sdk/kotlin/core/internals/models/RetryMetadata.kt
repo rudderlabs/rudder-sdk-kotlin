@@ -1,7 +1,6 @@
 package com.rudderstack.sdk.kotlin.core.internals.models
 
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
-import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import com.rudderstack.sdk.kotlin.core.internals.utils.LenientJson
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
@@ -33,7 +32,6 @@ internal data class RetryMetadata(
          * @param jsonString The JSON string to parse
          * @return Parsed metadata or null if parsing fails
          */
-        @OptIn(InternalRudderApi::class)
         fun fromJson(jsonString: String): RetryMetadata? = try {
             LenientJson.decodeFromString<RetryMetadata>(jsonString)
         } catch (e: SerializationException) {
@@ -47,6 +45,5 @@ internal data class RetryMetadata(
      *
      * @return JSON string representation
      */
-    @OptIn(InternalRudderApi::class)
     fun toJson(): String = LenientJson.encodeToString(this)
 }

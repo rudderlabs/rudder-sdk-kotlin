@@ -12,6 +12,7 @@ import com.rudderstack.sdk.kotlin.core.internals.network.formatStatusCodeMessage
 import com.rudderstack.sdk.kotlin.core.internals.network.toEventUploadResult
 import com.rudderstack.sdk.kotlin.core.internals.policies.backoff.MaxAttemptsWithBackoff
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
+import com.rudderstack.sdk.kotlin.core.internals.utils.DateTimeUtils
 import com.rudderstack.sdk.kotlin.core.internals.utils.JsonSentAtUpdater
 import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
 import com.rudderstack.sdk.kotlin.core.internals.utils.createIfInactive
@@ -131,7 +132,7 @@ internal class EventUpload(
         do {
             val updatedPayload = JsonSentAtUpdater.updateSentAt(batchPayload)
             LoggerAnalytics.verbose("Batch Payload: $updatedPayload")
-            val currentTimestampInMillis = System.currentTimeMillis()
+            val currentTimestampInMillis = DateTimeUtils.getSystemCurrentTime()
             val retryHeaders = retryHeadersProvider.getHeaders(batchId, currentTimestampInMillis)
             result = httpClientFactory.sendData(updatedPayload, retryHeaders).toEventUploadResult()
 

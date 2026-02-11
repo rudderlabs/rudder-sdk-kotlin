@@ -140,10 +140,10 @@ interface Storage {
     /**
      * Extracts the batch ID from a batch file reference.
      *
-     * @param filePath The batch file reference as returned by [readFileList].
+     * @param batchRef The batch file reference as returned by [readFileList].
      * @return The batch ID as an integer.
      */
-    fun getBatchId(filePath: String): Int
+    fun getBatchId(batchRef: String): Int
 
     /**
      * Retrieves the version information of the library.
