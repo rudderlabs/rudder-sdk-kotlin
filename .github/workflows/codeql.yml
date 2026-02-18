@@ -1,16 +1,26 @@
-name: CodeQL Analysis
+name: CodeQL Advanced
 
 on:
   pull_request:
 
 jobs:
   analyze:
-    name: Analyze (java-kotlin)
+    name: Analyze (${{ matrix.language }})
     runs-on: ubuntu-latest
     permissions:
       security-events: write
+      packages: read
       actions: read
       contents: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: actions
+            build-mode: none
+          - language: java-kotlin
+            build-mode: manual
 
     steps:
       - name: Harden the runner (Audit all outbound calls)
@@ -22,6 +32,7 @@ jobs:
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
 
       - name: Set up JDK 17
+        if: matrix.language == 'java-kotlin'
         uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # v4.8.0
         with:
           java-version: '17'
@@ -29,21 +40,23 @@ jobs:
           cache: gradle
 
       - name: Initialise CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
-          languages: java-kotlin
-          build-mode: manual
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
 
       - name: Grant execute permission for gradlew
+        if: matrix.build-mode == 'manual'
         run: chmod +x gradlew
 
       - name: Build all modules
-        # :core:assemble - builds the JVM module (assembleDebug skips JVM modules)
-        # assembleDebug  - builds all Android modules (android + integrations) in debug variant only
-        # -x :app        - excludes the sample app from the build
+        if: matrix.build-mode == 'manual'
+        # :core:assemble  - builds the JVM module (assembleDebug skips JVM modules)
+        # assembleDebug   - builds all Android modules (android + integrations) in debug variant only
+        # -x :app         - excludes the sample app from the build
         run: ./gradlew :core:assemble assembleDebug -x :app:assembleDebug --no-daemon
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
         with:
-          category: "/language:java-kotlin"
+          category: "/language:${{ matrix.language }}"
