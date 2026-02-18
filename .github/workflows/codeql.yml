@@ -38,7 +38,10 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build all modules
-        run: ./gradlew assemble --no-daemon
+        # :core:assemble - builds the JVM module (assembleDebug skips JVM modules)
+        # assembleDebug  - builds all Android modules (android + integrations) in debug variant only
+        # -x :app        - excludes the sample app from the build
+        run: ./gradlew :core:assemble assembleDebug -x :app:assembleDebug --no-daemon
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
