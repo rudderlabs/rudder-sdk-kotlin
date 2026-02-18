@@ -1,7 +1,11 @@
 name: CodeQL Advanced
 
 on:
+  push:
+    branches: [main, develop]
   pull_request:
+  schedule:
+    - cron: '0 6 * * 1' # Every Monday at 6am UTC
 
 jobs:
   analyze:
@@ -40,7 +44,7 @@ jobs:
           cache: gradle
 
       - name: Initialise CodeQL
-        uses: github/codeql-action/init@v4
+        uses: github/codeql-action/init@9e907b5e64f6b83e7804b09294d44122997950d6 # v4.32.3
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
@@ -57,6 +61,6 @@ jobs:
         run: ./gradlew :core:assemble assembleDebug -x :app:assembleDebug --no-daemon
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v4
+        uses: github/codeql-action/analyze@9e907b5e64f6b83e7804b09294d44122997950d6 # v4.32.3
         with:
           category: "/language:${{ matrix.language }}"
