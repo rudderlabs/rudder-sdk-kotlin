@@ -5,7 +5,6 @@ import com.rudderstack.sdk.kotlin.android.SessionConfiguration
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleObserver
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ProcessLifecycleObserver
 import com.rudderstack.sdk.kotlin.android.utils.addLifecycleObserver
-import com.rudderstack.sdk.kotlin.android.utils.getMonotonicCurrentTime
 import com.rudderstack.sdk.kotlin.android.utils.removeLifecycleObserver
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
@@ -111,7 +110,7 @@ internal class SessionManager(
     }
 
     internal fun updateLastActivityTime() {
-        val lastActivityTime = getMonotonicCurrentTime()
+        val lastActivityTime = DateTimeUtils.getSystemCurrentTime()
         sessionInfo.dispatch(SessionInfo.UpdateLastActivityTimeAction(lastActivityTime))
         withSessionDispatcher {
             sessionInfo.value.storeLastActivityTime(lastActivityTime, storage)
@@ -180,14 +179,14 @@ internal class SessionManager(
      * A session is considered timed out if the elapsed time since the last recorded
      * activity exceeds the configured session timeout.
      *
-     * This method uses monotonic time (time since last boot). If the current monotonic
+     * This method uses system current time. If the current system
      * time is less than or equal to the last activity time, it indicates a device reboot.
      * In such cases, the session is treated as expired.
      *
      * @return `true` if the session has timed out or a reboot is detected, `false` otherwise.
      */
     private fun hasSessionTimedOut(): Boolean {
-        val timeDifference = getMonotonicCurrentTime() - lastActivityTime
+        val timeDifference = DateTimeUtils.getSystemCurrentTime() - lastActivityTime
         return timeDifference > sessionTimeout || timeDifference <= 0
     }
 
