@@ -180,14 +180,21 @@ internal class SessionManager(
      * activity exceeds the configured session timeout.
      *
      * This method uses system current time. If the current system
-     * time is less than or equal to the last activity time, it indicates that the clock has been tempered with.
+     * time is less than or equal to the last activity time, it indicates that the clock has been tampered with.
      * In such cases, the session is treated as expired.
      *
      * @return `true` if the session has timed out, `false` otherwise.
      */
     private fun hasSessionTimedOut(): Boolean {
         val timeDifference = DateTimeUtils.getSystemCurrentTime() - lastActivityTime
-        return timeDifference > sessionTimeout || timeDifference <= 0
+        if (timeDifference <= 0) {
+            LoggerAnalytics.warn(
+                "Current system time is less than or equal to last activity time." +
+                    " This indicates potential clock tampering or timezone changes. Resetting the session"
+            )
+            return true
+        }
+        return timeDifference > sessionTimeout
     }
 
     internal fun generateSessionId(): Long {
