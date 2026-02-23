@@ -21,6 +21,7 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.util.concurrent.TimeUnit
 
 class SessionTrackingPluginTest {
 
@@ -108,10 +109,10 @@ class SessionTrackingPluginTest {
 
     @Test
     fun `given an automatic session is ongoing, when an event is made, then last activity time is updated`() = runTest(testDispatcher) {
-        val currentTime = 1234567890L
+        val currentTime = 1234567890_000L // current time in milliseconds
         mockSystemCurrentTime(currentTime)
         val message = TrackEvent("test", emptyJsonObject)
-        mockStorage.write(StorageKeys.SESSION_ID, currentTime)
+        mockStorage.write(StorageKeys.SESSION_ID, TimeUnit.MILLISECONDS.toSeconds(currentTime))
         mockStorage.write(StorageKeys.IS_SESSION_MANUAL, false)
         mockStorage.write(StorageKeys.LAST_ACTIVITY_TIME, currentTime - 600_000L)
         pluginSetup(automaticSessionTracking = true)

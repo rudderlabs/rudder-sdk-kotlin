@@ -180,10 +180,10 @@ internal class SessionManager(
      * activity exceeds the configured session timeout.
      *
      * This method uses system current time. If the current system
-     * time is less than or equal to the last activity time, it indicates a device reboot.
+     * time is less than or equal to the last activity time, it indicates that the clock has been tempered with.
      * In such cases, the session is treated as expired.
      *
-     * @return `true` if the session has timed out or a reboot is detected, `false` otherwise.
+     * @return `true` if the session has timed out, `false` otherwise.
      */
     private fun hasSessionTimedOut(): Boolean {
         val timeDifference = DateTimeUtils.getSystemCurrentTime() - lastActivityTime
