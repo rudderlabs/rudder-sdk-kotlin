@@ -7,7 +7,6 @@ import com.rudderstack.sdk.kotlin.android.models.reset.ResetOptions as AndroidRe
 import com.rudderstack.sdk.kotlin.android.plugins.DeviceInfoPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleManagementPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ProcessLifecycleManagementPlugin
-import com.rudderstack.sdk.kotlin.android.utils.getMonotonicCurrentTime
 import com.rudderstack.sdk.kotlin.core.AnalyticsConfiguration
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
@@ -42,7 +41,6 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -109,8 +107,6 @@ class AnalyticsTest {
         }
 
         // Mock SessionId
-        mockkStatic(::getMonotonicCurrentTime)
-        every { getMonotonicCurrentTime() } returns DEFAULT_SESSION_ID
         mockkObject(DateTimeUtils)
         every { DateTimeUtils.getSystemCurrentTime() } returns DEFAULT_SESSION_ID.toMilliSeconds()
 

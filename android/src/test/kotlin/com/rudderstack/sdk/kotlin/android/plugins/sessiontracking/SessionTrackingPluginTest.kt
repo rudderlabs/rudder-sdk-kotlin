@@ -1,9 +1,7 @@
 package com.rudderstack.sdk.kotlin.android.plugins.sessiontracking
 
-import android.os.SystemClock
 import com.rudderstack.sdk.kotlin.android.SessionConfiguration
 import com.rudderstack.sdk.kotlin.android.utils.MockMemoryStorage
-import com.rudderstack.sdk.kotlin.android.utils.getMonotonicCurrentTime
 import com.rudderstack.sdk.kotlin.android.utils.mockAnalytics
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
@@ -13,7 +11,6 @@ import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.DateTimeUtils
 import io.mockk.every
 import io.mockk.mockkObject
-import io.mockk.mockkStatic
 import io.mockk.spyk
 import io.mockk.unmockkAll
 import io.mockk.verify
@@ -38,7 +35,6 @@ class SessionTrackingPluginTest {
 
     @BeforeEach
     fun setUp() {
-        mockCurrentMonotonicTime()
         mockSystemCurrentTime()
 
         sessionTrackingPlugin = spyk(SessionTrackingPlugin())
@@ -56,9 +52,7 @@ class SessionTrackingPluginTest {
     fun `given automatic session enabled, when intercept called, then correct payload is attached`() =
         runTest(testDispatcher) {
             val sessionId = 1234567890L
-            val currentTime = 100000000L
             mockSystemCurrentTime(sessionId * 1000)
-            mockCurrentMonotonicTime(currentTime)
             val firstEvent = TrackEvent("test", emptyJsonObject)
             val secondEvent = TrackEvent("test", emptyJsonObject)
             pluginSetup(automaticSessionTracking = true)
@@ -100,7 +94,6 @@ class SessionTrackingPluginTest {
             val sessionId = 1234567890L
             val currentTime = 100000000L
             mockSystemCurrentTime(sessionId * 1000)
-            mockCurrentMonotonicTime(currentTime)
             val message = TrackEvent("test", emptyJsonObject)
             mockStorage.write(StorageKeys.SESSION_ID, sessionId)
             mockStorage.write(StorageKeys.IS_SESSION_MANUAL, true)
@@ -115,12 +108,10 @@ class SessionTrackingPluginTest {
 
     @Test
     fun `given an automatic session is ongoing, when an event is made, then last activity time is updated`() = runTest(testDispatcher) {
-        val sessionId = 1234567890L
-        val currentTime = 100000000L
-        mockSystemCurrentTime(sessionId * 1000)
-        mockCurrentMonotonicTime(currentTime)
+        val currentTime = 1234567890L
+        mockSystemCurrentTime(currentTime)
         val message = TrackEvent("test", emptyJsonObject)
-        mockStorage.write(StorageKeys.SESSION_ID, sessionId)
+        mockStorage.write(StorageKeys.SESSION_ID, currentTime)
         mockStorage.write(StorageKeys.IS_SESSION_MANUAL, false)
         mockStorage.write(StorageKeys.LAST_ACTIVITY_TIME, currentTime - 600_000L)
         pluginSetup(automaticSessionTracking = true)
@@ -155,11 +146,6 @@ class SessionTrackingPluginTest {
 
         every { sessionTrackingPlugin.sessionManager } returns sessionManager
         sessionTrackingPlugin.setup(mockAnalytics)
-    }
-
-    private fun mockCurrentMonotonicTime(currentTime: Long = System.currentTimeMillis()) {
-        mockkStatic(SystemClock::class)
-        every { getMonotonicCurrentTime() } returns currentTime
     }
 
     private fun mockSystemCurrentTime(currentTime: Long = System.currentTimeMillis()) {
