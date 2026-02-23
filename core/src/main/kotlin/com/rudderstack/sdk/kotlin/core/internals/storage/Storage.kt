@@ -138,6 +138,14 @@ interface Storage {
     fun readBatchContent(batchRef: String): String?
 
     /**
+     * Extracts the batch ID from a batch file reference.
+     *
+     * @param batchRef The batch file reference as returned by [readFileList].
+     * @return The batch ID as an integer.
+     */
+    fun getBatchId(batchRef: String): Int
+
+    /**
      * Retrieves the version information of the library.
      *
      * @return An instance of [LibraryVersion] containing version details.
@@ -227,6 +235,11 @@ enum class StorageKeys(val key: String) {
      * Key for storing the flag for session start.
      */
     IS_SESSION_START("is_session_start"),
+
+    /**
+     * Key for storing retry metadata for batch upload retry headers.
+     */
+    RETRY_METADATA("retry_metadata"),
 }
 
 /**

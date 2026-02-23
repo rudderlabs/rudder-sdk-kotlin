@@ -77,6 +77,9 @@ class EventUploadTest {
     @MockK
     private lateinit var mockMaxAttemptsWithBackoff: MaxAttemptsWithBackoff
 
+    @MockK
+    private lateinit var mockRetryHeadersProvider: RetryHeadersProvider
+
     private val listOfTimeStamp = listOf(
         "1970-01-01T00:00:00Z",
         "1970-01-01T00:00:01Z",
@@ -119,6 +122,7 @@ class EventUploadTest {
                 analytics = mockAnalytics,
                 httpClientFactory = mockHttpClient,
                 maxAttemptsWithBackoff = mockMaxAttemptsWithBackoff,
+                retryHeadersProvider = mockRetryHeadersProvider,
             )
         )
     }
@@ -139,7 +143,7 @@ class EventUploadTest {
                 every { mockStorage.readBatchContent(path) } returns unprocessedBatch
             }
             // Mock the behavior for HttpClient
-            every { mockHttpClient.sendData(any()) } returns Result.Success("Ok")
+            every { mockHttpClient.sendData(any(), any()) } returns Result.Success("Ok")
 
             processMessage()
 
@@ -148,7 +152,7 @@ class EventUploadTest {
                 verify(exactly = 1) { mockStorage.remove(path) }
             }
             verify(exactly = 2) {
-                mockHttpClient.sendData(processedBatch)
+                mockHttpClient.sendData(processedBatch, any())
             }
         }
 
@@ -160,8 +164,8 @@ class EventUploadTest {
         every { eventUpload.getAnonymousIdFromBatch(batchPayload1) } returns anonymousId1
         every { eventUpload.getAnonymousIdFromBatch(batchPayload2) } returns anonymousId2
         // Mock the behavior for HttpClient
-        every { mockHttpClient.sendData(batchPayload1) } returns Result.Success("Ok")
-        every { mockHttpClient.sendData(batchPayload2) } returns Result.Success("Ok")
+        every { mockHttpClient.sendData(batchPayload1, any()) } returns Result.Success("Ok")
+        every { mockHttpClient.sendData(batchPayload2, any()) } returns Result.Success("Ok")
 
         processMessage()
 
@@ -188,7 +192,7 @@ class EventUploadTest {
         every { mockStorage.readBatchContent(filePaths[0]) } returns batchPayload
 
         // Mock the behavior for HttpClient
-        every { mockHttpClient.sendData(batchPayload) } returns Result.Success("Ok")
+        every { mockHttpClient.sendData(batchPayload, any()) } returns Result.Success("Ok")
 
         val randomUUID = "some_random_id"
         mockkStatic(::generateUUID)
@@ -237,7 +241,7 @@ class EventUploadTest {
 
         // The batch should be sent with the updated `sentAt` timestamp
         updatedBatchList.forEach { payload ->
-            verify(exactly = 1) { mockHttpClient.sendData(payload) }
+            verify(exactly = 1) { mockHttpClient.sendData(payload, any()) }
         }
         // Once the batch is sent successfully, the file should be removed from storage
         verify(exactly = 1) { mockStorage.remove(singleFilePath) }
@@ -256,7 +260,7 @@ class EventUploadTest {
 
         // Once the batch is sent successfully, the file should be removed from storage
         verify(exactly = 1) { mockStorage.remove(singleFilePath) }
-        verify(exactly = 0) { mockHttpClient.sendData(any()) }
+        verify(exactly = 0) { mockHttpClient.sendData(any(), any()) }
     }
 
     @Test
@@ -279,7 +283,7 @@ class EventUploadTest {
         val unprocessedBatch = readFileTrimmed(unprocessedBatchWithTwoEvents)
         every { mockStorage.readString(StorageKeys.EVENT, String.empty()) } returns singleFilePath
         every { mockStorage.readBatchContent(singleFilePath) } returns unprocessedBatch
-        every { mockHttpClient.sendData(any()) } returns Result.Failure(
+        every { mockHttpClient.sendData(any(), any()) } returns Result.Failure(
             error = NetworkErrorStatus.Error400,
         )
 
@@ -296,14 +300,14 @@ class EventUploadTest {
             every { mockStorage.readBatchContent(path) } returns batchPayload
         }
         // Mock the behavior for HttpClient
-        every { mockHttpClient.sendData(batchPayload) } returns Result.Failure(
+        every { mockHttpClient.sendData(batchPayload, any()) } returns Result.Failure(
             error = NetworkErrorStatus.Error404,
         )
 
         processMessage()
 
         // Verify network attempt is made and event is not removed from storage
-        verify(exactly = 1) { mockHttpClient.sendData(batchPayload) }
+        verify(exactly = 1) { mockHttpClient.sendData(batchPayload, any()) }
         filePaths.forEach { path ->
             verify(exactly = 0) { mockStorage.remove(path) }
         }
@@ -315,7 +319,7 @@ class EventUploadTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         // Verify this time network attempt is not made again
-        verify(exactly = 0) { mockHttpClient.sendData(batchPayload) }
+        verify(exactly = 0) { mockHttpClient.sendData(batchPayload, any()) }
     }
 
     @Test
@@ -323,7 +327,7 @@ class EventUploadTest {
         val unprocessedBatch = readFileTrimmed(unprocessedBatchWithTwoEvents)
         every { mockStorage.readString(StorageKeys.EVENT, String.empty()) } returns singleFilePath
         every { mockStorage.readBatchContent(singleFilePath) } returns unprocessedBatch
-        every { mockHttpClient.sendData(any()) } returns Result.Failure(
+        every { mockHttpClient.sendData(any(), any()) } returns Result.Failure(
             error = NetworkErrorStatus.Error413,
         )
 
@@ -338,7 +342,7 @@ class EventUploadTest {
         val unprocessedBatch = readFileTrimmed(unprocessedBatchWithTwoEvents)
         every { mockStorage.readString(StorageKeys.EVENT, String.empty()) } returns singleFilePath
         every { mockStorage.readBatchContent(singleFilePath) } returns unprocessedBatch
-        every { mockHttpClient.sendData(any()) } returns Result.Failure(
+        every { mockHttpClient.sendData(any(), any()) } returns Result.Failure(
             error = NetworkErrorStatus.Error401,
         )
 
@@ -368,7 +372,7 @@ class EventUploadTest {
 
     private fun simulateRetryAbleError(maxAttempt: Int = MAX_ATTEMPT) {
         var callCount = 0
-        every { mockHttpClient.sendData(any()) } answers {
+        every { mockHttpClient.sendData(any(), any()) } answers {
             callCount++
             when {
                 callCount <= maxAttempt -> Result.Failure(NetworkErrorStatus.ErrorUnknown)

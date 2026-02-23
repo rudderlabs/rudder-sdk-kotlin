@@ -80,6 +80,8 @@ internal class MockMemoryStorage : Storage {
         return if (messageBatchMap.contains(batchRef)) batchRef else null
     }
 
+    override fun getBatchId(batchRef: String): Int = 0
+
     override fun getLibraryVersion(): LibraryVersion {
         return object : LibraryVersion {
             override fun getLibraryName(): String = "com.rudderstack.sdk.kotlin.core"

@@ -107,6 +107,8 @@ internal class InMemoryStorage(
         return eventBatchFile.readContent(batchRef)
     }
 
+    override fun getBatchId(batchRef: String): Int = batchRef.toIntOrNull() ?: 0
+
     override fun getLibraryVersion(): LibraryVersion {
         return object : LibraryVersion {
             override fun getLibraryName(): String = VersionConstants.LIBRARY_NAME

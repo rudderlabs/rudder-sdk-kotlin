@@ -131,6 +131,8 @@ internal class BasicStorage(writeKey: String, platformType: PlatformType) : Stor
         return eventsFile.readContent(batchRef)
     }
 
+    override fun getBatchId(batchRef: String): Int = File(batchRef).name.toIntOrNull() ?: 0
+
     override fun getLibraryVersion(): LibraryVersion {
         return object : LibraryVersion {
             override fun getLibraryName(): String = VersionConstants.LIBRARY_NAME
