@@ -190,7 +190,7 @@ internal class SessionManager(
         if (timeDifference <= 0) {
             LoggerAnalytics.warn(
                 "Current system time is less than or equal to last activity time." +
-                    " This indicates potential clock tampering or timezone changes. Resetting the session"
+                    " This indicates potential clock tampering. Resetting the session"
             )
             return true
         }
