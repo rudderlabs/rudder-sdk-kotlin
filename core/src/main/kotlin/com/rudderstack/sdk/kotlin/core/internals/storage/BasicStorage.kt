@@ -22,39 +22,29 @@ private const val FILE_NAME = "events"
  *
  * @param writeKey The key used to create a unique storage directory.
  * @param platformType The platform type used for event file ordering behaviour.
+ * @param storageDirectory The directory where the storage files are kept, determined by the provided `writeKey`.
+ * @param eventStorageDirectory The subdirectory within [storageDirectory] where event files are stored.
+ * @param propertiesFile The key-value storage implementation.
+ * @param eventsFile The event batch file manager.
  */
 @Suppress("Detekt.TooManyFunctions")
-internal class BasicStorage(writeKey: String, platformType: PlatformType) : Storage {
-
-    /**
-     * The directory where the storage files are kept, determined by the provided `writeKey`.
-     */
-    private val storageDirectory = File(FILE_DIRECTORY.appendWriteKey(writeKey))
-
-    /**
-     * The subdirectory within [storageDirectory] where event files are stored.
-     */
-    private val eventStorageDirectory = File(storageDirectory, FILE_NAME)
-
-    /**
-     * Manages properties files, including loading and saving properties.
-     */
-    private val propertiesFile = PropertiesFile(storageDirectory, writeKey)
-
-    /**
-     * Manages event batch files, including storing and reading events.
-     */
-    private val eventsFile = EventBatchFileManager(
+internal class BasicStorage(
+    writeKey: String,
+    platformType: PlatformType,
+    private val storageDirectory: File = File(FILE_DIRECTORY.appendWriteKey(writeKey)),
+    eventStorageDirectory: File = File(storageDirectory, FILE_NAME),
+    private val propertiesFile: KeyValueStorage = PropertiesFile(storageDirectory, writeKey)
+        .also {
+            // Load properties from the properties file
+            it.load()
+        },
+    private val eventsFile: EventBatchFileManager = EventBatchFileManager(
         directory = eventStorageDirectory,
         writeKey = writeKey,
         keyValueStorage = propertiesFile,
         platformType = platformType,
-    )
-
-    init {
-        // Load properties from the properties file during initialization.
-        propertiesFile.load()
-    }
+    ),
+) : Storage {
 
     override suspend fun write(key: StorageKeys, value: Boolean) {
         if (key != StorageKeys.EVENT) {

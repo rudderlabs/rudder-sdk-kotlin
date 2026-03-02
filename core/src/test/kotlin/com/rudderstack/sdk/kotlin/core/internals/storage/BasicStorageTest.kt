@@ -1,16 +1,12 @@
-package com.rudderstack.sdk.kotlin.android.storage
+package com.rudderstack.sdk.kotlin.core.internals.storage
 
-import android.content.Context
-import com.rudderstack.sdk.kotlin.android.storage.exceptions.QueuedPayloadTooLargeException
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
-import com.rudderstack.sdk.kotlin.core.internals.storage.EventBatchFileManager
-import com.rudderstack.sdk.kotlin.core.internals.storage.KeyValueStorage
-import com.rudderstack.sdk.kotlin.core.internals.storage.MAX_PAYLOAD_SIZE
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys.APP_BUILD
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys.EVENT
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys.IS_SESSION_START
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys.SESSION_ID
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys.USER_ID
+import com.rudderstack.sdk.kotlin.core.internals.storage.exception.PayloadTooLargeException
 import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import io.mockk.MockKAnnotations
@@ -30,32 +26,32 @@ import java.io.File
 
 private const val TEST_WRITE_KEY = "testWriteKey"
 
-class AndroidStorageTest {
+class BasicStorageTest {
 
     @MockK
-    private lateinit var mockContext: Context
+    private lateinit var mockPropertiesFile: KeyValueStorage
 
     @MockK
-    private lateinit var mockKeyValueStorage: KeyValueStorage
-
-    @MockK
-    private lateinit var mockEventBatchFile: EventBatchFileManager
+    private lateinit var mockEventsFile: EventBatchFileManager
 
     @MockK
     private lateinit var mockStorageDirectory: File
 
-    private lateinit var storage: AndroidStorage
+    @MockK
+    private lateinit var mockEventStorageDirectory: File
+
+    private lateinit var storage: BasicStorage
 
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this, relaxed = true)
-        storage = AndroidStorage(
-            context = mockContext,
+        storage = BasicStorage(
             writeKey = TEST_WRITE_KEY,
             platformType = PlatformType.Mobile,
-            rudderPrefsRepo = mockKeyValueStorage,
             storageDirectory = mockStorageDirectory,
-            eventBatchFile = mockEventBatchFile,
+            eventStorageDirectory = mockEventStorageDirectory,
+            propertiesFile = mockPropertiesFile,
+            eventsFile = mockEventsFile,
         )
     }
 
@@ -66,14 +62,14 @@ class AndroidStorageTest {
         fun `given a boolean value, when write is called with non-EVENT key, then value is saved to key-value storage`() = runTest {
             storage.write(IS_SESSION_START, true)
 
-            verify(exactly = 1) { mockKeyValueStorage.save(IS_SESSION_START.key, true) }
+            verify(exactly = 1) { mockPropertiesFile.save(IS_SESSION_START.key, true) }
         }
 
         @Test
         fun `given a boolean value, when write is called with EVENT key, then value is not saved to key-value storage`() = runTest {
             storage.write(EVENT, true)
 
-            verify(exactly = 0) { mockKeyValueStorage.save(any<String>(), any<Boolean>()) }
+            verify(exactly = 0) { mockPropertiesFile.save(any<String>(), any<Boolean>()) }
         }
     }
 
@@ -85,7 +81,7 @@ class AndroidStorageTest {
             val appBuild = 42
             storage.write(APP_BUILD, appBuild)
 
-            verify(exactly = 1) { mockKeyValueStorage.save(APP_BUILD.key, appBuild) }
+            verify(exactly = 1) { mockPropertiesFile.save(APP_BUILD.key, appBuild) }
         }
 
         @Test
@@ -93,7 +89,7 @@ class AndroidStorageTest {
             val appBuild = 42
             storage.write(EVENT, appBuild)
 
-            verify(exactly = 0) { mockKeyValueStorage.save(any<String>(), any<Int>()) }
+            verify(exactly = 0) { mockPropertiesFile.save(any<String>(), any<Int>()) }
         }
     }
 
@@ -105,7 +101,7 @@ class AndroidStorageTest {
             val sessionId = 1234567890L
             storage.write(SESSION_ID, sessionId)
 
-            verify(exactly = 1) { mockKeyValueStorage.save(SESSION_ID.key, sessionId) }
+            verify(exactly = 1) { mockPropertiesFile.save(SESSION_ID.key, sessionId) }
         }
 
         @Test
@@ -113,7 +109,7 @@ class AndroidStorageTest {
             val sessionId = 1234567890L
             storage.write(EVENT, sessionId)
 
-            verify(exactly = 0) { mockKeyValueStorage.save(any<String>(), any<Long>()) }
+            verify(exactly = 0) { mockPropertiesFile.save(any<String>(), any<Long>()) }
         }
     }
 
@@ -125,24 +121,24 @@ class AndroidStorageTest {
             val userId = "user-123"
             storage.write(USER_ID, userId)
 
-            verify { mockKeyValueStorage.save(USER_ID.key, userId) }
+            verify { mockPropertiesFile.save(USER_ID.key, userId) }
         }
 
         @Test
-        fun `given a valid event payload, when write is called with EVENT key, then event is stored via eventBatchFile`() = runTest {
+        fun `given a valid event payload, when write is called with EVENT key, then event is stored via event batch file`() = runTest {
             val payload = """{"event":"test"}"""
 
             storage.write(EVENT, payload)
 
-            coVerify { mockEventBatchFile.storeEvent(payload) }
+            coVerify { mockEventsFile.storeEvent(payload) }
         }
 
         @Test
-        fun `given a payload exceeding MAX_PAYLOAD_SIZE, when write is called with EVENT key, then QueuedPayloadTooLargeException is thrown`() = runTest {
+        fun `given a payload exceeding MAX_PAYLOAD_SIZE, when write is called with EVENT key, then PayloadTooLargeException is thrown`() = runTest {
             val oversizedPayload = "x".repeat(MAX_PAYLOAD_SIZE + 1)
 
-            assertThrows<QueuedPayloadTooLargeException> { storage.write(EVENT, oversizedPayload) }
-            coVerify(exactly = 0) { mockEventBatchFile.storeEvent(any()) }
+            assertThrows<PayloadTooLargeException> { storage.write(EVENT, oversizedPayload) }
+            coVerify(exactly = 0) { mockEventsFile.storeEvent(any()) }
         }
     }
 
@@ -152,7 +148,7 @@ class AndroidStorageTest {
         @Test
         fun `given key-value storage returns an int, when readInt is called, then the value from repo is returned`() {
             val appBuild = 99
-            every { mockKeyValueStorage.getInt(APP_BUILD.key, 0) } returns appBuild
+            every { mockPropertiesFile.getInt(APP_BUILD.key, 0) } returns appBuild
 
             val actual = storage.readInt(APP_BUILD, 0)
 
@@ -162,7 +158,7 @@ class AndroidStorageTest {
         @Test
         fun `given key-value storage returns a boolean, when readBoolean is called, then the value from repo is returned`() {
             val isSessionStart = true
-            every { mockKeyValueStorage.getBoolean(IS_SESSION_START.key, false) } returns isSessionStart
+            every { mockPropertiesFile.getBoolean(IS_SESSION_START.key, false) } returns isSessionStart
 
             val actual = storage.readBoolean(IS_SESSION_START, false)
 
@@ -172,7 +168,7 @@ class AndroidStorageTest {
         @Test
         fun `given key-value storage returns a long, when readLong is called, then the value from repo is returned`() {
             val sessionId = 9876543210L
-            every { mockKeyValueStorage.getLong(SESSION_ID.key, 0L) } returns sessionId
+            every { mockPropertiesFile.getLong(SESSION_ID.key, 0L) } returns sessionId
 
             val actual = storage.readLong(SESSION_ID, 0L)
 
@@ -182,7 +178,7 @@ class AndroidStorageTest {
         @Test
         fun `given key-value storage returns a string, when readString is called with non-EVENT key, then the value from repo is returned`() {
             val userId = "user-456"
-            every { mockKeyValueStorage.getString(USER_ID.key, String.empty()) } returns userId
+            every { mockPropertiesFile.getString(USER_ID.key, String.empty()) } returns userId
 
             val actual = storage.readString(USER_ID, String.empty())
 
@@ -193,7 +189,7 @@ class AndroidStorageTest {
         fun `given eventBatchFile returns file list, when readString is called with EVENT key, then joined file list is returned`() {
             val fileList = listOf("path/file1", "path/file2")
             val joinedFileList = "path/file1, path/file2"
-            every { mockEventBatchFile.read() } returns fileList
+            every { mockEventsFile.read() } returns fileList
 
             val actual = storage.readString(EVENT, String.empty())
 
@@ -207,7 +203,7 @@ class AndroidStorageTest {
         @Test
         fun `given eventBatchFile returns file list, when readFileList is called, then the list from eventBatchFile is returned`() {
             val fileList = listOf("file1")
-            every { mockEventBatchFile.read() } returns fileList
+            every { mockEventsFile.read() } returns fileList
 
             val actual = storage.readFileList()
 
@@ -218,7 +214,7 @@ class AndroidStorageTest {
         fun `given eventBatchFile returns content, when readBatchContent is called, then the content is returned`() {
             val batchRef = "file1"
             val batchContent = "batch-content"
-            every { mockEventBatchFile.readContent(batchRef) } returns batchContent
+            every { mockEventsFile.readContent(batchRef) } returns batchContent
 
             val actual = storage.readBatchContent(batchRef)
 
@@ -251,7 +247,7 @@ class AndroidStorageTest {
         fun `given a StorageKey, when remove is called, then key-value storage clear is called`() = runTest {
             storage.remove(USER_ID)
 
-            verify { mockKeyValueStorage.clear(USER_ID.key) }
+            verify { mockPropertiesFile.clear(USER_ID.key) }
         }
 
         @Test
@@ -259,21 +255,21 @@ class AndroidStorageTest {
             val filePath = "file1"
             storage.remove(filePath)
 
-            verify { mockEventBatchFile.remove(filePath) }
+            verify { mockEventsFile.remove(filePath) }
         }
 
         @Test
         fun `when rollover is called, then eventBatchFile rollover is called`() = runTest {
             storage.rollover()
 
-            coVerify { mockEventBatchFile.rollover() }
+            coVerify { mockEventsFile.rollover() }
         }
 
         @Test
         fun `when close is called, then eventBatchFile closeAndReset is called`() {
             storage.close()
 
-            verify { mockEventBatchFile.closeAndReset() }
+            verify { mockEventsFile.closeAndReset() }
         }
 
         @OptIn(UseWithCaution::class)
@@ -285,7 +281,7 @@ class AndroidStorageTest {
 
                 storage.delete()
 
-                verify { mockKeyValueStorage.delete() }
+                verify { mockPropertiesFile.delete() }
                 verify { mockStorageDirectory.deleteRecursively() }
             } finally {
                 unmockkStatic(File::deleteRecursively)
