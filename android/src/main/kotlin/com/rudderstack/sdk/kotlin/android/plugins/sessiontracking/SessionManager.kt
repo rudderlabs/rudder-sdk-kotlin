@@ -5,7 +5,6 @@ import com.rudderstack.sdk.kotlin.android.SessionConfiguration
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleObserver
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ProcessLifecycleObserver
 import com.rudderstack.sdk.kotlin.android.utils.addLifecycleObserver
-import com.rudderstack.sdk.kotlin.android.utils.getMonotonicCurrentTime
 import com.rudderstack.sdk.kotlin.android.utils.removeLifecycleObserver
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
@@ -111,7 +110,7 @@ internal class SessionManager(
     }
 
     internal fun updateLastActivityTime() {
-        val lastActivityTime = getMonotonicCurrentTime()
+        val lastActivityTime = DateTimeUtils.getSystemCurrentTime()
         sessionInfo.dispatch(SessionInfo.UpdateLastActivityTimeAction(lastActivityTime))
         withSessionDispatcher {
             sessionInfo.value.storeLastActivityTime(lastActivityTime, storage)
@@ -180,15 +179,22 @@ internal class SessionManager(
      * A session is considered timed out if the elapsed time since the last recorded
      * activity exceeds the configured session timeout.
      *
-     * This method uses monotonic time (time since last boot). If the current monotonic
-     * time is less than or equal to the last activity time, it indicates a device reboot.
+     * This method uses system current time. If the current system
+     * time is less than or equal to the last activity time, it indicates that the clock has been tampered with.
      * In such cases, the session is treated as expired.
      *
-     * @return `true` if the session has timed out or a reboot is detected, `false` otherwise.
+     * @return `true` if the session has timed out, `false` otherwise.
      */
     private fun hasSessionTimedOut(): Boolean {
-        val timeDifference = getMonotonicCurrentTime() - lastActivityTime
-        return timeDifference > sessionTimeout || timeDifference <= 0
+        val timeDifference = DateTimeUtils.getSystemCurrentTime() - lastActivityTime
+        if (timeDifference <= 0) {
+            LoggerAnalytics.warn(
+                "Current system time is less than or equal to last activity time." +
+                    " This indicates potential clock tampering. Resetting the session"
+            )
+            return true
+        }
+        return timeDifference > sessionTimeout
     }
 
     internal fun generateSessionId(): Long {

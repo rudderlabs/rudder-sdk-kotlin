@@ -1,6 +1,5 @@
 package com.rudderstack.sampleapp.analytics.migration.transform
 
-import android.os.SystemClock
 import com.rudderstack.sampleapp.analytics.migration.MigrationConstants
 import com.rudderstack.sampleapp.analytics.migration.MigrationLogger
 import com.rudderstack.sampleapp.analytics.migration.model.LegacyData
@@ -44,17 +43,6 @@ internal class DataTransformer {
         // Convert appBuild
         val appBuild = convertAppBuild(legacyData.appBuild)
 
-        // Convert lastActivityTime
-        val lastActivityTime = convertLastActivityTime(legacyData.lastActivityTime)
-
-        // If lastActivityTime is null (reboot detected), also reset sessionId
-        val sessionId = if (lastActivityTime == null && legacyData.lastActivityTime != null) {
-            MigrationLogger.warn("Resetting sessionId due to reboot detection. Session will start fresh.")
-            null
-        } else {
-            legacyData.sessionId
-        }
-
         // Invert autoSessionTrackingEnabled to isSessionManual
         val isSessionManual = convertAutoSessionTrackingToManual(legacyData.autoSessionTrackingEnabled)
 
@@ -64,8 +52,8 @@ internal class DataTransformer {
             anonymousId = legacyData.anonymousId,
             userId = legacyData.userId,
             traitsJson = cleanedTraits,
-            sessionId = sessionId,
-            lastActivityTime = lastActivityTime,
+            sessionId = legacyData.sessionId,
+            lastActivityTime = legacyData.lastActivityTime,
             appVersion = legacyData.appVersion,
             appBuild = appBuild,
             isSessionManual = isSessionManual,
@@ -123,89 +111,5 @@ internal class DataTransformer {
             "Converted autoSessionTracking=$autoSessionTrackingEnabled to isSessionManual=$isSessionManual"
         )
         return isSessionManual
-    }
-
-    /**
-     * Converts lastActivityTime from legacy wall-clock format to new SDK monotonic format.
-     *
-     * ## Important: Time Base Difference
-     * - Legacy SDK stores: `System.currentTimeMillis()` (milliseconds since Unix epoch 1970)
-     * - New SDK expects: `SystemClock.elapsedRealtime()` (milliseconds since device boot)
-     *
-     * ## Conversion Logic
-     * 1. Calculate elapsed time since last activity: `currentWallClock - legacyTimestamp`
-     * 2. Subtract from current monotonic time: `currentMonotonic - elapsed`
-     * 3. If result is negative (device rebooted), return null to start fresh session
-     *
-     * ## Timeline Example - No Reboot (Successful Conversion)
-     * ```
-     * 10:00 AM - Legacy SDK stores: lastActivityTime = 1735732800000 (wall-clock)
-     * 11:00 AM - Migration runs:
-     *   currentWallClock = 1735736400000        // 11:00 AM epoch
-     *   currentMonotonic = 21600000             // 6 hours (360 min) since boot
-     *   legacyTimestamp  = 1735732800000        // 10:00 AM epoch
-     *
-     *   elapsedSinceLastActivity = 1735736400000 - 1735732800000
-     *                            = 3600000 ms   // 60 minutes (11:00 AM - 10:00 AM)
-     *
-     *   convertedTime = 21600000 - 3600000      // 6 hrs - 1 hr
-     *                 = 18000000 (monotonic)    // 5 hours since boot
-     *
-     *   Result: Returns 18000000 ✅ (represents "1 hour ago" in monotonic time)
-     * ```
-     *
-     * ## Timeline Example - Reboot Detected (Returns null)
-     * ```
-     * 10:00 AM - Legacy SDK stores: lastActivityTime = 1735732800000 (wall-clock)
-     * 10:30 AM - Device reboots (monotonic resets to 0)
-     * 11:00 AM - Migration runs (30 min after reboot):
-     *   currentWallClock = 1735736400000        // 11:00 AM epoch
-     *   currentMonotonic = 1800000              // 30 min since reboot (NOT 6 hours!)
-     *   legacyTimestamp  = 1735732800000        // 10:00 AM epoch
-     *
-     *   elapsedSinceLastActivity = 1735736400000 - 1735732800000
-     *                            = 3600000 ms   // 60 minutes
-     *
-     *   convertedTime = 1800000 - 3600000       // 30 min - 60 min
-     *                 = -1800000 ❌ NEGATIVE!   // Cannot subtract 60 min from 30 min uptime
-     *
-     *   Result: Returns null ✅ (triggers fresh session)
-     * ```
-     *
-     * ## Why Reboot Returns null
-     * - Monotonic time resets to 0 on reboot
-     * - Cannot represent "60 min ago" on a timeline that's only 30 min old
-     * - Safe default: Start fresh session rather than carry stale data
-     *
-     * @param legacyTimestamp Wall-clock timestamp from legacy SDK (epoch ms)
-     * @return Monotonic timestamp for new SDK, or null if conversion not possible (reboot detected)
-     */
-    private fun convertLastActivityTime(legacyTimestamp: Long?): Long? {
-        if (legacyTimestamp == null) return null
-
-        val currentWallClock = System.currentTimeMillis()
-        val currentMonotonic = SystemClock.elapsedRealtime()
-
-        // Calculate how long ago the last activity was
-        val elapsedSinceLastActivity = currentWallClock - legacyTimestamp
-
-        // Convert to monotonic time base
-        val convertedTime = currentMonotonic - elapsedSinceLastActivity
-
-        // If negative (device rebooted since last activity), start fresh session
-        if (convertedTime < 0) {
-            MigrationLogger.warn(
-                "lastActivityTime conversion resulted in negative value. " +
-                    "Device may have rebooted. Session will start fresh."
-            )
-            return null
-        }
-
-        MigrationLogger.debug(
-            "Converted lastActivityTime: " +
-                "legacy=$legacyTimestamp (epoch) -> $convertedTime (monotonic), " +
-                "elapsed=${elapsedSinceLastActivity}ms"
-        )
-        return convertedTime
     }
 }

@@ -24,17 +24,15 @@ internal class AndroidStorage(
     private val context: Context,
     private val writeKey: String,
     platformType: PlatformType,
-    private val rudderPrefsRepo: KeyValueStorage = SharedPrefsStore(context, RUDDER_PREFS.toAndroidPrefsKey(writeKey))
-) : Storage {
-
-    private val storageDirectory: File =
-        context.getDir(DIRECTORY_NAME.appendWriteKey(writeKey), Context.MODE_PRIVATE)
-    private val eventBatchFile = EventBatchFileManager(
+    private val rudderPrefsRepo: KeyValueStorage = SharedPrefsStore(context, RUDDER_PREFS.toAndroidPrefsKey(writeKey)),
+    private val storageDirectory: File = context.getDir(DIRECTORY_NAME.appendWriteKey(writeKey), Context.MODE_PRIVATE),
+    private val eventBatchFile: EventBatchFileManager = EventBatchFileManager(
         directory = storageDirectory,
         writeKey = writeKey,
         keyValueStorage = rudderPrefsRepo,
         platformType = platformType,
-    )
+    ),
+) : Storage {
 
     override suspend fun write(key: StorageKeys, value: Boolean) {
         if (key != StorageKeys.EVENT) {
