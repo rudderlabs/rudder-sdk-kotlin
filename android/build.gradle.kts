@@ -34,22 +34,22 @@ tasks.withType<Test> {
 }
 
 android {
-    namespace = RudderStackBuildConfig.AndroidAndCoreSDKs.PACKAGE_NAME
-    compileSdk = RudderStackBuildConfig.Android.COMPILE_SDK
+    namespace = RudderStackBuildConfig.SDK.PACKAGE_NAME
+    compileSdk = RudderStackBuildConfig.AndroidBuild.COMPILE_SDK
 
     buildFeatures {
         buildConfig = true
     }
 
     defaultConfig {
-        minSdk = RudderStackBuildConfig.Android.MIN_SDK
+        minSdk = RudderStackBuildConfig.AndroidBuild.MIN_SDK
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
 
-        buildConfigField("String", "VERSION_NAME", "\"${RudderStackBuildConfig.AndroidAndCoreSDKs.VERSION_NAME}\"")
-        buildConfigField("int", "VERSION_CODE", RudderStackBuildConfig.AndroidAndCoreSDKs.VERSION_CODE)
-        buildConfigField("String", "LIBRARY_NAME", "\"${RudderStackBuildConfig.AndroidAndCoreSDKs.AndroidLibraryInfo.name}\"")
+        buildConfigField("String", "VERSION_NAME", "\"${RudderStackBuildConfig.SDK.Android.VERSION_NAME}\"")
+        buildConfigField("int", "VERSION_CODE", RudderStackBuildConfig.SDK.Android.VERSION_CODE)
+        buildConfigField("String", "LIBRARY_NAME", "\"${RudderStackBuildConfig.SDK.Android.LibraryInfo.name}\"")
     }
 
     buildTypes {
