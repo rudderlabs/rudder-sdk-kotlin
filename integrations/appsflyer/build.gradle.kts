@@ -30,6 +30,9 @@ tasks.withType<Test> {
         events("failed")
         showStandardStreams = true
     }
+    dependsOn("generatePomFileForReleasePublication")
+    val pomFile = layout.buildDirectory.file("publications/release/pom-default.xml")
+    systemProperty("appsflyerPomFile", pomFile.get().asFile.absolutePath)
 }
 
 android {

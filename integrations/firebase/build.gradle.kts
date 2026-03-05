@@ -29,6 +29,9 @@ tasks.withType<Test> {
     testLogging {
         events("failed")
     }
+    dependsOn("generatePomFileForReleasePublication")
+    val pomFile = layout.buildDirectory.file("publications/release/pom-default.xml")
+    systemProperty("firebasePomFile", pomFile.get().asFile.absolutePath)
 }
 
 android {
