@@ -12,17 +12,7 @@ plugins {
     alias(libs.plugins.nexus)
 }
 
-fun getVersionName(): String {
-    return if (project.hasProperty("release")) {
-        RudderStackBuildConfig.AndroidAndCoreSDKs.VERSION_NAME
-    } else {
-        "${RudderStackBuildConfig.AndroidAndCoreSDKs.VERSION_NAME}-SNAPSHOT"
-    }
-}
-
-allprojects {
-    version = getVersionName()
-}
+// Each module sets its own version via the unified publishing script
 
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
