@@ -34,10 +34,10 @@ tasks.withType<Test> {
 
 android {
     namespace = RudderStackBuildConfig.Integrations.Facebook.namespace
-    compileSdk = RudderStackBuildConfig.Android.COMPILE_SDK
+    compileSdk = RudderStackBuildConfig.AndroidBuild.COMPILE_SDK
 
     defaultConfig {
-        minSdk = RudderStackBuildConfig.Android.MIN_SDK
+        minSdk = RudderStackBuildConfig.AndroidBuild.MIN_SDK
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
@@ -117,4 +117,4 @@ dependencies {
     testRuntimeOnly(libs.junit.jupiter.engine)
 }
 
-apply(from = rootProject.file("gradle/publishing/publishing.integration.gradle.kts"))
+apply(from = rootProject.file("gradle/publishing/publishing.gradle.kts"))

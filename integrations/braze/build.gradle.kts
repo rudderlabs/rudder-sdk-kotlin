@@ -29,7 +29,7 @@ tasks.withType<Test> {
 
 android {
     namespace = RudderStackBuildConfig.Integrations.Braze.namespace
-    compileSdk = RudderStackBuildConfig.Android.COMPILE_SDK
+    compileSdk = RudderStackBuildConfig.AndroidBuild.COMPILE_SDK
 
     buildFeatures {
         buildFeatures {
@@ -115,4 +115,4 @@ dependencies {
     testImplementation(libs.json.assert)
 }
 
-apply(from = rootProject.file("gradle/publishing/publishing.integration.gradle.kts"))
+apply(from = rootProject.file("gradle/publishing/publishing.gradle.kts"))
