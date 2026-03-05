@@ -59,8 +59,8 @@ tasks.register("generateVersionConstants") {
             package source.version
 
             object VersionConstants {
-                const val VERSION_NAME = "${RudderStackBuildConfig.AndroidAndCoreSDKs.VERSION_NAME}"
-                const val LIBRARY_NAME = "${RudderStackBuildConfig.AndroidAndCoreSDKs.CoreLibraryInfo.name}"
+                const val VERSION_NAME = "${RudderStackBuildConfig.SDK.Core.VERSION_NAME}"
+                const val LIBRARY_NAME = "${RudderStackBuildConfig.SDK.Core.LibraryInfo.name}"
             }
             """.trimIndent()
         )
