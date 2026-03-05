@@ -91,7 +91,7 @@ tasks {
 
 dependencies {
     // RudderStack SDK
-    implementation(libs.rudder.android.sdk)
+    implementation(project(":android"))
 
     // Adjust android SDK
     implementation(libs.adjust.android)

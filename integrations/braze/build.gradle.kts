@@ -97,7 +97,7 @@ tasks {
 
 dependencies {
     // RudderStack SDK
-    implementation(libs.rudder.android.sdk)
+    implementation(project(":android"))
 
     // detekt plugins
     detektPlugins(libs.detekt.formatting)
