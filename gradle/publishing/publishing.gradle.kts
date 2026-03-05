@@ -196,14 +196,3 @@ tasks.getByName("publishToSonatype") {
     dependsOn("publish")
 }
 
-// Usage: ./gradlew :core:printPom or ./gradlew :android:printPom or ./gradlew :integrations:firebase:printPom
-tasks.register("printPom") {
-    description = "Prints the generated POM XML to the terminal for verification"
-    group = "publishing"
-    dependsOn("generatePomFileForReleasePublication")
-
-    doLast {
-        val pomFile = layout.buildDirectory.file("publications/release/pom-default.xml").get().asFile
-        println(pomFile.readText())
-    }
-}
