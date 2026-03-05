@@ -29,20 +29,20 @@ fun getModuleConfig(): ModuleConfig {
     val isRelease = hasProperty("release")
     return when (project.name) {
         "core" -> {
-            val v = RudderStackBuildConfig.SDK.Core.VERSION_NAME
+            val version = RudderStackBuildConfig.SDK.Core.VERSION_NAME
             ModuleConfig(
                 groupId = RudderStackBuildConfig.SDK.PACKAGE_NAME,
                 artifactId = RudderStackBuildConfig.SDK.Core.PublishConfig.artifactId,
-                version = if (isRelease) v else "$v-SNAPSHOT",
+                version = if (isRelease) version else "$version-SNAPSHOT",
                 pomPackaging = RudderStackBuildConfig.SDK.Core.PublishConfig.pomPackaging,
             )
         }
         "android" -> {
-            val v = RudderStackBuildConfig.SDK.Android.VERSION_NAME
+            val version = RudderStackBuildConfig.SDK.Android.VERSION_NAME
             ModuleConfig(
                 groupId = RudderStackBuildConfig.SDK.PACKAGE_NAME,
                 artifactId = RudderStackBuildConfig.SDK.Android.PublishConfig.artifactId,
-                version = if (isRelease) v else "$v-SNAPSHOT",
+                version = if (isRelease) version else "$version-SNAPSHOT",
                 pomPackaging = RudderStackBuildConfig.SDK.Android.PublishConfig.pomPackaging,
             )
         }
