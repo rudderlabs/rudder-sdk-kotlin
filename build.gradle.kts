@@ -12,8 +12,6 @@ plugins {
     alias(libs.plugins.nexus)
 }
 
-// Each module sets its own version via the unified publishing script
-
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
 }
@@ -85,6 +83,7 @@ nexusPublishing {
             snapshotRepositoryUrl.set(uri("https://central.sonatype.com/repository/maven-snapshots/"))
         }
     }
+    useStaging.set(hasProperty("release"))
 }
 
 true // Needed to make the Suppress annotation work for the plugins block
