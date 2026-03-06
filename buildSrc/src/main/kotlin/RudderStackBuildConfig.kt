@@ -23,7 +23,7 @@ object RudderStackBuildConfig {
 
         object Core {
 
-            const val VERSION_NAME = "1.3.0"
+            const val VERSION_NAME = "1.4.0"
 
             object LibraryInfo : LibraryInfoContract {
 
@@ -39,8 +39,8 @@ object RudderStackBuildConfig {
 
         object Android {
 
-            const val VERSION_NAME = "1.3.0"
-            const val VERSION_CODE = "8"
+            const val VERSION_NAME = "1.4.0"
+            const val VERSION_CODE = "9"
 
             object LibraryInfo : LibraryInfoContract {
 
