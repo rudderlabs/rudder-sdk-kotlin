@@ -35,7 +35,7 @@ print_warning() {
     echo -e "${YELLOW}[WARNING]${NC} $1"
 }
 
-# 1. Check branch name
+# 1. Validate branch name against naming convention before allowing push
 print_status "Validating branch name..."
 LC_ALL=C
 local_branch="$(git rev-parse --abbrev-ref HEAD)"
@@ -49,7 +49,8 @@ then
 fi
 print_success "✅ Branch name validation passed"
 
-# 2. Discover publishable modules via Gradle
+# 2. Discover publishable modules via Gradle's listModules task
+#    Categorises modules as Android or JVM based on plugin presence
 print_status "Discovering publishable modules..."
 MODULE_OUTPUT=$(./gradlew listModules --quiet 2>/dev/null)
 
@@ -63,29 +64,27 @@ if [ -z "$ANDROID_MODULES" ] || [ -z "$JVM_MODULES" ]; then
     exit 1
 fi
 
-# Build task lists from discovered modules
+# 3. Build task lists from discovered modules
+#    Android: lintDebug + assembleDebug + testDebugUnitTest
+#    JVM: assemble + test
 LINT_TASKS=""
 BUILD_TASKS=""
 TEST_TASKS=""
 
-if [ -n "$ANDROID_MODULES" ]; then
-    IFS=',' read -ra A_MODS <<< "$ANDROID_MODULES"
-    for mod in "${A_MODS[@]}"; do
-        LINT_TASKS="$LINT_TASKS ${mod}:lintDebug"
-        BUILD_TASKS="$BUILD_TASKS ${mod}:assembleDebug"
-        TEST_TASKS="$TEST_TASKS ${mod}:testDebugUnitTest"
-    done
-    print_success "Android modules: ${ANDROID_MODULES//,/, }"
-fi
+IFS=',' read -ra A_MODS <<< "$ANDROID_MODULES"
+for mod in "${A_MODS[@]}"; do
+    LINT_TASKS="$LINT_TASKS ${mod}:lintDebug"
+    BUILD_TASKS="$BUILD_TASKS ${mod}:assembleDebug"
+    TEST_TASKS="$TEST_TASKS ${mod}:testDebugUnitTest"
+done
+print_success "Android modules: ${ANDROID_MODULES//,/, }"
 
-if [ -n "$JVM_MODULES" ]; then
-    IFS=',' read -ra J_MODS <<< "$JVM_MODULES"
-    for mod in "${J_MODS[@]}"; do
-        BUILD_TASKS="$BUILD_TASKS ${mod}:assemble"
-        TEST_TASKS="$TEST_TASKS ${mod}:test"
-    done
-    print_success "JVM modules: ${JVM_MODULES//,/, }"
-fi
+IFS=',' read -ra J_MODS <<< "$JVM_MODULES"
+for mod in "${J_MODS[@]}"; do
+    BUILD_TASKS="$BUILD_TASKS ${mod}:assemble"
+    TEST_TASKS="$TEST_TASKS ${mod}:test"
+done
+print_success "JVM modules: ${JVM_MODULES//,/, }"
 
 # Trim leading spaces
 LINT_TASKS=$(echo "$LINT_TASKS" | sed 's/^ //')
@@ -102,7 +101,8 @@ echo "Checks to run:"
 [ -n "$BUILD_TASKS" ] && echo "  - Build (assembleDebug / assemble)"
 [ -n "$TEST_TASKS" ] && echo "  - Unit Tests (testDebugUnitTest / test)"
 
-# 3. Run all checks in a single Gradle invocation (incremental build + build cache)
+# 4. Run all checks in a single Gradle invocation
+#    Uses --parallel for speed and relies on incremental build + build cache
 echo ""
 SEPARATOR="────────────────────────────────────────"
 echo "$SEPARATOR"
