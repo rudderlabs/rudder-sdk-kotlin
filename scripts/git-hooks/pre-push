@@ -56,10 +56,11 @@ MODULE_OUTPUT=$(./gradlew listModules --quiet 2>/dev/null)
 ANDROID_MODULES=$(echo "$MODULE_OUTPUT" | grep "^ANDROID_MODULES=" | cut -d'=' -f2)
 JVM_MODULES=$(echo "$MODULE_OUTPUT" | grep "^JVM_MODULES=" | cut -d'=' -f2)
 
-if [ -z "$ANDROID_MODULES" ] && [ -z "$JVM_MODULES" ]; then
-    print_warning "No publishable modules detected. Skipping lint/build/test."
-    print_success "All pre-push checks passed! Ready to push."
-    exit 0
+if [ -z "$ANDROID_MODULES" ] || [ -z "$JVM_MODULES" ]; then
+    print_error "Module discovery failed. Expected both Android and JVM modules."
+    [ -z "$ANDROID_MODULES" ] && print_error "ANDROID_MODULES is empty"
+    [ -z "$JVM_MODULES" ] && print_error "JVM_MODULES is empty"
+    exit 1
 fi
 
 # Build task lists from discovered modules
