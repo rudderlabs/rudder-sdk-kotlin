@@ -2,7 +2,6 @@
 
 #sdk dependencies
 agp = "8.7.2"
-android = "[1.0,2.0)"
 android-core-ktx = "1.16.0"
 detekt = "1.23.6"
 json-assert = "1.5.0"

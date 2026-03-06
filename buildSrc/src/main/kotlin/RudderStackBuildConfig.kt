@@ -1,5 +1,7 @@
 import org.gradle.api.JavaVersion
 
+private typealias LibraryInfoContract = LibraryInfo
+
 object RudderStackBuildConfig {
 
     object Build {
@@ -9,38 +11,47 @@ object RudderStackBuildConfig {
         const val JVM_TOOLCHAIN = 17
     }
 
-    object Android {
+    object AndroidBuild {
 
         const val COMPILE_SDK = 35
         const val MIN_SDK = 21
     }
 
-    object AndroidAndCoreSDKs {
+    object SDK {
 
         const val PACKAGE_NAME = "com.rudderstack.sdk.kotlin"
-        const val VERSION_NAME = "1.3.0"
-        const val VERSION_CODE = "8"
 
-        object AndroidLibraryInfo : LibraryInfo {
+        object Core {
 
-            override val name: String = "$PACKAGE_NAME.android"
+            const val VERSION_NAME = "1.3.0"
+
+            object LibraryInfo : LibraryInfoContract {
+
+                override val name: String = "$PACKAGE_NAME.core"
+            }
+
+            object PublishConfig : MavenPublishConfig {
+
+                override val artifactId = "core"
+                override val pomPackaging = "jar"
+            }
         }
 
-        object CoreLibraryInfo : LibraryInfo {
+        object Android {
 
-            override val name: String = "$PACKAGE_NAME.core"
-        }
+            const val VERSION_NAME = "1.3.0"
+            const val VERSION_CODE = "8"
 
-        object AndroidPublishConfig : MavenPublishConfig {
+            object LibraryInfo : LibraryInfoContract {
 
-            override val artifactId = "android"
-            override val pomPackaging = "aar"
-        }
+                override val name: String = "$PACKAGE_NAME.android"
+            }
 
-        object CorePublishConfig : MavenPublishConfig {
+            object PublishConfig : MavenPublishConfig {
 
-            override val artifactId = "core"
-            override val pomPackaging = "jar"
+                override val artifactId = "android"
+                override val pomPackaging = "aar"
+            }
         }
     }
 
@@ -96,6 +107,15 @@ object RudderStackBuildConfig {
 
             override val artifactId = "firebase"
             override val pomPackaging = "aar"
+        }
+
+        fun getModuleInfo(projectName: String): IntegrationModuleInfo = when (projectName) {
+            "adjust" -> Adjust
+            "braze" -> Braze
+            "facebook" -> Facebook
+            "firebase" -> Firebase
+            "appsflyer" -> AppsFlyer
+            else -> throw IllegalArgumentException("Unknown integration module: $projectName")
         }
     }
 

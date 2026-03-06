@@ -25,6 +25,9 @@ tasks.withType<Test> {
     testLogging {
         events("failed")
     }
+    dependsOn("generatePomFileForReleasePublication")
+    val pomFile = layout.buildDirectory.file("publications/release/pom-default.xml")
+    systemProperty("corePomFile", pomFile.get().asFile.absolutePath)
 }
 
 // For generating SourcesJar and JavadocJar
@@ -59,8 +62,8 @@ tasks.register("generateVersionConstants") {
             package source.version
 
             object VersionConstants {
-                const val VERSION_NAME = "${RudderStackBuildConfig.AndroidAndCoreSDKs.VERSION_NAME}"
-                const val LIBRARY_NAME = "${RudderStackBuildConfig.AndroidAndCoreSDKs.CoreLibraryInfo.name}"
+                const val VERSION_NAME = "${RudderStackBuildConfig.SDK.Core.VERSION_NAME}"
+                const val LIBRARY_NAME = "${RudderStackBuildConfig.SDK.Core.LibraryInfo.name}"
             }
             """.trimIndent()
         )
