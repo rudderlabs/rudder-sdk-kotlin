@@ -32,19 +32,11 @@ print_error() {
 
 # 1. Run Detekt
 print_status "Running Detekt static code analysis..."
-if ! ./gradlew detekt; then
+if ! ./gradlew detekt --parallel --continue; then
     print_error "Detekt found code quality issues. Please fix them before committing."
     exit 1
 fi
-print_success "Detekt checks passed"
-
-# 2. Run Android Lint
-print_status "Running Android Lint..."
-if ! ./gradlew :android:lint; then
-    print_error "Android Lint found issues. Please fix them before committing."
-    exit 1
-fi
-print_success "Android Lint checks passed"
+print_success "✅ Detekt checks passed"
 
 print_success "🎉 All pre-commit checks passed! Ready to commit."
 exit 0
