@@ -1,38 +1,105 @@
+// Unified publishing script for all modules (core, android, and integrations).
+// Each module applies this script via: apply(from = rootProject.file("gradle/publishing/publishing.gradle.kts"))
+// Module type is detected via project.name to resolve the correct groupId, artifactId, and version.
+
 apply(plugin = "maven-publish")
 apply(plugin = "signing")
 
-private val PLATFORM_ANDROID = "android"
+// e.g., for android module: ModuleConfig("com.rudderstack.sdk.kotlin", "android", "1.3.0", "aar")
+data class ModuleConfig(
+    val groupId: String,
+    val artifactId: String,
+    val version: String,
+    val pomPackaging: String,
+)
 
-fun getExtraString(name: String) = extra[name]?.toString()
+// Computes the next major version for semver range constraints in POM dependencies.
+// e.g., "1.3.0" -> "2.0.0", used to produce ranges like [1.3.0, 2.0.0)
+fun computeNextMajor(version: String): String {
+    val major = version.split(".").first().toInt() + 1
+    return "$major.0.0"
+}
 
-// If not release build add SNAPSHOT suffix
-fun getVersionName() =
-    if (hasProperty("release"))
-        RudderStackBuildConfig.AndroidAndCoreSDKs.VERSION_NAME
-    else
-        RudderStackBuildConfig.AndroidAndCoreSDKs.VERSION_NAME + "-SNAPSHOT"
+// Resolves publishing metadata (groupId, artifactId, version, packaging) based on the module applying this script.
+// Appends "-SNAPSHOT" suffix for non-release builds.
+// e.g., core module    -> ModuleConfig("com.rudderstack.sdk.kotlin", "core", "1.3.0-SNAPSHOT", "jar")
+// e.g., android module -> ModuleConfig("com.rudderstack.sdk.kotlin", "android", "1.3.0-SNAPSHOT", "aar")
+// e.g., adjust module  -> ModuleConfig("com.rudderstack.integration.kotlin", "adjust", "1.2.0-SNAPSHOT", "aar")
+fun getModuleConfig(): ModuleConfig {
+    val isRelease = hasProperty("release")
+    return when (project.name) {
+        "core" -> {
+            val version = RudderStackBuildConfig.SDK.Core.VERSION_NAME
+            ModuleConfig(
+                groupId = RudderStackBuildConfig.SDK.PACKAGE_NAME,
+                artifactId = RudderStackBuildConfig.SDK.Core.PublishConfig.artifactId,
+                version = if (isRelease) version else "$version-SNAPSHOT",
+                pomPackaging = RudderStackBuildConfig.SDK.Core.PublishConfig.pomPackaging,
+            )
+        }
+        "android" -> {
+            val version = RudderStackBuildConfig.SDK.Android.VERSION_NAME
+            ModuleConfig(
+                groupId = RudderStackBuildConfig.SDK.PACKAGE_NAME,
+                artifactId = RudderStackBuildConfig.SDK.Android.PublishConfig.artifactId,
+                version = if (isRelease) version else "$version-SNAPSHOT",
+                pomPackaging = RudderStackBuildConfig.SDK.Android.PublishConfig.pomPackaging,
+            )
+        }
+        else -> {
 
-fun getModuleDetails(): MavenPublishConfig =
-    if (project.name == PLATFORM_ANDROID) {
-        RudderStackBuildConfig.AndroidAndCoreSDKs.AndroidPublishConfig
-    } else {
-        RudderStackBuildConfig.AndroidAndCoreSDKs.CorePublishConfig
+            // integrations
+            val info = RudderStackBuildConfig.Integrations.getModuleInfo(project.name)
+            ModuleConfig(
+                groupId = RudderStackBuildConfig.Integrations.PACKAGE_NAME,
+                artifactId = info.artifactId,
+                version = if (isRelease) info.versionName else "${info.versionName}-SNAPSHOT",
+                pomPackaging = info.pomPackaging,
+            )
+        }
     }
+}
+
+// Maps project dependencies (e.g., project(":core"), project(":android")) to Maven coordinates for the POM.
+// - Core dependency: pinned to exact version (android module tightly couples with core)
+// - Android dependency: semver range [current, nextMajor) so integrations stay compatible across minor bumps
+// e.g., android module's project(":core") -> ("com.rudderstack.sdk.kotlin", "core", "1.3.0")
+// e.g., adjust integration's project(":android") -> ("com.rudderstack.sdk.kotlin", "android", "[1.3.0, 2.0.0)")
+fun resolveProjectDependency(dep: org.gradle.api.artifacts.ProjectDependency): Triple<String, String, String> {
+    return when (dep.dependencyProject.name) {
+        "core" -> Triple(
+            RudderStackBuildConfig.SDK.PACKAGE_NAME,
+            RudderStackBuildConfig.SDK.Core.PublishConfig.artifactId,
+            RudderStackBuildConfig.SDK.Core.VERSION_NAME,
+        )
+        "android" -> Triple(
+            RudderStackBuildConfig.SDK.PACKAGE_NAME,
+            RudderStackBuildConfig.SDK.Android.PublishConfig.artifactId,
+            "[${RudderStackBuildConfig.SDK.Android.VERSION_NAME}, ${computeNextMajor(RudderStackBuildConfig.SDK.Android.VERSION_NAME)})",
+        )
+        else -> throw IllegalArgumentException("Unexpected project dependency: ${dep.dependencyProject.name}")
+    }
+}
+
+// Set project.version so jar/aar filenames match the module's own version
+version = getModuleConfig().version
 
 configure<PublishingExtension> {
     publications {
         register<MavenPublication>("release") {
-            groupId = RudderStackBuildConfig.AndroidAndCoreSDKs.PACKAGE_NAME
-            artifactId = getModuleDetails().artifactId
-            version = getVersionName()
+            val config = getModuleConfig()
 
-            // Add the `aar` or `jar` file to the artifacts
-            if (project.name == PLATFORM_ANDROID) {
-                artifact("${layout.buildDirectory.get()}/outputs/aar/${project.name}-release.aar") {
+            groupId = config.groupId
+            artifactId = config.artifactId
+            version = config.version
+
+            // Add the artifact (jar for core, aar for android/integrations)
+            if (config.pomPackaging == "jar") {
+                artifact("${layout.buildDirectory.get()}/libs/${project.name}-${version}.jar") {
                     builtBy(tasks.getByName("assemble"))
                 }
             } else {
-                artifact("${layout.buildDirectory.get()}/libs/${project.name}-${version}.jar") {
+                artifact("${layout.buildDirectory.get()}/outputs/aar/${project.name}-release.aar") {
                     builtBy(tasks.getByName("assemble"))
                 }
             }
@@ -44,7 +111,7 @@ configure<PublishingExtension> {
             // Add pom configuration
             pom {
                 name.set(RudderStackBuildConfig.POM.NAME)
-                packaging = getModuleDetails().pomPackaging
+                packaging = config.pomPackaging
                 description.set(RudderStackBuildConfig.POM.DESCRIPTION)
                 url.set(RudderStackBuildConfig.POM.URL)
 
@@ -69,25 +136,30 @@ configure<PublishingExtension> {
                     developerConnection.set(RudderStackBuildConfig.POM.SCM_DEV_CONNECTION)
                 }
 
-                // To include the transitive dependencies upon which the library depends
+                // Manually build POM dependencies to handle project dependencies correctly.
+                // ProjectDependency instances are resolved to Maven coordinates via resolveProjectDependency(),
+                // while external dependencies are written as-is.
                 withXml {
                     val dependenciesNode = asNode().appendNode("dependencies")
 
-                    fun addDependency(dep: Dependency, scope: String) {
-                        if (dep.group == null || dep.name == "unspecified" || dep.version == null) return
-                        val dependencyNode = dependenciesNode.appendNode("dependency")
+                    fun addDependency(dep: org.gradle.api.artifacts.Dependency, scope: String) {
+                        if (dep.name == "unspecified") return
 
-                        // Use the correct group ID for internal dependencies
-                        val groupId = if (dep.group == RudderStackBuildConfig.POM.NAME) {
-                            RudderStackBuildConfig.AndroidAndCoreSDKs.PACKAGE_NAME
+                        if (dep is org.gradle.api.artifacts.ProjectDependency) {
+                            val (depGroupId, depArtifactId, depVersion) = resolveProjectDependency(dep)
+                            val dependencyNode = dependenciesNode.appendNode("dependency")
+                            dependencyNode.appendNode("groupId", depGroupId)
+                            dependencyNode.appendNode("artifactId", depArtifactId)
+                            dependencyNode.appendNode("version", depVersion)
+                            dependencyNode.appendNode("scope", scope)
                         } else {
-                            dep.group
+                            if (dep.group == null || dep.version == null) return
+                            val dependencyNode = dependenciesNode.appendNode("dependency")
+                            dependencyNode.appendNode("groupId", dep.group)
+                            dependencyNode.appendNode("artifactId", dep.name)
+                            dependencyNode.appendNode("version", dep.version)
+                            dependencyNode.appendNode("scope", scope)
                         }
-
-                        dependencyNode.appendNode("groupId", groupId)
-                        dependencyNode.appendNode("artifactId", dep.name)
-                        dependencyNode.appendNode("version", dep.version)
-                        dependencyNode.appendNode("scope", scope)
                     }
 
                     configurations.findByName("api")?.dependencies?.forEach { dep ->
@@ -123,3 +195,4 @@ tasks.getByName("publishToMavenLocal") {
 tasks.getByName("publishToSonatype") {
     dependsOn("publish")
 }
+

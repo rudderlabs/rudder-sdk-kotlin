@@ -24,8 +24,8 @@ tasks.withType<Test> {
 
 android {
     val composeCompilerVersion = RudderStackBuildConfig.Kotlin.COMPILER_EXTENSION_VERSION
-    val androidCompileSdkVersion = RudderStackBuildConfig.Android.COMPILE_SDK
-    val androidMinSdkVersion = RudderStackBuildConfig.Android.MIN_SDK
+    val androidCompileSdkVersion = RudderStackBuildConfig.AndroidBuild.COMPILE_SDK
+    val androidMinSdkVersion = RudderStackBuildConfig.AndroidBuild.MIN_SDK
     val majorVersion = 0
     val minVersion = 1
     val patchVersion = 0
@@ -93,8 +93,11 @@ dependencies {
 
     // RudderStack Integrations
     // implementation(project(":integrations:adjust"))
-    // implementation(project(":integrations:braze")) // This requires minimum Sdk version of 25 and above.
     // implementation(project(":integrations:appsflyer"))
+    // implementation(project(":integrations:braze")) // This requires minimum Sdk version of 25 and above.
+    // implementation(project(":integrations:facebook"))
+    // implementation(project(":integrations:firebase"))
+
     //compose
     implementation(libs.ui)
     implementation(libs.ui.tooling.preview)

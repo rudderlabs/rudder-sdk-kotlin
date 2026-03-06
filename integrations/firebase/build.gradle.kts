@@ -29,14 +29,17 @@ tasks.withType<Test> {
     testLogging {
         events("failed")
     }
+    dependsOn("generatePomFileForReleasePublication")
+    val pomFile = layout.buildDirectory.file("publications/release/pom-default.xml")
+    systemProperty("firebasePomFile", pomFile.get().asFile.absolutePath)
 }
 
 android {
     namespace = RudderStackBuildConfig.Integrations.Firebase.namespace
-    compileSdk = RudderStackBuildConfig.Android.COMPILE_SDK
+    compileSdk = RudderStackBuildConfig.AndroidBuild.COMPILE_SDK
 
     defaultConfig {
-        minSdk = RudderStackBuildConfig.Android.MIN_SDK
+        minSdk = RudderStackBuildConfig.AndroidBuild.MIN_SDK
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
@@ -95,7 +98,7 @@ tasks {
 
 dependencies {
     // RudderStack SDK
-    implementation(libs.rudder.android.sdk)
+    implementation(project(":android"))
 
     // detekt plugins
     detektPlugins(libs.detekt.formatting)
@@ -117,4 +120,4 @@ dependencies {
     testRuntimeOnly(libs.junit.jupiter.engine)
 }
 
-apply(from = rootProject.file("gradle/publishing/publishing.integration.gradle.kts"))
+apply(from = rootProject.file("gradle/publishing/publishing.gradle.kts"))

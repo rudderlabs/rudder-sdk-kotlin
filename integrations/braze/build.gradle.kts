@@ -25,11 +25,14 @@ tasks.withType<Test> {
     testLogging {
         events("failed")
     }
+    dependsOn("generatePomFileForReleasePublication")
+    val pomFile = layout.buildDirectory.file("publications/release/pom-default.xml")
+    systemProperty("brazePomFile", pomFile.get().asFile.absolutePath)
 }
 
 android {
     namespace = RudderStackBuildConfig.Integrations.Braze.namespace
-    compileSdk = RudderStackBuildConfig.Android.COMPILE_SDK
+    compileSdk = RudderStackBuildConfig.AndroidBuild.COMPILE_SDK
 
     buildFeatures {
         buildFeatures {
@@ -97,7 +100,7 @@ tasks {
 
 dependencies {
     // RudderStack SDK
-    implementation(libs.rudder.android.sdk)
+    implementation(project(":android"))
 
     // detekt plugins
     detektPlugins(libs.detekt.formatting)
@@ -115,4 +118,4 @@ dependencies {
     testImplementation(libs.json.assert)
 }
 
-apply(from = rootProject.file("gradle/publishing/publishing.integration.gradle.kts"))
+apply(from = rootProject.file("gradle/publishing/publishing.gradle.kts"))

@@ -12,18 +12,6 @@ plugins {
     alias(libs.plugins.nexus)
 }
 
-fun getVersionName(): String {
-    return if (project.hasProperty("release")) {
-        RudderStackBuildConfig.AndroidAndCoreSDKs.VERSION_NAME
-    } else {
-        "${RudderStackBuildConfig.AndroidAndCoreSDKs.VERSION_NAME}-SNAPSHOT"
-    }
-}
-
-allprojects {
-    version = getVersionName()
-}
-
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
 }
@@ -95,6 +83,7 @@ nexusPublishing {
             snapshotRepositoryUrl.set(uri("https://central.sonatype.com/repository/maven-snapshots/"))
         }
     }
+    useStaging.set(hasProperty("release"))
 }
 
 true // Needed to make the Suppress annotation work for the plugins block
