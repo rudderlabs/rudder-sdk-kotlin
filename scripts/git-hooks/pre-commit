@@ -32,7 +32,7 @@ print_error() {
 
 # 1. Run Detekt
 print_status "Running Detekt static code analysis..."
-if ! ./gradlew detekt --parallel --continue; then
+if ! ./gradlew detekt; then
     print_error "Detekt found code quality issues. Please fix them before committing."
     exit 1
 fi
