@@ -1,6 +1,8 @@
 package com.rudderstack.sdk.kotlin.core
 
+import com.rudderstack.sdk.kotlin.core.internals.logger.AnalyticsLogger
 import com.rudderstack.sdk.kotlin.core.internals.logger.KotlinLogger
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.AliasEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
@@ -69,6 +71,19 @@ open class Analytics protected constructor(
         )
     ),
 ) : AnalyticsConfiguration by analyticsConfiguration, Platform {
+
+    /**
+     * The logging class for this Analytics instance used for logging throughout the SDK.
+     *
+     * **Important**: It is the first property to be initialized in the `Analytics` class,
+     * as it is used in various places during initialization and event processing.
+     *
+     */
+    @InternalRudderApi
+    val logger: Logger = AnalyticsLogger(
+        logger = configuration.logger,
+        logLevel = configuration.logLevel
+    )
 
     private val pluginChain: PluginChain = PluginChain().also { it.analytics = this }
 

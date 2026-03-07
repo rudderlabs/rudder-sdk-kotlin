@@ -9,6 +9,7 @@ import com.rudderstack.sdk.kotlin.android.Configuration.Companion.DEFAULT_TRACK_
 import com.rudderstack.sdk.kotlin.android.DEFAULT_SESSION_TIMEOUT_IN_MILLIS
 import com.rudderstack.sdk.kotlin.android.SessionConfiguration
 import com.rudderstack.sdk.kotlin.android.SessionConfiguration.Companion.DEFAULT_AUTOMATIC_SESSION_TRACKING
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPolicy
 import com.rudderstack.sdk.kotlin.core.javacompat.ConfigurationBuilder
 
@@ -89,6 +90,13 @@ class ConfigurationBuilder(
     }
 
     /**
+     * Sets the log level for the Analytics instance.
+     */
+    override fun setLogLevel(level: Logger.LogLevel) = apply {
+        super.setLogLevel(level)
+    }
+
+    /**
      * Builds the Configuration instance with the configured properties.
      */
     override fun build(): Configuration {
@@ -106,6 +114,8 @@ class ConfigurationBuilder(
             controlPlaneUrl = coreConfig.controlPlaneUrl,
             flushPolicies = coreConfig.flushPolicies,
             gzipEnabled = coreConfig.gzipEnabled,
+            logger = coreConfig.logger,
+            logLevel = coreConfig.logLevel,
         )
     }
 }

@@ -3,6 +3,9 @@ package com.rudderstack.sdk.kotlin.core
 import com.rudderstack.sdk.kotlin.core.Configuration.Companion.DEFAULT_CONTROL_PLANE_URL
 import com.rudderstack.sdk.kotlin.core.Configuration.Companion.DEFAULT_FLUSH_POLICIES
 import com.rudderstack.sdk.kotlin.core.Configuration.Companion.DEFAULT_GZIP_STATUS
+import com.rudderstack.sdk.kotlin.core.internals.logger.KotlinLogger
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
+import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.policies.CountFlushPolicy
 import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPolicy
 import com.rudderstack.sdk.kotlin.core.internals.policies.FrequencyFlushPolicy
@@ -19,6 +22,8 @@ import org.jetbrains.annotations.VisibleForTesting
  * @property gzipEnabled A flag indicating whether GZIP compression is enabled for network requests. Defaults to [DEFAULT_GZIP_STATUS].
  * @property flushPolicies A list of flush policies that determine when to flush events to the data plane. Defaults to [DEFAULT_FLUSH_POLICIES].
  * @property storageType The storage type for analytics data persistence. Defaults to [DEFAULT_STORAGE_TYPE].
+ * @property logger The logger instance used for logging SDK events and errors. Defaults to [LoggerAnalytics.logger] or [KotlinLogger] (in case of `null`).
+ * @property logLevel The log level for this configuration instance, determining the minimum severity of messages that will be logged. Defaults to [LoggerAnalytics.logLevel].
  */
 open class Configuration @JvmOverloads constructor(
     open val writeKey: String,
@@ -27,6 +32,8 @@ open class Configuration @JvmOverloads constructor(
     open val gzipEnabled: Boolean = DEFAULT_GZIP_STATUS,
     open val flushPolicies: List<FlushPolicy> = DEFAULT_FLUSH_POLICIES,
     open val storageType: StorageType = DEFAULT_STORAGE_TYPE,
+    @Suppress("DEPRECATION") open val logger: Logger = LoggerAnalytics.logger ?: KotlinLogger(),
+    @Suppress("DEPRECATION") open val logLevel: Logger.LogLevel = LoggerAnalytics.logLevel
 ) {
 
     companion object {

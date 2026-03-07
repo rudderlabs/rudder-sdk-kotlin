@@ -35,18 +35,41 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
  *
  * These methods ensure that messages are logged according to the configured log level, providing flexibility
  * and clarity for debugging and tracking events across SDK modules.
+ *
+ * **DEPRECATION NOTICE**: While this class remains available for backward compatibility with existing integrations,
+ * internal SDK components now use instance-based logging via `AnalyticsLogger` to support different log levels
+ * per Analytics instance. New internal development should use the instance logger available via `Analytics.logger`.
+ * External integrations may continue to use this singleton safely.
  */
+@Deprecated(
+    message = "LoggerAnalytics is deprecated for internal SDK usage and external clients. Use Analytics.logger instead " +
+        "for instance-based logging. External integrations may continue using this safely for backward compatibility.",
+    level = DeprecationLevel.WARNING
+)
 object LoggerAnalytics {
 
-    private var logger: Logger? = null
+    /**
+     * The logger instance used for logging messages. This is a platform-specific implementation of the Logger interface.
+     */
+    @InternalRudderApi
+    var logger: Logger? = null
+        @Synchronized private set
+
+        @Synchronized get
 
     /**
      * The log level for the logger. This determines the minimum severity of messages that will be logged.
      */
     var logLevel: Logger.LogLevel = DEFAULT_LOG_LEVEL
-        @Synchronized set
+        @Synchronized
+        @Deprecated(
+            message = "Pass the logLevel to the Configuration of each Analytics instance instead for instance-based logging",
+            level = DeprecationLevel.WARNING
+        )
+        set
 
-        @Synchronized get
+        @Synchronized
+        get
 
     /**
      * Sets the logger instance if null.
@@ -63,6 +86,11 @@ object LoggerAnalytics {
      *
      * @param logger The logger instance to set.
      */
+    @Deprecated(
+        message = "Pass the logger instance to the Configuration " +
+            "of each Analytics instance instead for instance-based logging",
+        level = DeprecationLevel.WARNING
+    )
     fun setLogger(logger: Logger) {
         this.logger = logger
     }
@@ -72,6 +100,10 @@ object LoggerAnalytics {
      *
      * @param log The message to log.
      */
+    @Deprecated(
+        message = "Use Analytics.logger.verbose() instead for instance-based logging",
+        level = DeprecationLevel.WARNING
+    )
     fun verbose(log: String) {
         if (Logger.LogLevel.VERBOSE >= logLevel) {
             logger?.verbose(log)
@@ -83,6 +115,10 @@ object LoggerAnalytics {
      *
      * @param log The message to log.
      */
+    @Deprecated(
+        message = "Use Analytics.logger.debug() instead for instance-based logging",
+        level = DeprecationLevel.WARNING
+    )
     fun debug(log: String) {
         if (Logger.LogLevel.DEBUG >= logLevel) {
             logger?.debug(log)
@@ -94,6 +130,10 @@ object LoggerAnalytics {
      *
      * @param log The message to log.
      */
+    @Deprecated(
+        message = "Use Analytics.logger.info() instead for instance-based logging",
+        level = DeprecationLevel.WARNING
+    )
     fun info(log: String) {
         if (Logger.LogLevel.INFO >= logLevel) {
             logger?.info(log)
@@ -105,6 +145,10 @@ object LoggerAnalytics {
      *
      * @param log The message to log.
      */
+    @Deprecated(
+        message = "Use Analytics.logger.warn() instead for instance-based logging",
+        level = DeprecationLevel.WARNING
+    )
     fun warn(log: String) {
         if (Logger.LogLevel.WARN >= logLevel) {
             logger?.warn(log)
@@ -117,6 +161,10 @@ object LoggerAnalytics {
      * @param log The message to log.
      * @param throwable An optional exception to log alongside the error message.
      */
+    @Deprecated(
+        message = "Use Analytics.logger.error() instead for instance-based logging",
+        level = DeprecationLevel.WARNING
+    )
     @JvmOverloads
     fun error(log: String, throwable: Throwable? = null) {
         if (Logger.LogLevel.ERROR >= logLevel) {
