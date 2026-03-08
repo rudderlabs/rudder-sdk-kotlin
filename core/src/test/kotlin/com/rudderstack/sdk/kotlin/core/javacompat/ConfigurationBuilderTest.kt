@@ -4,6 +4,7 @@ import com.rudderstack.sdk.kotlin.core.Configuration
 import com.rudderstack.sdk.kotlin.core.Configuration.Companion.DEFAULT_CONTROL_PLANE_URL
 import com.rudderstack.sdk.kotlin.core.Configuration.Companion.DEFAULT_FLUSH_POLICIES
 import com.rudderstack.sdk.kotlin.core.Configuration.Companion.DEFAULT_GZIP_STATUS
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPolicy
 import io.mockk.MockKAnnotations
 import io.mockk.every
@@ -45,7 +46,15 @@ class ConfigurationBuilderTest {
             assertEquals(DEFAULT_CONTROL_PLANE_URL, it.controlPlaneUrl)
             assertEquals(DEFAULT_FLUSH_POLICIES, it.flushPolicies)
             assertEquals(DEFAULT_GZIP_STATUS, it.gzipEnabled)
+            assertEquals(Logger.DEFAULT_LOG_LEVEL, it.logLevel)
         }
+    }
+
+    @Test
+    fun `when setLogLevel is set with a custom level, then logLevel should be updated`() {
+        val config = configurationBuilder.setLogLevel(Logger.LogLevel.VERBOSE).build()
+
+        assertEquals(Logger.LogLevel.VERBOSE, config.logLevel)
     }
 
     @Test
@@ -79,6 +88,7 @@ class ConfigurationBuilderTest {
             .setControlPlaneUrl(TEST_CONTROL_PLANE_URL)
             .setFlushPolicies(customPolicies)
             .setGzipEnabled(false)
+            .setLogLevel(Logger.LogLevel.DEBUG)
             .build()
 
         val expectedConfiguration = Configuration(
@@ -87,6 +97,7 @@ class ConfigurationBuilderTest {
             controlPlaneUrl = TEST_CONTROL_PLANE_URL,
             flushPolicies = customPolicies,
             gzipEnabled = false,
+            logLevel = Logger.LogLevel.DEBUG,
         )
         // As core, Configuration class is not a data class, we cannot use assertEquals directly
         with(actualConfiguration) {
@@ -95,6 +106,7 @@ class ConfigurationBuilderTest {
             assertEquals(expectedConfiguration.controlPlaneUrl, controlPlaneUrl)
             assertEquals(expectedConfiguration.flushPolicies, flushPolicies)
             assertEquals(expectedConfiguration.gzipEnabled, gzipEnabled)
+            assertEquals(expectedConfiguration.logLevel, logLevel)
         }
     }
 }

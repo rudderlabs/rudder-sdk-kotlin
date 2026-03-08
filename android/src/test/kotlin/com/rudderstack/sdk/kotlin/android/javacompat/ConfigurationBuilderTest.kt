@@ -3,6 +3,7 @@ package com.rudderstack.sdk.kotlin.android.javacompat
 import android.app.Application
 import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.android.utils.provideSessionConfiguration
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPolicy
 import com.rudderstack.sdk.kotlin.core.provideDefaultFlushPolicies
 import io.mockk.MockKAnnotations
@@ -48,7 +49,7 @@ class ConfigurationBuilderTest {
         val configuration = configurationBuilder.build()
 
         val expected =
-            Configuration(application = mockApplication, writeKey = TEST_WRITE_KEY, dataPlaneUrl = TEST_DATA_PLANE_URL)
+            Configuration(application = mockApplication, writeKey = TEST_WRITE_KEY, dataPlaneUrl = TEST_DATA_PLANE_URL, logger = configuration.logger)
         assertEquals(expected, configuration)
     }
 
@@ -93,6 +94,13 @@ class ConfigurationBuilderTest {
     }
 
     @Test
+    fun `when setLogLevel is set with a custom level, then logLevel should be updated`() {
+        val configuration = configurationBuilder.setLogLevel(Logger.LogLevel.VERBOSE).build()
+
+        assertEquals(Logger.LogLevel.VERBOSE, configuration.logLevel)
+    }
+
+    @Test
     fun `when all custom configurations are set, then the Configuration object should reflect those values`() {
         val customSessionConfig = provideSessionConfiguration(
             automaticSessionTracking = false,
@@ -109,6 +117,7 @@ class ConfigurationBuilderTest {
             .setControlPlaneUrl(TEST_CONTROL_PLANE_URL)
             .setFlushPolicies(customPolicies)
             .setGzipEnabled(false)
+            .setLogLevel(Logger.LogLevel.DEBUG)
             .build()
 
         val expectedConfiguration = Configuration(
@@ -123,6 +132,8 @@ class ConfigurationBuilderTest {
             controlPlaneUrl = TEST_CONTROL_PLANE_URL,
             flushPolicies = customPolicies,
             gzipEnabled = false,
+            logger = actualConfiguration.logger,
+            logLevel = Logger.LogLevel.DEBUG,
         )
         assertEquals(expectedConfiguration, actualConfiguration)
     }
