@@ -7,7 +7,6 @@ import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.dropInitialState
-import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import com.rudderstack.sdk.kotlin.core.internals.utils.LenientJson
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import kotlinx.coroutines.flow.filter
@@ -28,7 +27,6 @@ private const val EVENT_FILTERING_OPTION = "eventFilteringOption"
  * 1. Whitelist events: Only the events present in the whitelist will be allowed.
  * 2. Blacklist events: All the events except the ones present in the blacklist will be allowed.
  */
-@OptIn(InternalRudderApi::class)
 internal class EventFilteringPlugin(private val key: String) : Plugin {
 
     override val pluginType: Plugin.PluginType = Plugin.PluginType.PreProcess

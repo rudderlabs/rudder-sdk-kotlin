@@ -10,7 +10,6 @@ import com.rudderstack.sdk.kotlin.android.utils.putIfNotNull
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
-import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -43,7 +42,6 @@ internal class DeviceInfoPlugin : Plugin {
 
     override suspend fun intercept(event: Event): Event = attachDeviceInfo(event)
 
-    @OptIn(InternalRudderApi::class)
     @VisibleForTesting
     internal fun attachDeviceInfo(message: Event): Event {
         analytics.logger.debug("Attaching device info to the message payload")

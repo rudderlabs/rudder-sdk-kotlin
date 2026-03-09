@@ -17,7 +17,6 @@ import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.ScreenEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
-import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import com.rudderstack.sdk.kotlin.core.internals.utils.LenientJson
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.decodeFromJsonElement
@@ -37,7 +36,6 @@ private const val GENDER_KEY = "gender"
 /**
  * The Facebook Integration Plugin. This plugin is used to send events to Facebook.
  */
-@OptIn(InternalRudderApi::class)
 class FacebookIntegration : StandardIntegration, IntegrationPlugin() {
 
     private var facebookAppEventsLogger: AppEventsLogger? = null

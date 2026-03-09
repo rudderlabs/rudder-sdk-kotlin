@@ -5,7 +5,6 @@ import com.rudderstack.sdk.kotlin.core.Configuration
 import com.rudderstack.sdk.kotlin.core.Configuration.Companion.DEFAULT_GZIP_STATUS
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.models.Properties
-import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
 import com.rudderstack.sdk.kotlin.core.internals.models.Traits
 import com.rudderstack.sdk.kotlin.core.internals.models.reset.ResetEntries
@@ -65,6 +64,5 @@ fun trackMessageKotlinAPI(analytics: Analytics) {
         entries = ResetEntries(anonymousId = false, userId = true)
     ))
 
-    @OptIn(InternalRudderApi::class)
-    analytics.logger.debug("Message sent")
+    println("Message sent")
 }

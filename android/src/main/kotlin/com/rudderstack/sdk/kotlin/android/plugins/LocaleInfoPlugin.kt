@@ -4,7 +4,6 @@ import com.rudderstack.sdk.kotlin.android.utils.mergeWithHigherPriorityTo
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
-import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -36,7 +35,6 @@ internal class LocaleInfoPlugin : Plugin {
 
     override suspend fun intercept(event: Event): Event = attachLocaleInfo(event)
 
-    @OptIn(InternalRudderApi::class)
     private fun attachLocaleInfo(event: Event): Event {
         analytics.logger.debug("Attaching locale info to the event payload")
 

@@ -6,7 +6,6 @@ import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
 import com.rudderstack.sdk.kotlin.core.internals.models.reset.ResetOptions
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
-import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import com.rudderstack.sdk.kotlin.core.javacompat.JsonInteropHelper.toJsonObject
 import com.rudderstack.sdk.kotlin.core.javacompat.JsonInteropHelper.toRawMap
 import org.jetbrains.annotations.VisibleForTesting
@@ -52,7 +51,6 @@ open class JavaAnalytics protected constructor(
      *
      * @return The [Logger] instance for this analytics instance.
      */
-    @OptIn(InternalRudderApi::class)
     fun getLogger(): Logger = analytics.logger
 
     /**

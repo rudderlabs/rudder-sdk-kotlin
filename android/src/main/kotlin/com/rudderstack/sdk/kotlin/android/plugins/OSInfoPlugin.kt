@@ -5,7 +5,6 @@ import com.rudderstack.sdk.kotlin.android.utils.mergeWithHigherPriorityTo
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
-import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -46,7 +45,6 @@ internal class OSInfoPlugin : Plugin {
 
     override suspend fun intercept(event: Event): Event = attachOSInfo(event)
 
-    @OptIn(InternalRudderApi::class)
     private fun attachOSInfo(event: Event): Event {
         analytics.logger.debug("Attaching OS info to the event payload")
 

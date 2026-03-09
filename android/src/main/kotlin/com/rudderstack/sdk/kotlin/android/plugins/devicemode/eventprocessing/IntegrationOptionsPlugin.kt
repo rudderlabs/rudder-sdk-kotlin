@@ -4,7 +4,6 @@ import com.rudderstack.sdk.kotlin.android.utils.getBoolean
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
-import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 
 /**
  * A plugin to pass or drop events based on the integration options set for a destination in events.
@@ -61,7 +60,6 @@ internal class IntegrationOptionsPlugin(
         return event
     }
 
-    @OptIn(InternalRudderApi::class)
     private fun logDroppedEvent(event: Event) {
         analytics.logger.debug("IntegrationOptionsPlugin: Dropped event $event for destination: $key")
     }

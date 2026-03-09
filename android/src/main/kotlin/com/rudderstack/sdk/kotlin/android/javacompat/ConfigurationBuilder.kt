@@ -11,6 +11,7 @@ import com.rudderstack.sdk.kotlin.android.SessionConfiguration
 import com.rudderstack.sdk.kotlin.android.SessionConfiguration.Companion.DEFAULT_AUTOMATIC_SESSION_TRACKING
 import com.rudderstack.sdk.kotlin.android.logger.AndroidLogger
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
+import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPolicy
 import com.rudderstack.sdk.kotlin.core.javacompat.ConfigurationBuilder
 
@@ -33,7 +34,8 @@ class ConfigurationBuilder(
     private var trackActivities: Boolean = DEFAULT_TRACK_ACTIVITIES
     private var collectDeviceId: Boolean = DEFAULT_COLLECT_DEVICE_ID
 
-    private var logger: Logger = AndroidLogger()
+    @Suppress("DEPRECATION")
+    private var logger: Logger = LoggerAnalytics.logger ?: AndroidLogger()
     private var sessionConfiguration: SessionConfiguration = SessionConfigurationBuilder().build()
 
     /**

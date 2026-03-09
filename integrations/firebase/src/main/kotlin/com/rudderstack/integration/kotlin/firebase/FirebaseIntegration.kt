@@ -17,7 +17,6 @@ import com.rudderstack.sdk.kotlin.core.ecommerce.ECommerceParamNames
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.ScreenEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
-import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 
@@ -43,7 +42,6 @@ private const val TAX_KEY = "tax"
  * Firebase Integration Plugin. See [IntegrationPlugin] for more info.
  */
 @Suppress("TooManyFunctions")
-@OptIn(InternalRudderApi::class)
 class FirebaseIntegration : StandardIntegration, IntegrationPlugin() {
 
     private var firebaseAnalytics: FirebaseAnalytics? = null
