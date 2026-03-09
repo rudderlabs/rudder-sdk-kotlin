@@ -136,13 +136,14 @@ class AnalyticsLoggerTest {
             logger.info(any())
             logger.warn(any())
             logger.error(any(), any())
+            logger.error(any())
         }
     }
 
     @Test
     fun `given log level is ERROR, when error is called with throwable, then it should pass throwable to underlying logger`() {
         val logger = spyk(KotlinLogger())
-        val analyticsLogger = AnalyticsLogger(logger = logger, logLevel = Logger.LogLevel.VERBOSE)
+        val analyticsLogger = AnalyticsLogger(logger = logger, logLevel = Logger.LogLevel.ERROR)
         val throwable = RuntimeException("Test exception")
 
         analyticsLogger.error("Error log", throwable)
