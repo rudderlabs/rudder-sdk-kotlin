@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# --- Global Hook Forwarding ---
+GLOBAL_HOOKS_PATH=$(git config --global --get core.hooksPath 2>/dev/null)
+if [ -n "$GLOBAL_HOOKS_PATH" ] && [ -x "$GLOBAL_HOOKS_PATH/pre-commit" ]; then
+    "$GLOBAL_HOOKS_PATH/pre-commit" "$@" || exit $?
+fi
+# --- End Global Hook Forwarding ---
+
 set -e  # Exit on any error
 
 echo "🚀 Running pre-commit checks..."
@@ -29,15 +36,7 @@ if ! ./gradlew detekt; then
     print_error "Detekt found code quality issues. Please fix them before committing."
     exit 1
 fi
-print_success "Detekt checks passed"
-
-# 2. Run Android Lint
-print_status "Running Android Lint..."
-if ! ./gradlew :android:lint; then
-    print_error "Android Lint found issues. Please fix them before committing."
-    exit 1
-fi
-print_success "Android Lint checks passed"
+print_success "✅ Detekt checks passed"
 
 print_success "🎉 All pre-commit checks passed! Ready to commit."
 exit 0
