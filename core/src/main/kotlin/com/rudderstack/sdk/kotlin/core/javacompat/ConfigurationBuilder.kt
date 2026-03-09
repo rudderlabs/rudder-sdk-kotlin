@@ -58,6 +58,13 @@ open class ConfigurationBuilder(
     }
 
     /**
+     * Sets the logger for the Analytics instance.
+     */
+    open fun setLogger(logger: Logger) = apply {
+        this.logger = logger
+    }
+
+    /**
      * Builds the Configuration instance with the configured properties.
      */
     open fun build(): Configuration {

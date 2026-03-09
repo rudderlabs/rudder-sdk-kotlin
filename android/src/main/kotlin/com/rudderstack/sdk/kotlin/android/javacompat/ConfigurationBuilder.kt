@@ -97,6 +97,13 @@ class ConfigurationBuilder(
     }
 
     /**
+     * Sets the logger for the Analytics instance.
+     */
+    override fun setLogger(logger: Logger) = apply {
+        super.setLogger(logger)
+    }
+
+    /**
      * Builds the Configuration instance with the configured properties.
      */
     override fun build(): Configuration {
