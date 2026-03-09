@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# --- Global Hook Forwarding ---
+GLOBAL_HOOKS_PATH=$(git config --global --get core.hooksPath 2>/dev/null)
+if [ -n "$GLOBAL_HOOKS_PATH" ] && [ -x "$GLOBAL_HOOKS_PATH/pre-push" ]; then
+    "$GLOBAL_HOOKS_PATH/pre-push" "$@" || exit $?
+fi
+# --- End Global Hook Forwarding ---
+
 set -e  # Exit on any error
 
 echo "🚀 Running pre-push checks..."
