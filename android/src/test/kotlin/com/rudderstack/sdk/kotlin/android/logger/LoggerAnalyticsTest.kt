@@ -41,7 +41,7 @@ class LoggerAnalyticsTest {
             logger.debug("Debug log")
             logger.info("Info log")
             logger.warn("Warn log")
-            logger.error("Error log", null)
+            logger.error("Error log")
         }
     }
 
@@ -60,7 +60,7 @@ class LoggerAnalyticsTest {
         verifyOrder {
             logger.info("Info log")
             logger.warn("Warn log")
-            logger.error("Error log", null)
+            logger.error("Error log")
         }
 
         verify(exactly = 0) {
