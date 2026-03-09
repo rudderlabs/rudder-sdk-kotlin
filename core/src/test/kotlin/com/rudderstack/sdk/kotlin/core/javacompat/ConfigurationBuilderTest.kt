@@ -5,13 +5,13 @@ import com.rudderstack.sdk.kotlin.core.Configuration.Companion.DEFAULT_CONTROL_P
 import com.rudderstack.sdk.kotlin.core.Configuration.Companion.DEFAULT_FLUSH_POLICIES
 import com.rudderstack.sdk.kotlin.core.Configuration.Companion.DEFAULT_GZIP_STATUS
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
+import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPolicy
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.unmockkAll
-import io.mockk.unmockkObject
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -34,6 +34,9 @@ class ConfigurationBuilderTest {
 
         mockPolicies = listOf(mockk(), mockk(), mockk())
         every { DEFAULT_FLUSH_POLICIES } returns mockPolicies
+
+        mockkObject(LoggerAnalytics)
+        every { LoggerAnalytics.logLevel } returns Logger.DEFAULT_LOG_LEVEL
         
         configurationBuilder = ConfigurationBuilder(TEST_WRITE_KEY, TEST_DATA_PLANE_URL)
     }

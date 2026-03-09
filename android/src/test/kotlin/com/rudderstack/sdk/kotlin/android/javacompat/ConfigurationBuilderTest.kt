@@ -4,12 +4,14 @@ import android.app.Application
 import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.android.utils.provideSessionConfiguration
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
+import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPolicy
 import com.rudderstack.sdk.kotlin.core.provideDefaultFlushPolicies
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.mockk
+import io.mockk.mockkObject
 import io.mockk.mockkStatic
 import io.mockk.unmockkAll
 import org.junit.jupiter.api.AfterEach
@@ -40,6 +42,9 @@ class ConfigurationBuilderTest {
 
         mockkStatic("com.rudderstack.sdk.kotlin.core.ConfigurationKt")
         every { provideDefaultFlushPolicies() } returns mockPolicies
+
+        mockkObject(LoggerAnalytics)
+        every { LoggerAnalytics.logLevel } returns Logger.DEFAULT_LOG_LEVEL
 
         configurationBuilder = ConfigurationBuilder(
             mockApplication,
