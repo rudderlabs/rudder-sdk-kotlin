@@ -53,16 +53,6 @@ interface Logger {
     fun error(log: String, throwable: Throwable? = null)
 
     /**
-     * Logs an error message without a throwable. This method provides Java interoperability
-     * by allowing Java callers to invoke error logging without supplying a throwable parameter.
-     *
-     * @param log The message to be logged.
-     */
-    fun error(log: String) {
-        error(log, null)
-    }
-
-    /**
      * Enum representing the different log levels that can be set for the logger.
      * - `DEBUG`: Log detailed information useful for debugging.
      * - `INFO`: Log general information about the application's progress.
