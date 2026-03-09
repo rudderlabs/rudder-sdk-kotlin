@@ -12,9 +12,9 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
  * Use the `setLogger` method to configure the logger instance:
  *
  * ```kotlin
- * LoggerAnalytics.setup(logger = AndroidLogger())
+ * LoggerAnalytics.setLogger(logger = AndroidLogger())
  * // Or for Kotlin environments
- * LoggerAnalytics.setup(logger = KotlinLogger())
+ * LoggerAnalytics.setLogger(logger = KotlinLogger())
  * ```
  * Use `logLevel` to set the desired log level:
  *
