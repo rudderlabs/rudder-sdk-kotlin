@@ -72,6 +72,26 @@ subprojects {
     }
 }
 
+tasks.register("listModules") {
+    description = "Lists publishable modules categorised by type (android/jvm)"
+    group = "help"
+    doLast {
+        val androidModules = mutableListOf<String>()
+        val jvmModules = mutableListOf<String>()
+        subprojects.forEach { sub ->
+            if (sub.plugins.hasPlugin("maven-publish")) {
+                if (sub.plugins.hasPlugin("com.android.library")) {
+                    androidModules.add(sub.path)
+                } else {
+                    jvmModules.add(sub.path)
+                }
+            }
+        }
+        println("ANDROID_MODULES=${androidModules.joinToString(",")}")
+        println("JVM_MODULES=${jvmModules.joinToString(",")}")
+    }
+}
+
 nexusPublishing {
     packageGroup.set("com.rudderstack")
     repositories {

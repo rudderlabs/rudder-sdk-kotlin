@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# --- Global Hook Forwarding ---
+GLOBAL_HOOKS_PATH=$(git config --global --get core.hooksPath 2>/dev/null)
+if [ -n "$GLOBAL_HOOKS_PATH" ] && [ -x "$GLOBAL_HOOKS_PATH/pre-push" ]; then
+    "$GLOBAL_HOOKS_PATH/pre-push" "$@" || exit $?
+fi
+# --- End Global Hook Forwarding ---
+
 set -e  # Exit on any error
 
 echo "🚀 Running pre-push checks..."
@@ -28,14 +35,7 @@ print_warning() {
     echo -e "${YELLOW}[WARNING]${NC} $1"
 }
 
-# Helper function to format module names for display
-format_module_display() {
-    # Convert :module1,:module2:submodule format to clean display
-    # Remove leading colon and add proper spacing after commas
-    echo "$1" | sed 's/^://' | sed 's/,:/, /g'
-}
-
-# 1. Check branch name
+# 1. Validate branch name against naming convention before allowing push
 print_status "Validating branch name..."
 LC_ALL=C
 local_branch="$(git rev-parse --abbrev-ref HEAD)"
@@ -49,98 +49,73 @@ then
 fi
 print_success "✅ Branch name validation passed"
 
-# 2. Clean the project
-print_status "Cleaning project..."
-./gradlew clean --quiet
-print_success "✅ Project cleaned"
+# 2. Discover publishable modules via Gradle's listModules task
+#    Categorises modules as Android or JVM based on plugin presence
+print_status "Discovering publishable modules..."
+MODULE_OUTPUT=$(./gradlew listModules --quiet 2>/dev/null)
 
-# 3. Find affected modules
-print_status "Analyzing changed files..."
-AFFECTED_OUTPUT=$(sh scripts/find-affected-modules.sh 2>&1)
+ANDROID_MODULES=$(echo "$MODULE_OUTPUT" | grep "^ANDROID_MODULES=" | cut -d'=' -f2)
+JVM_MODULES=$(echo "$MODULE_OUTPUT" | grep "^JVM_MODULES=" | cut -d'=' -f2)
 
-# Extract affected modules from output
-AFFECTED_MODULES=$(echo "$AFFECTED_OUTPUT" | grep "AFFECTED_MODULES=" | cut -d'=' -f2)
-
-# Check if no modules are affected and exit early
-if [ -z "$AFFECTED_MODULES" ]; then
-    # Check if the script ran successfully but no modules were affected
-    if echo "$AFFECTED_OUTPUT" | grep -q "Module detection complete"; then
-        print_success "✅ Only CI/documentation files changed - no source modules affected"
-        echo ""
-        print_success "🎉 All pre-push checks passed! Ready to push."
-        echo "⚡ Fast-tracked: No testing or building required!"
-        exit 0
-    else
-        print_error "Failed to determine affected modules. find-affected-modules.sh script did not complete successfully."
-        print_error "Script output:"
-        echo "$AFFECTED_OUTPUT"
-        print_error "Please check the script and fix any issues before pushing."
-        exit 1
-    fi
+if [ -z "$ANDROID_MODULES" ] || [ -z "$JVM_MODULES" ]; then
+    print_error "Module discovery failed. Expected both Android and JVM modules."
+    [ -z "$ANDROID_MODULES" ] && print_error "ANDROID_MODULES is empty"
+    [ -z "$JVM_MODULES" ] && print_error "JVM_MODULES is empty"
+    exit 1
 fi
 
-# Preprocess affected modules for steps 4 and 5
-MODULE_COUNT=$(echo "$AFFECTED_MODULES" | tr ',' '\n' | wc -l | xargs)
-MODULE_NAMES=$(format_module_display "$AFFECTED_MODULES")
-TEST_TASKS=""
+# 3. Build task lists from discovered modules
+#    Android: lintDebug + assembleDebug + testDebugUnitTest
+#    JVM: assemble + test
+LINT_TASKS=""
 BUILD_TASKS=""
+TEST_TASKS=""
 
-IFS=',' read -ra MODULES <<< "$AFFECTED_MODULES"
-for module in "${MODULES[@]}"; do
-    # Remove leading colon
-    module_clean=$(echo "$module" | sed 's/^://')
-    if [ -n "$module_clean" ]; then
-        TEST_TASKS="$TEST_TASKS $module_clean:test"
-
-        # Determine the appropriate build task based on module
-        if [ "$module_clean" = "core" ]; then
-            BUILD_TASKS="$BUILD_TASKS :core:assemble"
-        elif [ "$module_clean" = "android" ]; then
-            BUILD_TASKS="$BUILD_TASKS :android:assembleRelease"
-        elif [[ "$module_clean" == integrations:* ]]; then
-            BUILD_TASKS="$BUILD_TASKS :$module_clean:assembleRelease"
-        else
-            print_warning "Unknown module format: $module_clean, using generic assemble task"
-            BUILD_TASKS="$BUILD_TASKS :$module_clean:assemble"
-        fi
-    fi
+IFS=',' read -ra A_MODS <<< "$ANDROID_MODULES"
+for mod in "${A_MODS[@]}"; do
+    LINT_TASKS="$LINT_TASKS ${mod}:lintDebug"
+    BUILD_TASKS="$BUILD_TASKS ${mod}:assembleDebug"
+    TEST_TASKS="$TEST_TASKS ${mod}:testDebugUnitTest"
 done
+print_success "Android modules: ${ANDROID_MODULES//,/, }"
 
-# Trim leading spaces from task strings
-TEST_TASKS=$(echo "$TEST_TASKS" | sed 's/^ //')
+IFS=',' read -ra J_MODS <<< "$JVM_MODULES"
+for mod in "${J_MODS[@]}"; do
+    BUILD_TASKS="$BUILD_TASKS ${mod}:assemble"
+    TEST_TASKS="$TEST_TASKS ${mod}:test"
+done
+print_success "JVM modules: ${JVM_MODULES//,/, }"
+
+# Trim leading spaces
+LINT_TASKS=$(echo "$LINT_TASKS" | sed 's/^ //')
 BUILD_TASKS=$(echo "$BUILD_TASKS" | sed 's/^ //')
+TEST_TASKS=$(echo "$TEST_TASKS" | sed 's/^ //')
 
-print_success "Detected changes in: $MODULE_NAMES"
+ALL_TASKS="$LINT_TASKS $BUILD_TASKS $TEST_TASKS"
+ALL_TASKS=$(echo "$ALL_TASKS" | sed 's/^ //')
 
-# 4. Build affected modules
-if [ -n "$BUILD_TASKS" ]; then
-    print_status "Building $MODULE_COUNT module(s): $MODULE_NAMES"
+# Print checklist of checks that will run
+echo ""
+echo "Checks to run:"
+[ -n "$LINT_TASKS" ] && echo "  - Android Lint (lintDebug)"
+[ -n "$BUILD_TASKS" ] && echo "  - Build (assembleDebug / assemble)"
+[ -n "$TEST_TASKS" ] && echo "  - Unit Tests (testDebugUnitTest / test)"
 
-    echo ""  # Visual separation
-
-    if ! ./gradlew $BUILD_TASKS --quiet; then
-        echo ""  # Visual separation
-        print_error "❌ Build failed! Please fix build errors before pushing."
-        exit 1
-    fi
-
-    echo ""  # Visual separation
-    print_success "✅ All modules built successfully"
+# 4. Run all checks in a single Gradle invocation
+#    Uses --parallel for speed and relies on incremental build + build cache
+echo ""
+SEPARATOR="────────────────────────────────────────"
+echo "$SEPARATOR"
+print_status "Running lint, build, and tests..."
+print_status "./gradlew $ALL_TASKS --parallel"
+echo "$SEPARATOR"
+if ! ./gradlew $ALL_TASKS --parallel; then
+    echo ""
+    print_error "❌ Pre-push checks failed! Please fix the issues before pushing."
+    exit 1
 fi
-
-# 5. Run unit tests for affected modules
-if [ -n "$TEST_TASKS" ]; then
-    print_status "Testing $MODULE_COUNT module(s): $MODULE_NAMES"
-
-    echo ""  # Add visual separation from gradle output
-    if ! ./gradlew $TEST_TASKS --quiet; then
-        print_error "❌ Tests failed! Please fix failing tests before pushing."
-        exit 1
-    fi
-    echo ""  # Add visual separation
-
-    print_success "✅ All tests passed"
-fi
+echo ""
+print_success "✅ Lint, build, and tests passed"
 
 echo ""
 print_success "🎉 All pre-push checks passed! Ready to push."
