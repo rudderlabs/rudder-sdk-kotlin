@@ -4,6 +4,7 @@ import android.app.Application
 import com.rudderstack.sdk.kotlin.android.logger.AndroidLogger
 import com.rudderstack.sdk.kotlin.core.Configuration
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
+import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPolicy
 
 internal const val DEFAULT_SESSION_TIMEOUT_IN_MILLIS = 300_000L
@@ -87,8 +88,9 @@ data class Configuration @JvmOverloads constructor(
          * The default logger instance used for logging SDK events and errors.
          * Defaults to an instance of `AndroidLogger`.
          */
+        @Suppress("DEPRECATION")
         internal val DEFAULT_LOGGER: Logger
-            get() = AndroidLogger()
+            get() = LoggerAnalytics.logger ?: AndroidLogger()
     }
 }
 

@@ -5,6 +5,7 @@ import com.rudderstack.sdk.kotlin.core.Configuration.Companion.DEFAULT_FLUSH_POL
 import com.rudderstack.sdk.kotlin.core.Configuration.Companion.DEFAULT_GZIP_STATUS
 import com.rudderstack.sdk.kotlin.core.internals.logger.KotlinLogger
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
+import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.policies.CountFlushPolicy
 import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPolicy
 import com.rudderstack.sdk.kotlin.core.internals.policies.FrequencyFlushPolicy
@@ -65,15 +66,17 @@ open class Configuration @JvmOverloads constructor(
          * The default logger instance used for logging SDK events and errors.
          * Defaults to a new instance of `KotlinLogger`.
          */
+        @Suppress("DEPRECATION")
         internal val DEFAULT_LOGGER: Logger
-            get() = KotlinLogger()
+            get() = LoggerAnalytics.logger ?: KotlinLogger()
 
         /**
          * The default log level for this configuration instance, determining the minimum severity of messages that will be logged.
          * Defaults to [Logger.DEFAULT_LOG_LEVEL].
          */
+        @Suppress("DEPRECATION")
         val DEFAULT_LOG_LEVEL: Logger.LogLevel
-            get() = Logger.DEFAULT_LOG_LEVEL
+            get() = LoggerAnalytics.logLevel
     }
 }
 

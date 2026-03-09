@@ -10,7 +10,6 @@ import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.utils.DateTimeUtils
-import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -20,7 +19,7 @@ import kotlin.properties.Delegates
 import com.rudderstack.sdk.kotlin.android.Analytics as AndroidAnalytics
 
 @Suppress("TooManyFunctions")
-@OptIn(ExperimentalCoroutinesApi::class, InternalRudderApi::class)
+@OptIn(ExperimentalCoroutinesApi::class)
 internal class SessionManager(
     // single thread dispatcher is required so that the session variables are updated (on storage) in a sequential manner.
     private val sessionDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(1),
