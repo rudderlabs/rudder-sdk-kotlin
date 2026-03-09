@@ -21,15 +21,15 @@ package com.rudderstack.sdk.kotlin.core.internals.logger
  * ```
  *
  * ### Usage
- * Access the logger via `Analytics.analyticsLogger` or the `Plugin.analyticsLogger` extension, then log
+ * Access the logger via `Analytics.logger` or the `Plugin.logger` extension, then log
  * messages at various levels:
  *
  * ```kotlin
- * analytics.analyticsLogger.verbose("This is a verbose message")
- * analytics.analyticsLogger.debug("This is a debug message")
- * analytics.analyticsLogger.info("This is an info message")
- * analytics.analyticsLogger.warn("This is a warning message")
- * analytics.analyticsLogger.error("This is an error message", throwable)
+ * analytics.logger.verbose("This is a verbose message")
+ * analytics.logger.debug("This is a debug message")
+ * analytics.logger.info("This is an info message")
+ * analytics.logger.warn("This is a warning message")
+ * analytics.logger.error("This is an error message", throwable)
  * ```
  *
  * The methods ensure that messages are logged according to the configured log level, providing flexibility
