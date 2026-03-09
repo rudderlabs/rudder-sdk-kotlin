@@ -66,6 +66,14 @@ class ConfigurationBuilderTest {
     }
 
     @Test
+    fun `when setLogger is set with a custom logger, then logger should be updated`() {
+        val customLogger = mockk<Logger>()
+        val config = configurationBuilder.setLogger(customLogger).build()
+
+        assertEquals(customLogger, config.logger)
+    }
+
+    @Test
     fun `when setControlPlaneUrl is set with a custom URL, then controlPlaneUrl should be updated`() {
         val config = configurationBuilder.setControlPlaneUrl(TEST_CONTROL_PLANE_URL).build()
 

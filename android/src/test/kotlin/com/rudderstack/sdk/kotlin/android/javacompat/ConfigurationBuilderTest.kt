@@ -9,6 +9,7 @@ import com.rudderstack.sdk.kotlin.core.provideDefaultFlushPolicies
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
+import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.unmockkAll
 import org.junit.jupiter.api.AfterEach
@@ -105,6 +106,14 @@ class ConfigurationBuilderTest {
         val configuration = configurationBuilder.setLogLevel(Logger.LogLevel.VERBOSE).build()
 
         assertEquals(Logger.LogLevel.VERBOSE, configuration.logLevel)
+    }
+
+    @Test
+    fun `when setLogger is set with a custom logger, then logger should be updated`() {
+        val customLogger = mockk<Logger>()
+        val configuration = configurationBuilder.setLogger(customLogger).build()
+
+        assertEquals(customLogger, configuration.logger)
     }
 
     @Test
