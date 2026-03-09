@@ -9,7 +9,9 @@ import com.rudderstack.sdk.kotlin.android.Configuration.Companion.DEFAULT_TRACK_
 import com.rudderstack.sdk.kotlin.android.DEFAULT_SESSION_TIMEOUT_IN_MILLIS
 import com.rudderstack.sdk.kotlin.android.SessionConfiguration
 import com.rudderstack.sdk.kotlin.android.SessionConfiguration.Companion.DEFAULT_AUTOMATIC_SESSION_TRACKING
+import com.rudderstack.sdk.kotlin.android.logger.AndroidLogger
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
+import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPolicy
 import com.rudderstack.sdk.kotlin.core.javacompat.ConfigurationBuilder
 
@@ -31,6 +33,9 @@ class ConfigurationBuilder(
     private var trackDeepLinks: Boolean = DEFAULT_TRACK_DEEP_LINKS
     private var trackActivities: Boolean = DEFAULT_TRACK_ACTIVITIES
     private var collectDeviceId: Boolean = DEFAULT_COLLECT_DEVICE_ID
+
+    @Suppress("DEPRECATION")
+    private var logger: Logger = LoggerAnalytics.logger ?: AndroidLogger()
     private var sessionConfiguration: SessionConfiguration = SessionConfigurationBuilder().build()
 
     /**
@@ -100,7 +105,7 @@ class ConfigurationBuilder(
      * Sets the logger for the Analytics instance.
      */
     override fun setLogger(logger: Logger) = apply {
-        super.setLogger(logger)
+        this.logger = logger
     }
 
     /**
@@ -121,7 +126,7 @@ class ConfigurationBuilder(
             controlPlaneUrl = coreConfig.controlPlaneUrl,
             flushPolicies = coreConfig.flushPolicies,
             gzipEnabled = coreConfig.gzipEnabled,
-            logger = coreConfig.logger,
+            logger = logger,
             logLevel = coreConfig.logLevel,
         )
     }

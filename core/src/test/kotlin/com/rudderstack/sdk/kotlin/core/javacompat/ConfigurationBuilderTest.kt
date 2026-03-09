@@ -9,6 +9,7 @@ import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPolicy
 import io.mockk.MockKAnnotations
 import io.mockk.every
+import io.mockk.impl.annotations.MockK
 import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.unmockkAll
@@ -27,6 +28,9 @@ class ConfigurationBuilderTest {
     private lateinit var mockPolicies: List<FlushPolicy>
     private lateinit var configurationBuilder: ConfigurationBuilder
 
+    @MockK
+    private lateinit var mockLogger: Logger
+
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this, relaxed = true)
@@ -37,6 +41,7 @@ class ConfigurationBuilderTest {
 
         mockkObject(LoggerAnalytics)
         every { LoggerAnalytics.logLevel } returns Logger.DEFAULT_LOG_LEVEL
+        every { LoggerAnalytics.logger } returns mockLogger
         
         configurationBuilder = ConfigurationBuilder(TEST_WRITE_KEY, TEST_DATA_PLANE_URL)
     }
@@ -58,6 +63,7 @@ class ConfigurationBuilderTest {
             assertEquals(DEFAULT_FLUSH_POLICIES, it.flushPolicies)
             assertEquals(DEFAULT_GZIP_STATUS, it.gzipEnabled)
             assertEquals(Logger.DEFAULT_LOG_LEVEL, it.logLevel)
+            assertEquals(mockLogger, it.logger)
         }
     }
 

@@ -34,6 +34,9 @@ class ConfigurationBuilderTest {
     @MockK
     private lateinit var mockPolicies: List<FlushPolicy>
 
+    @MockK
+    private lateinit var mockLogger: Logger
+
     private lateinit var configurationBuilder: ConfigurationBuilder
 
     @BeforeEach
@@ -45,6 +48,7 @@ class ConfigurationBuilderTest {
 
         mockkObject(LoggerAnalytics)
         every { LoggerAnalytics.logLevel } returns Logger.DEFAULT_LOG_LEVEL
+        every { LoggerAnalytics.logger } returns mockLogger
 
         configurationBuilder = ConfigurationBuilder(
             mockApplication,
@@ -61,8 +65,7 @@ class ConfigurationBuilderTest {
     fun `when Configuration object is created with only default values, then it should have default values`() {
         val configuration = configurationBuilder.build()
 
-        val expected =
-            Configuration(application = mockApplication, writeKey = TEST_WRITE_KEY, dataPlaneUrl = TEST_DATA_PLANE_URL, logger = configuration.logger)
+        val expected = Configuration(application = mockApplication, writeKey = TEST_WRITE_KEY, dataPlaneUrl = TEST_DATA_PLANE_URL)
         assertEquals(expected, configuration)
     }
 
