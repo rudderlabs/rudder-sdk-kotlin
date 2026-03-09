@@ -25,7 +25,7 @@ import com.rudderstack.sdk.kotlin.android.plugins.sessiontracking.DEFAULT_SESSIO
 import com.rudderstack.sdk.kotlin.android.plugins.sessiontracking.SessionTrackingPlugin
 import com.rudderstack.sdk.kotlin.android.storage.provideAndroidStorage
 import com.rudderstack.sdk.kotlin.core.Analytics
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.logger.provideAnalyticsLogger
 import com.rudderstack.sdk.kotlin.core.internals.models.reset.ResetOptions
 import com.rudderstack.sdk.kotlin.core.internals.platform.Platform
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
@@ -69,9 +69,7 @@ class Analytics(
     configuration: Configuration,
 ) : Platform, Analytics(
     configuration,
-    analyticsConfiguration = provideAnalyticsConfiguration(
-        storage = provideAndroidStorage(configuration.writeKey, configuration.application, PlatformType.Mobile)
-    )
+    analyticsConfiguration = createAndroidAnalyticsConfiguration(configuration),
 ) {
 
     private var navControllerTrackingPlugin: NavControllerTrackingPlugin? = null
@@ -92,7 +90,7 @@ class Analytics(
         if (!isAnalyticsActive()) return
 
         if (sessionId != null && sessionId.toString().length < MIN_SESSION_ID_LENGTH) {
-            LoggerAnalytics.error("Session Id should be at least $MIN_SESSION_ID_LENGTH digits.")
+            logger.error("Session Id should be at least $MIN_SESSION_ID_LENGTH digits.")
             return
         }
         val newSessionId = sessionId ?: sessionTrackingPlugin.sessionManager.generateSessionId()
@@ -130,7 +128,7 @@ class Analytics(
         if (!isAnalyticsActive()) return
 
         if (options !is AndroidResetOption) {
-            LoggerAnalytics.debug("The options should be of type Android ResetOptions.")
+            logger.debug("The options should be of type Android ResetOptions.")
         }
 
         super.reset(options)
@@ -258,8 +256,9 @@ class Analytics(
         }
     }
 
+    @Suppress("DEPRECATION")
     private fun setup() {
-        LoggerAnalytics.setPlatformLogger(logger = AndroidLogger())
+        com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics.setPlatformLogger(logger = AndroidLogger())
         add(AndroidConnectivityObserverPlugin(connectivityState))
         add(DeviceInfoPlugin())
         add(AppInfoPlugin())
@@ -294,4 +293,20 @@ class Analytics(
             if (!isAnalyticsActive() || sessionTrackingPlugin.sessionManager.sessionId == DEFAULT_SESSION_ID) return null
             return sessionTrackingPlugin.sessionManager.sessionId
         }
+}
+
+private fun createAndroidAnalyticsConfiguration(
+    configuration: Configuration
+): com.rudderstack.sdk.kotlin.core.AnalyticsConfiguration {
+    val storageLogger = provideAnalyticsLogger(logger = configuration.logger, logLevel = configuration.logLevel)
+    return provideAnalyticsConfiguration(
+        storage = provideAndroidStorage(
+            configuration.writeKey,
+            configuration.application,
+            PlatformType.Mobile,
+            storageLogger
+        ),
+        logger = configuration.logger,
+        logLevel = configuration.logLevel,
+    )
 }

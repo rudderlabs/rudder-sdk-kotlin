@@ -1,7 +1,9 @@
 package com.rudderstack.sampleapp.analytics.customplugins
 
+import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
+import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 
@@ -9,10 +11,13 @@ private const val EVENT_NAME = "Sample Event"
 
 class SetAnonymousIdPluginTest {
 
+    private val mockAnalytics: Analytics = mockk(relaxed = true)
+
     @Test
     fun `given an anonymousId, when it is set using SetAnonymousIdPlugin, then it is present in payload`() = runTest {
         val anonymousId = "someAnonymousId"
         val plugin = SetAnonymousIdPlugin(anonymousId)
+        plugin.setup(mockAnalytics)
 
         val event = TrackEvent(
             event = EVENT_NAME,

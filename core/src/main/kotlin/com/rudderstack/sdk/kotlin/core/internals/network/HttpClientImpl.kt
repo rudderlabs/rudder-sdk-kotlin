@@ -1,6 +1,6 @@
 package com.rudderstack.sdk.kotlin.core.internals.network
 
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.network.NetworkErrorStatus.Companion.toErrorStatus
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import com.rudderstack.sdk.kotlin.core.internals.utils.validatedBaseUrl
@@ -52,6 +52,7 @@ internal class HttpClientImpl private constructor(
     override var postConfig: PostConfig,
     override val customHeaders: Map<String, String>,
     override val connectionFactory: HttpURLConnectionFactory,
+    private val logger: Logger,
 ) : HttpClient {
 
     companion object {
@@ -76,7 +77,8 @@ internal class HttpClientImpl private constructor(
             authHeaderString: String,
             query: Map<String, String> = emptyMap(),
             customHeaders: Map<String, String> = emptyMap(),
-            connectionFactory: HttpURLConnectionFactory = DefaultHttpURLConnectionFactory()
+            connectionFactory: HttpURLConnectionFactory = DefaultHttpURLConnectionFactory(),
+            logger: Logger,
         ) = HttpClientImpl(
             baseUrl = baseUrl,
             endPoint = endPoint,
@@ -85,6 +87,7 @@ internal class HttpClientImpl private constructor(
             postConfig = createPostConfig(isGZIPEnabled = false),
             customHeaders = customHeaders,
             connectionFactory = connectionFactory,
+            logger = logger,
         )
 
         /**
@@ -109,7 +112,8 @@ internal class HttpClientImpl private constructor(
             isGZIPEnabled: Boolean,
             anonymousIdHeaderString: String,
             customHeaders: Map<String, String> = emptyMap(),
-            connectionFactory: HttpURLConnectionFactory = DefaultHttpURLConnectionFactory()
+            connectionFactory: HttpURLConnectionFactory = DefaultHttpURLConnectionFactory(),
+            logger: Logger,
         ) = HttpClientImpl(
             baseUrl = baseUrl,
             endPoint = endPoint,
@@ -121,6 +125,7 @@ internal class HttpClientImpl private constructor(
             ),
             customHeaders = customHeaders,
             connectionFactory = connectionFactory,
+            logger = logger,
         )
     }
 
@@ -196,7 +201,7 @@ internal class HttpClientImpl private constructor(
             connect()
             constructResponse()
         } catch (e: Exception) {
-            LoggerAnalytics.error("Network error: ${e.message}", e)
+            logger.error("Network error: ${e.message}", e)
             when (e) {
                 is SocketTimeoutException -> {
                     Result.Failure(error = NetworkErrorStatus.ErrorTimeout)

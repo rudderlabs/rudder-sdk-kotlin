@@ -1,6 +1,6 @@
 package com.rudderstack.sdk.kotlin.core.internals.storage.inmemory
 
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.storage.KeyValueStorage
 import com.rudderstack.sdk.kotlin.core.internals.storage.LibraryVersion
 import com.rudderstack.sdk.kotlin.core.internals.storage.MAX_PAYLOAD_SIZE
@@ -27,6 +27,7 @@ import source.version.VersionConstants
 @InternalRudderApi
 internal class InMemoryStorage(
     writeKey: String,
+    private val logger: Logger,
     private val prefsStore: KeyValueStorage = InMemoryPrefsStore()
 ) : Storage {
 
@@ -76,7 +77,7 @@ internal class InMemoryStorage(
 
     override fun close() {
         eventBatchFile.closeAndReset()
-        LoggerAnalytics.info("InMemoryStorage closed")
+        logger.info("InMemoryStorage closed")
     }
 
     override fun readInt(key: StorageKeys, defaultVal: Int): Int {
@@ -121,7 +122,7 @@ internal class InMemoryStorage(
     override fun delete() {
         prefsStore.delete()
         eventBatchFile.delete()
-        LoggerAnalytics.info("InMemoryStorage deleted")
+        logger.info("InMemoryStorage deleted")
     }
 }
 
@@ -131,6 +132,6 @@ internal class InMemoryStorage(
  * @param writeKey The key used to identify the storage instance.
  * @return An instance of [InMemoryStorage] with the provided [writeKey].
  */
-internal fun provideInMemoryStorage(writeKey: String): Storage {
-    return InMemoryStorage(writeKey = writeKey)
+internal fun provideInMemoryStorage(writeKey: String, logger: Logger): Storage {
+    return InMemoryStorage(writeKey = writeKey, logger = logger)
 }

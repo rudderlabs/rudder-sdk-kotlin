@@ -1,7 +1,7 @@
 package com.rudderstack.sdk.kotlin.android.utils.network
 
 import android.content.Context
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 
 /**
  * A class that provides information about the network state.
@@ -15,6 +15,7 @@ import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 internal class NetworkUtils(
     private var networkCallbackUtils: NetworkCallbackUtils? = null,
     private var defaultNetworkUtils: DefaultNetworkUtils = DefaultNetworkUtils(),
+    private val logger: Logger? = null,
 ) {
 
     // Catching a generic exception since the exact exception is annotated with @hide and cannot be caught directly.
@@ -25,7 +26,7 @@ internal class NetworkUtils(
         try {
             this.networkCallbackUtils = NetworkCallbackUtils(context).apply { setup() }
         } catch (e: RuntimeException) {
-            LoggerAnalytics.error("Error while setting up NetworkCallbackUtil: ${e.stackTraceToString()}")
+            logger?.error("Error while setting up NetworkCallbackUtil: ${e.stackTraceToString()}")
         }
     }
 

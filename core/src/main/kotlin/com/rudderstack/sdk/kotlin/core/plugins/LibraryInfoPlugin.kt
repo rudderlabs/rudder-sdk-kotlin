@@ -1,9 +1,9 @@
 package com.rudderstack.sdk.kotlin.core.plugins
 
 import com.rudderstack.sdk.kotlin.core.Analytics
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
+import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import com.rudderstack.sdk.kotlin.core.internals.utils.mergeWithHigherPriorityTo
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
@@ -44,8 +44,9 @@ internal class LibraryInfoPlugin : Plugin {
 
     override suspend fun intercept(event: Event): Event = attachLibraryInfo(event)
 
+    @OptIn(InternalRudderApi::class)
     private fun attachLibraryInfo(event: Event): Event {
-        LoggerAnalytics.debug("Attaching library info to the event payload")
+        analytics.logger.debug("Attaching library info to the event payload")
 
         event.context = event.context mergeWithHigherPriorityTo libraryContext
 

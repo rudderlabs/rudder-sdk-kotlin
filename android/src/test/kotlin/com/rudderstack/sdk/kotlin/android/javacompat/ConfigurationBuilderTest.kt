@@ -26,6 +26,7 @@ private const val TEST_DATA_PLANE_URL = "https://test-data-plane.com"
 private const val TEST_CONTROL_PLANE_URL = "https://test-control-plane.com"
 private const val CUSTOM_SESSION_TIMEOUT = 30000L
 
+@Suppress("DEPRECATION")
 class ConfigurationBuilderTest {
 
     @MockK
@@ -65,7 +66,12 @@ class ConfigurationBuilderTest {
     fun `when Configuration object is created with only default values, then it should have default values`() {
         val configuration = configurationBuilder.build()
 
-        val expected = Configuration(application = mockApplication, writeKey = TEST_WRITE_KEY, dataPlaneUrl = TEST_DATA_PLANE_URL)
+        val expected = Configuration(
+            application = mockApplication,
+            writeKey = TEST_WRITE_KEY,
+            dataPlaneUrl = TEST_DATA_PLANE_URL,
+            logger = configuration.logger,
+        )
         assertEquals(expected, configuration)
     }
 

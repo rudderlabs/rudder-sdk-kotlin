@@ -7,10 +7,10 @@ import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ProcessLife
 import com.rudderstack.sdk.kotlin.android.utils.addLifecycleObserver
 import com.rudderstack.sdk.kotlin.android.utils.removeLifecycleObserver
 import com.rudderstack.sdk.kotlin.core.Analytics
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.utils.DateTimeUtils
+import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -20,7 +20,7 @@ import kotlin.properties.Delegates
 import com.rudderstack.sdk.kotlin.android.Analytics as AndroidAnalytics
 
 @Suppress("TooManyFunctions")
-@OptIn(ExperimentalCoroutinesApi::class)
+@OptIn(ExperimentalCoroutinesApi::class, InternalRudderApi::class)
 internal class SessionManager(
     // single thread dispatcher is required so that the session variables are updated (on storage) in a sequential manner.
     private val sessionDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(1),
@@ -48,7 +48,7 @@ internal class SessionManager(
         sessionTimeout = if (sessionConfiguration.sessionTimeoutInMillis >= 0) {
             sessionConfiguration.sessionTimeoutInMillis
         } else {
-            LoggerAnalytics.error("Session timeout cannot be negative. Setting it to default value.")
+            analytics.logger.error("Session timeout cannot be negative. Setting it to default value.")
             DEFAULT_SESSION_TIMEOUT_IN_MILLIS
         }
 
@@ -188,7 +188,7 @@ internal class SessionManager(
     private fun hasSessionTimedOut(): Boolean {
         val timeDifference = DateTimeUtils.getSystemCurrentTime() - lastActivityTime
         if (timeDifference <= 0) {
-            LoggerAnalytics.warn(
+            analytics.logger.warn(
                 "Current system time is less than or equal to last activity time." +
                     " This indicates potential clock tampering. Resetting the session"
             )

@@ -1,5 +1,7 @@
 package com.rudderstack.integration.kotlin.adjust
 
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
+import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -11,6 +13,8 @@ import kotlinx.serialization.json.put
 import org.junit.jupiter.api.Test
 
 class UtilTest {
+
+    private val mockLogger: Logger = mockk(relaxed = true)
 
     @Test
     fun `given JsonObject with all types of values, when attempts are made to cast them into string, then it should return the string value or null`() {
@@ -42,7 +46,7 @@ class UtilTest {
                 else -> null
             }
 
-            assertEquals(expectedValue, jsonObject.getStringOrNull(key))
+            assertEquals(expectedValue, jsonObject.getStringOrNull(key, mockLogger))
         }
     }
 
@@ -76,7 +80,7 @@ class UtilTest {
                 else -> null
             }
 
-            assertEquals(expectedValue, jsonObject.getIntOrNull(key))
+            assertEquals(expectedValue, jsonObject.getIntOrNull(key, mockLogger))
         }
     }
 
@@ -110,7 +114,7 @@ class UtilTest {
                 else -> null
             }
 
-            assertEquals(expectedValue, jsonObject.getLongOrNull(key))
+            assertEquals(expectedValue, jsonObject.getLongOrNull(key, mockLogger))
         }
     }
 
@@ -144,7 +148,7 @@ class UtilTest {
                 else -> null
             }
 
-            assertEquals(expectedValue, jsonObject.getDoubleOrNull(key))
+            assertEquals(expectedValue, jsonObject.getDoubleOrNull(key, mockLogger))
         }
     }
 
@@ -152,7 +156,7 @@ class UtilTest {
     fun `given the key is not present in the JsonObject, when attempts are made to cast them into string, then it should return null`() {
         val jsonObject = provideJsonObjectWithAllTypesOfValues<String>()
 
-        val value = jsonObject.getStringOrNull("key-not-present")
+        val value = jsonObject.getStringOrNull("key-not-present", mockLogger)
 
         assertNull(value)
     }
@@ -161,7 +165,7 @@ class UtilTest {
     fun `given the key is not present in the JsonObject, when attempts are made to cast them into int, then it should return null`() {
         val jsonObject = provideJsonObjectWithAllTypesOfValues<Int>()
 
-        val value = jsonObject.getIntOrNull("key-not-present")
+        val value = jsonObject.getIntOrNull("key-not-present", mockLogger)
 
         assertNull(value)
     }
@@ -170,7 +174,7 @@ class UtilTest {
     fun `given the key is not present in the JsonObject, when attempts are made to cast them into long, then it should return null`() {
         val jsonObject = provideJsonObjectWithAllTypesOfValues<Long>()
 
-        val value = jsonObject.getLongOrNull("key-not-present")
+        val value = jsonObject.getLongOrNull("key-not-present", mockLogger)
 
         assertNull(value)
     }
@@ -179,7 +183,7 @@ class UtilTest {
     fun `given the key is not present in the JsonObject, when attempts are made to cast them into double, then it should return null`() {
         val jsonObject = provideJsonObjectWithAllTypesOfValues<Double>()
 
-        val value = jsonObject.getDoubleOrNull("key-not-present")
+        val value = jsonObject.getDoubleOrNull("key-not-present", mockLogger)
 
         assertNull(value)
     }

@@ -69,6 +69,7 @@ class BrazeIntegrationTest {
 
     private lateinit var brazeIntegration: BrazeIntegration
 
+    @Suppress("DEPRECATION")
     @BeforeEach
     fun setup() {
         MockKAnnotations.init(this, relaxed = true)

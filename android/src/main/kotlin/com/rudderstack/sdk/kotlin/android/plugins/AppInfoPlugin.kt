@@ -7,10 +7,10 @@ import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.android.utils.mergeWithHigherPriorityTo
 import com.rudderstack.sdk.kotlin.android.utils.putIfNotNull
 import com.rudderstack.sdk.kotlin.core.Analytics
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
+import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -35,6 +35,7 @@ internal class AppInfoPlugin : Plugin {
 
     private lateinit var appContext: JsonObject
 
+    @OptIn(InternalRudderApi::class)
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
         (analytics.configuration as Configuration).let { config ->
@@ -43,7 +44,7 @@ internal class AppInfoPlugin : Plugin {
                 val packageInfo = packageManager.getPackageInfo(config.application.packageName, 0)
                 constructAppContext(packageInfo, packageManager)
             } catch (e: PackageManager.NameNotFoundException) {
-                LoggerAnalytics.error("Failed to get package info", e)
+                analytics.logger.error("Failed to get package info", e)
                 emptyJsonObject
             }
         }
@@ -74,8 +75,9 @@ internal class AppInfoPlugin : Plugin {
 
     override suspend fun intercept(event: Event): Event = attachAppInfo(event)
 
+    @OptIn(InternalRudderApi::class)
     private fun attachAppInfo(event: Event): Event {
-        LoggerAnalytics.debug("Attaching app info to the event payload")
+        analytics.logger.debug("Attaching app info to the event payload")
 
         event.context = event.context mergeWithHigherPriorityTo appContext
 

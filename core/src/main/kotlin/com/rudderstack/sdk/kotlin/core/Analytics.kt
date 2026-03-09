@@ -1,9 +1,9 @@
 package com.rudderstack.sdk.kotlin.core
 
-import com.rudderstack.sdk.kotlin.core.internals.logger.AnalyticsLogger
 import com.rudderstack.sdk.kotlin.core.internals.logger.KotlinLogger
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.logger.provideAnalyticsLogger
 import com.rudderstack.sdk.kotlin.core.internals.models.AliasEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.GroupEvent
@@ -80,7 +80,7 @@ open class Analytics protected constructor(
      *
      */
     @InternalRudderApi
-    val logger: Logger = AnalyticsLogger(
+    val logger: Logger = provideAnalyticsLogger(
         logger = configuration.logger,
         logLevel = configuration.logLevel
     )
@@ -107,6 +107,7 @@ open class Analytics protected constructor(
         storeAnonymousId()
     }
 
+    @Suppress("DEPRECATION")
     private fun runForBaseTypeOnly() {
         if (this::class == Analytics::class) {
             LoggerAnalytics.setPlatformLogger(logger = KotlinLogger())
@@ -133,12 +134,7 @@ open class Analytics protected constructor(
      */
     constructor(configuration: Configuration) : this(
         configuration = configuration,
-        analyticsConfiguration = provideAnalyticsConfiguration(
-            storage = when (configuration.storageType) {
-                StorageType.IN_MEMORY -> provideInMemoryStorage(configuration.writeKey)
-                StorageType.FILE -> provideBasicStorage(configuration.writeKey, PlatformType.Server)
-            }
-        )
+        analyticsConfiguration = createAnalyticsConfiguration(configuration),
     )
 
     /**
@@ -235,6 +231,7 @@ open class Analytics protected constructor(
             SetUserIdAndTraitsAction(
                 newUserId = userId,
                 newTraits = traits,
+                logger = logger,
             )
         )
         analyticsScope.launch(keyValueStorageDispatcher) {
@@ -270,7 +267,7 @@ open class Analytics protected constructor(
 
         val updatedPreviousId = userIdentityState.value.resolvePreferredPreviousId(previousId)
         userIdentityState.dispatch(
-            SetUserIdForAliasEvent(newId = newId)
+            SetUserIdForAliasEvent(newId = newId, logger = logger)
         )
         analyticsScope.launch(keyValueStorageDispatcher) {
             userIdentityState.value.storeUserId(storage = storage)
@@ -311,7 +308,7 @@ open class Analytics protected constructor(
         if (!isAnalyticsActive()) return
 
         isAnalyticsShutdown = true
-        LoggerAnalytics.info("Initiating Analytics shutdown.")
+        logger.info("Initiating Analytics shutdown.")
 
         processEventChannel.close()
         processEventJob?.invokeOnCompletion {
@@ -322,7 +319,7 @@ open class Analytics protected constructor(
     private fun shutdownHook() {
         analyticsJob.invokeOnCompletion {
             closeAndCleanupStorage()
-            LoggerAnalytics.info("Analytics shutdown completed.")
+            logger.info("Analytics shutdown completed.")
         }
         analyticsScope.launch {
             this@Analytics.pluginChain.removeAll()
@@ -481,6 +478,18 @@ open class Analytics protected constructor(
             userIdentityState.value.storeAnonymousId(storage = storage)
         }
     }
+}
+
+private fun createAnalyticsConfiguration(configuration: Configuration): AnalyticsConfiguration {
+    val storageLogger = provideAnalyticsLogger(logger = configuration.logger, logLevel = configuration.logLevel)
+    return provideAnalyticsConfiguration(
+        storage = when (configuration.storageType) {
+            StorageType.IN_MEMORY -> provideInMemoryStorage(configuration.writeKey, storageLogger)
+            StorageType.FILE -> provideBasicStorage(configuration.writeKey, PlatformType.Server, storageLogger)
+        },
+        logger = configuration.logger,
+        logLevel = configuration.logLevel,
+    )
 }
 
 @VisibleForTesting

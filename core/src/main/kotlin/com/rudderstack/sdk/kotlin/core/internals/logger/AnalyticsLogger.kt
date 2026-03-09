@@ -1,5 +1,7 @@
 package com.rudderstack.sdk.kotlin.core.internals.logger
 
+import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
+
 /**
  * `AnalyticsLogger` is an instance-based logger that allows each Analytics instance to have its own logging configuration.
  * This enables multiple Analytics instances to have different log levels (e.g., one in DEBUG mode and another in NONE).
@@ -69,4 +71,12 @@ internal class AnalyticsLogger(
             logger.error(log, throwable)
         }
     }
+}
+
+/**
+ * Creates an [AnalyticsLogger] that wraps the given [logger] with log-level filtering.
+ */
+@InternalRudderApi
+fun provideAnalyticsLogger(logger: Logger, logLevel: Logger.LogLevel): Logger {
+    return AnalyticsLogger(logger = logger, logLevel = logLevel)
 }

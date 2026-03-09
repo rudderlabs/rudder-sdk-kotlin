@@ -1,6 +1,5 @@
 package com.rudderstack.sdk.kotlin.core.internals.storage.inmemory
 
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.storage.KeyValueStorage
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
@@ -58,6 +57,5 @@ internal class InMemoryPrefsStore : KeyValueStorage {
     @UseWithCaution
     override fun delete() {
         storage.clear()
-        LoggerAnalytics.info("InMemoryPrefsStore deleted")
     }
 }

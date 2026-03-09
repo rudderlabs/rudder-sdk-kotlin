@@ -4,13 +4,13 @@ import com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing.Eve
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing.IntegrationOptionsPlugin
 import com.rudderstack.sdk.kotlin.android.utils.findDestination
 import com.rudderstack.sdk.kotlin.core.Analytics
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.plugins.EventPlugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.PluginChain
+import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import com.rudderstack.sdk.kotlin.core.internals.utils.safelyExecute
 import kotlinx.serialization.json.JsonObject
@@ -22,6 +22,7 @@ import java.util.concurrent.CopyOnWriteArrayList
  * An integration plugin is a plugin that is responsible for sending events directly
  * to a 3rd party destination without sending it to Rudder server first.
  */
+@OptIn(InternalRudderApi::class)
 @Suppress("TooManyFunctions")
 abstract class IntegrationPlugin : EventPlugin {
 
@@ -107,7 +108,7 @@ abstract class IntegrationPlugin : EventPlugin {
             if (!configDestination.isDestinationEnabled) {
                 val errorMessage = "Destination $key is disabled in dashboard. " +
                     "No events will be sent to this destination."
-                LoggerAnalytics.warn("IntegrationPlugin: $errorMessage")
+                analytics.logger.warn("IntegrationPlugin: $errorMessage")
                 safelyUpdateOnFailureAndNotify(IllegalStateException(errorMessage))
                 return null
             }
@@ -115,7 +116,7 @@ abstract class IntegrationPlugin : EventPlugin {
         } ?: run {
             val errorMessage = "Destination $key not found in the source config. " +
                 "No events will be sent to this destination."
-            LoggerAnalytics.warn("IntegrationPlugin: $errorMessage")
+            analytics.logger.warn("IntegrationPlugin: $errorMessage")
             safelyUpdateOnFailureAndNotify(IllegalStateException(errorMessage))
             return null
         }
@@ -204,12 +205,12 @@ abstract class IntegrationPlugin : EventPlugin {
         safelyExecute(
             block = {
                 create(destinationConfig)
-                LoggerAnalytics.debug("IntegrationPlugin: Destination $key created successfully.")
+                analytics.logger.debug("IntegrationPlugin: Destination $key created successfully.")
                 this.isDestinationReady = true
                 notifyCallbacks(Result.Success(Unit))
             },
             onException = { exception ->
-                LoggerAnalytics.error("IntegrationPlugin: Failed to create destination $key. Error: ${exception.message}")
+                analytics.logger.error("IntegrationPlugin: Failed to create destination $key. Error: ${exception.message}")
                 this.isDestinationReady = false
                 notifyCallbacks(Result.Failure(exception))
             }
@@ -220,7 +221,7 @@ abstract class IntegrationPlugin : EventPlugin {
         safelyUpdateAndApplyBlock(
             destinationConfig = emptyJsonObject,
             block = {
-                LoggerAnalytics.debug("IntegrationPlugin: Destination $key updated with empty destinationConfig.")
+                analytics.logger.debug("IntegrationPlugin: Destination $key updated with empty destinationConfig.")
                 this.isDestinationReady = false
                 notifyCallbacks(Result.Failure(throwable))
             }
@@ -231,7 +232,7 @@ abstract class IntegrationPlugin : EventPlugin {
         safelyUpdateAndApplyBlock(
             destinationConfig = destinationConfig,
             block = {
-                LoggerAnalytics.debug(
+                analytics.logger.debug(
                     "IntegrationPlugin: Destination $key updated with destinationConfig: $destinationConfig."
                 )
                 this.isDestinationReady = true
@@ -249,7 +250,7 @@ abstract class IntegrationPlugin : EventPlugin {
                 }
             },
             onException = { exception ->
-                LoggerAnalytics.error("IntegrationPlugin: Failed to update destination $key. Error: ${exception.message}")
+                analytics.logger.error("IntegrationPlugin: Failed to update destination $key. Error: ${exception.message}")
                 this.isDestinationReady = false
                 notifyCallbacks(Result.Failure(exception))
             }

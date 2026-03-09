@@ -1,7 +1,9 @@
 package com.rudderstack.sdk.kotlin.core.internals.utils
 
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.models.DEFAULT_SENT_AT_TIMESTAMP
 import io.mockk.every
+import io.mockk.mockk
 import io.mockk.mockkObject
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
@@ -11,6 +13,7 @@ import java.util.Date
 class JsonSentAtUpdaterTest {
 
     private val mockCurrentTime = Date(0).toInstant().toString()
+    private val mockLogger: Logger = mockk(relaxed = true)
 
     @BeforeEach
     fun setup() {
@@ -21,7 +24,7 @@ class JsonSentAtUpdaterTest {
     @Test
     fun `given a json value with correct sentAt field, when updateSentAt called, then the sentAt field is updated`() {
         provideValidJsons().forEach { (jsonString, expectedJsonString) ->
-            val updatedJsonString = JsonSentAtUpdater.updateSentAt(jsonString)
+            val updatedJsonString = JsonSentAtUpdater.updateSentAt(jsonString, mockLogger)
 
             assertEquals(expectedJsonString, updatedJsonString)
         }
@@ -30,7 +33,7 @@ class JsonSentAtUpdaterTest {
     @Test
     fun `given a json value with incorrect sentAt field, when updateSentAt called, then the sentAt field is not updated`() {
         provideInvalidJsons().forEach { jsonString ->
-            val updatedJsonString = JsonSentAtUpdater.updateSentAt(jsonString)
+            val updatedJsonString = JsonSentAtUpdater.updateSentAt(jsonString, mockLogger)
 
             assertEquals(jsonString, updatedJsonString)
         }

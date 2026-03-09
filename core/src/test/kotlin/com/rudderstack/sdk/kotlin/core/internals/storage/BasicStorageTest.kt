@@ -1,5 +1,6 @@
 package com.rudderstack.sdk.kotlin.core.internals.storage
 
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys.APP_BUILD
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys.EVENT
@@ -13,6 +14,7 @@ import io.mockk.MockKAnnotations
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
+import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
 import io.mockk.verify
@@ -48,6 +50,7 @@ class BasicStorageTest {
         storage = BasicStorage(
             writeKey = TEST_WRITE_KEY,
             platformType = PlatformType.Mobile,
+            logger = mockk(relaxed = true),
             storageDirectory = mockStorageDirectory,
             eventStorageDirectory = mockEventStorageDirectory,
             propertiesFile = mockPropertiesFile,

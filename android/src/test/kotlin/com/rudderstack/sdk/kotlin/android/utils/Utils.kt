@@ -71,6 +71,7 @@ fun mockUri(
     }
 }
 
+@Suppress("DEPRECATION")
 fun setupLogger(logger: Logger, level: Logger.LogLevel = Logger.LogLevel.VERBOSE) {
     LoggerAnalytics.setLogger(logger = logger)
     LoggerAnalytics.logLevel = level

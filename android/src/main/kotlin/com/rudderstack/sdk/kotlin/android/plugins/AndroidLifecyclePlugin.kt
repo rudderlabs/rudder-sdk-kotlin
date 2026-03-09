@@ -111,7 +111,7 @@ internal class AndroidLifecyclePlugin : Plugin, ProcessLifecycleObserver {
             packageManager.getPackageInfo(application.packageName, 0)
         } catch (e: PackageManager.NameNotFoundException) {
             val message = "Package not found: ${application.packageName}"
-            logAndThrowError(message = message, throwable = e)
+            logAndThrowError(message = message, throwable = e, logger = analytics.logger)
         }
 
         return AppVersion(

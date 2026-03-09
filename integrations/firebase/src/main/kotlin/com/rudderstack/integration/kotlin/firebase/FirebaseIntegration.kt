@@ -14,10 +14,10 @@ import com.rudderstack.sdk.kotlin.android.utils.isDouble
 import com.rudderstack.sdk.kotlin.android.utils.isKeyEmpty
 import com.rudderstack.sdk.kotlin.core.ecommerce.ECommerceEvents
 import com.rudderstack.sdk.kotlin.core.ecommerce.ECommerceParamNames
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.ScreenEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
+import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 
@@ -43,6 +43,7 @@ private const val TAX_KEY = "tax"
  * Firebase Integration Plugin. See [IntegrationPlugin] for more info.
  */
 @Suppress("TooManyFunctions")
+@OptIn(InternalRudderApi::class)
 class FirebaseIntegration : StandardIntegration, IntegrationPlugin() {
 
     private var firebaseAnalytics: FirebaseAnalytics? = null
@@ -241,7 +242,7 @@ class FirebaseIntegration : StandardIntegration, IntegrationPlugin() {
 
             FirebaseAnalytics.Param.PRICE -> params.putDouble(firebaseKey, value?.getDouble() ?: 0.0)
 
-            else -> LoggerAnalytics.debug("FirebaseIntegration: Product value is not of expected type")
+            else -> analytics.logger.debug("FirebaseIntegration: Product value is not of expected type")
         }
     }
 
@@ -252,7 +253,7 @@ class FirebaseIntegration : StandardIntegration, IntegrationPlugin() {
         isEcommerceEvent: Boolean
     ) {
         attachAllCustomProperties(params, properties, isEcommerceEvent)
-        LoggerAnalytics.debug("FirebaseIntegration: Logged \"$firebaseEvent\" to Firebase")
+        analytics.logger.debug("FirebaseIntegration: Logged \"$firebaseEvent\" to Firebase")
         firebaseAnalytics?.logEvent(firebaseEvent, params)
     }
 }

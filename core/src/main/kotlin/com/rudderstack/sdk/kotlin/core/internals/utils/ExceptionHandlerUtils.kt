@@ -1,6 +1,6 @@
 package com.rudderstack.sdk.kotlin.core.internals.utils
 
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 
 /**
  * Executes the given block and catches any exception that occurs.
@@ -57,13 +57,14 @@ inline fun safelyExecute(block: () -> Unit, onException: (Exception) -> Unit, on
  */
 @InternalRudderApi
 @Suppress("TooGenericExceptionCaught")
-inline fun <T> safelyExecute(block: () -> T?): T? {
+inline fun <T> safelyExecute(logger: Logger, block: () -> T?): T? {
     return try {
         block()
     } catch (e: Exception) {
         defaultExceptionHandler(
             errorMsg = "Exception occurred:",
             exception = e,
+            logger = logger,
         )
         null
     }
@@ -76,8 +77,9 @@ inline fun <T> safelyExecute(block: () -> T?): T? {
  *
  * @param errorMsg The error message to be logged along with the exception.
  * @param exception The exception that was thrown and needs to be handled.
+ * @param logger The logger instance to use for logging the error.
  */
 @InternalRudderApi
-fun defaultExceptionHandler(errorMsg: String, exception: Exception) {
-    LoggerAnalytics.error("$errorMsg ${exception.stackTraceToString()}")
+fun defaultExceptionHandler(errorMsg: String, exception: Exception, logger: Logger) {
+    logger.error("$errorMsg ${exception.stackTraceToString()}")
 }

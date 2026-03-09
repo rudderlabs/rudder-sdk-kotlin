@@ -1,6 +1,6 @@
 package com.rudderstack.integration.kotlin.adjust
 
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.models.AnalyticsContext
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
@@ -28,11 +28,11 @@ private const val ERROR_UNSUPPORTED_TYPE = "Unsupported type"
  * Parses the [JsonObject] to the specified type [T].
  */
 @OptIn(InternalRudderApi::class)
-internal inline fun <reified T> JsonObject.parseConfig(): T? {
+internal inline fun <reified T> JsonObject.parseConfig(logger: Logger): T? {
     return this.takeIf { it.isNotEmpty() }?.let {
         LenientJson.decodeFromJsonElement<T>(this)
     } ?: run {
-        LoggerAnalytics.debug("AdjustIntegration: The configuration is empty.")
+        logger.debug("AdjustIntegration: The configuration is empty.")
         null
     }
 }
@@ -44,10 +44,10 @@ internal inline fun <reified T> JsonObject.parseConfig(): T? {
  * @param key The key to extract the value from.
  * @return The string value if present, else null.
  */
-internal fun JsonObject.getStringOrNull(key: String): String? = runCatching {
+internal fun JsonObject.getStringOrNull(key: String, logger: Logger): String? = runCatching {
     convertToString(this[key])
 }.getOrElse {
-    logErrorMessageAndReturnNull(this[key])
+    logErrorMessageAndReturnNull(this[key], logger)
 }
 
 private fun convertToString(value: Any?): String = when (value) {
@@ -65,10 +65,10 @@ private fun convertToString(value: Any?): String = when (value) {
  * @param key The key to extract the value from.
  * @return The integer value if present, else null.
  */
-internal fun JsonObject.getIntOrNull(key: String): Int? = runCatching {
+internal fun JsonObject.getIntOrNull(key: String, logger: Logger): Int? = runCatching {
     convertToInt(this[key])
 }.getOrElse {
-    logErrorMessageAndReturnNull(this[key])
+    logErrorMessageAndReturnNull(this[key], logger)
 }
 
 private fun convertToInt(value: Any?): Int = when (value) {
@@ -92,10 +92,10 @@ private fun convertToInt(value: Any?): Int = when (value) {
  * @param key The key to extract the value from.
  * @return The long value if present, else null.
  */
-internal fun JsonObject.getLongOrNull(key: String): Long? = runCatching {
+internal fun JsonObject.getLongOrNull(key: String, logger: Logger): Long? = runCatching {
     convertToLong(this[key])
 }.getOrElse {
-    logErrorMessageAndReturnNull(this[key])
+    logErrorMessageAndReturnNull(this[key], logger)
 }
 
 private fun convertToLong(value: Any?): Long = when (value) {
@@ -119,10 +119,10 @@ private fun convertToLong(value: Any?): Long = when (value) {
  * @param key The key to extract the value from.
  * @return The double value if present, else null.
  */
-internal fun JsonObject.getDoubleOrNull(key: String): Double? = runCatching {
+internal fun JsonObject.getDoubleOrNull(key: String, logger: Logger): Double? = runCatching {
     convertToDouble(this[key])
 }.getOrElse {
-    logErrorMessageAndReturnNull(this[key])
+    logErrorMessageAndReturnNull(this[key], logger)
 }
 
 private fun convertToDouble(value: Any?): Double = when (value) {
@@ -139,8 +139,8 @@ private fun convertToDouble(value: Any?): Double = when (value) {
     else -> throw IllegalArgumentException("$ERROR_UNSUPPORTED_TYPE: ${value::class}")
 }
 
-private inline fun <reified T> logErrorMessageAndReturnNull(value: Any?): T? {
-    LoggerAnalytics.debug("Integration: Error while converting [$value] to the ${T::class} type.")
+private inline fun <reified T> logErrorMessageAndReturnNull(value: Any?, logger: Logger): T? {
+    logger.error("AdjustIntegration: Failed to parse value: $value of type: ${T::class.simpleName}")
     return null
 }
 

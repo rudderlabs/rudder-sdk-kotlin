@@ -84,6 +84,7 @@ private fun String.cleanJsonString(): String {
     }
 }
 
+@Suppress("DEPRECATION")
 fun setupLogger(logger: Logger, level: Logger.LogLevel = Logger.LogLevel.VERBOSE) {
     LoggerAnalytics.setPlatformLogger(logger = logger)
     LoggerAnalytics.logLevel = level

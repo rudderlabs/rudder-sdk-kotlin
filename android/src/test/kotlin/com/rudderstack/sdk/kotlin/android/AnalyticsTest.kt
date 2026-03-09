@@ -8,7 +8,9 @@ import com.rudderstack.sdk.kotlin.android.plugins.DeviceInfoPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleManagementPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ProcessLifecycleManagementPlugin
 import com.rudderstack.sdk.kotlin.core.AnalyticsConfiguration
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.logger.provideAnalyticsLogger
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
@@ -64,6 +66,9 @@ class AnalyticsTest {
     @MockK
     private lateinit var mockStorage: Storage
 
+    @MockK
+    private lateinit var mockLogger: Logger
+
     private val testDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
     private lateinit var configuration: Configuration
@@ -93,9 +98,13 @@ class AnalyticsTest {
             anyConstructed<ActivityLifecycleManagementPlugin>().setup(any())
         } just Runs
 
+        // Mock Analytics Logger
+        mockkStatic(::provideAnalyticsLogger)
+        every { provideAnalyticsLogger(any(), any()) } returns mockLogger
+
         // Mock Analytics Configuration
         mockkStatic(::provideAnalyticsConfiguration)
-        every { provideAnalyticsConfiguration(any()) } returns mockAnalyticsConfiguration
+        every { provideAnalyticsConfiguration(any(), any(), any()) } returns mockAnalyticsConfiguration
         mockAnalyticsConfiguration.apply {
             every { analyticsScope } returns testScope
             every { analyticsDispatcher } returns testDispatcher
@@ -111,6 +120,7 @@ class AnalyticsTest {
         every { DateTimeUtils.getSystemCurrentTime() } returns DEFAULT_SESSION_ID.toMilliSeconds()
 
         // Mock LoggerAnalytics
+        @Suppress("DEPRECATION")
         mockkObject(LoggerAnalytics)
 
         configuration = Configuration(
@@ -245,7 +255,7 @@ class AnalyticsTest {
         analytics.reset(coreResetOptions)
 
         verify(exactly = 1) {
-            LoggerAnalytics.debug("The options should be of type Android ResetOptions.")
+            analytics.logger.debug("The options should be of type Android ResetOptions.")
         }
     }
 
@@ -263,7 +273,7 @@ class AnalyticsTest {
         analytics.reset(androidResetOptions)
 
         verify(exactly = 0) {
-            LoggerAnalytics.debug("The options should be of type Android ResetOptions.")
+            analytics.logger.debug("The options should be of type Android ResetOptions.")
         }
     }
     
@@ -350,6 +360,7 @@ class AnalyticsTest {
             }
         }
 
+    @Suppress("DEPRECATION")
     @Test
     fun `when SDK is initialised, then AndroidLogger should be set`() {
         verify(exactly = 1) {

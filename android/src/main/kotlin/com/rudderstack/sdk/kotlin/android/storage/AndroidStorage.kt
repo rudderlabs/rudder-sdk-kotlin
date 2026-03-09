@@ -3,7 +3,7 @@ package com.rudderstack.sdk.kotlin.android.storage
 import android.content.Context
 import com.rudderstack.sdk.kotlin.BuildConfig
 import com.rudderstack.sdk.kotlin.android.storage.exceptions.QueuedPayloadTooLargeException
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.storage.EventBatchFileManager
 import com.rudderstack.sdk.kotlin.core.internals.storage.KeyValueStorage
@@ -24,7 +24,12 @@ internal class AndroidStorage(
     private val context: Context,
     private val writeKey: String,
     platformType: PlatformType,
-    private val rudderPrefsRepo: KeyValueStorage = SharedPrefsStore(context, RUDDER_PREFS.toAndroidPrefsKey(writeKey)),
+    private val logger: Logger,
+    private val rudderPrefsRepo: KeyValueStorage = SharedPrefsStore(
+        context,
+        RUDDER_PREFS.toAndroidPrefsKey(writeKey),
+        logger
+    ),
     private val storageDirectory: File = context.getDir(DIRECTORY_NAME.appendWriteKey(writeKey), Context.MODE_PRIVATE),
     private val eventBatchFile: EventBatchFileManager = EventBatchFileManager(
         directory = storageDirectory,
@@ -78,7 +83,7 @@ internal class AndroidStorage(
 
     override fun close() {
         eventBatchFile.closeAndReset()
-        LoggerAnalytics.info("Storage closed")
+        logger.info("Storage closed")
     }
 
     override fun readInt(key: StorageKeys, defaultVal: Int): Int {
@@ -125,7 +130,7 @@ internal class AndroidStorage(
     override fun delete() {
         rudderPrefsRepo.delete()
         storageDirectory.deleteRecursively().let { isDeleted ->
-            LoggerAnalytics.info("Storage directory deleted: $isDeleted")
+            logger.info("Storage directory deleted: $isDeleted")
         }
     }
 }
@@ -138,10 +143,16 @@ internal class AndroidStorage(
  * @param platformType The platform type used for event file ordering behaviour.
  * @return An instance of [AndroidStorage].
  */
-internal fun provideAndroidStorage(writeKey: String, application: Context, platformType: PlatformType): Storage {
+internal fun provideAndroidStorage(
+    writeKey: String,
+    application: Context,
+    platformType: PlatformType,
+    logger: Logger
+): Storage {
     return AndroidStorage(
         context = application,
         writeKey = writeKey,
         platformType = platformType,
+        logger = logger,
     )
 }

@@ -25,6 +25,7 @@ class MaxAttemptsWithBackoffTest {
     @BeforeEach
     fun setup() {
         backoff = MaxAttemptsWithBackoff(
+            logger = mockk(relaxed = true),
             maxAttempts = maxAttempts,
             coolOffPeriod = coolOffPeriod,
             backOffPolicy = mockBackOffPolicy

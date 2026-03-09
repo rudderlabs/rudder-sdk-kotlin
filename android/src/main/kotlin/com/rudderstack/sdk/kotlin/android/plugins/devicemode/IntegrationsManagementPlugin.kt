@@ -1,12 +1,12 @@
 package com.rudderstack.sdk.kotlin.android.plugins.devicemode
 
 import com.rudderstack.sdk.kotlin.core.Analytics
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.PluginChain
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.dropInitialState
+import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collectIndexed
 import kotlinx.coroutines.flow.filter
@@ -19,6 +19,7 @@ internal const val FIRST_INDEX = 0
  * This plugin will queue the events till the sourceConfig is fetched and
  * will host all the device mode integration plugins in its PluginChain instance.
  */
+@OptIn(InternalRudderApi::class)
 internal class IntegrationsManagementPlugin : Plugin {
 
     override val pluginType: Plugin.PluginType = Plugin.PluginType.Terminal
@@ -58,7 +59,7 @@ internal class IntegrationsManagementPlugin : Plugin {
     }
 
     override suspend fun intercept(event: Event): Event {
-        LoggerAnalytics.debug("IntegrationsManagementPlugin: queueing event")
+        analytics.logger.debug("IntegrationsManagementPlugin: queueing event")
 
         runCatching {
             queuedEventsChannel.trySend(event).getOrThrow()
@@ -99,7 +100,7 @@ internal class IntegrationsManagementPlugin : Plugin {
                 if (plugin.isDestinationReady) {
                     plugin.reset()
                 } else {
-                    LoggerAnalytics.debug(
+                    analytics.logger.debug(
                         "IntegrationsManagementPlugin: Destination ${plugin.key} is not ready. Reset discarded."
                     )
                 }
@@ -115,7 +116,7 @@ internal class IntegrationsManagementPlugin : Plugin {
                 if (plugin.isDestinationReady) {
                     plugin.flush()
                 } else {
-                    LoggerAnalytics.debug(
+                    analytics.logger.debug(
                         "IntegrationsManagementPlugin: Destination ${plugin.key} is not ready. Flush discarded."
                     )
                 }

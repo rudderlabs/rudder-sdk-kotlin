@@ -4,9 +4,9 @@ import android.util.DisplayMetrics
 import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.android.utils.mergeWithHigherPriorityTo
 import com.rudderstack.sdk.kotlin.core.Analytics
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
+import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -50,8 +50,9 @@ internal class ScreenInfoPlugin : Plugin {
 
     override suspend fun intercept(event: Event): Event = attachScreenInfo(event)
 
+    @OptIn(InternalRudderApi::class)
     private fun attachScreenInfo(event: Event): Event {
-        LoggerAnalytics.debug("Attaching screen info to the event payload")
+        analytics.logger.debug("Attaching screen info to the event payload")
 
         event.context = event.context mergeWithHigherPriorityTo screenContext
 

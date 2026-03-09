@@ -4,7 +4,6 @@ import android.app.Application
 import com.rudderstack.sdk.kotlin.android.logger.AndroidLogger
 import com.rudderstack.sdk.kotlin.core.Configuration
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPolicy
 
 internal const val DEFAULT_SESSION_TIMEOUT_IN_MILLIS = 300_000L
@@ -69,8 +68,8 @@ data class Configuration @JvmOverloads constructor(
     override val controlPlaneUrl: String = DEFAULT_CONTROL_PLANE_URL,
     override val flushPolicies: List<FlushPolicy> = DEFAULT_FLUSH_POLICIES,
     override val gzipEnabled: Boolean = DEFAULT_GZIP_STATUS,
-    @Suppress("DEPRECATION") override val logger: Logger = DEFAULT_LOGGER,
-    @Suppress("DEPRECATION") override val logLevel: Logger.LogLevel = DEFAULT_LOG_LEVEL,
+    override val logger: Logger = DEFAULT_LOGGER,
+    override val logLevel: Logger.LogLevel = DEFAULT_LOG_LEVEL,
 ) : Configuration(
     writeKey = writeKey,
     dataPlaneUrl = dataPlaneUrl,
@@ -85,10 +84,11 @@ data class Configuration @JvmOverloads constructor(
         internal const val DEFAULT_COLLECT_DEVICE_ID = true
 
         /**
-         * The default logger instance used for logging SDK events and errors. If `LoggerAnalytics.logger` is not set, it defaults to an instance of `AndroidLogger`.
+         * The default logger instance used for logging SDK events and errors.
+         * Defaults to an instance of `AndroidLogger`.
          */
         internal val DEFAULT_LOGGER: Logger
-            get() = LoggerAnalytics.logger ?: AndroidLogger()
+            get() = AndroidLogger()
     }
 }
 

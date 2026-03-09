@@ -11,10 +11,10 @@ import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.android.SessionConfiguration
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.IntegrationPlugin
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
+import com.rudderstack.sdk.kotlin.core.internals.plugins.logger
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 
 object RudderAnalyticsUtils {
@@ -30,11 +30,6 @@ object RudderAnalyticsUtils {
      * @param application The Android Application instance
      */
     fun initialize(application: Application) {
-        // setting the LogLevel
-        LoggerAnalytics.logLevel = Logger.LogLevel.VERBOSE
-        // setting a custom logger
-        LoggerAnalytics.setLogger(CustomTimberLogger())
-
         analytics = Analytics(
             configuration = Configuration(
                 trackApplicationLifecycleEvents = true,
@@ -46,6 +41,8 @@ object RudderAnalyticsUtils {
                     sessionTimeoutInMillis = 3000,
                 ),
                 gzipEnabled = true,
+                logger = CustomTimberLogger(),
+                logLevel = Logger.LogLevel.VERBOSE,
             )
         )
         analytics.add(sampleIntegrationPlugin())
@@ -62,7 +59,7 @@ object RudderAnalyticsUtils {
 
             override suspend fun intercept(event: Event): Event? {
                 if (event is TrackEvent && event.event == "Track Event 1") {
-                    LoggerAnalytics.debug("SampleCustomIntegrationPlugin: dropping event")
+                    logger.debug("SampleCustomIntegrationPlugin: dropping event")
                     return null
                 }
                 return event
@@ -71,10 +68,10 @@ object RudderAnalyticsUtils {
         sampleIntegrationPlugin.onDestinationReady { _, destinationResult ->
             when (destinationResult) {
                 is Result.Success ->
-                    LoggerAnalytics.debug("SampleCustomIntegrationPlugin: destination ready")
+                    sampleIntegrationPlugin.logger.debug("SampleCustomIntegrationPlugin: destination ready")
 
                 is Result.Failure ->
-                    LoggerAnalytics.debug("SampleCustomIntegrationPlugin: destination failed to initialise: ${destinationResult.error.message}.")
+                    sampleIntegrationPlugin.logger.debug("SampleCustomIntegrationPlugin: destination failed to initialise: ${destinationResult.error.message}.")
             }
         }
         return sampleIntegrationPlugin
