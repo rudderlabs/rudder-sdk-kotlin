@@ -3,18 +3,22 @@ package com.rudderstack.sdk.kotlin.android.plugins
 import android.app.Application
 import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.android.utils.network.NetworkUtils
+import com.rudderstack.sdk.kotlin.android.utils.network.provideNetworkUtils
 import com.rudderstack.sdk.kotlin.android.utils.provideEvent
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
+import io.mockk.mockkStatic
 import io.mockk.spyk
+import io.mockk.unmockkAll
 import io.mockk.verify
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.skyscreamer.jsonassert.JSONAssert
@@ -48,9 +52,17 @@ class NetworkInfoPluginTest {
         MockKAnnotations.init(this, relaxed = true)
 
         every { (mockAnalytics.configuration as Configuration).application } returns mockApplication
+
+        mockkStatic(::provideNetworkUtils)
+        every { provideNetworkUtils(any()) } returns mockNetworkUtils
         every { mockNetworkUtils.setup(any()) } returns Unit
 
-        networkInfoPlugin = spyk(NetworkInfoPlugin(mockNetworkUtils))
+        networkInfoPlugin = spyk(NetworkInfoPlugin())
+    }
+
+    @AfterEach
+    fun tearDown() {
+        unmockkAll()
     }
 
     @Test
@@ -90,6 +102,7 @@ class NetworkInfoPluginTest {
 
     @Test
     fun `when teardown is called, then network utils teardown is called`() = runTest {
+        networkInfoPlugin.setup(mockAnalytics)
         networkInfoPlugin.teardown()
 
         verify { mockNetworkUtils.teardown() }

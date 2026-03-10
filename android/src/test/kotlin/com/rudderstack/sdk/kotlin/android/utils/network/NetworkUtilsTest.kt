@@ -1,5 +1,6 @@
 package com.rudderstack.sdk.kotlin.android.utils.network
 
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
@@ -16,6 +17,9 @@ class NetworkUtilsTest {
     @MockK
     private lateinit var mockDefaultNetworkUtils: DefaultNetworkUtils
 
+    @MockK
+    private lateinit var mockLogger: Logger
+
     @BeforeEach
     fun setup() {
         MockKAnnotations.init(this, relaxed = true)
@@ -23,7 +27,7 @@ class NetworkUtilsTest {
 
     @Test
     fun `given default network utils returns true, when get carrier is called, then carrier is returned`() {
-        val networkUtils = NetworkUtils(mockNetworkCallbackUtils, mockDefaultNetworkUtils)
+        val networkUtils = NetworkUtils(mockNetworkCallbackUtils, mockDefaultNetworkUtils, mockLogger)
         val expectedCarrier = "T-Mobile"
         every { mockDefaultNetworkUtils.getCarrier() } returns expectedCarrier
 
@@ -34,7 +38,7 @@ class NetworkUtilsTest {
 
     @Test
     fun `given network callback utils returns true, when is cellular connected is called, then cellular connection status is returned`() {
-        val networkUtils = NetworkUtils(mockNetworkCallbackUtils, mockDefaultNetworkUtils)
+        val networkUtils = NetworkUtils(mockNetworkCallbackUtils, mockDefaultNetworkUtils, mockLogger)
         val expectedCellularStatus = true
         every { mockNetworkCallbackUtils.isCellularConnected } returns expectedCellularStatus
 
@@ -47,7 +51,7 @@ class NetworkUtilsTest {
 
     @Test
     fun `given network callback utils is null, when is cellular connected is called, then default network utils is used to get cellular connection status`() {
-        val networkUtils = NetworkUtils(networkCallbackUtils = null, defaultNetworkUtils = mockDefaultNetworkUtils,)
+        val networkUtils = NetworkUtils(networkCallbackUtils = null, defaultNetworkUtils = mockDefaultNetworkUtils, logger = mockLogger)
         val expectedCellularStatus = true
         every { mockDefaultNetworkUtils.isCellularConnected() } returns expectedCellularStatus
 
@@ -60,7 +64,7 @@ class NetworkUtilsTest {
 
     @Test
     fun `given network callback utils returns false, when is cellular connected is called, then default network utils is used to get cellular connection status`() {
-        val networkUtils = NetworkUtils(mockNetworkCallbackUtils, mockDefaultNetworkUtils)
+        val networkUtils = NetworkUtils(mockNetworkCallbackUtils, mockDefaultNetworkUtils, mockLogger)
         val expectedCellularStatus = true
         every { mockNetworkCallbackUtils.isCellularConnected } returns false
         every { mockDefaultNetworkUtils.isCellularConnected() } returns expectedCellularStatus
@@ -74,7 +78,7 @@ class NetworkUtilsTest {
 
     @Test
     fun `given network callback utils returns true, when is wifi enabled is called, then wifi status is returned`() {
-        val networkUtils = NetworkUtils(mockNetworkCallbackUtils, mockDefaultNetworkUtils)
+        val networkUtils = NetworkUtils(mockNetworkCallbackUtils, mockDefaultNetworkUtils, mockLogger)
         val expectedWifiStatus = true
         every { mockNetworkCallbackUtils.isWifiEnabled } returns expectedWifiStatus
 
@@ -87,7 +91,7 @@ class NetworkUtilsTest {
 
     @Test
     fun `given network callback utils is null, when is wifi enabled is called, then default network utils is used to get wifi status`() {
-        val networkUtils = NetworkUtils(networkCallbackUtils = null, defaultNetworkUtils = mockDefaultNetworkUtils)
+        val networkUtils = NetworkUtils(networkCallbackUtils = null, defaultNetworkUtils = mockDefaultNetworkUtils, logger = mockLogger)
         val expectedWifiStatus = true
         every { mockDefaultNetworkUtils.isWifiEnabled() } returns expectedWifiStatus
 
@@ -100,7 +104,7 @@ class NetworkUtilsTest {
 
     @Test
     fun `given network callback utils returns false, when is wifi enabled is called, then default network utils is used to get wifi status`() {
-        val networkUtils = NetworkUtils(mockNetworkCallbackUtils, mockDefaultNetworkUtils)
+        val networkUtils = NetworkUtils(mockNetworkCallbackUtils, mockDefaultNetworkUtils, mockLogger)
         val expectedWifiStatus = false
         every { mockNetworkCallbackUtils.isWifiEnabled } returns expectedWifiStatus
 
@@ -113,7 +117,7 @@ class NetworkUtilsTest {
 
     @Test
     fun `given default network utils returns true, when is bluetooth enabled is called, then bluetooth status is returned`() {
-        val networkUtils = NetworkUtils(mockNetworkCallbackUtils, mockDefaultNetworkUtils)
+        val networkUtils = NetworkUtils(mockNetworkCallbackUtils, mockDefaultNetworkUtils, mockLogger)
         val expectedBluetoothStatus = true
         every { mockDefaultNetworkUtils.isBluetoothEnabled() } returns expectedBluetoothStatus
 
@@ -124,7 +128,7 @@ class NetworkUtilsTest {
 
     @Test
     fun `when teardown is called, then network callback utils teardown is called`() {
-        val networkUtils = NetworkUtils(mockNetworkCallbackUtils, mockDefaultNetworkUtils)
+        val networkUtils = NetworkUtils(mockNetworkCallbackUtils, mockDefaultNetworkUtils, mockLogger)
 
         networkUtils.teardown()
 

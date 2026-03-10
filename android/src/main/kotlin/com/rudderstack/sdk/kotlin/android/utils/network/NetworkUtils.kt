@@ -15,7 +15,7 @@ import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 internal class NetworkUtils(
     private var networkCallbackUtils: NetworkCallbackUtils? = null,
     private var defaultNetworkUtils: DefaultNetworkUtils = DefaultNetworkUtils(),
-    private val logger: Logger? = null,
+    private val logger: Logger,
 ) {
 
     // Catching a generic exception since the exact exception is annotated with @hide and cannot be caught directly.
@@ -26,7 +26,7 @@ internal class NetworkUtils(
         try {
             this.networkCallbackUtils = NetworkCallbackUtils(context).apply { setup() }
         } catch (e: RuntimeException) {
-            logger?.error("Error while setting up NetworkCallbackUtil: ${e.stackTraceToString()}")
+            logger.error("Error while setting up NetworkCallbackUtil: ${e.stackTraceToString()}")
         }
     }
 
@@ -46,4 +46,8 @@ internal class NetworkUtils(
     internal fun teardown() {
         networkCallbackUtils?.teardown()
     }
+}
+
+internal fun provideNetworkUtils(logger: Logger): NetworkUtils {
+    return NetworkUtils(logger = logger)
 }
