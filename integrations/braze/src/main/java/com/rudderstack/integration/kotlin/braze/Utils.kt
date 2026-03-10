@@ -19,11 +19,11 @@ import java.util.Locale
  * Parses the [JsonObject] to the specified type [T].
  */
 @OptIn(InternalRudderApi::class)
-internal inline fun <reified T> JsonObject.parse(logger: Logger? = null): T? {
+internal inline fun <reified T> JsonObject.parse(logger: Logger): T? {
     return this.takeIf { it.isNotEmpty() }?.let {
         LenientJson.decodeFromJsonElement<T>(this)
     } ?: run {
-        logger?.debug("BrazeIntegration: The configuration is empty.")
+        logger.debug("BrazeIntegration: The configuration is empty.")
         null
     }
 }
@@ -33,8 +33,8 @@ internal inline fun <reified T> JsonObject.parse(logger: Logger? = null): T? {
  *
  * @return StandardProperties object parsed from the JsonObject.
  */
-internal fun JsonObject.getStandardProperties(): StandardProperties {
-    return this.parse<StandardProperties>() ?: StandardProperties()
+internal fun JsonObject.getStandardProperties(logger: Logger): StandardProperties {
+    return this.parse<StandardProperties>(logger) ?: StandardProperties()
 }
 
 /**
@@ -89,8 +89,8 @@ internal fun IdentifyTraits.getExternalIdOrUserId() = this.context.brazeExternal
  *
  * @return The [IdentifyTraits] object parsed from the [IdentifyEvent].
  */
-internal fun IdentifyEvent.toIdentifyTraits(): IdentifyTraits {
-    val context = this.context.parse<Context>() ?: Context()
+internal fun IdentifyEvent.toIdentifyTraits(logger: Logger): IdentifyTraits {
+    val context = this.context.parse<Context>(logger) ?: Context()
 
     val customTraits = this.traits?.filter(rootKeys = Traits.getKeysAsList()) ?: JsonObject(emptyMap())
     return IdentifyTraits(

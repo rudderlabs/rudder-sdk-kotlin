@@ -73,7 +73,7 @@ class FirebaseIntegration : StandardIntegration, IntegrationPlugin() {
         payload.traits?.forEach { (key, value) ->
             if (key !in IDENTIFY_RESERVED_KEYWORDS && key != USER_ID_KEY) {
                 val firebaseCompatibleKey = formatFirebaseKey(key)
-                val stringValue = getString(value = value, maxLength = MAX_TRAITS_VALUE_LENGTH)
+                val stringValue = getString(value = value, maxLength = MAX_TRAITS_VALUE_LENGTH, logger = analytics.logger)
                 firebaseAnalytics?.setUserProperty(firebaseCompatibleKey, stringValue)
             }
         }
@@ -83,7 +83,7 @@ class FirebaseIntegration : StandardIntegration, IntegrationPlugin() {
         if (payload.screenName.isNotEmpty()) {
             getBundle().apply {
                 putString(FirebaseAnalytics.Param.SCREEN_NAME, payload.screenName)
-                attachAllCustomProperties(this, payload.properties, false)
+                attachAllCustomProperties(this, payload.properties, false, analytics.logger)
                 firebaseAnalytics?.logEvent(FirebaseAnalytics.Event.SCREEN_VIEW, this)
             }
         }
@@ -250,7 +250,7 @@ class FirebaseIntegration : StandardIntegration, IntegrationPlugin() {
         properties: JsonObject?,
         isEcommerceEvent: Boolean
     ) {
-        attachAllCustomProperties(params, properties, isEcommerceEvent)
+        attachAllCustomProperties(params, properties, isEcommerceEvent, analytics.logger)
         analytics.logger.debug("FirebaseIntegration: Logged \"$firebaseEvent\" to Firebase")
         firebaseAnalytics?.logEvent(firebaseEvent, params)
     }

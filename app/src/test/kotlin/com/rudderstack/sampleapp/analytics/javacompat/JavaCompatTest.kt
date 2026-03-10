@@ -307,12 +307,4 @@ class JavaCompatTest {
 
         assertEquals(traits, actualTraits)
     }
-
-    @Test
-    fun `when setCustomLogger is called, then it should not throw`() {
-        val customJavaLogger = spyk(JavaCustomLogger())
-
-        // setCustomLogger is a no-op; custom logger should be set via Configuration during initialization
-        javaCompat.setCustomLogger(customJavaLogger)
-    }
 }

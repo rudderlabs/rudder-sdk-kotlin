@@ -140,7 +140,7 @@ private fun convertToDouble(value: Any?): Double = when (value) {
 }
 
 private inline fun <reified T> logErrorMessageAndReturnNull(value: Any?, logger: Logger): T? {
-    logger.error("AdjustIntegration: Failed to parse value: $value of type: ${T::class.simpleName}")
+    logger.debug("AdjustIntegration: Failed to parse value: $value of type: ${T::class.simpleName}")
     return null
 }
 

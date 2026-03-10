@@ -69,6 +69,7 @@ public class JavaCompat {
                 .setSessionConfiguration(sessionConfiguration)
                 .setGzipEnabled(true)
                 .setLogLevel(Logger.LogLevel.VERBOSE)
+                .setLogger(new JavaCustomLogger())
                 .build();
 
 
@@ -309,10 +310,6 @@ public class JavaCompat {
     @Nullable
     public Map<String, Object> getTraits() {
         return analytics.getTraits();
-    }
-
-    public void setCustomLogger(Logger customLogger) {
-        // Custom logger should be set via Configuration during initialization
     }
 
     @NonNull

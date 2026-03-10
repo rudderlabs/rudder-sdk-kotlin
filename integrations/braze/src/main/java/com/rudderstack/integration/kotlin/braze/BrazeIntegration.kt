@@ -105,7 +105,7 @@ class BrazeIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
     }
 
     private fun handleInstallAttributedEvent(payload: TrackEvent) {
-        payload.properties.parse<InstallAttributed>()
+        payload.properties.parse<InstallAttributed>(analytics.logger)
             .takeIf { it?.campaign != null }
             ?.let { campaign ->
                 this.braze?.currentUser?.setAttributionData(
@@ -129,7 +129,7 @@ class BrazeIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
             productKeys = Product.getKeysAsList(),
         )
 
-        payload.properties.getStandardProperties().let { standardProperties ->
+        payload.properties.getStandardProperties(analytics.logger).let { standardProperties ->
             val currency = standardProperties.currency
 
             standardProperties.products
@@ -164,7 +164,7 @@ class BrazeIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
     override fun identify(payload: IdentifyEvent) {
         if (brazeConfig.isHybridMode(analytics.logger)) return
 
-        payload.toIdentifyTraits().let { currentIdentifyTraits ->
+        payload.toIdentifyTraits(analytics.logger).let { currentIdentifyTraits ->
             val deDupedTraits = this.brazeConfig.takeIf { it.supportDedup }?.let {
                 currentIdentifyTraits deDupe previousIdentifyTraits
             } ?: currentIdentifyTraits
