@@ -23,7 +23,7 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
  * ```
  *
  * ### Usage
- * Access the logger via `Analytics.logger` or the `Plugin.logger` extension, then log
+ * Access the logger via `analyticsInstance.logger` or the `Plugin.logger` extension, then log
  * messages at various levels:
  *
  * ```kotlin
