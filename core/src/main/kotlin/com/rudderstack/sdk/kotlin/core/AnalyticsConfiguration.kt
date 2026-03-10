@@ -20,6 +20,11 @@ import kotlinx.coroutines.SupervisorJob
 interface AnalyticsConfiguration {
 
     /**
+     * The logger instance for this analytics configuration.
+     */
+    val logger: Logger
+
+    /**
      * Storage implementation for the analytics module.
      */
     val storage: Storage
@@ -82,7 +87,7 @@ interface AnalyticsConfiguration {
 @OptIn(ExperimentalCoroutinesApi::class)
 private class AnalyticsConfigurationImpl(
     override val storage: Storage,
-    logger: Logger,
+    override val logger: Logger,
 ) : AnalyticsConfiguration {
 
     private val handler = CoroutineExceptionHandler { _, exception ->

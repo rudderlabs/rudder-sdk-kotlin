@@ -5,7 +5,6 @@ import com.rudderstack.sdk.kotlin.core.AnalyticsConfiguration
 import com.rudderstack.sdk.kotlin.core.Configuration
 import com.rudderstack.sdk.kotlin.core.SourceConfigManager
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
-import com.rudderstack.sdk.kotlin.core.internals.logger.provideAnalyticsLogger
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
@@ -64,13 +63,12 @@ class AnalyticsUtilsTest {
 
         // Mock logger
         mockLogger = mockk(relaxed = true)
-        mockkStatic(::provideAnalyticsLogger)
-        every { provideAnalyticsLogger(any(), any()) } returns mockLogger
 
         // Mock Analytics Configuration
         mockkStatic(::provideAnalyticsConfiguration)
         every { provideAnalyticsConfiguration(any(), any()) } returns mockAnalyticsConfiguration
         mockAnalyticsConfiguration.apply {
+            every { logger } returns mockLogger
             every { analyticsScope } returns testScope
             every { analyticsDispatcher } returns testDispatcher
             every { fileStorageDispatcher } returns testDispatcher

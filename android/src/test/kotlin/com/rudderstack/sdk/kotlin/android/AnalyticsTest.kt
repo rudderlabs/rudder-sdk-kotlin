@@ -10,7 +10,6 @@ import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ProcessLife
 import com.rudderstack.sdk.kotlin.core.AnalyticsConfiguration
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
-import com.rudderstack.sdk.kotlin.core.internals.logger.provideAnalyticsLogger
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
@@ -98,14 +97,11 @@ class AnalyticsTest {
             anyConstructed<ActivityLifecycleManagementPlugin>().setup(any())
         } just Runs
 
-        // Mock Analytics Logger
-        mockkStatic(::provideAnalyticsLogger)
-        every { provideAnalyticsLogger(any(), any()) } returns mockLogger
-
         // Mock Analytics Configuration
         mockkStatic(::provideAnalyticsConfiguration)
         every { provideAnalyticsConfiguration(any(), any()) } returns mockAnalyticsConfiguration
         mockAnalyticsConfiguration.apply {
+            every { logger } returns mockLogger
             every { analyticsScope } returns testScope
             every { analyticsDispatcher } returns testDispatcher
             every { fileStorageDispatcher } returns testDispatcher
@@ -255,7 +251,7 @@ class AnalyticsTest {
         analytics.reset(coreResetOptions)
 
         verify(exactly = 1) {
-            analytics.logger.debug("The options should be of type Android ResetOptions.")
+            mockLogger.debug("The options should be of type Android ResetOptions.")
         }
     }
 
@@ -273,7 +269,7 @@ class AnalyticsTest {
         analytics.reset(androidResetOptions)
 
         verify(exactly = 0) {
-            analytics.logger.debug("The options should be of type Android ResetOptions.")
+            mockLogger.debug("The options should be of type Android ResetOptions.")
         }
     }
     
