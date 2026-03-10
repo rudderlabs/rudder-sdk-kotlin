@@ -86,7 +86,7 @@ data class Configuration @JvmOverloads constructor(
 
         /**
          * The default logger instance used for logging SDK events and errors.
-         * Defaults to an instance of `AndroidLogger`.
+         * Defaults to the logger set via `LoggerAnalytics`, or an instance of `AndroidLogger` if none is set.
          */
         @Suppress("DEPRECATION")
         internal val DEFAULT_LOGGER: Logger

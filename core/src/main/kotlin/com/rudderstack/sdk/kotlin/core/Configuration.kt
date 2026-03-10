@@ -64,7 +64,7 @@ open class Configuration @JvmOverloads constructor(
 
         /**
          * The default logger instance used for logging SDK events and errors.
-         * Defaults to a new instance of `KotlinLogger`.
+         * Defaults to the logger set via `LoggerAnalytics`, or a new instance of `KotlinLogger` if none is set.
          */
         @Suppress("DEPRECATION")
         internal val DEFAULT_LOGGER: Logger
@@ -72,7 +72,7 @@ open class Configuration @JvmOverloads constructor(
 
         /**
          * The default log level for this configuration instance, determining the minimum severity of messages that will be logged.
-         * Defaults to [Logger.DEFAULT_LOG_LEVEL].
+         * Defaults to [LoggerAnalytics.logLevel].
          */
         @Suppress("DEPRECATION")
         val DEFAULT_LOG_LEVEL: Logger.LogLevel

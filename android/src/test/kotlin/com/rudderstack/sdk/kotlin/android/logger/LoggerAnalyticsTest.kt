@@ -12,7 +12,6 @@ import io.mockk.verifyOrder
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
-@Suppress("DEPRECATION")
 class LoggerAnalyticsTest {
 
     @BeforeEach

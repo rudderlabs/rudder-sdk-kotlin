@@ -1,6 +1,7 @@
 package com.rudderstack.sampleapp.analytics
 
 import android.app.Application
+import android.util.Log
 import com.rudderstack.android.sampleapp.BuildConfig
 import com.rudderstack.sampleapp.analytics.customlogger.CustomTimberLogger
 import com.rudderstack.sampleapp.analytics.customplugins.AndroidAdvertisingIdPlugin
@@ -68,10 +69,10 @@ object RudderAnalyticsUtils {
         sampleIntegrationPlugin.onDestinationReady { _, destinationResult ->
             when (destinationResult) {
                 is Result.Success ->
-                    sampleIntegrationPlugin.logger.debug("SampleCustomIntegrationPlugin: destination ready")
+                    Log.d("Rudder-Analytics", "SampleCustomIntegrationPlugin: destination ready")
 
                 is Result.Failure ->
-                    sampleIntegrationPlugin.logger.debug("SampleCustomIntegrationPlugin: destination failed to initialise: ${destinationResult.error.message}.")
+                    Log.d("Rudder-Analytics", "SampleCustomIntegrationPlugin: destination failed to initialise: ${destinationResult.error.message}.")
             }
         }
         return sampleIntegrationPlugin
