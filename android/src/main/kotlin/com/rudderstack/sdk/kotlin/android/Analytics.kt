@@ -25,6 +25,8 @@ import com.rudderstack.sdk.kotlin.android.plugins.sessiontracking.DEFAULT_SESSIO
 import com.rudderstack.sdk.kotlin.android.plugins.sessiontracking.SessionTrackingPlugin
 import com.rudderstack.sdk.kotlin.android.storage.provideAndroidStorage
 import com.rudderstack.sdk.kotlin.core.Analytics
+import com.rudderstack.sdk.kotlin.core.AnalyticsConfiguration
+import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.provideAnalyticsLogger
 import com.rudderstack.sdk.kotlin.core.internals.models.reset.ResetOptions
 import com.rudderstack.sdk.kotlin.core.internals.platform.Platform
@@ -256,9 +258,9 @@ class Analytics(
         }
     }
 
-    @Suppress("DEPRECATION")
     private fun setup() {
-        com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics.setPlatformLogger(logger = AndroidLogger())
+        @Suppress("DEPRECATION")
+        LoggerAnalytics.setPlatformLogger(logger = AndroidLogger())
         add(AndroidConnectivityObserverPlugin(connectivityState))
         add(DeviceInfoPlugin())
         add(AppInfoPlugin())
@@ -295,18 +297,15 @@ class Analytics(
         }
 }
 
-private fun createAndroidAnalyticsConfiguration(
-    configuration: Configuration
-): com.rudderstack.sdk.kotlin.core.AnalyticsConfiguration {
-    val storageLogger = provideAnalyticsLogger(logger = configuration.logger, logLevel = configuration.logLevel)
+private fun createAndroidAnalyticsConfiguration(configuration: Configuration): AnalyticsConfiguration {
+    val analyticsLogger = provideAnalyticsLogger(logger = configuration.logger, logLevel = configuration.logLevel)
     return provideAnalyticsConfiguration(
         storage = provideAndroidStorage(
             configuration.writeKey,
             configuration.application,
             PlatformType.Mobile,
-            storageLogger
+            analyticsLogger
         ),
-        logger = configuration.logger,
-        logLevel = configuration.logLevel,
+        logger = analyticsLogger
     )
 }

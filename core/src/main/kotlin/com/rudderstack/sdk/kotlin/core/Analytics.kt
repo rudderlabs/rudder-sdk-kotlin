@@ -73,11 +73,10 @@ open class Analytics protected constructor(
 ) : AnalyticsConfiguration by analyticsConfiguration, Platform {
 
     /**
-     * The logging class for this Analytics instance used for logging throughout the SDK.
+     * The `logger` instance for this Analytics instance used for logging throughout the SDK.
      *
      * **Important**: It is the first property to be initialized in the `Analytics` class,
-     * as it is used in various places during initialization and event processing.
-     *
+     * as it's required during initialization and event processing.
      */
     @InternalRudderApi
     val logger: Logger = provideAnalyticsLogger(
@@ -481,14 +480,13 @@ open class Analytics protected constructor(
 }
 
 private fun createAnalyticsConfiguration(configuration: Configuration): AnalyticsConfiguration {
-    val storageLogger = provideAnalyticsLogger(logger = configuration.logger, logLevel = configuration.logLevel)
+    val analyticsLogger = provideAnalyticsLogger(logger = configuration.logger, logLevel = configuration.logLevel)
     return provideAnalyticsConfiguration(
         storage = when (configuration.storageType) {
-            StorageType.IN_MEMORY -> provideInMemoryStorage(configuration.writeKey, storageLogger)
-            StorageType.FILE -> provideBasicStorage(configuration.writeKey, PlatformType.Server, storageLogger)
+            StorageType.IN_MEMORY -> provideInMemoryStorage(configuration.writeKey, analyticsLogger)
+            StorageType.FILE -> provideBasicStorage(configuration.writeKey, PlatformType.Server, analyticsLogger)
         },
-        logger = configuration.logger,
-        logLevel = configuration.logLevel,
+        logger = analyticsLogger
     )
 }
 

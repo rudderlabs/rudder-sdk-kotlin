@@ -1,7 +1,6 @@
 package com.rudderstack.sdk.kotlin.core
 
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
-import com.rudderstack.sdk.kotlin.core.internals.logger.provideAnalyticsLogger
 import com.rudderstack.sdk.kotlin.core.internals.models.connectivity.ConnectivityState
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
@@ -84,13 +83,10 @@ interface AnalyticsConfiguration {
 private class AnalyticsConfigurationImpl(
     override val storage: Storage,
     logger: Logger,
-    logLevel: Logger.LogLevel = Logger.DEFAULT_LOG_LEVEL,
 ) : AnalyticsConfiguration {
 
-    private val analyticsLogger = provideAnalyticsLogger(logger, logLevel)
-
     private val handler = CoroutineExceptionHandler { _, exception ->
-        analyticsLogger.error(exception.stackTraceToString())
+        logger.error(exception.stackTraceToString())
     }
     override val analyticsJob: Job = SupervisorJob()
     override val analyticsScope: CoroutineScope = run {
@@ -113,10 +109,6 @@ private class AnalyticsConfigurationImpl(
  * Get the analytics configuration.
  */
 @InternalRudderApi
-fun provideAnalyticsConfiguration(
-    storage: Storage,
-    logger: Logger,
-    logLevel: Logger.LogLevel = Logger.DEFAULT_LOG_LEVEL,
-): AnalyticsConfiguration {
-    return AnalyticsConfigurationImpl(storage, logger, logLevel)
+fun provideAnalyticsConfiguration(storage: Storage, logger: Logger,): AnalyticsConfiguration {
+    return AnalyticsConfigurationImpl(storage, logger)
 }

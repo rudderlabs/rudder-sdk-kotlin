@@ -106,7 +106,7 @@ class AnalyticsTest {
 
         // Mock Analytics Configuration
         mockkStatic(::provideAnalyticsConfiguration)
-        every { provideAnalyticsConfiguration(any(), any(), any()) } returns mockAnalyticsConfiguration
+        every { provideAnalyticsConfiguration(any(), any()) } returns mockAnalyticsConfiguration
         mockAnalyticsConfiguration.apply {
             every { analyticsScope } returns testScope
             every { analyticsDispatcher } returns testDispatcher
