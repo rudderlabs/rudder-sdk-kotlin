@@ -28,7 +28,7 @@ import source.version.VersionConstants
 internal class InMemoryStorage(
     writeKey: String,
     private val logger: Logger,
-    private val prefsStore: KeyValueStorage = InMemoryPrefsStore()
+    private val prefsStore: KeyValueStorage = InMemoryPrefsStore(logger)
 ) : Storage {
 
     private val eventBatchFile = InMemoryBatchManager(writeKey, prefsStore)

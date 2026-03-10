@@ -26,9 +26,9 @@ internal class AndroidStorage(
     platformType: PlatformType,
     private val logger: Logger,
     private val rudderPrefsRepo: KeyValueStorage = SharedPrefsStore(
-        context,
-        RUDDER_PREFS.toAndroidPrefsKey(writeKey),
-        logger
+        context = context,
+        prefsName = RUDDER_PREFS.toAndroidPrefsKey(writeKey),
+        logger = logger
     ),
     private val storageDirectory: File = context.getDir(DIRECTORY_NAME.appendWriteKey(writeKey), Context.MODE_PRIVATE),
     private val eventBatchFile: EventBatchFileManager = EventBatchFileManager(
