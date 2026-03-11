@@ -6,6 +6,7 @@ import com.rudderstack.sdk.kotlin.core.Configuration.Companion.DEFAULT_FLUSH_POL
 import com.rudderstack.sdk.kotlin.core.Configuration.Companion.DEFAULT_GZIP_STATUS
 import com.rudderstack.sdk.kotlin.core.internals.logger.KotlinLogger
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
+import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPolicy
 
 /**
@@ -22,7 +23,8 @@ open class ConfigurationBuilder(
     private var gzipEnabled: Boolean = DEFAULT_GZIP_STATUS
     private var flushPolicies: List<FlushPolicy> = DEFAULT_FLUSH_POLICIES
 
-    private var logger: Logger = KotlinLogger()
+    @Suppress("DEPRECATION")
+    private var logger: Logger = LoggerAnalytics.logger ?: KotlinLogger()
     private var logLevel: Logger.LogLevel = Logger.DEFAULT_LOG_LEVEL
 
     /**

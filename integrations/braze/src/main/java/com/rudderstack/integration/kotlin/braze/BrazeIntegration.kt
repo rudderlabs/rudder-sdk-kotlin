@@ -55,8 +55,9 @@ class BrazeIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
     public override fun create(destinationConfig: JsonObject) {
         braze ?: run {
             destinationConfig.parse<RudderBrazeConfig>(analytics.logger)?.let { config ->
+                config.logger = analytics.logger
                 this.brazeConfig = config
-                initBraze(analytics.application, config, analytics.configuration.logLevel, analytics.logger).also {
+                initBraze(analytics.application, config, analytics.configuration.logLevel).also {
                     braze = it
                     setUserAlias()
                 }
@@ -78,6 +79,7 @@ class BrazeIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
 
     override fun update(destinationConfig: JsonObject) {
         destinationConfig.parse<RudderBrazeConfig>(analytics.logger)?.let { updatedConfig ->
+            updatedConfig.logger = analytics.logger
             this.brazeConfig = updatedConfig
         }
     }
@@ -87,7 +89,7 @@ class BrazeIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
     }
 
     override fun track(payload: TrackEvent) {
-        if (brazeConfig.isHybridMode(analytics.logger)) return
+        if (brazeConfig.isHybridMode()) return
 
         when (payload.event) {
             INSTALL_ATTRIBUTED -> {
@@ -162,7 +164,7 @@ class BrazeIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
     }
 
     override fun identify(payload: IdentifyEvent) {
-        if (brazeConfig.isHybridMode(analytics.logger)) return
+        if (brazeConfig.isHybridMode()) return
 
         payload.toIdentifyTraits(analytics.logger).let { currentIdentifyTraits ->
             val deDupedTraits = this.brazeConfig.takeIf { it.supportDedup }?.let {
@@ -190,16 +192,11 @@ class BrazeIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
     }
 }
 
-private fun initBraze(
-    application: Application,
-    config: RudderBrazeConfig,
-    logLevel: Logger.LogLevel,
-    logger: Logger
-): Braze {
+private fun initBraze(application: Application, config: RudderBrazeConfig, logLevel: Logger.LogLevel,): Braze {
     with(config) {
         val builder: BrazeConfig.Builder =
             initBrazeConfig()
-                .setApiKey(resolvedAppIdentifierKey(logger))
+                .setApiKey(resolvedAppIdentifierKey())
                 .setCustomEndpoint(customEndpoint)
         setLogLevel(logLevel)
         Braze.configure(application, builder.build())
