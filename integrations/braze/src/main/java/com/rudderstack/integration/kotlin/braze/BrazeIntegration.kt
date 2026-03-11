@@ -196,7 +196,7 @@ private fun initBraze(application: Application, config: RudderBrazeConfig, logLe
     with(config) {
         val builder: BrazeConfig.Builder =
             initBrazeConfig()
-                .setApiKey(resolvedAppIdentifierKey())
+                .setApiKey(resolvedAppIdentifierKey)
                 .setCustomEndpoint(customEndpoint)
         setLogLevel(logLevel)
         Braze.configure(application, builder.build())

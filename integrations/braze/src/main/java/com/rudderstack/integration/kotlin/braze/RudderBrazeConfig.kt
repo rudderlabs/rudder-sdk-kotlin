@@ -49,34 +49,28 @@ internal data class RudderBrazeConfig(
     @Transient
     internal var logger: Logger? = null
 
-    init {
-        require(
-            resolveAppIdentifierKeyForValidation().isNotBlank()
-        ) { "Invalid App Identifier Key. Aborting Braze initialization." }
-        require(customEndpoint.isNotBlank()) { "dataCenter cannot be empty or blank" }
-    }
-
     /**
      * Resolves the App Identifier Key to use based on platform-specific configuration.
      * Prefers androidAppIdentifierKey when usePlatformSpecificAppIdentifierKeys is enabled and androidAppIdentifierKey is not blank.
      * Falls back to the legacy appIdentifierKey otherwise.
      */
-    internal fun resolvedAppIdentifierKey(): String = when {
-        usePlatformSpecificAppIdentifierKeys && !androidAppIdentifierKey.isNullOrBlank() -> androidAppIdentifierKey
-        usePlatformSpecificAppIdentifierKeys -> {
-            logger?.error(
-                "BrazeIntegration: Configured to use platform-specific App Identifier Keys " +
-                    "but Android App Identifier Key is not valid. " +
-                    "Falling back to the Default App Identifier Key."
-            )
-            appIdentifierKey
+    internal val resolvedAppIdentifierKey: String
+        get() = when {
+            usePlatformSpecificAppIdentifierKeys && !androidAppIdentifierKey.isNullOrBlank() -> androidAppIdentifierKey
+            usePlatformSpecificAppIdentifierKeys -> {
+                logger?.error(
+                    "BrazeIntegration: Configured to use platform-specific App Identifier Keys " +
+                        "but Android App Identifier Key is not valid. " +
+                        "Falling back to the Default App Identifier Key."
+                )
+                appIdentifierKey
+            }
+            else -> appIdentifierKey
         }
-        else -> appIdentifierKey
-    }
 
-    private fun resolveAppIdentifierKeyForValidation(): String = when {
-        usePlatformSpecificAppIdentifierKeys && !androidAppIdentifierKey.isNullOrBlank() -> androidAppIdentifierKey
-        else -> appIdentifierKey
+    init {
+        require(resolvedAppIdentifierKey.isNotBlank()) { "Invalid App Identifier Key. Aborting Braze initialization." }
+        require(customEndpoint.isNotBlank()) { "dataCenter cannot be empty or blank" }
     }
 
     internal fun isHybridMode(): Boolean {
