@@ -25,7 +25,9 @@ open class ConfigurationBuilder(
 
     @Suppress("DEPRECATION")
     private var logger: Logger = LoggerAnalytics.logger ?: KotlinLogger()
-    private var logLevel: Logger.LogLevel = Logger.DEFAULT_LOG_LEVEL
+
+    @Suppress("DEPRECATION")
+    private var logLevel: Logger.LogLevel = LoggerAnalytics.logLevel
 
     /**
      * Sets the control plane URL.
