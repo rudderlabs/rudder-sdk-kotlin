@@ -1,10 +1,11 @@
 package com.rudderstack.integration.kotlin.braze
 
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.models.ExternalId
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -45,6 +46,9 @@ internal data class RudderBrazeConfig(
     val connectionMode: ConnectionMode,
 ) {
 
+    @Transient
+    internal var logger: Logger? = null
+
     /**
      * Resolves the App Identifier Key to use based on platform-specific configuration.
      * Prefers androidAppIdentifierKey when usePlatformSpecificAppIdentifierKeys is enabled and androidAppIdentifierKey is not blank.
@@ -54,7 +58,7 @@ internal data class RudderBrazeConfig(
         get() = when {
             usePlatformSpecificAppIdentifierKeys && !androidAppIdentifierKey.isNullOrBlank() -> androidAppIdentifierKey
             usePlatformSpecificAppIdentifierKeys -> {
-                LoggerAnalytics.error(
+                logger?.error(
                     "BrazeIntegration: Configured to use platform-specific App Identifier Keys " +
                         "but Android App Identifier Key is not valid. " +
                         "Falling back to the Default App Identifier Key."
@@ -72,7 +76,7 @@ internal data class RudderBrazeConfig(
     internal fun isHybridMode(): Boolean {
         return when (connectionMode) {
             ConnectionMode.HYBRID -> {
-                LoggerAnalytics.verbose("BrazeIntegration: As connection mode is set to hybrid, dropping event request.")
+                logger?.verbose("BrazeIntegration: As connection mode is set to hybrid, dropping event request.")
                 true
             }
             ConnectionMode.DEVICE -> return false

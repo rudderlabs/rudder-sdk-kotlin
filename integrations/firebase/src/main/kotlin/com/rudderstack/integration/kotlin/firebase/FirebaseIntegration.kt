@@ -14,7 +14,6 @@ import com.rudderstack.sdk.kotlin.android.utils.isDouble
 import com.rudderstack.sdk.kotlin.android.utils.isKeyEmpty
 import com.rudderstack.sdk.kotlin.core.ecommerce.ECommerceEvents
 import com.rudderstack.sdk.kotlin.core.ecommerce.ECommerceParamNames
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.ScreenEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
@@ -74,7 +73,7 @@ class FirebaseIntegration : StandardIntegration, IntegrationPlugin() {
         payload.traits?.forEach { (key, value) ->
             if (key !in IDENTIFY_RESERVED_KEYWORDS && key != USER_ID_KEY) {
                 val firebaseCompatibleKey = formatFirebaseKey(key)
-                val stringValue = getString(value = value, maxLength = MAX_TRAITS_VALUE_LENGTH)
+                val stringValue = getString(value = value, maxLength = MAX_TRAITS_VALUE_LENGTH, logger = analytics.logger)
                 firebaseAnalytics?.setUserProperty(firebaseCompatibleKey, stringValue)
             }
         }
@@ -84,7 +83,7 @@ class FirebaseIntegration : StandardIntegration, IntegrationPlugin() {
         if (payload.screenName.isNotEmpty()) {
             getBundle().apply {
                 putString(FirebaseAnalytics.Param.SCREEN_NAME, payload.screenName)
-                attachAllCustomProperties(this, payload.properties, false)
+                attachAllCustomProperties(this, payload.properties, false, analytics.logger)
                 firebaseAnalytics?.logEvent(FirebaseAnalytics.Event.SCREEN_VIEW, this)
             }
         }
@@ -241,7 +240,7 @@ class FirebaseIntegration : StandardIntegration, IntegrationPlugin() {
 
             FirebaseAnalytics.Param.PRICE -> params.putDouble(firebaseKey, value?.getDouble() ?: 0.0)
 
-            else -> LoggerAnalytics.debug("FirebaseIntegration: Product value is not of expected type")
+            else -> analytics.logger.debug("FirebaseIntegration: Product value is not of expected type")
         }
     }
 
@@ -251,8 +250,8 @@ class FirebaseIntegration : StandardIntegration, IntegrationPlugin() {
         properties: JsonObject?,
         isEcommerceEvent: Boolean
     ) {
-        attachAllCustomProperties(params, properties, isEcommerceEvent)
-        LoggerAnalytics.debug("FirebaseIntegration: Logged \"$firebaseEvent\" to Firebase")
+        attachAllCustomProperties(params, properties, isEcommerceEvent, analytics.logger)
+        analytics.logger.debug("FirebaseIntegration: Logged \"$firebaseEvent\" to Firebase")
         firebaseAnalytics?.logEvent(firebaseEvent, params)
     }
 }

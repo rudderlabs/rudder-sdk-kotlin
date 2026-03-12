@@ -1,6 +1,7 @@
 import com.rudderstack.integration.kotlin.firebase.getString
 import com.rudderstack.integration.kotlin.firebase.attachAllCustomProperties
 import android.os.Bundle
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.mockk
@@ -23,6 +24,7 @@ import java.util.stream.Stream
 class UtilsTest {
 
     private lateinit var mockBundle: Bundle
+    private val mockLogger: Logger = mockk(relaxed = true)
 
     @BeforeEach
     fun setup() {
@@ -40,7 +42,7 @@ class UtilsTest {
         jsonElement: Any?,
         expected: String,
     ) {
-        val result = getString(jsonElement as? JsonElement, maxLength = 100)
+        val result = getString(jsonElement as? JsonElement, maxLength = 100, logger = mockLogger)
 
         assertEquals(expected, result)
     }
@@ -53,7 +55,7 @@ class UtilsTest {
             put("custom_property", "custom_value") // Non-reserved property
         }
 
-        attachAllCustomProperties(mockBundle, properties, isEcommerceEvent = true)
+        attachAllCustomProperties(mockBundle, properties, isEcommerceEvent = true, logger = mockLogger)
 
         // Verify reserved keywords are NOT added to bundle
         verify(exactly = 0) { mockBundle.putString("product_id", any()) }
@@ -71,7 +73,7 @@ class UtilsTest {
             put("custom_property", "custom_value") // Non-reserved property
         }
 
-        attachAllCustomProperties(mockBundle, properties, isEcommerceEvent = false)
+        attachAllCustomProperties(mockBundle, properties, isEcommerceEvent = false, logger = mockLogger)
 
         // Verify ALL properties are added to bundle (including reserved keywords)
         verify(exactly = 1) { mockBundle.putString("product_id", "product456") }
@@ -83,7 +85,7 @@ class UtilsTest {
     fun `when attachAllCustomProperties is called with empty properties, then no properties should be added`() {
         val properties = buildJsonObject { }
 
-        attachAllCustomProperties(mockBundle, properties, isEcommerceEvent = true)
+        attachAllCustomProperties(mockBundle, properties, isEcommerceEvent = true, logger = mockLogger)
 
         verify(exactly = 0) { mockBundle.putString(any(), any()) }
         verify(exactly = 0) { mockBundle.putInt(any(), any()) }
@@ -95,7 +97,7 @@ class UtilsTest {
     fun `when attachAllCustomProperties is called with empty properties for non-ecommerce events, then no properties should be added`() {
         val properties = buildJsonObject { }
 
-        attachAllCustomProperties(mockBundle, properties, isEcommerceEvent = false)
+        attachAllCustomProperties(mockBundle, properties, isEcommerceEvent = false, logger = mockLogger)
 
         verify(exactly = 0) { mockBundle.putString(any(), any()) }
         verify(exactly = 0) { mockBundle.putInt(any(), any()) }
@@ -105,7 +107,7 @@ class UtilsTest {
 
     @Test
     fun `when attachAllCustomProperties is called with null properties, then no properties should be added`() {
-        attachAllCustomProperties(mockBundle, null, isEcommerceEvent = true)
+        attachAllCustomProperties(mockBundle, null, isEcommerceEvent = true, logger = mockLogger)
 
         verify(exactly = 0) { mockBundle.putString(any(), any()) }
         verify(exactly = 0) { mockBundle.putInt(any(), any()) }
@@ -115,7 +117,7 @@ class UtilsTest {
 
     @Test
     fun `when attachAllCustomProperties is called with null properties for non-ecommerce events, then no properties should be added`() {
-        attachAllCustomProperties(mockBundle, null, isEcommerceEvent = false)
+        attachAllCustomProperties(mockBundle, null, isEcommerceEvent = false, logger = mockLogger)
 
         verify(exactly = 0) { mockBundle.putString(any(), any()) }
         verify(exactly = 0) { mockBundle.putInt(any(), any()) }
