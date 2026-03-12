@@ -33,7 +33,7 @@ private const val NETWORK_WIFI_KEY = "wifi"
  *
  */
 internal class NetworkInfoPlugin(
-    private var networkUtils: NetworkUtils = NetworkUtils()
+    private val networkUtils: NetworkUtils = NetworkUtils(),
 ) : Plugin {
 
     override val pluginType: Plugin.PluginType = Plugin.PluginType.PreProcess
