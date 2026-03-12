@@ -4,7 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.os.Build
 import androidx.core.content.edit
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.storage.KeyValueStorage
 import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
 import java.io.File
@@ -12,6 +12,7 @@ import java.io.File
 internal class SharedPrefsStore(
     private val context: Context,
     private val prefsName: String,
+    private val logger: Logger,
 ) : KeyValueStorage {
 
     private val preferences: SharedPreferences = context.getSharedPreferences(prefsName, Context.MODE_PRIVATE)
@@ -55,7 +56,7 @@ internal class SharedPrefsStore(
         } else {
             File(context.getSharedPreferencesFilePath(prefsName)).takeIf { file -> file.exists() }?.delete() ?: false
         }
-        LoggerAnalytics.debug("Attempt to delete shared preferences successful: $isDeleted")
+        logger.debug("Attempt to delete shared preferences successful: $isDeleted")
     }
 
     override fun clear(key: String) {
@@ -78,7 +79,7 @@ internal class SharedPrefsStore(
                 is String -> putString(key, value)
 
                 else -> {
-                    LoggerAnalytics.error("SharedPrefsStore: ($key and $value) type is not supported.")
+                    logger.error("SharedPrefsStore: ($key and $value) type is not supported.")
                 }
             }
         }

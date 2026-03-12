@@ -1,6 +1,6 @@
 package com.rudderstack.sdk.kotlin.core.internals.storage.inmemory
 
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.storage.KeyValueStorage
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
@@ -15,7 +15,9 @@ import java.util.concurrent.ConcurrentHashMap
  * Useful for server-side SDK deployments or testing purposes where persistence is not required.
  */
 @InternalRudderApi
-internal class InMemoryPrefsStore : KeyValueStorage {
+internal class InMemoryPrefsStore(
+    private val logger: Logger,
+) : KeyValueStorage {
 
     private val storage = ConcurrentHashMap<String, Any>()
 
@@ -58,6 +60,6 @@ internal class InMemoryPrefsStore : KeyValueStorage {
     @UseWithCaution
     override fun delete() {
         storage.clear()
-        LoggerAnalytics.info("InMemoryPrefsStore deleted")
+        logger.info("InMemoryPrefsStore deleted")
     }
 }

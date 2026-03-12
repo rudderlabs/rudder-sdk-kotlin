@@ -38,11 +38,12 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
  *
  * **DEPRECATION NOTICE**: While this class remains available for backward compatibility with existing integrations,
  * internal SDK components now use instance-based logging via `AnalyticsLogger` to support different log levels
- * per Analytics instance. New internal development should use the instance logger available via `Analytics.logger`.
+ * per Analytics instance. New internal development should use the instance logger available via `analyticsInstance.logger`.
  * External integrations may continue to use this singleton safely.
  */
 @Deprecated(
-    message = "LoggerAnalytics is deprecated for internal SDK usage and external clients. Use Analytics.logger instead " +
+    message = "LoggerAnalytics is deprecated for internal SDK usage and external clients. " +
+        "Use analyticsInstance.logger instead " +
         "for instance-based logging. External integrations may continue using this safely for backward compatibility.",
     level = DeprecationLevel.WARNING
 )
@@ -101,7 +102,7 @@ object LoggerAnalytics {
      * @param log The message to log.
      */
     @Deprecated(
-        message = "Use Analytics.logger.verbose() instead for instance-based logging",
+        message = "Use analyticsInstance.logger.verbose() instead for instance-based logging",
         level = DeprecationLevel.WARNING
     )
     fun verbose(log: String) {
@@ -116,7 +117,7 @@ object LoggerAnalytics {
      * @param log The message to log.
      */
     @Deprecated(
-        message = "Use Analytics.logger.debug() instead for instance-based logging",
+        message = "Use analyticsInstance.logger.debug() instead for instance-based logging",
         level = DeprecationLevel.WARNING
     )
     fun debug(log: String) {
@@ -131,7 +132,7 @@ object LoggerAnalytics {
      * @param log The message to log.
      */
     @Deprecated(
-        message = "Use Analytics.logger.info() instead for instance-based logging",
+        message = "Use analyticsInstance.logger.info() instead for instance-based logging",
         level = DeprecationLevel.WARNING
     )
     fun info(log: String) {
@@ -146,7 +147,7 @@ object LoggerAnalytics {
      * @param log The message to log.
      */
     @Deprecated(
-        message = "Use Analytics.logger.warn() instead for instance-based logging",
+        message = "Use analyticsInstance.logger.warn() instead for instance-based logging",
         level = DeprecationLevel.WARNING
     )
     fun warn(log: String) {
@@ -162,7 +163,7 @@ object LoggerAnalytics {
      * @param throwable An optional exception to log alongside the error message.
      */
     @Deprecated(
-        message = "Use Analytics.logger.error() instead for instance-based logging",
+        message = "Use analyticsInstance.logger.error() instead for instance-based logging",
         level = DeprecationLevel.WARNING
     )
     @JvmOverloads

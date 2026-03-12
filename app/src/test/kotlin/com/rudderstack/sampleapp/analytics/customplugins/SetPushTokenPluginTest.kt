@@ -1,7 +1,9 @@
 package com.rudderstack.sampleapp.analytics.customplugins
 
+import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
+import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
@@ -15,11 +17,14 @@ private val emptyJsonObject = JsonObject(emptyMap())
 
 class SetPushTokenPluginTest {
 
+    private val mockAnalytics: Analytics = mockk(relaxed = true)
+
     @Test
     fun `given a push token, when it is set using custom plugin, then it is added in the payload`()
     = runTest {
         val event = provideDefaultEvent()
         val setPushTokenPlugin = SetPushTokenPlugin(pushToken)
+        setPushTokenPlugin.setup(mockAnalytics)
 
         setPushTokenPlugin.intercept(event)
 

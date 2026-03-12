@@ -1,8 +1,10 @@
 package com.rudderstack.sdk.kotlin.core.internals.storage
 
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.models.DEFAULT_SENT_AT_TIMESTAMP
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.utils.appendWriteKey
+import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -21,7 +23,8 @@ class EventBatchFileManagerTest {
     private val fileName = "0"
     private val epochTimestamp = DEFAULT_SENT_AT_TIMESTAMP
     private val directory = File(FILE_DIRECTORY.appendWriteKey(writeKey))
-    private val keyValueStorage = PropertiesFile(directory.parentFile, writeKey)
+    private val mockLogger: Logger = mockk(relaxed = true)
+    private val keyValueStorage = PropertiesFile(directory.parentFile, writeKey, mockLogger)
 
     private lateinit var eventBatchFileManager: EventBatchFileManager
 

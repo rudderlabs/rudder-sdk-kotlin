@@ -1,7 +1,6 @@
 package com.rudderstack.sdk.kotlin.core.internals.utils
 
 import com.rudderstack.sdk.kotlin.core.Analytics
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 
@@ -11,7 +10,7 @@ import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 @InternalRudderApi
 fun Analytics.isAnalyticsActive(): Boolean {
     if (isAnalyticsShutdown) {
-        LoggerAnalytics.error("Analytics instance has been shutdown. No further operations are allowed.")
+        logger.error("Analytics instance has been shutdown. No further operations are allowed.")
         return false
     }
     return true
@@ -42,7 +41,7 @@ fun Analytics.isSourceEnabled(): Boolean {
 @InternalRudderApi
 fun Analytics.isSourceEnabledWithLogging(): Boolean {
     if (!isSourceEnabled()) {
-        LoggerAnalytics.error("Source is disabled. This operation is not allowed.")
+        logger.error("Source is disabled. This operation is not allowed.")
         return false
     }
     return true

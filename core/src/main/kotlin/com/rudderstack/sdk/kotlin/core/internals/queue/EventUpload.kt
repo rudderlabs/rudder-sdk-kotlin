@@ -1,7 +1,6 @@
 package com.rudderstack.sdk.kotlin.core.internals.queue
 
 import com.rudderstack.sdk.kotlin.core.Analytics
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.network.EventUploadResult
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClient
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClientImpl
@@ -50,11 +49,12 @@ internal class EventUpload(
             endPoint = BATCH_ENDPOINT,
             authHeaderString = writeKey.encodeToBase64(),
             isGZIPEnabled = gzipEnabled,
-            anonymousIdHeaderString = analytics.anonymousId ?: String.empty()
+            anonymousIdHeaderString = analytics.anonymousId ?: String.empty(),
+            logger = analytics.logger,
         )
     },
-    private val maxAttemptsWithBackoff: MaxAttemptsWithBackoff = MaxAttemptsWithBackoff(),
-    private val retryHeadersProvider: RetryHeadersProvider = RetryHeadersProviderImpl(analytics.storage),
+    private val maxAttemptsWithBackoff: MaxAttemptsWithBackoff = MaxAttemptsWithBackoff(logger = analytics.logger),
+    private val retryHeadersProvider: RetryHeadersProvider = RetryHeadersProviderImpl(analytics.storage, analytics.logger),
 ) {
 
     private var lastBatchAnonymousId = String.empty()
@@ -76,7 +76,7 @@ internal class EventUpload(
     @Suppress("TooGenericExceptionCaught")
     private fun upload() = analytics.analyticsScope.launch(analytics.networkDispatcher) {
         uploadChannel.consumeEach {
-            LoggerAnalytics.debug("performing flush")
+            analytics.logger.debug("performing flush")
             prepareForUpload()
             processAndUploadEvent()
         }
@@ -101,10 +101,10 @@ internal class EventUpload(
                     uploadEvents(batch, filePath)
                 }
             } catch (e: CancellationException) {
-                LoggerAnalytics.error("Job was cancelled. Stopping the upload process.", e)
+                analytics.logger.error("Job was cancelled. Stopping the upload process.", e)
                 throw e
             } catch (e: Exception) {
-                LoggerAnalytics.error("Error when processing batch payload. Deleting the file.", e)
+                analytics.logger.error("Error when processing batch payload. Deleting the file.", e)
                 cleanup(filePath)
             }
         }
@@ -121,7 +121,7 @@ internal class EventUpload(
     @VisibleForTesting
     internal fun getAnonymousIdFromBatch(batchPayload: String): String {
         return ANONYMOUS_ID_REGEX.find(batchPayload)?.groupValues?.get(1) ?: run {
-            LoggerAnalytics.error("Fetched empty anonymousId from batch payload, falling back to random UUID.")
+            analytics.logger.error("Fetched empty anonymousId from batch payload, falling back to random UUID.")
             generateUUID()
         }
     }
@@ -130,21 +130,21 @@ internal class EventUpload(
         val batchId = storage.getBatchId(filePath)
         var result: EventUploadResult
         do {
-            val updatedPayload = JsonSentAtUpdater.updateSentAt(batchPayload)
-            LoggerAnalytics.verbose("Batch Payload: $updatedPayload")
+            val updatedPayload = JsonSentAtUpdater.updateSentAt(batchPayload, analytics.logger)
+            analytics.logger.verbose("Batch Payload: $updatedPayload")
             val currentTimestampInMillis = DateTimeUtils.getSystemCurrentTime()
             val retryHeaders = retryHeadersProvider.getHeaders(batchId, currentTimestampInMillis)
             result = httpClientFactory.sendData(updatedPayload, retryHeaders).toEventUploadResult()
 
             when (result) {
                 is Success -> {
-                    LoggerAnalytics.debug("Event uploaded successfully. Server response: ${result.response}")
+                    analytics.logger.debug("Event uploaded successfully. Server response: ${result.response}")
                     resetRetryState()
                     cleanup(filePath)
                 }
 
                 is RetryAbleEventUploadError -> {
-                    LoggerAnalytics.debug("EventUpload: ${result.formatStatusCodeMessage()}. Retry able error occurred.")
+                    analytics.logger.debug("EventUpload: ${result.formatStatusCodeMessage()}. Retry able error occurred.")
                     retryHeadersProvider.recordFailure(batchId, currentTimestampInMillis, result)
                     maxAttemptsWithBackoff.delayWithBackoff()
                 }
@@ -161,7 +161,7 @@ internal class EventUpload(
     private fun handleNonRetryAbleError(status: NonRetryAbleEventUploadError, filePath: String) {
         when (status) {
             NonRetryAbleEventUploadError.ERROR_400 -> {
-                LoggerAnalytics.error(
+                analytics.logger.error(
                     "EventUpload: ${status.formatStatusCodeMessage()}. Invalid request: Missing or malformed body. " +
                         "Ensure the payload is a valid JSON and includes either 'anonymousId' or 'userId' properties."
                 )
@@ -169,7 +169,7 @@ internal class EventUpload(
             }
 
             NonRetryAbleEventUploadError.ERROR_401 -> {
-                LoggerAnalytics.error(
+                analytics.logger.error(
                     "EventUpload: ${status.formatStatusCodeMessage()}. " +
                         "Invalid write key. Ensure the write key is valid."
                 )
@@ -178,7 +178,7 @@ internal class EventUpload(
             }
 
             NonRetryAbleEventUploadError.ERROR_404 -> {
-                LoggerAnalytics.error(
+                analytics.logger.error(
                     "EventUpload: ${status.formatStatusCodeMessage()}. Source is disabled. " +
                         "Stopping the events upload process until the source is enabled again."
                 )
@@ -187,7 +187,7 @@ internal class EventUpload(
             }
 
             NonRetryAbleEventUploadError.ERROR_413 -> {
-                LoggerAnalytics.error(
+                analytics.logger.error(
                     "EventUpload: ${status.formatStatusCodeMessage()}. " +
                         "Request failed: Payload size exceeds the maximum allowed limit."
                 )
@@ -205,7 +205,7 @@ internal class EventUpload(
         filePath
             .takeIf { it.isNotEmpty() }
             ?.let { storage.remove(it) }
-            ?.let { LoggerAnalytics.debug("Removed file: $filePath") }
+            ?.let { analytics.logger.debug("Removed file: $filePath") }
     }
 
     internal fun cancel() {

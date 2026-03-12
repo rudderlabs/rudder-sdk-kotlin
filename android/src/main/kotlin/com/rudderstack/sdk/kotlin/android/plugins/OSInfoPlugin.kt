@@ -3,7 +3,6 @@ package com.rudderstack.sdk.kotlin.android.plugins
 import android.os.Build
 import com.rudderstack.sdk.kotlin.android.utils.mergeWithHigherPriorityTo
 import com.rudderstack.sdk.kotlin.core.Analytics
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import kotlinx.serialization.json.JsonObject
@@ -47,7 +46,7 @@ internal class OSInfoPlugin : Plugin {
     override suspend fun intercept(event: Event): Event = attachOSInfo(event)
 
     private fun attachOSInfo(event: Event): Event {
-        LoggerAnalytics.debug("Attaching OS info to the event payload")
+        analytics.logger.debug("Attaching OS info to the event payload")
 
         event.context = event.context mergeWithHigherPriorityTo osContext
 

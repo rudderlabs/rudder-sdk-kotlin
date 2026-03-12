@@ -7,7 +7,6 @@ import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ProcessLife
 import com.rudderstack.sdk.kotlin.android.utils.addLifecycleObserver
 import com.rudderstack.sdk.kotlin.android.utils.removeLifecycleObserver
 import com.rudderstack.sdk.kotlin.core.Analytics
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.utils.DateTimeUtils
@@ -48,7 +47,7 @@ internal class SessionManager(
         sessionTimeout = if (sessionConfiguration.sessionTimeoutInMillis >= 0) {
             sessionConfiguration.sessionTimeoutInMillis
         } else {
-            LoggerAnalytics.error("Session timeout cannot be negative. Setting it to default value.")
+            analytics.logger.error("Session timeout cannot be negative. Setting it to default value.")
             DEFAULT_SESSION_TIMEOUT_IN_MILLIS
         }
 
@@ -188,7 +187,7 @@ internal class SessionManager(
     private fun hasSessionTimedOut(): Boolean {
         val timeDifference = DateTimeUtils.getSystemCurrentTime() - lastActivityTime
         if (timeDifference <= 0) {
-            LoggerAnalytics.warn(
+            analytics.logger.warn(
                 "Current system time is less than or equal to last activity time." +
                     " This indicates potential clock tampering. Resetting the session"
             )

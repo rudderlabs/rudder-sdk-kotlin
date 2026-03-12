@@ -1,6 +1,6 @@
 package com.rudderstack.sdk.kotlin.core.internals.queue
 
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.models.RetryMetadata
 import com.rudderstack.sdk.kotlin.core.internals.network.RetryAbleEventUploadError
 import com.rudderstack.sdk.kotlin.core.internals.network.toRetryReason
@@ -35,6 +35,7 @@ private const val FIRST_ATTEMPT = 1
  */
 internal class RetryHeadersProviderImpl(
     private val storage: Storage,
+    private val logger: Logger,
 ) : RetryHeadersProvider {
 
     override fun getHeaders(batchId: Int, currentTimestampInMillis: Long): Map<String, String> {
@@ -43,7 +44,7 @@ internal class RetryHeadersProviderImpl(
         val elapsedSinceLastAttemptInMillis = currentTimestampInMillis - metadata.lastAttemptTimestampInMillis
         val sinceLastAttemptInMillis = maxOf(MIN_SINCE_LAST_ATTEMPT_IN_MILLIS, elapsedSinceLastAttemptInMillis)
 
-        LoggerAnalytics.verbose(
+        logger.verbose(
             "Adding retry headers: attempt=${metadata.attempt}, " +
                 "sinceLastAttempt=${sinceLastAttemptInMillis}ms, reason=${metadata.reason}"
         )
@@ -73,20 +74,20 @@ internal class RetryHeadersProviderImpl(
     }
 
     override suspend fun clear() {
-        LoggerAnalytics.verbose("Clearing retry metadata from storage")
+        logger.verbose("Clearing retry metadata from storage")
         storage.remove(StorageKeys.RETRY_METADATA)
     }
 
     private fun getMetadataForBatch(batchId: Int): RetryMetadata? {
         val metadata = storage.readString(StorageKeys.RETRY_METADATA, String.empty())
             .takeIf { it.isNotEmpty() }
-            ?.toRetryMetadata()
+            ?.toRetryMetadata(logger)
             ?: return null
 
         return if (metadata.batchId == batchId) {
             metadata
         } else {
-            LoggerAnalytics.verbose("Discarding stale retry metadata: batchId mismatch")
+            logger.verbose("Discarding stale retry metadata: batchId mismatch")
             null
         }
     }
@@ -96,4 +97,4 @@ internal class RetryHeadersProviderImpl(
  * Extension function to convert JSON string to [RetryMetadata].
  * Improves readability in transformation chains.
  */
-private fun String.toRetryMetadata(): RetryMetadata? = RetryMetadata.fromJson(this)
+private fun String.toRetryMetadata(logger: Logger): RetryMetadata? = RetryMetadata.fromJson(this, logger)

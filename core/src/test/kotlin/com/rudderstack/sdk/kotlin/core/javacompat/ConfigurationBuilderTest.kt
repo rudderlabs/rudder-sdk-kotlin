@@ -23,6 +23,7 @@ private const val TEST_WRITE_KEY = "test-write-key"
 private const val TEST_DATA_PLANE_URL = "https://test-data-plane.com"
 private const val TEST_CONTROL_PLANE_URL = "https://test-control-plane.com"
 
+@Suppress("DEPRECATION")
 class ConfigurationBuilderTest {
 
     private lateinit var mockPolicies: List<FlushPolicy>
@@ -42,7 +43,7 @@ class ConfigurationBuilderTest {
         mockkObject(LoggerAnalytics)
         every { LoggerAnalytics.logLevel } returns Logger.DEFAULT_LOG_LEVEL
         every { LoggerAnalytics.logger } returns mockLogger
-        
+
         configurationBuilder = ConfigurationBuilder(TEST_WRITE_KEY, TEST_DATA_PLANE_URL)
     }
 
