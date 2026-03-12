@@ -7,7 +7,6 @@ import com.rudderstack.sdk.kotlin.android.utils.hasPermission
 import com.rudderstack.sdk.kotlin.android.utils.mergeWithHigherPriorityTo
 import com.rudderstack.sdk.kotlin.android.utils.network.DefaultNetworkUtils
 import com.rudderstack.sdk.kotlin.android.utils.network.NetworkUtils
-import com.rudderstack.sdk.kotlin.android.utils.network.provideNetworkUtils
 import com.rudderstack.sdk.kotlin.android.utils.putIfNotNull
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
@@ -33,19 +32,19 @@ private const val NETWORK_WIFI_KEY = "wifi"
  *   in the default network util plugin [DefaultNetworkUtils.isWifiEnabled].
  *
  */
-internal class NetworkInfoPlugin : Plugin {
+internal class NetworkInfoPlugin(
+    private var networkUtils: NetworkUtils = NetworkUtils()
+) : Plugin {
 
     override val pluginType: Plugin.PluginType = Plugin.PluginType.PreProcess
     override lateinit var analytics: Analytics
     private lateinit var context: Context
-    private lateinit var networkUtils: NetworkUtils
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
-        networkUtils = provideNetworkUtils(analytics.logger)
         (analytics.configuration as Configuration).let {
             context = it.application
-            networkUtils.setup(context = context)
+            networkUtils.setup(context = context, logger = analytics.logger)
         }
     }
 

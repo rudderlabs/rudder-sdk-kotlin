@@ -15,12 +15,11 @@ import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 internal class NetworkUtils(
     private var networkCallbackUtils: NetworkCallbackUtils? = null,
     private var defaultNetworkUtils: DefaultNetworkUtils = DefaultNetworkUtils(),
-    private val logger: Logger,
 ) {
 
     // Catching a generic exception since the exact exception is annotated with @hide and cannot be caught directly.
     @Suppress("TooGenericExceptionCaught")
-    internal fun setup(context: Context) {
+    internal fun setup(context: Context, logger: Logger) {
         this.defaultNetworkUtils.setup(context)
 
         try {
@@ -46,8 +45,4 @@ internal class NetworkUtils(
     internal fun teardown() {
         networkCallbackUtils?.teardown()
     }
-}
-
-internal fun provideNetworkUtils(logger: Logger): NetworkUtils {
-    return NetworkUtils(logger = logger)
 }
