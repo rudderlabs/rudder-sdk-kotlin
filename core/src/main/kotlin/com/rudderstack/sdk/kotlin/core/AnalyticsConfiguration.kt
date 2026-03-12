@@ -1,6 +1,7 @@
 package com.rudderstack.sdk.kotlin.core
 
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
+import com.rudderstack.sdk.kotlin.core.internals.logger.provideAnalyticsLogger
 import com.rudderstack.sdk.kotlin.core.internals.models.connectivity.ConnectivityState
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
@@ -112,8 +113,16 @@ private class AnalyticsConfigurationImpl(
 
 /**
  * Get the analytics configuration.
+ *
+ * @param configuration The configuration object defining settings such as write key, data plane URL, logger, etc.
+ * @param storageProvider Lambda to provide a custom storage implementation.
  */
 @InternalRudderApi
-fun provideAnalyticsConfiguration(storage: Storage, logger: Logger,): AnalyticsConfiguration {
-    return AnalyticsConfigurationImpl(storage, logger)
+fun provideAnalyticsConfiguration(
+    configuration: Configuration,
+    storageProvider: (writeKey: String, logger: Logger) -> Storage,
+): AnalyticsConfiguration {
+    val analyticsLogger = provideAnalyticsLogger(logger = configuration.logger, logLevel = configuration.logLevel)
+    val storage = storageProvider(configuration.writeKey, analyticsLogger)
+    return AnalyticsConfigurationImpl(storage, analyticsLogger)
 }

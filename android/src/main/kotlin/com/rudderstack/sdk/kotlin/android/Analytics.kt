@@ -25,9 +25,7 @@ import com.rudderstack.sdk.kotlin.android.plugins.sessiontracking.DEFAULT_SESSIO
 import com.rudderstack.sdk.kotlin.android.plugins.sessiontracking.SessionTrackingPlugin
 import com.rudderstack.sdk.kotlin.android.storage.provideAndroidStorage
 import com.rudderstack.sdk.kotlin.core.Analytics
-import com.rudderstack.sdk.kotlin.core.AnalyticsConfiguration
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
-import com.rudderstack.sdk.kotlin.core.internals.logger.provideAnalyticsLogger
 import com.rudderstack.sdk.kotlin.core.internals.models.reset.ResetOptions
 import com.rudderstack.sdk.kotlin.core.internals.platform.Platform
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
@@ -71,7 +69,9 @@ class Analytics(
     configuration: Configuration,
 ) : Platform, Analytics(
     configuration,
-    analyticsConfiguration = createAndroidAnalyticsConfiguration(configuration),
+    analyticsConfiguration = provideAnalyticsConfiguration(configuration) { writeKey, logger ->
+        provideAndroidStorage(writeKey, configuration.application, PlatformType.Mobile, logger)
+    },
 ) {
 
     private var navControllerTrackingPlugin: NavControllerTrackingPlugin? = null
@@ -295,17 +295,4 @@ class Analytics(
             if (!isAnalyticsActive() || sessionTrackingPlugin.sessionManager.sessionId == DEFAULT_SESSION_ID) return null
             return sessionTrackingPlugin.sessionManager.sessionId
         }
-}
-
-private fun createAndroidAnalyticsConfiguration(configuration: Configuration): AnalyticsConfiguration {
-    val analyticsLogger = provideAnalyticsLogger(logger = configuration.logger, logLevel = configuration.logLevel)
-    return provideAnalyticsConfiguration(
-        storage = provideAndroidStorage(
-            configuration.writeKey,
-            configuration.application,
-            PlatformType.Mobile,
-            analyticsLogger
-        ),
-        logger = analyticsLogger
-    )
 }

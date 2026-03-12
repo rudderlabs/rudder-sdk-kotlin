@@ -2,7 +2,6 @@ package com.rudderstack.sdk.kotlin.core
 
 import com.rudderstack.sdk.kotlin.core.internals.logger.KotlinLogger
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
-import com.rudderstack.sdk.kotlin.core.internals.logger.provideAnalyticsLogger
 import com.rudderstack.sdk.kotlin.core.internals.models.AliasEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.GroupEvent
@@ -120,7 +119,12 @@ open class Analytics protected constructor(
      */
     constructor(configuration: Configuration) : this(
         configuration = configuration,
-        analyticsConfiguration = createAnalyticsConfiguration(configuration),
+        analyticsConfiguration = provideAnalyticsConfiguration(configuration) { writeKey, logger ->
+            when (configuration.storageType) {
+                StorageType.IN_MEMORY -> provideInMemoryStorage(writeKey, logger)
+                StorageType.FILE -> provideBasicStorage(writeKey, PlatformType.Server, logger)
+            }
+        },
     )
 
     /**
@@ -464,17 +468,6 @@ open class Analytics protected constructor(
             userIdentityState.value.storeAnonymousId(storage = storage)
         }
     }
-}
-
-private fun createAnalyticsConfiguration(configuration: Configuration): AnalyticsConfiguration {
-    val analyticsLogger = provideAnalyticsLogger(logger = configuration.logger, logLevel = configuration.logLevel)
-    return provideAnalyticsConfiguration(
-        storage = when (configuration.storageType) {
-            StorageType.IN_MEMORY -> provideInMemoryStorage(configuration.writeKey, analyticsLogger)
-            StorageType.FILE -> provideBasicStorage(configuration.writeKey, PlatformType.Server, analyticsLogger)
-        },
-        logger = analyticsLogger
-    )
 }
 
 @VisibleForTesting
