@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.rudderstack.sdk.kotlin.core.javacompat
 
 import com.rudderstack.sdk.kotlin.core.Configuration
@@ -23,10 +25,8 @@ open class ConfigurationBuilder(
     private var gzipEnabled: Boolean = DEFAULT_GZIP_STATUS
     private var flushPolicies: List<FlushPolicy> = DEFAULT_FLUSH_POLICIES
 
-    @Suppress("DEPRECATION")
     private var logger: Logger = LoggerAnalytics.logger ?: KotlinLogger()
 
-    @Suppress("DEPRECATION")
     private var logLevel: Logger.LogLevel = LoggerAnalytics.logLevel
 
     /**

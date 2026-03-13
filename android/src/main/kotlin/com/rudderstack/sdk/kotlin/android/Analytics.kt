@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.rudderstack.sdk.kotlin.android
 
 import android.app.Activity
@@ -259,7 +261,6 @@ class Analytics(
     }
 
     private fun setup() {
-        @Suppress("DEPRECATION")
         LoggerAnalytics.setPlatformLogger(logger = AndroidLogger())
         add(AndroidConnectivityObserverPlugin(connectivityState))
         add(DeviceInfoPlugin())

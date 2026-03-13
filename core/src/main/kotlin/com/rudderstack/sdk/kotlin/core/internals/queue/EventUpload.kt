@@ -7,6 +7,7 @@ import com.rudderstack.sdk.kotlin.core.internals.network.HttpClientImpl
 import com.rudderstack.sdk.kotlin.core.internals.network.NonRetryAbleEventUploadError
 import com.rudderstack.sdk.kotlin.core.internals.network.RetryAbleEventUploadError
 import com.rudderstack.sdk.kotlin.core.internals.network.Success
+import com.rudderstack.sdk.kotlin.core.internals.network.createPostConfig
 import com.rudderstack.sdk.kotlin.core.internals.network.formatStatusCodeMessage
 import com.rudderstack.sdk.kotlin.core.internals.network.toEventUploadResult
 import com.rudderstack.sdk.kotlin.core.internals.policies.backoff.MaxAttemptsWithBackoff
@@ -48,8 +49,10 @@ internal class EventUpload(
             baseUrl = dataPlaneUrl,
             endPoint = BATCH_ENDPOINT,
             authHeaderString = writeKey.encodeToBase64(),
-            isGZIPEnabled = gzipEnabled,
-            anonymousIdHeaderString = analytics.anonymousId ?: String.empty(),
+            postConfig = createPostConfig(
+                isGZIPEnabled = gzipEnabled,
+                anonymousIdHeaderString = analytics.anonymousId ?: String.empty(),
+            ),
             logger = analytics.logger,
         )
     },

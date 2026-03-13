@@ -99,8 +99,7 @@ internal class HttpClientImpl private constructor(
          * @param baseUrl The base URL for the HttpClient.
          * @param endPoint The specific endpoint appended to the base URL.
          * @param authHeaderString The authorization header string, typically for Basic Auth.
-         * @param isGZIPEnabled A flag indicating whether GZIP compression is enabled for POST requests.
-         * @param anonymousIdHeaderString A custom header used to identify anonymous users.
+         * @param postConfig Configuration options specific to POST requests, including GZIP compression and a custom identifier header.
          * @param customHeaders Additional HTTP headers for the request. Defaults to an empty map.
          * @param connectionFactory A factory for creating `HttpURLConnection` instances. Defaults to `DefaultHttpURLConnectionFactory()`.
          * @return A configured `HttpClientImpl` instance for POST requests.
@@ -109,8 +108,7 @@ internal class HttpClientImpl private constructor(
             baseUrl: String,
             endPoint: String,
             authHeaderString: String,
-            isGZIPEnabled: Boolean,
-            anonymousIdHeaderString: String,
+            postConfig: PostConfig,
             customHeaders: Map<String, String> = emptyMap(),
             connectionFactory: HttpURLConnectionFactory = DefaultHttpURLConnectionFactory(),
             logger: Logger,
@@ -119,10 +117,7 @@ internal class HttpClientImpl private constructor(
             endPoint = endPoint,
             authHeaderString = authHeaderString,
             getConfig = createGetConfig(),
-            postConfig = createPostConfig(
-                isGZIPEnabled = isGZIPEnabled,
-                anonymousIdHeaderString = anonymousIdHeaderString,
-            ),
+            postConfig = postConfig,
             customHeaders = customHeaders,
             connectionFactory = connectionFactory,
             logger = logger,

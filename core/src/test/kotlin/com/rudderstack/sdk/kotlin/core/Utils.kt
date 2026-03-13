@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.rudderstack.sdk.kotlin.core
 
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
@@ -84,7 +86,6 @@ private fun String.cleanJsonString(): String {
     }
 }
 
-@Suppress("DEPRECATION")
 fun setupLogger(logger: Logger, level: Logger.LogLevel = Logger.LogLevel.VERBOSE) {
     LoggerAnalytics.setPlatformLogger(logger = logger)
     LoggerAnalytics.logLevel = level
