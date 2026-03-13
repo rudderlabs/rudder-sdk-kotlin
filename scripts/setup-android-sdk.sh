@@ -5,14 +5,18 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 LOCAL_PROPERTIES="$REPO_ROOT/local.properties"
 
 write_local_properties() {
-  echo "sdk.dir=$1" > "$LOCAL_PROPERTIES"
+  local sdk_path="$1"
+  echo "sdk.dir=$sdk_path" > "$LOCAL_PROPERTIES"
+  return 0
 }
 
 export_android_home() {
-  echo "ANDROID_HOME=$1" >> "$GITHUB_ENV"
-  echo "ANDROID_SDK_ROOT=$1" >> "$GITHUB_ENV"
-  echo "$1/platform-tools" >> "$GITHUB_PATH"
-  echo "$1/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
+  local sdk_path="$1"
+  echo "ANDROID_HOME=$sdk_path" >> "$GITHUB_ENV"
+  echo "ANDROID_SDK_ROOT=$sdk_path" >> "$GITHUB_ENV"
+  echo "$sdk_path/platform-tools" >> "$GITHUB_PATH"
+  echo "$sdk_path/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
+  return 0
 }
 
 # Check well-known locations
@@ -24,7 +28,7 @@ for candidate in \
   "$HOME/Android/Sdk" \
   "/opt/android-sdk"
 do
-  if [ -n "$candidate" ] && [ -d "$candidate" ]; then
+  if [[ -n "$candidate" ]] && [[ -d "$candidate" ]]; then
     echo "Android SDK found at: $candidate"
     export_android_home "$candidate"
     write_local_properties "$candidate"
