@@ -1,0 +1,44 @@
+name: 'Setup and List Modules'
+description: 'Common setup steps and module discovery for Android CI/CD workflows'
+
+outputs:
+  available_modules:
+    description: 'Comma-separated list of all publishable modules'
+    value: ${{ steps.list-modules.outputs.available_modules }}
+  android_modules:
+    description: 'Comma-separated list of Android publishable modules'
+    value: ${{ steps.list-modules.outputs.android_modules }}
+  jvm_modules:
+    description: 'Comma-separated list of JVM publishable modules'
+    value: ${{ steps.list-modules.outputs.jvm_modules }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up JDK 17
+      uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # v4.8.0
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: gradle
+
+    - name: Grant execute permission for gradlew
+      shell: bash
+      run: chmod +x gradlew
+
+    - name: Check Gradle build scripts dependencies are sorted
+      shell: bash
+      run: ./gradlew buildEnvironment --dry-run
+
+    - name: List all publishable modules
+      id: list-modules
+      shell: bash
+      run: |
+        OUTPUT=$(./gradlew listModules --quiet)
+        ANDROID_MODULES=$(echo "$OUTPUT" | grep "^ANDROID_MODULES=" | cut -d= -f2)
+        JVM_MODULES=$(echo "$OUTPUT"    | grep "^JVM_MODULES="     | cut -d= -f2)
+        ALL_MODULES="${JVM_MODULES},${ANDROID_MODULES}"
+        echo "Available modules: $ALL_MODULES"
+        echo "available_modules=${ALL_MODULES}" >> "$GITHUB_OUTPUT"
+        echo "android_modules=${ANDROID_MODULES}" >> "$GITHUB_OUTPUT"
+        echo "jvm_modules=${JVM_MODULES}" >> "$GITHUB_OUTPUT"
