@@ -3,6 +3,7 @@ package com.rudderstack.sdk.kotlin.core.internals.network.provider
 import com.rudderstack.sdk.kotlin.core.Configuration.Companion.DEFAULT_GZIP_STATUS
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClientImpl
+import com.rudderstack.sdk.kotlin.core.internals.network.createPostConfig
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpURLConnectionFactory
 import io.mockk.mockk
 import java.net.HttpURLConnection
@@ -42,8 +43,10 @@ internal fun provideHttpClientImplForPostRequest(
     baseUrl = baseUrl,
     endPoint = endPoint,
     authHeaderString = authHeaderString,
-    isGZIPEnabled = isGZIPEnabled,
-    anonymousIdHeaderString = anonymousIdHeaderString,
+    postConfig = createPostConfig(
+        isGZIPEnabled = isGZIPEnabled,
+        anonymousIdHeaderString = anonymousIdHeaderString,
+    ),
     customHeaders = customHeaders,
     connectionFactory = connectionFactory,
     logger = mockLogger,
