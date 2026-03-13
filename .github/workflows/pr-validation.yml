@@ -13,7 +13,7 @@ jobs:
   # PR Title validation - runs in parallel and is required for success
   pr-title-check:
     name: PR Title Check
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64]
     permissions:
       contents: read
     steps:
@@ -31,7 +31,7 @@ jobs:
   # SonarCloud analysis - runs in parallel, independent of other checks
   sonarcloud-analysis:
     name: SonarCloud Analysis
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64]
     permissions:
       contents: read
     steps:
@@ -53,7 +53,7 @@ jobs:
   # Setup and list all modules
   setup-and-list-modules:
     name: Setup & List Modules
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64]
     permissions:
       contents: read
     outputs:
@@ -78,7 +78,7 @@ jobs:
   # Detekt static analysis - runs in parallel
   detekt-check:
     name: Detekt Check
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64]
     permissions:
       contents: read
     needs: setup-and-list-modules
@@ -101,7 +101,7 @@ jobs:
   # Android Lint - runs in parallel
   lint-check:
     name: Lint Check
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64]
     permissions:
       contents: read
     needs: setup-and-list-modules
@@ -124,7 +124,7 @@ jobs:
   # Unit tests - runs in parallel
   test-check:
     name: Test Check
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64]
     permissions:
       contents: read
     needs: setup-and-list-modules
@@ -148,7 +148,7 @@ jobs:
   # Build modules - runs in parallel
   build-check:
     name: Build Check
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64]
     permissions:
       contents: read
     needs: setup-and-list-modules
@@ -176,7 +176,7 @@ jobs:
   # Summary job that depends on all required jobs
   pr-validation-summary:
     name: PR Validation Summary
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64]
     permissions:
       contents: read
     needs: [pr-title-check, setup-and-list-modules, detekt-check, lint-check, test-check, build-check, sonarcloud-analysis]
