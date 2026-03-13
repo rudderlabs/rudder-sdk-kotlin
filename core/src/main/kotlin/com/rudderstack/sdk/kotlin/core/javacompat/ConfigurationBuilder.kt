@@ -1,9 +1,14 @@
+@file:Suppress("DEPRECATION")
+
 package com.rudderstack.sdk.kotlin.core.javacompat
 
 import com.rudderstack.sdk.kotlin.core.Configuration
 import com.rudderstack.sdk.kotlin.core.Configuration.Companion.DEFAULT_CONTROL_PLANE_URL
 import com.rudderstack.sdk.kotlin.core.Configuration.Companion.DEFAULT_FLUSH_POLICIES
 import com.rudderstack.sdk.kotlin.core.Configuration.Companion.DEFAULT_GZIP_STATUS
+import com.rudderstack.sdk.kotlin.core.internals.logger.KotlinLogger
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
+import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPolicy
 
 /**
@@ -19,6 +24,10 @@ open class ConfigurationBuilder(
     private var controlPlaneUrl: String = DEFAULT_CONTROL_PLANE_URL
     private var gzipEnabled: Boolean = DEFAULT_GZIP_STATUS
     private var flushPolicies: List<FlushPolicy> = DEFAULT_FLUSH_POLICIES
+
+    private var logger: Logger = LoggerAnalytics.logger ?: KotlinLogger()
+
+    private var logLevel: Logger.LogLevel = LoggerAnalytics.logLevel
 
     /**
      * Sets the control plane URL.
@@ -42,6 +51,20 @@ open class ConfigurationBuilder(
     }
 
     /**
+     * Sets the log level for the Analytics instance.
+     */
+    open fun setLogLevel(level: Logger.LogLevel) = apply {
+        logLevel = level
+    }
+
+    /**
+     * Sets the logger for the Analytics instance.
+     */
+    open fun setLogger(logger: Logger) = apply {
+        this.logger = logger
+    }
+
+    /**
      * Builds the Configuration instance with the configured properties.
      */
     open fun build(): Configuration {
@@ -50,7 +73,9 @@ open class ConfigurationBuilder(
             dataPlaneUrl = dataPlaneUrl,
             controlPlaneUrl = controlPlaneUrl,
             flushPolicies = flushPolicies,
-            gzipEnabled = gzipEnabled
+            gzipEnabled = gzipEnabled,
+            logger = logger,
+            logLevel = logLevel
         )
     }
 }

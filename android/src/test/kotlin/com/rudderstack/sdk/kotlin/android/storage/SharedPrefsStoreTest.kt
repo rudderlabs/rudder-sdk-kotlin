@@ -34,7 +34,7 @@ class SharedPrefsStoreTest {
         every { mockContext.getSharedPreferences(prefsName, Context.MODE_PRIVATE) } returns mockSharedPreferences
         every { mockSharedPreferences.edit() } returns mockEditor
 
-        sharedPrefsStore = SharedPrefsStore(mockContext, prefsName)
+        sharedPrefsStore = SharedPrefsStore(mockContext, prefsName, mockk(relaxed = true))
 
         mockkObject(CheckBuildVersionUseCase)
     }

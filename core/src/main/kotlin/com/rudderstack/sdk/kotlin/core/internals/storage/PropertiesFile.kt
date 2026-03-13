@@ -1,6 +1,6 @@
 package com.rudderstack.sdk.kotlin.core.internals.storage
 
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
 import com.rudderstack.sdk.kotlin.core.internals.utils.toPropertiesFileName
 import java.io.File
@@ -14,6 +14,7 @@ private const val PROPERTIES_SUFFIX = ".properties"
 internal class PropertiesFile(
     directory: File,
     writeKey: String,
+    private val logger: Logger,
 ) : KeyValueStorage {
 
     private var properties: Properties = Properties()
@@ -31,7 +32,7 @@ internal class PropertiesFile(
                 }
             } catch (e: Throwable) {
                 propsFile.delete()
-                LoggerAnalytics.error(
+                logger.error(
                     "Failed to load property file with path " +
                         "${propsFile.absolutePath}, error stacktrace: ${e.stackTraceToString()}"
                 )
@@ -107,7 +108,7 @@ internal class PropertiesFile(
     @UseWithCaution
     override fun delete() {
         propsFile.deleteRecursively().let { isDeleted ->
-            LoggerAnalytics.info("Attempt to delete properties file successful: $isDeleted")
+            logger.info("Attempt to delete properties file successful: $isDeleted")
         }
     }
 }

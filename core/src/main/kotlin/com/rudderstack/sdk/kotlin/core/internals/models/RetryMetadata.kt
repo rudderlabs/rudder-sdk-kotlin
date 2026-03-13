@@ -1,6 +1,6 @@
 package com.rudderstack.sdk.kotlin.core.internals.models
 
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.utils.LenientJson
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
@@ -32,10 +32,10 @@ internal data class RetryMetadata(
          * @param jsonString The JSON string to parse
          * @return Parsed metadata or null if parsing fails
          */
-        fun fromJson(jsonString: String): RetryMetadata? = try {
+        fun fromJson(jsonString: String, logger: Logger): RetryMetadata? = try {
             LenientJson.decodeFromString<RetryMetadata>(jsonString)
         } catch (e: SerializationException) {
-            LoggerAnalytics.warn("Failed to parse retry metadata: ${e.message}")
+            logger.warn("Failed to parse retry metadata: ${e.message}")
             null
         }
     }

@@ -10,11 +10,13 @@ import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.spyk
+import io.mockk.unmockkAll
 import io.mockk.verify
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.skyscreamer.jsonassert.JSONAssert
@@ -48,9 +50,14 @@ class NetworkInfoPluginTest {
         MockKAnnotations.init(this, relaxed = true)
 
         every { (mockAnalytics.configuration as Configuration).application } returns mockApplication
-        every { mockNetworkUtils.setup(any()) } returns Unit
+        every { mockNetworkUtils.setup(any(), any()) } returns Unit
 
-        networkInfoPlugin = spyk(NetworkInfoPlugin(mockNetworkUtils))
+        networkInfoPlugin = spyk(NetworkInfoPlugin(networkUtils = mockNetworkUtils))
+    }
+
+    @AfterEach
+    fun tearDown() {
+        unmockkAll()
     }
 
     @Test
@@ -90,6 +97,7 @@ class NetworkInfoPluginTest {
 
     @Test
     fun `when teardown is called, then network utils teardown is called`() = runTest {
+        networkInfoPlugin.setup(mockAnalytics)
         networkInfoPlugin.teardown()
 
         verify { mockNetworkUtils.teardown() }

@@ -1,6 +1,8 @@
 package com.rudderstack.sdk.kotlin.core.internals.plugins
 
 import com.rudderstack.sdk.kotlin.core.Analytics
+import com.rudderstack.sdk.kotlin.core.internals.logger.AnalyticsLogger
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 
 /**
@@ -90,3 +92,31 @@ interface Plugin {
         Utility
     }
 }
+
+/**
+ * Provides a convenient [Logger] instance for logging within plugin implementations.
+ *
+ * This is the recommended way to log messages from custom plugins and custom integrations.
+ * It delegates to the per-instance logger of the [Analytics] instance associated with this plugin,
+ * ensuring that logs are scoped to the correct SDK instance and respect its configured log level.
+ *
+ * **Important:** This property must only be accessed after [Plugin.setup] has been called, as it relies on the
+ * [Plugin.analytics] reference being initialized.
+ *
+ * ### Usage
+ * ```kotlin
+ * class MyCustomPlugin : Plugin {
+ *     override val pluginType = Plugin.PluginType.OnProcess
+ *     override lateinit var analytics: Analytics
+ *
+ *     override suspend fun intercept(event: Event): Event? {
+ *         logger.debug("Processing event: ${event.type}")
+ *         return event
+ *     }
+ * }
+ * ```
+ *
+ * @see AnalyticsLogger
+ */
+val Plugin.logger: Logger
+    get() = analytics.logger

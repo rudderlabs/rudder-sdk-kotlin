@@ -1,6 +1,6 @@
 package com.rudderstack.sdk.kotlin.core.internals.storage
 
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.storage.exception.PayloadTooLargeException
 import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
@@ -31,9 +31,10 @@ private const val FILE_NAME = "events"
 internal class BasicStorage(
     writeKey: String,
     platformType: PlatformType,
+    private val logger: Logger,
     private val storageDirectory: File = File(FILE_DIRECTORY.appendWriteKey(writeKey)),
     eventStorageDirectory: File = File(storageDirectory, FILE_NAME),
-    private val propertiesFile: KeyValueStorage = PropertiesFile(storageDirectory, writeKey)
+    private val propertiesFile: KeyValueStorage = PropertiesFile(storageDirectory, writeKey, logger)
         .also {
             // Load properties from the properties file
             it.load()
@@ -90,7 +91,7 @@ internal class BasicStorage(
 
     override fun close() {
         eventsFile.closeAndReset()
-        LoggerAnalytics.info("Storage closed")
+        logger.info("Storage closed")
     }
 
     override fun readInt(key: StorageKeys, defaultVal: Int): Int {
@@ -135,7 +136,7 @@ internal class BasicStorage(
     override fun delete() {
         propertiesFile.delete()
         storageDirectory.deleteRecursively().let { isDeleted ->
-            LoggerAnalytics.info("Storage directory deleted: $isDeleted")
+            logger.info("Storage directory deleted: $isDeleted")
         }
     }
 }
@@ -147,6 +148,6 @@ internal class BasicStorage(
  * @param platformType The platform type used for event file ordering behaviour.
  * @return An instance of [BasicStorage] with the provided [writeKey] and [platformType].
  */
-internal fun provideBasicStorage(writeKey: String, platformType: PlatformType): Storage {
-    return BasicStorage(writeKey = writeKey, platformType = platformType)
+internal fun provideBasicStorage(writeKey: String, platformType: PlatformType, logger: Logger): Storage {
+    return BasicStorage(writeKey = writeKey, platformType = platformType, logger = logger)
 }

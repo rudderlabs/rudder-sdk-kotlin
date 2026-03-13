@@ -1,14 +1,22 @@
+@file:Suppress("DEPRECATION")
+
 package com.rudderstack.sdk.kotlin.android.javacompat
 
 import android.app.Application
 import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.android.utils.provideSessionConfiguration
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
+import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPolicy
 import com.rudderstack.sdk.kotlin.core.provideDefaultFlushPolicies
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
+import io.mockk.mockk
+import io.mockk.mockkObject
 import io.mockk.mockkStatic
+import io.mockk.unmockkAll
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -28,6 +36,9 @@ class ConfigurationBuilderTest {
     @MockK
     private lateinit var mockPolicies: List<FlushPolicy>
 
+    @MockK
+    private lateinit var mockLogger: Logger
+
     private lateinit var configurationBuilder: ConfigurationBuilder
 
     @BeforeEach
@@ -37,18 +48,31 @@ class ConfigurationBuilderTest {
         mockkStatic("com.rudderstack.sdk.kotlin.core.ConfigurationKt")
         every { provideDefaultFlushPolicies() } returns mockPolicies
 
+        mockkObject(LoggerAnalytics)
+        every { LoggerAnalytics.logLevel } returns Logger.DEFAULT_LOG_LEVEL
+        every { LoggerAnalytics.logger } returns mockLogger
+
         configurationBuilder = ConfigurationBuilder(
             mockApplication,
             TEST_WRITE_KEY, TEST_DATA_PLANE_URL
         )
     }
 
+    @AfterEach
+    fun tearDown() {
+        unmockkAll()
+    }
+
     @Test
     fun `when Configuration object is created with only default values, then it should have default values`() {
         val configuration = configurationBuilder.build()
 
-        val expected =
-            Configuration(application = mockApplication, writeKey = TEST_WRITE_KEY, dataPlaneUrl = TEST_DATA_PLANE_URL)
+        val expected = Configuration(
+            application = mockApplication,
+            writeKey = TEST_WRITE_KEY,
+            dataPlaneUrl = TEST_DATA_PLANE_URL,
+            logger = configuration.logger,
+        )
         assertEquals(expected, configuration)
     }
 
@@ -93,6 +117,21 @@ class ConfigurationBuilderTest {
     }
 
     @Test
+    fun `when setLogLevel is set with a custom level, then logLevel should be updated`() {
+        val configuration = configurationBuilder.setLogLevel(Logger.LogLevel.VERBOSE).build()
+
+        assertEquals(Logger.LogLevel.VERBOSE, configuration.logLevel)
+    }
+
+    @Test
+    fun `when setLogger is set with a custom logger, then logger should be updated`() {
+        val customLogger = mockk<Logger>()
+        val configuration = configurationBuilder.setLogger(customLogger).build()
+
+        assertEquals(customLogger, configuration.logger)
+    }
+
+    @Test
     fun `when all custom configurations are set, then the Configuration object should reflect those values`() {
         val customSessionConfig = provideSessionConfiguration(
             automaticSessionTracking = false,
@@ -109,6 +148,7 @@ class ConfigurationBuilderTest {
             .setControlPlaneUrl(TEST_CONTROL_PLANE_URL)
             .setFlushPolicies(customPolicies)
             .setGzipEnabled(false)
+            .setLogLevel(Logger.LogLevel.DEBUG)
             .build()
 
         val expectedConfiguration = Configuration(
@@ -123,6 +163,8 @@ class ConfigurationBuilderTest {
             controlPlaneUrl = TEST_CONTROL_PLANE_URL,
             flushPolicies = customPolicies,
             gzipEnabled = false,
+            logger = actualConfiguration.logger,
+            logLevel = Logger.LogLevel.DEBUG,
         )
         assertEquals(expectedConfiguration, actualConfiguration)
     }

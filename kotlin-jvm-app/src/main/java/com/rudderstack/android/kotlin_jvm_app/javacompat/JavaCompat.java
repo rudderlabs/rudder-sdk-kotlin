@@ -5,7 +5,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
 import com.rudderstack.sdk.kotlin.core.Configuration;
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics;
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger;
 import com.rudderstack.sdk.kotlin.core.javacompat.ConfigurationBuilder;
 import com.rudderstack.sdk.kotlin.core.internals.models.ExternalId;
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption;
@@ -164,12 +164,13 @@ public class JavaCompat {
      * Log examples for different log levels.
      */
     public void logExamples() {
-        LoggerAnalytics.INSTANCE.verbose("JavaCompat: This is a verbose log");
-        LoggerAnalytics.INSTANCE.debug("JavaCompat: This is a debug log");
-        LoggerAnalytics.INSTANCE.info("JavaCompat: This is an info log");
-        LoggerAnalytics.INSTANCE.warn("JavaCompat: This is a warn log");
-        LoggerAnalytics.INSTANCE.error("JavaCompat: This is an error log");
-        LoggerAnalytics.INSTANCE.error("JavaCompat: This is an error log with exception", new Exception("Sample exception"));
+        Logger logger = analytics.getLogger();
+        logger.verbose("JavaCompat: This is a verbose log");
+        logger.debug("JavaCompat: This is a debug log");
+        logger.info("JavaCompat: This is an info log");
+        logger.warn("JavaCompat: This is a warn log");
+        logger.error("JavaCompat: This is an error log", null);
+        logger.error("JavaCompat: This is an error log with exception", new Exception("Sample exception"));
     }
 
     /**
@@ -214,9 +215,10 @@ public class JavaCompat {
         javaCompat.resetWithOptions(true, false, true);
         javaCompat.logExamples();
 
-        LoggerAnalytics.INSTANCE.verbose("JavaCompat: Anonymous ID: " + javaCompat.getAnonymousId());
-        LoggerAnalytics.INSTANCE.verbose("JavaCompat: User ID: " + javaCompat.getUserId());
-        LoggerAnalytics.INSTANCE.verbose("JavaCompat: User Traits: " + javaCompat.getTraits());
+        Logger logger = javaCompat.analytics.getLogger();
+        logger.verbose("JavaCompat: Anonymous ID: " + javaCompat.getAnonymousId());
+        logger.verbose("JavaCompat: User ID: " + javaCompat.getUserId());
+        logger.verbose("JavaCompat: User Traits: " + javaCompat.getTraits());
     }
 
     @NonNull

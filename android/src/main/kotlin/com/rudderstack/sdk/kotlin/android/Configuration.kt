@@ -1,7 +1,12 @@
+@file:Suppress("DEPRECATION")
+
 package com.rudderstack.sdk.kotlin.android
 
 import android.app.Application
+import com.rudderstack.sdk.kotlin.android.logger.AndroidLogger
 import com.rudderstack.sdk.kotlin.core.Configuration
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
+import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPolicy
 
 internal const val DEFAULT_SESSION_TIMEOUT_IN_MILLIS = 300_000L
@@ -37,6 +42,8 @@ internal const val DEFAULT_SESSION_TIMEOUT_IN_MILLIS = 300_000L
  * @param controlPlaneUrl The URL of the control plane, used for remote configuration management. Defaults to `DEFAULT_CONTROL_PLANE_URL`.
  * @param flushPolicies A list of flush policies defining when and how events should be sent to the backend. Defaults to `DEFAULT_FLUSH_POLICIES`.
  * @param gzipEnabled Flag to enable or disable GZIP compression for network requests. Defaults to `DEFAULT_GZIP_STATUS`.
+ * @param logger An instance of `Logger` for logging SDK events and errors. Defaults to `DEFAULT_LOGGER`.
+ * @param logLevel The log level for this configuration instance, determining the minimum severity of messages that will be logged. Defaults to `DEFAULT_LOG_LEVEL`.
  *
  * ## Example
  * ```kotlin
@@ -63,7 +70,9 @@ data class Configuration @JvmOverloads constructor(
     override val dataPlaneUrl: String,
     override val controlPlaneUrl: String = DEFAULT_CONTROL_PLANE_URL,
     override val flushPolicies: List<FlushPolicy> = DEFAULT_FLUSH_POLICIES,
-    override val gzipEnabled: Boolean = DEFAULT_GZIP_STATUS
+    override val gzipEnabled: Boolean = DEFAULT_GZIP_STATUS,
+    override val logger: Logger = DEFAULT_LOGGER,
+    override val logLevel: Logger.LogLevel = DEFAULT_LOG_LEVEL,
 ) : Configuration(
     writeKey = writeKey,
     dataPlaneUrl = dataPlaneUrl,
@@ -76,6 +85,13 @@ data class Configuration @JvmOverloads constructor(
         internal const val DEFAULT_TRACK_DEEP_LINKS = true
         internal const val DEFAULT_TRACK_ACTIVITIES = false
         internal const val DEFAULT_COLLECT_DEVICE_ID = true
+
+        /**
+         * The default logger instance used for logging SDK events and errors.
+         * Defaults to the logger set via `LoggerAnalytics`, or an instance of `AndroidLogger` if none is set.
+         */
+        internal val DEFAULT_LOGGER: Logger
+            get() = LoggerAnalytics.logger ?: AndroidLogger()
     }
 }
 

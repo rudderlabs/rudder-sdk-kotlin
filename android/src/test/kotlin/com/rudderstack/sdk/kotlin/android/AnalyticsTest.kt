@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.rudderstack.sdk.kotlin.android
 
 import android.app.Application
@@ -8,6 +10,7 @@ import com.rudderstack.sdk.kotlin.android.plugins.DeviceInfoPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleManagementPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ProcessLifecycleManagementPlugin
 import com.rudderstack.sdk.kotlin.core.AnalyticsConfiguration
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
@@ -64,6 +67,9 @@ class AnalyticsTest {
     @MockK
     private lateinit var mockStorage: Storage
 
+    @MockK
+    private lateinit var mockLogger: Logger
+
     private val testDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
     private lateinit var configuration: Configuration
@@ -95,8 +101,9 @@ class AnalyticsTest {
 
         // Mock Analytics Configuration
         mockkStatic(::provideAnalyticsConfiguration)
-        every { provideAnalyticsConfiguration(any()) } returns mockAnalyticsConfiguration
+        every { provideAnalyticsConfiguration(any(), any()) } returns mockAnalyticsConfiguration
         mockAnalyticsConfiguration.apply {
+            every { logger } returns mockLogger
             every { analyticsScope } returns testScope
             every { analyticsDispatcher } returns testDispatcher
             every { fileStorageDispatcher } returns testDispatcher
@@ -245,7 +252,7 @@ class AnalyticsTest {
         analytics.reset(coreResetOptions)
 
         verify(exactly = 1) {
-            LoggerAnalytics.debug("The options should be of type Android ResetOptions.")
+            mockLogger.debug("The options should be of type Android ResetOptions.")
         }
     }
 
@@ -263,7 +270,7 @@ class AnalyticsTest {
         analytics.reset(androidResetOptions)
 
         verify(exactly = 0) {
-            LoggerAnalytics.debug("The options should be of type Android ResetOptions.")
+            mockLogger.debug("The options should be of type Android ResetOptions.")
         }
     }
     

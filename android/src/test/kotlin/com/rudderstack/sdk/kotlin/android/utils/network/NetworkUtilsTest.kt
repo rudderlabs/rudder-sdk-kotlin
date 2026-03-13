@@ -47,7 +47,7 @@ class NetworkUtilsTest {
 
     @Test
     fun `given network callback utils is null, when is cellular connected is called, then default network utils is used to get cellular connection status`() {
-        val networkUtils = NetworkUtils(networkCallbackUtils = null, defaultNetworkUtils = mockDefaultNetworkUtils,)
+        val networkUtils = NetworkUtils(networkCallbackUtils = null, defaultNetworkUtils = mockDefaultNetworkUtils)
         val expectedCellularStatus = true
         every { mockDefaultNetworkUtils.isCellularConnected() } returns expectedCellularStatus
 

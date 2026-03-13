@@ -2,7 +2,6 @@ package com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing
 
 import com.rudderstack.sdk.kotlin.android.utils.getBoolean
 import com.rudderstack.sdk.kotlin.core.Analytics
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 
@@ -62,6 +61,6 @@ internal class IntegrationOptionsPlugin(
     }
 
     private fun logDroppedEvent(event: Event) {
-        LoggerAnalytics.debug("IntegrationOptionsPlugin: Dropped event $event for destination: $key")
+        analytics.logger.debug("IntegrationOptionsPlugin: Dropped event $event for destination: $key")
     }
 }
