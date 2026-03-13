@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.rudderstack.sdk.kotlin.core
 
 import com.rudderstack.sdk.kotlin.core.internals.logger.KotlinLogger
@@ -92,7 +94,6 @@ open class Analytics protected constructor(
         storeAnonymousId()
     }
 
-    @Suppress("DEPRECATION")
     private fun runForBaseTypeOnly() {
         if (this::class == Analytics::class) {
             LoggerAnalytics.setPlatformLogger(logger = KotlinLogger())

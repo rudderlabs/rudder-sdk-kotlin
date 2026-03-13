@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.rudderstack.integration.kotlin.braze
 
 import android.app.Application
@@ -69,7 +71,6 @@ class BrazeIntegrationTest {
 
     private lateinit var brazeIntegration: BrazeIntegration
 
-    @Suppress("DEPRECATION")
     @BeforeEach
     fun setup() {
         MockKAnnotations.init(this, relaxed = true)

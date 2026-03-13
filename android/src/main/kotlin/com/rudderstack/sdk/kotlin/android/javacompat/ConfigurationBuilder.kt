@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.rudderstack.sdk.kotlin.android.javacompat
 
 import android.app.Application
@@ -34,7 +36,6 @@ class ConfigurationBuilder(
     private var trackActivities: Boolean = DEFAULT_TRACK_ACTIVITIES
     private var collectDeviceId: Boolean = DEFAULT_COLLECT_DEVICE_ID
 
-    @Suppress("DEPRECATION")
     private var logger: Logger = LoggerAnalytics.logger ?: AndroidLogger()
     private var sessionConfiguration: SessionConfiguration = SessionConfigurationBuilder().build()
 

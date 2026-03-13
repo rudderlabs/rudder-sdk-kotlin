@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.rudderstack.sdk.kotlin.android
 
 import android.app.Application
@@ -116,7 +118,6 @@ class AnalyticsTest {
         every { DateTimeUtils.getSystemCurrentTime() } returns DEFAULT_SESSION_ID.toMilliSeconds()
 
         // Mock LoggerAnalytics
-        @Suppress("DEPRECATION")
         mockkObject(LoggerAnalytics)
 
         configuration = Configuration(
@@ -356,7 +357,6 @@ class AnalyticsTest {
             }
         }
 
-    @Suppress("DEPRECATION")
     @Test
     fun `when SDK is initialised, then AndroidLogger should be set`() {
         verify(exactly = 1) {

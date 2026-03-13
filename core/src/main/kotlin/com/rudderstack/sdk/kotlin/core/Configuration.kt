@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.rudderstack.sdk.kotlin.core
 
 import com.rudderstack.sdk.kotlin.core.Configuration.Companion.DEFAULT_CONTROL_PLANE_URL
@@ -66,7 +68,6 @@ open class Configuration @JvmOverloads constructor(
          * The default logger instance used for logging SDK events and errors.
          * Defaults to the logger set via `LoggerAnalytics`, or a new instance of `KotlinLogger` if none is set.
          */
-        @Suppress("DEPRECATION")
         internal val DEFAULT_LOGGER: Logger
             get() = LoggerAnalytics.logger ?: KotlinLogger()
 
@@ -74,7 +75,6 @@ open class Configuration @JvmOverloads constructor(
          * The default log level for this configuration instance, determining the minimum severity of messages that will be logged.
          * Defaults to [LoggerAnalytics.logLevel].
          */
-        @Suppress("DEPRECATION")
         val DEFAULT_LOG_LEVEL: Logger.LogLevel
             get() = LoggerAnalytics.logLevel
     }

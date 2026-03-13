@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.rudderstack.sdk.kotlin.android
 
 import android.app.Application
@@ -88,7 +90,6 @@ data class Configuration @JvmOverloads constructor(
          * The default logger instance used for logging SDK events and errors.
          * Defaults to the logger set via `LoggerAnalytics`, or an instance of `AndroidLogger` if none is set.
          */
-        @Suppress("DEPRECATION")
         internal val DEFAULT_LOGGER: Logger
             get() = LoggerAnalytics.logger ?: AndroidLogger()
     }

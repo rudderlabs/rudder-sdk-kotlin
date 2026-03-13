@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.rudderstack.sdk.kotlin.android.javacompat
 
 import android.app.Application
@@ -26,7 +28,6 @@ private const val TEST_DATA_PLANE_URL = "https://test-data-plane.com"
 private const val TEST_CONTROL_PLANE_URL = "https://test-control-plane.com"
 private const val CUSTOM_SESSION_TIMEOUT = 30000L
 
-@Suppress("DEPRECATION")
 class ConfigurationBuilderTest {
 
     @MockK
