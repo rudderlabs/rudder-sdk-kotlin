@@ -55,9 +55,8 @@ class BrazeIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
     public override fun create(destinationConfig: JsonObject) {
         braze ?: run {
             destinationConfig.parse<RudderBrazeConfig>(analytics.logger)?.let { config ->
-                config.logger = analytics.logger
                 this.brazeConfig = config
-                initBraze(analytics.application, config, analytics.configuration.logLevel).also {
+                initBraze(analytics.application, config, analytics.logger, analytics.configuration.logLevel).also {
                     braze = it
                     setUserAlias()
                 }
@@ -79,7 +78,6 @@ class BrazeIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
 
     override fun update(destinationConfig: JsonObject) {
         destinationConfig.parse<RudderBrazeConfig>(analytics.logger)?.let { updatedConfig ->
-            updatedConfig.logger = analytics.logger
             this.brazeConfig = updatedConfig
         }
     }
@@ -89,7 +87,10 @@ class BrazeIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
     }
 
     override fun track(payload: TrackEvent) {
-        if (brazeConfig.isHybridMode()) return
+        if (brazeConfig.isHybridMode()) {
+            analytics.logger.verbose("BrazeIntegration: As connection mode is set to hybrid, dropping event request.")
+            return
+        }
 
         when (payload.event) {
             INSTALL_ATTRIBUTED -> {
@@ -164,7 +165,10 @@ class BrazeIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
     }
 
     override fun identify(payload: IdentifyEvent) {
-        if (brazeConfig.isHybridMode()) return
+        if (brazeConfig.isHybridMode()) {
+            analytics.logger.verbose("BrazeIntegration: As connection mode is set to hybrid, dropping event request.")
+            return
+        }
 
         payload.toIdentifyTraits(analytics.logger).let { currentIdentifyTraits ->
             val deDupedTraits = this.brazeConfig.takeIf { it.supportDedup }?.let {
@@ -192,16 +196,24 @@ class BrazeIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
     }
 }
 
-private fun initBraze(application: Application, config: RudderBrazeConfig, logLevel: Logger.LogLevel,): Braze {
-    with(config) {
-        val builder: BrazeConfig.Builder =
-            initBrazeConfig()
-                .setApiKey(resolvedAppIdentifierKey)
-                .setCustomEndpoint(customEndpoint)
-        setLogLevel(logLevel)
-        Braze.configure(application, builder.build())
-        return Braze.getInstance(application)
+private fun initBraze(
+    application: Application,
+    config: RudderBrazeConfig,
+    logger: Logger,
+    logLevel: Logger.LogLevel
+): Braze {
+    val appKeyResolution = config.resolveAppIdentifierKey()
+    if (appKeyResolution is AppKeyResolution.FellBack) {
+        logger.error("BrazeIntegration: ${appKeyResolution.reason}")
     }
+
+    val builder: BrazeConfig.Builder =
+        initBrazeConfig()
+            .setApiKey(appKeyResolution.key)
+            .setCustomEndpoint(config.customEndpoint)
+    setLogLevel(logLevel)
+    Braze.configure(application, builder.build())
+    return Braze.getInstance(application)
 }
 
 @VisibleForTesting
