@@ -32,8 +32,8 @@ open class Configuration @JvmOverloads constructor(
     open val gzipEnabled: Boolean = DEFAULT_GZIP_STATUS,
     open val flushPolicies: List<FlushPolicy> = DEFAULT_FLUSH_POLICIES,
     open val storageType: StorageType = DEFAULT_STORAGE_TYPE,
-    @Suppress("DEPRECATION") open val logger: Logger = DEFAULT_LOGGER,
-    @Suppress("DEPRECATION") open val logLevel: Logger.LogLevel = DEFAULT_LOG_LEVEL
+    open val logger: Logger = DEFAULT_LOGGER,
+    open val logLevel: Logger.LogLevel = DEFAULT_LOG_LEVEL
 ) {
 
     companion object {
@@ -64,15 +64,17 @@ open class Configuration @JvmOverloads constructor(
 
         /**
          * The default logger instance used for logging SDK events and errors.
-         * It first checks for a logger set in `LoggerAnalytics.logger` and falls back to a new instance of `KotlinLogger` if none is found.
+         * Defaults to the logger set via `LoggerAnalytics`, or a new instance of `KotlinLogger` if none is set.
          */
+        @Suppress("DEPRECATION")
         internal val DEFAULT_LOGGER: Logger
             get() = LoggerAnalytics.logger ?: KotlinLogger()
 
         /**
          * The default log level for this configuration instance, determining the minimum severity of messages that will be logged.
-         * It retrieves the log level from `LoggerAnalytics.logLevel`.
+         * Defaults to [LoggerAnalytics.logLevel].
          */
+        @Suppress("DEPRECATION")
         val DEFAULT_LOG_LEVEL: Logger.LogLevel
             get() = LoggerAnalytics.logLevel
     }

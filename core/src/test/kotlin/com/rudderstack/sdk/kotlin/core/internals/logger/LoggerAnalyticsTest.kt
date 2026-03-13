@@ -5,6 +5,7 @@ import io.mockk.verify
 import io.mockk.verifyOrder
 import org.junit.jupiter.api.Test
 
+@Suppress("DEPRECATION")
 class LoggerAnalyticsTest {
 
     @Test

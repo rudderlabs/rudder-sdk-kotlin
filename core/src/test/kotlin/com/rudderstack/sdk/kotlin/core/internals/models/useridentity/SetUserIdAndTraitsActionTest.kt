@@ -1,6 +1,7 @@
 package com.rudderstack.sdk.kotlin.core.internals.models.useridentity
 
 import com.rudderstack.sdk.kotlin.core.Analytics
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.LenientJson
@@ -8,6 +9,7 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import com.rudderstack.sdk.kotlin.core.internals.utils.mergeWithHigherPriorityTo
 import com.rudderstack.sdk.kotlin.core.mockAnalytics
 import io.mockk.coVerify
+import io.mockk.mockk
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -28,13 +30,14 @@ class SetUserIdAndTraitsActionTest {
     private val testDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
     private val mockAnalytics: Analytics = mockAnalytics(testScope, testDispatcher)
+    private val mockLogger: Logger = mockk(relaxed = true)
 
     @Test
     fun `given identify event is made for the first time, when identify event is made, then it should update all the values`() =
         runTest {
             val userIdentityState = provideUserIdentityInitialState()
 
-            val result = SetUserIdAndTraitsAction(USER_1, TRAITS_1)
+            val result = SetUserIdAndTraitsAction(USER_1, TRAITS_1, mockLogger)
                 .reduce(userIdentityState)
             testDispatcher.scheduler.advanceUntilIdle()
 
@@ -47,7 +50,7 @@ class SetUserIdAndTraitsActionTest {
         runTest {
             val userIdentityState = provideUserIdentityStateAfterFirstIdentifyEventIsMade()
 
-            val result = SetUserIdAndTraitsAction(USER_1, TRAITS_2)
+            val result = SetUserIdAndTraitsAction(USER_1, TRAITS_2, mockLogger)
                 .reduce(userIdentityState)
             testDispatcher.scheduler.advanceUntilIdle()
 
@@ -60,7 +63,7 @@ class SetUserIdAndTraitsActionTest {
         runTest {
             val userIdentityState = provideUserIdentityStateAfterFirstIdentifyEventIsMade()
 
-            val result = SetUserIdAndTraitsAction(USER_1, TRAITS_1_OVERLAP)
+            val result = SetUserIdAndTraitsAction(USER_1, TRAITS_1_OVERLAP, mockLogger)
                 .reduce(userIdentityState)
             testDispatcher.scheduler.advanceUntilIdle()
 
@@ -73,7 +76,7 @@ class SetUserIdAndTraitsActionTest {
         runTest {
             val userIdentityState = provideUserIdentityStateAfterFirstIdentifyEventIsMade()
 
-            val result = SetUserIdAndTraitsAction(USER_2, TRAITS_2)
+            val result = SetUserIdAndTraitsAction(USER_2, TRAITS_2, mockLogger)
                 .reduce(userIdentityState)
             testDispatcher.scheduler.advanceUntilIdle()
 

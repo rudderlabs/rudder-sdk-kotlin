@@ -69,8 +69,8 @@ data class Configuration @JvmOverloads constructor(
     override val controlPlaneUrl: String = DEFAULT_CONTROL_PLANE_URL,
     override val flushPolicies: List<FlushPolicy> = DEFAULT_FLUSH_POLICIES,
     override val gzipEnabled: Boolean = DEFAULT_GZIP_STATUS,
-    @Suppress("DEPRECATION") override val logger: Logger = DEFAULT_LOGGER,
-    @Suppress("DEPRECATION") override val logLevel: Logger.LogLevel = DEFAULT_LOG_LEVEL,
+    override val logger: Logger = DEFAULT_LOGGER,
+    override val logLevel: Logger.LogLevel = DEFAULT_LOG_LEVEL,
 ) : Configuration(
     writeKey = writeKey,
     dataPlaneUrl = dataPlaneUrl,
@@ -85,8 +85,10 @@ data class Configuration @JvmOverloads constructor(
         internal const val DEFAULT_COLLECT_DEVICE_ID = true
 
         /**
-         * The default logger instance used for logging SDK events and errors. If `LoggerAnalytics.logger` is not set, it defaults to an instance of `AndroidLogger`.
+         * The default logger instance used for logging SDK events and errors.
+         * Defaults to the logger set via `LoggerAnalytics`, or an instance of `AndroidLogger` if none is set.
          */
+        @Suppress("DEPRECATION")
         internal val DEFAULT_LOGGER: Logger
             get() = LoggerAnalytics.logger ?: AndroidLogger()
     }

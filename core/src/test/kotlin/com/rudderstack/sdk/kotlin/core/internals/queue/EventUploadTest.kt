@@ -2,6 +2,7 @@ package com.rudderstack.sdk.kotlin.core.internals.queue
 
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.KotlinLogger
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClient
 import com.rudderstack.sdk.kotlin.core.internals.network.NetworkErrorStatus
@@ -27,6 +28,7 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.just
+import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.mockkStatic
 import io.mockk.runs
@@ -88,6 +90,8 @@ class EventUploadTest {
         "1970-01-01T00:00:04Z",
         "1970-01-01T00:00:05Z"
     )
+
+    private val mockLogger: Logger = mockk(relaxed = true)
 
     private val testDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
@@ -397,7 +401,7 @@ class EventUploadTest {
         every { DateTimeUtils.now() } returnsMany listOfTimeStamp
         return mutableListOf<String>().apply {
             repeat(totalAttempts) {
-                add(JsonSentAtUpdater.updateSentAt(unprocessedBatch))
+                add(JsonSentAtUpdater.updateSentAt(unprocessedBatch, mockLogger))
             }
         }
     }

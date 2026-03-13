@@ -3,7 +3,6 @@ package com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing
 import com.rudderstack.sdk.kotlin.android.utils.findDestination
 import com.rudderstack.sdk.kotlin.android.utils.getString
 import com.rudderstack.sdk.kotlin.core.Analytics
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
@@ -51,7 +50,7 @@ internal class EventFilteringPlugin(private val key: String) : Plugin {
         val eventName = event.event.trim()
         return when {
             shouldDropEvent(eventName) -> {
-                LoggerAnalytics.debug("EventFilteringPlugin: Dropped event '$eventName' for destination: $key")
+                analytics.logger.debug("EventFilteringPlugin: Dropped event '$eventName' for destination: $key")
                 null
             }
             else -> event
@@ -88,7 +87,7 @@ internal class EventFilteringPlugin(private val key: String) : Plugin {
         filteringList.clear()
 
         if (filteringOption.isBlank()) {
-            LoggerAnalytics.debug("EventFilteringPlugin: Missing event filtering option for destination: $key")
+            analytics.logger.debug("EventFilteringPlugin: Missing event filtering option for destination: $key")
             return
         }
 
@@ -105,7 +104,7 @@ internal class EventFilteringPlugin(private val key: String) : Plugin {
         val serializedEvents = destinationConfig?.get(listKey)?.toString()
 
         if (serializedEvents.isNullOrBlank()) {
-            LoggerAnalytics.error("EventFilteringPlugin: Missing $listKey in destination config for: $key")
+            analytics.logger.error("EventFilteringPlugin: Missing $listKey in destination config for: $key")
             return emptyList()
         }
 
@@ -118,7 +117,7 @@ internal class EventFilteringPlugin(private val key: String) : Plugin {
                 it.eventName.trim().takeIf { name -> name.isNotEmpty() }
             }
         } catch (e: IllegalArgumentException) {
-            LoggerAnalytics.error("EventFilteringPlugin: Error decoding event list: ${e.message}")
+            analytics.logger.error("EventFilteringPlugin: Error decoding event list: ${e.message}")
             emptyList()
         }
     }

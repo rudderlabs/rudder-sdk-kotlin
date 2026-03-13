@@ -1,12 +1,12 @@
 package com.rudderstack.sampleapp.analytics.customplugins
 
 import com.rudderstack.sdk.kotlin.core.Analytics
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.ExternalId
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
+import com.rudderstack.sdk.kotlin.core.internals.plugins.logger
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -60,7 +60,7 @@ class OptionPlugin (
         addCustomContext(event)
         addIntegrations(event)
         addExternalIds(event)
-        LoggerAnalytics.verbose("OptionPlugin: Added custom context, integrations and externalIds to the message.")
+        logger.verbose("OptionPlugin: Added custom context, integrations and externalIds to the message.")
         return event
     }
 

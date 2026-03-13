@@ -1,11 +1,15 @@
 package com.rudderstack.sdk.kotlin.core.internals.utils
 
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.provideSpyBlock
+import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 
 class ExceptionHandlingTest {
+
+    private val mockLogger: Logger = mockk(relaxed = true)
 
     @Test
     fun `given exception occurs and onException block is provided, when certain block is executed safely, then onException block is executed`() {
@@ -40,9 +44,9 @@ class ExceptionHandlingTest {
     fun `given exception occurs, when certain block is executed safely, then exception is handled by default exception handler`() {
         val exceptionBlock = provideSpyBlock()
 
-        val result = safelyExecute(
-            block = { exceptionBlock.executeAndThrowException() },
-        )
+        val result = safelyExecute(mockLogger) {
+            exceptionBlock.executeAndThrowException()
+        }
 
         assertNull(result)
     }

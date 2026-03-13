@@ -1,6 +1,8 @@
 package com.rudderstack.sdk.kotlin.core.internals.models
 
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
+import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
@@ -9,11 +11,13 @@ import org.skyscreamer.jsonassert.JSONAssert
 
 class RetryMetadataTest {
 
+    private val mockLogger: Logger = mockk(relaxed = true)
+
     @Test
     fun `given valid json, when fromJson is called, then returns RetryMetadata`() {
         val json = """{"batchId":0,"attempt":2,"lastAttemptTimestampInMillis":1705831208450,"reason":"server-503"}"""
 
-        val result = RetryMetadata.fromJson(json)
+        val result = RetryMetadata.fromJson(json, mockLogger)
 
         assertNotNull(result)
         assertEquals(0, result!!.batchId)
@@ -34,21 +38,21 @@ class RetryMetadataTest {
 
     @Test
     fun `given empty string, when fromJson is called, then returns null`() {
-        val result = RetryMetadata.fromJson(String.empty())
+        val result = RetryMetadata.fromJson(String.empty(), mockLogger)
 
         assertNull(result)
     }
 
     @Test
     fun `given malformed json, when fromJson is called, then returns null`() {
-        val result = RetryMetadata.fromJson("{invalid json}")
+        val result = RetryMetadata.fromJson("{invalid json}", mockLogger)
 
         assertNull(result)
     }
 
     @Test
     fun `given json with missing fields, when fromJson is called, then returns null`() {
-        val result = RetryMetadata.fromJson("""{"batchId":0}""")
+        val result = RetryMetadata.fromJson("""{"batchId":0}""", mockLogger)
 
         assertNull(result)
     }
@@ -57,7 +61,7 @@ class RetryMetadataTest {
     fun `given json with extra fields, when fromJson is called, then ignores extra fields`() {
         val json = """{"batchId":0,"attempt":1,"lastAttemptTimestampInMillis":100,"reason":"server-500","extra":"field"}"""
 
-        val result = RetryMetadata.fromJson(json)
+        val result = RetryMetadata.fromJson(json, mockLogger)
 
         assertNotNull(result)
         assertEquals(0, result!!.batchId)

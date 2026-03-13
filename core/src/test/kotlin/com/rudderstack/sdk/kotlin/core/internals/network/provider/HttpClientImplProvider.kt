@@ -1,9 +1,13 @@
 package com.rudderstack.sdk.kotlin.core.internals.network.provider
 
 import com.rudderstack.sdk.kotlin.core.Configuration.Companion.DEFAULT_GZIP_STATUS
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClientImpl
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpURLConnectionFactory
+import io.mockk.mockk
 import java.net.HttpURLConnection
+
+private val mockLogger: Logger = mockk(relaxed = true)
 
 internal fun provideHttpClientImplForGetRequest(
     connectionFactory: HttpURLConnectionFactory,
@@ -23,6 +27,7 @@ internal fun provideHttpClientImplForGetRequest(
     query = query,
     customHeaders = customHeaders,
     connectionFactory = connectionFactory,
+    logger = mockLogger,
 )
 
 internal fun provideHttpClientImplForPostRequest(
@@ -41,6 +46,7 @@ internal fun provideHttpClientImplForPostRequest(
     anonymousIdHeaderString = anonymousIdHeaderString,
     customHeaders = customHeaders,
     connectionFactory = connectionFactory,
+    logger = mockLogger,
 )
 
 fun provideErrorMessage(

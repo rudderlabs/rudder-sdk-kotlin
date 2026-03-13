@@ -1,7 +1,6 @@
 package com.rudderstack.sdk.kotlin.core.internals.queue
 
 import com.rudderstack.sdk.kotlin.core.Analytics
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPoliciesFacade
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
@@ -104,13 +103,13 @@ internal class EventQueue(
                 try {
                     queueMessage.event?.let {
                         stringifyBaseEvent(it).also { stringValue ->
-                            LoggerAnalytics.debug("Storing event: $stringValue")
+                            analytics.logger.debug("Storing event: $stringValue")
                             storage.write(StorageKeys.EVENT, stringValue)
                         }
                         flushPoliciesFacade.updateState()
                     }
                 } catch (e: Exception) {
-                    LoggerAnalytics.error("Error adding payload: $queueMessage", e)
+                    analytics.logger.error("Error adding payload: $queueMessage", e)
                 }
             }
 

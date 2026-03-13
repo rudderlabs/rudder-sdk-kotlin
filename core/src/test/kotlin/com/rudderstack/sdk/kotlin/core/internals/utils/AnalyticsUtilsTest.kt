@@ -4,7 +4,7 @@ import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.AnalyticsConfiguration
 import com.rudderstack.sdk.kotlin.core.Configuration
 import com.rudderstack.sdk.kotlin.core.SourceConfigManager
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
@@ -16,7 +16,7 @@ import com.rudderstack.sdk.kotlin.core.provideSourceConfigManager
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
-import io.mockk.mockkObject
+import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.spyk
 import io.mockk.verify
@@ -55,18 +55,20 @@ class AnalyticsUtilsTest {
     private val configuration = provideConfiguration()
 
     private lateinit var analytics: Analytics
+    private lateinit var mockLogger: Logger
 
     @BeforeEach
     fun setup() {
         MockKAnnotations.init(this, relaxed = true)
 
-        // Mock LoggerAnalytics
-        mockkObject(LoggerAnalytics)
+        // Mock logger
+        mockLogger = mockk(relaxed = true)
 
         // Mock Analytics Configuration
         mockkStatic(::provideAnalyticsConfiguration)
-        every { provideAnalyticsConfiguration(any()) } returns mockAnalyticsConfiguration
+        every { provideAnalyticsConfiguration(any(), any()) } returns mockAnalyticsConfiguration
         mockAnalyticsConfiguration.apply {
+            every { logger } returns mockLogger
             every { analyticsScope } returns testScope
             every { analyticsDispatcher } returns testDispatcher
             every { fileStorageDispatcher } returns testDispatcher
@@ -110,7 +112,7 @@ class AnalyticsUtilsTest {
 
         assertFalse(result)
         verify(exactly = 1) {
-            LoggerAnalytics.error("Analytics instance has been shutdown. No further operations are allowed.")
+            mockLogger.error("Analytics instance has been shutdown. No further operations are allowed.")
         }
     }
 
@@ -157,7 +159,7 @@ class AnalyticsUtilsTest {
 
         assertTrue(result)
         verify(exactly = 0) {
-            LoggerAnalytics.error("Source is disabled. This operation is not allowed.")
+            mockLogger.error("Source is disabled. This operation is not allowed.")
         }
     }
 
@@ -170,7 +172,7 @@ class AnalyticsUtilsTest {
 
         assertTrue(result) // Server always returns true
         verify(exactly = 0) {
-            LoggerAnalytics.error("Source is disabled. This operation is not allowed.")
+            mockLogger.error("Source is disabled. This operation is not allowed.")
         }
     }
 
@@ -183,7 +185,7 @@ class AnalyticsUtilsTest {
 
         assertFalse(result)
         verify(exactly = 1) {
-            LoggerAnalytics.error("Source is disabled. This operation is not allowed.")
+            mockLogger.error("Source is disabled. This operation is not allowed.")
         }
     }
 

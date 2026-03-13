@@ -4,9 +4,7 @@ import android.app.Activity
 import androidx.navigation.NavController
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
 import com.rudderstack.sdk.kotlin.android.javacompat.JavaAnalytics
-import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.android.models.reset.ResetOptions
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import io.mockk.MockKAnnotations
 import io.mockk.confirmVerified
@@ -308,27 +306,5 @@ class JavaCompatTest {
         val actualTraits = javaCompat.traits
 
         assertEquals(traits, actualTraits)
-    }
-
-    @Test
-    fun `given log level is verbose, when custom logger is set, then all logs should be tracked using custom logger`() {
-        LoggerAnalytics.logLevel = Logger.LogLevel.VERBOSE
-        val customJavaLogger = spyk(JavaCustomLogger())
-        val msg = "Test message"
-        
-        javaCompat.setCustomLogger(customJavaLogger)
-        LoggerAnalytics.verbose(msg)
-        LoggerAnalytics.debug(msg)
-        LoggerAnalytics.info(msg)
-        LoggerAnalytics.warn(msg)
-        LoggerAnalytics.error(msg)
-
-        verify(exactly = 1) {
-            customJavaLogger.verbose(msg)
-            customJavaLogger.debug(msg)
-            customJavaLogger.info(msg)
-            customJavaLogger.warn(msg)
-            customJavaLogger.error(msg)
-        }
     }
 }

@@ -1,12 +1,13 @@
 package com.rudderstack.sampleapp.analytics.customplugins
 
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.IntegrationPlugin
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.models.AliasEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.GroupEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.ScreenEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
+import com.rudderstack.sdk.kotlin.core.internals.plugins.logger
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonObject
@@ -35,7 +36,7 @@ class SampleCustomIntegrationPlugin : IntegrationPlugin() {
     ) {
         if (destinationSdk == null) {
             val apiKey = "SomeCustomApiKey"
-            destinationSdk = SampleDestinationSdk.create(apiKey)
+            destinationSdk = SampleDestinationSdk.create(apiKey, logger)
         }
     }
 
@@ -72,44 +73,44 @@ class SampleCustomIntegrationPlugin : IntegrationPlugin() {
     }
 }
 
-class SampleDestinationSdk private constructor(private val key: String) {
+class SampleDestinationSdk private constructor(private val key: String, private val logger: Logger) {
 
     fun track(event: String, properties: Map<String, Any>) {
-        LoggerAnalytics.debug("SampleDestinationSdk: track event $event with properties $properties")
+        logger.debug("SampleDestinationSdk: track event $event with properties $properties")
     }
 
     fun screen(screenName: String, properties: Map<String, Any>) {
-        LoggerAnalytics.debug("SampleDestinationSdk: screen event $screenName with properties $properties")
+        logger.debug("SampleDestinationSdk: screen event $screenName with properties $properties")
     }
 
     fun group(groupId: String, traits: Map<String, Any>) {
-        LoggerAnalytics.debug("SampleDestinationSdk: group event $groupId with traits $traits")
+        logger.debug("SampleDestinationSdk: group event $groupId with traits $traits")
     }
 
     fun identifyUser(userId: String, traits: Map<String, Any>) {
-        LoggerAnalytics.debug("SampleDestinationSdk: identify user $userId with traits $traits")
+        logger.debug("SampleDestinationSdk: identify user $userId with traits $traits")
     }
 
     fun aliasUser(userId: String, previousId: String) {
-        LoggerAnalytics.debug("SampleDestinationSdk: alias user $userId with previous ID $previousId")
+        logger.debug("SampleDestinationSdk: alias user $userId with previous ID $previousId")
     }
 
     fun flush() {
-        LoggerAnalytics.debug("SampleDestinationSdk: flush")
+        logger.debug("SampleDestinationSdk: flush")
     }
 
     fun reset() {
-        LoggerAnalytics.debug("SampleDestinationSdk: reset")
+        logger.debug("SampleDestinationSdk: reset")
     }
 
     companion object {
 
-        fun create(key: String): SampleDestinationSdk {
+        fun create(key: String, logger: Logger): SampleDestinationSdk {
             // Create SampleDestinationSdk SDK instance
             return runBlocking {
                 // simulate a delay in creation
                 delay(1000)
-                SampleDestinationSdk(key)
+                SampleDestinationSdk(key, logger)
             }
         }
     }

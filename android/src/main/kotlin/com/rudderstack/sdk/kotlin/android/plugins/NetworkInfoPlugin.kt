@@ -9,7 +9,6 @@ import com.rudderstack.sdk.kotlin.android.utils.network.DefaultNetworkUtils
 import com.rudderstack.sdk.kotlin.android.utils.network.NetworkUtils
 import com.rudderstack.sdk.kotlin.android.utils.putIfNotNull
 import com.rudderstack.sdk.kotlin.core.Analytics
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import kotlinx.serialization.json.JsonObject
@@ -45,14 +44,14 @@ internal class NetworkInfoPlugin(
         super.setup(analytics)
         (analytics.configuration as Configuration).let {
             context = it.application
-            networkUtils.setup(context = context)
+            networkUtils.setup(context = context, logger = analytics.logger)
         }
     }
 
     override suspend fun intercept(event: Event): Event = attachNetworkInfo(event)
 
     private fun attachNetworkInfo(event: Event): Event {
-        LoggerAnalytics.debug("Attaching network info to the event payload")
+        analytics.logger.debug("Attaching network info to the event payload")
 
         event.context = event.context mergeWithHigherPriorityTo getNetworkInfo()
 

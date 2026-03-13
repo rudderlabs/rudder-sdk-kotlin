@@ -5,6 +5,7 @@ import androidx.navigation.NavController
 import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.android.Analytics
 import com.rudderstack.sdk.kotlin.android.models.reset.ResetOptions
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import io.mockk.MockKAnnotations
 import io.mockk.confirmVerified
@@ -120,6 +121,28 @@ class JavaAnalyticsTest {
 
         verify { mockAnalytics.add(plugin) }
         confirmVerified(mockAnalytics)
+    }
+
+    @Test
+    fun `given log level is verbose, when custom logger is set, then all logs should be tracked using custom logger`() {
+        val customLogger = mockk<Logger>(relaxed = true)
+        every { mockAnalytics.logger } returns customLogger
+        val msg = "Test message"
+
+        val logger = javaAnalytics.getLogger()
+        logger.verbose(msg)
+        logger.debug(msg)
+        logger.info(msg)
+        logger.warn(msg)
+        logger.error(msg)
+
+        verify(exactly = 1) {
+            customLogger.verbose(msg)
+            customLogger.debug(msg)
+            customLogger.info(msg)
+            customLogger.warn(msg)
+            customLogger.error(msg)
+        }
     }
 
     @Test

@@ -1,10 +1,12 @@
 package com.rudderstack.sdk.kotlin.core.internals.storage.inmemory
 
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.storage.MAX_PAYLOAD_SIZE
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.storage.exception.PayloadTooLargeException
 import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
+import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -22,7 +24,7 @@ class InMemoryStorageTest {
 
     @BeforeEach
     fun setup() {
-        storage = InMemoryStorage(writeKey = TEST_WRITE_KEY)
+        storage = InMemoryStorage(writeKey = TEST_WRITE_KEY, logger = mockk<Logger>(relaxed = true))
     }
 
     @Test

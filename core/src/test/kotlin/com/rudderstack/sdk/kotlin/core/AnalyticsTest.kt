@@ -93,6 +93,7 @@ class AnalyticsTest {
     private lateinit var mockAnalyticsJob: CompletableJob
     private lateinit var analytics: Analytics
 
+    @Suppress("DEPRECATION")
     @BeforeEach
     fun setup() {
         MockKAnnotations.init(this, relaxed = true)
@@ -105,7 +106,7 @@ class AnalyticsTest {
 
         // Mock Analytics Configuration
         mockkStatic(::provideAnalyticsConfiguration)
-        every { provideAnalyticsConfiguration(any()) } returns mockAnalyticsConfiguration
+        every { provideAnalyticsConfiguration(any(), any()) } returns mockAnalyticsConfiguration
         mockAnalyticsConfiguration.apply {
             every { analyticsScope } returns testScope
             every { analyticsDispatcher } returns testDispatcher
@@ -213,6 +214,7 @@ class AnalyticsTest {
         assertNull(traits)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun `when SDK is initialised, then KotlinLogger should be set`() {
         verify(exactly = 1) {

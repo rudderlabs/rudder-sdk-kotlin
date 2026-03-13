@@ -21,7 +21,7 @@ package com.rudderstack.sdk.kotlin.core.internals.logger
  * ```
  *
  * ### Usage
- * Access the logger via `Analytics.logger` or the `Plugin.logger` extension, then log
+ * Access the logger via `analyticsInstance.logger` or the `Plugin.logger` extension, then log
  * messages at various levels:
  *
  * ```kotlin
@@ -69,4 +69,11 @@ internal class AnalyticsLogger(
             logger.error(log, throwable)
         }
     }
+}
+
+/**
+ * Creates an [AnalyticsLogger] that wraps the given [logger] with log-level filtering.
+ */
+internal fun provideAnalyticsLogger(logger: Logger, logLevel: Logger.LogLevel): Logger {
+    return AnalyticsLogger(logger = logger, logLevel = logLevel)
 }
