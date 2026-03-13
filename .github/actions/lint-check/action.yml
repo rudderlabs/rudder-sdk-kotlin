@@ -16,6 +16,9 @@ runs:
         distribution: 'temurin'
         cache: gradle
 
+    - name: Set up Android SDK
+      uses: android-actions/setup-android@e1f5280a991e8ca3bcd3a9dfe3fe0c8bd65e7e18 # v3.2.2
+
     - name: Cache Gradle build cache
       uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
       with:
