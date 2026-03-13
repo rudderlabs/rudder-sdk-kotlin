@@ -5,9 +5,6 @@ on:
     branches: [ "develop", "feat/*", "refactor/*", "release/*", "ci/*", "fix/*", "chore/*" ]
     types: [ "opened", "reopened", "synchronize", "edited" ]
 
-permissions:
-  contents: read
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.head_ref }}
   cancel-in-progress: true
@@ -17,6 +14,8 @@ jobs:
   pr-title-check:
     name: PR Title Check
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Harden the runner (Audit all outbound calls)
         uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
@@ -33,6 +32,8 @@ jobs:
   sonarcloud-analysis:
     name: SonarCloud Analysis
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Harden the runner (Audit all outbound calls)
         uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
@@ -53,6 +54,8 @@ jobs:
   setup-and-list-modules:
     name: Setup & List Modules
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       available_modules: ${{ steps.setup.outputs.available_modules }}
       android_modules: ${{ steps.setup.outputs.android_modules }}
@@ -76,6 +79,8 @@ jobs:
   detekt-check:
     name: Detekt Check
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     needs: setup-and-list-modules
     steps:
       - name: Harden the runner (Audit all outbound calls)
@@ -97,6 +102,8 @@ jobs:
   lint-check:
     name: Lint Check
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     needs: setup-and-list-modules
     steps:
       - name: Harden the runner (Audit all outbound calls)
@@ -118,6 +125,8 @@ jobs:
   test-check:
     name: Test Check
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     needs: setup-and-list-modules
     steps:
       - name: Harden the runner (Audit all outbound calls)
@@ -140,6 +149,8 @@ jobs:
   build-check:
     name: Build Check
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     needs: setup-and-list-modules
     steps:
       - name: Harden the runner (Audit all outbound calls)
@@ -166,6 +177,8 @@ jobs:
   pr-validation-summary:
     name: PR Validation Summary
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     needs: [pr-title-check, setup-and-list-modules, detekt-check, lint-check, test-check, build-check, sonarcloud-analysis]
     if: always()
     steps:

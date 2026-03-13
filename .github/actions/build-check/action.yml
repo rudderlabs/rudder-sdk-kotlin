@@ -35,8 +35,11 @@ runs:
 
     - name: Build all modules
       shell: bash
+      env:
+        ANDROID_MODULES: ${{ inputs.android_modules }}
+        JVM_MODULES: ${{ inputs.jvm_modules }}
       run: |
         chmod +x scripts/run-gradle-tasks.sh
         ./scripts/run-gradle-tasks.sh \
-          "${{ inputs.android_modules }}" "assembleRelease" \
-          "${{ inputs.jvm_modules }}" "assemble"
+          "$ANDROID_MODULES" "assembleRelease" \
+          "$JVM_MODULES" "assemble"

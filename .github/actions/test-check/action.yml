@@ -35,11 +35,14 @@ runs:
 
     - name: Run tests on all modules
       shell: bash
+      env:
+        ANDROID_MODULES: ${{ inputs.android_modules }}
+        JVM_MODULES: ${{ inputs.jvm_modules }}
       run: |
         chmod +x scripts/run-gradle-tasks.sh
         ./scripts/run-gradle-tasks.sh \
-          "${{ inputs.android_modules }}" "testReleaseUnitTest" \
-          "${{ inputs.jvm_modules }}" "test"
+          "$ANDROID_MODULES" "testReleaseUnitTest" \
+          "$JVM_MODULES" "test"
 
     - name: Upload test reports
       if: always()

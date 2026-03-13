@@ -32,9 +32,11 @@ runs:
 
     - name: Run Detekt on all modules
       shell: bash
+      env:
+        AVAILABLE_MODULES: ${{ inputs.available_modules }}
       run: |
         chmod +x scripts/run-gradle-tasks.sh
-        ./scripts/run-gradle-tasks.sh "${{ inputs.available_modules }}" "detekt"
+        ./scripts/run-gradle-tasks.sh "$AVAILABLE_MODULES" "detekt"
 
     - name: Upload Detekt reports
       if: always()

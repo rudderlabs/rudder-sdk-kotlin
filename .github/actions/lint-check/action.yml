@@ -32,9 +32,11 @@ runs:
 
     - name: Run Android Lint on all modules
       shell: bash
+      env:
+        ANDROID_MODULES: ${{ inputs.android_modules }}
       run: |
         chmod +x scripts/run-gradle-tasks.sh
-        ./scripts/run-gradle-tasks.sh "${{ inputs.android_modules }}" "lintRelease"
+        ./scripts/run-gradle-tasks.sh "$ANDROID_MODULES" "lintRelease"
 
     - name: Upload Lint reports
       if: always()

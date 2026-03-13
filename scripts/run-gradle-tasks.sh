@@ -22,13 +22,13 @@ while [[ $# -ge 2 ]]; do
 
   IFS=',' read -ra MODS <<< "$MODULES_CSV"
   for mod in "${MODS[@]}"; do
-    [ -n "$mod" ] && TASKS="$TASKS ${mod}:${TASK_SUFFIX}"
+    [[ -n "$mod" ]] && TASKS="$TASKS ${mod}:${TASK_SUFFIX}"
   done
 done
 
 TASKS=$(echo "$TASKS" | sed 's/^ //')
 
-if [ -z "$TASKS" ]; then
+if [[ -z "$TASKS" ]]; then
   echo "No tasks to run"
   exit 0
 fi
