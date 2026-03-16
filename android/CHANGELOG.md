@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+# [1.5.0](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.sdk.kotlin.android@1.4.0...com.rudderstack.sdk.kotlin.android@1.5.0) (2026-03-16)
+
+## Features
+
+- Add per-module CHANGELOG.md files ([#291](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/291))
+- Implement instance based logging ([#276](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/276))
+- Use local project modules with unified publishing script and Gradle build cache ([#272](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/272))
+
+## Dependency Updates
+
+- Update core dependency to 1.5.0
+
 # [1.4.0](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.sdk.kotlin.android@1.3.0...com.rudderstack.sdk.kotlin.android@1.4.0) (2026-03-03)
 
 ## Features
