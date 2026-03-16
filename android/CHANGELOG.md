@@ -21,7 +21,7 @@ All notable changes to this project will be documented in this file.
 
 # [1.2.0](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.sdk.kotlin.android@1.1.2...com.rudderstack.sdk.kotlin.android@1.2.0) (2026-02-03)
 
-## Refactoring
+## Features
 
 - Refactor error handling nomenclature for retryable and non-retryable errors ([#249](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/249))
 
