@@ -33,7 +33,7 @@ open class Configuration @JvmOverloads constructor(
     open val controlPlaneUrl: String = DEFAULT_CONTROL_PLANE_URL,
     open val gzipEnabled: Boolean = DEFAULT_GZIP_STATUS,
     open val flushPolicies: List<FlushPolicy> = DEFAULT_FLUSH_POLICIES,
-    open val storageType: StorageType = DEFAULT_STORAGE_TYPE,
+    val storageType: StorageType = DEFAULT_STORAGE_TYPE,
     open val logger: Logger = DEFAULT_LOGGER,
     open val logLevel: Logger.LogLevel = DEFAULT_LOG_LEVEL
 ) {
