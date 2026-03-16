@@ -14,7 +14,7 @@ import com.rudderstack.sdk.kotlin.android.utils.isLong
 import com.rudderstack.sdk.kotlin.android.utils.isString
 import com.rudderstack.sdk.kotlin.core.ecommerce.ECommerceEvents
 import com.rudderstack.sdk.kotlin.core.ecommerce.ECommerceParamNames
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -97,20 +97,20 @@ internal fun formatFirebaseKey(key: String): String {
         .take(MAX_KEY_LENGTH)
 }
 
-internal fun attachAllCustomProperties(params: Bundle, properties: JsonObject?, isEcommerceEvent: Boolean) {
+internal fun attachAllCustomProperties(params: Bundle, properties: JsonObject?, isEcommerceEvent: Boolean, logger: Logger) {
     properties?.takeIf { it.isNotEmpty() }?.keys?.forEach { key ->
         val firebaseKey = formatFirebaseKey(key)
         if ((isEcommerceEvent && firebaseKey.lowercase() in RESERVED_EVENTS_KEYWORDS) || properties.isKeyEmpty(key)) {
             return@forEach
         }
-        addPropertyToBundle(params, firebaseKey, key, properties)
+        addPropertyToBundle(params, firebaseKey, key, properties, logger)
     }
 }
 
-private fun addPropertyToBundle(params: Bundle, firebaseKey: String, key: String, properties: JsonObject) {
+private fun addPropertyToBundle(params: Bundle, firebaseKey: String, key: String, properties: JsonObject, logger: Logger) {
     when {
         properties.isString(key) -> {
-            val value = getString(value = properties[key], maxLength = MAX_PROPERTY_VALUE_LENGTH)
+            val value = getString(value = properties[key], maxLength = MAX_PROPERTY_VALUE_LENGTH, logger = logger)
             params.putString(firebaseKey, value)
         }
 
@@ -131,13 +131,13 @@ internal fun getBundle(): Bundle {
     return Bundle()
 }
 
-internal fun getString(value: JsonElement?, maxLength: Int): String {
+internal fun getString(value: JsonElement?, maxLength: Int, logger: Logger): String {
     val stringValue = when (value) {
         is JsonPrimitive -> value.content
         is JsonArray, is JsonObject -> try {
             Json.encodeToString(value)
         } catch (e: Exception) {
-            LoggerAnalytics.error("FirebaseIntegration: Error while converting JsonElement to String.", e)
+            logger.error("FirebaseIntegration: Error while converting JsonElement to String.", e)
             value.toString()
         }
 

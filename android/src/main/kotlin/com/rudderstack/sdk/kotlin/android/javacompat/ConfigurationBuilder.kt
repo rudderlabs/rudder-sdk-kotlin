@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.rudderstack.sdk.kotlin.android.javacompat
 
 import android.app.Application
@@ -9,6 +11,9 @@ import com.rudderstack.sdk.kotlin.android.Configuration.Companion.DEFAULT_TRACK_
 import com.rudderstack.sdk.kotlin.android.DEFAULT_SESSION_TIMEOUT_IN_MILLIS
 import com.rudderstack.sdk.kotlin.android.SessionConfiguration
 import com.rudderstack.sdk.kotlin.android.SessionConfiguration.Companion.DEFAULT_AUTOMATIC_SESSION_TRACKING
+import com.rudderstack.sdk.kotlin.android.logger.AndroidLogger
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
+import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPolicy
 import com.rudderstack.sdk.kotlin.core.javacompat.ConfigurationBuilder
 
@@ -30,6 +35,8 @@ class ConfigurationBuilder(
     private var trackDeepLinks: Boolean = DEFAULT_TRACK_DEEP_LINKS
     private var trackActivities: Boolean = DEFAULT_TRACK_ACTIVITIES
     private var collectDeviceId: Boolean = DEFAULT_COLLECT_DEVICE_ID
+
+    private var logger: Logger = LoggerAnalytics.logger ?: AndroidLogger()
     private var sessionConfiguration: SessionConfiguration = SessionConfigurationBuilder().build()
 
     /**
@@ -89,6 +96,20 @@ class ConfigurationBuilder(
     }
 
     /**
+     * Sets the log level for the Analytics instance.
+     */
+    override fun setLogLevel(level: Logger.LogLevel) = apply {
+        super.setLogLevel(level)
+    }
+
+    /**
+     * Sets the logger for the Analytics instance.
+     */
+    override fun setLogger(logger: Logger) = apply {
+        this.logger = logger
+    }
+
+    /**
      * Builds the Configuration instance with the configured properties.
      */
     override fun build(): Configuration {
@@ -106,6 +127,8 @@ class ConfigurationBuilder(
             controlPlaneUrl = coreConfig.controlPlaneUrl,
             flushPolicies = coreConfig.flushPolicies,
             gzipEnabled = coreConfig.gzipEnabled,
+            logger = logger,
+            logLevel = coreConfig.logLevel,
         )
     }
 }

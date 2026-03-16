@@ -1,5 +1,6 @@
 package com.rudderstack.sdk.kotlin.core.internals.queue
 
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.models.RetryMetadata
 import com.rudderstack.sdk.kotlin.core.internals.network.RetryAbleEventUploadError
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
@@ -17,13 +18,14 @@ import org.junit.jupiter.api.Test
 
 class RetryHeadersProviderTest {
 
+    private val mockLogger: Logger = mockk(relaxed = true)
     private lateinit var storage: Storage
     private lateinit var provider: RetryHeadersProviderImpl
 
     @BeforeEach
     fun setup() {
         storage = mockk(relaxed = true)
-        provider = RetryHeadersProviderImpl(storage)
+        provider = RetryHeadersProviderImpl(storage, mockk(relaxed = true))
     }
 
     @Nested
@@ -276,7 +278,7 @@ class RetryHeadersProviderTest {
             storage.write(
                 StorageKeys.RETRY_METADATA,
                 match<String> { json ->
-                    val parsed = RetryMetadata.fromJson(json)
+                    val parsed = RetryMetadata.fromJson(json, mockLogger)
                     parsed != null &&
                             parsed.batchId == batchId &&
                             parsed.attempt == attempt &&

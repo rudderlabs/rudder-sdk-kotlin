@@ -1,6 +1,7 @@
 package com.rudderstack.sdk.kotlin.core
 
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
+import com.rudderstack.sdk.kotlin.core.internals.logger.provideAnalyticsLogger
 import com.rudderstack.sdk.kotlin.core.internals.models.connectivity.ConnectivityState
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
@@ -18,6 +19,11 @@ import kotlinx.coroutines.SupervisorJob
  */
 @InternalRudderApi
 interface AnalyticsConfiguration {
+
+    /**
+     * The logger instance for this analytics configuration.
+     */
+    val logger: Logger
 
     /**
      * Storage implementation for the analytics module.
@@ -81,11 +87,12 @@ interface AnalyticsConfiguration {
 
 @OptIn(ExperimentalCoroutinesApi::class)
 private class AnalyticsConfigurationImpl(
-    override val storage: Storage
+    override val storage: Storage,
+    override val logger: Logger,
 ) : AnalyticsConfiguration {
 
     private val handler = CoroutineExceptionHandler { _, exception ->
-        LoggerAnalytics.error(exception.stackTraceToString())
+        logger.error(exception.stackTraceToString())
     }
     override val analyticsJob: Job = SupervisorJob()
     override val analyticsScope: CoroutineScope = run {
@@ -106,8 +113,16 @@ private class AnalyticsConfigurationImpl(
 
 /**
  * Get the analytics configuration.
+ *
+ * @param configuration The configuration object defining settings such as write key, data plane URL, logger, etc.
+ * @param storageProvider Lambda to provide a custom storage implementation.
  */
 @InternalRudderApi
-fun provideAnalyticsConfiguration(storage: Storage): AnalyticsConfiguration {
-    return AnalyticsConfigurationImpl(storage)
+fun provideAnalyticsConfiguration(
+    configuration: Configuration,
+    storageProvider: (writeKey: String, logger: Logger) -> Storage,
+): AnalyticsConfiguration {
+    val analyticsLogger = provideAnalyticsLogger(logger = configuration.logger, logLevel = configuration.logLevel)
+    val storage = storageProvider(configuration.writeKey, analyticsLogger)
+    return AnalyticsConfigurationImpl(storage, analyticsLogger)
 }

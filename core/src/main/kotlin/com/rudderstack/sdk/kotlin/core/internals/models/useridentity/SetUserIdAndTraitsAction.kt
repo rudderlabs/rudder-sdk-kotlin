@@ -1,6 +1,6 @@
 package com.rudderstack.sdk.kotlin.core.internals.models.useridentity
 
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.models.Traits
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
@@ -11,6 +11,7 @@ import kotlinx.serialization.encodeToString
 internal class SetUserIdAndTraitsAction(
     private val newUserId: String,
     private val newTraits: Traits,
+    private val logger: Logger,
 ) : UserIdentity.UserIdentityAction {
 
     override fun reduce(currentState: UserIdentity): UserIdentity {
@@ -21,7 +22,7 @@ internal class SetUserIdAndTraitsAction(
             isUserIdChanged = isUserIdChanged(currentState = currentState)
         )
 
-        LoggerAnalytics.verbose("UserId changed from ${currentState.userId} to $newUserId. Updated traits: $updatedTraits")
+        logger.verbose("UserId changed from ${currentState.userId} to $newUserId. Updated traits: $updatedTraits")
 
         return currentState.copy(userId = newUserId, traits = updatedTraits)
     }

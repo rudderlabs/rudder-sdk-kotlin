@@ -1,11 +1,13 @@
 package com.rudderstack.integration.kotlin.braze
 
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.models.ExternalId
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.UserIdentity
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
+import io.mockk.mockk
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
@@ -23,6 +25,8 @@ private const val EXTERNAL_ID = "<externalId>"
 
 class UtilsTest {
 
+    private val mockLogger: Logger = mockk(relaxed = true)
+
     @Test
     fun `given identify event with traits, when traits are accessed, then it should return some not null value`() {
         val identifyEvent = provideIdentifyEventWithTraits()
@@ -36,7 +40,7 @@ class UtilsTest {
     fun `given both standard and custom properties is present, when standard properties is requested, then return only standard properties`() {
         val properties = getStandardAndCustomProperties()
 
-        val standardProperties = properties.getStandardProperties()
+        val standardProperties = properties.getStandardProperties(mockLogger)
 
         val expectedProperties = provideStandardProperties()
         assertEquals(expectedProperties, standardProperties)
@@ -46,7 +50,7 @@ class UtilsTest {
     fun `given only custom properties is present, when standard properties is requested, then return empty standard properties`() {
         val properties = getOnlyCustomProperties()
 
-        val standardProperties = properties.getStandardProperties()
+        val standardProperties = properties.getStandardProperties(mockLogger)
 
         val emptyStandardProperties = StandardProperties()
         assertEquals(emptyStandardProperties, standardProperties)
@@ -105,7 +109,7 @@ class UtilsTest {
     fun `given IdentifyEvent contains userId, traits and externalId, when it is converted into IdentityTraits, then return IdentityTraits object`() {
         val identifyEvent = provideIdentifyEvent()
 
-        val identityTraits = identifyEvent.toIdentifyTraits()
+        val identityTraits = identifyEvent.toIdentifyTraits(mockLogger)
 
         val expectedIdentityTraits = IdentifyTraits(
             userId = USER_ID,

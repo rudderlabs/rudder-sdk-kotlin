@@ -14,7 +14,6 @@ import com.rudderstack.sdk.kotlin.android.utils.getString
 import com.rudderstack.sdk.kotlin.core.ecommerce.ECommerceEvents
 import com.rudderstack.sdk.kotlin.core.ecommerce.ECommerceParamNames
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.ScreenEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
@@ -48,7 +47,7 @@ class FacebookIntegration : StandardIntegration, IntegrationPlugin() {
         facebookAppEventsLogger ?: run {
             destinationConfig.parseConfig<FacebookDestinationConfig>()
                 .let { config ->
-                    if (LoggerAnalytics.logLevel <= Logger.LogLevel.DEBUG) {
+                    if (analytics.configuration.logLevel <= Logger.LogLevel.DEBUG) {
                         FacebookSdk.setIsDebugEnabled(true)
                         FacebookSdk.addLoggingBehavior(LoggingBehavior.APP_EVENTS)
                     }
@@ -84,7 +83,7 @@ class FacebookIntegration : StandardIntegration, IntegrationPlugin() {
                 } else {
                     facebookAppEventsLogger?.logEvent("Viewed $it Screen")
                 }
-                LoggerAnalytics.debug("FacebookIntegration: Screen $it sent to Facebook")
+                analytics.logger.debug("FacebookIntegration: Screen $it sent to Facebook")
             }
     }
 
@@ -167,7 +166,7 @@ class FacebookIntegration : StandardIntegration, IntegrationPlugin() {
 
                     else -> facebookAppEventsLogger?.logEvent(eventName, params)
                 }
-                LoggerAnalytics.debug("FacebookIntegration: Event $eventName sent to Facebook")
+                analytics.logger.debug("FacebookIntegration: Event $eventName sent to Facebook")
             }
     }
 
@@ -187,13 +186,13 @@ class FacebookIntegration : StandardIntegration, IntegrationPlugin() {
                 config.country,
                 config.state
             )
-            LoggerAnalytics.debug(
+            analytics.logger.debug(
                 "FacebookIntegration: Data Processing Options set " +
                     "to LDU with country: ${config.country} and state: ${config.state}"
             )
         } else {
             FacebookSdk.setDataProcessingOptions(arrayOf())
-            LoggerAnalytics.debug("FacebookIntegration: Data Processing Options cleared")
+            analytics.logger.debug("FacebookIntegration: Data Processing Options cleared")
         }
     }
 

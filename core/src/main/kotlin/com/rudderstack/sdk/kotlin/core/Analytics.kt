@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.rudderstack.sdk.kotlin.core
 
 import com.rudderstack.sdk.kotlin.core.internals.logger.KotlinLogger
@@ -118,12 +120,12 @@ open class Analytics protected constructor(
      */
     constructor(configuration: Configuration) : this(
         configuration = configuration,
-        analyticsConfiguration = provideAnalyticsConfiguration(
-            storage = when (configuration.storageType) {
-                StorageType.IN_MEMORY -> provideInMemoryStorage(configuration.writeKey)
-                StorageType.FILE -> provideBasicStorage(configuration.writeKey, PlatformType.Server)
+        analyticsConfiguration = provideAnalyticsConfiguration(configuration) { writeKey, logger ->
+            when (configuration.storageType) {
+                StorageType.IN_MEMORY -> provideInMemoryStorage(writeKey, logger)
+                StorageType.FILE -> provideBasicStorage(writeKey, PlatformType.Server, logger)
             }
-        )
+        },
     )
 
     /**
@@ -220,6 +222,7 @@ open class Analytics protected constructor(
             SetUserIdAndTraitsAction(
                 newUserId = userId,
                 newTraits = traits,
+                logger = logger,
             )
         )
         analyticsScope.launch(keyValueStorageDispatcher) {
@@ -255,7 +258,7 @@ open class Analytics protected constructor(
 
         val updatedPreviousId = userIdentityState.value.resolvePreferredPreviousId(previousId)
         userIdentityState.dispatch(
-            SetUserIdForAliasEvent(newId = newId)
+            SetUserIdForAliasEvent(newId = newId, logger = logger)
         )
         analyticsScope.launch(keyValueStorageDispatcher) {
             userIdentityState.value.storeUserId(storage = storage)
@@ -296,7 +299,7 @@ open class Analytics protected constructor(
         if (!isAnalyticsActive()) return
 
         isAnalyticsShutdown = true
-        LoggerAnalytics.info("Initiating Analytics shutdown.")
+        logger.info("Initiating Analytics shutdown.")
 
         processEventChannel.close()
         processEventJob?.invokeOnCompletion {
@@ -307,7 +310,7 @@ open class Analytics protected constructor(
     private fun shutdownHook() {
         analyticsJob.invokeOnCompletion {
             closeAndCleanupStorage()
-            LoggerAnalytics.info("Analytics shutdown completed.")
+            logger.info("Analytics shutdown completed.")
         }
         analyticsScope.launch {
             this@Analytics.pluginChain.removeAll()

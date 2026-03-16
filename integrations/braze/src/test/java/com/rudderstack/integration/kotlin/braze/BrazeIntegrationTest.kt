@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.rudderstack.integration.kotlin.braze
 
 import android.app.Application

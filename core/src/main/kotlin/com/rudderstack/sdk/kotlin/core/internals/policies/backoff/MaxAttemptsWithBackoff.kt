@@ -1,6 +1,6 @@
 package com.rudderstack.sdk.kotlin.core.internals.policies.backoff
 
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import kotlinx.coroutines.delay
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
@@ -22,6 +22,7 @@ private val DEFAULT_COOL_OFF_PERIOD_IN_MILLIS = 30.minutes
  * @param backOffPolicy Delay calculation policy. Default to [ExponentialBackOffPolicy]
  */
 internal class MaxAttemptsWithBackoff(
+    private val logger: Logger,
     private val maxAttempts: Int = DEFAULT_MAX_ATTEMPT,
     private val coolOffPeriod: Duration = DEFAULT_COOL_OFF_PERIOD_IN_MILLIS,
     private val backOffPolicy: BackOffPolicy = ExponentialBackOffPolicy(),
@@ -38,20 +39,20 @@ internal class MaxAttemptsWithBackoff(
     }
 
     private suspend fun applyCoolOffPeriod() {
-        LoggerAnalytics.verbose("Max attempts reached. Entering cool-off period for upload queue")
+        logger.verbose("Max attempts reached. Entering cool-off period for upload queue")
         reset()
-        LoggerAnalytics.verbose("Next attempt will be after $coolOffPeriod")
+        logger.verbose("Next attempt will be after $coolOffPeriod")
         delay(coolOffPeriod)
     }
 
     private suspend fun applyBackoff() {
         val delayInMillis = backOffPolicy.nextDelayInMillis()
-        LoggerAnalytics.verbose("Sleeping for $delayInMillis milliseconds (attempt $currentAttempt of $maxAttempts)")
+        logger.verbose("Sleeping for $delayInMillis milliseconds (attempt $currentAttempt of $maxAttempts)")
         delay(delayInMillis)
     }
 
     internal fun reset() {
-        LoggerAnalytics.verbose("Resetting retry attempts and backoff policy")
+        logger.verbose("Resetting retry attempts and backoff policy")
         currentAttempt = 0
         backOffPolicy.resetBackOff()
     }

@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.rudderstack.sdk.kotlin.core
 
 import com.rudderstack.sdk.kotlin.core.internals.logger.KotlinLogger
@@ -105,7 +107,7 @@ class AnalyticsTest {
 
         // Mock Analytics Configuration
         mockkStatic(::provideAnalyticsConfiguration)
-        every { provideAnalyticsConfiguration(any()) } returns mockAnalyticsConfiguration
+        every { provideAnalyticsConfiguration(any(), any()) } returns mockAnalyticsConfiguration
         mockAnalyticsConfiguration.apply {
             every { analyticsScope } returns testScope
             every { analyticsDispatcher } returns testDispatcher

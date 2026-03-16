@@ -1,9 +1,9 @@
 package com.rudderstack.sampleapp.analytics.customplugins
 
 import com.rudderstack.sdk.kotlin.core.Analytics
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
+import com.rudderstack.sdk.kotlin.core.internals.plugins.logger
 
 /**
  * A plugin that sets a given [anonymousId] in the event payload for every event.
@@ -28,7 +28,7 @@ class SetAnonymousIdPlugin(
     override suspend fun intercept(event: Event): Event = replaceAnonymousId(event)
 
     private fun replaceAnonymousId(event: Event): Event {
-        LoggerAnalytics.debug("SetAnonymousIdPlugin: Replacing anonymousId: $anonymousId in the event payload")
+        logger.debug("SetAnonymousIdPlugin: Replacing anonymousId: $anonymousId in the event payload")
 
         event.anonymousId = anonymousId
 
