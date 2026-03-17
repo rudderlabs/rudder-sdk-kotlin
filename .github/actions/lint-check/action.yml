@@ -16,6 +16,12 @@ runs:
         distribution: 'temurin'
         cache: gradle
 
+    - name: Set up Android SDK
+      shell: bash
+      run: |
+        chmod +x scripts/setup-android-sdk.sh
+        ./scripts/setup-android-sdk.sh
+
     - name: Cache Gradle build cache
       uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
       with:
