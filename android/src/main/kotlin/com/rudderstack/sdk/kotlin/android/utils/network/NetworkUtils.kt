@@ -27,7 +27,8 @@ internal class NetworkUtils(
         } catch (e: RuntimeException) {
             logger.error(
                 "NetworkUtils: Error setting up NetworkCallbackUtils, " +
-                    "falling back to DefaultNetworkUtils: ${e.message}"
+                    "falling back to DefaultNetworkUtils: ${e.message}",
+                e
             )
         }
     }
