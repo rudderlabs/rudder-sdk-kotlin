@@ -61,22 +61,34 @@ fun getModuleConfig(): ModuleConfig {
 }
 
 // Maps project dependencies (e.g., project(":core"), project(":android")) to Maven coordinates for the POM.
+// Release builds:
 // - Core dependency: pinned to exact version (android module tightly couples with core)
 // - Android dependency: semver range [current, nextMajor) so integrations stay compatible across minor bumps
-// e.g., android module's project(":core") -> ("com.rudderstack.sdk.kotlin", "core", "1.3.0")
-// e.g., adjust integration's project(":android") -> ("com.rudderstack.sdk.kotlin", "android", "[1.3.0, 2.0.0)")
+// Snapshot builds:
+// - Both core and android dependencies: pinned to exact snapshot version
+// e.g., release: android's project(":core") -> ("com.rudderstack.sdk.kotlin", "core", "1.3.0")
+// e.g., release: adjust's project(":android") -> ("com.rudderstack.sdk.kotlin", "android", "[1.3.0, 2.0.0)")
+// e.g., snapshot: android's project(":core") -> ("com.rudderstack.sdk.kotlin", "core", "1.3.0-SNAPSHOT")
+// e.g., snapshot: adjust's project(":android") -> ("com.rudderstack.sdk.kotlin", "android", "1.3.0-SNAPSHOT")
 fun resolveProjectDependency(dep: org.gradle.api.artifacts.ProjectDependency): Triple<String, String, String> {
+    val isRelease = hasProperty("release")
     return when (dep.dependencyProject.name) {
-        "core" -> Triple(
-            RudderStackBuildConfig.SDK.PACKAGE_NAME,
-            RudderStackBuildConfig.SDK.Core.PublishConfig.artifactId,
-            RudderStackBuildConfig.SDK.Core.VERSION_NAME,
-        )
-        "android" -> Triple(
-            RudderStackBuildConfig.SDK.PACKAGE_NAME,
-            RudderStackBuildConfig.SDK.Android.PublishConfig.artifactId,
-            "[${RudderStackBuildConfig.SDK.Android.VERSION_NAME}, ${computeNextMajor(RudderStackBuildConfig.SDK.Android.VERSION_NAME)})",
-        )
+        "core" -> {
+            val version = RudderStackBuildConfig.SDK.Core.VERSION_NAME
+            Triple(
+                RudderStackBuildConfig.SDK.PACKAGE_NAME,
+                RudderStackBuildConfig.SDK.Core.PublishConfig.artifactId,
+                if (isRelease) version else "$version-SNAPSHOT",
+            )
+        }
+        "android" -> {
+            val version = RudderStackBuildConfig.SDK.Android.VERSION_NAME
+            Triple(
+                RudderStackBuildConfig.SDK.PACKAGE_NAME,
+                RudderStackBuildConfig.SDK.Android.PublishConfig.artifactId,
+                if (isRelease) "[$version, ${computeNextMajor(version)})" else "$version-SNAPSHOT",
+            )
+        }
         else -> throw IllegalArgumentException("Unexpected project dependency: ${dep.dependencyProject.name}")
     }
 }
