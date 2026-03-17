@@ -18,12 +18,10 @@ import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.mockk
 import io.mockk.mockkStatic
-import io.mockk.spyk
 import io.mockk.verify
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
-import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -172,7 +170,7 @@ class AnalyticsUtilsTest {
 
         assertTrue(result) // Server always returns true
         verify(exactly = 0) {
-            mockLogger.warn("Source is disabled. This operation is not allowed.")
+            mockLogger.warn("AnalyticsUtils: Source is disabled. This operation is not allowed.")
         }
     }
 

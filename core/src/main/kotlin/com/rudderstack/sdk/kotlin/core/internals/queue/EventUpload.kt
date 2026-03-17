@@ -211,7 +211,7 @@ internal class EventUpload(
         filePath
             .takeIf { it.isNotEmpty() }
             ?.let { storage.remove(it) }
-            ?.let { analytics.logger.debug("Removed file: $filePath") }
+            ?.let { analytics.logger.debug("EventUpload: Removed file: $filePath") }
             ?: analytics.logger.warn("EventUpload: cleanup() called with empty filePath")
     }
 
