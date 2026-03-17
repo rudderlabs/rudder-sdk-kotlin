@@ -1,10 +1,12 @@
 package com.rudderstack.sdk.kotlin.core.internals.models.useridentity
 
 import com.rudderstack.sdk.kotlin.core.Analytics
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.mockAnalytics
 import io.mockk.coVerify
+import io.mockk.mockk
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -19,12 +21,13 @@ class SetUserIdForAliasEventTest {
     private val testDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
     private val mockAnalytics: Analytics = mockAnalytics(testScope, testDispatcher)
+    private val mockLogger: Logger = mockk(relaxed = true)
 
     @Test
     fun `when user id is set for alias event, then it should update the user id`() {
         val userIdentityState = provideUserIdentityInitialState()
 
-        val result = SetUserIdForAliasEvent(ALIAS_ID)
+        val result = SetUserIdForAliasEvent(ALIAS_ID, mockLogger)
             .reduce(userIdentityState)
 
         val expected = provideUserIdentityStateAfterUserIdIsSetForAliasEvent()

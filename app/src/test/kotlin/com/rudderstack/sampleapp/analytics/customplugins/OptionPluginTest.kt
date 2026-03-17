@@ -1,9 +1,11 @@
 package com.rudderstack.sampleapp.analytics.customplugins
 
+import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.ExternalId
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
+import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonArray
@@ -24,10 +26,13 @@ private val emptyJsonObject = JsonObject(emptyMap())
 
 class OptionPluginTest {
 
+    private val mockAnalytics: Analytics = mockk(relaxed = true)
+
     @Test
     fun `given an empty option object is passed, when the option plugin is intercepted, then event contains empty context and default integrations`() =
         runTest {
             val optionPlugin = OptionPlugin()
+            optionPlugin.setup(mockAnalytics)
             val event = provideDefaultEvent().apply {
                 configureDefaultIntegration(this)
             }
@@ -60,6 +65,7 @@ class OptionPluginTest {
                     externalIds = EXTERNAL_ID,
                 )
             )
+            optionPlugin.setup(mockAnalytics)
             val event = provideDefaultEvent().apply {
                 configureDefaultIntegration(this)
                 context = buildJsonObject {
@@ -118,6 +124,7 @@ class OptionPluginTest {
                 )
             )
             val optionPlugin = OptionPlugin(option = higherPreferenceOption)
+            optionPlugin.setup(mockAnalytics)
             val event = provideDefaultEvent().apply {
                 configureDefaultIntegration(this)
                 context = buildJsonObject {

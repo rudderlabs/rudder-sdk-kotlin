@@ -1,6 +1,8 @@
 package com.rudderstack.sdk.kotlin.core.internals.storage
 
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
+import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -8,8 +10,9 @@ import java.io.File
 
 class PropertiesFileTest {
 
+    private val mockLogger: Logger = mockk(relaxed = true)
     private val directory = File("/tmp/rudderstack-analytics/123")
-    private val propertiesFile = PropertiesFile(directory, "123")
+    private val propertiesFile = PropertiesFile(directory, "123", mockLogger)
 
     @BeforeEach
     fun setUp() {
@@ -98,7 +101,7 @@ class PropertiesFileTest {
 
         propertiesFile.clear("key")
         // Create new instance to force reload from file
-        val reloadedFile = PropertiesFile(directory, "123")
+        val reloadedFile = PropertiesFile(directory, "123", mockLogger)
         reloadedFile.load()
 
         assertEquals("default", reloadedFile.getString("key", "default"))

@@ -2,6 +2,7 @@ package com.rudderstack.sdk.kotlin.core.internals.storage.inmemory
 
 import com.rudderstack.sdk.kotlin.core.internals.models.DEFAULT_SENT_AT_TIMESTAMP
 import com.rudderstack.sdk.kotlin.core.internals.storage.TMP_SUFFIX
+import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -23,7 +24,7 @@ class InMemoryBatchManagerTest {
 
     @BeforeEach
     fun setup() {
-        keyValueStorage = InMemoryPrefsStore()
+        keyValueStorage = InMemoryPrefsStore(mockk(relaxed = true))
         inMemoryBatchManager = InMemoryBatchManager(TEST_WRITE_KEY, keyValueStorage)
     }
 

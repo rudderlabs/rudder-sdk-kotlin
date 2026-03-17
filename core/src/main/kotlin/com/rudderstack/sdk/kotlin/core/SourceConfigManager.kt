@@ -1,6 +1,6 @@
 package com.rudderstack.sdk.kotlin.core
 
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClient
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClientImpl
@@ -58,11 +58,11 @@ class SourceConfigManager(
 
         return if (cachedSourceConfig.isNotEmpty()) {
             LenientJson.decodeFromString<SourceConfig>(cachedSourceConfig).let { sourceConfig ->
-                LoggerAnalytics.info("SourceConfig fetched from storage: $sourceConfig")
+                analytics.logger.info("SourceConfig fetched from storage: $sourceConfig")
                 sourceConfig
             }
         } else {
-            LoggerAnalytics.info("SourceConfig not found in storage")
+            analytics.logger.info("SourceConfig not found in storage")
             null
         }
     }
@@ -78,7 +78,7 @@ class SourceConfigManager(
 
     private suspend fun downloadSourceConfig(): SourceConfig? {
         return withContext(analytics.networkDispatcher) {
-            safelyExecute {
+            safelyExecute(analytics.logger) {
                 fetchSourceConfigWithFallback { failureResult ->
                     getSourceConfigOnFailure(failureResult)
                 }
@@ -90,7 +90,7 @@ class SourceConfigManager(
     private suspend fun getSourceConfigOnFailure(result: Result.Failure<NetworkErrorStatus>): SourceConfig? =
         when (val error = result.error) {
             NetworkErrorStatus.Error400 -> {
-                LoggerAnalytics.error(
+                analytics.logger.error(
                     "SourceConfigManager: ${error.formatStatusCodeMessage()}. " +
                         "Invalid write key. Ensure the write key is valid."
                 )
@@ -105,7 +105,7 @@ class SourceConfigManager(
             NetworkErrorStatus.ErrorUnknown,
             NetworkErrorStatus.ErrorNetworkUnavailable,
             NetworkErrorStatus.ErrorTimeout -> {
-                LoggerAnalytics.debug(
+                analytics.logger.debug(
                     "SourceConfigManager: ${error.formatStatusCodeMessage()}. Retrying to fetch SourceConfig."
                 )
                 fetchSourceConfigWithBackOff()
@@ -116,11 +116,11 @@ class SourceConfigManager(
         val backOffPolicy = provideBackoffPolicy()
         repeat(SOURCE_CONFIG_RETRY_ATTEMPT) { attempt ->
             delay(backOffPolicy.nextDelayInMillis())
-            LoggerAnalytics.verbose("Retrying fetching of SourceConfig, attempt: ${attempt + 1}")
+            analytics.logger.verbose("Retrying fetching of SourceConfig, attempt: ${attempt + 1}")
 
             fetchSourceConfigWithFallback { null }?.let { return it }
         }
-        LoggerAnalytics.info("All retry attempts for fetching SourceConfig have been exhausted. Returning null.")
+        analytics.logger.info("All retry attempts for fetching SourceConfig have been exhausted. Returning null.")
         return null
     }
 
@@ -128,20 +128,20 @@ class SourceConfigManager(
         onFailure: (Result.Failure<NetworkErrorStatus>) -> SourceConfig?
     ): SourceConfig? {
         return when (val result = httpClientFactory.getData()) {
-            is Result.Success -> result.toSourceConfig()
+            is Result.Success -> result.toSourceConfig(analytics.logger)
             is Result.Failure -> onFailure(result)
         }
     }
 
     private suspend fun storeSourceConfig(sourceConfig: SourceConfig) {
         withContext(analytics.keyValueStorageDispatcher) {
-            LoggerAnalytics.verbose("Storing sourceConfig in storage.")
+            analytics.logger.verbose("Storing sourceConfig in storage.")
             sourceConfig.storeSourceConfig(analytics.storage)
         }
     }
 
     private fun notifyObservers(sourceConfig: SourceConfig) {
-        LoggerAnalytics.verbose("Notifying observers with sourceConfig.")
+        analytics.logger.verbose("Notifying observers with sourceConfig.")
         sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfig))
     }
 }
@@ -155,6 +155,7 @@ private fun Analytics.createGetHttpClientFactory(): HttpClient {
         endPoint = SOURCE_CONFIG_ENDPOINT,
         authHeaderString = authHeaderString,
         query = query,
+        logger = logger,
     )
 }
 
@@ -178,9 +179,9 @@ internal fun Analytics.getQuery() = when (getPlatformType()) {
     }
 }
 
-private fun Result.Success<String>.toSourceConfig(): SourceConfig {
+private fun Result.Success<String>.toSourceConfig(logger: Logger): SourceConfig {
     val config = LenientJson.decodeFromString<SourceConfig>(response)
-    LoggerAnalytics.info("SourceConfig is fetched successfully: $config")
+    logger.info("SourceConfig is fetched successfully: $config")
     return config
 }
 

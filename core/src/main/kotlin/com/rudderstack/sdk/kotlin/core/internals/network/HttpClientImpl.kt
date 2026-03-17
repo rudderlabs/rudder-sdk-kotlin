@@ -1,6 +1,6 @@
 package com.rudderstack.sdk.kotlin.core.internals.network
 
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.network.NetworkErrorStatus.Companion.toErrorStatus
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import com.rudderstack.sdk.kotlin.core.internals.utils.validatedBaseUrl
@@ -52,6 +52,7 @@ internal class HttpClientImpl private constructor(
     override var postConfig: PostConfig,
     override val customHeaders: Map<String, String>,
     override val connectionFactory: HttpURLConnectionFactory,
+    private val logger: Logger,
 ) : HttpClient {
 
     companion object {
@@ -76,7 +77,8 @@ internal class HttpClientImpl private constructor(
             authHeaderString: String,
             query: Map<String, String> = emptyMap(),
             customHeaders: Map<String, String> = emptyMap(),
-            connectionFactory: HttpURLConnectionFactory = DefaultHttpURLConnectionFactory()
+            connectionFactory: HttpURLConnectionFactory = DefaultHttpURLConnectionFactory(),
+            logger: Logger,
         ) = HttpClientImpl(
             baseUrl = baseUrl,
             endPoint = endPoint,
@@ -85,6 +87,7 @@ internal class HttpClientImpl private constructor(
             postConfig = createPostConfig(isGZIPEnabled = false),
             customHeaders = customHeaders,
             connectionFactory = connectionFactory,
+            logger = logger,
         )
 
         /**
@@ -96,8 +99,7 @@ internal class HttpClientImpl private constructor(
          * @param baseUrl The base URL for the HttpClient.
          * @param endPoint The specific endpoint appended to the base URL.
          * @param authHeaderString The authorization header string, typically for Basic Auth.
-         * @param isGZIPEnabled A flag indicating whether GZIP compression is enabled for POST requests.
-         * @param anonymousIdHeaderString A custom header used to identify anonymous users.
+         * @param postConfig Configuration options specific to POST requests, including GZIP compression and a custom identifier header.
          * @param customHeaders Additional HTTP headers for the request. Defaults to an empty map.
          * @param connectionFactory A factory for creating `HttpURLConnection` instances. Defaults to `DefaultHttpURLConnectionFactory()`.
          * @return A configured `HttpClientImpl` instance for POST requests.
@@ -106,21 +108,19 @@ internal class HttpClientImpl private constructor(
             baseUrl: String,
             endPoint: String,
             authHeaderString: String,
-            isGZIPEnabled: Boolean,
-            anonymousIdHeaderString: String,
+            postConfig: PostConfig,
             customHeaders: Map<String, String> = emptyMap(),
-            connectionFactory: HttpURLConnectionFactory = DefaultHttpURLConnectionFactory()
+            connectionFactory: HttpURLConnectionFactory = DefaultHttpURLConnectionFactory(),
+            logger: Logger,
         ) = HttpClientImpl(
             baseUrl = baseUrl,
             endPoint = endPoint,
             authHeaderString = authHeaderString,
             getConfig = createGetConfig(),
-            postConfig = createPostConfig(
-                isGZIPEnabled = isGZIPEnabled,
-                anonymousIdHeaderString = anonymousIdHeaderString,
-            ),
+            postConfig = postConfig,
             customHeaders = customHeaders,
             connectionFactory = connectionFactory,
+            logger = logger,
         )
     }
 
@@ -196,7 +196,7 @@ internal class HttpClientImpl private constructor(
             connect()
             constructResponse()
         } catch (e: Exception) {
-            LoggerAnalytics.error("Network error: ${e.message}", e)
+            logger.error("Network error: ${e.message}", e)
             when (e) {
                 is SocketTimeoutException -> {
                     Result.Failure(error = NetworkErrorStatus.ErrorTimeout)

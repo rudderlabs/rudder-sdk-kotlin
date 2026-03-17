@@ -15,7 +15,6 @@ import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLif
 import com.rudderstack.sdk.kotlin.android.utils.addLifecycleObserver
 import com.rudderstack.sdk.kotlin.android.utils.application
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
@@ -48,17 +47,18 @@ class AdjustIntegration : StandardIntegration, IntegrationPlugin(), ActivityLife
 
     public override fun create(destinationConfig: JsonObject) {
         adjustInstance ?: run {
-            destinationConfig.parseConfig<AdjustDestinationConfig>()?.let { config ->
+            destinationConfig.parseConfig<AdjustDestinationConfig>(analytics.logger)?.let { config ->
                 eventToTokenMappings = config.eventToTokenMappings
                 enableInstallAttributionTracking = config.enableInstallAttributionTracking
                 adjustInstance = initAdjust(
                     application = analytics.application,
                     appToken = config.appToken,
-                    logLevel = LoggerAnalytics.logLevel,
-                    attributionCallback = ::sendInstallAttributedEvent
+                    logLevel = analytics.configuration.logLevel,
+                    attributionCallback = ::sendInstallAttributedEvent,
+                    logger = analytics.logger,
                 )
                 (analytics as? AndroidAnalytics)?.addLifecycleObserver(this)
-                LoggerAnalytics.verbose("AdjustIntegration: Adjust SDK initialized.")
+                analytics.logger.verbose("AdjustIntegration: Adjust SDK initialized.")
             }
         }
     }
@@ -68,7 +68,7 @@ class AdjustIntegration : StandardIntegration, IntegrationPlugin(), ActivityLife
     }
 
     override fun update(destinationConfig: JsonObject) {
-        destinationConfig.parseConfig<AdjustDestinationConfig>()?.let { updatedConfig ->
+        destinationConfig.parseConfig<AdjustDestinationConfig>(analytics.logger)?.let { updatedConfig ->
             this.eventToTokenMappings = updatedConfig.eventToTokenMappings
             this.enableInstallAttributionTracking = updatedConfig.enableInstallAttributionTracking
         }
@@ -87,9 +87,9 @@ class AdjustIntegration : StandardIntegration, IntegrationPlugin(), ActivityLife
                 addCallbackParameter(payload.context.toJsonObject(PropertiesConstants.TRAITS))
             }
             Adjust.trackEvent(adjustEvent)
-            LoggerAnalytics.verbose("AdjustIntegration: Track event sent to Adjust.")
+            analytics.logger.verbose("AdjustIntegration: Track event sent to Adjust.")
         } ?: run {
-            LoggerAnalytics.error(
+            analytics.logger.error(
                 "AdjustIntegration: Either Event to Token mapping is not configured in the dashboard " +
                     "or the corresponding token is empty. Therefore dropping the ${payload.event} event."
             )
@@ -98,7 +98,7 @@ class AdjustIntegration : StandardIntegration, IntegrationPlugin(), ActivityLife
 
     override fun reset() {
         Adjust.removeGlobalPartnerParameters()
-        LoggerAnalytics.verbose("AdjustIntegration: Reset call completed.")
+        analytics.logger.verbose("AdjustIntegration: Reset call completed.")
     }
 
     private fun Event.setSessionParams() {
@@ -110,13 +110,13 @@ class AdjustIntegration : StandardIntegration, IntegrationPlugin(), ActivityLife
 
     private fun AdjustEvent.addCallbackParameter(jsonObject: JsonObject) {
         jsonObject.keys.forEach { key ->
-            addCallbackParameter(key, jsonObject.getStringOrNull(key))
+            addCallbackParameter(key, jsonObject.getStringOrNull(key, analytics.logger))
         }
     }
 
     private fun AdjustEvent.setRevenue(jsonObject: JsonObject) {
-        jsonObject.getDoubleOrNull(PropertiesConstants.REVENUE)?.let { revenue ->
-            jsonObject.getStringOrNull(PropertiesConstants.CURRENCY)?.let { currency ->
+        jsonObject.getDoubleOrNull(PropertiesConstants.REVENUE, analytics.logger)?.let { revenue ->
+            jsonObject.getStringOrNull(PropertiesConstants.CURRENCY, analytics.logger)?.let { currency ->
                 setRevenue(revenue, currency)
             }
         }
@@ -151,11 +151,11 @@ class AdjustIntegration : StandardIntegration, IntegrationPlugin(), ActivityLife
             )
 
             analytics.track(INSTALL_ATTRIBUTED_EVENT, installAttributionDto.toJsonObject())
-            LoggerAnalytics.info(
+            analytics.logger.info(
                 "AdjustIntegration: Install Attributed event sent successfully with properties: $installAttributionDto"
             )
         } else {
-            LoggerAnalytics.debug("AdjustIntegration: Install attribution tracking is disabled.")
+            analytics.logger.debug("AdjustIntegration: Install attribution tracking is disabled.")
         }
     }
 }
@@ -164,13 +164,14 @@ private fun initAdjust(
     application: Application,
     appToken: String,
     logLevel: Logger.LogLevel,
-    attributionCallback: ((AdjustAttribution) -> Unit)
+    attributionCallback: ((AdjustAttribution) -> Unit),
+    logger: Logger,
 ): AdjustInstance {
     val adjustEnvironment = getAdjustEnvironment(logLevel)
     val adjustConfig = initAdjustConfig(application, appToken, adjustEnvironment)
         .apply {
             setLogLevel(logLevel)
-            setAllListeners(attributionCallback)
+            setAllListeners(attributionCallback, logger)
             enableSendingInBackground()
         }
     Adjust.initSdk(adjustConfig)
@@ -200,32 +201,32 @@ private fun AdjustConfig.setLogLevel(logLevel: Logger.LogLevel) {
     }
 }
 
-private fun AdjustConfig.setAllListeners(attributionCallback: ((AdjustAttribution) -> Unit)) {
+private fun AdjustConfig.setAllListeners(attributionCallback: ((AdjustAttribution) -> Unit), logger: Logger) {
     setOnAttributionChangedListener { attribution ->
-        LoggerAnalytics.debug("Adjust: Attribution callback called!")
-        LoggerAnalytics.debug("Adjust: Attribution: $attribution")
+        logger.debug("Adjust: Attribution callback called!")
+        logger.debug("Adjust: Attribution: $attribution")
 
         attributionCallback.invoke(attribution)
     }
     setOnEventTrackingSucceededListener { adjustEventSuccess ->
-        LoggerAnalytics.debug("Adjust: Event success callback called!")
-        LoggerAnalytics.debug("Adjust: Event success data: $adjustEventSuccess")
+        logger.debug("Adjust: Event success callback called!")
+        logger.debug("Adjust: Event success data: $adjustEventSuccess")
     }
     setOnEventTrackingFailedListener { adjustEventFailure ->
-        LoggerAnalytics.debug("Adjust: Event failure callback called!")
-        LoggerAnalytics.debug("Adjust: Event failure data: $adjustEventFailure")
+        logger.debug("Adjust: Event failure callback called!")
+        logger.debug("Adjust: Event failure data: $adjustEventFailure")
     }
     setOnSessionTrackingSucceededListener { adjustSessionSuccess ->
-        LoggerAnalytics.debug("Adjust: Session success callback called!")
-        LoggerAnalytics.debug("Adjust: Session success data: $adjustSessionSuccess")
+        logger.debug("Adjust: Session success callback called!")
+        logger.debug("Adjust: Session success data: $adjustSessionSuccess")
     }
     setOnSessionTrackingFailedListener { adjustSessionFailure ->
-        LoggerAnalytics.debug("Adjust: Session failure callback called!")
-        LoggerAnalytics.debug("Adjust: Session failure data: $adjustSessionFailure")
+        logger.debug("Adjust: Session failure callback called!")
+        logger.debug("Adjust: Session failure data: $adjustSessionFailure")
     }
     setOnDeferredDeeplinkResponseListener { deeplink ->
-        LoggerAnalytics.debug("Adjust: Deferred deep link callback called!")
-        LoggerAnalytics.debug("Adjust: Deep link URL: $deeplink")
+        logger.debug("Adjust: Deferred deep link callback called!")
+        logger.debug("Adjust: Deep link URL: $deeplink")
         true
     }
 }

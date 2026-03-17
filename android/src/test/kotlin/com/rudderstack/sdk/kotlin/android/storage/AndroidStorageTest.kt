@@ -17,6 +17,7 @@ import io.mockk.MockKAnnotations
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
+import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
 import io.mockk.verify
@@ -56,6 +57,7 @@ class AndroidStorageTest {
             rudderPrefsRepo = mockKeyValueStorage,
             storageDirectory = mockStorageDirectory,
             eventBatchFile = mockEventBatchFile,
+            logger = mockk(relaxed = true),
         )
     }
 

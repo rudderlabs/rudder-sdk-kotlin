@@ -2,7 +2,6 @@ package com.rudderstack.sdk.kotlin.android.plugins
 
 import com.rudderstack.sdk.kotlin.android.utils.mergeWithHigherPriorityTo
 import com.rudderstack.sdk.kotlin.core.Analytics
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import kotlinx.serialization.json.JsonObject
@@ -37,7 +36,7 @@ internal class TimezoneInfoPlugin : Plugin {
     override suspend fun intercept(event: Event): Event = attachTimezoneInfo(event)
 
     private fun attachTimezoneInfo(event: Event): Event {
-        LoggerAnalytics.debug("Attaching timezone info to the event payload")
+        analytics.logger.debug("Attaching timezone info to the event payload")
 
         event.context = event.context mergeWithHigherPriorityTo timezoneContext
 

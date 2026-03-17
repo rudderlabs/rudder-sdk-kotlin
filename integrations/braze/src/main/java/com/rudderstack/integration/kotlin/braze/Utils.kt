@@ -1,7 +1,7 @@
 package com.rudderstack.integration.kotlin.braze
 
 import androidx.annotation.VisibleForTesting
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import com.rudderstack.sdk.kotlin.core.internals.utils.LenientJson
@@ -19,11 +19,11 @@ import java.util.Locale
  * Parses the [JsonObject] to the specified type [T].
  */
 @OptIn(InternalRudderApi::class)
-internal inline fun <reified T> JsonObject.parse(): T? {
+internal inline fun <reified T> JsonObject.parse(logger: Logger): T? {
     return this.takeIf { it.isNotEmpty() }?.let {
         LenientJson.decodeFromJsonElement<T>(this)
     } ?: run {
-        LoggerAnalytics.debug("AdjustIntegration: The configuration is empty.")
+        logger.debug("BrazeIntegration: The configuration is empty.")
         null
     }
 }
@@ -33,8 +33,8 @@ internal inline fun <reified T> JsonObject.parse(): T? {
  *
  * @return StandardProperties object parsed from the JsonObject.
  */
-internal fun JsonObject.getStandardProperties(): StandardProperties {
-    return this.parse<StandardProperties>() ?: StandardProperties()
+internal fun JsonObject.getStandardProperties(logger: Logger): StandardProperties {
+    return this.parse<StandardProperties>(logger) ?: StandardProperties()
 }
 
 /**
@@ -89,8 +89,8 @@ internal fun IdentifyTraits.getExternalIdOrUserId() = this.context.brazeExternal
  *
  * @return The [IdentifyTraits] object parsed from the [IdentifyEvent].
  */
-internal fun IdentifyEvent.toIdentifyTraits(): IdentifyTraits {
-    val context = this.context.parse<Context>() ?: Context()
+internal fun IdentifyEvent.toIdentifyTraits(logger: Logger): IdentifyTraits {
+    val context = this.context.parse<Context>(logger) ?: Context()
 
     val customTraits = this.traits?.filter(rootKeys = Traits.getKeysAsList()) ?: JsonObject(emptyMap())
     return IdentifyTraits(
@@ -184,8 +184,8 @@ internal fun tryDateConversion(value: String): Long? {
 private const val MILLIS_TO_SECONDS_DIVISOR = 1000
 private fun Long.toSeconds() = this / MILLIS_TO_SECONDS_DIVISOR
 
-internal fun logUnsupportedType(key: String, value: Any) {
-    LoggerAnalytics.error("BrazeIntegration: Unsupported type for custom trait $key: $value")
+internal fun logUnsupportedType(key: String, value: Any, logger: Logger) {
+    logger.error("BrazeIntegration: Unsupported type for custom trait $key: $value")
 }
 
 internal fun JsonObject.toJSONObject(): JSONObject {

@@ -1,9 +1,9 @@
 package com.rudderstack.sampleapp.analytics.customplugins
 
 import com.rudderstack.sdk.kotlin.core.Analytics
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
+import com.rudderstack.sdk.kotlin.core.internals.plugins.logger
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
@@ -33,7 +33,7 @@ class SetPushTokenPlugin(
 
     override suspend fun intercept(event: Event): Event {
         setPushToken(event)
-        LoggerAnalytics.verbose("SetPushTokenPlugin: Setting push token: $pushToken in the event payload")
+        logger.verbose("SetPushTokenPlugin: Setting push token: $pushToken in the event payload")
         return event
     }
 

@@ -1,6 +1,8 @@
 package com.rudderstack.sdk.kotlin.core.internals.storage.inmemory
 
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
+import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -11,7 +13,7 @@ class InMemoryPrefsStoreTest {
 
     @BeforeEach
     fun setUp() {
-        inMemoryPrefsStore = InMemoryPrefsStore()
+        inMemoryPrefsStore = InMemoryPrefsStore(mockk(relaxed = true))
     }
 
     // Int operations

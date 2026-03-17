@@ -1,7 +1,9 @@
 package com.rudderstack.sampleapp.analytics.customplugins
 
+import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
+import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -16,11 +18,14 @@ private val emptyJsonObject = JsonObject(emptyMap())
 
 class UserAgentPluginTest {
 
+    private val mockAnalytics: Analytics = mockk(relaxed = true)
+
     @Test
     fun `given a user agent, when it is set using custom plugin, then it is added in the payload`() =
         runTest {
             val event = provideDefaultEvent()
             val userAgentPlugin = UserAgentPlugin { userAgent }
+            userAgentPlugin.setup(mockAnalytics)
 
             userAgentPlugin.intercept(event)
 
@@ -33,6 +38,7 @@ class UserAgentPluginTest {
         runTest {
             val event = provideDefaultEvent()
             val userAgentPlugin = UserAgentPlugin { null }
+            userAgentPlugin.setup(mockAnalytics)
 
             userAgentPlugin.intercept(event)
 
