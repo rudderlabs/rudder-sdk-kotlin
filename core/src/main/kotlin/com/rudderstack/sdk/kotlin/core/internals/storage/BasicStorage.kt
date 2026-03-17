@@ -44,6 +44,7 @@ internal class BasicStorage(
         writeKey = writeKey,
         keyValueStorage = propertiesFile,
         platformType = platformType,
+        logger = logger,
     ),
 ) : Storage {
 
@@ -58,6 +59,7 @@ internal class BasicStorage(
             if (value.length < MAX_PAYLOAD_SIZE) {
                 eventsFile.storeEvent(value)
             } else {
+                logger.warn("BasicStorage: Event payload exceeds MAX_PAYLOAD_SIZE, dropping event")
                 throw PayloadTooLargeException()
             }
         } else {
@@ -91,7 +93,7 @@ internal class BasicStorage(
 
     override fun close() {
         eventsFile.closeAndReset()
-        logger.info("Storage closed")
+        logger.debug("BasicStorage: Storage closed")
     }
 
     override fun readInt(key: StorageKeys, defaultVal: Int): Int {
@@ -136,7 +138,7 @@ internal class BasicStorage(
     override fun delete() {
         propertiesFile.delete()
         storageDirectory.deleteRecursively().let { isDeleted ->
-            logger.info("Storage directory deleted: $isDeleted")
+            logger.debug("BasicStorage: Storage directory deleted: $isDeleted")
         }
     }
 }

@@ -25,7 +25,10 @@ internal class NetworkUtils(
         try {
             this.networkCallbackUtils = NetworkCallbackUtils(context).apply { setup() }
         } catch (e: RuntimeException) {
-            logger.error("Error while setting up NetworkCallbackUtil: ${e.stackTraceToString()}")
+            logger.error(
+                "NetworkUtils: Error setting up NetworkCallbackUtils, " +
+                    "falling back to DefaultNetworkUtils: ${e.message}"
+            )
         }
     }
 

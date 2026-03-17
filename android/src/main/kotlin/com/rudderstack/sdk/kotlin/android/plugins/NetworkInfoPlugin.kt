@@ -51,7 +51,7 @@ internal class NetworkInfoPlugin(
     override suspend fun intercept(event: Event): Event = attachNetworkInfo(event)
 
     private fun attachNetworkInfo(event: Event): Event {
-        analytics.logger.debug("Attaching network info to the event payload")
+        analytics.logger.verbose("NetworkInfoPlugin: Attaching network info to the event payload")
 
         event.context = event.context mergeWithHigherPriorityTo getNetworkInfo()
 

@@ -46,7 +46,7 @@ internal class OSInfoPlugin : Plugin {
     override suspend fun intercept(event: Event): Event = attachOSInfo(event)
 
     private fun attachOSInfo(event: Event): Event {
-        analytics.logger.debug("Attaching OS info to the event payload")
+        analytics.logger.verbose("OSInfoPlugin: Attaching OS info to the event payload")
 
         event.context = event.context mergeWithHigherPriorityTo osContext
 

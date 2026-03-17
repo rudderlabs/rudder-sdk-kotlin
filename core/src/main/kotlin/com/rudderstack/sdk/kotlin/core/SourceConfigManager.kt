@@ -58,11 +58,11 @@ class SourceConfigManager(
 
         return if (cachedSourceConfig.isNotEmpty()) {
             LenientJson.decodeFromString<SourceConfig>(cachedSourceConfig).let { sourceConfig ->
-                analytics.logger.info("SourceConfig fetched from storage: $sourceConfig")
+                analytics.logger.debug("SourceConfigManager: SourceConfig fetched from storage: $sourceConfig")
                 sourceConfig
             }
         } else {
-            analytics.logger.info("SourceConfig not found in storage")
+            analytics.logger.debug("SourceConfigManager: SourceConfig not found in storage")
             null
         }
     }
@@ -120,7 +120,10 @@ class SourceConfigManager(
 
             fetchSourceConfigWithFallback { null }?.let { return it }
         }
-        analytics.logger.info("All retry attempts for fetching SourceConfig have been exhausted. Returning null.")
+        analytics.logger.warn(
+            "SourceConfigManager: All retry attempts for fetching SourceConfig " +
+                "have been exhausted. Returning null"
+        )
         return null
     }
 
@@ -181,7 +184,7 @@ internal fun Analytics.getQuery() = when (getPlatformType()) {
 
 private fun Result.Success<String>.toSourceConfig(logger: Logger): SourceConfig {
     val config = LenientJson.decodeFromString<SourceConfig>(response)
-    logger.info("SourceConfig is fetched successfully: $config")
+    logger.debug("SourceConfigManager: SourceConfig fetched successfully: $config")
     return config
 }
 

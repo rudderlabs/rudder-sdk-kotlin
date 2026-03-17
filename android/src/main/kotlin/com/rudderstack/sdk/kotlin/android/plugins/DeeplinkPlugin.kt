@@ -50,6 +50,7 @@ internal class DeeplinkPlugin : Plugin, ActivityLifecycleObserver {
     private fun trackDeepLink(activity: Activity) {
         val intent = activity.intent
         if (intent == null || intent.data == null) {
+            analytics.logger.debug("DeeplinkPlugin: No deep link data found in activity intent")
             return
         }
 
@@ -91,6 +92,7 @@ internal class DeeplinkPlugin : Plugin, ActivityLifecycleObserver {
                 try {
                     it.toUri()
                 } catch (ignored: ParseException) {
+                    analytics.logger.debug("DeeplinkPlugin: Failed to parse referrer URL: ${ignored.message}")
                     null
                 }
             }

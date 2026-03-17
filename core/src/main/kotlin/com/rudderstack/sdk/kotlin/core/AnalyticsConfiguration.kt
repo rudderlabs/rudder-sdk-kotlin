@@ -92,7 +92,7 @@ private class AnalyticsConfigurationImpl(
 ) : AnalyticsConfiguration {
 
     private val handler = CoroutineExceptionHandler { _, exception ->
-        logger.error(exception.stackTraceToString())
+        logger.error("Unhandled exception in analytics coroutine scope", exception)
     }
     override val analyticsJob: Job = SupervisorJob()
     override val analyticsScope: CoroutineScope = run {

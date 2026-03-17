@@ -88,6 +88,7 @@ open class Analytics protected constructor(
         private set
 
     init {
+        logger.info("Analytics(core): Initialized with configuration: $configuration")
         runForBaseTypeOnly()
         processEvents()
         setup()
@@ -138,6 +139,7 @@ open class Analytics protected constructor(
      */
     @JvmOverloads
     fun track(name: String, properties: Properties = emptyJsonObject, options: RudderOption = RudderOption()) {
+        logger.debug("Analytics(core): track() called with event='$name'")
         if (!isAnalyticsActive() || !isSourceEnabledWithLogging()) return
 
         val event = TrackEvent(
@@ -147,7 +149,9 @@ open class Analytics protected constructor(
             userIdentityState = userIdentityState.value,
         )
 
-        processEventChannel.trySend(event)
+        processEventChannel.trySend(event).apply {
+            if (isFailure) logger.warn("Analytics(core): Failed to enqueue track event — channel closed or full")
+        }
     }
 
     /**
@@ -166,6 +170,7 @@ open class Analytics protected constructor(
         properties: Properties = emptyJsonObject,
         options: RudderOption = RudderOption()
     ) {
+        logger.debug("Analytics(core): screen() called with screenName='$screenName', category='$category'")
         if (!isAnalyticsActive() || !isSourceEnabledWithLogging()) return
 
         val updatedProperties = addNameAndCategoryToProperties(screenName, category, properties)
@@ -177,7 +182,9 @@ open class Analytics protected constructor(
             userIdentityState = userIdentityState.value,
         )
 
-        processEventChannel.trySend(event)
+        processEventChannel.trySend(event).apply {
+            if (isFailure) logger.warn("Analytics(core): Failed to enqueue screen event — channel closed or full")
+        }
     }
 
     /**
@@ -190,6 +197,7 @@ open class Analytics protected constructor(
      */
     @JvmOverloads
     fun group(groupId: String, traits: Traits = emptyJsonObject, options: RudderOption = RudderOption()) {
+        logger.debug("Analytics(core): group() called with groupId='$groupId'")
         if (!isAnalyticsActive() || !isSourceEnabledWithLogging()) return
 
         val event = GroupEvent(
@@ -199,7 +207,9 @@ open class Analytics protected constructor(
             userIdentityState = userIdentityState.value,
         )
 
-        processEventChannel.trySend(event)
+        processEventChannel.trySend(event).apply {
+            if (isFailure) logger.warn("Analytics(core): Failed to enqueue group event — channel closed or full")
+        }
     }
 
     /**
@@ -212,6 +222,7 @@ open class Analytics protected constructor(
      */
     @JvmOverloads
     fun identify(userId: String = String.empty(), traits: Traits = emptyJsonObject, options: RudderOption = RudderOption()) {
+        logger.debug("Analytics(core): identify() called with userId='$userId'")
         if (!isAnalyticsActive()) return
 
         if (!this.userId.isNullOrEmpty() && this.userId != userId) {
@@ -238,7 +249,9 @@ open class Analytics protected constructor(
             userIdentityState = userIdentityState.value,
         )
 
-        processEventChannel.trySend(event)
+        processEventChannel.trySend(event).apply {
+            if (isFailure) logger.warn("Analytics(core): Failed to enqueue identify event — channel closed or full")
+        }
     }
 
     /**
@@ -254,6 +267,7 @@ open class Analytics protected constructor(
      */
     @JvmOverloads
     fun alias(newId: String, previousId: String = String.empty(), options: RudderOption = RudderOption()) {
+        logger.debug("Analytics(core): alias() called with newId='$newId'")
         if (!isAnalyticsActive()) return
 
         val updatedPreviousId = userIdentityState.value.resolvePreferredPreviousId(previousId)
@@ -272,7 +286,9 @@ open class Analytics protected constructor(
             userIdentityState = userIdentityState.value,
         )
 
-        processEventChannel.trySend(event)
+        processEventChannel.trySend(event).apply {
+            if (isFailure) logger.warn("Analytics(core): Failed to enqueue alias event — channel closed or full")
+        }
     }
 
     /**
@@ -280,6 +296,7 @@ open class Analytics protected constructor(
      * This method specifically targets the `RudderStackDataPlanePlugin` to initiate the flush operation.
      */
     open fun flush() {
+        logger.debug("Analytics(core): flush() called")
         if (!isAnalyticsActive() || !isSourceEnabledWithLogging()) return
 
         this.pluginChain.applyClosure {
@@ -299,7 +316,7 @@ open class Analytics protected constructor(
         if (!isAnalyticsActive()) return
 
         isAnalyticsShutdown = true
-        logger.info("Initiating Analytics shutdown.")
+        logger.info("Analytics(core): Initiating shutdown")
 
         processEventChannel.close()
         processEventJob?.invokeOnCompletion {
@@ -310,7 +327,7 @@ open class Analytics protected constructor(
     private fun shutdownHook() {
         analyticsJob.invokeOnCompletion {
             closeAndCleanupStorage()
-            logger.info("Analytics shutdown completed.")
+            logger.info("Analytics(core): Shutdown completed")
         }
         analyticsScope.launch {
             this@Analytics.pluginChain.removeAll()
@@ -344,6 +361,7 @@ open class Analytics protected constructor(
      * @param plugin The plugin to be added to the plugin chain.
      */
     open fun add(plugin: Plugin) {
+        logger.debug("Analytics(core): add() called with plugin=${plugin::class.simpleName}")
         if (!isAnalyticsActive()) return
 
         this.pluginChain.add(plugin)
@@ -355,6 +373,7 @@ open class Analytics protected constructor(
      * @param plugin The plugin to be removed from the plugin chain.
      */
     open fun remove(plugin: Plugin) {
+        logger.debug("Analytics(core): remove() called with plugin=${plugin::class.simpleName}")
         if (!isAnalyticsActive()) return
 
         this.pluginChain.remove(plugin)
@@ -377,6 +396,7 @@ open class Analytics protected constructor(
      *                If not provided, defaults to resetting all user data.
      */
     open fun reset(options: ResetOptions = ResetOptions()) {
+        logger.debug("Analytics(core): reset() called")
         if (!isAnalyticsActive()) return
 
         userIdentityState.dispatch(ResetUserIdentityAction(options.entries))

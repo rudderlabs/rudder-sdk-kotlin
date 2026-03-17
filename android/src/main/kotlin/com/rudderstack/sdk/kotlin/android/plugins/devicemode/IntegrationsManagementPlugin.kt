@@ -62,6 +62,7 @@ internal class IntegrationsManagementPlugin : Plugin {
         runCatching {
             queuedEventsChannel.trySend(event).getOrThrow()
         }.onFailure {
+            analytics.logger.warn("IntegrationsManagementPlugin: Event queue full — dropping oldest event to make room")
             // drop the oldest event
             queuedEventsChannel.tryReceive()
             queuedEventsChannel.trySend(event)

@@ -36,6 +36,7 @@ internal class AndroidStorage(
         writeKey = writeKey,
         keyValueStorage = rudderPrefsRepo,
         platformType = platformType,
+        logger = logger,
     ),
 ) : Storage {
 
@@ -83,7 +84,7 @@ internal class AndroidStorage(
 
     override fun close() {
         eventBatchFile.closeAndReset()
-        logger.info("Storage closed")
+        logger.debug("AndroidStorage: Storage closed")
     }
 
     override fun readInt(key: StorageKeys, defaultVal: Int): Int {

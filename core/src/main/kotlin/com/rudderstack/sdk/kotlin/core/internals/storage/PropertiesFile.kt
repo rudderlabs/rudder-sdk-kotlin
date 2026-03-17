@@ -32,10 +32,7 @@ internal class PropertiesFile(
                 }
             } catch (e: Throwable) {
                 propsFile.delete()
-                logger.error(
-                    "Failed to load property file with path " +
-                        "${propsFile.absolutePath}, error stacktrace: ${e.stackTraceToString()}"
-                )
+                logger.error("PropertiesFile: Failed to load property file: ${propsFile.absolutePath}", e)
             }
         } else {
             propsFile.parentFile.mkdirs()
@@ -46,9 +43,14 @@ internal class PropertiesFile(
     /**
      * Saves the current properties to the file.
      */
+    @Suppress("TooGenericExceptionCaught")
     private fun save() {
-        FileOutputStream(propsFile).use {
-            properties.store(it, null)
+        try {
+            FileOutputStream(propsFile).use {
+                properties.store(it, null)
+            }
+        } catch (e: Exception) {
+            logger.error("PropertiesFile: Failed to save properties to ${propsFile.absolutePath}", e)
         }
     }
 
@@ -108,7 +110,7 @@ internal class PropertiesFile(
     @UseWithCaution
     override fun delete() {
         propsFile.deleteRecursively().let { isDeleted ->
-            logger.info("Attempt to delete properties file successful: $isDeleted")
+            logger.debug("Attempt to delete properties file successful: $isDeleted")
         }
     }
 }

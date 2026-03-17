@@ -1,6 +1,7 @@
 package com.rudderstack.sdk.kotlin.core.internals.policies
 
 import com.rudderstack.sdk.kotlin.core.Analytics
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -21,6 +22,7 @@ class FrequencyFlushPolicy(private var flushIntervalInMillis: Long = DEFAULT_FLU
 
     private var flushJob: Job? = null
     private var jobStarted: Boolean = false
+    private var logger: Logger? = null
 
     init {
         flushIntervalInMillis = when {
@@ -32,6 +34,8 @@ class FrequencyFlushPolicy(private var flushIntervalInMillis: Long = DEFAULT_FLU
     internal fun schedule(analytics: Analytics) {
         if (!jobStarted) {
             jobStarted = true
+            logger = analytics.logger
+            analytics.logger.debug("FrequencyFlushPolicy: Scheduled flush every ${flushIntervalInMillis}ms")
 
             flushJob = analytics.analyticsScope.launch(analytics.analyticsDispatcher) {
                 if (flushIntervalInMillis > 0) {
@@ -46,6 +50,7 @@ class FrequencyFlushPolicy(private var flushIntervalInMillis: Long = DEFAULT_FLU
 
     internal fun cancelSchedule() {
         if (jobStarted) {
+            logger?.debug("FrequencyFlushPolicy: Flush schedule cancelled")
             jobStarted = false
             flushJob?.cancel()
         }

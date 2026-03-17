@@ -12,6 +12,7 @@ import androidx.annotation.VisibleForTesting
 import com.rudderstack.sdk.kotlin.android.utils.application
 import com.rudderstack.sdk.kotlin.android.utils.runBasedOnSDK
 import com.rudderstack.sdk.kotlin.core.Analytics
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.models.connectivity.ConnectivityState
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
@@ -41,8 +42,8 @@ internal class AndroidConnectivityObserverPlugin(
     private var connectivityManager: ConnectivityManager? = null
     private var intentFilter: IntentFilter? = null
 
-    private val networkCallback by lazy { createNetworkCallback(connectivityState) }
-    private val broadcastReceiver by lazy { createBroadcastReceiver(connectivityState) }
+    private val networkCallback by lazy { createNetworkCallback(connectivityState, analytics.logger) }
+    private val broadcastReceiver by lazy { createBroadcastReceiver(connectivityState, analytics.logger) }
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
@@ -92,31 +93,42 @@ internal class AndroidConnectivityObserverPlugin(
 }
 
 @VisibleForTesting
-internal fun createNetworkCallback(connectivityState: State<Boolean>) = object : ConnectivityManager.NetworkCallback() {
-    override fun onAvailable(network: Network) {
-        super.onAvailable(network)
-        connectivityState.dispatch(ConnectivityState.EnableConnectivityAction())
-    }
+internal fun createNetworkCallback(connectivityState: State<Boolean>, logger: Logger) =
+    object : ConnectivityManager.NetworkCallback() {
+        override fun onAvailable(network: Network) {
+            super.onAvailable(network)
+            logger.debug("AndroidConnectivityObserver: Network available")
+            connectivityState.dispatch(ConnectivityState.EnableConnectivityAction())
+        }
 
-    override fun onLost(network: Network) {
-        super.onLost(network)
-        connectivityState.dispatch(ConnectivityState.DisableConnectivityAction())
+        override fun onLost(network: Network) {
+            super.onLost(network)
+            logger.debug("AndroidConnectivityObserver: Network lost")
+            connectivityState.dispatch(ConnectivityState.DisableConnectivityAction())
+        }
     }
-}
 
 @VisibleForTesting
 // Suppressing deprecation warning as we need to support lower API levels.
 @Suppress("DEPRECATION")
-internal fun createBroadcastReceiver(connectivityState: State<Boolean>) = object : BroadcastReceiver() {
-    @SuppressLint("MissingPermission")
-    override fun onReceive(context: Context, intent: Intent?) {
-        (context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).activeNetworkInfo?.let {
-            when (it.isConnected) {
-                true -> connectivityState.dispatch(ConnectivityState.EnableConnectivityAction())
-                false -> connectivityState.dispatch(ConnectivityState.DisableConnectivityAction())
+internal fun createBroadcastReceiver(connectivityState: State<Boolean>, logger: Logger) =
+    object : BroadcastReceiver() {
+        @SuppressLint("MissingPermission")
+        override fun onReceive(context: Context, intent: Intent?) {
+            (context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).activeNetworkInfo?.let {
+                when (it.isConnected) {
+                    true -> {
+                        logger.debug("AndroidConnectivityObserver: Network available (broadcast)")
+                        connectivityState.dispatch(ConnectivityState.EnableConnectivityAction())
+                    }
+                    false -> {
+                        logger.debug("AndroidConnectivityObserver: Network lost (broadcast)")
+                        connectivityState.dispatch(ConnectivityState.DisableConnectivityAction())
+                    }
+                }
+            } ?: run { // if activeNetworkInfo is null, it means the device is not connected to any network.
+                logger.debug("AndroidConnectivityObserver: Network lost (broadcast)")
+                connectivityState.dispatch(ConnectivityState.DisableConnectivityAction())
             }
-        } ?: run { // if activeNetworkInfo is null, it means the device is not connected to any network.
-            connectivityState.dispatch(ConnectivityState.DisableConnectivityAction())
         }
     }
-}

@@ -47,7 +47,10 @@ internal class SessionManager(
         sessionTimeout = if (sessionConfiguration.sessionTimeoutInMillis >= 0) {
             sessionConfiguration.sessionTimeoutInMillis
         } else {
-            analytics.logger.error("Session timeout cannot be negative. Setting it to default value.")
+            analytics.logger.warn(
+                "SessionManager: Session timeout (${sessionConfiguration.sessionTimeoutInMillis}ms) " +
+                    "is negative. Defaulting to ${DEFAULT_SESSION_TIMEOUT_IN_MILLIS}ms"
+            )
             DEFAULT_SESSION_TIMEOUT_IN_MILLIS
         }
 
@@ -56,7 +59,13 @@ internal class SessionManager(
                 checkAndStartSessionOnLaunch()
                 attachSessionTrackingObservers()
             }
-            !isSessionManual -> endSession()
+            !isSessionManual -> {
+                analytics.logger.debug(
+                    "SessionManager: Ending session — both manual " +
+                        "and automatic session tracking is disabled"
+                )
+                endSession()
+            }
             else -> Unit
         }
     }
