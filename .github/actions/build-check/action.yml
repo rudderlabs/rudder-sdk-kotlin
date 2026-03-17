@@ -1,15 +1,13 @@
 name: 'Build Check'
-description: 'Build affected modules after quality checks pass'
+description: 'Build all publishable modules after quality checks pass'
 
 inputs:
-  affected_modules:
-    description: 'Comma-separated list of affected modules'
+  android_modules:
+    description: 'Comma-separated list of Android publishable modules'
     required: true
-
-outputs:
-  affected_modules:
-    description: 'Comma-separated list of affected modules (pass-through)'
-    value: ${{ inputs.affected_modules }}
+  jvm_modules:
+    description: 'Comma-separated list of JVM publishable modules'
+    required: true
 
 runs:
   using: 'composite'
@@ -21,12 +19,27 @@ runs:
         distribution: 'temurin'
         cache: gradle
 
+    - name: Cache Gradle build cache
+      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+      with:
+        path: |
+          ~/.gradle/build-cache
+          .gradle
+        key: gradle-build-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/gradle.properties') }}
+        restore-keys: |
+          gradle-build-${{ runner.os }}-
+
     - name: Grant execute permission for gradlew
       shell: bash
       run: chmod +x gradlew
 
-    - name: Build affected modules
+    - name: Build all modules
       shell: bash
+      env:
+        ANDROID_MODULES: ${{ inputs.android_modules }}
+        JVM_MODULES: ${{ inputs.jvm_modules }}
       run: |
-        chmod +x scripts/run-quality-checks.sh
-        ./scripts/run-quality-checks.sh "${{ inputs.affected_modules }}" "build"
+        chmod +x scripts/run-gradle-tasks.sh
+        ./scripts/run-gradle-tasks.sh \
+          "$ANDROID_MODULES" "assembleRelease" \
+          "$JVM_MODULES" "assemble"
