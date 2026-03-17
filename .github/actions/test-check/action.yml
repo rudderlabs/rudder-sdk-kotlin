@@ -1,9 +1,12 @@
 name: 'Test Check'
-description: 'Run unit tests on affected modules'
+description: 'Run unit tests on all publishable modules'
 
 inputs:
-  affected_modules:
-    description: 'Comma-separated list of affected modules'
+  android_modules:
+    description: 'Comma-separated list of Android publishable modules'
+    required: true
+  jvm_modules:
+    description: 'Comma-separated list of JVM publishable modules'
     required: true
 
 runs:
@@ -16,15 +19,30 @@ runs:
         distribution: 'temurin'
         cache: gradle
 
+    - name: Cache Gradle build cache
+      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+      with:
+        path: |
+          ~/.gradle/build-cache
+          .gradle
+        key: gradle-test-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/gradle.properties') }}
+        restore-keys: |
+          gradle-test-${{ runner.os }}-
+
     - name: Grant execute permission for gradlew
       shell: bash
       run: chmod +x gradlew
 
-    - name: Run tests on affected modules
+    - name: Run tests on all modules
       shell: bash
+      env:
+        ANDROID_MODULES: ${{ inputs.android_modules }}
+        JVM_MODULES: ${{ inputs.jvm_modules }}
       run: |
-        chmod +x scripts/run-quality-checks.sh
-        ./scripts/run-quality-checks.sh "${{ inputs.affected_modules }}" "test"
+        chmod +x scripts/run-gradle-tasks.sh
+        ./scripts/run-gradle-tasks.sh \
+          "$ANDROID_MODULES" "testReleaseUnitTest" \
+          "$JVM_MODULES" "test"
 
     - name: Upload test reports
       if: always()

@@ -2,7 +2,7 @@ name: PR Validation
 
 on:
   pull_request:
-    branches: [ "develop", "feat/*", "refactor/*", "release/*", "ci/*", "fix/*" ]
+    branches: [ "develop", "feat/*", "refactor/*", "release/*", "ci/*", "fix/*", "chore/*" ]
     types: [ "opened", "reopened", "synchronize", "edited" ]
 
 concurrency:
@@ -14,6 +14,8 @@ jobs:
   pr-title-check:
     name: PR Title Check
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Harden the runner (Audit all outbound calls)
         uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
@@ -30,6 +32,8 @@ jobs:
   sonarcloud-analysis:
     name: SonarCloud Analysis
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Harden the runner (Audit all outbound calls)
         uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
@@ -46,12 +50,16 @@ jobs:
         with:
           sonar_token: ${{ secrets.SONAR_TOKEN }}
 
-  # Setup and find affected modules
-  setup-and-find-modules:
-    name: Setup & Find Modules
+  # Setup and list all modules
+  setup-and-list-modules:
+    name: Setup & List Modules
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
-      affected_modules: ${{ steps.setup.outputs.affected_modules }}
+      available_modules: ${{ steps.setup.outputs.available_modules }}
+      android_modules: ${{ steps.setup.outputs.android_modules }}
+      jvm_modules: ${{ steps.setup.outputs.jvm_modules }}
     steps:
       - name: Harden the runner (Audit all outbound calls)
         uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
@@ -63,17 +71,17 @@ jobs:
         with:
           fetch-depth: 0  # Fetch all history for detecting changes
 
-      - name: Setup and Find Modules
+      - name: Setup and List Modules
         id: setup
-        uses: ./.github/actions/setup-and-find-modules
-        with:
-          base_branch: ${{ github.base_ref }}
+        uses: ./.github/actions/setup-and-list-modules
 
   # Detekt static analysis - runs in parallel
   detekt-check:
     name: Detekt Check
     runs-on: ubuntu-latest
-    needs: setup-and-find-modules
+    permissions:
+      contents: read
+    needs: setup-and-list-modules
     steps:
       - name: Harden the runner (Audit all outbound calls)
         uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
@@ -88,13 +96,15 @@ jobs:
       - name: Run Detekt
         uses: ./.github/actions/detekt-check
         with:
-          affected_modules: ${{ needs.setup-and-find-modules.outputs.affected_modules }}
+          available_modules: ${{ needs.setup-and-list-modules.outputs.available_modules }}
 
   # Android Lint - runs in parallel
   lint-check:
     name: Lint Check
     runs-on: ubuntu-latest
-    needs: setup-and-find-modules
+    permissions:
+      contents: read
+    needs: setup-and-list-modules
     steps:
       - name: Harden the runner (Audit all outbound calls)
         uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
@@ -109,13 +119,15 @@ jobs:
       - name: Run Lint
         uses: ./.github/actions/lint-check
         with:
-          affected_modules: ${{ needs.setup-and-find-modules.outputs.affected_modules }}
+          android_modules: ${{ needs.setup-and-list-modules.outputs.android_modules }}
 
   # Unit tests - runs in parallel
   test-check:
     name: Test Check
     runs-on: ubuntu-latest
-    needs: setup-and-find-modules
+    permissions:
+      contents: read
+    needs: setup-and-list-modules
     steps:
       - name: Harden the runner (Audit all outbound calls)
         uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
@@ -130,15 +142,16 @@ jobs:
       - name: Run Tests
         uses: ./.github/actions/test-check
         with:
-          affected_modules: ${{ needs.setup-and-find-modules.outputs.affected_modules }}
+          android_modules: ${{ needs.setup-and-list-modules.outputs.android_modules }}
+          jvm_modules: ${{ needs.setup-and-list-modules.outputs.jvm_modules }}
 
-  # Build modules after all quality checks pass
+  # Build modules - runs in parallel
   build-check:
     name: Build Check
     runs-on: ubuntu-latest
-    needs: [setup-and-find-modules, detekt-check, lint-check, test-check]
-    outputs:
-      affected_modules: ${{ steps.build.outputs.affected_modules }}
+    permissions:
+      contents: read
+    needs: setup-and-list-modules
     steps:
       - name: Harden the runner (Audit all outbound calls)
         uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
@@ -151,10 +164,10 @@ jobs:
           fetch-depth: 0
 
       - name: Build Modules
-        id: build
         uses: ./.github/actions/build-check
         with:
-          affected_modules: ${{ needs.setup-and-find-modules.outputs.affected_modules }}
+          android_modules: ${{ needs.setup-and-list-modules.outputs.android_modules }}
+          jvm_modules: ${{ needs.setup-and-list-modules.outputs.jvm_modules }}
 
 
 
@@ -164,7 +177,9 @@ jobs:
   pr-validation-summary:
     name: PR Validation Summary
     runs-on: ubuntu-latest
-    needs: [pr-title-check, setup-and-find-modules, detekt-check, lint-check, test-check, build-check, sonarcloud-analysis]
+    permissions:
+      contents: read
+    needs: [pr-title-check, setup-and-list-modules, detekt-check, lint-check, test-check, build-check, sonarcloud-analysis]
     if: always()
     steps:
       - name: Harden the runner (Audit all outbound calls)
@@ -179,7 +194,7 @@ jobs:
         run: |
           echo "=== PR Validation Summary ==="
           echo "PR Title Check: ${{ needs.pr-title-check.result }}"
-          echo "Setup & Find Modules: ${{ needs.setup-and-find-modules.result }}"
+          echo "Setup & List Modules: ${{ needs.setup-and-list-modules.result }}"
           echo "Detekt Check: ${{ needs.detekt-check.result }}"
           echo "Lint Check: ${{ needs.lint-check.result }}"
           echo "Test Check: ${{ needs.test-check.result }}"
@@ -201,8 +216,8 @@ jobs:
             OVERALL_STATUS="failed"
           fi
 
-          if [[ "${{ needs.setup-and-find-modules.result }}" != "success" ]]; then
-            FAILED_CHECKS="${FAILED_CHECKS}• Setup & Find Modules (${{ needs.setup-and-find-modules.result }}) - Environment setup failed\n"
+          if [[ "${{ needs.setup-and-list-modules.result }}" != "success" ]]; then
+            FAILED_CHECKS="${FAILED_CHECKS}• Setup & List Modules (${{ needs.setup-and-list-modules.result }}) - Environment setup failed\n"
             OVERALL_STATUS="failed"
           fi
 
