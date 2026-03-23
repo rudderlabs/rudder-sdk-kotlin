@@ -4,10 +4,10 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.rudderstack.sdk.kotlin.core.Analytics;
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics;
 import com.rudderstack.sdk.kotlin.core.internals.models.Event;
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent;
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin;
+import com.rudderstack.sdk.kotlin.core.internals.plugins.PluginKt;
 
 import java.util.List;
 
@@ -44,7 +44,7 @@ public class JavaEventFilteringPlugin implements Plugin {
     @Override
     public Object intercept(@NonNull Event event, @NonNull Continuation<? super Event> $completion) {
         if (event instanceof TrackEvent && listOfEventsToBeFiltered.contains(((TrackEvent) event).getEvent())) {
-            LoggerAnalytics.INSTANCE.verbose("EventFilteringPlugin: Event \"" + ((TrackEvent) event).getEvent() + "\" is filtered out.");
+            PluginKt.getLogger(this).verbose("EventFilteringPlugin: Event \"" + ((TrackEvent) event).getEvent() + "\" is filtered out.");
             return null;
         }
 

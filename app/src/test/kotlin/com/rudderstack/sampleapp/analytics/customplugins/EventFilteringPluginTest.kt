@@ -1,11 +1,13 @@
 package com.rudderstack.sampleapp.analytics.customplugins
 
+import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.GroupEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.ScreenEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.UserIdentity
+import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
@@ -14,11 +16,13 @@ import org.junit.jupiter.api.Test
 
 class EventFilteringPluginTest {
 
+    private val mockAnalytics: Analytics = mockk<Analytics>(relaxed = true)
     private lateinit var eventFilteringPlugin: EventFilteringPlugin
 
     @BeforeEach
     fun setup() {
         eventFilteringPlugin = EventFilteringPlugin()
+        eventFilteringPlugin.setup(mockAnalytics)
     }
 
     @Test
@@ -89,6 +93,7 @@ class EventFilteringPluginTest {
     @Test
     fun `given custom events list in constructor, when filtered track event intercepted, then event is filtered out`() = runTest {
         val customFilteringPlugin = EventFilteringPlugin(listOf("Custom Event", "Another Event"))
+        customFilteringPlugin.setup(mockAnalytics)
         val filteredEvent = TrackEvent(event = "Custom Event", properties = emptyJsonObject)
 
         val result = customFilteringPlugin.intercept(filteredEvent)
@@ -99,6 +104,7 @@ class EventFilteringPluginTest {
     @Test
     fun `given custom events list in constructor, when non-filtered track event intercepted, then event passes through`() = runTest {
         val customFilteringPlugin = EventFilteringPlugin(listOf("Custom Event", "Another Event"))
+        customFilteringPlugin.setup(mockAnalytics)
         val nonFilteredEvent = TrackEvent(event = "Application Opened", properties = emptyJsonObject) // Default filter won't apply
 
         val result = customFilteringPlugin.intercept(nonFilteredEvent)
@@ -109,6 +115,7 @@ class EventFilteringPluginTest {
     @Test
     fun `given empty events list in constructor, when any track event intercepted, then all events pass through`() = runTest {
         val noFilteringPlugin = EventFilteringPlugin(emptyList())
+        noFilteringPlugin.setup(mockAnalytics)
         val trackEvent = TrackEvent(event = "Application Opened", properties = emptyJsonObject)
 
         val result = noFilteringPlugin.intercept(trackEvent)

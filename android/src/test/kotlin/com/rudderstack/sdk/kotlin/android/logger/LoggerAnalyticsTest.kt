@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.rudderstack.sdk.kotlin.android.logger
 
 import android.util.Log

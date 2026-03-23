@@ -8,7 +8,6 @@ import com.rudderstack.sdk.kotlin.android.utils.UniqueIdProvider
 import com.rudderstack.sdk.kotlin.android.utils.mergeWithHigherPriorityTo
 import com.rudderstack.sdk.kotlin.android.utils.putIfNotNull
 import com.rudderstack.sdk.kotlin.core.Analytics
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import kotlinx.serialization.json.JsonObject
@@ -45,7 +44,7 @@ internal class DeviceInfoPlugin : Plugin {
 
     @VisibleForTesting
     internal fun attachDeviceInfo(message: Event): Event {
-        LoggerAnalytics.debug("Attaching device info to the message payload")
+        analytics.logger.debug("Attaching device info to the message payload")
         message.context = message.context mergeWithHigherPriorityTo deviceContext
         return message
     }

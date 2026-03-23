@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.rudderstack.sdk.kotlin.android
 
 import android.app.Activity
@@ -69,9 +71,9 @@ class Analytics(
     configuration: Configuration,
 ) : Platform, Analytics(
     configuration,
-    analyticsConfiguration = provideAnalyticsConfiguration(
-        storage = provideAndroidStorage(configuration.writeKey, configuration.application, PlatformType.Mobile)
-    )
+    analyticsConfiguration = provideAnalyticsConfiguration(configuration) { writeKey, logger ->
+        provideAndroidStorage(writeKey, configuration.application, PlatformType.Mobile, logger)
+    },
 ) {
 
     private var navControllerTrackingPlugin: NavControllerTrackingPlugin? = null
@@ -92,7 +94,7 @@ class Analytics(
         if (!isAnalyticsActive()) return
 
         if (sessionId != null && sessionId.toString().length < MIN_SESSION_ID_LENGTH) {
-            LoggerAnalytics.error("Session Id should be at least $MIN_SESSION_ID_LENGTH digits.")
+            logger.error("Session Id should be at least $MIN_SESSION_ID_LENGTH digits.")
             return
         }
         val newSessionId = sessionId ?: sessionTrackingPlugin.sessionManager.generateSessionId()
@@ -130,7 +132,7 @@ class Analytics(
         if (!isAnalyticsActive()) return
 
         if (options !is AndroidResetOption) {
-            LoggerAnalytics.debug("The options should be of type Android ResetOptions.")
+            logger.debug("The options should be of type Android ResetOptions.")
         }
 
         super.reset(options)

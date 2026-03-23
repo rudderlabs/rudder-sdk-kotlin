@@ -6,10 +6,10 @@ import androidx.annotation.VisibleForTesting
 import com.google.android.gms.ads.identifier.AdvertisingIdClient
 import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.core.Analytics
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
+import com.rudderstack.sdk.kotlin.core.internals.plugins.logger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
@@ -79,13 +79,13 @@ class AndroidAdvertisingIdPlugin @OptIn(DelicateCoroutinesApi::class) constructo
                 is Result.Success -> {
                     adTrackingEnabled = true
                     advertisingId = result.response
-                    LoggerAnalytics.debug(log = "Collected advertising ID: $advertisingId")
+                    logger.debug(log = "Collected advertising ID: $advertisingId")
                 }
 
                 is Result.Failure -> {
                     adTrackingEnabled = false
                     advertisingId = ""
-                    LoggerAnalytics.error(log = "Failed to collect advertising ID: ${result.error.message}")
+                    logger.error(log = "Failed to collect advertising ID: ${result.error.message}")
                 }
             }
         }
@@ -101,7 +101,7 @@ class AndroidAdvertisingIdPlugin @OptIn(DelicateCoroutinesApi::class) constructo
         return try {
             val advertisingInfo = AdvertisingIdClient.getAdvertisingIdInfo(context)
             if (advertisingInfo.isLimitAdTrackingEnabled) {
-                LoggerAnalytics.warn(log = "Error collecting play services ad id.")
+                logger.warn(log = "Error collecting play services ad id.")
                 Result.Failure(error = Exception("Error collecting play services ad id."))
             } else {
                 Result.Success(advertisingInfo.id!!)
@@ -116,7 +116,7 @@ class AndroidAdvertisingIdPlugin @OptIn(DelicateCoroutinesApi::class) constructo
         return try {
             val contentResolver = context.contentResolver
             if (android.provider.Settings.Secure.getInt(contentResolver, FIRE_LIMIT_AD_TRACKING) != 0) {
-                LoggerAnalytics.warn(log = "Not collecting advertising ID because limit_ad_tracking (Amazon Fire OS) is true.")
+                logger.warn(log = "Not collecting advertising ID because limit_ad_tracking (Amazon Fire OS) is true.")
                 Result.Failure(error = Exception("Not collecting advertising ID because limit_ad_tracking (Amazon Fire OS) is true."))
             } else {
                 val advertisingId = android.provider.Settings.Secure.getString(contentResolver, FIRE_ADVERTISING_ID)

@@ -52,7 +52,8 @@ internal class AndroidConnectivityObserverPlugin(
             onException = { exception ->
                 defaultExceptionHandler(
                     errorMsg = "Failed to register connectivity subscriber. Setting network availability to true. Exception:",
-                    exception = exception
+                    exception = exception,
+                    logger = analytics.logger,
                 )
                 connectivityState.dispatch(ConnectivityState.SetDefaultStateAction())
             },

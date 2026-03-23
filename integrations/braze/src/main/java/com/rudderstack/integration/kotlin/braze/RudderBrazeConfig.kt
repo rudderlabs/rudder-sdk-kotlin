@@ -1,6 +1,5 @@
 package com.rudderstack.integration.kotlin.braze
 
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.ExternalId
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
@@ -17,6 +16,24 @@ import java.util.Calendar
 import java.util.Locale
 
 private const val BRAZE_EXTERNAL_ID = "brazeExternalId"
+
+/**
+ * Sealed class representing the result of resolving the App Identifier Key.
+ */
+internal sealed class AppKeyResolution {
+
+    abstract val key: String
+
+    /**
+     * The key was resolved directly (either platform-specific or default).
+     */
+    data class Resolved(override val key: String) : AppKeyResolution()
+
+    /**
+     * The platform-specific key was invalid, so the default key was used as a fallback.
+     */
+    data class FellBack(override val key: String, val reason: String) : AppKeyResolution()
+}
 
 /**
  * Data class representing the configuration for Braze Integration.
@@ -50,34 +67,25 @@ internal data class RudderBrazeConfig(
      * Prefers androidAppIdentifierKey when usePlatformSpecificAppIdentifierKeys is enabled and androidAppIdentifierKey is not blank.
      * Falls back to the legacy appIdentifierKey otherwise.
      */
-    internal val resolvedAppIdentifierKey: String
-        get() = when {
-            usePlatformSpecificAppIdentifierKeys && !androidAppIdentifierKey.isNullOrBlank() -> androidAppIdentifierKey
-            usePlatformSpecificAppIdentifierKeys -> {
-                LoggerAnalytics.error(
-                    "BrazeIntegration: Configured to use platform-specific App Identifier Keys " +
-                        "but Android App Identifier Key is not valid. " +
-                        "Falling back to the Default App Identifier Key."
-                )
-                appIdentifierKey
-            }
-            else -> appIdentifierKey
-        }
+    internal fun resolveAppIdentifierKey(): AppKeyResolution = when {
+        usePlatformSpecificAppIdentifierKeys && !androidAppIdentifierKey.isNullOrBlank() ->
+            AppKeyResolution.Resolved(androidAppIdentifierKey)
+        usePlatformSpecificAppIdentifierKeys ->
+            AppKeyResolution.FellBack(
+                key = appIdentifierKey,
+                reason = "Configured to use platform-specific App Identifier Keys " +
+                    "but Android App Identifier Key is not valid. " +
+                    "Falling back to the Default App Identifier Key."
+            )
+        else -> AppKeyResolution.Resolved(appIdentifierKey)
+    }
 
     init {
-        require(resolvedAppIdentifierKey.isNotBlank()) { "Invalid App Identifier Key. Aborting Braze initialization." }
+        require(resolveAppIdentifierKey().key.isNotBlank()) { "Invalid App Identifier Key. Aborting Braze initialization." }
         require(customEndpoint.isNotBlank()) { "dataCenter cannot be empty or blank" }
     }
 
-    internal fun isHybridMode(): Boolean {
-        return when (connectionMode) {
-            ConnectionMode.HYBRID -> {
-                LoggerAnalytics.verbose("BrazeIntegration: As connection mode is set to hybrid, dropping event request.")
-                true
-            }
-            ConnectionMode.DEVICE -> return false
-        }
-    }
+    internal fun isHybridMode(): Boolean = connectionMode == ConnectionMode.HYBRID
 }
 
 /**

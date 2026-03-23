@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# --- Global Hook Forwarding ---
+GLOBAL_HOOKS_PATH=$(git config --global --get core.hooksPath 2>/dev/null)
+if [ -n "$GLOBAL_HOOKS_PATH" ] && [ -x "$GLOBAL_HOOKS_PATH/commit-msg" ]; then
+    "$GLOBAL_HOOKS_PATH/commit-msg" "$@" || exit $?
+fi
+# --- End Global Hook Forwarding ---
+
 # Path to the commit message file
 commit_message_file=".git/COMMIT_EDITMSG"
 

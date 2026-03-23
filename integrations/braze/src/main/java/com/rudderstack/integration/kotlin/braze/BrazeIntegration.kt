@@ -17,7 +17,6 @@ import com.rudderstack.sdk.kotlin.android.plugins.devicemode.StandardIntegration
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleObserver
 import com.rudderstack.sdk.kotlin.android.utils.application
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
@@ -55,13 +54,13 @@ class BrazeIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
 
     public override fun create(destinationConfig: JsonObject) {
         braze ?: run {
-            destinationConfig.parse<RudderBrazeConfig>()?.let { config ->
+            destinationConfig.parse<RudderBrazeConfig>(analytics.logger)?.let { config ->
                 this.brazeConfig = config
-                initBraze(analytics.application, config, LoggerAnalytics.logLevel).also {
+                initBraze(analytics.application, config, analytics.logger, analytics.configuration.logLevel).also {
                     braze = it
                     setUserAlias()
                 }
-                LoggerAnalytics.verbose("BrazeIntegration: Braze SDK initialized")
+                analytics.logger.verbose("BrazeIntegration: Braze SDK initialized")
             }
         }
     }
@@ -73,12 +72,12 @@ class BrazeIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
     private fun setUserAlias() {
         analytics.anonymousId?.let {
             this.braze?.currentUser?.addAlias(it, ALIAS_LABEL)
-            LoggerAnalytics.verbose("BrazeIntegration: Alias call made with anonymousId: $it")
+            analytics.logger.verbose("BrazeIntegration: Alias call made with anonymousId: $it")
         }
     }
 
     override fun update(destinationConfig: JsonObject) {
-        destinationConfig.parse<RudderBrazeConfig>()?.let { updatedConfig ->
+        destinationConfig.parse<RudderBrazeConfig>(analytics.logger)?.let { updatedConfig ->
             this.brazeConfig = updatedConfig
         }
     }
@@ -88,7 +87,10 @@ class BrazeIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
     }
 
     override fun track(payload: TrackEvent) {
-        if (brazeConfig.isHybridMode()) return
+        if (brazeConfig.isHybridMode()) {
+            analytics.logger.verbose("BrazeIntegration: As connection mode is set to hybrid, dropping event request.")
+            return
+        }
 
         when (payload.event) {
             INSTALL_ATTRIBUTED -> {
@@ -106,7 +108,7 @@ class BrazeIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
     }
 
     private fun handleInstallAttributedEvent(payload: TrackEvent) {
-        payload.properties.parse<InstallAttributed>()
+        payload.properties.parse<InstallAttributed>(analytics.logger)
             .takeIf { it?.campaign != null }
             ?.let { campaign ->
                 this.braze?.currentUser?.setAttributionData(
@@ -117,7 +119,7 @@ class BrazeIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
                         creative = campaign.campaign?.adCreative,
                     )
                 )
-                LoggerAnalytics.verbose("BrazeIntegration: Install Attributed event sent.")
+                analytics.logger.verbose("BrazeIntegration: Install Attributed event sent.")
             } ?: run {
             handleCustomEvent(payload)
         }
@@ -130,7 +132,7 @@ class BrazeIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
             productKeys = Product.getKeysAsList(),
         )
 
-        payload.properties.getStandardProperties().let { standardProperties ->
+        payload.properties.getStandardProperties(analytics.logger).let { standardProperties ->
             val currency = standardProperties.currency
 
             standardProperties.products
@@ -143,7 +145,7 @@ class BrazeIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
                         quantity = it.quantity,
                         properties = initBrazeProperties(customProperties),
                     )
-                    LoggerAnalytics.verbose(
+                    analytics.logger.verbose(
                         "BrazeIntegration: Order Completed event sent for " +
                             "product_id: ${it.productId}, currency: $currency, price: ${it.price} " +
                             "and properties $customProperties."
@@ -155,31 +157,34 @@ class BrazeIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
     private fun handleCustomEvent(payload: TrackEvent) {
         payload.properties.takeIf { it.isNotEmpty() }?.let { properties ->
             this.braze?.logCustomEvent(payload.event, initBrazeProperties(properties))
-            LoggerAnalytics.verbose("BrazeIntegration: Custom event ${payload.event} and properties $properties sent.")
+            analytics.logger.verbose("BrazeIntegration: Custom event ${payload.event} and properties $properties sent.")
         } ?: run {
             this.braze?.logCustomEvent(payload.event)
-            LoggerAnalytics.verbose("BrazeIntegration: Custom event ${payload.event} sent.")
+            analytics.logger.verbose("BrazeIntegration: Custom event ${payload.event} sent.")
         }
     }
 
     override fun identify(payload: IdentifyEvent) {
-        if (brazeConfig.isHybridMode()) return
+        if (brazeConfig.isHybridMode()) {
+            analytics.logger.verbose("BrazeIntegration: As connection mode is set to hybrid, dropping event request.")
+            return
+        }
 
-        payload.toIdentifyTraits().let { currentIdentifyTraits ->
+        payload.toIdentifyTraits(analytics.logger).let { currentIdentifyTraits ->
             val deDupedTraits = this.brazeConfig.takeIf { it.supportDedup }?.let {
                 currentIdentifyTraits deDupe previousIdentifyTraits
             } ?: currentIdentifyTraits
 
             deDupedTraits.getExternalIdOrUserId()?.let { this.braze?.changeUser(it) }
-            this.braze?.currentUser?.setTraits(deDupedTraits = deDupedTraits)
+            this.braze?.currentUser?.setTraits(deDupedTraits = deDupedTraits, logger = analytics.logger)
 
             previousIdentifyTraits = currentIdentifyTraits
-        }.also { LoggerAnalytics.verbose("BrazeIntegration: Identify event sent.") }
+        }.also { analytics.logger.verbose("BrazeIntegration: Identify event sent.") }
     }
 
     override fun flush() {
         this.braze?.requestImmediateDataFlush()
-        LoggerAnalytics.verbose("BrazeIntegration: Flush call completed")
+        analytics.logger.verbose("BrazeIntegration: Flush call completed")
     }
 
     override fun onActivityStarted(activity: Activity) {
@@ -191,16 +196,24 @@ class BrazeIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
     }
 }
 
-private fun initBraze(application: Application, config: RudderBrazeConfig, logLevel: Logger.LogLevel): Braze {
-    with(config) {
-        val builder: BrazeConfig.Builder =
-            initBrazeConfig()
-                .setApiKey(resolvedAppIdentifierKey)
-                .setCustomEndpoint(customEndpoint)
-        setLogLevel(logLevel)
-        Braze.configure(application, builder.build())
-        return Braze.getInstance(application)
+private fun initBraze(
+    application: Application,
+    config: RudderBrazeConfig,
+    logger: Logger,
+    logLevel: Logger.LogLevel
+): Braze {
+    val appKeyResolution = config.resolveAppIdentifierKey()
+    if (appKeyResolution is AppKeyResolution.FellBack) {
+        logger.error("BrazeIntegration: ${appKeyResolution.reason}")
     }
+
+    val builder: BrazeConfig.Builder =
+        initBrazeConfig()
+            .setApiKey(appKeyResolution.key)
+            .setCustomEndpoint(config.customEndpoint)
+    setLogLevel(logLevel)
+    Braze.configure(application, builder.build())
+    return Braze.getInstance(application)
 }
 
 @VisibleForTesting
@@ -219,17 +232,17 @@ private fun setLogLevel(rudderLogLevel: Logger.LogLevel) {
     }
 }
 
-private fun BrazeUser.setTraits(deDupedTraits: IdentifyTraits) {
+private fun BrazeUser.setTraits(deDupedTraits: IdentifyTraits, logger: Logger) {
     with(deDupedTraits.context.traits) {
         birthday?.let { setDateOfBirth(it) }
         email?.let { setEmail(it) }
         firstName?.let { setFirstName(it) }
         lastName?.let { setLastName(it) }
-        gender?.let { setGender(it) }
+        gender?.let { setGender(it, logger) }
         phone?.let { setPhoneNumber(it) }
         address?.let { setAddress(it) }
     }
-    setCustomTraits(deDupedTraits.customTraits)
+    setCustomTraits(deDupedTraits.customTraits, logger)
 }
 
 private fun BrazeUser.setDateOfBirth(date: Calendar?) {
@@ -242,13 +255,13 @@ private fun BrazeUser.setDateOfBirth(date: Calendar?) {
     }
 }
 
-private fun BrazeUser.setGender(gender: String?) {
+private fun BrazeUser.setGender(gender: String?, logger: Logger) {
     when (gender?.uppercase()) {
         "M", "MALE" -> setGender(Gender.MALE)
         "F", "FEMALE" -> setGender(Gender.FEMALE)
 
         else -> {
-            LoggerAnalytics.error("BrazeIntegration: Unsupported gender: $gender")
+            logger.error("BrazeIntegration: Unsupported gender: $gender")
         }
     }
 }
@@ -258,15 +271,15 @@ private fun BrazeUser.setAddress(address: Address?) {
     setCountry(address?.country)
 }
 
-private fun BrazeUser.setCustomTraits(customTraits: JsonObject) {
+private fun BrazeUser.setCustomTraits(customTraits: JsonObject, logger: Logger) {
     customTraits.forEach { (key, value) ->
         when {
-            value !is JsonPrimitive -> logUnsupportedType(key, value)
+            value !is JsonPrimitive -> logUnsupportedType(key, value, logger)
             value.booleanOrNull != null -> setCustomUserAttribute(key, value.boolean)
             value.longOrNull != null -> setCustomUserAttribute(key, value.long)
             value.doubleOrNull != null -> setCustomUserAttribute(key, value.double)
             value.isString -> handleStringValue(key, value.content)
-            else -> logUnsupportedType(key, value)
+            else -> logUnsupportedType(key, value, logger)
         }
     }
 }

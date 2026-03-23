@@ -12,18 +12,6 @@ plugins {
     alias(libs.plugins.nexus)
 }
 
-fun getVersionName(): String {
-    return if (project.hasProperty("release")) {
-        RudderStackBuildConfig.AndroidAndCoreSDKs.VERSION_NAME
-    } else {
-        "${RudderStackBuildConfig.AndroidAndCoreSDKs.VERSION_NAME}-SNAPSHOT"
-    }
-}
-
-allprojects {
-    version = getVersionName()
-}
-
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
 }
@@ -84,6 +72,26 @@ subprojects {
     }
 }
 
+tasks.register("listModules") {
+    description = "Lists publishable modules categorised by type (android/jvm)"
+    group = "help"
+    doLast {
+        val androidModules = mutableListOf<String>()
+        val jvmModules = mutableListOf<String>()
+        subprojects.forEach { sub ->
+            if (sub.plugins.hasPlugin("maven-publish")) {
+                if (sub.plugins.hasPlugin("com.android.library")) {
+                    androidModules.add(sub.path)
+                } else {
+                    jvmModules.add(sub.path)
+                }
+            }
+        }
+        println("ANDROID_MODULES=${androidModules.joinToString(",")}")
+        println("JVM_MODULES=${jvmModules.joinToString(",")}")
+    }
+}
+
 nexusPublishing {
     packageGroup.set("com.rudderstack")
     repositories {
@@ -95,6 +103,7 @@ nexusPublishing {
             snapshotRepositoryUrl.set(uri("https://central.sonatype.com/repository/maven-snapshots/"))
         }
     }
+    useStaging.set(hasProperty("release"))
 }
 
 true // Needed to make the Suppress annotation work for the plugins block

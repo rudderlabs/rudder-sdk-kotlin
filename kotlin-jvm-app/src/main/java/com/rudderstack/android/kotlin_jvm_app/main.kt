@@ -4,7 +4,6 @@ import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.Configuration
 import com.rudderstack.sdk.kotlin.core.Configuration.Companion.DEFAULT_GZIP_STATUS
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
-import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Properties
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
 import com.rudderstack.sdk.kotlin.core.internals.models.Traits
@@ -15,12 +14,12 @@ import java.util.Date
 private lateinit var analytics: Analytics
 
 fun main() {
-    LoggerAnalytics.logLevel = Logger.LogLevel.VERBOSE
     analytics = Analytics(
         configuration = Configuration(
             writeKey = "<WRITE KEY>",
             dataPlaneUrl = "<DATA PLANE URL>",
             gzipEnabled = DEFAULT_GZIP_STATUS,
+            logLevel = Logger.LogLevel.VERBOSE,
         )
     )
 
@@ -65,5 +64,5 @@ fun trackMessageKotlinAPI(analytics: Analytics) {
         entries = ResetEntries(anonymousId = false, userId = true)
     ))
 
-    LoggerAnalytics.debug("Message sent")
+    println("Message sent")
 }
