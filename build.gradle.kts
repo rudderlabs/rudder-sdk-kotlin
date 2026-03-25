@@ -1,5 +1,8 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 import java.io.ByteArrayOutputStream
+import org.gradle.api.publish.PublishingExtension
+import org.gradle.api.publish.maven.MavenPublication
+import org.gradle.api.artifacts.ProjectDependency
 
 @Suppress("DSL_SCOPE_VIOLATION") // TODO: Remove once KTIJ-19369 is fixed
 plugins {
@@ -89,6 +92,33 @@ tasks.register("listModules") {
         }
         println("ANDROID_MODULES=${androidModules.joinToString(",")}")
         println("JVM_MODULES=${jvmModules.joinToString(",")}")
+    }
+}
+
+tasks.register("printDependencyChain") {
+    description = "Prints the dependency chain of all publishable modules"
+    group = "help"
+    doLast {
+        println("name|groupId|artifactId|version|packaging|deps")
+        subprojects.forEach { sub ->
+            if (!sub.plugins.hasPlugin("maven-publish")) return@forEach
+
+            val pub = sub.extensions.getByType<PublishingExtension>()
+                .publications.findByName("release") as? MavenPublication
+                ?: return@forEach
+
+            val packaging = if (sub.plugins.hasPlugin("com.android.library")) "aar" else "jar"
+
+            val deps = mutableListOf<String>()
+            sub.configurations.findByName("api")?.dependencies?.forEach { dep ->
+                if (dep is ProjectDependency) deps.add("${dep.dependencyProject.name}:api")
+            }
+            sub.configurations.findByName("implementation")?.dependencies?.forEach { dep ->
+                if (dep is ProjectDependency) deps.add("${dep.dependencyProject.name}:implementation")
+            }
+
+            println("${sub.name}|${pub.groupId}|${pub.artifactId}|${pub.version}|${packaging}|${deps.joinToString(",")}")
+        }
     }
 }
 
