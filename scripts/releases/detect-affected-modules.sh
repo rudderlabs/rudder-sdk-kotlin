@@ -27,6 +27,7 @@ _kv_get() {
     local val
     val=$(echo "$store" | tr ' ' '\n' | grep "^${key}=" | tail -1 | cut -d'=' -f2)
     echo "${val:-none}"
+    return 0
 }
 
 _kv_set() {
@@ -34,6 +35,7 @@ _kv_set() {
     # Remove existing entry, then append
     _KV_BUMPS=$(echo "$_KV_BUMPS" | tr ' ' '\n' | grep -v "^${key}=" | tr '\n' ' ')
     _KV_BUMPS="${_KV_BUMPS}${key}=${val} "
+    return 0
 }
 
 # --- Helpers ---
@@ -77,6 +79,7 @@ get_cascade_bump() {
         minor|patch) echo "patch" ;;
         *) echo "none" ;;
     esac
+    return 0
 }
 
 # --- Main ---

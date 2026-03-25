@@ -10,7 +10,8 @@ source "${SCRIPT_DIR}/common.sh"
 SECTION_ORDER="breaking feat fix refactor chore deps"
 
 section_heading() {
-    case "$1" in
+    local type="$1"
+    case "$type" in
         breaking) echo "## ⚠ Breaking Changes" ;;
         feat)     echo "## Features" ;;
         fix)      echo "## Bug Fixes" ;;
@@ -19,6 +20,7 @@ section_heading() {
         deps)     echo "## Dependency Updates" ;;
         *)        echo "## Other" ;;
     esac
+    return 0
 }
 
 sanitize_changelog_entry() {
@@ -34,6 +36,7 @@ sanitize_changelog_entry() {
     escaped_url=$(echo "$REPO_URL" | sed 's/[.\/]/\\&/g')
     text=$(echo "$text" | perl -pe "s/\[([^\]]+)\]\((?!${escaped_url})([^)]*)\)/\$1/g")
     echo "$text"
+    return 0
 }
 
 input="${1:--}"

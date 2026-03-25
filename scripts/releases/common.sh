@@ -13,11 +13,15 @@ GRADLE_PROPERTIES_PATH="gradle.properties"
 # --- Security helpers ---
 
 escape_sed() {
-    printf '%s' "$1" | sed 's/[.[\/*^$&]/\\&/g'
+    local input="$1"
+    printf '%s' "$input" | sed 's/[.[\/*^$&]/\\&/g'
+    return 0
 }
 
 escape_grep() {
-    printf '%s' "$1" | sed 's/[.[\*^$+?{}()|]/\\&/g'
+    local input="$1"
+    printf '%s' "$input" | sed 's/[.[\*^$+?{}()|]/\\&/g'
+    return 0
 }
 
 validate_module_name() {
@@ -26,6 +30,7 @@ validate_module_name() {
         echo "Error: invalid module name: $name" >&2
         exit 1
     fi
+    return 0
 }
 
 # --- Portable sed -i ---
@@ -36,12 +41,14 @@ sed_inplace() {
     else
         sed -i "$@"
     fi
+    return 0
 }
 
 # --- Monorepo tag ---
 
 find_monorepo_tag() {
     git tag -l 'v*.*.*' --sort=-v:refname | head -1
+    return 0
 }
 
 # --- Dependency chain (session-cached) ---
@@ -63,12 +70,14 @@ get_dependency_chain() {
         fi
     fi
     echo "$_DEPENDENCY_CHAIN_CACHE"
+    return 0
 }
 
 # --- Module discovery ---
 
 get_all_modules() {
     get_dependency_chain | tail -n +2 | cut -d'|' -f1 | tr '\n' ' ' | sed 's/ $//'
+    return 0
 }
 
 get_module_maven_info() {
@@ -76,6 +85,7 @@ get_module_maven_info() {
     local escaped
     escaped=$(escape_grep "$module")
     get_dependency_chain | grep "^${escaped}|" | cut -d'|' -f2-5
+    return 0
 }
 
 get_module_version() {
@@ -83,6 +93,7 @@ get_module_version() {
     local escaped
     escaped=$(escape_grep "$module")
     get_dependency_chain | grep "^${escaped}|" | cut -d'|' -f4 | sed 's/-SNAPSHOT//'
+    return 0
 }
 
 get_module_tag_prefix() {
@@ -94,6 +105,7 @@ get_module_tag_prefix() {
     group_id=$(echo "$info" | cut -d'|' -f2)
     artifact_id=$(echo "$info" | cut -d'|' -f3)
     echo "${group_id}.${artifact_id}"
+    return 0
 }
 
 # --- Dependency graph ---
@@ -118,6 +130,7 @@ get_dependents() {
             echo "$name"
         fi
     done | tr '\n' ' ' | sed 's/ $//'
+    return 0
 }
 
 # --- Version utilities ---
@@ -138,24 +151,28 @@ bump_version() {
         patch) echo "${major}.${minor}.$((patch + 1))" ;;
         *) echo "Error: invalid bump type: $bump_type" >&2; exit 1 ;;
     esac
+    return 0
 }
 
 max_bump() {
     local a="$1"
     local b="$2"
     _bump_rank() {
-        case "$1" in
+        local val="$1"
+        case "$val" in
             major) echo 3 ;; minor) echo 2 ;; patch) echo 1 ;; *) echo 0 ;;
         esac
+        return 0
     }
     local rank_a rank_b
     rank_a=$(_bump_rank "$a")
     rank_b=$(_bump_rank "$b")
-    if [ "$rank_a" -ge "$rank_b" ]; then
+    if [[ "$rank_a" -ge "$rank_b" ]]; then
         echo "$a"
     else
         echo "$b"
     fi
+    return 0
 }
 
 # --- Path mapping ---
@@ -182,4 +199,5 @@ module_to_gradle_path() {
         core|android) echo ":${module}" ;;
         *) echo ":integrations:${module}" ;;
     esac
+    return 0
 }

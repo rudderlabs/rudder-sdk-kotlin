@@ -27,6 +27,7 @@ changelog_path_for_module() {
         core|android) echo "${module}/CHANGELOG.md" ;;
         *) echo "integrations/${module}/CHANGELOG.md" ;;
     esac
+    return 0
 }
 
 extract_latest_changelog_entry() {
