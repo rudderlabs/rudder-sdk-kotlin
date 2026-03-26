@@ -43,4 +43,8 @@ case "$mode" in
     release)
         ./gradlew "${gradle_path}:publishToSonatype" -Prelease closeAndReleaseSonatypeStagingRepository
         ;;
+    *)
+        echo "Error: unexpected mode: ${mode}" >&2
+        exit 1
+        ;;
 esac
