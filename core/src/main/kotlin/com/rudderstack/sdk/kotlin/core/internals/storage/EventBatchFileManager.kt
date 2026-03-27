@@ -256,10 +256,8 @@ class EventBatchFileManager(
      * @param directory The directory to create.
      */
     private fun createDirectory(directory: File) {
-        if (!directory.exists()) {
-            if (!directory.mkdirs()) {
-                logger.warn("EventBatchFileManager: Failed to create directory: ${directory.absolutePath}")
-            }
+        if (!directory.exists() && !directory.mkdirs()) {
+            logger.warn("EventBatchFileManager: Failed to create directory: ${directory.absolutePath}")
         }
     }
 }
