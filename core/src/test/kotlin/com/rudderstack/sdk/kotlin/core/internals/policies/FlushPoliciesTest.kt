@@ -7,7 +7,9 @@ import io.mockk.coVerify
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import com.rudderstack.sdk.kotlin.core.mockAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import io.mockk.every
+import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -18,6 +20,7 @@ class FlushPoliciesTest {
     private val testDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
     private val mockAnalytics = mockAnalytics(testScope, testDispatcher)
+    private val mockLogger = mockk<Logger>(relaxed = true)
 
     @BeforeEach
     fun setup() {
@@ -34,7 +37,8 @@ class FlushPoliciesTest {
     fun `given only StartupFlushPolicy is enabled, when shouldFlush is called, then it should return true`() {
         val startupFlushPolicy = StartupFlushPolicy()
         val flushPoliciesFacade = FlushPoliciesFacade(
-            listOf(startupFlushPolicy)
+            flushPolicies = listOf(startupFlushPolicy),
+            logger = mockLogger,
         )
 
         assertTrue(flushPoliciesFacade.shouldFlush())
@@ -44,7 +48,8 @@ class FlushPoliciesTest {
     fun `given only CountFlushPolicy is enabled, when default number of events have been tracked, then shouldFlush should return true`() {
         val countFlushPolicy = CountFlushPolicy()
         val flushPoliciesFacade = FlushPoliciesFacade(
-            listOf(countFlushPolicy)
+            flushPolicies = listOf(countFlushPolicy),
+            logger = mockLogger,
         )
 
         // Until the default number of events have been tracked, it should not flush
@@ -61,7 +66,8 @@ class FlushPoliciesTest {
     fun `given only FrequencyFlushPolicy is enabled, when the policy is scheduled, then it should flush after the default interval`() {
         val frequencyFlushPolicy = FrequencyFlushPolicy()
         val flushPoliciesFacade = FlushPoliciesFacade(
-            listOf(frequencyFlushPolicy)
+            flushPolicies = listOf(frequencyFlushPolicy),
+            logger = mockLogger,
         )
 
         flushPoliciesFacade.schedule(mockAnalytics)
@@ -77,7 +83,8 @@ class FlushPoliciesTest {
         val startupFlushPolicy = StartupFlushPolicy()
         val countFlushPolicy = CountFlushPolicy()
         val flushPoliciesFacade = FlushPoliciesFacade(
-            listOf(startupFlushPolicy, countFlushPolicy)
+            flushPolicies = listOf(startupFlushPolicy, countFlushPolicy),
+            logger = mockLogger,
         )
 
         // At starting, it should flush
@@ -97,7 +104,8 @@ class FlushPoliciesTest {
         val startupFlushPolicy = StartupFlushPolicy()
         val frequencyFlushPolicy = FrequencyFlushPolicy()
         val flushPoliciesFacade = FlushPoliciesFacade(
-            listOf(startupFlushPolicy, frequencyFlushPolicy)
+            flushPolicies = listOf(startupFlushPolicy, frequencyFlushPolicy),
+            logger = mockLogger,
         )
 
         flushPoliciesFacade.schedule(mockAnalytics)
@@ -119,7 +127,8 @@ class FlushPoliciesTest {
         val countFlushPolicy = CountFlushPolicy()
         val frequencyFlushPolicy = FrequencyFlushPolicy()
         val flushPoliciesFacade = FlushPoliciesFacade(
-            listOf(startupFlushPolicy, countFlushPolicy, frequencyFlushPolicy)
+            flushPolicies = listOf(startupFlushPolicy, countFlushPolicy, frequencyFlushPolicy),
+            logger = mockLogger,
         )
 
         flushPoliciesFacade.schedule(mockAnalytics)

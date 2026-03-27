@@ -77,7 +77,7 @@ internal class InMemoryStorage(
 
     override fun close() {
         eventBatchFile.closeAndReset()
-        logger.info("InMemoryStorage closed")
+        logger.debug("InMemoryStorage: Closed")
     }
 
     override fun readInt(key: StorageKeys, defaultVal: Int): Int {
@@ -122,7 +122,7 @@ internal class InMemoryStorage(
     override fun delete() {
         prefsStore.delete()
         eventBatchFile.delete()
-        logger.info("InMemoryStorage deleted")
+        logger.debug("InMemoryStorage: Deleted")
     }
 }
 

@@ -54,6 +54,7 @@ internal class RudderStackDataplanePlugin : EventPlugin {
     }
 
     private fun enqueue(event: Event) {
+        analytics.logger.verbose("RudderStackDataplanePlugin: Enqueuing ${event.type} event")
         this.eventQueue?.put(event)
     }
 }

@@ -34,6 +34,7 @@ class AppsFlyerIntegration : StandardIntegration, IntegrationPlugin() {
     public override fun create(destinationConfig: JsonObject) {
         if (appsFlyerInstance == null) {
             appsFlyerInstance = provideAppsFlyerInstance()
+            analytics.logger.verbose("AppsFlyerIntegration: AppsFlyer SDK initialized")
         }
 
         extractConfiguration(destinationConfig)
@@ -49,6 +50,7 @@ class AppsFlyerIntegration : StandardIntegration, IntegrationPlugin() {
 
     override fun update(destinationConfig: JsonObject) {
         extractConfiguration(destinationConfig)
+        analytics.logger.verbose("AppsFlyerIntegration: Configuration updated")
     }
 
     override fun getDestinationInstance(): Any? {
@@ -65,6 +67,8 @@ class AppsFlyerIntegration : StandardIntegration, IntegrationPlugin() {
             ?.getString()
             ?.takeIf { it.isNotEmpty() }
             ?.let { appsFlyerInstance?.setUserEmails(it) }
+
+        analytics.logger.verbose("AppsFlyerIntegration: Identify event processed")
     }
 
     override fun track(payload: TrackEvent) {
@@ -74,6 +78,7 @@ class AppsFlyerIntegration : StandardIntegration, IntegrationPlugin() {
         )
 
         appsFlyerInstance?.logEvent(analytics.application, appsFlyerEventName, appsFlyerEventProps)
+        analytics.logger.verbose("AppsFlyerIntegration: Track event '${payload.event}' sent to AppsFlyer")
     }
 
     override fun screen(payload: ScreenEvent) {
@@ -90,5 +95,6 @@ class AppsFlyerIntegration : StandardIntegration, IntegrationPlugin() {
         }
 
         appsFlyerInstance?.logEvent(analytics.application, screenName, payload.properties.toMutableMap())
+        analytics.logger.verbose("AppsFlyerIntegration: Screen event sent to AppsFlyer")
     }
 }

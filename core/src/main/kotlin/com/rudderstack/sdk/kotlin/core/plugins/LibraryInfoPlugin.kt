@@ -44,7 +44,7 @@ internal class LibraryInfoPlugin : Plugin {
     override suspend fun intercept(event: Event): Event = attachLibraryInfo(event)
 
     private fun attachLibraryInfo(event: Event): Event {
-        analytics.logger.debug("Attaching library info to the event payload")
+        analytics.logger.verbose("LibraryInfoPlugin: Attaching library info to the event payload")
 
         event.context = event.context mergeWithHigherPriorityTo libraryContext
 

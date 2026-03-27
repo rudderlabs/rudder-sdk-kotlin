@@ -50,7 +50,7 @@ internal class ScreenInfoPlugin : Plugin {
     override suspend fun intercept(event: Event): Event = attachScreenInfo(event)
 
     private fun attachScreenInfo(event: Event): Event {
-        analytics.logger.debug("Attaching screen info to the event payload")
+        analytics.logger.verbose("ScreenInfoPlugin: Attaching screen info to the event payload")
 
         event.context = event.context mergeWithHigherPriorityTo screenContext
 

@@ -60,6 +60,6 @@ internal class InMemoryPrefsStore(
     @UseWithCaution
     override fun delete() {
         storage.clear()
-        logger.info("InMemoryPrefsStore deleted")
+        logger.debug("InMemoryPrefsStore: Deleted")
     }
 }

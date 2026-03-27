@@ -100,6 +100,7 @@ abstract class IntegrationPlugin : EventPlugin {
 
     private fun isDestinationConfigured(sourceConfig: SourceConfig): JsonObject? {
         if (!isStandardIntegration) {
+            analytics.logger.debug("IntegrationPlugin[$key]: Non-standard integration, using empty config")
             return emptyJsonObject
         }
         findDestination(sourceConfig, key)?.let { configDestination ->
@@ -150,6 +151,7 @@ abstract class IntegrationPlugin : EventPlugin {
      */
     fun add(plugin: Plugin) {
         if (isPluginSetup) {
+            analytics.logger.debug("IntegrationPlugin[$key]: Added plugin ${plugin::class.simpleName}")
             pluginChain.add(plugin)
         } else {
             pluginList.add(plugin)
@@ -164,6 +166,7 @@ abstract class IntegrationPlugin : EventPlugin {
     fun remove(plugin: Plugin) {
         pluginList.remove(plugin)
         if (isPluginSetup) {
+            analytics.logger.debug("IntegrationPlugin[$key]: Removed plugin ${plugin::class.simpleName}")
             pluginChain.remove(plugin)
         }
     }
@@ -257,6 +260,11 @@ abstract class IntegrationPlugin : EventPlugin {
 
     private fun notifyCallbacks(destinationResult: DestinationResult) {
         synchronized(this) {
+            if (destinationReadyCallbacks.isNotEmpty()) {
+                analytics.logger.debug(
+                    "IntegrationPlugin[$key]: Notifying ${destinationReadyCallbacks.size} deferred callback(s)"
+                )
+            }
             destinationReadyCallbacks.forEach { callback -> callback(getDestinationInstance(), destinationResult) }
             destinationReadyCallbacks.clear()
         }

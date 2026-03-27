@@ -45,7 +45,7 @@ internal class RetryHeadersProviderImpl(
         val sinceLastAttemptInMillis = maxOf(MIN_SINCE_LAST_ATTEMPT_IN_MILLIS, elapsedSinceLastAttemptInMillis)
 
         logger.verbose(
-            "Adding retry headers: attempt=${metadata.attempt}, " +
+            "RetryHeadersProvider: Adding retry headers: attempt=${metadata.attempt}, " +
                 "sinceLastAttempt=${sinceLastAttemptInMillis}ms, reason=${metadata.reason}"
         )
 
@@ -74,7 +74,7 @@ internal class RetryHeadersProviderImpl(
     }
 
     override suspend fun clear() {
-        logger.verbose("Clearing retry metadata from storage")
+        logger.verbose("RetryHeadersProvider: Clearing retry metadata from storage")
         storage.remove(StorageKeys.RETRY_METADATA)
     }
 
@@ -87,7 +87,7 @@ internal class RetryHeadersProviderImpl(
         return if (metadata.batchId == batchId) {
             metadata
         } else {
-            logger.verbose("Discarding stale retry metadata: batchId mismatch")
+            logger.verbose("RetryHeadersProvider: Discarding stale retry metadata: batchId mismatch")
             null
         }
     }

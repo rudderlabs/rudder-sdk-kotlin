@@ -63,11 +63,13 @@ class AndroidConnectivityObserverTest {
         every {
             createNetworkCallback(
                 connectivityState = capture(connectivityStateSlot),
+                logger = any(),
             )
         } returns mockNetworkCallback
         every {
             createBroadcastReceiver(
                 connectivityState = capture(connectivityStateSlot),
+                logger = any(),
             )
         } returns mockBroadcastReceiver
 
