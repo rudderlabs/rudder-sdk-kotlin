@@ -1,0 +1,157 @@
+name: 'Slack Release Notify'
+description: 'Manages Slack release notification state (artifact upload/download) and message posting'
+
+inputs:
+  mode:
+    description: 'Operation mode: upload-artifact, download-artifact, post-thread, post-channel'
+    required: true
+  channel_id:
+    description: 'Slack channel ID (required for upload-artifact, post-thread, post-channel)'
+    required: false
+    default: ''
+  thread_ts:
+    description: 'Slack thread timestamp (required for upload-artifact, post-thread)'
+    required: false
+    default: ''
+  release_version:
+    description: 'Release version string (required for upload-artifact, download-artifact)'
+    required: false
+    default: ''
+  release_ticket_id:
+    description: 'Release ticket identifier (required for upload-artifact, download-artifact)'
+    required: false
+    default: ''
+  slack_bot_token:
+    description: 'Slack bot token for API calls (required for post-thread, post-channel)'
+    required: false
+    default: ''
+  message:
+    description: 'Message text to post (required for post-thread, post-channel)'
+    required: false
+    default: ''
+
+outputs:
+  channel_id:
+    description: 'Slack channel ID retrieved from artifact (set by download-artifact)'
+    value: ${{ steps.read-artifact.outputs.channel_id }}
+  thread_ts:
+    description: 'Slack thread timestamp retrieved from artifact (set by download-artifact)'
+    value: ${{ steps.read-artifact.outputs.thread_ts }}
+
+runs:
+  using: 'composite'
+  steps:
+    # ──────────────────────────────────────────────
+    # Mode: upload-artifact
+    # ──────────────────────────────────────────────
+    - name: Create release info JSON
+      if: inputs.mode == 'upload-artifact'
+      shell: bash
+      env:
+        CHANNEL_ID: ${{ inputs.channel_id }}
+        THREAD_TS: ${{ inputs.thread_ts }}
+      run: |
+        mkdir -p /tmp/release-info
+        jq -n --arg cid "$CHANNEL_ID" --arg ts "$THREAD_TS" \
+          '{channel_id: $cid, thread_ts: $ts}' > /tmp/release-info/release-info.json
+        echo "Created release-info.json:"
+        cat /tmp/release-info/release-info.json
+
+    - name: Upload release info artifact
+      if: inputs.mode == 'upload-artifact'
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      with:
+        name: release-info-v${{ inputs.release_version }}-${{ inputs.release_ticket_id }}
+        path: /tmp/release-info/release-info.json
+        retention-days: 30
+
+    # ──────────────────────────────────────────────
+    # Mode: download-artifact
+    # ──────────────────────────────────────────────
+    - name: Download release info artifact
+      if: inputs.mode == 'download-artifact'
+      id: download-artifact
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        ARTIFACT_NAME: release-info-v${{ inputs.release_version }}-${{ inputs.release_ticket_id }}
+      run: |
+        echo "Searching for artifact: ${ARTIFACT_NAME}"
+
+        ARTIFACT_JSON=$(gh api \
+          -H "Accept: application/vnd.github+json" \
+          "/repos/${GITHUB_REPOSITORY}/actions/artifacts?name=${ARTIFACT_NAME}" \
+          --jq '.artifacts[0]')
+
+        if [ -z "${ARTIFACT_JSON}" ] || [ "${ARTIFACT_JSON}" = "null" ]; then
+          echo "::error::Artifact '${ARTIFACT_NAME}' not found"
+          exit 1
+        fi
+
+        ARTIFACT_ID=$(echo "${ARTIFACT_JSON}" | jq -r '.id')
+        echo "Found artifact ID: ${ARTIFACT_ID}"
+
+        gh api \
+          -H "Accept: application/vnd.github+json" \
+          "/repos/${GITHUB_REPOSITORY}/actions/artifacts/${ARTIFACT_ID}/zip" > /tmp/artifact.zip
+
+        mkdir -p /tmp/release-info-download
+        unzip -o /tmp/artifact.zip -d /tmp/release-info-download
+        echo "Artifact contents:"
+        cat /tmp/release-info-download/release-info.json
+
+    - name: Read artifact and set outputs
+      if: inputs.mode == 'download-artifact'
+      id: read-artifact
+      shell: bash
+      run: |
+        CHANNEL_ID=$(jq -r '.channel_id' /tmp/release-info-download/release-info.json)
+        THREAD_TS=$(jq -r '.thread_ts' /tmp/release-info-download/release-info.json)
+
+        echo "channel_id=${CHANNEL_ID}" >> "${GITHUB_OUTPUT}"
+        echo "thread_ts=${THREAD_TS}" >> "${GITHUB_OUTPUT}"
+
+        echo "Retrieved channel_id: ${CHANNEL_ID}"
+        echo "Retrieved thread_ts: ${THREAD_TS}"
+
+    # ──────────────────────────────────────────────
+    # Mode: post-thread
+    # ──────────────────────────────────────────────
+    - name: Post thread message
+      if: inputs.mode == 'post-thread'
+      uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
+      env:
+        CHANNEL_ID: ${{ inputs.channel_id }}
+        THREAD_TS: ${{ inputs.thread_ts }}
+        MESSAGE: ${{ inputs.message }}
+      with:
+        method: chat.postMessage
+        token: ${{ inputs.slack_bot_token }}
+        retries: rapid
+        payload-templated: true
+        payload: |
+          {
+            "channel": "${{ env.CHANNEL_ID }}",
+            "thread_ts": "${{ env.THREAD_TS }}",
+            "text": "${{ env.MESSAGE }}"
+          }
+
+    # ──────────────────────────────────────────────
+    # Mode: post-channel
+    # ──────────────────────────────────────────────
+    - name: Post channel message
+      if: inputs.mode == 'post-channel'
+      uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
+      env:
+        CHANNEL_ID: ${{ inputs.channel_id }}
+        MESSAGE: ${{ inputs.message }}
+      with:
+        method: chat.postMessage
+        token: ${{ inputs.slack_bot_token }}
+        retries: rapid
+        payload-templated: true
+        payload: |
+          {
+            "channel": "${{ env.CHANNEL_ID }}",
+            "text": "${{ env.MESSAGE }}"
+          }
