@@ -139,7 +139,7 @@ open class Analytics protected constructor(
      */
     @JvmOverloads
     fun track(name: String, properties: Properties = emptyJsonObject, options: RudderOption = RudderOption()) {
-        logger.debug("Analytics(core): track() called with event='$name'")
+        logger.debug("Analytics(core): track() called with event='$name', properties=$properties, options=$options")
         if (!isAnalyticsActive() || !isSourceEnabledWithLogging()) return
 
         val event = TrackEvent(
@@ -170,7 +170,10 @@ open class Analytics protected constructor(
         properties: Properties = emptyJsonObject,
         options: RudderOption = RudderOption()
     ) {
-        logger.debug("Analytics(core): screen() called with screenName='$screenName', category='$category'")
+        logger.debug(
+            "Analytics(core): screen() called with " +
+                "screenName='$screenName', category='$category', properties=$properties, options=$options"
+        )
         if (!isAnalyticsActive() || !isSourceEnabledWithLogging()) return
 
         val updatedProperties = addNameAndCategoryToProperties(screenName, category, properties)
@@ -197,7 +200,7 @@ open class Analytics protected constructor(
      */
     @JvmOverloads
     fun group(groupId: String, traits: Traits = emptyJsonObject, options: RudderOption = RudderOption()) {
-        logger.debug("Analytics(core): group() called with groupId='$groupId'")
+        logger.debug("Analytics(core): group() called with groupId='$groupId', traits=$traits, options=$options")
         if (!isAnalyticsActive() || !isSourceEnabledWithLogging()) return
 
         val event = GroupEvent(
@@ -222,7 +225,7 @@ open class Analytics protected constructor(
      */
     @JvmOverloads
     fun identify(userId: String = String.empty(), traits: Traits = emptyJsonObject, options: RudderOption = RudderOption()) {
-        logger.debug("Analytics(core): identify() called with userId='$userId'")
+        logger.debug("Analytics(core): identify() called with userId='$userId', traits=$traits, options=$options")
         if (!isAnalyticsActive()) return
 
         if (!this.userId.isNullOrEmpty() && this.userId != userId) {
@@ -267,7 +270,7 @@ open class Analytics protected constructor(
      */
     @JvmOverloads
     fun alias(newId: String, previousId: String = String.empty(), options: RudderOption = RudderOption()) {
-        logger.debug("Analytics(core): alias() called with newId='$newId'")
+        logger.debug("Analytics(core): alias() called with newId='$newId', previousId='$previousId', options=$options")
         if (!isAnalyticsActive()) return
 
         val updatedPreviousId = userIdentityState.value.resolvePreferredPreviousId(previousId)

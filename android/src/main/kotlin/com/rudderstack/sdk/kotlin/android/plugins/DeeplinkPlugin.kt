@@ -92,7 +92,7 @@ internal class DeeplinkPlugin : Plugin, ActivityLifecycleObserver {
                 try {
                     it.toUri()
                 } catch (ignored: ParseException) {
-                    analytics.logger.debug("DeeplinkPlugin: Failed to parse referrer URL: ${ignored.message}")
+                    analytics.logger.warn("DeeplinkPlugin: Failed to parse referrer URL: ${ignored.message}")
                     null
                 }
             }

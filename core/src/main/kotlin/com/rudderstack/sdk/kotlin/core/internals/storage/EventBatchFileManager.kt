@@ -216,7 +216,7 @@ class EventBatchFileManager(
                 flush()
             }
         } catch (e: Exception) {
-            logger.error("EventBatchFileManager: Failed to write to batch file: ${file.name}: ${e.message}")
+            logger.error("EventBatchFileManager: Failed to write to batch file: ${file.name}: ${e.message}", e)
         }
     }
 
@@ -257,7 +257,7 @@ class EventBatchFileManager(
      */
     private fun createDirectory(directory: File) {
         if (!directory.exists()) {
-            if (!directory.mkdirs() && !directory.exists()) {
+            if (!directory.mkdirs()) {
                 logger.warn("EventBatchFileManager: Failed to create directory: ${directory.absolutePath}")
             }
         }
