@@ -110,7 +110,7 @@ internal class PropertiesFile(
     @UseWithCaution
     override fun delete() {
         propsFile.deleteRecursively().let { isDeleted ->
-            logger.debug("Attempt to delete properties file successful: $isDeleted")
+            logger.debug("PropertiesFile: Properties file deleted: $isDeleted")
         }
     }
 }

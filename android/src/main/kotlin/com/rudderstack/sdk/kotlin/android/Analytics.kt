@@ -135,7 +135,7 @@ class Analytics(
         if (!isAnalyticsActive()) return
 
         if (options !is AndroidResetOption) {
-            logger.debug("The options should be of type Android ResetOptions.")
+            logger.debug("Analytics(android): The options should be of type Android ResetOptions")
         }
 
         super.reset(options)

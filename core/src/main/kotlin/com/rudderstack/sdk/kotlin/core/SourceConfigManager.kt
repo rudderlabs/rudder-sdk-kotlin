@@ -116,7 +116,7 @@ class SourceConfigManager(
         val backOffPolicy = provideBackoffPolicy()
         repeat(SOURCE_CONFIG_RETRY_ATTEMPT) { attempt ->
             delay(backOffPolicy.nextDelayInMillis())
-            analytics.logger.verbose("Retrying fetching of SourceConfig, attempt: ${attempt + 1}")
+            analytics.logger.verbose("SourceConfigManager: Retrying fetching of SourceConfig, attempt: ${attempt + 1}")
 
             fetchSourceConfigWithFallback { null }?.let { return it }
         }
@@ -138,13 +138,13 @@ class SourceConfigManager(
 
     private suspend fun storeSourceConfig(sourceConfig: SourceConfig) {
         withContext(analytics.keyValueStorageDispatcher) {
-            analytics.logger.verbose("Storing sourceConfig in storage.")
+            analytics.logger.verbose("SourceConfigManager: Storing sourceConfig in storage")
             sourceConfig.storeSourceConfig(analytics.storage)
         }
     }
 
     private fun notifyObservers(sourceConfig: SourceConfig) {
-        analytics.logger.verbose("Notifying observers with sourceConfig.")
+        analytics.logger.verbose("SourceConfigManager: Notifying observers with sourceConfig")
         sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfig))
     }
 }

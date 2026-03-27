@@ -97,13 +97,13 @@ internal fun createNetworkCallback(connectivityState: State<Boolean>, logger: Lo
     object : ConnectivityManager.NetworkCallback() {
         override fun onAvailable(network: Network) {
             super.onAvailable(network)
-            logger.debug("AndroidConnectivityObserver: Network available")
+            logger.verbose("AndroidConnectivityObserver: Network available")
             connectivityState.dispatch(ConnectivityState.EnableConnectivityAction())
         }
 
         override fun onLost(network: Network) {
             super.onLost(network)
-            logger.debug("AndroidConnectivityObserver: Network lost")
+            logger.verbose("AndroidConnectivityObserver: Network lost")
             connectivityState.dispatch(ConnectivityState.DisableConnectivityAction())
         }
     }
@@ -118,16 +118,16 @@ internal fun createBroadcastReceiver(connectivityState: State<Boolean>, logger: 
             (context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).activeNetworkInfo?.let {
                 when (it.isConnected) {
                     true -> {
-                        logger.debug("AndroidConnectivityObserver: Network available (broadcast)")
+                        logger.verbose("AndroidConnectivityObserver: Network available (broadcast)")
                         connectivityState.dispatch(ConnectivityState.EnableConnectivityAction())
                     }
                     false -> {
-                        logger.debug("AndroidConnectivityObserver: Network lost (broadcast)")
+                        logger.verbose("AndroidConnectivityObserver: Network lost (broadcast)")
                         connectivityState.dispatch(ConnectivityState.DisableConnectivityAction())
                     }
                 }
             } ?: run { // if activeNetworkInfo is null, it means the device is not connected to any network.
-                logger.debug("AndroidConnectivityObserver: Network lost (broadcast)")
+                logger.verbose("AndroidConnectivityObserver: Network lost (broadcast)")
                 connectivityState.dispatch(ConnectivityState.DisableConnectivityAction())
             }
         }

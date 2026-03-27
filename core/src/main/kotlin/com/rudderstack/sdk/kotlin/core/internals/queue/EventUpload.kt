@@ -126,7 +126,7 @@ internal class EventUpload(
     @VisibleForTesting
     internal fun getAnonymousIdFromBatch(batchPayload: String): String {
         return ANONYMOUS_ID_REGEX.find(batchPayload)?.groupValues?.get(1) ?: run {
-            analytics.logger.warn("EventUpload: Fetched empty anonymousId from batch payload, falling back to random UUID.")
+            analytics.logger.warn("EventUpload: Fetched empty anonymousId from batch payload, falling back to random UUID")
             generateUUID()
         }
     }

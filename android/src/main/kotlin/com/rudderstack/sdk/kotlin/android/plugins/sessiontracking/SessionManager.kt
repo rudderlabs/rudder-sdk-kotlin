@@ -197,7 +197,7 @@ internal class SessionManager(
         val timeDifference = DateTimeUtils.getSystemCurrentTime() - lastActivityTime
         if (timeDifference <= 0) {
             analytics.logger.warn(
-                "Current system time is less than or equal to last activity time." +
+                "SessionManager: Current system time is less than or equal to last activity time." +
                     " This indicates potential clock tampering. Resetting the session"
             )
             return true

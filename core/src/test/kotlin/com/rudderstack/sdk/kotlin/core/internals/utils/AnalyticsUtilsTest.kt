@@ -110,7 +110,7 @@ class AnalyticsUtilsTest {
 
         assertFalse(result)
         verify(exactly = 1) {
-            mockLogger.warn("AnalyticsUtils: Analytics instance has been shutdown. No further operations are allowed.")
+            mockLogger.warn("AnalyticsUtils: Analytics instance has been shutdown. No further operations are allowed")
         }
     }
 
@@ -157,7 +157,7 @@ class AnalyticsUtilsTest {
 
         assertTrue(result)
         verify(exactly = 0) {
-            mockLogger.warn("Source is disabled. This operation is not allowed.")
+            mockLogger.warn("Source is disabled. This operation is not allowed")
         }
     }
 
@@ -170,7 +170,7 @@ class AnalyticsUtilsTest {
 
         assertTrue(result) // Server always returns true
         verify(exactly = 0) {
-            mockLogger.warn("AnalyticsUtils: Source is disabled. This operation is not allowed.")
+            mockLogger.warn("AnalyticsUtils: Source is disabled. This operation is not allowed")
         }
     }
 
@@ -183,7 +183,7 @@ class AnalyticsUtilsTest {
 
         assertFalse(result)
         verify(exactly = 1) {
-            mockLogger.warn("AnalyticsUtils: Source is disabled. This operation is not allowed.")
+            mockLogger.warn("AnalyticsUtils: Source is disabled. This operation is not allowed")
         }
     }
 

@@ -10,7 +10,7 @@ import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 @InternalRudderApi
 fun Analytics.isAnalyticsActive(): Boolean {
     if (isAnalyticsShutdown) {
-        logger.warn("AnalyticsUtils: Analytics instance has been shutdown. No further operations are allowed.")
+        logger.warn("AnalyticsUtils: Analytics instance has been shutdown. No further operations are allowed")
         return false
     }
     return true
@@ -41,7 +41,7 @@ fun Analytics.isSourceEnabled(): Boolean {
 @InternalRudderApi
 fun Analytics.isSourceEnabledWithLogging(): Boolean {
     if (!isSourceEnabled()) {
-        logger.warn("AnalyticsUtils: Source is disabled. This operation is not allowed.")
+        logger.warn("AnalyticsUtils: Source is disabled. This operation is not allowed")
         return false
     }
     return true
