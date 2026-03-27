@@ -136,7 +136,7 @@ internal class EventUpload(
         var result: EventUploadResult
         do {
             val updatedPayload = JsonSentAtUpdater.updateSentAt(batchPayload, analytics.logger)
-            analytics.logger.verbose("EventUpload: Batch payload: $updatedPayload")
+            analytics.logger.verbose("EventUpload: Uploading batch payload of size: ${updatedPayload.length}")
             val currentTimestampInMillis = DateTimeUtils.getSystemCurrentTime()
             val retryHeaders = retryHeadersProvider.getHeaders(batchId, currentTimestampInMillis)
             result = httpClientFactory.sendData(updatedPayload, retryHeaders).toEventUploadResult()
