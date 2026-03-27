@@ -95,7 +95,7 @@ class Analytics(
         if (!isAnalyticsActive()) return
 
         if (sessionId != null && sessionId.toString().length < MIN_SESSION_ID_LENGTH) {
-            logger.error("Session Id should be at least $MIN_SESSION_ID_LENGTH digits.")
+            logger.error("Analytics(android): Session Id should be at least $MIN_SESSION_ID_LENGTH digits")
             return
         }
         val newSessionId = sessionId ?: sessionTrackingPlugin.sessionManager.generateSessionId()

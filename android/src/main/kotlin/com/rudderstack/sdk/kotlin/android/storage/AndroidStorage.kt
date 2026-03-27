@@ -131,7 +131,7 @@ internal class AndroidStorage(
     override fun delete() {
         rudderPrefsRepo.delete()
         storageDirectory.deleteRecursively().let { isDeleted ->
-            logger.info("Storage directory deleted: $isDeleted")
+            logger.debug("AndroidStorage: Storage directory deleted: $isDeleted")
         }
     }
 }
