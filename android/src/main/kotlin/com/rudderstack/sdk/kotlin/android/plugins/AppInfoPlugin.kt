@@ -74,7 +74,7 @@ internal class AppInfoPlugin : Plugin {
     override suspend fun intercept(event: Event): Event = attachAppInfo(event)
 
     private fun attachAppInfo(event: Event): Event {
-        analytics.logger.verbose("AppInfoPlugin: Attaching app info to the event payload")
+        analytics.logger.verbose("AppInfoPlugin: Attaching app info to the event payload (messageId=${event.messageId})")
 
         event.context = event.context mergeWithHigherPriorityTo appContext
 

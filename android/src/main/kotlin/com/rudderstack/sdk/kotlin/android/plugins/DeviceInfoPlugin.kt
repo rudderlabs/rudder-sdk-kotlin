@@ -44,7 +44,9 @@ internal class DeviceInfoPlugin : Plugin {
 
     @VisibleForTesting
     internal fun attachDeviceInfo(message: Event): Event {
-        analytics.logger.verbose("DeviceInfoPlugin: Attaching device info to the message payload")
+        analytics.logger.verbose(
+            "DeviceInfoPlugin: Attaching device info to the event payload (messageId=${message.messageId})"
+        )
         message.context = message.context mergeWithHigherPriorityTo deviceContext
         return message
     }

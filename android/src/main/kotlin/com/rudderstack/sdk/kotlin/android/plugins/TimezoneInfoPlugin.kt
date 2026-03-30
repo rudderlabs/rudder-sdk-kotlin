@@ -36,7 +36,9 @@ internal class TimezoneInfoPlugin : Plugin {
     override suspend fun intercept(event: Event): Event = attachTimezoneInfo(event)
 
     private fun attachTimezoneInfo(event: Event): Event {
-        analytics.logger.verbose("TimezoneInfoPlugin: Attaching timezone info to the event payload")
+        analytics.logger.verbose(
+            "TimezoneInfoPlugin: Attaching timezone info to the event payload (messageId=${event.messageId})"
+        )
 
         event.context = event.context mergeWithHigherPriorityTo timezoneContext
 
