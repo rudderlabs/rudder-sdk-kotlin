@@ -89,7 +89,7 @@ class AdjustIntegration : StandardIntegration, IntegrationPlugin(), ActivityLife
             Adjust.trackEvent(adjustEvent)
             analytics.logger.verbose("AdjustIntegration: Track event sent to Adjust.")
         } ?: run {
-            analytics.logger.error(
+            analytics.logger.warn(
                 "AdjustIntegration: Either Event to Token mapping is not configured in the dashboard " +
                     "or the corresponding token is empty. Therefore dropping the ${payload.event} event."
             )
@@ -151,7 +151,7 @@ class AdjustIntegration : StandardIntegration, IntegrationPlugin(), ActivityLife
             )
 
             analytics.track(INSTALL_ATTRIBUTED_EVENT, installAttributionDto.toJsonObject())
-            analytics.logger.info(
+            analytics.logger.debug(
                 "AdjustIntegration: Install Attributed event sent successfully with properties: $installAttributionDto"
             )
         } else {
@@ -203,30 +203,24 @@ private fun AdjustConfig.setLogLevel(logLevel: Logger.LogLevel) {
 
 private fun AdjustConfig.setAllListeners(attributionCallback: ((AdjustAttribution) -> Unit), logger: Logger) {
     setOnAttributionChangedListener { attribution ->
-        logger.debug("Adjust: Attribution callback called!")
-        logger.debug("Adjust: Attribution: $attribution")
+        logger.verbose("AdjustIntegration: Attribution callback received: $attribution")
 
         attributionCallback.invoke(attribution)
     }
     setOnEventTrackingSucceededListener { adjustEventSuccess ->
-        logger.debug("Adjust: Event success callback called!")
-        logger.debug("Adjust: Event success data: $adjustEventSuccess")
+        logger.verbose("AdjustIntegration: Event tracking succeeded: $adjustEventSuccess")
     }
     setOnEventTrackingFailedListener { adjustEventFailure ->
-        logger.debug("Adjust: Event failure callback called!")
-        logger.debug("Adjust: Event failure data: $adjustEventFailure")
+        logger.verbose("AdjustIntegration: Event tracking failed: $adjustEventFailure")
     }
     setOnSessionTrackingSucceededListener { adjustSessionSuccess ->
-        logger.debug("Adjust: Session success callback called!")
-        logger.debug("Adjust: Session success data: $adjustSessionSuccess")
+        logger.verbose("AdjustIntegration: Session tracking succeeded: $adjustSessionSuccess")
     }
     setOnSessionTrackingFailedListener { adjustSessionFailure ->
-        logger.debug("Adjust: Session failure callback called!")
-        logger.debug("Adjust: Session failure data: $adjustSessionFailure")
+        logger.verbose("AdjustIntegration: Session tracking failed: $adjustSessionFailure")
     }
     setOnDeferredDeeplinkResponseListener { deeplink ->
-        logger.debug("Adjust: Deferred deep link callback called!")
-        logger.debug("Adjust: Deep link URL: $deeplink")
+        logger.verbose("AdjustIntegration: Deferred deep link received: $deeplink")
         true
     }
 }

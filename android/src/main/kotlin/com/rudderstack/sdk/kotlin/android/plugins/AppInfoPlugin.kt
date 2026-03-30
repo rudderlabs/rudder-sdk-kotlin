@@ -42,7 +42,7 @@ internal class AppInfoPlugin : Plugin {
                 val packageInfo = packageManager.getPackageInfo(config.application.packageName, 0)
                 constructAppContext(packageInfo, packageManager)
             } catch (e: PackageManager.NameNotFoundException) {
-                analytics.logger.error("Failed to get package info", e)
+                analytics.logger.error("AppInfoPlugin: Failed to get package info. App context info may be incomplete", e)
                 emptyJsonObject
             }
         }
@@ -74,7 +74,7 @@ internal class AppInfoPlugin : Plugin {
     override suspend fun intercept(event: Event): Event = attachAppInfo(event)
 
     private fun attachAppInfo(event: Event): Event {
-        analytics.logger.debug("Attaching app info to the event payload")
+        analytics.logger.verbose("AppInfoPlugin: Attaching app info to the event payload (messageId=${event.messageId})")
 
         event.context = event.context mergeWithHigherPriorityTo appContext
 

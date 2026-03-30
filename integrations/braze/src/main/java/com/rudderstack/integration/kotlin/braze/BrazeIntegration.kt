@@ -157,11 +157,13 @@ class BrazeIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
     private fun handleCustomEvent(payload: TrackEvent) {
         payload.properties.takeIf { it.isNotEmpty() }?.let { properties ->
             this.braze?.logCustomEvent(payload.event, initBrazeProperties(properties))
-            analytics.logger.verbose("BrazeIntegration: Custom event ${payload.event} and properties $properties sent.")
         } ?: run {
             this.braze?.logCustomEvent(payload.event)
-            analytics.logger.verbose("BrazeIntegration: Custom event ${payload.event} sent.")
         }
+        analytics.logger.debug(
+            "BrazeIntegration: Custom event '${payload.event}' " +
+                "sent with properties: ${payload.properties}"
+        )
     }
 
     override fun identify(payload: IdentifyEvent) {

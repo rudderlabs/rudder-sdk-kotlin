@@ -36,7 +36,9 @@ internal class LocaleInfoPlugin : Plugin {
     override suspend fun intercept(event: Event): Event = attachLocaleInfo(event)
 
     private fun attachLocaleInfo(event: Event): Event {
-        analytics.logger.debug("Attaching locale info to the event payload")
+        analytics.logger.verbose(
+            "LocaleInfoPlugin: Attaching locale info to the event payload (messageId=${event.messageId})"
+        )
 
         event.context = event.context mergeWithHigherPriorityTo localeContext
 

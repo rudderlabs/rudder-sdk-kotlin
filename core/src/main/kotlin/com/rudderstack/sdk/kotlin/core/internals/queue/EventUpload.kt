@@ -79,13 +79,14 @@ internal class EventUpload(
     @Suppress("TooGenericExceptionCaught")
     private fun upload() = analytics.analyticsScope.launch(analytics.networkDispatcher) {
         uploadChannel.consumeEach {
-            analytics.logger.debug("performing flush")
+            analytics.logger.debug("EventUpload: Performing flush")
             prepareForUpload()
             processAndUploadEvent()
         }
     }
 
     private suspend fun prepareForUpload() {
+        analytics.logger.verbose("EventUpload: Preparing for upload — rolling over current batch file")
         withContext(analytics.fileStorageDispatcher) {
             storage.rollover()
         }
@@ -94,6 +95,7 @@ internal class EventUpload(
     @Suppress("TooGenericExceptionCaught")
     private suspend fun processAndUploadEvent() {
         val fileUrlList = storage.readString(StorageKeys.EVENT, String.empty()).parseFilePaths()
+        analytics.logger.debug("EventUpload: Processing ${fileUrlList.size} batch file(s) for upload")
         for (filePath in fileUrlList) {
             // ensureActive will help in cancelling the coroutine
             coroutineContext.ensureActive()
@@ -102,12 +104,12 @@ internal class EventUpload(
                 storage.readBatchContent(filePath)?.let { batch ->
                     updateAnonymousIdHeaderIfChanged(batch)
                     uploadEvents(batch, filePath)
-                }
+                } ?: analytics.logger.warn("EventUpload: Batch file returned null content, skipping")
             } catch (e: CancellationException) {
-                analytics.logger.error("Job was cancelled. Stopping the upload process.", e)
+                analytics.logger.error("EventUpload: Job was cancelled. Stopping the upload process.", e)
                 throw e
             } catch (e: Exception) {
-                analytics.logger.error("Error when processing batch payload. Deleting the file.", e)
+                analytics.logger.error("EventUpload: Error when processing batch payload. Deleting the file.", e)
                 cleanup(filePath)
             }
         }
@@ -124,7 +126,7 @@ internal class EventUpload(
     @VisibleForTesting
     internal fun getAnonymousIdFromBatch(batchPayload: String): String {
         return ANONYMOUS_ID_REGEX.find(batchPayload)?.groupValues?.get(1) ?: run {
-            analytics.logger.error("Fetched empty anonymousId from batch payload, falling back to random UUID.")
+            analytics.logger.warn("EventUpload: Fetched empty anonymousId from batch payload, falling back to random UUID")
             generateUUID()
         }
     }
@@ -134,14 +136,14 @@ internal class EventUpload(
         var result: EventUploadResult
         do {
             val updatedPayload = JsonSentAtUpdater.updateSentAt(batchPayload, analytics.logger)
-            analytics.logger.verbose("Batch Payload: $updatedPayload")
+            analytics.logger.verbose("EventUpload: Uploading batch payload of size: ${updatedPayload.length} bytes")
             val currentTimestampInMillis = DateTimeUtils.getSystemCurrentTime()
             val retryHeaders = retryHeadersProvider.getHeaders(batchId, currentTimestampInMillis)
             result = httpClientFactory.sendData(updatedPayload, retryHeaders).toEventUploadResult()
 
             when (result) {
                 is Success -> {
-                    analytics.logger.debug("Event uploaded successfully. Server response: ${result.response}")
+                    analytics.logger.debug("EventUpload: Event uploaded successfully. Server response: ${result.response}")
                     resetRetryState()
                     cleanup(filePath)
                 }
@@ -149,6 +151,7 @@ internal class EventUpload(
                 is RetryAbleEventUploadError -> {
                     analytics.logger.debug("EventUpload: ${result.formatStatusCodeMessage()}. Retry able error occurred.")
                     retryHeadersProvider.recordFailure(batchId, currentTimestampInMillis, result)
+                    analytics.logger.debug("EventUpload: Retry attempt recorded. Backing off before next attempt")
                     maxAttemptsWithBackoff.delayWithBackoff()
                 }
 
@@ -208,7 +211,8 @@ internal class EventUpload(
         filePath
             .takeIf { it.isNotEmpty() }
             ?.let { storage.remove(it) }
-            ?.let { analytics.logger.debug("Removed file: $filePath") }
+            ?.let { analytics.logger.debug("EventUpload: Removed file: $filePath") }
+            ?: analytics.logger.warn("EventUpload: cleanup() called with empty filePath")
     }
 
     internal fun cancel() {

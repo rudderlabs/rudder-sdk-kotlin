@@ -81,5 +81,5 @@ inline fun <T> safelyExecute(logger: Logger, block: () -> T?): T? {
  */
 @InternalRudderApi
 fun defaultExceptionHandler(errorMsg: String, exception: Exception, logger: Logger) {
-    logger.error("$errorMsg ${exception.stackTraceToString()}")
+    logger.error(errorMsg, exception)
 }

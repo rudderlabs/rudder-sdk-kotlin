@@ -56,7 +56,7 @@ internal class SharedPrefsStore(
         } else {
             File(context.getSharedPreferencesFilePath(prefsName)).takeIf { file -> file.exists() }?.delete() ?: false
         }
-        logger.debug("Attempt to delete shared preferences successful: $isDeleted")
+        logger.debug("SharedPrefsStore: Attempt to delete shared preferences successful: $isDeleted")
     }
 
     override fun clear(key: String) {
@@ -79,7 +79,10 @@ internal class SharedPrefsStore(
                 is String -> putString(key, value)
 
                 else -> {
-                    logger.error("SharedPrefsStore: ($key and $value) type is not supported.")
+                    logger.warn(
+                        "SharedPrefsStore: Unsupported type " +
+                            "${(value as? Any)?.javaClass?.simpleName} for key '$key'"
+                    )
                 }
             }
         }

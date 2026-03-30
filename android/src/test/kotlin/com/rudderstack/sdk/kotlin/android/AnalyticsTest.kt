@@ -252,7 +252,7 @@ class AnalyticsTest {
         analytics.reset(coreResetOptions)
 
         verify(exactly = 1) {
-            mockLogger.debug("The options should be of type Android ResetOptions.")
+            mockLogger.debug("Analytics(android): The options should be of type Android ResetOptions")
         }
     }
 
@@ -270,7 +270,7 @@ class AnalyticsTest {
         analytics.reset(androidResetOptions)
 
         verify(exactly = 0) {
-            mockLogger.debug("The options should be of type Android ResetOptions.")
+            mockLogger.debug("Analytics(android): The options should be of type Android ResetOptions")
         }
     }
     
