@@ -18,17 +18,17 @@ internal class FlushPoliciesFacade(
 ) {
 
     internal fun shouldFlush(): Boolean {
-        val result = flushPolicies.any {
-            when (it) {
-                is CountFlushPolicy -> it.shouldFlush()
-                is StartupFlushPolicy -> it.shouldFlush()
+        return flushPolicies.any { policy ->
+            val shouldFlush = when (policy) {
+                is CountFlushPolicy -> policy.shouldFlush()
+                is StartupFlushPolicy -> policy.shouldFlush()
                 else -> false
             }
+            if (shouldFlush) {
+                logger.verbose("FlushPoliciesFacade: Flush triggered by ${policy::class.simpleName}")
+            }
+            shouldFlush
         }
-        if (result) {
-            logger.verbose("FlushPoliciesFacade: Flush condition met")
-        }
-        return result
     }
 
     internal fun updateState() {

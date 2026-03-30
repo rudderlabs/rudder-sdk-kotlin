@@ -27,7 +27,9 @@ class PluginChain(
      * Processes an event through the plugin chain.
      */
     suspend fun process(event: Event) {
-        analytics.logger.verbose("PluginChain: Processing ${event.type} event through plugin chain")
+        analytics.logger.verbose(
+            "PluginChain: Processing ${event.type} event through plugin chain (messageId=${event.messageId})"
+        )
         val preProcessResult = applyPlugins(Plugin.PluginType.PreProcess, event)
         val onProcessResult = applyPlugins(Plugin.PluginType.OnProcess, preProcessResult)
         applyPlugins(Plugin.PluginType.Terminal, onProcessResult)
@@ -95,7 +97,9 @@ class PluginChain(
         val mediator = pluginList[pluginType]
         result = applyPlugins(mediator, result)
         if (event != null && result == null) {
-            analytics.logger.debug("PluginChain: Event dropped by plugin at $pluginType stage")
+            analytics.logger.debug(
+                "PluginChain: Event dropped by plugin at $pluginType stage (messageId=${event.messageId})"
+            )
         }
         return result
     }

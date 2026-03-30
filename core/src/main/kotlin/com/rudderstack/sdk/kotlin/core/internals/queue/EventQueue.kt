@@ -44,7 +44,7 @@ internal class EventQueue(
     }
 
     internal fun put(event: Event) {
-        analytics.logger.verbose("EventQueue: Event queued for writing")
+        analytics.logger.verbose("EventQueue: Event queued for writing (messageId=${event.messageId})")
         writeChannel.trySend(QueueMessage(QueueMessage.QueueMessageType.MESSAGE, event))
     }
 
@@ -108,13 +108,16 @@ internal class EventQueue(
                 try {
                     queueMessage.event?.let {
                         stringifyBaseEvent(it).also { stringValue ->
-                            analytics.logger.verbose("EventQueue: Storing event: $stringValue")
+                            analytics.logger.verbose("EventQueue: Storing event (messageId=${it.messageId}): $stringValue")
                             storage.write(StorageKeys.EVENT, stringValue)
                         }
                         flushPoliciesFacade.updateState()
                     }
                 } catch (e: Exception) {
-                    analytics.logger.error("EventQueue: Error adding payload: $queueMessage", e)
+                    analytics.logger.error(
+                        "EventQueue: Error adding payload (messageId=${queueMessage.event?.messageId}): $queueMessage",
+                        e
+                    )
                 }
             }
 
