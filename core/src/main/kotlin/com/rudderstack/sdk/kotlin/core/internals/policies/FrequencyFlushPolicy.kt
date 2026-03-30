@@ -41,6 +41,7 @@ class FrequencyFlushPolicy(private var flushIntervalInMillis: Long = DEFAULT_FLU
                 if (flushIntervalInMillis > 0) {
                     do {
                         delay(flushIntervalInMillis)
+                        analytics.logger.verbose("FrequencyFlushPolicy: Flush triggered after ${flushIntervalInMillis}ms")
                         analytics.flush()
                     } while (isActive)
                 }
