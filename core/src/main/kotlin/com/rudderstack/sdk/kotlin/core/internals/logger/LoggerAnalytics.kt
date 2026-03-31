@@ -4,42 +4,37 @@ import com.rudderstack.sdk.kotlin.core.internals.logger.Logger.Companion.DEFAULT
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 
 /**
- * `LoggerAnalytics` is a singleton class that manages the logging instance for the SDK, supporting configurable
- * logger types and log levels. It allows setting up either an Android or Kotlin logger, providing consistent
- * logging across different environments.
+ * `LoggerAnalytics` is a singleton class that was previously used to manage the logging instance for the SDK.
  *
- * ### Setup
- * Use the `setLogger` method to configure the logger instance:
+ * **DEPRECATED**: This class is deprecated in favor of instance-based logging. Migrate as follows:
  *
- * ```kotlin
- * LoggerAnalytics.setLogger(logger = AndroidLogger())
- * // Or for Kotlin environments
- * LoggerAnalytics.setLogger(logger = KotlinLogger())
- * ```
- * Use `logLevel` to set the desired log level:
+ * ### Configuring logger and log level
+ * Pass `logger` and `logLevel` via `Configuration` when initializing the SDK:
  *
  * ```kotlin
- * LoggerAnalytics.logLevel = Logger.LogLevel.VERBOSE
+ * Analytics(
+ *     configuration = Configuration(
+ *         writeKey = "YOUR_WRITE_KEY",
+ *         dataPlaneUrl = "YOUR_DATA_PLANE_URL",
+ *         logger = AndroidLogger(),
+ *         logLevel = Logger.LogLevel.VERBOSE
+ *     )
+ * )
  * ```
  *
- * ### Usage
- * Once configured, log messages at various levels as shown below:
+ * ### Logging inside a custom plugin
+ * Use the `logger` extension property on the `Plugin` interface:
  *
  * ```kotlin
- * LoggerAnalytics.verbose("This is a verbose message")
- * LoggerAnalytics.debug("This is a debug message")
- * LoggerAnalytics.info("This is an info message")
- * LoggerAnalytics.warn("This is a warning message")
- * LoggerAnalytics.error("This is an error message", throwable)
+ * class MyPlugin : Plugin {
+ *     override fun intercept(event: Event): Event {
+ *         logger.verbose("Processing event")
+ *         return event
+ *     }
+ * }
  * ```
  *
- * These methods ensure that messages are logged according to the configured log level, providing flexibility
- * and clarity for debugging and tracking events across SDK modules.
- *
- * **DEPRECATION NOTICE**: This class is deprecated in favor of instance-based logging.
- * - Pass `logger` and `logLevel` via `Configuration` when initializing the SDK.
- * - Inside a custom plugin, use the `logger` extension property on the `Plugin` interface to access the per-instance logger.
- * - This class remains available for backward compatibility but should not be used in new code.
+ * This class remains available for backward compatibility but should not be used in new code.
  */
 @Deprecated(
     message = "LoggerAnalytics is deprecated. Pass logger and logLevel via Configuration instead. " +
@@ -101,7 +96,7 @@ object LoggerAnalytics {
      * @param log The message to log.
      */
     @Deprecated(
-        message = "Use the Plugin.logger extension property instead for instance-based logging inside a custom plugin",
+        message = "Use instance-based logging instead. Inside a custom plugin, call Plugin.logger.verbose(log).",
         level = DeprecationLevel.WARNING
     )
     fun verbose(log: String) {
@@ -116,7 +111,7 @@ object LoggerAnalytics {
      * @param log The message to log.
      */
     @Deprecated(
-        message = "Use the Plugin.logger extension property instead for instance-based logging inside a custom plugin",
+        message = "Use instance-based logging instead. Inside a custom plugin, call Plugin.logger.debug(log).",
         level = DeprecationLevel.WARNING
     )
     fun debug(log: String) {
@@ -131,7 +126,7 @@ object LoggerAnalytics {
      * @param log The message to log.
      */
     @Deprecated(
-        message = "Use the Plugin.logger extension property instead for instance-based logging inside a custom plugin",
+        message = "Use instance-based logging instead. Inside a custom plugin, call Plugin.logger.info(log).",
         level = DeprecationLevel.WARNING
     )
     fun info(log: String) {
@@ -146,7 +141,7 @@ object LoggerAnalytics {
      * @param log The message to log.
      */
     @Deprecated(
-        message = "Use the Plugin.logger extension property instead for instance-based logging inside a custom plugin",
+        message = "Use instance-based logging instead. Inside a custom plugin, call Plugin.logger.warn(log).",
         level = DeprecationLevel.WARNING
     )
     fun warn(log: String) {
@@ -162,7 +157,7 @@ object LoggerAnalytics {
      * @param throwable An optional exception to log alongside the error message.
      */
     @Deprecated(
-        message = "Use the Plugin.logger extension property instead for instance-based logging inside a custom plugin",
+        message = "Use instance-based logging instead. Inside a custom plugin, call Plugin.logger.error(log, throwable).",
         level = DeprecationLevel.WARNING
     )
     @JvmOverloads
