@@ -23,6 +23,7 @@ interface AnalyticsConfiguration {
     /**
      * The logger instance for this analytics configuration.
      */
+    @InternalRudderApi
     val logger: Logger
 
     /**
