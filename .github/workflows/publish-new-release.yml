@@ -276,10 +276,11 @@ jobs:
             module_line+="${module} ${new_ver}"
           done <<< "$AFFECTED"
 
-          msg=":rocket: New release: Kotlin SDK"
-          msg+=$'\n'"*Release: <https://github.com/${REPO}/compare/${prev_tag}...v${VERSION}|v${VERSION}>*"
+          msg=":rocket: *New release: Kotlin SDK*"
+          msg+=$'\n'"*Release:* <https://github.com/${REPO}/compare/${prev_tag}...v${VERSION}|v${VERSION}>"
           msg+=$'\n'"${module_line}"
-          msg+=$'\n'"CC: @mobile-sdk @sdk-on-call"
+          msg+=$'\n'
+          msg+=$'\n'"CC: <!subteam^S066Z6BUTAS> <!subteam^S03SW7DM8P3>"
 
           EOF_MARKER=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
           echo "text<<${EOF_MARKER}" >> "$GITHUB_OUTPUT"
@@ -312,12 +313,15 @@ jobs:
             module_line+="${module} ${new_ver}"
           done <<< "$AFFECTED"
 
-          msg=":rocket: New release: Kotlin SDK"
-          msg+=$'\n\n'"Published to Maven Central:"
+          msg=":rocket: *New release: Kotlin SDK*"
+          msg+=$'\n'
+          msg+=$'\n'"*Published to Maven Central:*"
           msg+=$'\n'"${module_line}"
-          msg+=$'\n'"Back-merge PR: ${BACKMERGE_PR}"
+          msg+=$'\n'
+          msg+=$'\n'"*Back-merge PR:* <${BACKMERGE_PR}>"
           msg+=$'\n'":point_right: Please review and merge the back-merge PR."
-          msg+=$'\n\n'"CC: @mobile-sdk @sdk-on-call"
+          msg+=$'\n'
+          msg+=$'\n'"CC: <!subteam^S066Z6BUTAS> <!subteam^S03SW7DM8P3>"
 
           EOF_MARKER=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
           echo "text<<${EOF_MARKER}" >> "$GITHUB_OUTPUT"
