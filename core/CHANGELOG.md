@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+# [1.6.0](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.sdk.kotlin.core@v1.5.0...com.rudderstack.sdk.kotlin.core@v1.6.0) (2026-04-02)
+
+## Features
+
+- Update and add logs ([#294](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/294)) ([2d86bb9](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/2d86bb978c5500940d602f08f37e663ad174ee0a))
+
+## Refactors
+
+- Update deprecation messages in LoggerAnalytics ([#303](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/303)) ([ddc090e](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/ddc090ed3e1450c8a58b9a29e39f4b2300cded4a))
+
+
 # [1.5.0](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.sdk.kotlin.core@1.4.0...com.rudderstack.sdk.kotlin.core@1.5.0) (2026-03-17)
 
 ## Features
