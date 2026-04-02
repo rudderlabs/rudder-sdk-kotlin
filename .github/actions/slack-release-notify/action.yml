@@ -123,7 +123,6 @@ runs:
       env:
         CHANNEL_ID: ${{ inputs.channel_id }}
         THREAD_TS: ${{ inputs.thread_ts }}
-        MESSAGE: ${{ inputs.message }}
       with:
         method: chat.postMessage
         token: ${{ inputs.slack_bot_token }}
@@ -133,7 +132,7 @@ runs:
           {
             "channel": "${{ env.CHANNEL_ID }}",
             "thread_ts": "${{ env.THREAD_TS }}",
-            "text": "${{ env.MESSAGE }}"
+            "text": ${{ toJSON(inputs.message) }}
           }
 
     # ──────────────────────────────────────────────
@@ -144,7 +143,6 @@ runs:
       uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
       env:
         CHANNEL_ID: ${{ inputs.channel_id }}
-        MESSAGE: ${{ inputs.message }}
       with:
         method: chat.postMessage
         token: ${{ inputs.slack_bot_token }}
@@ -153,5 +151,5 @@ runs:
         payload: |
           {
             "channel": "${{ env.CHANNEL_ID }}",
-            "text": "${{ env.MESSAGE }}"
+            "text": ${{ toJSON(inputs.message) }}
           }

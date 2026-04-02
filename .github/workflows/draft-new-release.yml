@@ -223,15 +223,16 @@ jobs:
             modules_list+="  ${padded_module}${old_ver} -> ${new_ver} (${bump})"$'\n'
           done <<< "$AFFECTED"
 
-          msg=":rocket: Release PR Created: ${PR_URL}"
+          msg=":rocket: *Release PR Created*:"
+          msg+=$'\n'"${PR_URL}"
           msg+=$'\n'
-          msg+=$'\n'"SDK Version: v${VERSION}"
-          msg+=$'\n'"Release Branch: ${BRANCH}"
+          msg+=$'\n'"*SDK Monorepo Version:* v${VERSION}"
+          msg+=$'\n'"*Release Branch:* \`${BRANCH}\`"
           msg+=$'\n'
-          msg+=$'\n'"Affected Modules:"
+          msg+=$'\n'"*Affected Modules:*"
           msg+=$'\n'"${modules_list}"
           msg+=$'\n'":point_right: Review and merge when ready!"
-          msg+=$'\n'"CC: @mobile-sdk @sdk-on-call"
+          msg+=$'\n'"CC: <!subteam^S066Z6BUTAS> <!subteam^S03SW7DM8P3>"
 
           EOF_MARKER=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
           echo "text<<${EOF_MARKER}" >> "$GITHUB_OUTPUT"

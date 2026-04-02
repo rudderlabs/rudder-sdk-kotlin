@@ -175,20 +175,23 @@ jobs:
           AFFECTED: ${{ needs.detect-modules.outputs.affected }}
         run: |
           if [[ "$IS_FIRST" == "true" ]]; then
-            msg=":package: Snapshot versions published to Maven Central"
-            msg+=$'\n\n'"Modules:"
+            msg=":package: *Snapshot versions published to Maven Central*"
+            msg+=$'\n'
+            msg+=$'\n'"*Modules:*"
             while IFS='|' read -r module bump old_ver new_ver; do
               [[ -z "$module" ]] && continue
               case "$module" in
                 core|android) group="com.rudderstack.sdk.kotlin" ;;
                 *) group="com.rudderstack.integration.kotlin" ;;
               esac
-              msg+=$'\n'"  ${group}:${module}:${new_ver}-SNAPSHOT"
+              msg+=$'\n'"  \`${group}:${module}:${new_ver}-SNAPSHOT\`"
             done <<< "$AFFECTED"
-            msg+=$'\n\n'"CC: @mobile-sdk @sdk-on-call"
+            msg+=$'\n'
+            msg+=$'\n'"CC: <!subteam^S066Z6BUTAS> <!subteam^S03SW7DM8P3>"
           else
-            msg=":package: Snapshots republished"
-            msg+=$'\n\n'"CC: @mobile-sdk @sdk-on-call"
+            msg=":package: *Snapshots republished*"
+            msg+=$'\n'
+            msg+=$'\n'"CC: <!subteam^S066Z6BUTAS> <!subteam^S03SW7DM8P3>"
           fi
 
           EOF_MARKER=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
