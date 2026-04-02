@@ -32,6 +32,7 @@ tasks.withType<Test> {
     }
     dependsOn("generatePomFileForReleasePublication")
     val pomFile = layout.buildDirectory.file("publications/release/pom-default.xml")
+    inputs.file(pomFile)
     systemProperty("facebookPomFile", pomFile.get().asFile.absolutePath)
 }
 

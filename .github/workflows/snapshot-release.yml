@@ -1,0 +1,209 @@
+name: Snapshot Release
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize]
+
+concurrency:
+  group: snapshot-${{ github.head_ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  detect-modules:
+    runs-on: ubuntu-latest
+    if: >
+      startsWith(github.event.pull_request.head.ref, 'release/') ||
+      startsWith(github.event.pull_request.head.ref, 'hotfix-release/')
+    outputs:
+      matrix: ${{ steps.detect.outputs.matrix }}
+      snapshot_modules: ${{ steps.detect.outputs.snapshot_modules }}
+      has_modules: ${{ steps.detect.outputs.has_modules }}
+      affected: ${{ steps.detect.outputs.affected }}
+    steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@a90bcbc6539c36a85cdfeb73f7e2f433735f215b # v2.15.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Setup JDK
+        uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Read affected modules
+        id: detect
+        shell: bash
+        run: |
+          affected=$(./scripts/releases/read-affected-modules.sh)
+          if [ -z "$affected" ]; then
+            echo "No affected modules detected."
+            echo "has_modules=false" >> "$GITHUB_OUTPUT"
+            echo "matrix=[]" >> "$GITHUB_OUTPUT"
+            echo "snapshot_modules=" >> "$GITHUB_OUTPUT"
+          else
+            echo "Affected modules:"
+            echo "$affected"
+            echo ""
+            modules=$(echo "$affected" | cut -d'|' -f1)
+            matrix=$(echo "$modules" | jq -R -s -c 'split("\n") | map(select(length > 0))')
+            snapshot_csv=$(echo "$modules" | tr '\n' ',' | sed 's/,$//')
+            echo "Matrix: $matrix"
+            echo "Snapshot modules: $snapshot_csv"
+            echo "has_modules=true" >> "$GITHUB_OUTPUT"
+            echo "matrix=${matrix}" >> "$GITHUB_OUTPUT"
+            echo "snapshot_modules=${snapshot_csv}" >> "$GITHUB_OUTPUT"
+
+            # Store affected as multiline output using delimiter
+            EOF_MARKER=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+            echo "affected<<${EOF_MARKER}" >> "$GITHUB_OUTPUT"
+            echo "$affected" >> "$GITHUB_OUTPUT"
+            echo "${EOF_MARKER}" >> "$GITHUB_OUTPUT"
+          fi
+
+  publish-snapshot:
+    needs: detect-modules
+    if: needs.detect-modules.outputs.has_modules == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        module: ${{ fromJson(needs.detect-modules.outputs.matrix) }}
+      fail-fast: false
+    steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@a90bcbc6539c36a85cdfeb73f7e2f433735f215b # v2.15.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Setup JDK
+        uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Publish snapshot
+        shell: bash
+        env:
+          MODULE: ${{ matrix.module }}
+          SNAPSHOT_MODULES: ${{ needs.detect-modules.outputs.snapshot_modules }}
+          NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+          NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+          SIGNING_KEY_ID: ${{ secrets.SIGNING_KEY_ID }}
+          SIGNING_PRIVATE_KEY_BASE64: ${{ secrets.SIGNING_PRIVATE_KEY_BASE64 }}
+          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+        run: |
+          ./scripts/releases/publish-module.sh "$MODULE" snapshot "$SNAPSHOT_MODULES"
+
+  notify-slack:
+    needs: [detect-modules, publish-snapshot]
+    if: needs.detect-modules.outputs.has_modules == 'true'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@a90bcbc6539c36a85cdfeb73f7e2f433735f215b # v2.15.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - name: Extract release info from branch
+        id: release-info
+        shell: bash
+        env:
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: |
+          # Branch format: release/6.2.0-SDK-4567 or hotfix-release/6.2.0-SDK-4567
+          suffix="${BRANCH#*/}"
+          version=$(echo "$suffix" | grep -oE '^[0-9]+\.[0-9]+\.[0-9]+')
+          ticket_id="${suffix#${version}-}"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "ticket_id=${ticket_id}" >> "$GITHUB_OUTPUT"
+
+      - name: Download release thread info
+        id: artifact
+        uses: ./.github/actions/slack-release-notify
+        with:
+          mode: download-artifact
+          release_version: ${{ steps.release-info.outputs.version }}
+          release_ticket_id: ${{ steps.release-info.outputs.ticket_id }}
+
+      - name: Detect first vs subsequent run
+        id: run-check
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+          REPO: ${{ github.repository }}
+        run: |
+          # Check for previous successful runs of this workflow for the same branch
+          # Current run is still in_progress, so only prior runs appear
+          count=$(gh api "/repos/${REPO}/actions/workflows/snapshot-release.yml/runs?branch=${BRANCH}&status=success&per_page=1" \
+            --jq '.total_count')
+          if [[ "$count" -gt 0 ]]; then
+            echo "is_first=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_first=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build notification message
+        id: message
+        shell: bash
+        env:
+          IS_FIRST: ${{ steps.run-check.outputs.is_first }}
+          AFFECTED: ${{ needs.detect-modules.outputs.affected }}
+        run: |
+          if [[ "$IS_FIRST" == "true" ]]; then
+            msg=":package: *Snapshot versions published to Maven Central*"
+            msg+=$'\n'
+            msg+=$'\n'"*Modules:*"
+            while IFS='|' read -r module bump old_ver new_ver; do
+              [[ -z "$module" ]] && continue
+              case "$module" in
+                core|android) group="com.rudderstack.sdk.kotlin" ;;
+                *) group="com.rudderstack.integration.kotlin" ;;
+              esac
+              msg+=$'\n'"  \`${group}:${module}:${new_ver}-SNAPSHOT\`"
+            done <<< "$AFFECTED"
+            msg+=$'\n'
+            msg+=$'\n'"CC: <!subteam^S066Z6BUTAS> <!subteam^S03SW7DM8P3>"
+          else
+            msg=":package: *Snapshots republished*"
+            msg+=$'\n'
+            msg+=$'\n'"CC: <!subteam^S066Z6BUTAS> <!subteam^S03SW7DM8P3>"
+          fi
+
+          EOF_MARKER=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          echo "text<<${EOF_MARKER}" >> "$GITHUB_OUTPUT"
+          echo "$msg" >> "$GITHUB_OUTPUT"
+          echo "${EOF_MARKER}" >> "$GITHUB_OUTPUT"
+
+      - name: Post thread message
+        uses: ./.github/actions/slack-release-notify
+        with:
+          mode: post-thread
+          slack_bot_token: ${{ secrets.SLACK_BOT_TOKEN }}
+          channel_id: ${{ steps.artifact.outputs.channel_id }}
+          thread_ts: ${{ steps.artifact.outputs.thread_ts }}
+          message: ${{ steps.message.outputs.text }}

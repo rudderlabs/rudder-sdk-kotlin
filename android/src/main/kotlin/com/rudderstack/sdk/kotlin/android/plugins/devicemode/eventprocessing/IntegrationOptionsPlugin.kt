@@ -61,6 +61,8 @@ internal class IntegrationOptionsPlugin(
     }
 
     private fun logDroppedEvent(event: Event) {
-        analytics.logger.debug("IntegrationOptionsPlugin: Dropped event $event for destination: $key")
+        analytics.logger.debug(
+            "IntegrationOptionsPlugin: Dropped event (messageId=${event.messageId}) for destination: $key"
+        )
     }
 }

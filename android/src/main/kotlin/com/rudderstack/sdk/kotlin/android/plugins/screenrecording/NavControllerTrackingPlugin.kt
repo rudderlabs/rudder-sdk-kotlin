@@ -31,6 +31,9 @@ internal class NavControllerTrackingPlugin : Plugin, NavController.OnDestination
         when (destination.navigatorName) {
             FRAGMENT_NAVIGATOR_NAME -> trackFragmentScreen(destination)
             COMPOSE_NAVIGATOR_NAME -> trackComposeScreen(destination)
+            else -> analytics.logger.debug(
+                "NavControllerTrackingPlugin: Unknown navigator type '${destination.navigatorName}', skipping screen event"
+            )
         }
     }
 
@@ -74,6 +77,9 @@ internal class NavControllerTrackingPlugin : Plugin, NavController.OnDestination
     }
 
     private fun trackComposeScreen(destination: NavDestination) {
+        if (destination.route == null) {
+            analytics.logger.debug("NavControllerTrackingPlugin: Compose destination has null route")
+        }
         val argumentKeys = destination.arguments.keys
         val screenName = destination.route?.let {
             if (argumentKeys.isEmpty()) {

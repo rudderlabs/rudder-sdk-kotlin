@@ -18,7 +18,11 @@ import kotlinx.coroutines.withContext
 @OptIn(DelicateCoroutinesApi::class)
 internal class EventQueue(
     private val analytics: Analytics,
-    private var flushPoliciesFacade: FlushPoliciesFacade = FlushPoliciesFacade(analytics.configuration.flushPolicies),
+    private var flushPoliciesFacade: FlushPoliciesFacade =
+        FlushPoliciesFacade(
+            flushPolicies = analytics.configuration.flushPolicies,
+            logger = analytics.logger,
+        ),
     private val eventUpload: EventUpload = EventUpload(
         analytics = analytics,
     ),
@@ -40,6 +44,7 @@ internal class EventQueue(
     }
 
     internal fun put(event: Event) {
+        analytics.logger.verbose("EventQueue: Event queued for writing (messageId=${event.messageId})")
         writeChannel.trySend(QueueMessage(QueueMessage.QueueMessageType.MESSAGE, event))
     }
 
@@ -103,18 +108,22 @@ internal class EventQueue(
                 try {
                     queueMessage.event?.let {
                         stringifyBaseEvent(it).also { stringValue ->
-                            analytics.logger.debug("Storing event: $stringValue")
+                            analytics.logger.verbose("EventQueue: Storing event (messageId=${it.messageId}): $stringValue")
                             storage.write(StorageKeys.EVENT, stringValue)
                         }
                         flushPoliciesFacade.updateState()
                     }
                 } catch (e: Exception) {
-                    analytics.logger.error("Error adding payload: $queueMessage", e)
+                    analytics.logger.error(
+                        "EventQueue: Error adding payload (messageId=${queueMessage.event?.messageId}): $queueMessage",
+                        e
+                    )
                 }
             }
 
             if ((isFlushSignal || flushPoliciesFacade.shouldFlush()) && analytics.isSourceEnabled()) {
                 eventUpload.flush()
+                analytics.logger.debug("EventQueue: Flush signal sent to upload channel")
                 flushPoliciesFacade.reset()
             }
         }
@@ -123,6 +132,7 @@ internal class EventQueue(
     private suspend fun updateAnonymousIdAndRolloverIfNeeded(queueMessage: QueueMessage) {
         val currentEventAnonymousId = queueMessage.event?.anonymousId ?: String.empty()
         if (currentEventAnonymousId != lastEventAnonymousId) {
+            analytics.logger.debug("EventQueue: AnonymousId changed, triggering file rollover")
             withContext(analytics.keyValueStorageDispatcher) {
                 // rollover when last and current anonymousId are different
                 storage.rollover()

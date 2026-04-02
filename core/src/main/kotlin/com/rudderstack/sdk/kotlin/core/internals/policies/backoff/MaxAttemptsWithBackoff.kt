@@ -39,20 +39,22 @@ internal class MaxAttemptsWithBackoff(
     }
 
     private suspend fun applyCoolOffPeriod() {
-        logger.verbose("Max attempts reached. Entering cool-off period for upload queue")
+        logger.verbose("MaxAttemptsWithBackoff: Max attempts reached. Entering cool-off period for upload queue")
         reset()
-        logger.verbose("Next attempt will be after $coolOffPeriod")
+        logger.verbose("MaxAttemptsWithBackoff: Next attempt will be after $coolOffPeriod")
         delay(coolOffPeriod)
     }
 
     private suspend fun applyBackoff() {
         val delayInMillis = backOffPolicy.nextDelayInMillis()
-        logger.verbose("Sleeping for $delayInMillis milliseconds (attempt $currentAttempt of $maxAttempts)")
+        logger.verbose(
+            "MaxAttemptsWithBackoff: Sleeping for $delayInMillis milliseconds (attempt $currentAttempt of $maxAttempts)"
+        )
         delay(delayInMillis)
     }
 
     internal fun reset() {
-        logger.verbose("Resetting retry attempts and backoff policy")
+        logger.verbose("MaxAttemptsWithBackoff: Resetting retry attempts and backoff policy")
         currentAttempt = 0
         backOffPolicy.resetBackOff()
     }

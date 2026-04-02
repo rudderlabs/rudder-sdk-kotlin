@@ -1,5 +1,6 @@
 package com.rudderstack.sdk.kotlin.core.internals.storage
 
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.models.DEFAULT_SENT_AT_TIMESTAMP
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
@@ -34,6 +35,7 @@ class EventBatchFileManager(
     private val writeKey: String,
     private val keyValueStorage: KeyValueStorage,
     private val platformType: PlatformType,
+    private val logger: Logger,
 ) {
 
     /**
@@ -76,14 +78,17 @@ class EventBatchFileManager(
             file.createNewFile()
             start(file)
             newFile = true
+            logger.debug("EventBatchFileManager: Created new batch file: ${file.name}")
         }
 
         if (file.length() > MAX_BATCH_SIZE) {
+            logger.debug("EventBatchFileManager: Batch file size exceeded threshold, rolling over")
             finish()
             file = currentFile()
             file.createNewFile()
             start(file)
             newFile = true
+            logger.debug("EventBatchFileManager: Created new batch file: ${file.name}")
         }
 
         val contents = if (newFile) eventPayload else ",$eventPayload"
@@ -170,7 +175,12 @@ class EventBatchFileManager(
         if (!file.exists()) return
         val contents = "$BATCH_SENT_AT_SUFFIX$DEFAULT_SENT_AT_TIMESTAMP\"}"
         writeToFile(contents.toByteArray(), file)
-        file.renameTo(File(directory, file.nameWithoutExtension))
+        val renamed = file.renameTo(File(directory, file.nameWithoutExtension))
+        if (renamed) {
+            logger.debug("EventBatchFileManager: Batch file finalized: ${file.name}")
+        } else {
+            logger.warn("EventBatchFileManager: Failed to rename batch file: ${file.name}")
+        }
         os?.close()
         incrementFileIndex()
         reset()
@@ -195,13 +205,18 @@ class EventBatchFileManager(
      * @param content The content to write.
      * @param file The file to write to.
      */
+    @Suppress("TooGenericExceptionCaught")
     private fun writeToFile(content: ByteArray, file: File) {
-        if (os == null) {
-            os = FileOutputStream(file, true)
-        }
-        os?.apply {
-            write(content)
-            flush()
+        try {
+            if (os == null) {
+                os = FileOutputStream(file, true)
+            }
+            os?.apply {
+                write(content)
+                flush()
+            }
+        } catch (e: Exception) {
+            logger.error("EventBatchFileManager: Failed to write to batch file: ${file.name}: ${e.message}", e)
         }
     }
 
@@ -241,8 +256,8 @@ class EventBatchFileManager(
      * @param directory The directory to create.
      */
     private fun createDirectory(directory: File) {
-        if (!directory.exists()) {
-            directory.mkdirs()
+        if (!directory.exists() && !directory.mkdirs()) {
+            logger.warn("EventBatchFileManager: Failed to create directory: ${directory.absolutePath}")
         }
     }
 }

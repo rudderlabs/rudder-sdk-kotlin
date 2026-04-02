@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+# [1.2.1](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.integration.kotlin.facebook@v1.2.0...com.rudderstack.integration.kotlin.facebook@v1.2.1) (2026-04-02)
+
+## Dependency Updates
+
+- The following workspace dependencies were updated
+  - dependencies
+    - @rudderstack/android bumped from 1.5.0 to 1.6.0
+
+
 # [1.2.0](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.integration.kotlin.facebook@1.1.0...com.rudderstack.integration.kotlin.facebook@1.2.0) (2026-03-17)
 
 ## Features

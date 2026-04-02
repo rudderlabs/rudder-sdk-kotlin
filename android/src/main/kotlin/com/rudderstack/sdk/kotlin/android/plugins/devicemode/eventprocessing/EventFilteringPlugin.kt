@@ -50,7 +50,9 @@ internal class EventFilteringPlugin(private val key: String) : Plugin {
         val eventName = event.event.trim()
         return when {
             shouldDropEvent(eventName) -> {
-                analytics.logger.debug("EventFilteringPlugin: Dropped event '$eventName' for destination: $key")
+                analytics.logger.debug(
+                    "EventFilteringPlugin: Dropped event '$eventName' for destination: $key (messageId=${event.messageId})"
+                )
                 null
             }
             else -> event

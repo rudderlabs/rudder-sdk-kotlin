@@ -23,6 +23,7 @@ interface AnalyticsConfiguration {
     /**
      * The logger instance for this analytics configuration.
      */
+    @InternalRudderApi
     val logger: Logger
 
     /**
@@ -92,7 +93,7 @@ private class AnalyticsConfigurationImpl(
 ) : AnalyticsConfiguration {
 
     private val handler = CoroutineExceptionHandler { _, exception ->
-        logger.error(exception.stackTraceToString())
+        logger.error("AnalyticsConfiguration: Unhandled exception in analytics coroutine scope", exception)
     }
     override val analyticsJob: Job = SupervisorJob()
     override val analyticsScope: CoroutineScope = run {

@@ -35,6 +35,7 @@ class EventBatchFileManagerTest {
             writeKey = writeKey,
             keyValueStorage = keyValueStorage,
             platformType = PlatformType.Server,
+            logger = mockLogger,
         )
     }
 
@@ -182,6 +183,7 @@ class EventBatchFileManagerTest {
             writeKey = writeKey,
             keyValueStorage = keyValueStorage,
             platformType = PlatformType.Server,
+            logger = mockLogger,
         )
         assertTrue(file.read().isEmpty())
     }
@@ -217,12 +219,14 @@ class EventBatchFileManagerTest {
             writeKey = writeKey1,
             keyValueStorage = keyValueStorage,
             platformType = PlatformType.Server,
+            logger = mockLogger,
         )
         val file2 = EventBatchFileManager(
             directory = directory,
             writeKey = writeKey2,
             keyValueStorage = keyValueStorage,
             platformType = PlatformType.Server,
+            logger = mockLogger,
         )
 
         file1.storeEvent(provideMessagePayload())
@@ -262,6 +266,7 @@ class EventBatchFileManagerTest {
             writeKey = writeKey,
             keyValueStorage = keyValueStorage,
             platformType = PlatformType.Server,
+            logger = mockLogger,
         )
 
         val files = sortingFileManager.read()
@@ -289,6 +294,7 @@ class EventBatchFileManagerTest {
             writeKey = writeKey,
             keyValueStorage = keyValueStorage,
             platformType = PlatformType.Mobile,
+            logger = mockLogger,
         )
 
         val files = nonSortingFileManager.read()

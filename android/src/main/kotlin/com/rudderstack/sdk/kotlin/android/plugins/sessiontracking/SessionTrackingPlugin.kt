@@ -34,6 +34,10 @@ internal class SessionTrackingPlugin : Plugin {
 
     override suspend fun intercept(event: Event): Event {
         if (sessionManager.sessionId != DEFAULT_SESSION_ID) {
+            analytics.logger.verbose(
+                "SessionTrackingPlugin: Attaching sessionId=${sessionManager.sessionId} to the event payload " +
+                    "(messageId=${event.messageId})"
+            )
             addSessionIdToEvent(event)
             if (!sessionManager.isSessionManual) {
                 sessionManager.updateLastActivityTime()

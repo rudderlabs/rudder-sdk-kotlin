@@ -91,10 +91,11 @@ class Analytics(
      */
     @JvmOverloads
     fun startSession(sessionId: Long? = null) {
+        logger.debug("Analytics(android): startSession() called with sessionId=${sessionId ?: "auto"}")
         if (!isAnalyticsActive()) return
 
         if (sessionId != null && sessionId.toString().length < MIN_SESSION_ID_LENGTH) {
-            logger.error("Session Id should be at least $MIN_SESSION_ID_LENGTH digits.")
+            logger.error("Analytics(android): Session Id should be at least $MIN_SESSION_ID_LENGTH digits")
             return
         }
         val newSessionId = sessionId ?: sessionTrackingPlugin.sessionManager.generateSessionId()
@@ -105,6 +106,7 @@ class Analytics(
      * Ends the current session.
      */
     fun endSession() {
+        logger.debug("Analytics(android): endSession() called")
         if (!isAnalyticsActive()) return
 
         sessionTrackingPlugin.sessionManager.endSession()
@@ -129,10 +131,11 @@ class Analytics(
      *                These options override the default behavior of resetting all user data.
      */
     override fun reset(options: ResetOptions) {
+        logger.debug("Analytics(android): reset() called")
         if (!isAnalyticsActive()) return
 
         if (options !is AndroidResetOption) {
-            logger.debug("The options should be of type Android ResetOptions.")
+            logger.debug("Analytics(android): The options should be of type Android ResetOptions")
         }
 
         super.reset(options)
@@ -141,7 +144,10 @@ class Analytics(
             sessionTrackingPlugin.sessionManager.refreshSession()
         }
 
-        if (!isSourceEnabled()) return
+        if (!isSourceEnabled()) {
+            logger.debug("Analytics(android): Skipping integrations reset — source is disabled")
+            return
+        }
 
         integrationsManagementPlugin.reset()
     }
@@ -151,6 +157,7 @@ class Analytics(
      * This method specifically targets the `RudderStackDataPlanePlugin` to initiate the flush operation.
      */
     override fun flush() {
+        logger.debug("Analytics(android): flush() called")
         if (!isAnalyticsActive()) return
 
         super.flush()
@@ -210,6 +217,7 @@ class Analytics(
      */
     @Synchronized
     fun setNavigationDestinationsTracking(navController: NavController, activity: Activity) {
+        logger.debug("Analytics(android): setNavigationDestinationsTracking() called")
         if (!isAnalyticsActive()) return
 
         if (navControllerTrackingPlugin == null) {
@@ -234,6 +242,7 @@ class Analytics(
      * @param plugin The plugin to be added to the plugin chain.
      */
     override fun add(plugin: Plugin) {
+        logger.debug("Analytics(android): add() called with plugin=${plugin::class.simpleName}")
         if (!isAnalyticsActive()) return
 
         if (plugin is IntegrationPlugin) {
@@ -251,6 +260,7 @@ class Analytics(
      * @param plugin The plugin to be removed from the plugin chain.
      */
     override fun remove(plugin: Plugin) {
+        logger.debug("Analytics(android): remove() called with plugin=${plugin::class.simpleName}")
         if (!isAnalyticsActive()) return
 
         if (plugin is IntegrationPlugin) {

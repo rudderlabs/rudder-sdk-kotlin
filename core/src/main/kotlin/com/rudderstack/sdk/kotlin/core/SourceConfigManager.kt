@@ -58,11 +58,11 @@ class SourceConfigManager(
 
         return if (cachedSourceConfig.isNotEmpty()) {
             LenientJson.decodeFromString<SourceConfig>(cachedSourceConfig).let { sourceConfig ->
-                analytics.logger.info("SourceConfig fetched from storage: $sourceConfig")
+                analytics.logger.debug("SourceConfigManager: SourceConfig fetched from storage: $sourceConfig")
                 sourceConfig
             }
         } else {
-            analytics.logger.info("SourceConfig not found in storage")
+            analytics.logger.debug("SourceConfigManager: SourceConfig not found in storage")
             null
         }
     }
@@ -116,11 +116,14 @@ class SourceConfigManager(
         val backOffPolicy = provideBackoffPolicy()
         repeat(SOURCE_CONFIG_RETRY_ATTEMPT) { attempt ->
             delay(backOffPolicy.nextDelayInMillis())
-            analytics.logger.verbose("Retrying fetching of SourceConfig, attempt: ${attempt + 1}")
+            analytics.logger.verbose("SourceConfigManager: Retrying fetching of SourceConfig, attempt: ${attempt + 1}")
 
             fetchSourceConfigWithFallback { null }?.let { return it }
         }
-        analytics.logger.info("All retry attempts for fetching SourceConfig have been exhausted. Returning null.")
+        analytics.logger.warn(
+            "SourceConfigManager: All retry attempts for fetching SourceConfig " +
+                "have been exhausted. Returning null"
+        )
         return null
     }
 
@@ -135,13 +138,13 @@ class SourceConfigManager(
 
     private suspend fun storeSourceConfig(sourceConfig: SourceConfig) {
         withContext(analytics.keyValueStorageDispatcher) {
-            analytics.logger.verbose("Storing sourceConfig in storage.")
+            analytics.logger.verbose("SourceConfigManager: Storing sourceConfig in storage")
             sourceConfig.storeSourceConfig(analytics.storage)
         }
     }
 
     private fun notifyObservers(sourceConfig: SourceConfig) {
-        analytics.logger.verbose("Notifying observers with sourceConfig.")
+        analytics.logger.verbose("SourceConfigManager: Notifying observers with sourceConfig")
         sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfig))
     }
 }
@@ -181,7 +184,7 @@ internal fun Analytics.getQuery() = when (getPlatformType()) {
 
 private fun Result.Success<String>.toSourceConfig(logger: Logger): SourceConfig {
     val config = LenientJson.decodeFromString<SourceConfig>(response)
-    logger.info("SourceConfig is fetched successfully: $config")
+    logger.debug("SourceConfigManager: SourceConfig fetched successfully: $config")
     return config
 }
 
