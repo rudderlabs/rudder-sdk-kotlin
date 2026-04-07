@@ -167,6 +167,7 @@ internal class HttpClientImpl private constructor(
      * @return `Result<String>` containing the response data or an error.
      */
     override fun sendData(body: String, additionalHeaders: Map<String, String>): NetworkResult {
+        logger.debug("HttpClient: Sending POST to $baseUrl$endPoint")
         val url = createURL(baseUrl, endPoint)
         return connectionFactory.createConnection(url, headers)
             .useConnection {
@@ -196,7 +197,7 @@ internal class HttpClientImpl private constructor(
             connect()
             constructResponse()
         } catch (e: Exception) {
-            logger.error("Network error: ${e.message}", e)
+            logger.error("HttpClient: Network error while calling $baseUrl$endPoint: ${e.message}", e)
             when (e) {
                 is SocketTimeoutException -> {
                     Result.Failure(error = NetworkErrorStatus.ErrorTimeout)
@@ -239,14 +240,17 @@ internal class HttpClientImpl private constructor(
             }
         }
 
-    private fun HttpURLConnection.constructResponse(): NetworkResult = when (responseCode) {
-        in OK_RESPONSE_CODE..SUCCESSFUL_TRANSACTION_CODE -> Result.Success(
-            response = getSuccessResponse()
-        )
+    private fun HttpURLConnection.constructResponse(): NetworkResult {
+        logger.debug("HttpClient: Response received — status=$responseCode")
+        return when (responseCode) {
+            in OK_RESPONSE_CODE..SUCCESSFUL_TRANSACTION_CODE -> Result.Success(
+                response = getSuccessResponse()
+            )
 
-        else -> Result.Failure(
-            error = toErrorStatus(responseCode),
-        )
+            else -> Result.Failure(
+                error = toErrorStatus(responseCode),
+            )
+        }
     }
 }
 

@@ -38,6 +38,18 @@ open class Configuration @JvmOverloads constructor(
     open val logLevel: Logger.LogLevel = DEFAULT_LOG_LEVEL
 ) {
 
+    override fun toString(): String {
+        return "Configuration(" +
+            "writeKey='$writeKey', " +
+            "dataPlaneUrl='$dataPlaneUrl', " +
+            "controlPlaneUrl='$controlPlaneUrl', " +
+            "gzipEnabled=$gzipEnabled, " +
+            "flushPolicies=$flushPolicies, " +
+            "storageType=$storageType, " +
+            "logLevel=$logLevel" +
+            ")"
+    }
+
     companion object {
 
         /**

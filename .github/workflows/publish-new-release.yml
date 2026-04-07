@@ -1,0 +1,338 @@
+name: Publish New Release
+
+on:
+  pull_request:
+    branches: [main]
+    types: [closed]
+
+concurrency:
+  group: publish-release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  detect-modules:
+    runs-on: ubuntu-latest
+    if: >
+      github.event.pull_request.merged == true &&
+      (startsWith(github.event.pull_request.head.ref, 'release/') ||
+       startsWith(github.event.pull_request.head.ref, 'hotfix-release/'))
+    outputs:
+      matrix: ${{ steps.detect.outputs.matrix }}
+      has_modules: ${{ steps.detect.outputs.has_modules }}
+      affected: ${{ steps.detect.outputs.affected }}
+      version: ${{ steps.detect.outputs.version }}
+    steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@a90bcbc6539c36a85cdfeb73f7e2f433735f215b # v2.15.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Setup JDK
+        uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Read affected modules
+        id: detect
+        shell: bash
+        run: |
+          affected=$(./scripts/releases/read-affected-modules.sh)
+          if [ -z "$affected" ]; then
+            echo "No affected modules detected."
+            echo "has_modules=false" >> "$GITHUB_OUTPUT"
+            echo "matrix=[]" >> "$GITHUB_OUTPUT"
+          else
+            echo "Affected modules:"
+            echo "$affected"
+            echo ""
+            modules=$(echo "$affected" | cut -d'|' -f1)
+            matrix=$(echo "$modules" | jq -R -s -c 'split("\n") | map(select(length > 0))')
+            echo "Matrix: $matrix"
+            echo "has_modules=true" >> "$GITHUB_OUTPUT"
+            echo "matrix=${matrix}" >> "$GITHUB_OUTPUT"
+          fi
+          # Store affected as multiline output using delimiter
+          EOF_MARKER=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          echo "affected<<${EOF_MARKER}" >> "$GITHUB_OUTPUT"
+          echo "$affected" >> "$GITHUB_OUTPUT"
+          echo "${EOF_MARKER}" >> "$GITHUB_OUTPUT"
+          # Store version
+          version=$(grep '^SDK_VERSION=' gradle.properties | cut -d'=' -f2)
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+
+  create-tags:
+    needs: detect-modules
+    if: needs.detect-modules.outputs.has_modules == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@a90bcbc6539c36a85cdfeb73f7e2f433735f215b # v2.15.0
+        with:
+          egress-policy: audit
+
+      - name: Generate token
+        id: app-token
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
+        with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Create tags
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          AFFECTED: ${{ needs.detect-modules.outputs.affected }}
+        run: |
+          echo "$AFFECTED" | ./scripts/releases/create-tags.sh -
+
+  create-github-releases:
+    needs: [detect-modules, create-tags]
+    if: needs.detect-modules.outputs.has_modules == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@a90bcbc6539c36a85cdfeb73f7e2f433735f215b # v2.15.0
+        with:
+          egress-policy: audit
+
+      - name: Generate token
+        id: app-token
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
+        with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Create releases
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          AFFECTED: ${{ needs.detect-modules.outputs.affected }}
+        run: |
+          echo "$AFFECTED" | ./scripts/releases/create-github-releases.sh -
+
+  publish-release:
+    needs: detect-modules
+    if: needs.detect-modules.outputs.has_modules == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@a90bcbc6539c36a85cdfeb73f7e2f433735f215b # v2.15.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - name: Setup JDK
+        uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Publish all affected modules
+        shell: bash
+        env:
+          MODULES: ${{ needs.detect-modules.outputs.matrix }}
+          NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+          NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+          SIGNING_KEY_ID: ${{ secrets.SIGNING_KEY_ID }}
+          SIGNING_PRIVATE_KEY_BASE64: ${{ secrets.SIGNING_PRIVATE_KEY_BASE64 }}
+          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+        run: |
+          source scripts/releases/common.sh
+          tasks=""
+          for module in $(echo "$MODULES" | jq -r '.[]'); do
+            gradle_path="$(module_to_gradle_path "$module")"
+            tasks="$tasks ${gradle_path}:publishToSonatype"
+          done
+          echo "Publishing tasks:$tasks"
+          ./gradlew $tasks -Prelease closeAndReleaseSonatypeStagingRepository
+
+  back-merge:
+    needs: detect-modules
+    if: needs.detect-modules.outputs.has_modules == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      backmerge_pr_url: ${{ steps.create-backmerge.outputs.pr_url }}
+    steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@a90bcbc6539c36a85cdfeb73f7e2f433735f215b # v2.15.0
+        with:
+          egress-policy: audit
+
+      - name: Generate token
+        id: app-token
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
+        with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Create back-merge PR
+        id: create-backmerge
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          VERSION: ${{ needs.detect-modules.outputs.version }}
+        run: |
+          pr_url=$(./scripts/releases/create-backmerge-pr.sh "$VERSION")
+          echo "pr_url=${pr_url}" >> "$GITHUB_OUTPUT"
+
+  notify-slack:
+    needs: [detect-modules, publish-release, create-github-releases, back-merge]
+    if: needs.detect-modules.outputs.has_modules == 'true'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@a90bcbc6539c36a85cdfeb73f7e2f433735f215b # v2.15.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Extract release info from branch
+        id: release-info
+        shell: bash
+        env:
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: |
+          # Branch format: release/6.2.0-SDK-4567 or hotfix-release/6.2.0-SDK-4567
+          suffix="${BRANCH#*/}"
+          version=$(echo "$suffix" | grep -oE '^[0-9]+\.[0-9]+\.[0-9]+')
+          ticket_id="${suffix#${version}-}"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "ticket_id=${ticket_id}" >> "$GITHUB_OUTPUT"
+
+      - name: Download release thread info
+        id: artifact
+        uses: ./.github/actions/slack-release-notify
+        with:
+          mode: download-artifact
+          release_version: ${{ steps.release-info.outputs.version }}
+          release_ticket_id: ${{ steps.release-info.outputs.ticket_id }}
+
+      - name: Build main channel message
+        id: channel-msg
+        shell: bash
+        env:
+          VERSION: ${{ needs.detect-modules.outputs.version }}
+          AFFECTED: ${{ needs.detect-modules.outputs.affected }}
+          REPO: ${{ github.repository }}
+        run: |
+          # Find previous monorepo tag for compare URL
+          prev_tag=$(git tag -l 'v*.*.*' --sort=-v:refname | grep -v "v${VERSION}" | head -1)
+
+          # Build inline module list: "core 6.2.0 · android 6.0.4 · ..."
+          module_line=""
+          while IFS='|' read -r module bump old_ver new_ver; do
+            [[ -z "$module" ]] && continue
+            if [[ -n "$module_line" ]]; then
+              module_line+=" · "
+            fi
+            module_line+="${module} ${new_ver}"
+          done <<< "$AFFECTED"
+
+          msg=":rocket: *New release: Kotlin SDK*"
+          msg+=$'\n'"*Release:* <https://github.com/${REPO}/compare/${prev_tag}...v${VERSION}|v${VERSION}>"
+          msg+=$'\n'"${module_line}"
+          msg+=$'\n'
+          msg+=$'\n'"CC: <!subteam^S066Z6BUTAS> <!subteam^S03SW7DM8P3>"
+
+          EOF_MARKER=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          echo "text<<${EOF_MARKER}" >> "$GITHUB_OUTPUT"
+          echo "$msg" >> "$GITHUB_OUTPUT"
+          echo "${EOF_MARKER}" >> "$GITHUB_OUTPUT"
+
+      - name: Post main channel message
+        uses: ./.github/actions/slack-release-notify
+        with:
+          mode: post-channel
+          slack_bot_token: ${{ secrets.SLACK_BOT_TOKEN }}
+          channel_id: ${{ secrets.SLACK_RELEASE_CHANNEL_ID }}
+          message: ${{ steps.channel-msg.outputs.text }}
+
+      - name: Build thread message
+        id: thread-msg
+        shell: bash
+        env:
+          VERSION: ${{ needs.detect-modules.outputs.version }}
+          AFFECTED: ${{ needs.detect-modules.outputs.affected }}
+          BACKMERGE_PR: ${{ needs.back-merge.outputs.backmerge_pr_url }}
+        run: |
+          # Build inline module list: "core 6.2.0 · android 6.0.4 · ..."
+          module_line=""
+          while IFS='|' read -r module bump old_ver new_ver; do
+            [[ -z "$module" ]] && continue
+            if [[ -n "$module_line" ]]; then
+              module_line+=" · "
+            fi
+            module_line+="${module} ${new_ver}"
+          done <<< "$AFFECTED"
+
+          msg=":rocket: *New release: Kotlin SDK*"
+          msg+=$'\n'
+          msg+=$'\n'"*Published to Maven Central:*"
+          msg+=$'\n'"${module_line}"
+          msg+=$'\n'
+          msg+=$'\n'"*Back-merge PR:* <${BACKMERGE_PR}>"
+          msg+=$'\n'":point_right: Please review and merge the back-merge PR."
+          msg+=$'\n'
+          msg+=$'\n'"CC: <!subteam^S066Z6BUTAS> <!subteam^S03SW7DM8P3>"
+
+          EOF_MARKER=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          echo "text<<${EOF_MARKER}" >> "$GITHUB_OUTPUT"
+          echo "$msg" >> "$GITHUB_OUTPUT"
+          echo "${EOF_MARKER}" >> "$GITHUB_OUTPUT"
+
+      - name: Post thread message
+        uses: ./.github/actions/slack-release-notify
+        with:
+          mode: post-thread
+          slack_bot_token: ${{ secrets.SLACK_BOT_TOKEN }}
+          channel_id: ${{ steps.artifact.outputs.channel_id }}
+          thread_ts: ${{ steps.artifact.outputs.thread_ts }}
+          message: ${{ steps.thread-msg.outputs.text }}

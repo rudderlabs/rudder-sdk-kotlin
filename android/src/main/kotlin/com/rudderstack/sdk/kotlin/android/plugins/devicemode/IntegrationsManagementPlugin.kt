@@ -57,11 +57,15 @@ internal class IntegrationsManagementPlugin : Plugin {
     }
 
     override suspend fun intercept(event: Event): Event {
-        analytics.logger.debug("IntegrationsManagementPlugin: queueing event")
+        analytics.logger.debug("IntegrationsManagementPlugin: queueing event (messageId=${event.messageId})")
 
         runCatching {
             queuedEventsChannel.trySend(event).getOrThrow()
         }.onFailure {
+            analytics.logger.warn(
+                "IntegrationsManagementPlugin: Event queue full — dropping oldest event to make room " +
+                    "(messageId=${event.messageId})"
+            )
             // drop the oldest event
             queuedEventsChannel.tryReceive()
             queuedEventsChannel.trySend(event)

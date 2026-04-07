@@ -1,0 +1,249 @@
+name: Draft New Release
+
+on:
+  workflow_dispatch:
+    branches:
+      - develop
+    inputs:
+      release_ticket_id:
+        description: "Linear ticket ID for the release"
+        required: true
+        type: string
+      slack_message_link:
+        description: "Slack message URL for the release thread"
+        required: true
+        type: string
+
+concurrency:
+  group: release-draft
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  prepare-release:
+    runs-on: ubuntu-latest
+    outputs:
+      has_modules: ${{ steps.detect.outputs.has_modules }}
+      version: ${{ steps.branch.outputs.version }}
+      branch_name: ${{ steps.branch.outputs.name }}
+      pr_url: ${{ steps.create-pr.outputs.pr_url }}
+      affected_modules: ${{ steps.read-affected.outputs.affected }}
+
+    steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@a90bcbc6539c36a85cdfeb73f7e2f433735f215b # v2.15.0
+        with:
+          egress-policy: audit
+
+      - name: Generate token
+        id: app-token
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
+        with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Setup JDK
+        uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Git config
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Validate inputs
+        shell: bash
+        env:
+          TICKET_ID: ${{ github.event.inputs.release_ticket_id }}
+        run: |
+          if [[ ! "$TICKET_ID" =~ ^[A-Za-z]+-[0-9]+$ ]]; then
+            echo "Error: Invalid ticket ID format: $TICKET_ID (expected format: ABC-123)" >&2
+            exit 1
+          fi
+
+      - name: Detect modules
+        id: detect
+        shell: bash
+        run: |
+          ./scripts/releases/detect-affected-modules.sh > ${RUNNER_TEMP}/affected-modules.txt
+          if [ ! -s ${RUNNER_TEMP}/affected-modules.txt ]; then
+            echo "No modules affected — nothing to release."
+            echo "has_modules=false" >> "$GITHUB_OUTPUT"
+          else
+            cat ${RUNNER_TEMP}/affected-modules.txt
+            echo "has_modules=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Read affected modules for output
+        if: steps.detect.outputs.has_modules == 'true'
+        id: read-affected
+        shell: bash
+        run: |
+          affected=$(cat ${RUNNER_TEMP}/affected-modules.txt)
+          EOF_MARKER=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          echo "affected<<${EOF_MARKER}" >> "$GITHUB_OUTPUT"
+          echo "$affected" >> "$GITHUB_OUTPUT"
+          echo "${EOF_MARKER}" >> "$GITHUB_OUTPUT"
+
+      - name: Bump versions
+        if: steps.detect.outputs.has_modules == 'true'
+        shell: bash
+        run: |
+          ./scripts/releases/bump-versions.sh ${RUNNER_TEMP}/affected-modules.txt
+
+      - name: Generate changelogs
+        if: steps.detect.outputs.has_modules == 'true'
+        shell: bash
+        run: |
+          ./scripts/releases/generate-changelog.sh ${RUNNER_TEMP}/affected-modules.txt
+
+      - name: Create release branch
+        if: steps.detect.outputs.has_modules == 'true'
+        id: branch
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          TICKET_ID: ${{ github.event.inputs.release_ticket_id }}
+        run: |
+          NEW_VERSION=$(grep '^SDK_VERSION=' gradle.properties | cut -d'=' -f2)
+          BRANCH="release/${NEW_VERSION}-${TICKET_ID}"
+          echo "name=${BRANCH}" >> "$GITHUB_OUTPUT"
+          echo "version=${NEW_VERSION}" >> "$GITHUB_OUTPUT"
+
+          SHA=$(git rev-parse HEAD)
+          gh api "repos/${{ github.repository }}/git/refs" \
+            --method POST \
+            -f "ref=refs/heads/${BRANCH}" \
+            -f "sha=${SHA}"
+
+      - name: Create verified commit
+        if: steps.detect.outputs.has_modules == 'true'
+        uses: ryancyq/github-signed-commit@e9f3b28c80da7be66d24b8f501a5abe82a6b855f # v1.2.0
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        with:
+          branch-name: ${{ steps.branch.outputs.name }}
+          commit-message: 'chore: update versions and generate release changelog'
+          files: |
+            .
+
+      - name: Create release PR
+        if: steps.detect.outputs.has_modules == 'true'
+        id: create-pr
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          TICKET_ID: ${{ github.event.inputs.release_ticket_id }}
+          BRANCH_NAME: ${{ steps.branch.outputs.name }}
+          VERSION: ${{ steps.branch.outputs.version }}
+        run: |
+          pr_url=$(./scripts/releases/create-release-pr.sh "$BRANCH_NAME" "$VERSION" "$TICKET_ID" ${RUNNER_TEMP}/affected-modules.txt)
+          echo "pr_url=${pr_url}" >> "$GITHUB_OUTPUT"
+
+  notify-slack:
+    needs: prepare-release
+    if: needs.prepare-release.outputs.has_modules == 'true'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@a90bcbc6539c36a85cdfeb73f7e2f433735f215b # v2.15.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - name: Extract thread info from Slack URL
+        id: slack-info
+        shell: bash
+        env:
+          SLACK_URL: ${{ github.event.inputs.slack_message_link }}
+        run: |
+          # Handle two Slack URL formats:
+          # 1. https://rudderlabs.slack.com/archives/CXXXXXXXX/p1234567890123456
+          # 2. https://rudderlabs.slack.com/archives/CXXXXXXXX/p1234567890123456?thread_ts=1234567890.123456&cid=CXXXXXXXX
+          channel_id=$(echo "$SLACK_URL" | sed -n 's|.*/archives/\([^/]*\)/.*|\1|p')
+
+          if echo "$SLACK_URL" | grep -q "thread_ts="; then
+            thread_ts=$(echo "$SLACK_URL" | sed -n 's|.*thread_ts=\([0-9]*\.[0-9]*\).*|\1|p')
+          else
+            raw_ts=$(echo "$SLACK_URL" | sed -n 's|.*/p\([0-9]*\).*|\1|p')
+            if [[ ${#raw_ts} -eq 16 ]]; then
+              thread_ts="${raw_ts:0:10}.${raw_ts:10:6}"
+            else
+              thread_ts="$raw_ts"
+            fi
+          fi
+
+          echo "Extracted channel_id: $channel_id"
+          echo "Extracted thread_ts: $thread_ts"
+          echo "channel_id=${channel_id}" >> "$GITHUB_OUTPUT"
+          echo "thread_ts=${thread_ts}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload release thread info
+        uses: ./.github/actions/slack-release-notify
+        with:
+          mode: upload-artifact
+          channel_id: ${{ steps.slack-info.outputs.channel_id }}
+          thread_ts: ${{ steps.slack-info.outputs.thread_ts }}
+          release_version: ${{ needs.prepare-release.outputs.version }}
+          release_ticket_id: ${{ github.event.inputs.release_ticket_id }}
+
+      - name: Build notification message
+        id: message
+        shell: bash
+        env:
+          PR_URL: ${{ needs.prepare-release.outputs.pr_url }}
+          VERSION: ${{ needs.prepare-release.outputs.version }}
+          BRANCH: ${{ needs.prepare-release.outputs.branch_name }}
+          AFFECTED: ${{ needs.prepare-release.outputs.affected_modules }}
+        run: |
+          # Build the affected modules table
+          modules_list=""
+          while IFS='|' read -r module bump old_ver new_ver; do
+            [[ -z "$module" ]] && continue
+            printf -v padded_module "%-13s" "$module"
+            modules_list+="  ${padded_module}${old_ver} -> ${new_ver} (${bump})"$'\n'
+          done <<< "$AFFECTED"
+
+          msg=":rocket: *Release PR Created*:"
+          msg+=$'\n'"${PR_URL}"
+          msg+=$'\n'
+          msg+=$'\n'"*SDK Monorepo Version:* v${VERSION}"
+          msg+=$'\n'"*Release Branch:* \`${BRANCH}\`"
+          msg+=$'\n'
+          msg+=$'\n'"*Affected Modules:*"
+          msg+=$'\n'"${modules_list}"
+          msg+=$'\n'":point_right: Review and merge when ready!"
+          msg+=$'\n'"CC: <!subteam^S066Z6BUTAS> <!subteam^S03SW7DM8P3>"
+
+          EOF_MARKER=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          echo "text<<${EOF_MARKER}" >> "$GITHUB_OUTPUT"
+          echo "$msg" >> "$GITHUB_OUTPUT"
+          echo "${EOF_MARKER}" >> "$GITHUB_OUTPUT"
+
+      - name: Post thread message
+        uses: ./.github/actions/slack-release-notify
+        with:
+          mode: post-thread
+          slack_bot_token: ${{ secrets.SLACK_BOT_TOKEN }}
+          channel_id: ${{ steps.slack-info.outputs.channel_id }}
+          thread_ts: ${{ steps.slack-info.outputs.thread_ts }}
+          message: ${{ steps.message.outputs.text }}

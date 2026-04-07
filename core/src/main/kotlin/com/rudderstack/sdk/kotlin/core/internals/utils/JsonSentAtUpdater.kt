@@ -9,7 +9,7 @@ internal object JsonSentAtUpdater {
 
     internal fun updateSentAt(jsonString: String, logger: Logger): String {
         val latestTimestamp = DateTimeUtils.now()
-        logger.verbose("Updating sentAt in JSON string to $latestTimestamp")
+        logger.verbose("JsonSentAtUpdater: Updating sentAt in JSON string to $latestTimestamp")
 
         val updatedJsonString = jsonString.replace(
             SENT_AT_PATTERN,
