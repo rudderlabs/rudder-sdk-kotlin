@@ -131,6 +131,13 @@ dependencies {
     testImplementation(libs.navigation.runtime)
 
     testRuntimeOnly(libs.junit.jupiter.engine)
+
+    //androidTestImplementation
+    androidTestImplementation(libs.okhttp.mockwebserver)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.core)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.json.assert)
 }
 
 apply(from = rootProject.file("gradle/publishing/publishing.gradle.kts"))
