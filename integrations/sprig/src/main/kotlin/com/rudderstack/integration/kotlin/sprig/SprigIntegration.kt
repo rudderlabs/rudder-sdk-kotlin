@@ -15,6 +15,8 @@ import kotlinx.serialization.json.JsonObject
 import com.rudderstack.sdk.kotlin.android.Analytics as AndroidAnalytics
 
 private const val SPRIG_KEY = "Sprig"
+internal const val EMAIL_KEY = "email"
+internal const val MAX_ATTRIBUTE_KEY_LENGTH = 256
 
 /**
  * SprigIntegration is a plugin that sends events to the Sprig SDK.
@@ -50,7 +52,17 @@ class SprigIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
     }
 
     override fun identify(payload: IdentifyEvent) {
-        // TODO: Step 5 - Set user identifier and visitor attributes
+        val sprig = sprig ?: return
+
+        if (payload.userId.isNotBlank()) {
+            sprig.setUserIdentifier(payload.userId)
+        }
+
+        payload.traits?.let { traits ->
+            setSprigAttributes(sprig, traits, analytics.logger)
+        }
+
+        analytics.logger.verbose("SprigIntegration: Identify event processed.")
     }
 
     override fun track(payload: TrackEvent) {
