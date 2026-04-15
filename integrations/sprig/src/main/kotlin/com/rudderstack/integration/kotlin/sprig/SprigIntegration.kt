@@ -44,10 +44,6 @@ class SprigIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
         }
     }
 
-    override fun update(destinationConfig: JsonObject) {
-        // No updatable config fields for Sprig — environmentId is set once during create().
-    }
-
     override fun getDestinationInstance(): Any? {
         return sprig
     }
