@@ -99,6 +99,7 @@ dependencies {
 
     // Sprig (UserLeap) android SDK
     implementation(libs.userleap.android.sdk)
+    implementation(libs.androidx.fragment.ktx)
 
     // detekt plugins
     detektPlugins(libs.detekt.formatting)
