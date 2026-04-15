@@ -10,6 +10,7 @@ import com.rudderstack.sdk.kotlin.android.utils.application
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
+import com.userleap.EventPayload
 import com.userleap.Sprig
 import kotlinx.serialization.json.JsonObject
 import com.rudderstack.sdk.kotlin.android.Analytics as AndroidAnalytics
@@ -35,10 +36,10 @@ class SprigIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
     public override fun create(destinationConfig: JsonObject) {
         sprig ?: run {
             destinationConfig.parseConfig<SprigConfig>(analytics.logger)?.let { config ->
-                Sprig.configure(analytics.application.applicationContext, config.environmentId)
                 sprig = Sprig
+                sprig?.configure(analytics.application.applicationContext, config.environmentId)
                 (analytics as? AndroidAnalytics)?.addLifecycleObserver(this)
-                analytics.logger.verbose("SprigIntegration: Sprig SDK initialized.")
+                analytics.logger.info("SprigIntegration: Sprig SDK initialized")
             }
         }
     }
@@ -62,15 +63,30 @@ class SprigIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
             setSprigAttributes(sprig, traits, analytics.logger)
         }
 
-        analytics.logger.verbose("SprigIntegration: Identify event processed.")
+        analytics.logger.verbose("SprigIntegration: Identify event processed (messageId=${payload.messageId})")
     }
 
     override fun track(payload: TrackEvent) {
-        // TODO: Step 6 - Create EventPayload and track/trackAndPresent
+        val sprig = sprig ?: return
+
+        val eventPayload = EventPayload(
+            event = payload.event,
+            properties = payload.properties.toStringMap(),
+        )
+
+        val activity = currentActivity
+        if (activity != null) {
+            sprig.trackAndPresent(eventPayload, activity)
+        } else {
+            sprig.track(eventPayload)
+        }
+
+        analytics.logger.verbose("SprigIntegration: Track event '${payload.event}' sent (messageId=${payload.messageId})")
     }
 
     override fun reset() {
-        // TODO: Step 7e - Call sprig.logout()
+        sprig?.logout()
+        analytics.logger.debug("SprigIntegration: Reset completed")
     }
 
     override fun onActivityResumed(activity: Activity) {
