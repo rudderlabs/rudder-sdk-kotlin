@@ -89,10 +89,19 @@ class SprigIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
         analytics.logger.debug("SprigIntegration: Reset completed")
     }
 
-    override fun onActivityResumed(activity: Activity) {
-        if (activity is FragmentActivity) {
-            currentActivity = activity
-        }
+    /**
+     * Sets the current [FragmentActivity] that the Sprig SDK will use to present in-app
+     * experiences (such as surveys) when a track event triggers one.
+     *
+     * Call this from the host app whenever a [FragmentActivity] becomes the foreground
+     * activity (e.g. in `onResume`). The integration automatically clears the reference
+     * in [onActivityDestroyed], so the host does not need to pass `null` on teardown.
+     *
+     * When no activity is set, [track] falls back to `Sprig.track` and in-app experiences
+     * are not presented.
+     */
+    fun setFragmentActivity(activity: FragmentActivity?) {
+        currentActivity = activity
     }
 
     override fun onActivityDestroyed(activity: Activity) {

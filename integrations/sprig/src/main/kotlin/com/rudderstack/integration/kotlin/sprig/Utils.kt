@@ -10,8 +10,10 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.decodeFromJsonElement
+import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.longOrNull
 
 /**
  * Parses the [JsonObject] to the specified type [T].
@@ -32,9 +34,15 @@ internal inline fun <reified T> JsonObject.parseConfig(logger: Logger): T? {
 internal fun JsonPrimitive.toStringOrNull(): String? = if (isString) content else null
 
 /**
- * Extracts an int value from the [JsonPrimitive] and returns it.
+ * Coerces a numeric [JsonPrimitive] to [Int], mirroring Java's `Number.intValue()`.
+ * Accepts both integer and decimal JSON numbers; decimals are truncated toward zero,
+ * and values outside the Int range wrap per [Long.toInt] / [Double.toInt].
+ * Returns null if the primitive is a string, boolean, or null.
  */
-internal fun JsonPrimitive.toIntOrNull(): Int? = intOrNull
+internal fun JsonPrimitive.toIntOrNull(): Int? {
+    if (isString) return null
+    return longOrNull?.toInt() ?: doubleOrNull?.toInt()
+}
 
 /**
  * Extracts a boolean value from the [JsonPrimitive] and returns it.

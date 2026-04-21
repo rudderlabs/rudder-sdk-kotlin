@@ -171,6 +171,50 @@ class SprigIntegrationTest {
     }
 
     @Test
+    fun `given integration is initialised, when identify is called with long trait, then setVisitorAttribute is called with int`() {
+        sprigIntegration.create(mockSprigConfig)
+        val traits = buildJsonObject { put("loginCount", 1234567890123L) }
+        val identifyEvent = provideIdentifyEvent(userId = USER_ID, traits = traits)
+
+        sprigIntegration.identify(identifyEvent)
+
+        verify { Sprig.setVisitorAttribute("loginCount", 1234567890123L.toInt()) }
+    }
+
+    @Test
+    fun `given integration is initialised, when identify is called with double trait, then setVisitorAttribute is called with truncated int`() {
+        sprigIntegration.create(mockSprigConfig)
+        val traits = buildJsonObject { put("score", 3.75) }
+        val identifyEvent = provideIdentifyEvent(userId = USER_ID, traits = traits)
+
+        sprigIntegration.identify(identifyEvent)
+
+        verify { Sprig.setVisitorAttribute("score", 3) }
+    }
+
+    @Test
+    fun `given integration is initialised, when identify is called with negative double trait, then setVisitorAttribute is called with int truncated toward zero`() {
+        sprigIntegration.create(mockSprigConfig)
+        val traits = buildJsonObject { put("delta", -2.9) }
+        val identifyEvent = provideIdentifyEvent(userId = USER_ID, traits = traits)
+
+        sprigIntegration.identify(identifyEvent)
+
+        verify { Sprig.setVisitorAttribute("delta", -2) }
+    }
+
+    @Test
+    fun `given integration is initialised, when identify is called with float trait, then setVisitorAttribute is called with truncated int`() {
+        sprigIntegration.create(mockSprigConfig)
+        val traits = buildJsonObject { put("ratio", 1.5f) }
+        val identifyEvent = provideIdentifyEvent(userId = USER_ID, traits = traits)
+
+        sprigIntegration.identify(identifyEvent)
+
+        verify { Sprig.setVisitorAttribute("ratio", 1) }
+    }
+
+    @Test
     fun `given integration is initialised, when identify is called with boolean trait, then setVisitorAttribute is called with boolean`() {
         sprigIntegration.create(mockSprigConfig)
         val traits = buildJsonObject { put("premium", true) }
@@ -231,7 +275,7 @@ class SprigIntegrationTest {
     fun `given integration is initialised and activity is present, when track is called, then trackAndPresent is called`() {
         sprigIntegration.create(mockSprigConfig)
         val mockActivity: FragmentActivity = mockk()
-        sprigIntegration.onActivityResumed(mockActivity)
+        sprigIntegration.setFragmentActivity(mockActivity)
         val trackEvent = provideTrackEvent(eventName = "Test Event")
 
         sprigIntegration.track(trackEvent)
@@ -292,10 +336,10 @@ class SprigIntegrationTest {
     // region activity lifecycle
 
     @Test
-    fun `given a FragmentActivity is resumed, when activity is destroyed, then currentActivity is cleared`() {
+    fun `given setFragmentActivity is called, when activity is destroyed, then currentActivity is cleared`() {
         sprigIntegration.create(mockSprigConfig)
         val mockActivity: FragmentActivity = mockk()
-        sprigIntegration.onActivityResumed(mockActivity)
+        sprigIntegration.setFragmentActivity(mockActivity)
         val trackEvent = provideTrackEvent(eventName = "Event Before Destroy")
 
         // Before destroy - should use trackAndPresent
