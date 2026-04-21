@@ -68,9 +68,7 @@ internal fun JsonObject.toStringMap(): Map<String, Any> {
         key to when (value) {
             is JsonPrimitive -> when {
                 value.isString -> value.content
-                value.booleanOrNull != null -> value.booleanOrNull!!
-                value.intOrNull != null -> value.intOrNull!!
-                else -> value.content
+                else -> value.booleanOrNull ?: value.intOrNull ?: value.content
             }
             else -> value.toString()
         }
@@ -109,11 +107,12 @@ private fun setVisitorAttribute(sprig: Sprig, key: String, value: JsonElement, l
         return
     }
 
-    when {
-        primitive.toStringOrNull() != null -> sprig.setVisitorAttribute(key, primitive.content)
-        primitive.toIntOrNull() != null -> sprig.setVisitorAttribute(key, primitive.toIntOrNull()!!)
-        primitive.toBooleanOrNull() != null -> sprig.setVisitorAttribute(key, primitive.toBooleanOrNull()!!)
-        else -> logger.warn(
+    val handled = primitive.toStringOrNull()?.also { sprig.setVisitorAttribute(key, it) }
+        ?: primitive.toBooleanOrNull()?.also { sprig.setVisitorAttribute(key, it) }
+        ?: primitive.toIntOrNull()?.also { sprig.setVisitorAttribute(key, it) }
+
+    if (handled == null) {
+        logger.warn(
             "SprigIntegration: '${primitive.content}' is not a valid property value. " +
                 "Only String, Int, and Boolean are accepted. Ignoring property"
         )
