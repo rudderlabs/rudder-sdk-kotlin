@@ -83,7 +83,7 @@ internal fun setSprigAttributes(sprig: Sprig, attributes: JsonObject, logger: Lo
     }
 }
 
-private fun setVisitorAttribute(sprig: Sprig, key: String, value: kotlinx.serialization.json.JsonElement, logger: Logger) {
+private fun setVisitorAttribute(sprig: Sprig, key: String, value: JsonElement, logger: Logger) {
     if (key.length >= MAX_ATTRIBUTE_KEY_LENGTH || key.startsWith("!")) {
         logger.warn(
             "SprigIntegration: '$key' is not a valid property name. " +

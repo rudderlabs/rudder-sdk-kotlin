@@ -7,11 +7,14 @@ import com.rudderstack.sdk.kotlin.android.plugins.devicemode.StandardIntegration
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleObserver
 import com.rudderstack.sdk.kotlin.android.utils.addLifecycleObserver
 import com.rudderstack.sdk.kotlin.android.utils.application
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
+import com.userleap.EventName
 import com.userleap.EventPayload
 import com.userleap.Sprig
+import com.userleap.SprigLoggingLevel
 import kotlinx.serialization.json.JsonObject
 import com.rudderstack.sdk.kotlin.android.Analytics as AndroidAnalytics
 
@@ -36,6 +39,7 @@ class SprigIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
     public override fun create(destinationConfig: JsonObject) {
         sprig ?: run {
             destinationConfig.parseConfig<SprigConfig>(analytics.logger)?.let { config ->
+                setLogLevel(analytics.logger, analytics.configuration.logLevel)
                 sprig = Sprig
                 sprig?.configure(analytics.application.applicationContext, config.environmentId)
                 (analytics as? AndroidAnalytics)?.addLifecycleObserver(this)
@@ -94,6 +98,29 @@ class SprigIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
     override fun onActivityDestroyed(activity: Activity) {
         if (activity == currentActivity) {
             currentActivity = null
+        }
+    }
+}
+
+/**
+ * Supplies the logger that the Sprig SDK lacks: Sprig does not ship its own logger, it only
+ * emits log output through `LOGGING_EVENT` callbacks carrying a [SprigLoggingLevel], leaving
+ * it to the host to decide where to write them. This function installs that listener and
+ * forwards each event to the Rudder [Logger] at the mapped severity, so Sprig output honours
+ * the Rudder SDK's [Logger.LogLevel] filter (which the logger applies internally).
+ *
+ * Skips registration entirely when the Rudder log level is [Logger.LogLevel.NONE].
+ */
+private fun setLogLevel(logger: Logger, rudderLogLevel: Logger.LogLevel) {
+    if (rudderLogLevel == Logger.LogLevel.NONE) return
+
+    Sprig.addEventListener(EventName.LOGGING_EVENT) { event ->
+        val message = "SprigIntegration: ${event.logMessage}"
+        when (event.logLevel) {
+            SprigLoggingLevel.DEBUG -> logger.debug(message)
+            SprigLoggingLevel.INFO -> logger.info(message)
+            SprigLoggingLevel.WARNING -> logger.warn(message)
+            SprigLoggingLevel.ERROR, SprigLoggingLevel.CRITICAL -> logger.error(message)
         }
     }
 }

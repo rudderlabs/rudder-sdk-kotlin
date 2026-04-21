@@ -62,6 +62,7 @@ class SprigIntegrationTest {
 
         mockkObject(Sprig)
         every { Sprig.configure(any(), any()) } just Runs
+        every { Sprig.addEventListener(any(), any()) } just Runs
         every { Sprig.setUserIdentifier(any()) } just Runs
         every { Sprig.setEmailAddress(any()) } just Runs
         every { Sprig.setVisitorAttribute(any(), any<String>()) } just Runs
