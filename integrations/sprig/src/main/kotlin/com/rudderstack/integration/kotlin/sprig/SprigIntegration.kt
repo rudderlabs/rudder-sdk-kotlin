@@ -2,15 +2,18 @@ package com.rudderstack.integration.kotlin.sprig
 
 import android.app.Activity
 import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.Lifecycle
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.IntegrationPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.StandardIntegration
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleObserver
 import com.rudderstack.sdk.kotlin.android.utils.addLifecycleObserver
 import com.rudderstack.sdk.kotlin.android.utils.application
+import com.rudderstack.sdk.kotlin.android.utils.removeLifecycleObserver
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
+import com.userleap.EventListener
 import com.userleap.EventName
 import com.userleap.EventPayload
 import com.userleap.Sprig
@@ -33,13 +36,15 @@ class SprigIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
 
     private var sprig: Sprig? = null
 
+    private var loggingListener: EventListener? = null
+
     @Volatile
     private var currentActivity: FragmentActivity? = null
 
     public override fun create(destinationConfig: JsonObject) {
         sprig ?: run {
             destinationConfig.parseConfig<SprigConfig>(analytics.logger)?.let { config ->
-                setLogLevel(analytics.logger, analytics.configuration.logLevel)
+                loggingListener = registerSprigLogging(analytics.logger, analytics.configuration.logLevel)
                 sprig = Sprig
                 sprig?.configure(analytics.application.applicationContext, config.environmentId)
                 (analytics as? AndroidAnalytics)?.addLifecycleObserver(this)
@@ -75,14 +80,23 @@ class SprigIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
         )
 
         val activity = currentActivity
-        if (activity != null) {
-            sprig.trackAndPresent(eventPayload, activity)
-        } else {
+        if (activity == null) {
             sprig.track(eventPayload)
+        } else {
+            activity.runOnUiThread {
+                if (activity.canHostSurvey()) {
+                    sprig.trackAndPresent(eventPayload, activity)
+                } else {
+                    sprig.track(eventPayload)
+                }
+            }
         }
 
         analytics.logger.verbose("SprigIntegration: Track event '${payload.event}' sent (messageId=${payload.messageId})")
     }
+
+    private fun FragmentActivity.canHostSurvey(): Boolean =
+        !isFinishing && !isDestroyed && lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)
 
     override fun reset() {
         sprig?.logout()
@@ -93,12 +107,17 @@ class SprigIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
      * Sets the current [FragmentActivity] that the Sprig SDK will use to present in-app
      * experiences (such as surveys) when a track event triggers one.
      *
-     * Call this from the host app whenever a [FragmentActivity] becomes the foreground
-     * activity (e.g. in `onResume`). The integration automatically clears the reference
-     * in [onActivityDestroyed], so the host does not need to pass `null` on teardown.
+     * Recommended contract:
+     * - Call `setFragmentActivity(activity)` from `onResume`.
+     * - Call `setFragmentActivity(null)` from `onPause`.
      *
-     * When no activity is set, [track] falls back to `Sprig.track` and in-app experiences
-     * are not presented.
+     * Clearing in `onPause` prevents the Sprig SDK from attempting to commit a fragment
+     * transaction on an activity that has already saved its instance state (which would
+     * throw `IllegalStateException`). The integration also clears the reference in
+     * [onActivityDestroyed] as a safety net for hosts that forget.
+     *
+     * When no activity is set, or the stored activity is not in at least the `STARTED`
+     * state, [track] falls back to `Sprig.track` and in-app experiences are not presented.
      */
     fun setFragmentActivity(activity: FragmentActivity?) {
         currentActivity = activity
@@ -108,6 +127,17 @@ class SprigIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
         if (activity == currentActivity) {
             currentActivity = null
         }
+    }
+
+    override fun teardown() {
+        super.teardown()
+        loggingListener?.let { listener ->
+            sprig?.removeEventListener(EventName.LOGGING_EVENT, listener)
+        }
+        loggingListener = null
+        (analytics as? AndroidAnalytics)?.removeLifecycleObserver(this)
+        currentActivity = null
+        sprig = null
     }
 }
 
@@ -120,10 +150,10 @@ class SprigIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
  *
  * Skips registration entirely when the Rudder log level is [Logger.LogLevel.NONE].
  */
-private fun setLogLevel(logger: Logger, rudderLogLevel: Logger.LogLevel) {
-    if (rudderLogLevel == Logger.LogLevel.NONE) return
+private fun registerSprigLogging(logger: Logger, rudderLogLevel: Logger.LogLevel): EventListener? {
+    if (rudderLogLevel == Logger.LogLevel.NONE) return null
 
-    Sprig.addEventListener(EventName.LOGGING_EVENT) { event ->
+    val listener = EventListener { event ->
         val message = "SprigIntegration: ${event.logMessage}"
         when (event.logLevel) {
             SprigLoggingLevel.DEBUG -> logger.debug(message)
@@ -132,4 +162,6 @@ private fun setLogLevel(logger: Logger, rudderLogLevel: Logger.LogLevel) {
             SprigLoggingLevel.ERROR, SprigLoggingLevel.CRITICAL -> logger.error(message)
         }
     }
+    Sprig.addEventListener(EventName.LOGGING_EVENT, listener)
+    return listener
 }

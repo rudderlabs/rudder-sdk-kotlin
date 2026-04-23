@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.Application
 import android.content.Context
 import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.Lifecycle
 import com.rudderstack.sdk.kotlin.android.utils.application
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
@@ -274,7 +275,7 @@ class SprigIntegrationTest {
     @Test
     fun `given integration is initialised and activity is present, when track is called, then trackAndPresent is called`() {
         sprigIntegration.create(mockSprigConfig)
-        val mockActivity: FragmentActivity = mockk()
+        val mockActivity = mockSurveyHostActivity()
         sprigIntegration.setFragmentActivity(mockActivity)
         val trackEvent = provideTrackEvent(eventName = "Test Event")
 
@@ -282,6 +283,32 @@ class SprigIntegrationTest {
 
         verify { Sprig.trackAndPresent(any<EventPayload>(), mockActivity) }
         verify(exactly = 0) { Sprig.track(any<EventPayload>()) }
+    }
+
+    @Test
+    fun `given stored activity is below STARTED, when track is called, then Sprig track is used instead of trackAndPresent`() {
+        sprigIntegration.create(mockSprigConfig)
+        val mockActivity = mockSurveyHostActivity(lifecycleState = Lifecycle.State.CREATED)
+        sprigIntegration.setFragmentActivity(mockActivity)
+        val trackEvent = provideTrackEvent(eventName = "Test Event")
+
+        sprigIntegration.track(trackEvent)
+
+        verify { Sprig.track(any<EventPayload>()) }
+        verify(exactly = 0) { Sprig.trackAndPresent(any<EventPayload>(), any()) }
+    }
+
+    @Test
+    fun `given stored activity is finishing, when track is called, then Sprig track is used instead of trackAndPresent`() {
+        sprigIntegration.create(mockSprigConfig)
+        val mockActivity = mockSurveyHostActivity(isFinishing = true)
+        sprigIntegration.setFragmentActivity(mockActivity)
+        val trackEvent = provideTrackEvent(eventName = "Test Event")
+
+        sprigIntegration.track(trackEvent)
+
+        verify { Sprig.track(any<EventPayload>()) }
+        verify(exactly = 0) { Sprig.trackAndPresent(any<EventPayload>(), any()) }
     }
 
     @Test
@@ -338,7 +365,7 @@ class SprigIntegrationTest {
     @Test
     fun `given setFragmentActivity is called, when activity is destroyed, then currentActivity is cleared`() {
         sprigIntegration.create(mockSprigConfig)
-        val mockActivity: FragmentActivity = mockk()
+        val mockActivity = mockSurveyHostActivity()
         sprigIntegration.setFragmentActivity(mockActivity)
         val trackEvent = provideTrackEvent(eventName = "Event Before Destroy")
 
@@ -412,4 +439,17 @@ private fun Event.applyMockedValues() {
     this.originalTimestamp = "<original-timestamp>"
     this.context = emptyJsonObject
     this.messageId = "<message-id>"
+}
+
+private fun mockSurveyHostActivity(
+    isFinishing: Boolean = false,
+    isDestroyed: Boolean = false,
+    lifecycleState: Lifecycle.State = Lifecycle.State.RESUMED,
+): FragmentActivity = mockk {
+    every { runOnUiThread(any()) } answers { firstArg<Runnable>().run() }
+    every { this@mockk.isFinishing } returns isFinishing
+    every { this@mockk.isDestroyed } returns isDestroyed
+    every { lifecycle } returns mockk {
+        every { currentState } returns lifecycleState
+    }
 }
