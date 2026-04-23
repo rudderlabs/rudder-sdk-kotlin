@@ -60,15 +60,22 @@ internal val IdentifyEvent.traits: JsonObject?
 
 /**
  * Converts a [JsonObject] to a [Map] of String keys to Any values.
- * Extracts primitive values (String, Boolean, Number) from [JsonPrimitive] elements,
- * and converts other [JsonElement] types to their string representation.
+ * Extracts primitive values from [JsonPrimitive] elements, preserving their native types:
+ * String, Boolean, Int (for integers in Int range), Long (for integers beyond Int range),
+ * and Double (for decimals or integers outside the Long range).
+ * Non-primitive [JsonElement] types are converted to their string representation.
  */
 internal fun JsonObject.toStringMap(): Map<String, Any> {
     return entries.associate { (key, value) ->
         key to when (value) {
             is JsonPrimitive -> when {
                 value.isString -> value.content
-                else -> value.booleanOrNull ?: value.intOrNull ?: value.content
+                else ->
+                    value.booleanOrNull
+                        ?: value.intOrNull
+                        ?: value.longOrNull
+                        ?: value.doubleOrNull
+                        ?: value.content
             }
             else -> value.toString()
         }

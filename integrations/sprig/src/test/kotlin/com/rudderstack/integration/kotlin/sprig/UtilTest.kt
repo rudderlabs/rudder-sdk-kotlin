@@ -146,6 +146,8 @@ class UtilTest {
         val jsonObject = buildJsonObject {
             put("stringKey", "stringValue")
             put("intKey", 42)
+            put("longKey", 9_999_999_999L)
+            put("doubleKey", 3.75)
             put("boolKey", true)
         }
 
@@ -153,6 +155,8 @@ class UtilTest {
 
         assertEquals("stringValue", result["stringKey"])
         assertEquals(42, result["intKey"])
+        assertEquals(9_999_999_999L, result["longKey"])
+        assertEquals(3.75, result["doubleKey"])
         assertEquals(true, result["boolKey"])
     }
 
