@@ -8,6 +8,7 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.verify
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -167,6 +168,20 @@ class UtilTest {
         val result = jsonObject.toStringMap()
 
         assertEquals(emptyMap<String, Any>(), result)
+    }
+
+    @Test
+    fun `given json object with JsonNull value, when toStringMap is called, then key is omitted`() {
+        val jsonObject = buildJsonObject {
+            put("name", "Alice")
+            put("nullKey", JsonNull)
+        }
+
+        val result = jsonObject.toStringMap()
+
+        assertEquals("Alice", result["name"])
+        assertEquals(false, result.containsKey("nullKey"))
+        assertEquals(1, result.size)
     }
 
     // endregion

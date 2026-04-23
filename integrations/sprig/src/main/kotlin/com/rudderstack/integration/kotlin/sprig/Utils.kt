@@ -6,6 +6,7 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import com.rudderstack.sdk.kotlin.core.internals.utils.LenientJson
 import com.userleap.Sprig
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
@@ -63,12 +64,15 @@ internal val IdentifyEvent.traits: JsonObject?
  * Extracts primitive values from [JsonPrimitive] elements, preserving their native types:
  * String, Boolean, Int (for integers in Int range), Long (for integers beyond Int range),
  * and Double (for decimals or integers outside the Long range).
- * Non-primitive [JsonElement] types are converted to their string representation.
+ * [JsonNull] entries are omitted from the resulting map to avoid sending the literal
+ * string "null" as a property value. Non-primitive [JsonElement] types are converted
+ * to their string representation.
  */
 internal fun JsonObject.toStringMap(): Map<String, Any> {
-    return entries.associate { (key, value) ->
-        key to when (value) {
-            is JsonPrimitive -> when {
+    return entries.mapNotNull { (key, value) ->
+        when (value) {
+            is JsonNull -> null
+            is JsonPrimitive -> key to when {
                 value.isString -> value.content
                 else ->
                     value.booleanOrNull
@@ -77,9 +81,9 @@ internal fun JsonObject.toStringMap(): Map<String, Any> {
                         ?: value.doubleOrNull
                         ?: value.content
             }
-            else -> value.toString()
+            else -> key to value.toString()
         }
-    }
+    }.toMap()
 }
 
 internal fun setSprigAttributes(sprig: Sprig, attributes: JsonObject, logger: Logger) {
