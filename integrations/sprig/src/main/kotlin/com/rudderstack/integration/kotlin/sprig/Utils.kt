@@ -86,15 +86,29 @@ internal fun JsonObject.toStringMap(): Map<String, Any> {
     }.toMap()
 }
 
+/**
+ * Trait keys handled by dedicated Sprig setters (e.g. [Sprig.setEmailAddress]) rather than
+ * the generic [Sprig.setVisitorAttribute]. Keys listed here are skipped by the custom-trait
+ * loop so they are not also sent as visitor attributes.
+ */
+private val STANDARD_TRAIT_KEYS = setOf(EMAIL_KEY)
+
 internal fun setSprigAttributes(sprig: Sprig, attributes: JsonObject, logger: Logger) {
+    setStandardTraits(sprig, attributes)
+    setCustomTraits(sprig, attributes, logger)
+}
+
+private fun setStandardTraits(sprig: Sprig, attributes: JsonObject) {
     attributes[EMAIL_KEY]?.let { element ->
         (element as? JsonPrimitive)?.toStringOrNull()?.let { email ->
             sprig.setEmailAddress(email)
         }
     }
+}
 
+private fun setCustomTraits(sprig: Sprig, attributes: JsonObject, logger: Logger) {
     for ((key, value) in attributes) {
-        if (key != EMAIL_KEY) {
+        if (key !in STANDARD_TRAIT_KEYS) {
             setVisitorAttribute(sprig, key, value, logger)
         }
     }
