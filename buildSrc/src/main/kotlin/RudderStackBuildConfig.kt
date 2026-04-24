@@ -121,7 +121,7 @@ object RudderStackBuildConfig {
 
     object Kotlin {
 
-        const val COMPILER_EXTENSION_VERSION = "1.5.1"
+        const val COMPILER_EXTENSION_VERSION = "1.5.14"
     }
 
     object POM {
