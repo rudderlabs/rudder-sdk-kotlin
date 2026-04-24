@@ -124,6 +124,8 @@ class SprigIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
     }
 
     override fun onActivityDestroyed(activity: Activity) {
+        // Only clear when the destroyed activity is the one the host registered via setFragmentActivity.
+        // Other activities in the app may be destroyed independently and must not reset that reference.
         if (activity == currentActivity) {
             currentActivity = null
         }

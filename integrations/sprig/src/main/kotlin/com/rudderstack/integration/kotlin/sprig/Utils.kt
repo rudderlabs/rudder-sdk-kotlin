@@ -101,31 +101,35 @@ internal fun setSprigAttributes(sprig: Sprig, attributes: JsonObject, logger: Lo
 }
 
 private fun setVisitorAttribute(sprig: Sprig, key: String, value: JsonElement, logger: Logger) {
-    if (key.length >= MAX_ATTRIBUTE_KEY_LENGTH || key.startsWith("!")) {
+    if (key.startsWith("!")) {
         logger.warn(
             "SprigIntegration: '$key' is not a valid property name. " +
-                "Property names must be less than $MAX_ATTRIBUTE_KEY_LENGTH characters " +
-                "and cannot start with '!'. Ignoring property"
+                "Property names cannot start with '!'. Ignoring property"
         )
         return
     }
 
-    val primitive = value as? JsonPrimitive ?: run {
+    val normalizedKey = key.takeIf { it.length < MAX_ATTRIBUTE_KEY_LENGTH }
+        ?: key.take(MAX_ATTRIBUTE_KEY_LENGTH - 1).also { trimmed ->
+            logger.warn(
+                "SprigIntegration: property name '$key' exceeds ${MAX_ATTRIBUTE_KEY_LENGTH - 1} characters. " +
+                    "Trimming to '$trimmed'"
+            )
+        }
+
+    val primitiveValue = value as? JsonPrimitive ?: run {
         logger.warn(
-            "SprigIntegration: '$key' has an unsupported value type. " +
+            "SprigIntegration: '$normalizedKey' has an unsupported value type. " +
                 "Only String, Int, and Boolean are accepted. Ignoring property"
         )
         return
     }
 
-    val handled = primitive.toStringOrNull()?.also { sprig.setVisitorAttribute(key, it) }
-        ?: primitive.toBooleanOrNull()?.also { sprig.setVisitorAttribute(key, it) }
-        ?: primitive.toIntOrNull()?.also { sprig.setVisitorAttribute(key, it) }
-
-    if (handled == null) {
-        logger.warn(
-            "SprigIntegration: '${primitive.content}' is not a valid property value. " +
+    primitiveValue.toStringOrNull()?.also { sprig.setVisitorAttribute(normalizedKey, it) }
+        ?: primitiveValue.toBooleanOrNull()?.also { sprig.setVisitorAttribute(normalizedKey, it) }
+        ?: primitiveValue.toIntOrNull()?.also { sprig.setVisitorAttribute(normalizedKey, it) }
+        ?: logger.warn(
+            "SprigIntegration: '${primitiveValue.content}' is not a valid property value. " +
                 "Only String, Int, and Boolean are accepted. Ignoring property"
         )
-    }
 }
