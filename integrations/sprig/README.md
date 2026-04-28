@@ -12,7 +12,7 @@ dependencies {
     implementation("com.rudderstack.sdk.kotlin:android:<latest_version>")
 
     // Add the Sprig integration
-    implementation("com.rudderstack.sdk.kotlin:sprig:<latest_version>")
+    implementation("com.rudderstack.integration.kotlin:sprig:<latest_version>")
 }
 ```
 
