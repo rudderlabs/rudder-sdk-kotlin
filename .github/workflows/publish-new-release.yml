@@ -27,7 +27,7 @@ jobs:
       version: ${{ steps.detect.outputs.version }}
     steps:
       - name: Harden the runner
-        uses: step-security/harden-runner@a90bcbc6539c36a85cdfeb73f7e2f433735f215b # v2.15.0
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
         with:
           egress-policy: audit
 
@@ -78,7 +78,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Harden the runner
-        uses: step-security/harden-runner@a90bcbc6539c36a85cdfeb73f7e2f433735f215b # v2.15.0
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
         with:
           egress-policy: audit
 
@@ -113,7 +113,7 @@ jobs:
       contents: write
     steps:
       - name: Harden the runner
-        uses: step-security/harden-runner@a90bcbc6539c36a85cdfeb73f7e2f433735f215b # v2.15.0
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
         with:
           egress-policy: audit
 
@@ -144,9 +144,13 @@ jobs:
     needs: detect-modules
     if: needs.detect-modules.outputs.has_modules == 'true'
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        module: ${{ fromJson(needs.detect-modules.outputs.matrix) }}
+      fail-fast: false
     steps:
       - name: Harden the runner
-        uses: step-security/harden-runner@a90bcbc6539c36a85cdfeb73f7e2f433735f215b # v2.15.0
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
         with:
           egress-policy: audit
 
@@ -160,24 +164,17 @@ jobs:
           java-version: '17'
           cache: gradle
 
-      - name: Publish all affected modules
+      - name: Publish ${{ matrix.module }}
         shell: bash
         env:
-          MODULES: ${{ needs.detect-modules.outputs.matrix }}
+          MODULE: ${{ matrix.module }}
           NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
           NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
           SIGNING_KEY_ID: ${{ secrets.SIGNING_KEY_ID }}
           SIGNING_PRIVATE_KEY_BASE64: ${{ secrets.SIGNING_PRIVATE_KEY_BASE64 }}
           SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
         run: |
-          source scripts/releases/common.sh
-          tasks=""
-          for module in $(echo "$MODULES" | jq -r '.[]'); do
-            gradle_path="$(module_to_gradle_path "$module")"
-            tasks="$tasks ${gradle_path}:publishToSonatype"
-          done
-          echo "Publishing tasks:$tasks"
-          ./gradlew $tasks -Prelease closeAndReleaseSonatypeStagingRepository
+          ./scripts/releases/publish-module.sh "$MODULE" release
 
   back-merge:
     needs: detect-modules
@@ -187,7 +184,7 @@ jobs:
       backmerge_pr_url: ${{ steps.create-backmerge.outputs.pr_url }}
     steps:
       - name: Harden the runner
-        uses: step-security/harden-runner@a90bcbc6539c36a85cdfeb73f7e2f433735f215b # v2.15.0
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
         with:
           egress-policy: audit
 
@@ -224,7 +221,7 @@ jobs:
 
     steps:
       - name: Harden the runner
-        uses: step-security/harden-runner@a90bcbc6539c36a85cdfeb73f7e2f433735f215b # v2.15.0
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
         with:
           egress-policy: audit
 

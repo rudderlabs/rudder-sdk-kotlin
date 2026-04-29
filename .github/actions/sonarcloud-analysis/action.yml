@@ -28,7 +28,7 @@ runs:
         restore-keys: ${{ runner.os }}-sonar
 
     - name: Run SonarCloud Analysis
-      uses: SonarSource/sonarqube-scan-action@2500896589ef8f7247069a56136f8dc177c27ccf
+      uses: SonarSource/sonarqube-scan-action@fd88b7d7ccbaefd23d8f36f73b59db7a3d246602
       env:
         SONAR_TOKEN: ${{ inputs.sonar_token }}
 
