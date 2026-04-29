@@ -112,7 +112,7 @@ object RudderStackBuildConfig {
         object Sprig : IntegrationModuleInfo {
 
             override val moduleName: String = "sprig"
-            override val versionName: String = "0.0.0"
+            override val versionName: String = "1.0.0"
             override val versionCode: String = "1"
 
             override val artifactId = "sprig"
