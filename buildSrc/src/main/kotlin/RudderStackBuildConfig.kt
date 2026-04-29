@@ -113,7 +113,7 @@ object RudderStackBuildConfig {
 
             override val moduleName: String = "sprig"
             override val versionName: String = "1.0.0"
-            override val versionCode: String = "2"
+            override val versionCode: String = "1"
 
             override val artifactId = "sprig"
             override val pomPackaging = "aar"
