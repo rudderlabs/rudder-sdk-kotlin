@@ -1,6 +1,8 @@
 package com.rudderstack.testapp.ipc
 
 import com.rudderstack.scenarioengine.domain.step.Step
+import com.rudderstack.sdk.kotlin.android.models.reset.ResetEntries
+import com.rudderstack.sdk.kotlin.android.models.reset.ResetOptions
 import com.rudderstack.testapp.TestApp
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.boolean
@@ -16,9 +18,9 @@ import kotlinx.serialization.json.longOrNull
  * means: (1) add its constant in [Commands], (2) add a `when` branch here, (3) update the
  * driver-side [com.rudderstack.scenarioengine.domain.helper.Sut] adapter when it lands.
  *
- * Step 2 implements only [Commands.CMD_INIT] and [Commands.CMD_TRACK]. Every other command
- * throws; the receiver translates the throw into an error broadcast so the driver — when
- * it exists — sees a clear failure rather than a silent no-op.
+ * Step 5 wires [Commands.CMD_INIT], [Commands.CMD_TRACK], and [Commands.CMD_RESET] end-to-end.
+ * Every other command throws; the receiver translates the throw into an error broadcast so the
+ * driver sees a clear failure rather than a silent no-op.
  */
 class Dispatcher(private val app: TestApp) {
 
@@ -47,6 +49,19 @@ class Dispatcher(private val app: TestApp) {
                 val properties = args["properties"]?.jsonObject ?: JsonObject(emptyMap())
                 analytics.track(name, properties)
             }
+            Commands.CMD_RESET -> {
+                val analytics = app.analytics
+                    ?: error("RESET called before INIT; no Analytics instance")
+                // All four flags map 1:1 to the Android SDK's ResetEntries fields. Each defaults
+                // to true — both here and on Step.Reset — matching the SDK's full-reset semantics.
+                val entries = ResetEntries(
+                    anonymousId = args["anonymousId"]?.jsonPrimitive?.boolean ?: true,
+                    userId = args["userId"]?.jsonPrimitive?.boolean ?: true,
+                    traits = args["traits"]?.jsonPrimitive?.boolean ?: true,
+                    session = args["session"]?.jsonPrimitive?.boolean ?: true,
+                )
+                analytics.reset(ResetOptions(entries = entries))
+            }
             else -> error("not implemented yet: $cmd")
         }
         if (callbackId != null) Events.sendCallback(app, callbackId)
@@ -59,11 +74,19 @@ class Dispatcher(private val app: TestApp) {
      * keep tests deterministic.
      */
     private fun parseInit(args: JsonObject): Step.Init {
+        val mockServerUrl = args["mockServerUrl"]?.jsonPrimitive?.content
+            ?: error("INIT requires 'mockServerUrl'")
+        // Reject the DSL's empty-sentinel default. The driver-side runner is supposed to
+        // rewrite Step.Init.mockServerUrl to the live mock server URL before dispatch; an
+        // empty value here means the rewrite was skipped — fail loud rather than silently
+        // sending events to "".
+        require(mockServerUrl.isNotEmpty()) {
+            "INIT received empty 'mockServerUrl' — runner did not inject the live mock server URL"
+        }
         return Step.Init(
             writeKey = args["writeKey"]?.jsonPrimitive?.content
                 ?: error("INIT requires 'writeKey'"),
-            mockServerUrl = args["mockServerUrl"]?.jsonPrimitive?.content
-                ?: error("INIT requires 'mockServerUrl'"),
+            mockServerUrl = mockServerUrl,
             trackApplicationLifecycleEvents = args["trackApplicationLifecycleEvents"]?.jsonPrimitive?.boolean ?: false,
             trackDeepLinks = args["trackDeepLinks"]?.jsonPrimitive?.boolean ?: false,
             trackActivities = args["trackActivities"]?.jsonPrimitive?.boolean ?: false,

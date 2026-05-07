@@ -51,7 +51,11 @@ internal object Commands {
     const val EVENT_TYPE_SDK_EVENT = "sdkEvent"
 
     // ---- Command names ----
-    // Step 2 wires only INIT and TRACK end-to-end; everything else lands in later steps.
+    // Step 5 wires INIT, TRACK, and RESET end-to-end. RESET lands here (rather than Step 6)
+    // because the DSL's `defaultInit = true` path auto-prepends [Init, Reset] — exercising the
+    // canonical authoring path requires Reset to round-trip. The remaining event/session/
+    // lifecycle commands land in Step 6.
     const val CMD_INIT = "INIT"
     const val CMD_TRACK = "TRACK"
+    const val CMD_RESET = "RESET"
 }

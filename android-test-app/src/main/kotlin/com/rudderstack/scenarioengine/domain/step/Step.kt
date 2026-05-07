@@ -58,11 +58,28 @@ sealed class Step {
     ) : Step()
 
     /**
-     * Reset SDK identity to its initial state — new anonymousId, cleared userId, cleared traits.
+     * Reset some or all of the SDK's identity state.
      *
-     * @param resetSession If true, also rotate the active session (end + start fresh).
+     * Mirrors the four flags on the Android SDK's `ResetEntries` 1:1 so the engine exposes the
+     * full reset contract without inventing its own subset. All default to `true` — that's the
+     * SDK's "full reset" semantics, and the canonical use of [Reset] in scenarios is to bring
+     * the SDK back to a known-fresh state.
+     *
+     * **Doc deviation.** §4.1 shows `Reset(resetSession: Boolean)`. The implementation expanded
+     * to four flags after reading `com.rudderstack.sdk.kotlin.android.models.reset.ResetEntries`,
+     * which exposes all four on the public API.
+     *
+     * @param anonymousId If true, generate a new anonymous ID.
+     * @param userId If true, clear the user ID.
+     * @param traits If true, clear user traits.
+     * @param session If true, refresh the active session (Android-specific).
      */
-    data class Reset(val resetSession: Boolean = true) : Step()
+    data class Reset(
+        val anonymousId: Boolean = true,
+        val userId: Boolean = true,
+        val traits: Boolean = true,
+        val session: Boolean = true,
+    ) : Step()
 
     /** Tear down the SDK instance. After this, further event Steps are no-ops until the next [Init]. */
     data object Shutdown : Step()
