@@ -82,6 +82,29 @@ class LifecycleDestructiveScenariosTest : ScenarioRunnerTest() {
         })
     }
 
+    /**
+     * Track an event, then kill mid-scenario, cold-start back, and prove the IPC + SDK chain
+     * comes up clean: a second track on the new process round-trips to the wire. The `Before`
+     * event has already been observed before the kill, so the assertion is just that `After`
+     * arrives — the SDK and the broadcast transport survived a process death.
+     *
+     * Distinct from [persistence] tests in intent: this proves *the harness still works* across
+     * a kill, not that *the SDK persists state* across a kill (which is what the persistence
+     * pack asserts).
+     */
+    @Test
+    fun kill_mid_scenario_then_reinit_round_trips_track() {
+        runScenario(rudderScenario(name = "lifecycle.kill_then_reinit_round_trips_track") {
+            track(name = "Before")
+            waitForEvent(type = StepEventType.TRACK, name = "Before")
+            kill()
+            coldStart()
+            step(Step.Init(writeKey = "test-write-key", mockServerUrl = ""))
+            track(name = "After")
+            waitForEvent(type = StepEventType.TRACK, name = "After")
+        })
+    }
+
     private fun sutIsRunning(): Boolean =
         device.executeShellCommand("pidof $SUT_PACKAGE").trim().isNotEmpty()
 
