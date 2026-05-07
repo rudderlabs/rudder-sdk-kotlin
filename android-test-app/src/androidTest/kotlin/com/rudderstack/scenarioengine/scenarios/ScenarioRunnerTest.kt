@@ -51,8 +51,11 @@ abstract class ScenarioRunnerTest {
     private lateinit var mockPlane: OkHttpMockPlane
     private lateinit var transport: BroadcastTransport
     private lateinit var spyOracle: BroadcastSpyOracle
-    private lateinit var helpers: Helpers
-    private lateinit var interpreter: SequentialInterpreter
+    // `protected` since Step 9: the live-mode MCP test (McpLiveTest) constructs an McpServer
+    // around the same helpers + interpreter the runner already wires for normal scenarios.
+    // Visibility-widening rather than duplicating the wiring keeps the engine setup in one place.
+    protected lateinit var helpers: Helpers
+    protected lateinit var interpreter: SequentialInterpreter
 
     @Before
     fun setUp() = runBlocking {

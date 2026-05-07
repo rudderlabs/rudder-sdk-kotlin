@@ -39,11 +39,7 @@ class SequentialInterpreter(private val helpers: Helpers) : Interpreter {
         lastObservedEvent = null
         val results = mutableListOf<StepResult>()
         scenario.steps.forEachIndexed { index, step ->
-            val result = runCatching { dispatch(step) }
-                .fold(
-                    onSuccess = { it },
-                    onFailure = { StepResult.Failed(it.message ?: it::class.simpleName ?: "unknown", it) },
-                )
+            val result = runStepWithRecovery(step)
             results += result
             if (result is StepResult.Failed) {
                 return ScenarioResult.Failed(failedAt = index, stepResults = results, reason = result.reason)
@@ -52,7 +48,30 @@ class SequentialInterpreter(private val helpers: Helpers) : Interpreter {
         return ScenarioResult.Passed(results)
     }
 
-    private suspend fun dispatch(step: Step): StepResult = when (step) {
+    /**
+     * Dispatch a single [Step] outside the [run] flow, preserving [lastObservedEvent] across
+     * calls. Live-mode (MCP) drives the interpreter one Step per tool call — `assertField`
+     * after a `wait_for_event` from a *separate* tool call has to read the cached event from
+     * the previous call, which the per-scenario [run] entrypoint deliberately wipes.
+     *
+     * Same exception-to-[StepResult.Failed] envelope as [run] — callers never have to try /
+     * catch.
+     */
+    suspend fun dispatch(step: Step): StepResult = runStepWithRecovery(step)
+
+    /** Reset cached state ([lastObservedEvent]). Live-mode calls this at session boundaries. */
+    fun reset() {
+        lastObservedEvent = null
+    }
+
+    private suspend fun runStepWithRecovery(step: Step): StepResult =
+        runCatching { dispatchInternal(step) }
+            .fold(
+                onSuccess = { it },
+                onFailure = { StepResult.Failed(it.message ?: it::class.simpleName ?: "unknown", it) },
+            )
+
+    private suspend fun dispatchInternal(step: Step): StepResult = when (step) {
         // ---- events ----
         is Step.Init -> { helpers.sut.init(step); StepResult.Ok() }
         is Step.Track -> { helpers.sut.track(step); StepResult.Ok() }

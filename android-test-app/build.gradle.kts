@@ -6,6 +6,10 @@ import java.util.zip.ZipOutputStream
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    // kotlinx.serialization plugin needed for @Serializable types in the MCP server (Step 9).
+    // The compiler-plugin generates serializers at compile time; without it, McpProtocol.kt's
+    // request/response shapes fail to compile and every reference into the package cascades.
+    alias(libs.plugins.kotlin.serialization)
 }
 
 tasks.withType<Test> {
@@ -39,6 +43,31 @@ android {
 
     kotlinOptions {
         jvmTarget = RudderStackBuildConfig.Build.JVM_TARGET
+    }
+
+    // Step 9 — keep Kotlin reflection metadata in the APK.
+    //
+    // AGP's default packaging strips `*.kotlin_builtins` and `*.kotlin_module` files. Most
+    // Kotlin code on Android works fine without them, but Ktor 2.x's request pipeline hits
+    // them via `kotlin.reflect.jvm.internal.impl.types.TypeUtils` on the first
+    // `call.respond(message: Any)`. Stripping them makes the POST hang with
+    // `Resource not found in classpath: kotlin/kotlin.kotlin_builtins` in logcat.
+    //
+    // Re-include these resources only on the androidTest variant (live-mode MCP server) —
+    // the main SUT APK doesn't host Ktor and stays at AGP defaults to keep its size lean.
+    packaging {
+        resources {
+            merges += listOf(
+                "**/*.kotlin_builtins",
+                "**/*.kotlin_module",
+            )
+            // Avoid duplicate-resource failures when multiple deps ship the same META-INF
+            // license / version files (Ktor + okhttp + kotlinx ones overlap).
+            pickFirsts += listOf(
+                "META-INF/INDEX.LIST",
+                "META-INF/io.netty.versions.properties",
+            )
+        }
     }
 }
 
@@ -229,6 +258,87 @@ tasks.matching { it.name == "connectedDebugAndroidTest" }.configureEach {
     dependsOn(injectSutClassesIntoAndroidTestApk)
 }
 
+// installDebugAndroidTest is the AGP task that pushes the test APK onto a device. The
+// inject step rewrites that APK in-place, so install must wait until inject runs — without
+// this the live-mode flow (startMcpLive) would push the un-injected APK and the driver
+// process would crash on launch with NoClassDefFoundError on SUT-side classes.
+tasks.matching { it.name == "installDebugAndroidTest" }.configureEach {
+    dependsOn(injectSutClassesIntoAndroidTestApk)
+}
+
+// NOTE: Running tests directly from Android Studio's "Run Test" gutter does NOT work today —
+// AS's IDE-side task graph for instrumentation tests skips `packageDebug` even when invoking
+// `connectedDebugAndroidTest`, leaving inject without a SUT APK to merge from. CLI works
+// (`./gradlew :android-test-app:connectedDebugAndroidTest`); AS integration is on the backlog.
+
+/**
+ * `startMcpLive` — orchestrate a live-mode MCP session.
+ *
+ * Build + install both APKs, `adb forward` the MCP port, then `am instrument` the [McpLiveTest]
+ * class with the `mcp.live=true` opt-in argument. The test boots the MCP server inside the
+ * driver process and blocks; the host machine connects at `http://localhost:5111/sse`.
+ *
+ * The task itself blocks while `am instrument` runs (test blocks until idle timeout or
+ * Ctrl+C). Forwarding stdout/stderr live so the user sees server logs and can kill cleanly.
+ *
+ * **Test runner.** With Step 6b's `testApplicationId = "com.rudderstack.testapp.driver"`,
+ * the test APK applicationId is `com.rudderstack.testapp.driver` (no `.test` suffix), so
+ * the instrumentation target is `<that>/androidx.test.runner.AndroidJUnitRunner`.
+ *
+ * **Why `adb forward` and not `adb reverse`.** The server lives on the *device*; the AI
+ * client lives on the *host*. `adb forward host_port → device_port` is the host-to-device
+ * direction (host opens a local socket, traffic tunnels to the device). The doc's §14.2
+ * reads "adb reverse" — that's the opposite topology (server on host, device-side client),
+ * which doesn't match where the engine helpers run. We use `adb forward` and document the
+ * deviation here. Bonus: `adb reverse` would have the device's adbd bind to 5111, blocking
+ * the in-process Ktor server from binding — an empirical confirmation of the direction.
+ */
+tasks.register("startMcpLive") {
+    description = "Boot the MCP server in live mode and adb-forward the port. Blocks until idle timeout."
+    group = "mcp"
+    dependsOn("installDebug", "installDebugAndroidTest")
+
+    val mcpPort = 5111
+    val testClass = "com.rudderstack.scenarioengine.scenarios.mcp.McpLiveTest"
+    val instrumentation = "com.rudderstack.testapp.driver/androidx.test.runner.AndroidJUnitRunner"
+
+    doLast {
+        // Clear any prior forward / reverse on the same port to avoid Address already in use.
+        exec {
+            commandLine("adb", "forward", "--remove", "tcp:$mcpPort")
+            isIgnoreExitValue = true
+        }
+        exec {
+            commandLine("adb", "reverse", "--remove", "tcp:$mcpPort")
+            isIgnoreExitValue = true
+        }
+        // host:5111 → device:5111. Set up before the test starts so the host can connect
+        // as soon as the in-process Ktor server is ready, without races on the @Before.
+        exec {
+            commandLine("adb", "forward", "tcp:$mcpPort", "tcp:$mcpPort")
+        }
+        println()
+        println("=========================================================")
+        println("  MCP server starting…")
+        println("  Connect from this host: http://localhost:$mcpPort/sse")
+        println("  Press Ctrl+C to stop the session.")
+        println("=========================================================")
+        println()
+
+        // -w: wait for completion. -r: raw output (verbose).
+        // -e mcp.live true: opt-in arg the McpLiveTest's `assumeTrue` checks.
+        // -e class <FQN>: restrict to the live-mode test (don't run anything else).
+        exec {
+            commandLine(
+                "adb", "shell", "am", "instrument", "-w", "-r",
+                "-e", "mcp.live", "true",
+                "-e", "class", testClass,
+                instrumentation,
+            )
+        }
+    }
+}
+
 dependencies {
     implementation(project(":android"))
     // Engine domain types + IPC ABI constants. Lives in its own JVM library so that AGP
@@ -263,4 +373,16 @@ dependencies {
     androidTestImplementation(libs.okhttp)
     androidTestImplementation(libs.okhttp.mockwebserver)
     androidTestImplementation(libs.kotlinx.coroutines.test)
+
+    // MCP server — hosts the JSON-RPC + SSE endpoint inside the driver process during
+    // live-mode runs. Ktor 2.3.13 is the last line that compiles against Kotlin 1.9; the
+    // official MCP Kotlin SDK requires Kotlin 2.x and is therefore unusable here, so the
+    // protocol layer (initialize / tools/list / tools/call) is hand-rolled on top.
+    androidTestImplementation(libs.ktor.server.core)
+    androidTestImplementation(libs.ktor.server.cio)
+    // Ktor's request pipeline reflects on inbound types in `call.receive<T>` and on response
+    // shapes in `call.respond(message)`. Without kotlin-reflect, the first POST hits
+    // `Resource not found in classpath: kotlin/kotlin.kotlin_builtins` and the call hangs.
+    // The packaging block below is the matching half of the fix.
+    androidTestImplementation(kotlin("reflect"))
 }
