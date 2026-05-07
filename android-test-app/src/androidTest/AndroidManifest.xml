@@ -3,9 +3,27 @@
   Driver-side manifest. AGP merges this into the synthesized test manifest under
   testApplicationId = com.rudderstack.testapp.driver.
 
-  Intentionally minimal at Step 3: the driver only needs to send broadcasts and
-  query the SUT's ContentProvider, both of which work cross-package without
-  declaring anything extra here. The dynamic EVENT receiver and any test-only
-  components arrive in Step 4 (BroadcastTransport).
+  Intentionally minimal at Step 4: cross-package broadcast and ContentProvider
+  reads need nothing here. The dynamic EVENT receiver registers programmatically
+  in BroadcastTransport.
+
+  ## Known gap, deferred to Step 6: destructive-op survival
+
+  The two-APK split (§11) gives the driver its own applicationId, but the
+  instrumentation framework binds its lifecycle to <instrumentation
+  android:targetPackage>, which AGP defaults to the SUT's applicationId. So
+  `pm clear com.rudderstack.testapp`, `am force-stop`, or `am kill` crash the
+  instrumentation even though the driver runs in its own process.
+
+  Pointing targetPackage at the driver itself breaks the AGP-managed classpath
+  sharing between SUT and test APKs (kotlin-stdlib goes missing at app load,
+  among other things). The fix needs both a manifest rewrite *and* test-APK
+  packaging changes to make it self-contained — non-trivial AGP work that
+  Step 4 isn't the right place for.
+
+  Step 6 wires lifecycle Step types (Background, Foreground, Kill, ForceStop,
+  ColdStart, ClearAppData) into the interpreter. The destructive ones won't be
+  callable from inside an @Test until this is solved. Step 4's AdbLifecycleControl
+  class is correct in shape — only the destructive *tests* are deferred.
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" />

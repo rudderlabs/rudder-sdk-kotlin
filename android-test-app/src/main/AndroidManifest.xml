@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!--
+      INTERNET is required for:
+        - the SDK's network calls to the (mock) data plane
+        - the driver-side OkHttpMockServer binding a loopback socket. With AGP's default
+          <instrumentation android:targetPackage = SUT>, the test process inherits the SUT's
+          permissions, so this declaration has to live on the SUT manifest rather than the
+          androidTest one.
+    -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:name=".TestApp"
         android:label="RudderStack Test SUT"
