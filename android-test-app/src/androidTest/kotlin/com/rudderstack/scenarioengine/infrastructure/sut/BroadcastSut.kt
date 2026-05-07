@@ -12,11 +12,9 @@ import com.rudderstack.testapp.ipc.Commands
  * `Map<String, Any?>` → JSON conversion (including `JsonElement` passthrough), so the
  * builder maps below pass `Step` fields straight through without re-encoding.
  *
- * **Step 5 scope.** Implements [init], [track], and [reset]. The remaining methods throw
- * [NotImplementedError] keyed to the step that wires them — calling an unwired method from
- * a scenario produces a loud failure rather than a silent no-op. This mirrors the
- * [com.rudderstack.scenarioengine.application.interpreter.SequentialInterpreter] dispatch's
- * own `TODO()`s; both surfaces stay in lockstep as the taxonomy expands.
+ * **Step 6a scope.** Implements every SDK-touching helper method except spy plugins (Step 7)
+ * and state export/import (Step 11). Adapter and interpreter dispatch stay in lockstep — both
+ * surfaces TODO the same Step types.
  *
  * Stateless aside from its [transport] reference. Lifetime is the test's lifetime —
  * caller closes the [transport] in `@After`.
@@ -63,21 +61,60 @@ class BroadcastSut(private val transport: Transport) : Sut {
         )
     }
 
-    override suspend fun screen(step: Step.Screen): Unit = TODO("wired in build step 6")
+    override suspend fun screen(step: Step.Screen) {
+        val args = mutableMapOf<String, Any?>(
+            "name" to step.name,
+            "properties" to step.properties,
+        )
+        // Only forward category when set so the SUT-side default (empty string, matching the
+        // SDK) applies — keeps the wire payload tight and the SDK-default behavior unsurprising.
+        step.category?.let { args["category"] = it }
+        sendOrFail(Commands.CMD_SCREEN, args)
+    }
 
-    override suspend fun identify(step: Step.Identify): Unit = TODO("wired in build step 6")
+    override suspend fun identify(step: Step.Identify) {
+        sendOrFail(
+            Commands.CMD_IDENTIFY,
+            mapOf(
+                "userId" to step.userId,
+                "traits" to step.traits,
+            ),
+        )
+    }
 
-    override suspend fun group(step: Step.Group): Unit = TODO("wired in build step 6")
+    override suspend fun group(step: Step.Group) {
+        sendOrFail(
+            Commands.CMD_GROUP,
+            mapOf(
+                "groupId" to step.groupId,
+                "traits" to step.traits,
+            ),
+        )
+    }
 
-    override suspend fun alias(step: Step.Alias): Unit = TODO("wired in build step 6")
+    override suspend fun alias(step: Step.Alias) {
+        val args = mutableMapOf<String, Any?>("newId" to step.newId)
+        step.previousId?.let { args["previousId"] = it }
+        sendOrFail(Commands.CMD_ALIAS, args)
+    }
 
-    override suspend fun flush(): Unit = TODO("wired in build step 6")
+    override suspend fun flush() {
+        sendOrFail(Commands.CMD_FLUSH, emptyMap())
+    }
 
-    override suspend fun shutdown(): Unit = TODO("wired in build step 6")
+    override suspend fun shutdown() {
+        sendOrFail(Commands.CMD_SHUTDOWN, emptyMap())
+    }
 
-    override suspend fun startSession(step: Step.StartSession): Unit = TODO("wired in build step 6")
+    override suspend fun startSession(step: Step.StartSession) {
+        val args = mutableMapOf<String, Any?>()
+        step.sessionId?.let { args["sessionId"] = it }
+        sendOrFail(Commands.CMD_START_SESSION, args)
+    }
 
-    override suspend fun endSession(): Unit = TODO("wired in build step 6")
+    override suspend fun endSession() {
+        sendOrFail(Commands.CMD_END_SESSION, emptyMap())
+    }
 
     override suspend fun addSpyPlugin(tag: String): Unit = TODO("wired in build step 7")
 

@@ -18,9 +18,10 @@ import kotlinx.serialization.json.longOrNull
  * means: (1) add its constant in [Commands], (2) add a `when` branch here, (3) update the
  * driver-side [com.rudderstack.scenarioengine.domain.helper.Sut] adapter when it lands.
  *
- * Step 5 wires [Commands.CMD_INIT], [Commands.CMD_TRACK], and [Commands.CMD_RESET] end-to-end.
- * Every other command throws; the receiver translates the throw into an error broadcast so the
- * driver sees a clear failure rather than a silent no-op.
+ * Step 6a expands the wired surface to Screen, Identify, Group, Alias, Flush, Shutdown,
+ * StartSession, and EndSession — covering every public method on `Analytics` that the §21
+ * mapping calls out as in-scope for v1. Unrecognized commands still throw and are translated
+ * into error broadcasts.
  */
 class Dispatcher(private val app: TestApp) {
 
@@ -61,6 +62,65 @@ class Dispatcher(private val app: TestApp) {
                     session = args["session"]?.jsonPrimitive?.boolean ?: true,
                 )
                 analytics.reset(ResetOptions(entries = entries))
+            }
+            Commands.CMD_SCREEN -> {
+                val analytics = app.analytics
+                    ?: error("SCREEN called before INIT; no Analytics instance")
+                val name = args["name"]?.jsonPrimitive?.content
+                    ?: error("SCREEN requires 'name'")
+                // The SDK takes `category: String` (default empty), not nullable. Step.Screen's
+                // nullable shape is the engine's choice — map null → "" at the boundary.
+                val category = args["category"]?.jsonPrimitive?.content.orEmpty()
+                val properties = args["properties"]?.jsonObject ?: JsonObject(emptyMap())
+                analytics.screen(screenName = name, category = category, properties = properties)
+            }
+            Commands.CMD_IDENTIFY -> {
+                val analytics = app.analytics
+                    ?: error("IDENTIFY called before INIT; no Analytics instance")
+                val userId = args["userId"]?.jsonPrimitive?.content
+                    ?: error("IDENTIFY requires 'userId'")
+                val traits = args["traits"]?.jsonObject ?: JsonObject(emptyMap())
+                analytics.identify(userId = userId, traits = traits)
+            }
+            Commands.CMD_GROUP -> {
+                val analytics = app.analytics
+                    ?: error("GROUP called before INIT; no Analytics instance")
+                val groupId = args["groupId"]?.jsonPrimitive?.content
+                    ?: error("GROUP requires 'groupId'")
+                val traits = args["traits"]?.jsonObject ?: JsonObject(emptyMap())
+                analytics.group(groupId = groupId, traits = traits)
+            }
+            Commands.CMD_ALIAS -> {
+                val analytics = app.analytics
+                    ?: error("ALIAS called before INIT; no Analytics instance")
+                val newId = args["newId"]?.jsonPrimitive?.content
+                    ?: error("ALIAS requires 'newId'")
+                // SDK's `previousId: String` defaults to empty; map null/missing → "" so the SDK
+                // can resolve the previous id from current user state itself.
+                val previousId = args["previousId"]?.jsonPrimitive?.content.orEmpty()
+                analytics.alias(newId = newId, previousId = previousId)
+            }
+            Commands.CMD_FLUSH -> {
+                val analytics = app.analytics
+                    ?: error("FLUSH called before INIT; no Analytics instance")
+                analytics.flush()
+            }
+            Commands.CMD_SHUTDOWN -> {
+                // shutdown is idempotent on the engine side: TestApp.shutdownAnalytics already
+                // tolerates a null instance. Going through it (rather than `app.analytics.shutdown()`)
+                // also clears the cached instance so a follow-up INIT works cleanly.
+                app.shutdownAnalytics()
+            }
+            Commands.CMD_START_SESSION -> {
+                val analytics = app.analytics
+                    ?: error("START_SESSION called before INIT; no Analytics instance")
+                val sessionId = args["sessionId"]?.jsonPrimitive?.longOrNull
+                analytics.startSession(sessionId = sessionId)
+            }
+            Commands.CMD_END_SESSION -> {
+                val analytics = app.analytics
+                    ?: error("END_SESSION called before INIT; no Analytics instance")
+                analytics.endSession()
             }
             else -> error("not implemented yet: $cmd")
         }

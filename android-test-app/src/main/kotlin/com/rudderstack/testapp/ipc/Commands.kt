@@ -51,11 +51,19 @@ internal object Commands {
     const val EVENT_TYPE_SDK_EVENT = "sdkEvent"
 
     // ---- Command names ----
-    // Step 5 wires INIT, TRACK, and RESET end-to-end. RESET lands here (rather than Step 6)
-    // because the DSL's `defaultInit = true` path auto-prepends [Init, Reset] — exercising the
-    // canonical authoring path requires Reset to round-trip. The remaining event/session/
-    // lifecycle commands land in Step 6.
+    // Step 5 wires INIT / TRACK / RESET. Step 6a expands to the rest of the SDK's public
+    // event surface plus session controls. Destructive lifecycle ops (Kill/ForceStop/
+    // ColdStart/ClearAppData) ride Step.LifecycleControl directly via UiAutomator's
+    // shell channel — they don't need an SUT-side command, so no constants here.
     const val CMD_INIT = "INIT"
     const val CMD_TRACK = "TRACK"
     const val CMD_RESET = "RESET"
+    const val CMD_SCREEN = "SCREEN"
+    const val CMD_IDENTIFY = "IDENTIFY"
+    const val CMD_GROUP = "GROUP"
+    const val CMD_ALIAS = "ALIAS"
+    const val CMD_FLUSH = "FLUSH"
+    const val CMD_SHUTDOWN = "SHUTDOWN"
+    const val CMD_START_SESSION = "START_SESSION"
+    const val CMD_END_SESSION = "END_SESSION"
 }
