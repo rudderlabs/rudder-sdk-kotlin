@@ -115,6 +115,11 @@ class RudderScenarioBuilder(
     fun assertState(field: StateField, expected: String?) =
         step(Step.AssertState(field, expected))
 
+    // ---- spy plugins ----
+    fun addSpyPlugin(tag: String) = step(Step.AddSpyPlugin(tag))
+
+    fun removeSpyPlugin(tag: String) = step(Step.RemoveSpyPlugin(tag))
+
     /**
      * Materialize the [Scenario]. Called by [rudderScenario]; not part of the authoring surface.
      */

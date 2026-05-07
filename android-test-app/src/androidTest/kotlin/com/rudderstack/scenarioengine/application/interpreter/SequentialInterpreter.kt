@@ -13,13 +13,10 @@ import kotlinx.serialization.json.JsonObject
 /**
  * The default [Interpreter]. Runs a scenario step-by-step, halts on the first failure.
  *
- * **Step 6b scope.** With the destructive-op survival fix landed (driver-targeted
- * `<instrumentation>` in the androidTest manifest), the four destructive lifecycle Step
- * types — [Step.Kill], [Step.ForceStop], [Step.ColdStart], [Step.ClearAppData] — wire here
- * alongside the non-destructive ones from 6a. The dispatch is now exhaustive across every
- * v1-scope Step type. Spy plugins (Step 7), state export/import (Step 11), and system
- * state / faults (Step 12) remain `TODO()`d. The sealed [Step] hierarchy keeps this
- * exhaustive at compile time.
+ * **Step 7 scope.** Spy plugin Step types ([Step.AddSpyPlugin], [Step.RemoveSpyPlugin]) wire
+ * here alongside the destructive lifecycle ops from 6b. The dispatch is now exhaustive across
+ * every v1-scope Step type. State export/import (Step 11) and system state / faults (Step 12)
+ * remain `TODO()`d. The sealed [Step] hierarchy keeps this exhaustive at compile time.
  *
  * **AssertField cache.** [Step.AssertField] is documented as asserting against the most-recent
  * event captured by the mock plane. The interpreter holds [lastObservedEvent] as per-run
@@ -93,9 +90,9 @@ class SequentialInterpreter(private val helpers: Helpers) : Interpreter {
         }
         is Step.AssertState -> assertStateOrFail(step)
 
-        // ---- wired in Step 7 (spy plugins) ----
-        is Step.AddSpyPlugin,
-        is Step.RemoveSpyPlugin -> TODO("wired in build step 7: ${step::class.simpleName}")
+        // ---- spy plugins (Step 7) ----
+        is Step.AddSpyPlugin -> { helpers.sut.addSpyPlugin(step.tag); StepResult.Ok() }
+        is Step.RemoveSpyPlugin -> { helpers.sut.removeSpyPlugin(step.tag); StepResult.Ok() }
 
         // ---- wired in Step 11 (state export / import) ----
         Step.SnapshotState,

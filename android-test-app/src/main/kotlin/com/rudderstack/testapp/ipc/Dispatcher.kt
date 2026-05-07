@@ -123,6 +123,26 @@ class Dispatcher(private val app: TestApp) {
                     ?: error("END_SESSION called before INIT; no Analytics instance")
                 analytics.endSession()
             }
+            Commands.CMD_ADD_SPY_PLUGIN -> {
+                val analytics = app.analytics
+                    ?: error("ADD_SPY_PLUGIN called before INIT; no Analytics instance")
+                val registry = app.spyPluginRegistry
+                    ?: error("ADD_SPY_PLUGIN called before INIT; no SpyPluginRegistry")
+                val tag = args["tag"]?.jsonPrimitive?.content
+                    ?: error("ADD_SPY_PLUGIN requires 'tag'")
+                // Registry throws on duplicate tag — propagated up to the catch in
+                // CommandReceiver, which translates it into an EVENT_TYPE_ERROR broadcast.
+                registry.add(tag = tag, analytics = analytics)
+            }
+            Commands.CMD_REMOVE_SPY_PLUGIN -> {
+                val analytics = app.analytics
+                    ?: error("REMOVE_SPY_PLUGIN called before INIT; no Analytics instance")
+                val registry = app.spyPluginRegistry
+                    ?: error("REMOVE_SPY_PLUGIN called before INIT; no SpyPluginRegistry")
+                val tag = args["tag"]?.jsonPrimitive?.content
+                    ?: error("REMOVE_SPY_PLUGIN requires 'tag'")
+                registry.remove(tag = tag, analytics = analytics)
+            }
             else -> error("not implemented yet: $cmd")
         }
         if (callbackId != null) Events.sendCallback(app, callbackId)

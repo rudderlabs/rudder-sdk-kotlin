@@ -4,12 +4,14 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
 import com.rudderstack.scenarioengine.application.interpreter.Helpers
 import com.rudderstack.scenarioengine.application.interpreter.SequentialInterpreter
+import com.rudderstack.scenarioengine.domain.helper.SpyOracle
 import com.rudderstack.scenarioengine.domain.scenario.Scenario
 import com.rudderstack.scenarioengine.domain.scenario.ScenarioResult
 import com.rudderstack.scenarioengine.domain.step.Step
 import com.rudderstack.scenarioengine.infrastructure.lifecycle.AdbLifecycleControl
 import com.rudderstack.scenarioengine.infrastructure.mockserver.OkHttpMockPlane
 import com.rudderstack.scenarioengine.infrastructure.mockserver.OkHttpMockServer
+import com.rudderstack.scenarioengine.infrastructure.spy.BroadcastSpyOracle
 import com.rudderstack.scenarioengine.infrastructure.state.ContentProviderStateProbe
 import com.rudderstack.scenarioengine.infrastructure.sut.BroadcastSut
 import com.rudderstack.scenarioengine.infrastructure.transport.BroadcastTransport
@@ -48,6 +50,7 @@ abstract class ScenarioRunnerTest {
     private lateinit var mockServer: OkHttpMockServer
     private lateinit var mockPlane: OkHttpMockPlane
     private lateinit var transport: BroadcastTransport
+    private lateinit var spyOracle: BroadcastSpyOracle
     private lateinit var helpers: Helpers
     private lateinit var interpreter: SequentialInterpreter
 
@@ -58,11 +61,21 @@ abstract class ScenarioRunnerTest {
         mockPlane.start()
 
         transport = BroadcastTransport(context)
+        // Construct the oracle on the same transport — it eagerly subscribes to
+        // EVENT_TYPE_SDK_EVENT broadcasts so observations emitted between Step.AddSpyPlugin
+        // and the assertion are captured.
+        spyOracle = BroadcastSpyOracle(transport)
         val lifecycle = AdbLifecycleControl(device)
         val state = ContentProviderStateProbe(context)
         val sut = BroadcastSut(transport)
 
-        helpers = Helpers(sut = sut, lifecycle = lifecycle, mockPlane = mockPlane, state = state)
+        helpers = Helpers(
+            sut = sut,
+            lifecycle = lifecycle,
+            mockPlane = mockPlane,
+            state = state,
+            spy = spyOracle,
+        )
         interpreter = SequentialInterpreter(helpers)
 
         // launch is non-destructive (am start) — safe even with the deferred destructive-op
@@ -72,9 +85,18 @@ abstract class ScenarioRunnerTest {
 
     @After
     fun tearDown() {
+        runCatching { spyOracle.close() }
         runCatching { transport.close() }
         runBlocking { runCatching { mockPlane.shutdown() } }
     }
+
+    /**
+     * Driver-side spy oracle exposed for subclass assertions. Tests typically `addSpyPlugin`
+     * via the DSL, run a scenario, then `spy.awaitObservation(...)` from `@Test` to verify the
+     * SDK's internal behavior. The oracle is shared across the whole test method — tags set
+     * inside the scenario are visible to assertions after [runScenario] returns.
+     */
+    protected val spy: SpyOracle get() = spyOracle
 
     /**
      * Run [scenario] through the interpreter, asserting the result is [ScenarioResult.Passed].

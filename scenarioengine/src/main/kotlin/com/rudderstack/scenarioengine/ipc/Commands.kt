@@ -71,4 +71,10 @@ object Commands {
     const val CMD_SHUTDOWN = "SHUTDOWN"
     const val CMD_START_SESSION = "START_SESSION"
     const val CMD_END_SESSION = "END_SESSION"
+
+    // Step 7. Spy plugins are registered/deregistered by tag; the SUT-side registry is the
+    // source of truth for tag → plugin mapping. Observations flow back over [ACTION_EVENT]
+    // as [EVENT_TYPE_SDK_EVENT] payloads — no new event channel needed.
+    const val CMD_ADD_SPY_PLUGIN = "ADD_SPY_PLUGIN"
+    const val CMD_REMOVE_SPY_PLUGIN = "REMOVE_SPY_PLUGIN"
 }

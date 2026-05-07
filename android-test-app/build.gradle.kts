@@ -103,7 +103,9 @@ val injectSutClassesIntoAndroidTestApk = tasks.register("injectSutClassesIntoAnd
     val testApkFile = layout.buildDirectory.file(
         "outputs/apk/androidTest/debug/android-test-app-debug-androidTest.apk",
     )
-    inputs.file(sutApkFile)
+    // Link inputs to the producing tasks so Gradle resolves them after packaging runs,
+    // not at configuration time when the APK doesn't exist yet on a clean build.
+    inputs.files(tasks.named("packageDebug"), tasks.named("packageDebugAndroidTest"))
     outputs.file(testApkFile)
 
     doLast {

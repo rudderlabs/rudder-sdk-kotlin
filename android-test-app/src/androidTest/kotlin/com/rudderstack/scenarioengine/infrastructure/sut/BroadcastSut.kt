@@ -12,9 +12,9 @@ import com.rudderstack.scenarioengine.ipc.Commands
  * `Map<String, Any?>` → JSON conversion (including `JsonElement` passthrough), so the
  * builder maps below pass `Step` fields straight through without re-encoding.
  *
- * **Step 6a scope.** Implements every SDK-touching helper method except spy plugins (Step 7)
- * and state export/import (Step 11). Adapter and interpreter dispatch stay in lockstep — both
- * surfaces TODO the same Step types.
+ * **Step 7 scope.** Implements every SDK-touching helper method including spy plugin add/remove.
+ * State export/import (Step 11) remains TODO. Adapter and interpreter dispatch stay in lockstep —
+ * both surfaces TODO the same Step types.
  *
  * Stateless aside from its [transport] reference. Lifetime is the test's lifetime —
  * caller closes the [transport] in `@After`.
@@ -116,9 +116,13 @@ class BroadcastSut(private val transport: Transport) : Sut {
         sendOrFail(Commands.CMD_END_SESSION, emptyMap())
     }
 
-    override suspend fun addSpyPlugin(tag: String): Unit = TODO("wired in build step 7")
+    override suspend fun addSpyPlugin(tag: String) {
+        sendOrFail(Commands.CMD_ADD_SPY_PLUGIN, mapOf("tag" to tag))
+    }
 
-    override suspend fun removeSpyPlugin(tag: String): Unit = TODO("wired in build step 7")
+    override suspend fun removeSpyPlugin(tag: String) {
+        sendOrFail(Commands.CMD_REMOVE_SPY_PLUGIN, mapOf("tag" to tag))
+    }
 
     override suspend fun exportState(): ByteArray = TODO("wired in build step 11")
 

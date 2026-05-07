@@ -5,6 +5,8 @@ import com.rudderstack.scenarioengine.domain.step.Step
 import com.rudderstack.sdk.kotlin.android.Analytics
 import com.rudderstack.testapp.analytics.AnalyticsFactory
 import com.rudderstack.testapp.ipc.Dispatcher
+import com.rudderstack.testapp.spy.BroadcastSpySink
+import com.rudderstack.testapp.spy.SpyPluginRegistry
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -32,16 +34,28 @@ class TestApp : Application() {
         private set
 
     /**
+     * The registry of test-only SpyPlugins for the currently-active [analytics]. Lifetime is
+     * tied to the SDK instance — a fresh registry is built in [initAnalytics] and cleared in
+     * [shutdownAnalytics]. Null before the first INIT / after shutdown, mirroring [analytics].
+     */
+    @Volatile
+    var spyPluginRegistry: SpyPluginRegistry? = null
+        private set
+
+    /**
      * Build a fresh [Analytics] from [step] and adopt it as the active instance.
      * Any prior instance is shut down first.
      */
     fun initAnalytics(step: Step.Init) {
-        analytics?.shutdown()
+        shutdownAnalytics()
         analytics = AnalyticsFactory.create(this, step)
+        spyPluginRegistry = SpyPluginRegistry(BroadcastSpySink(applicationContext))
     }
 
-    /** Tear down the active [Analytics], if any. Idempotent. */
+    /** Tear down the active [Analytics] and its [SpyPluginRegistry], if any. Idempotent. */
     fun shutdownAnalytics() {
+        spyPluginRegistry?.clear(analytics)
+        spyPluginRegistry = null
         analytics?.shutdown()
         analytics = null
     }
