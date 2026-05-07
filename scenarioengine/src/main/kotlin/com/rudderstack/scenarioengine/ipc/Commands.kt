@@ -1,13 +1,18 @@
-package com.rudderstack.testapp.ipc
+package com.rudderstack.scenarioengine.ipc
 
 /**
- * Wire-level constants shared between the SUT (this side) and the driver (engine side).
+ * Wire-level constants shared between the SUT and the driver.
  *
- * The action strings, extra keys, and command/event names form the IPC ABI. Renaming
- * any of these here without updating the corresponding driver-side adapter
- * (`BroadcastTransport`, lands in Step 4) will break the engine — treat them as a contract.
+ * The action strings, extra keys, and command/event names form the IPC ABI. Renaming any of
+ * these without updating both sides breaks the engine — treat them as a contract.
+ *
+ * This object lives in the `:scenarioengine` shared library because both the SUT (which
+ * declares the COMMAND receiver and emits EVENT broadcasts) and the driver (which sends
+ * COMMANDs and subscribes to EVENTs) need to compile against and load the same constants
+ * at runtime in their respective processes — a need that arose with Step 6b's two-process
+ * separation when the destructive-op survival fix landed.
  */
-internal object Commands {
+object Commands {
 
     /** Driver → SUT broadcast action. Carries one command per intent. */
     const val ACTION_COMMAND = "com.rudderstack.testapp.COMMAND"

@@ -3,7 +3,7 @@ package com.rudderstack.scenarioengine.infrastructure.sut
 import com.rudderstack.scenarioengine.domain.helper.Sut
 import com.rudderstack.scenarioengine.domain.step.Step
 import com.rudderstack.scenarioengine.domain.transport.Transport
-import com.rudderstack.testapp.ipc.Commands
+import com.rudderstack.scenarioengine.ipc.Commands
 
 /**
  * Driver-side adapter that turns [Sut] calls into [Transport] command broadcasts.

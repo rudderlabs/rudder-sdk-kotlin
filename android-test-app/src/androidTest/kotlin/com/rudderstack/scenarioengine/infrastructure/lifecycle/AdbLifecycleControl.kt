@@ -48,8 +48,22 @@ class AdbLifecycleControl(
     }
 
     override suspend fun kill() {
-        device.executeShellCommand("am kill $sutPackage")
-        waitUntil(running = false)
+        // **Doc deviation.** §10.2 specifies `am kill`. In practice AMS treats `am kill` as a
+        // best-effort, AMS-decides-when call: a SUT with a recently-init'd SDK keeps "important"
+        // priority for several seconds even after `am make-uid-idle`, leaving `am kill` a no-op
+        // within any reasonable test timeout.
+        //
+        // `kill -9 PID` is the unconditional equivalent and preserves the Step.Kill *intent* —
+        // an OS-level process kill where app data is preserved and only the process dies
+        // (distinct from `am force-stop`'s broader cleanup of alarms / pending intents).
+        // Issued via `run-as <SUT-package>` so the kill executes as the SUT's own UID; the
+        // shell UID (2000) lacks SIGKILL privileges against app processes. `run-as` requires
+        // the target to be debuggable, which the test SUT always is.
+        val pid = device.executeShellCommand("pidof $sutPackage").trim()
+        if (pid.isNotEmpty()) {
+            device.executeShellCommand("run-as $sutPackage kill -9 $pid")
+            waitUntil(running = false)
+        }
     }
 
     override suspend fun forceStop() {

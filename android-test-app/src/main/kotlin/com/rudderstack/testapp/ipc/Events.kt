@@ -2,6 +2,7 @@ package com.rudderstack.testapp.ipc
 
 import android.content.Context
 import android.content.Intent
+import com.rudderstack.scenarioengine.ipc.Commands
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 

@@ -13,13 +13,13 @@ import kotlinx.serialization.json.JsonObject
 /**
  * The default [Interpreter]. Runs a scenario step-by-step, halts on the first failure.
  *
- * **Step 6a scope.** Wires every event Step type, session Step types, non-destructive
- * lifecycle ([Step.Background] / [Step.Foreground]), and the three remaining assertion Step
- * types ([Step.WaitForBatch], [Step.AssertNoEvent], [Step.AssertState]). Destructive lifecycle
- * ops ([Step.Kill], [Step.ForceStop], [Step.ColdStart], [Step.ClearAppData]) stay TODO until
- * Step 6b lands the AGP/manifest fix that makes them survivable from inside an `@Test`. Spy
- * plugins (Step 7), state export/import (Step 11), and system state / faults (Step 12)
- * remain `TODO()`d. The sealed [Step] hierarchy keeps this exhaustive at compile time.
+ * **Step 6b scope.** With the destructive-op survival fix landed (driver-targeted
+ * `<instrumentation>` in the androidTest manifest), the four destructive lifecycle Step
+ * types — [Step.Kill], [Step.ForceStop], [Step.ColdStart], [Step.ClearAppData] — wire here
+ * alongside the non-destructive ones from 6a. The dispatch is now exhaustive across every
+ * v1-scope Step type. Spy plugins (Step 7), state export/import (Step 11), and system
+ * state / faults (Step 12) remain `TODO()`d. The sealed [Step] hierarchy keeps this
+ * exhaustive at compile time.
  *
  * **AssertField cache.** [Step.AssertField] is documented as asserting against the most-recent
  * event captured by the mock plane. The interpreter holds [lastObservedEvent] as per-run
@@ -71,9 +71,13 @@ class SequentialInterpreter(private val helpers: Helpers) : Interpreter {
         is Step.StartSession -> { helpers.sut.startSession(step); StepResult.Ok() }
         Step.EndSession -> { helpers.sut.endSession(); StepResult.Ok() }
 
-        // ---- non-destructive lifecycle ----
+        // ---- lifecycle ----
         Step.Background -> { helpers.lifecycle.background(); StepResult.Ok() }
         Step.Foreground -> { helpers.lifecycle.foreground(); StepResult.Ok() }
+        Step.Kill -> { helpers.lifecycle.kill(); StepResult.Ok() }
+        Step.ForceStop -> { helpers.lifecycle.forceStop(); StepResult.Ok() }
+        Step.ColdStart -> { helpers.lifecycle.coldStart(); StepResult.Ok() }
+        Step.ClearAppData -> { helpers.lifecycle.clearAppData(); StepResult.Ok() }
 
         // ---- assertions ----
         is Step.WaitForBatch -> StepResult.Ok(helpers.mockPlane.waitForBatch(step.timeoutMs))
@@ -88,12 +92,6 @@ class SequentialInterpreter(private val helpers: Helpers) : Interpreter {
             StepResult.Ok()
         }
         is Step.AssertState -> assertStateOrFail(step)
-
-        // ---- destructive lifecycle: wired in Step 6b ----
-        Step.Kill,
-        Step.ForceStop,
-        Step.ColdStart,
-        Step.ClearAppData -> TODO("wired in build step 6b: ${step::class.simpleName}")
 
         // ---- wired in Step 7 (spy plugins) ----
         is Step.AddSpyPlugin,

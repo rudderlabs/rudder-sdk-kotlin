@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import com.rudderstack.scenarioengine.ipc.Commands
 import com.rudderstack.testapp.TestApp
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json

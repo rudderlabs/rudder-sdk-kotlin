@@ -5,7 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import com.rudderstack.testapp.ipc.Commands
+import com.rudderstack.scenarioengine.ipc.Commands
 import com.rudderstack.testapp.ipc.StateProvider
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull

@@ -24,13 +24,17 @@ internal object AnalyticsFactory {
 
     /** Construct a fully-configured [Analytics] from [step]. Returns immediately; the SDK initializes asynchronously. */
     fun create(application: Application, step: Step.Init): Analytics {
-        val sessionConfiguration = if (step.sessionTimeoutMs == null) {
+        // Read sessionTimeoutMs into a local val so the smart-cast works — Kotlin won't
+        // smart-cast a public property from another module (here, :scenarioengine), since
+        // a property is contractually a getter that could return different values per call.
+        val sessionTimeoutMs = step.sessionTimeoutMs
+        val sessionConfiguration = if (sessionTimeoutMs == null) {
             // Use the SDK's own default timeout; only override automaticSessionTracking.
             SessionConfiguration(automaticSessionTracking = step.automaticSessionTracking)
         } else {
             SessionConfiguration(
                 automaticSessionTracking = step.automaticSessionTracking,
-                sessionTimeoutInMillis = step.sessionTimeoutMs,
+                sessionTimeoutInMillis = sessionTimeoutMs,
             )
         }
 

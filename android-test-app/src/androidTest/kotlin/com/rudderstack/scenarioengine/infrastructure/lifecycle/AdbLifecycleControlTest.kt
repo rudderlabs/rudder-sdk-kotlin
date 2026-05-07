@@ -9,18 +9,12 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * Validates [AdbLifecycleControl]'s `launch` and `background` paths — the two non-destructive
- * methods on the interface that round-trip safely from inside an @Test today.
+ * Validates [AdbLifecycleControl]'s `launch` and `background` paths.
  *
- * **What's deliberately not covered here.** The destructive methods — `forceStop`, `kill`,
- * `coldStart`, `clearAppData` — all eventually trigger `am force-stop com.rudderstack.testapp`
- * or `pm clear com.rudderstack.testapp`. With AGP's default `<instrumentation
- * android:targetPackage="com.rudderstack.testapp"/>`, these ops crash the instrumentation
- * even under the two-APK split (the test process is not killed by uid; the framework kills
- * it because its `targetPackage` died). The fix requires pointing `targetPackage` at the
- * driver itself *and* making the test APK self-contained — see the comment in
- * `src/androidTest/AndroidManifest.xml`. Tracked for Step 6, when the interpreter wires
- * these Step types in.
+ * The destructive methods (`forceStop`, `kill`, `coldStart`, `clearAppData`) are exercised
+ * via the interpreter at the scenario layer in `LifecycleDestructiveScenariosTest`, not here —
+ * the adapter is a pure shell-command wrapper, so coverage at the *behavioral* layer (Step
+ * dispatch + Helpers wiring + post-condition `pidof` check) is the higher-value test.
  *
  * The independent `pidof` check ([sutIsRunning]) duplicates the adapter's private helper
  * intentionally — testing through the public API but verifying with an external probe

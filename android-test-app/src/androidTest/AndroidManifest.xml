@@ -3,27 +3,34 @@
   Driver-side manifest. AGP merges this into the synthesized test manifest under
   testApplicationId = com.rudderstack.testapp.driver.
 
-  Intentionally minimal at Step 4: cross-package broadcast and ContentProvider
-  reads need nothing here. The dynamic EVENT receiver registers programmatically
-  in BroadcastTransport.
+  ## Why this is no longer empty (Step 6b)
 
-  ## Known gap, deferred to Step 6: destructive-op survival
+  When targetPackage = driver (set via the build-script rewrite in build.gradle.kts), the
+  test process runs as the driver app under its own UID — not the SUT's. Two consequences:
 
-  The two-APK split (§11) gives the driver its own applicationId, but the
-  instrumentation framework binds its lifecycle to <instrumentation
-  android:targetPackage>, which AGP defaults to the SUT's applicationId. So
-  `pm clear com.rudderstack.testapp`, `am force-stop`, or `am kill` crash the
-  instrumentation even though the driver runs in its own process.
+   1. Android 11+ package visibility: cross-package ContentResolver / Intent traffic
+      requires the caller to declare a <queries> entry for the target. Without it,
+      `Failed to find provider info for com.rudderstack.testapp.state` from the
+      ContentResolver and the SDK's TestApp.analytics state isn't readable.
 
-  Pointing targetPackage at the driver itself breaks the AGP-managed classpath
-  sharing between SUT and test APKs (kotlin-stdlib goes missing at app load,
-  among other things). The fix needs both a manifest rewrite *and* test-APK
-  packaging changes to make it self-contained — non-trivial AGP work that
-  Step 4 isn't the right place for.
-
-  Step 6 wires lifecycle Step types (Background, Foreground, Kill, ForceStop,
-  ColdStart, ClearAppData) into the interpreter. The destructive ones won't be
-  callable from inside an @Test until this is solved. Step 4's AdbLifecycleControl
-  class is correct in shape — only the destructive *tests* are deferred.
+   2. Driver-side OkHttpMockServer binds a loopback socket from inside the driver
+      process — needs INTERNET on the driver manifest. (When targetPackage was SUT,
+      the test inherited the SUT's permissions and INTERNET on the SUT manifest
+      covered both sides; that no longer applies.)
 -->
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" />
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Driver needs INTERNET to bind the OkHttpMockServer loopback socket. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!--
+      Package visibility for the SUT. The provider authority is the actually-used handle
+      (StateProbe), but listing the package itself is a small superset that also covers
+      future Intent-based interactions (e.g. ActivityScenario, package introspection).
+    -->
+    <queries>
+        <package android:name="com.rudderstack.testapp" />
+        <provider android:authorities="com.rudderstack.testapp.state" />
+    </queries>
+
+</manifest>

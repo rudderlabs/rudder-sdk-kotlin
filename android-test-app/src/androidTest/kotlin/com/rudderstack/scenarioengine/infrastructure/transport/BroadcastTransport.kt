@@ -10,7 +10,7 @@ import androidx.core.content.ContextCompat
 import com.rudderstack.scenarioengine.domain.transport.Transport
 import com.rudderstack.scenarioengine.domain.transport.TransportAck
 import com.rudderstack.scenarioengine.domain.transport.TransportEvent
-import com.rudderstack.testapp.ipc.Commands
+import com.rudderstack.scenarioengine.ipc.Commands
 import com.rudderstack.testapp.ipc.StateProvider
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers

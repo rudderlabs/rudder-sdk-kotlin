@@ -1,6 +1,7 @@
 package com.rudderstack.testapp.ipc
 
 import com.rudderstack.scenarioengine.domain.step.Step
+import com.rudderstack.scenarioengine.ipc.Commands
 import com.rudderstack.sdk.kotlin.android.models.reset.ResetEntries
 import com.rudderstack.sdk.kotlin.android.models.reset.ResetOptions
 import com.rudderstack.testapp.TestApp
