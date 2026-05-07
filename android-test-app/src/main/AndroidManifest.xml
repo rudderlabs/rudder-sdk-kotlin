@@ -1,4 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <application />
+
+    <application
+        android:name=".TestApp"
+        android:label="RudderStack Test SUT"
+        android:allowBackup="false">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <receiver
+            android:name=".ipc.CommandReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.rudderstack.testapp.COMMAND" />
+            </intent-filter>
+        </receiver>
+
+        <provider
+            android:name=".ipc.StateProvider"
+            android:authorities="com.rudderstack.testapp.state"
+            android:exported="true" />
+
+    </application>
+
 </manifest>
