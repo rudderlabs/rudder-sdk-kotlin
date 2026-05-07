@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Driver-side manifest. AGP merges this into the synthesized test manifest under
+  testApplicationId = com.rudderstack.testapp.driver.
+
+  Intentionally minimal at Step 3: the driver only needs to send broadcasts and
+  query the SUT's ContentProvider, both of which work cross-package without
+  declaring anything extra here. The dynamic EVENT receiver and any test-only
+  components arrive in Step 4 (BroadcastTransport).
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" />

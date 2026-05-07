@@ -16,6 +16,10 @@ android {
 
     defaultConfig {
         applicationId = "com.rudderstack.testapp"
+        // The driver runs as its own APK so that destructive ops aimed at the SUT
+        // (am force-stop, pm clear, am kill) don't take the test process with them.
+        // See §11 of the design doc.
+        testApplicationId = "com.rudderstack.testapp.driver"
         minSdk = RudderStackBuildConfig.AndroidBuild.MIN_SDK
         targetSdk = RudderStackBuildConfig.AndroidBuild.COMPILE_SDK
         versionCode = 1
@@ -42,4 +46,11 @@ dependencies {
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.jupiter.engine)
+
+    // androidTest uses JUnit4 — JUnit5 instrumentation runners are awkward on Android
+    // and AGP's testInstrumentationRunner expects a JUnit4-compatible runner.
+    androidTestImplementation(libs.junit4)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.core)
+    androidTestImplementation(libs.androidx.test.ext.junit)
 }

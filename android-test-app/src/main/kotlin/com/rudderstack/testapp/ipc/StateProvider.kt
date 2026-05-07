@@ -60,6 +60,8 @@ class StateProvider : ContentProvider() {
     ): Int = 0
 
     internal companion object {
+        /** Provider authority. Must match `android:authorities` in the SUT's `AndroidManifest.xml`. */
+        const val AUTHORITY = "com.rudderstack.testapp.state"
         const val COLUMN_VALUE = "value"
         const val FIELD_ANONYMOUS_ID = "anonymousId"
         const val FIELD_USER_ID = "userId"
