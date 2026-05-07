@@ -23,6 +23,7 @@ rootProject.name = "Analytics Kotlin SDK"
 include(":app")
 include(":core")
 include(":android")
+include(":android-test-app")
 include(":kotlin-jvm-app")
 include(":integrations:adjust")
 include(":integrations:appsflyer")
