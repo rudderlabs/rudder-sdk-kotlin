@@ -81,9 +81,14 @@ abstract class ScenarioRunnerTest {
         )
         interpreter = SequentialInterpreter(helpers)
 
-        // launch is non-destructive (am start) — safe even with the deferred destructive-op
-        // survival problem (see src/androidTest/AndroidManifest.xml).
-        lifecycle.launch()
+        // coldStart (force-stop + start -S) gives every test a fresh SUT process regardless
+        // of what state the previous test left it in. The earlier `launch()`-only setup was a
+        // hangover from before Step 6b's two-APK split, when destructive ops took the test
+        // process with them and we deliberately stayed non-destructive in @Before. Now that
+        // destructive ops survive, the trade-off flips: a plain `am start -n` after a prior
+        // `kill -9` can leave AMS's activity record in a state where the SUT process never
+        // actually relaunches (observed on API 26), so we always force-stop first.
+        lifecycle.coldStart()
     }
 
     @After

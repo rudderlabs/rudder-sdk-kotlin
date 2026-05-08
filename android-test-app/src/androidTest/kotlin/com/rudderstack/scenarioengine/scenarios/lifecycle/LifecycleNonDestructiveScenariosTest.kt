@@ -9,6 +9,7 @@ import com.rudderstack.scenarioengine.scenarios.ScenarioRunnerTest
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -69,6 +70,48 @@ class LifecycleNonDestructiveScenariosTest : ScenarioRunnerTest() {
             waitForEvent(type = StepEventType.TRACK, name = APPLICATION_BACKGROUNDED)
             foreground()
             waitForEvent(type = StepEventType.TRACK, name = APPLICATION_OPENED)
+        })
+    }
+
+    /**
+     * **§15.2 doc-named L2 scenario** ("lifecycle.cold_start_to_background_to_foreground").
+     *
+     * Walks the full first-launch → background → foreground arc and asserts the
+     * `properties.from_background` flag flips correctly:
+     *
+     *  - Cold-start init fires the *first* `Application Opened` with `from_background = false`
+     *    (`AndroidLifecyclePlugin` flips its `firstLaunch` AtomicBoolean once on the first
+     *    `onStart`; see `AndroidLifecyclePlugin.kt:68`).
+     *  - Background fires `Application Backgrounded`.
+     *  - Foreground fires the *second* `Application Opened` — now with `from_background = true`.
+     *
+     * Distinct from [foreground_emits_application_opened_event]: that scenario only checks the
+     * event names fire; this one is the load-bearing assertion that the flag itself is correct,
+     * which is what consumers of these events actually rely on.
+     */
+    @Test
+    fun cold_start_then_background_then_foreground_flips_from_background_flag() {
+        runScenario(rudderScenario(name = "lifecycle.cold_start_to_background_to_foreground") {
+            initBlock = {
+                Step.Init(
+                    writeKey = "test-write-key",
+                    mockServerUrl = "",
+                    trackApplicationLifecycleEvents = true,
+                )
+            }
+            // First Application Opened comes from `AndroidLifecyclePlugin.onStart` firing right
+            // after Init registers the process-lifecycle observer (the SUT process is already
+            // started by the runner's @Before coldStart). firstLaunch is true → from_background = false.
+            waitForEvent(type = StepEventType.TRACK, name = APPLICATION_OPENED)
+            assertField(path = "properties.from_background", expected = JsonPrimitive(false))
+
+            background()
+            waitForEvent(type = StepEventType.TRACK, name = APPLICATION_BACKGROUNDED)
+
+            foreground()
+            // Second Application Opened — firstLaunch is now false → from_background = true.
+            waitForEvent(type = StepEventType.TRACK, name = APPLICATION_OPENED)
+            assertField(path = "properties.from_background", expected = JsonPrimitive(true))
         })
     }
 
