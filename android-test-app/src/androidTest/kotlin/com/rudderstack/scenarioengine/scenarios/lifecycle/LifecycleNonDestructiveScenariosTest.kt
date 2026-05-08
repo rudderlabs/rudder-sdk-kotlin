@@ -85,9 +85,11 @@ class LifecycleNonDestructiveScenariosTest : ScenarioRunnerTest() {
      *  - Background fires `Application Backgrounded`.
      *  - Foreground fires the *second* `Application Opened` — now with `from_background = true`.
      *
-     * Distinct from [foreground_emits_application_opened_event]: that scenario only checks the
-     * event names fire; this one is the load-bearing assertion that the flag itself is correct,
-     * which is what consumers of these events actually rely on.
+     * Reliable because [com.rudderstack.scenarioengine.infrastructure.mockserver.OkHttpMockPlane]
+     * keeps a transcript of every batch event the mock server has received; even the cold-start
+     * `Application Opened` that fires before any `waitForEvent` subscribes is captured and
+     * matchable. Each `waitForEvent` advances a cursor past the matched event so the second
+     * `Application Opened` doesn't re-resolve the first.
      */
     @Test
     fun cold_start_then_background_then_foreground_flips_from_background_flag() {
