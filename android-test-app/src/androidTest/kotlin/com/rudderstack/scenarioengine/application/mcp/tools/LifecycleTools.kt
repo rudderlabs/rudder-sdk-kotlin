@@ -16,12 +16,55 @@ import com.rudderstack.scenarioengine.domain.step.Step
  * fault Step that's `TODO()` in the interpreter (Step 12 territory) so it isn't exposed yet.
  */
 internal fun registerLifecycleTools(registry: ToolRegistry, ctx: ToolContext) {
-    registry.register(simpleTool("rudder.background", "Move the SUT to background (HOME key).", ctx, Step.Background))
-    registry.register(simpleTool("rudder.foreground", "Foreground the SUT (start its main activity).", ctx, Step.Foreground))
-    registry.register(simpleTool("rudder.kill", "Kill the SUT process via `am kill`.", ctx, Step.Kill))
-    registry.register(simpleTool("rudder.force_stop", "Force-stop the SUT via `am force-stop`.", ctx, Step.ForceStop))
-    registry.register(simpleTool("rudder.cold_start", "Force-stop then re-launch the SUT (full cold start).", ctx, Step.ColdStart))
-    registry.register(simpleTool("rudder.clear_app_data", "Wipe the SUT's app data via `pm clear`.", ctx, Step.ClearAppData))
+    registry.register(simpleTool(
+        name = "rudder.background",
+        description = "Move the SUT to background (HOME key). To observe an `Application Backgrounded` " +
+            "Track event on the wire, the preceding `rudder.init` must set " +
+            "`trackApplicationLifecycleEvents = true` — otherwise this only moves the process " +
+            "without any SDK-emitted event.",
+        ctx = ctx,
+        step = Step.Background,
+    ))
+    registry.register(simpleTool(
+        name = "rudder.foreground",
+        description = "Foreground the SUT (start its main activity). To observe an `Application Opened` " +
+            "Track event on the wire, the preceding `rudder.init` must set " +
+            "`trackApplicationLifecycleEvents = true`. The first such event after init carries " +
+            "`properties.from_background = false`; subsequent foregrounds carry `true`.",
+        ctx = ctx,
+        step = Step.Foreground,
+    ))
+    registry.register(simpleTool(
+        name = "rudder.kill",
+        description = "Kill the SUT process via `kill -9` (run-as). The SDK process dies; on-disk state " +
+            "(identity, queued events) is preserved. Pair with `rudder.cold_start` to verify " +
+            "what the SDK rehydrates on the new process.",
+        ctx = ctx,
+        step = Step.Kill,
+    ))
+    registry.register(simpleTool(
+        name = "rudder.force_stop",
+        description = "Force-stop the SUT via `am force-stop`. Softer than kill (no SIGKILL). On-disk " +
+            "state is preserved; pair with `rudder.cold_start` to verify rehydration.",
+        ctx = ctx,
+        step = Step.ForceStop,
+    ))
+    registry.register(simpleTool(
+        name = "rudder.cold_start",
+        description = "Force-stop then re-launch the SUT (full cold start). After this returns, the " +
+            "SUT is alive on a fresh process; you must call `rudder.init` again to bring the " +
+            "SDK up before any further event tools.",
+        ctx = ctx,
+        step = Step.ColdStart,
+    ))
+    registry.register(simpleTool(
+        name = "rudder.clear_app_data",
+        description = "Wipe the SUT's app data via `pm clear`. Removes all SDK-persisted state " +
+            "(identity, queued events). The SUT process is taken down; you must call " +
+            "`rudder.init` again afterward.",
+        ctx = ctx,
+        step = Step.ClearAppData,
+    ))
 }
 
 /**

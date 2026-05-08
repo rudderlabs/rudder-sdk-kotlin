@@ -31,17 +31,44 @@ internal fun registerStateTools(registry: ToolRegistry, ctx: ToolContext) {
 
 private fun initTool(ctx: ToolContext) = Tool(
     name = "rudder.init",
-    description = "Initialize the SDK with the engine's live mock-server URL. " +
-        "Must be called once at the start of an MCP session before any event/lifecycle/assertion tools.",
+    description = "Initialize the SDK with the engine's live mock-server URL. Must be called once " +
+        "at the start of an MCP session before any event/lifecycle/assertion tools. " +
+        "**IMPORTANT — opt into the SDK behaviors you want to test:** " +
+        "to verify `Application Opened` / `Application Backgrounded` Track events on " +
+        "background/foreground, pass `trackApplicationLifecycleEvents = true`. " +
+        "To verify auto-session rotation across long backgrounds, pass " +
+        "`automaticSessionTracking = true` (and a `sessionTimeoutMs`). " +
+        "These flags map 1:1 to the SDK's `Configuration` knobs and are off by default; " +
+        "asserting on lifecycle/session events without enabling the matching flag will " +
+        "time out because the SDK never emits them.",
     inputSchema = objectSchema(
         properties = mapOf(
             "writeKey" to stringField("Optional write key (default: 'test-write-key')"),
-            "trackApplicationLifecycleEvents" to booleanField("Default false"),
-            "trackDeepLinks" to booleanField("Default false"),
-            "trackActivities" to booleanField("Default false"),
-            "automaticSessionTracking" to booleanField("Default false"),
-            "sessionTimeoutMs" to integerField("Optional auto-session timeout in ms"),
-            "flushAt" to integerField("Override flushPolicies to a single CountFlushPolicy(N). Default 1."),
+            "trackApplicationLifecycleEvents" to booleanField(
+                "Default false. **Set true to test lifecycle events.** When true, the SDK " +
+                    "emits `Application Opened` (with `properties.from_background = false` on " +
+                    "the first onStart, then `true` on subsequent foregroundings) and " +
+                    "`Application Backgrounded` Track events as the process moves between " +
+                    "foreground and background."
+            ),
+            "trackDeepLinks" to booleanField("Default false. Set true to test `Deep Link Opened` events."),
+            "trackActivities" to booleanField("Default false. Set true to test per-Activity screen events."),
+            "automaticSessionTracking" to booleanField(
+                "Default false. **Set true to test session rotation.** When true, the SDK " +
+                    "auto-starts a session on init and rotates it after a background longer " +
+                    "than `sessionTimeoutMs`. Without this flag, sessions are only managed " +
+                    "via `rudder.start_session` / `rudder.end_session`."
+            ),
+            "sessionTimeoutMs" to integerField(
+                "Optional auto-session timeout in ms. Only meaningful with " +
+                    "`automaticSessionTracking = true`."
+            ),
+            "flushAt" to integerField(
+                "Override flushPolicies to a single CountFlushPolicy(N). Default 1 — every " +
+                    "event auto-flushes immediately, which is what most assertion flows want. " +
+                    "Use a high value (e.g. 100) when explicitly testing the queue / `flush()` " +
+                    "behavior."
+            ),
         ),
     ),
     handler = { args ->
