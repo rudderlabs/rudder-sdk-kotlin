@@ -67,7 +67,11 @@ private fun initTool(ctx: ToolContext) = Tool(
                 "Override flushPolicies to a single CountFlushPolicy(N). Default 1 — every " +
                     "event auto-flushes immediately, which is what most assertion flows want. " +
                     "Use a high value (e.g. 100) when explicitly testing the queue / `flush()` " +
-                    "behavior."
+                    "behavior. **Caveat:** the default `flushAt = 1` *masks* the SDK's real " +
+                    "production flush-policy behavior — a scenario that passes here only proves " +
+                    "single-event correctness, not that the configured policy works in production. " +
+                    "If you're testing flush semantics, set `flushAt` to a real value and " +
+                    "explicitly call `rudder.flush`."
             ),
         ),
     ),

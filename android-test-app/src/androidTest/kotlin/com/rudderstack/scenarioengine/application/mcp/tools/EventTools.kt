@@ -202,6 +202,15 @@ internal fun objectField(description: String? = null): JsonObject = kotlinx.seri
     if (description != null) put("description", JsonPrimitive(description))
 }
 
+/**
+ * "Any JSON value" schema — primitive, object, or array. Omitting `type` is the JSON Schema
+ * idiom for unconstrained values; `objectField` (which pins `type: object`) lies for callers
+ * that want to pass a bare `false` or `"foo"`.
+ */
+internal fun anyJsonField(description: String? = null): JsonObject = kotlinx.serialization.json.buildJsonObject {
+    if (description != null) put("description", JsonPrimitive(description))
+}
+
 internal fun integerField(description: String? = null): JsonObject = kotlinx.serialization.json.buildJsonObject {
     put("type", JsonPrimitive("integer"))
     if (description != null) put("description", JsonPrimitive(description))

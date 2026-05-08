@@ -5,15 +5,18 @@ import com.rudderstack.scenarioengine.application.mcp.ToolContext
 import com.rudderstack.scenarioengine.application.mcp.ToolRegistry
 import com.rudderstack.scenarioengine.application.mcp.errorResult
 import com.rudderstack.scenarioengine.application.mcp.stepResultToToolResult
+import com.rudderstack.scenarioengine.application.mcp.textResult
 import com.rudderstack.scenarioengine.domain.step.Step
 import com.rudderstack.scenarioengine.domain.step.StepEventType
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.long
 
 /**
- * Four assertion tools — the shape of the wire / event-cache oracles the AI uses to verify
+ * Five assertion tools — the shape of the wire / event-cache oracles the AI uses to verify
  * SDK behavior:
  *
  *  - `rudder.assert_next_event` — wait for the next batch carrying a matching event; return it.
@@ -24,18 +27,25 @@ import kotlinx.serialization.json.long
  *    Wraps [Step.AssertField].
  *  - `rudder.wait_for_batch` — wait for any batch and return its parsed events. Useful for
  *    debugging the SDK's wire format before narrowing to a specific event.
+ *  - `rudder.peek_events` — read-only tail of the wire transcript. Does not advance the
+ *    `assert_next_event` cursor — purely for "what arrived" introspection during debugging.
  */
 internal fun registerAssertionTools(registry: ToolRegistry, ctx: ToolContext) {
     registry.register(assertNextEventTool(ctx))
     registry.register(assertNoEventTool(ctx))
     registry.register(assertFieldTool(ctx))
     registry.register(waitForBatchTool(ctx))
+    registry.register(peekEventsTool(ctx))
 }
 
 private fun assertNextEventTool(ctx: ToolContext) = Tool(
     name = "rudder.assert_next_event",
-    description = "Wait for the next event matching type/name to appear on the mock plane and return it. " +
-        "The event becomes the target for a subsequent rudder.assert_field call.",
+    description = "Wait for the next unconsumed event matching type/name and return its full JSON. " +
+        "**Consuming + ordered:** an internal cursor advances past the matched event, so a follow-up " +
+        "`rudder.assert_next_event` returns the *next* event after this one — calling it twice with " +
+        "the same filter does not return the same event. The matched event becomes the target for a " +
+        "subsequent `rudder.assert_field` call (single most-recent slot, overwritten on the next " +
+        "`assert_next_event`). Use `rudder.peek_events` to inspect the transcript without consuming.",
     inputSchema = objectSchema(
         properties = mapOf(
             "type" to enumField(StepEventType.values().map { it.name.lowercase() }, "Event type"),
@@ -88,7 +98,7 @@ private fun assertFieldTool(ctx: ToolContext) = Tool(
     inputSchema = objectSchema(
         properties = mapOf(
             "path" to stringField("Dotted path into the event JSON (e.g. 'context.sessionId')"),
-            "expected" to objectField("Expected JSON value (any primitive / object / array)"),
+            "expected" to anyJsonField("Expected JSON value — any primitive (string, number, boolean, null), object, or array."),
         ),
         required = listOf("path", "expected"),
     ),
@@ -115,6 +125,30 @@ private fun waitForBatchTool(ctx: ToolContext) = Tool(
     },
 )
 
+/**
+ * Read-only debug view onto the wire transcript. Use this when an `assert_next_event` times
+ * out or asserts the wrong field — the response shows what the SDK actually emitted, including
+ * events that fired before any waiter subscribed. Does not advance the consume cursor.
+ */
+private fun peekEventsTool(ctx: ToolContext) = Tool(
+    name = "rudder.peek_events",
+    description = "Return up to `limit` most-recent events from the wire transcript as a JSON array, " +
+        "without consuming them. Useful for debugging when an assertion fails or times out — call this " +
+        "to see what actually arrived. Does NOT affect the `rudder.assert_next_event` cursor; the same " +
+        "events remain available for assertion. Returns `[]` when the transcript is empty.",
+    inputSchema = objectSchema(
+        properties = mapOf(
+            "limit" to integerField("Max events to return (default 20). Returns the tail — most-recent."),
+        ),
+    ),
+    handler = { args ->
+        val limit = (args["limit"]?.jsonPrimitive?.long?.toInt() ?: DEFAULT_PEEK_LIMIT)
+            .coerceAtLeast(0)
+        val events = ctx.mockPlane.peekEvents(limit)
+        textResult(Json.encodeToString(JsonArray.serializer(), JsonArray(events)))
+    },
+)
+
 /** Build an enum-restricted JSON Schema field. v1 supports string enums only — fine for our use. */
 private fun enumField(values: List<String>, description: String? = null) = kotlinx.serialization.json.buildJsonObject {
     put("type", JsonPrimitive("string"))
@@ -124,3 +158,4 @@ private fun enumField(values: List<String>, description: String? = null) = kotli
 
 private const val DEFAULT_TIMEOUT_MS = 10_000L
 private const val DEFAULT_NO_EVENT_WINDOW_MS = 2_000L
+private const val DEFAULT_PEEK_LIMIT = 20

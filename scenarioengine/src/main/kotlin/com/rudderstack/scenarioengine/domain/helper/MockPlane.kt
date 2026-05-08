@@ -51,6 +51,16 @@ interface MockPlane {
     suspend fun assertNoEvent(type: StepEventType, name: String?, windowMs: Long)
 
     /**
+     * Read-only snapshot of the most-recent events the SDK has sent over the wire. Returns
+     * the *tail* of the transcript (up to [limit] events) without advancing any consume
+     * cursor — purely for debugging / "what actually arrived" introspection.
+     *
+     * Has no effect on subsequent [nextEvent] / [assertNoEvent] calls. Returns an empty list
+     * when the transcript is empty; never blocks (does not wait for new events).
+     */
+    suspend fun peekEvents(limit: Int): List<JsonObject>
+
+    /**
      * Override the response served at [path]. Use for fault injection: a `Static(500, "...")`,
      * a [MockResponseSpec.Sequence] that returns 500 then 200, or a [MockResponseSpec.Delayed]
      * to test client timeouts.

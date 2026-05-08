@@ -179,6 +179,13 @@ class OkHttpMockPlane(private val server: MockServer) : MockPlane {
         error("unreachable")
     }
 
+    override suspend fun peekEvents(limit: Int): List<JsonObject> = transcriptMutex.withLock {
+        if (limit <= 0 || transcript.isEmpty()) return@withLock emptyList()
+        // Tail: the last `limit` events. takeLast on a copy keeps the snapshot independent
+        // of further transcript mutations after the mutex is released.
+        transcript.takeLast(limit).toList()
+    }
+
     override fun installRoute(path: String, response: MockResponseSpec) {
         server.installRoute(path, response)
     }
