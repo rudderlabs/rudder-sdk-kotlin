@@ -295,7 +295,7 @@ class SessionManagerTest {
     }
 
     @Test
-    fun `given app is in foreground, when shouldUpdateLastActivityTime is called, then returns true`() {
+    fun `given app is in foreground, when shouldUpdateLastActivityTime is called, then activity time should be updated`() {
         val observerSlot = captureProcessLifecycleObserver()
         sessionManagerSetup(automaticSessionTracking = true)
         // Simulate the OS delivering a foreground lifecycle event to the captured observer.
@@ -307,7 +307,7 @@ class SessionManagerTest {
     }
 
     @Test
-    fun `given app is in background and toggle is off, when shouldUpdateLastActivityTime is called, then returns false`() {
+    fun `given app is in background and updateSessionOnBackgroundEvents is disabled, when shouldUpdateLastActivityTime is called, then activity time should not be updated`() {
         val observerSlot = captureProcessLifecycleObserver()
         sessionManagerSetup(automaticSessionTracking = true, updateSessionOnBackgroundEvents = false)
         // Simulate the OS delivering a background lifecycle event to the captured observer.
@@ -319,7 +319,7 @@ class SessionManagerTest {
     }
 
     @Test
-    fun `given app is in background and toggle is on, when shouldUpdateLastActivityTime is called, then returns true`() {
+    fun `given app is in background and updateSessionOnBackgroundEvents is enabled, when shouldUpdateLastActivityTime is called, then activity time should be updated`() {
         val observerSlot = captureProcessLifecycleObserver()
         sessionManagerSetup(automaticSessionTracking = true, updateSessionOnBackgroundEvents = true)
         // Simulate the OS delivering a background lifecycle event to the captured observer.
@@ -333,7 +333,7 @@ class SessionManagerTest {
     private fun sessionManagerSetup(
         automaticSessionTracking: Boolean = true,
         sessionTimeoutInMillis: Long = 300_000L,
-        updateSessionOnBackgroundEvents: Boolean = false
+        updateSessionOnBackgroundEvents: Boolean = false,
     ) {
         sessionConfiguration = SessionConfiguration(
             automaticSessionTracking = automaticSessionTracking,
