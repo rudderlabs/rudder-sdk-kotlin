@@ -104,10 +104,8 @@ class SessionTrackingObserverTest {
     }
 
     @Test
-    fun `given app is in background, when onCreate is called, then isInForeground is true`() {
-        sessionTrackingObserver.onStop(mockk<LifecycleOwner>())
-
-        sessionTrackingObserver.onCreate(mockk<LifecycleOwner>())
+    fun `given app is in background, when onStart is called, then isInForeground is true`() {
+        sessionTrackingObserver.onStart(mockk<LifecycleOwner>())
 
         assertTrue(sessionTrackingObserver.isInForeground.get())
     }
