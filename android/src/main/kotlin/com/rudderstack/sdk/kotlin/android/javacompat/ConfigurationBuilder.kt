@@ -171,7 +171,7 @@ class SessionConfigurationBuilder {
         return SessionConfiguration(
             automaticSessionTracking = automaticSessionTracking,
             sessionTimeoutInMillis = sessionTimeoutInMillis,
-            updateSessionOnBackgroundEvents = updateSessionOnBackgroundEvents
+            updateSessionOnBackgroundEvents = updateSessionOnBackgroundEvents,
         )
     }
 }
