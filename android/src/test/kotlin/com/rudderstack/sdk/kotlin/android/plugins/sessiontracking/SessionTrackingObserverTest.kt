@@ -96,6 +96,8 @@ class SessionTrackingObserverTest {
 
     @Test
     fun `given app is in foreground, when onStop is called, then isInForeground is false`() {
+        sessionTrackingObserver.onStart(mockk<LifecycleOwner>())
+
         sessionTrackingObserver.onStop(mockk<LifecycleOwner>())
 
         assertFalse(sessionTrackingObserver.isInForeground.get())
