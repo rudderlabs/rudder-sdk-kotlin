@@ -1,5 +1,6 @@
 package com.rudderstack.sdk.kotlin.android.plugins.sessiontracking
 
+import androidx.lifecycle.LifecycleOwner
 import com.rudderstack.sdk.kotlin.android.DEFAULT_SESSION_TIMEOUT_IN_MILLIS
 import com.rudderstack.sdk.kotlin.android.SessionConfiguration
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleObserver
@@ -13,8 +14,11 @@ import com.rudderstack.sdk.kotlin.android.Analytics as AndroidAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.DateTimeUtils
+import io.mockk.CapturingSlot
 import io.mockk.every
+import io.mockk.mockk
 import io.mockk.mockkObject
+import io.mockk.slot
 import io.mockk.unmockkAll
 import io.mockk.verify
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -24,6 +28,7 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -289,13 +294,51 @@ class SessionManagerTest {
         verifyDetachObservers()
     }
 
+    @Test
+    fun `given app is in foreground, when shouldUpdateLastActivityTime is called, then returns true`() {
+        val observerSlot = captureProcessLifecycleObserver()
+        sessionManagerSetup(automaticSessionTracking = true)
+        // Simulate the OS delivering a foreground lifecycle event to the captured observer.
+        observerSlot.captured.onStart(mockk<LifecycleOwner>())
+
+        val result = sessionManager.shouldUpdateLastActivityTime()
+
+        assertTrue(result)
+    }
+
+    @Test
+    fun `given app is in background and toggle is off, when shouldUpdateLastActivityTime is called, then returns false`() {
+        val observerSlot = captureProcessLifecycleObserver()
+        sessionManagerSetup(automaticSessionTracking = true, updateSessionOnBackgroundEvents = false)
+        // Simulate the OS delivering a background lifecycle event to the captured observer.
+        observerSlot.captured.onStop(mockk<LifecycleOwner>())
+
+        val result = sessionManager.shouldUpdateLastActivityTime()
+
+        assertFalse(result)
+    }
+
+    @Test
+    fun `given app is in background and toggle is on, when shouldUpdateLastActivityTime is called, then returns true`() {
+        val observerSlot = captureProcessLifecycleObserver()
+        sessionManagerSetup(automaticSessionTracking = true, updateSessionOnBackgroundEvents = true)
+        // Simulate the OS delivering a background lifecycle event to the captured observer.
+        observerSlot.captured.onStop(mockk<LifecycleOwner>())
+
+        val result = sessionManager.shouldUpdateLastActivityTime()
+
+        assertTrue(result)
+    }
+
     private fun sessionManagerSetup(
         automaticSessionTracking: Boolean = true,
-        sessionTimeoutInMillis: Long = 300_000L
+        sessionTimeoutInMillis: Long = 300_000L,
+        updateSessionOnBackgroundEvents: Boolean = false
     ) {
         sessionConfiguration = SessionConfiguration(
             automaticSessionTracking = automaticSessionTracking,
-            sessionTimeoutInMillis = sessionTimeoutInMillis
+            sessionTimeoutInMillis = sessionTimeoutInMillis,
+            updateSessionOnBackgroundEvents = updateSessionOnBackgroundEvents
         )
 
         sessionManager = SessionManager(
@@ -303,6 +346,13 @@ class SessionManagerTest {
             analytics = mockAnalytics,
             sessionConfiguration = sessionConfiguration
         )
+    }
+
+    private fun captureProcessLifecycleObserver(): CapturingSlot<ProcessLifecycleObserver> {
+        // SessionManager owns the observer privately; capture it via MockK so we can drive lifecycle callbacks.
+        val observerSlot = slot<ProcessLifecycleObserver>()
+        every { (mockAnalytics as AndroidAnalytics).addLifecycleObserver(capture(observerSlot)) } returns Unit
+        return observerSlot
     }
 
     private fun verifyDetachObservers() {

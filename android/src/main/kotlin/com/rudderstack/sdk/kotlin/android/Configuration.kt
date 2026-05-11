@@ -104,6 +104,7 @@ data class Configuration @JvmOverloads constructor(
  *
  * @param automaticSessionTracking Flag to enable or disable automatic session tracking. Defaults to `true`.
  * @param sessionTimeoutInMillis The duration in milliseconds after which a session is considered timed out. Defaults to `300_000` milliseconds (5 minutes).
+ * @param updateSessionOnBackgroundEvents When `true`, background events update the session's last activity timestamp, extending the session timeout. Defaults to `false`. Only applicable for automatic session tracking.
  *
  * This `SessionConfiguration` instance can then be used to configure session tracking in the [Configuration].
  *
@@ -111,10 +112,12 @@ data class Configuration @JvmOverloads constructor(
 data class SessionConfiguration(
     val automaticSessionTracking: Boolean = DEFAULT_AUTOMATIC_SESSION_TRACKING,
     val sessionTimeoutInMillis: Long = DEFAULT_SESSION_TIMEOUT_IN_MILLIS,
+    val updateSessionOnBackgroundEvents: Boolean = DEFAULT_UPDATE_SESSION_ON_BACKGROUND_EVENTS,
 ) {
 
     companion object {
 
         internal const val DEFAULT_AUTOMATIC_SESSION_TRACKING = true
+        internal const val DEFAULT_UPDATE_SESSION_ON_BACKGROUND_EVENTS = false
     }
 }

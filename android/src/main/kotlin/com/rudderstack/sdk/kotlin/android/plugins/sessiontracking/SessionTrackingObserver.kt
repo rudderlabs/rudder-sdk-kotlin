@@ -14,6 +14,7 @@ internal class SessionTrackingObserver(
 
     @VisibleForTesting
     internal val isSessionAlreadyUpdated = AtomicBoolean(true)
+    internal val isInForeground = AtomicBoolean(false)
 
     override fun onCreate(owner: LifecycleOwner) { updateSession() }
 
@@ -24,11 +25,13 @@ internal class SessionTrackingObserver(
     override fun onActivityStarted(activity: Activity) { updateSession() }
 
     override fun onStop(owner: LifecycleOwner) {
+        isInForeground.set(false)
         isSessionAlreadyUpdated.set(false)
         sessionManager.updateLastActivityTime()
     }
 
     private fun updateSession() {
+        isInForeground.set(true)
         if (isSessionAlreadyUpdated.compareAndSet(false, true)) {
             sessionManager.checkAndStartSessionOnForeground()
         }
