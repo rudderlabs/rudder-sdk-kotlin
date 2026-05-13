@@ -39,8 +39,8 @@ object RudderStackBuildConfig {
 
         object Android {
 
-            const val VERSION_NAME = "1.6.0"
-            const val VERSION_CODE = "11"
+            const val VERSION_NAME = "1.7.0-beta.1"
+            const val VERSION_CODE = "12"
 
             object LibraryInfo : LibraryInfoContract {
 

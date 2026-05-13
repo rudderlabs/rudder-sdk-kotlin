@@ -11,6 +11,7 @@ import com.rudderstack.sdk.kotlin.android.Configuration.Companion.DEFAULT_TRACK_
 import com.rudderstack.sdk.kotlin.android.DEFAULT_SESSION_TIMEOUT_IN_MILLIS
 import com.rudderstack.sdk.kotlin.android.SessionConfiguration
 import com.rudderstack.sdk.kotlin.android.SessionConfiguration.Companion.DEFAULT_AUTOMATIC_SESSION_TRACKING
+import com.rudderstack.sdk.kotlin.android.SessionConfiguration.Companion.DEFAULT_UPDATE_SESSION_ON_BACKGROUND_EVENTS
 import com.rudderstack.sdk.kotlin.android.logger.AndroidLogger
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
@@ -140,6 +141,7 @@ class SessionConfigurationBuilder {
 
     private var automaticSessionTracking: Boolean = DEFAULT_AUTOMATIC_SESSION_TRACKING
     private var sessionTimeoutInMillis: Long = DEFAULT_SESSION_TIMEOUT_IN_MILLIS
+    private var updateSessionOnBackgroundEvents: Boolean = DEFAULT_UPDATE_SESSION_ON_BACKGROUND_EVENTS
 
     /**
      * Sets whether to enable automatic session tracking.
@@ -156,12 +158,20 @@ class SessionConfigurationBuilder {
     }
 
     /**
+     * Sets whether background events should update the session's last activity timestamp. Only applies when automatic session tracking is enabled.
+     */
+    fun setUpdateSessionOnBackgroundEvents(updateSessionOnBackgroundEvents: Boolean) = apply {
+        this.updateSessionOnBackgroundEvents = updateSessionOnBackgroundEvents
+    }
+
+    /**
      * Builds the SessionConfiguration with the configured properties.
      */
     fun build(): SessionConfiguration {
         return SessionConfiguration(
             automaticSessionTracking = automaticSessionTracking,
-            sessionTimeoutInMillis = sessionTimeoutInMillis
+            sessionTimeoutInMillis = sessionTimeoutInMillis,
+            updateSessionOnBackgroundEvents = updateSessionOnBackgroundEvents,
         )
     }
 }

@@ -24,7 +24,7 @@ internal class SessionManager(
     // single thread dispatcher is required so that the session variables are updated (on storage) in a sequential manner.
     private val sessionDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(1),
     private val analytics: Analytics,
-    sessionConfiguration: SessionConfiguration
+    private val sessionConfiguration: SessionConfiguration
 ) {
 
     private val storage: Storage
@@ -123,6 +123,10 @@ internal class SessionManager(
         withSessionDispatcher {
             sessionInfo.value.storeLastActivityTime(lastActivityTime, storage)
         }
+    }
+
+    internal fun shouldUpdateLastActivityTime(): Boolean {
+        return sessionConfiguration.updateSessionOnBackgroundEvents || sessionTrackingObserver.isInForeground.get()
     }
 
     private fun checkAndStartSessionOnLaunch() {

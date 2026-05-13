@@ -10,6 +10,8 @@ import io.mockk.spyk
 import io.mockk.unmockkAll
 import io.mockk.verify
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -74,7 +76,7 @@ class SessionTrackingObserverTest {
 
         sessionTrackingObserver.onStop(mockk<LifecycleOwner>())
 
-        assert(!sessionTrackingObserver.isSessionAlreadyUpdated.get())
+        assertFalse(sessionTrackingObserver.isSessionAlreadyUpdated.get())
         verify { mockSessionManager.updateLastActivityTime() }
     }
 
@@ -85,5 +87,26 @@ class SessionTrackingObserverTest {
         sessionTrackingObserver.onCreate(mockk<LifecycleOwner>()) // Triggers updateSession()
 
         verify(exactly = 0) { mockSessionManager.checkAndStartSessionOnForeground() }
+    }
+
+    @Test
+    fun `given observer is created, when checked, then isInForeground is false`() {
+        assertFalse(sessionTrackingObserver.isInForeground.get())
+    }
+
+    @Test
+    fun `given app is in foreground, when onStop is called, then isInForeground is false`() {
+        sessionTrackingObserver.onStart(mockk<LifecycleOwner>())
+
+        sessionTrackingObserver.onStop(mockk<LifecycleOwner>())
+
+        assertFalse(sessionTrackingObserver.isInForeground.get())
+    }
+
+    @Test
+    fun `given app is in background, when onStart is called, then isInForeground is true`() {
+        sessionTrackingObserver.onStart(mockk<LifecycleOwner>())
+
+        assertTrue(sessionTrackingObserver.isInForeground.get())
     }
 }

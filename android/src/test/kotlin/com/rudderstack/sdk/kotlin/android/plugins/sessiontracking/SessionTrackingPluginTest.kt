@@ -115,11 +115,38 @@ class SessionTrackingPluginTest {
         mockStorage.write(StorageKeys.IS_SESSION_MANUAL, false)
         mockStorage.write(StorageKeys.LAST_ACTIVITY_TIME, sessionId * 1000 - 600_000L)
         pluginSetup(automaticSessionTracking = true)
+        every { sessionManager.shouldUpdateLastActivityTime() } returns true
 
         sessionTrackingPlugin.intercept(message)
         testDispatcher.scheduler.advanceUntilIdle()
         assertEquals(sessionId * 1000, mockStorage.readLong(StorageKeys.LAST_ACTIVITY_TIME, 0L))
     }
+
+    @Test
+    fun `given activity time update is not required, when event is intercepted, then updateLastActivityTime is not called`() =
+        runTest(testDispatcher) {
+            val message = TrackEvent("test", emptyJsonObject)
+            pluginSetup(automaticSessionTracking = true)
+            every { sessionManager.shouldUpdateLastActivityTime() } returns false
+
+            sessionTrackingPlugin.intercept(message)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify(exactly = 0) { sessionManager.updateLastActivityTime() }
+        }
+
+    @Test
+    fun `given activity time update is required, when event is intercepted, then updateLastActivityTime is called`() =
+        runTest(testDispatcher) {
+            val message = TrackEvent("test", emptyJsonObject)
+            pluginSetup(automaticSessionTracking = true)
+            every { sessionManager.shouldUpdateLastActivityTime() } returns true
+
+            sessionTrackingPlugin.intercept(message)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify(exactly = 1) { sessionManager.updateLastActivityTime() }
+        }
 
     @Test
     fun `when teardown is called, then session tracking observer is detached`() = runTest {

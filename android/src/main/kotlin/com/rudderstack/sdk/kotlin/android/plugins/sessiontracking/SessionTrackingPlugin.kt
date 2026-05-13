@@ -39,8 +39,15 @@ internal class SessionTrackingPlugin : Plugin {
                     "(messageId=${event.messageId})"
             )
             addSessionIdToEvent(event)
-            if (!sessionManager.isSessionManual) {
+            if (sessionManager.isSessionManual) return event
+
+            if (sessionManager.shouldUpdateLastActivityTime()) {
                 sessionManager.updateLastActivityTime()
+            } else {
+                analytics.logger.debug(
+                    "SessionTrackingPlugin: Not updating activity time for event — app is in the background " +
+                        "and background event updates are disabled"
+                )
             }
         }
         return event
