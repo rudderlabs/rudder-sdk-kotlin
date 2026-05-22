@@ -1,9 +1,8 @@
 ---
 name: onboard-kotlin-integration
-description: Generates a Kotlin integration for rudder-sdk-kotlin repo in a step-by-step manner by referencing the corresponding Java integration
-when_to_use: When the user wants to create a new Kotlin device-mode integration from an existing Java Android v1 integration. Trigger phrases - "onboard kotlin integration", "generate kotlin integration", "convert java integration to kotlin", "new kotlin integration for <name>"
+description: Generates a Kotlin integration for the rudder-sdk-kotlin repo in a step-by-step manner by referencing the corresponding Java integration. Use when the user wants to create a new Kotlin device-mode integration from an existing Java Android v1 integration. Trigger phrases - "onboard kotlin integration", "generate kotlin integration", "convert java integration to kotlin", "new kotlin integration for <name>".
 argument-hint: [integration-name] [closest-example]
-allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Agent, AskUserQuestion
+allowed-tools: Bash, Read, Write, Edit, Glob, Grep, AskUserQuestion
 ---
 
 You are an expert Android/Kotlin developer that creates Rudder integrations by converting Java integrations to Kotlin equivalents.
@@ -20,60 +19,12 @@ User input: $ARGUMENTS
 
 If integration_name is not provided, use AskUserQuestion to ask the user for it before proceeding.
 
-## API Mapping: Java Android v1 <-> Kotlin SDK
+## Reference Material (read on demand)
 
-| Java Android v1 Method | Kotlin SDK Method | Description |
-|-------------------------|-------------------|-------------|
-| `RudderIntegration()` constructor / `getFactory()` | `create(destinationConfig: JsonObject)` | Initialize the integration with configuration |
-| N/A | `update(destinationConfig: JsonObject)` | **New in Kotlin**: Update config dynamically without re-init |
-| N/A | `getDestinationInstance(): Any?` | **New in Kotlin**: Return the destination SDK instance |
-| `reset()` | `reset()` | Reset user state / logout |
-| `flush()` | `flush()` | Flush pending events |
-| `dump(RudderMessage)` with type check | `identify(payload: IdentifyEvent)` | Handle identify events |
-| `dump(RudderMessage)` with type check | `track(payload: TrackEvent)` | Handle track events |
-| `dump(RudderMessage)` with type check | `screen(payload: ScreenEvent)` | Handle screen events |
-| `dump(RudderMessage)` with type check | `group(payload: GroupEvent)` | Handle group events |
-| `dump(RudderMessage)` with type check | `alias(payload: AliasEvent)` | Handle alias events |
-| Activity lifecycle callbacks | `ActivityLifecycleObserver` methods | Activity lifecycle handling |
+- **`references/api-mapping.md`** — Java Android v1 ↔ Kotlin SDK method mapping table plus key differences. Read this before Step 1 (Java analysis) and consult it whenever you map an event method during Steps 5–7.
+- **`references/integration-plugin.md`** — Signatures of the `IntegrationPlugin` abstract class and the `StandardIntegration` marker interface. Read this before Step 3 (generating the main integration class).
 
-**Key Differences**:
-- Java uses a single `dump()` method with `MessageType` checking; Kotlin has separate methods per event type.
-- `create()` and `update()` receive `JsonObject` (not `Map<String, Any>`). Access config via `jsonObject["key"]?.jsonPrimitive?.content` etc.
-- `update()` and `getDestinationInstance()` are new in Kotlin with no Java equivalent.
-
-## IntegrationPlugin Abstract Class Reference
-
-```kotlin
-abstract class IntegrationPlugin : EventPlugin {
-    // --- Abstract (must implement) ---
-    abstract val key: String                                    // Destination key from source config
-    abstract fun create(destinationConfig: JsonObject)          // Initialize destination instance
-    abstract fun getDestinationInstance(): Any?                 // Return the created destination instance
-
-    // --- Optional overrides ---
-    open fun update(destinationConfig: JsonObject) {}           // Called when config updates dynamically
-    open fun flush() {}                                         // Handle Analytics.flush()
-    open fun reset() {}                                         // Handle Analytics.reset()
-    override fun teardown() {}                                  // Cleanup when plugin is removed
-
-    // --- Inherited from EventPlugin (override as needed) ---
-    // fun track(payload: TrackEvent) {}
-    // fun screen(payload: ScreenEvent) {}
-    // fun group(payload: GroupEvent) {}
-    // fun identify(payload: IdentifyEvent) {}
-    // fun alias(payload: AliasEvent) {}
-
-    // --- Inherited from Plugin ---
-    // val pluginType: Plugin.PluginType   -> Always .Terminal for integrations
-    // var analytics: Analytics            -> Analytics instance reference
-
-    // --- Integration-specific ---
-    fun onDestinationReady(callback: (Any?, DestinationResult) -> Unit)
-}
-
-// Marker interface for standard integrations
-interface StandardIntegration
-```
+Use the `Read` tool to load each reference file only when the corresponding step needs it. Do not paste their contents back into your responses unless asked — refer to them by filename.
 
 ## Locating Source Material
 
