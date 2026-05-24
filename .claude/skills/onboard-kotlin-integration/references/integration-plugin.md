@@ -25,6 +25,11 @@ abstract class IntegrationPlugin : EventPlugin {
     // --- Inherited from Plugin ---
     // val pluginType: Plugin.PluginType   -> Always .Terminal for integrations
     // var analytics: Analytics            -> Analytics instance reference
+    // setup(analytics: Analytics)         -> FINAL OVERRIDE in IntegrationPlugin — cannot
+    //                                        be overridden. Runs at plugin-attach time
+    //                                        (before SourceConfig fetch); do all init work
+    //                                        in create() instead, which fires after the
+    //                                        fetch with the destination config in hand.
 
     // --- Integration-specific ---
     fun onDestinationReady(callback: (Any?, DestinationResult) -> Unit)
