@@ -86,32 +86,47 @@ import com.rudderstack.sdk.kotlin.android.utils.getBoolean
 import com.rudderstack.sdk.kotlin.android.utils.getDouble
 import com.rudderstack.sdk.kotlin.android.utils.getInt
 import com.rudderstack.sdk.kotlin.android.utils.getLong
-import com.rudderstack.sdk.kotlin.android.utils.getString
 import com.rudderstack.sdk.kotlin.android.utils.isBoolean
 import com.rudderstack.sdk.kotlin.android.utils.isDouble
 import com.rudderstack.sdk.kotlin.android.utils.isInt
 import com.rudderstack.sdk.kotlin.android.utils.isLong
 import com.rudderstack.sdk.kotlin.android.utils.isString
 
-private fun addPropertyToBundle(
-    params: Bundle,
-    key: String,
-    properties: JsonObject,
-    logger: Logger,
-) {
+private const val MAX_PROPERTY_VALUE_LENGTH = 100
+
+private fun addPropertyToBundle(params: Bundle, firebaseKey: String, key: String, properties: JsonObject, logger: Logger) {
     when {
-        properties.isString(key)  -> params.putString(key, getString(properties[key], maxLength = MAX_LEN, logger = logger))
-        properties.isInt(key)     -> params.putInt(key, properties.getInt(key) ?: 0)
-        properties.isLong(key)    -> params.putLong(key, properties.getLong(key) ?: 0)
-        properties.isDouble(key)  -> params.putDouble(key, properties.getDouble(key) ?: 0.0)
-        properties.isBoolean(key) -> params.putBoolean(key, properties.getBoolean(key) ?: false)
-        // For nested objects/arrays Firebase Analytics rejects them as Bundle entries —
-        // stringify with kotlinx.serialization.json.Json.encodeToString and putString.
+        properties.isString(key) -> {
+            val value = getString(value = properties[key], maxLength = MAX_PROPERTY_VALUE_LENGTH, logger = logger)
+            params.putString(firebaseKey, value)
+        }
+        properties.isInt(key)     -> params.putInt(firebaseKey, properties.getInt(key) ?: 0)
+        properties.isLong(key)    -> params.putLong(firebaseKey, properties.getLong(key) ?: 0)
+        properties.isDouble(key)  -> params.putDouble(firebaseKey, properties.getDouble(key) ?: 0.0)
+        properties.isBoolean(key) -> params.putBoolean(firebaseKey, properties.getBoolean(key) ?: false)
+        else -> properties[key]?.toString()?.take(MAX_PROPERTY_VALUE_LENGTH)?.let {
+            params.putString(firebaseKey, it)
+        }
     }
+}
+
+// Integration-local getString helper — not from the SDK, defined per-integration
+internal fun getString(value: JsonElement?, maxLength: Int, logger: Logger): String {
+    val stringValue = when (value) {
+        is JsonPrimitive -> value.content
+        is JsonArray, is JsonObject -> try {
+            Json.encodeToString(value)
+        } catch (e: Exception) {
+            logger.error("Error converting JsonElement to String.", e)
+            value.toString()
+        }
+        else -> value.toString()
+    }
+    return stringValue.take(maxLength)
 }
 ```
 
-See `integrations/firebase/src/main/.../Utils.kt` (`attachAllCustomProperties` and `addPropertyToBundle`) for the full pattern including reserved-keyword filtering and key sanitization (`formatFirebaseKey`).
+See `integrations/firebase/src/main/.../Utils.kt` (`attachAllCustomProperties` and `addPropertyToBundle`) for the full pattern including reserved-keyword filtering and key sanitization (`formatFirebaseKey`). Note: `getString` is defined locally in the integration, not imported from the SDK.
 
 ## Strategy 3: JSONObject-based
 

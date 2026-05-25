@@ -49,8 +49,6 @@ dependencies {
     testImplementation(libs.mockk)
     testImplementation(libs.mockk.agent)
     testImplementation(libs.json.assert)
-    // Add testImplementation(libs.kotlinx.coroutines.test) if you mock coroutine dispatchers
-    // (firebase does this; adjust does not — only needed when you use TestScope/TestDispatcher).
 
     testRuntimeOnly(libs.junit.jupiter.engine)
 }
@@ -77,38 +75,13 @@ Drop in verbatim, swap the package. This is the canonical version — promote `r
 ```kotlin
 package com.rudderstack.integration.kotlin.<integration_name>
 
-import com.rudderstack.sdk.kotlin.core.Analytics
-import io.mockk.every
-import io.mockk.mockk
-import kotlinx.coroutines.test.TestDispatcher
-import kotlinx.coroutines.test.TestScope
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 import java.io.BufferedReader
 
 /**
- * Builds a relaxed mock Analytics whose dispatchers route through the test scope —
- * needed whenever the integration touches `analytics.analyticsScope` or any of the
- * `*Dispatcher` accessors. Required for tests that exercise coroutine-based paths.
- */
-fun mockAnalytics(testScope: TestScope, testDispatcher: TestDispatcher): Analytics {
-    val mockAnalytics = mockk<Analytics>(relaxed = true)
-
-    mockAnalytics.also {
-        every { it.analyticsScope } returns testScope
-        every { it.analyticsDispatcher } returns testDispatcher
-        every { it.fileStorageDispatcher } returns testDispatcher
-        every { it.networkDispatcher } returns testDispatcher
-        every { it.integrationsDispatcher } returns testDispatcher
-    }
-
-    return mockAnalytics
-}
-
-/**
  * Loads a JSON fixture from `src/test/resources/<fileName>` and parses it into a JsonObject.
- * Use for destination configs and event payload fixtures.
  */
 internal fun Any.readFileAsJsonObject(fileName: String): JsonObject {
     val inputStream = this::class.java.classLoader!!.getResourceAsStream(fileName)
@@ -118,10 +91,31 @@ internal fun Any.readFileAsJsonObject(fileName: String): JsonObject {
 
 /**
  * Merges two JsonObjects with the right-hand side taking priority on key conflicts.
- * Useful for building event fixtures (base context + per-test overrides).
  */
 infix fun JsonObject.mergeWithHigherPriorityTo(other: JsonObject): JsonObject {
     return JsonObject(this.toMap() + other.toMap())
+}
+```
+
+If the integration tests exercise coroutine-based paths, add `testImplementation(libs.kotlinx.coroutines.test)` to `build.gradle.kts` and include this additional helper in `TestUtils.kt`:
+
+```kotlin
+import com.rudderstack.sdk.kotlin.core.Analytics
+import io.mockk.every
+import io.mockk.mockk
+import kotlinx.coroutines.test.TestDispatcher
+import kotlinx.coroutines.test.TestScope
+
+fun mockAnalytics(testScope: TestScope, testDispatcher: TestDispatcher): Analytics {
+    val mockAnalytics = mockk<Analytics>(relaxed = true)
+    mockAnalytics.also {
+        every { it.analyticsScope } returns testScope
+        every { it.analyticsDispatcher } returns testDispatcher
+        every { it.fileStorageDispatcher } returns testDispatcher
+        every { it.networkDispatcher } returns testDispatcher
+        every { it.integrationsDispatcher } returns testDispatcher
+    }
+    return mockAnalytics
 }
 ```
 

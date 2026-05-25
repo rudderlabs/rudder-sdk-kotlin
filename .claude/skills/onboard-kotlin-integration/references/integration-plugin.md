@@ -6,14 +6,17 @@ Reference the signatures below when generating the main integration class (Step 
 abstract class IntegrationPlugin : EventPlugin {
     // --- Abstract (must implement) ---
     abstract val key: String                                    // Destination key from source config
-    abstract fun create(destinationConfig: JsonObject)          // Initialize destination instance
+    protected abstract fun create(destinationConfig: JsonObject)// Initialize destination instance
     abstract fun getDestinationInstance(): Any?                 // Return the created destination instance
 
     // --- Optional overrides ---
     open fun update(destinationConfig: JsonObject) {}           // Called when config updates dynamically
     open fun flush() {}                                         // Handle Analytics.flush()
     open fun reset() {}                                         // Handle Analytics.reset()
-    override fun teardown() {}                                  // Cleanup when plugin is removed
+    override fun teardown() {                                   // Has real cleanup — always call super
+        pluginList.clear()
+        if (isPluginSetup) { pluginChain.removeAll() }
+    }
 
     // --- Inherited from EventPlugin (override as needed) ---
     // fun track(payload: TrackEvent) {}
