@@ -77,7 +77,7 @@ Drop in verbatim, swap the package. This is the canonical version — promote `r
 ```kotlin
 package com.rudderstack.integration.kotlin.<integration_name>
 
-import com.rudderstack.sdk.kotlin.android.Analytics
+import com.rudderstack.sdk.kotlin.core.Analytics
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.TestDispatcher
@@ -136,20 +136,25 @@ import android.app.Application
 import com.rudderstack.sdk.kotlin.android.utils.application
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
+import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
+import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.UserIdentity
+import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
+import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import io.mockk.MockKAnnotations
 import io.mockk.Runs
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.just
 import io.mockk.mockkStatic
-import io.mockk.spyk
 import io.mockk.verify
 import kotlinx.serialization.json.JsonObject
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 private const val PATH_TO_CONFIG = "config/<integration_name>_config.json"
@@ -182,70 +187,109 @@ class <Name>IntegrationTest {
         // Mock the analytics.application accessor used by create()
         every { mockAnalytics.application } returns mockApplication
 
-        integration = <Name>Integration()
-        integration.setup(analytics = mockAnalytics)   // calls create() internally
+        integration = <Name>Integration().also { it.analytics = mockAnalytics }
     }
 
-    // === create() / update() / getDestinationInstance() ===
+    @Nested
+    inner class Create {
 
-    @Test
-    fun `given integration is not initialised, when instance is requested, then null is returned`() {
-        val fresh = <Name>Integration()
-        assertNull(fresh.getDestinationInstance())
+        @Test
+        fun `given integration is not initialised, when instance is requested, then null is returned`() {
+            val fresh = <Name>Integration()
+            assertNull(fresh.getDestinationInstance())
+        }
+
+        @Test
+        fun `given integration is initialised, when instance is requested, then destination SDK instance is returned`() {
+            integration.create(mockIntegrationConfig)
+            assertNotNull(integration.getDestinationInstance())
+        }
+
+        @Test
+        fun `when integration is initialised, then destination SDK is configured with expected values`() {
+            integration.create(mockIntegrationConfig)
+            verify { /* destination SDK initialization call with expected args */ }
+        }
+
+        @Test
+        fun `given integration is already initialised, when create is called again, then SDK is not re-initialised`() {
+            integration.create(mockIntegrationConfig)
+            integration.create(mockNewIntegrationConfig)
+            verify(exactly = 1) { /* destination SDK initialization call */ }
+        }
     }
 
-    @Test
-    fun `given integration is initialised, when instance is requested, then destination SDK instance is returned`() {
-        integration.create(mockIntegrationConfig)
-        // assertEquals(expectedInstance, integration.getDestinationInstance())
+    @Nested
+    inner class Identify {
+
+        @Test
+        fun `given identify event has userId and traits, when identify is called, then destination receives them`() {
+            integration.create(mockIntegrationConfig)
+            val event = provideIdentifyEvent(userId = "u-1")
+            integration.identify(event)
+            verify { /* destination SDK identify call */ }
+        }
     }
 
-    @Test
-    fun `when integration is initialised, then destination SDK is configured with expected values`() {
-        integration.create(mockIntegrationConfig)
-        verify { /* destination SDK initialization call with expected args */ }
+    @Nested
+    inner class Track {
+
+        @Test
+        fun `given track event has event name and properties, when track is called, then destination receives them`() {
+            integration.create(mockIntegrationConfig)
+            val event = provideTrackEvent(eventName = "Order Completed")
+            integration.track(event)
+            verify { /* destination SDK track call */ }
+        }
     }
 
-    @Test
-    fun `given destination config is updated, when update is called, then SDK is NOT re-initialised`() {
-        integration.create(mockIntegrationConfig)
-        integration.update(mockNewIntegrationConfig)
-        verify(exactly = 1) { /* destination SDK initialization call */ }
+    @Nested
+    inner class Reset {
+
+        @Test
+        fun `when reset is called, then destination logout is invoked`() {
+            integration.create(mockIntegrationConfig)
+            integration.reset()
+            verify { /* destination SDK logout/reset call */ }
+        }
     }
 
-    // === identify() ===
+    // @Nested inner class ActivityLifecycle — only if implemented
+    // Pattern: pass an Activity mock, call onActivityResumed/onActivityDestroyed,
+    // assert integration state via side effects on the next track/identify call.
 
-    @Test
-    fun `given identify event has userId and traits, when identify is called, then destination receives them`() {
-        integration.create(mockIntegrationConfig)
-        val event = IdentifyEvent(userId = "u-1", traits = /* JsonObject of traits */ emptyJsonObject)
-        integration.identify(event)
-        verify { /* destination SDK identify call */ }
+    @OptIn(InternalRudderApi::class)
+    private fun provideTrackEvent(
+        eventName: String,
+        properties: JsonObject = emptyJsonObject,
+    ) = TrackEvent(
+        event = eventName,
+        properties = properties,
+        options = RudderOption(),
+    ).also {
+        it.originalTimestamp = "<original-timestamp>"
+        it.context = emptyJsonObject
+        it.messageId = "<message-id>"
+        it.updateData(PlatformType.Mobile)
     }
 
-    // === track() ===
-
-    @Test
-    fun `given track event has event name and properties, when track is called, then destination receives them`() {
-        integration.create(mockIntegrationConfig)
-        val event = TrackEvent(event = "Order Completed", properties = /* JsonObject */ emptyJsonObject)
-        integration.track(event)
-        verify { /* destination SDK track call */ }
+    @OptIn(InternalRudderApi::class)
+    private fun provideIdentifyEvent(
+        userId: String = "test-user",
+        traits: JsonObject = emptyJsonObject,
+    ) = IdentifyEvent(
+        options = RudderOption(),
+        userIdentityState = UserIdentity(
+            anonymousId = "<anonymousId>",
+            userId = userId,
+            traits = traits,
+        ),
+    ).also {
+        it.originalTimestamp = "<original-timestamp>"
+        it.context = emptyJsonObject
+        it.messageId = "<message-id>"
+        it.updateData(PlatformType.Mobile)
     }
-
-    // === reset() — only if implemented ===
-
-    @Test
-    fun `when reset is called, then destination logout is invoked`() {
-        integration.create(mockIntegrationConfig)
-        integration.reset()
-        verify { /* destination SDK logout/reset call */ }
-    }
-
-    // === ActivityLifecycleObserver — only if implemented ===
-    // Pattern: pass a FragmentActivity (or whatever the integration filters on),
-    // call onActivityResumed/onActivityDestroyed, assert the integration's internal
-    // state via the side effects on the next track/identify call.
 }
 ```
 
@@ -259,6 +303,8 @@ The mock setup in `@BeforeEach` depends on what the destination SDK looks like (
 - **Instance-required class** (firebase's `FirebaseAnalytics`): `mockk<Foo>(relaxed = true)`, inject via the integration's factory hook.
 
 The choice mirrors Step 1's analysis directly — if Step 1 captured "entry point shape: Kotlin object", the mock pattern is `mockkObject`.
+
+**Overloaded methods**: many destination SDKs have overloaded methods (e.g., `track(String)` vs `track(EventPayload)`). Bare `any()` causes mockk overload-resolution ambiguity at compile time. Use `any<SpecificType>()` in both `every` stubs and `verify` calls: `every { Foo.track(any<EventPayload>()) } just Runs`.
 
 ## `UtilsTest.kt` skeleton
 
@@ -369,16 +415,21 @@ new_<integration_name>_config.json      # an alternate config used for update() 
 
 The fixtures must be parseable by whatever `parseConfig<T>` (or equivalent) the integration uses. If your config has a feature flag that toggles behavior, add a fixture per branch.
 
-## Test naming convention
+## Test structure and naming convention
 
-Use backticked, sentence-form names following the **given/when/then** pattern:
+**Grouping**: use `@Nested inner class` to group tests by method (`Create`, `Identify`, `Track`, `Reset`, `ActivityLifecycle`, etc.). This mirrors the structure in `UtilsTest.kt` and gives clean hierarchical output in IDE test runners.
+
+**Naming**: use backticked, sentence-form names following the **given/when/then** pattern:
 
 ```kotlin
-@Test
-fun `given integration is initialised, when track event is made, then destination SDK receives it`() { ... }
+@Nested
+inner class Track {
+    @Test
+    fun `given integration is initialised, when track event is made, then destination SDK receives it`() { ... }
+}
 ```
 
-This shows up cleanly in IDE test runners and gradle reports. Not negotiable — every existing integration follows it, mixed naming will fail review.
+Not negotiable — every existing integration follows this naming style, mixed naming will fail review.
 
 ## Running the tests
 

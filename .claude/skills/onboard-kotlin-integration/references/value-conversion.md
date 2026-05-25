@@ -5,7 +5,7 @@ Every device-mode integration has to bridge between two value models:
 - **RudderStack events** carry `properties`, `traits`, and `context` as `kotlinx.serialization.json.JsonObject`.
 - **Destination SDKs** accept very different shapes: `Map<String, Any>`, `android.os.Bundle`, `org.json.JSONObject`, typed primitives, or their own typed parameter objects.
 
-There is **no single canonical helper** that fits every integration. The existing integrations use four distinct strategies, and the choice is driven by what the destination SDK accepts. Pick the strategy first, then copy the matching helpers.
+There is **no single canonical helper** that fits every integration. The existing integrations use five distinct strategies, and the choice is driven by what the destination SDK accepts. Pick the strategy first, then copy the matching helpers.
 
 ## Pick a strategy
 

@@ -114,6 +114,8 @@ In **auto mode**, skip this gate unless there are Behavior Divergences that devi
 ### Step 2: Create Module Structure
 Create the basic module structure in `integrations/<integration_name>/` of the current repo:
 
+**Source directory convention**: use `src/main/kotlin/` and `src/test/kotlin/`, not `java/`.
+
 **Create directories and basic files**:
 - `build.gradle.kts` - Module build configuration
 - `src/main/AndroidManifest.xml` - Android manifest
@@ -127,6 +129,8 @@ Create the basic module structure in `integrations/<integration_name>/` of the c
 - `libs.versions.toml` - add the dependency version here for the destination SDK. Follow existing integration examples.
 - `build.gradle.kts` - add that dependency from libs.versions.toml. Use the same structure as other integrations.
 
+**Dependencies**: If the destination SDK's API uses Android framework types not provided by the RudderStack SDK's transitive graph (e.g., `FragmentActivity`, `AppCompatActivity`), add them as `implementation` — not `compileOnly` — since consumers of the integration need them at compile time too.
+
 **Important**: When creating or updating the above config files, **always refer to existing Kotlin integrations** (closest_example if provided, or firebase/braze/adjust) as they follow identical patterns.
 
 Proceed directly to Step 3 — no approval gate here. Module scaffolding is mechanical.
@@ -138,7 +142,7 @@ Create the main `<IntegrationName>Integration.kt` class and generate **only** th
 - Always: `create()`, `getDestinationInstance()`, `key` property.
 - `update()` only if the destination SDK exposes a re-configure API (see Step 4b — most do not; the base class default is a no-op and overriding it with an empty body is dead code).
 - From Step 1's per-method analysis: a stub for every method (event, lifecycle, activity-lifecycle callback) the Java integration implements with non-trivial logic.
-- Do **not** add stubs for methods the Java integration leaves empty. Do **not** override `flush()`, `reset()`, `teardown()`, or `update()` just to fill them in — `IntegrationPlugin` already provides empty defaults for these, so an empty override is noise.
+- Do **not** add stubs for methods the Java integration leaves empty. Do **not** override `flush()`, `reset()`, or `update()` just to fill them in — `IntegrationPlugin` already provides no-op defaults for these, so an empty override is noise. `teardown()` is different — it has real base-class cleanup (clears plugin list, removes from plugin chain), so only override it when you need to add integration-specific cleanup (see cleanup symmetry rule in Step 4a), and always call `super.teardown()` first.
 
 **Destination-instance field (non-negotiable)**: Declare a nullable `private var` for the destination SDK instance, default `null`, assigned in `create()` and returned by `getDestinationInstance()`. The Kotlin SDK uses this null-ness to decide between `create()` and `update()` on every config refresh — see `android/src/main/kotlin/com/rudderstack/sdk/kotlin/android/plugins/devicemode/IntegrationPlugin.kt:197` for the gating logic. Returning a non-null literal (e.g., the destination SDK's `object` itself) breaks this and causes `create()` to never fire.
 
@@ -152,7 +156,7 @@ class FooIntegration : StandardIntegration, IntegrationPlugin() {
 
     private var foo: Foo? = null
 
-    override fun create(destinationConfig: JsonObject) {
+    public override fun create(destinationConfig: JsonObject) {
         foo ?: run {
             // parse config, then assign
             foo = Foo.initialize(...)
@@ -162,6 +166,8 @@ class FooIntegration : StandardIntegration, IntegrationPlugin() {
     override fun getDestinationInstance(): Any? = foo
 }
 ```
+
+**Visibility**: `IntegrationPlugin.create()` is `protected`. Always declare `public override fun create(...)` so that tests can call it directly. All existing integrations do this.
 
 If the destination SDK is a Kotlin `object` (single global instance), the field still exists — typed as `Foo?` — and `create()` assigns it to the object reference after a successful `configure()` call. Every call site in `identify`/`track`/`reset`/lifecycle must use the stored field (`foo?.track(...)`), not the SDK class directly (`Foo.track(...)`), so that calls before `create()` is gated null-safe.
 
@@ -181,7 +187,7 @@ Convert the Java integration initialization logic to Kotlin.
 3. Call the destination SDK's init (`Foo.configure(...)` or equivalent) and assign the result to `foo`. For SDKs that don't return an instance (e.g., Kotlin `object` singletons), do the configure call then assign `foo = Foo`.
 4. Register any cross-cutting hooks the integration needs (e.g., `(analytics as? AndroidAnalytics)?.addLifecycleObserver(this)` for activity-lifecycle observers).
 
-**Cleanup symmetry rule**: every registration in `create()` — lifecycle observers, SDK event listeners, callbacks — requires a corresponding deregistration in `teardown()`. If `create()` calls `addLifecycleObserver(this)`, then `teardown()` must call `removeLifecycleObserver(this)`, null out the destination instance field, and clean up any other state (e.g., clear cached activity references). Add `teardown()` to Step 7's work list whenever `create()` registers anything — the Java integration may not have had explicit cleanup, but the Kotlin SDK's plugin lifecycle requires it.
+**Cleanup symmetry rule**: every registration in `create()` — lifecycle observers, SDK event listeners, callbacks — requires a corresponding deregistration in `teardown()`. `teardown()` must **always begin with `super.teardown()`** — the base class (`IntegrationPlugin`) has real cleanup logic (clears plugin list and removes from plugin chain). After the super call: if `create()` calls `addLifecycleObserver(this)`, then `teardown()` must call `removeLifecycleObserver(this)`, null out the destination instance field, and clean up any other state (e.g., clear cached activity references). Add `teardown()` to Step 7's work list whenever `create()` registers anything — the Java integration may not have had explicit cleanup, but the Kotlin SDK's plugin lifecycle requires it.
 
 Do **not** introduce a separate `isInitialized` flag — the `foo == null` check is the canonical signal and the SDK uses it directly (`IntegrationPlugin.kt:197`).
 
@@ -248,7 +254,7 @@ Do **not** add empty overrides or stubs for methods the Java integration doesn't
 ### Step 8: Finalize Utility Classes and Configuration
 By this point, `Utils.kt` should already contain the value-conversion helpers and any transformation functions extracted from Steps 5–7 (per the Utils extraction rule in Step 5). This step handles anything remaining:
 
-- **Verify `Utils.kt` completeness**: review the integration class for any private helper functions that don't access `this`. If any exist, move them to `Utils.kt` as `internal` functions now.
+- **Verify `Utils.kt` completeness**: for each private/internal function in the integration class, check: does it read or write an instance field (`analytics`, `currentActivity`, etc.) directly — not via a parameter? If no, move it to `Utils.kt` as an `internal` function, passing any needed context (e.g., `logger`) as a parameter.
 - **Config data class**: should already exist from Step 4a (the `@Serializable` config class + `parseConfig<T>` helper). If it wasn't created yet, create it now.
 - **Additional utility classes**: convert any remaining Java utility or configuration classes not covered above. For value-conversion utilities, use the implementations from `references/value-conversion.md` matching the strategy picked in Step 5/6 verbatim — these are duplicated across integrations on purpose (the core helper is `internal`).
 
@@ -281,9 +287,9 @@ Work through the scaffold in this order — no per-sub-step approval gates:
 1. **Add test dependencies and `tasks.withType<Test>` block** to `build.gradle.kts` per the scaffold.
 2. **Create `src/test/kotlin/.../TestUtils.kt`** with `mockAnalytics`, `readFileAsJsonObject`, `mergeWithHigherPriorityTo` (copy verbatim from the scaffold).
 3. **Create `src/test/resources/config/<integration_name>_config.json`** and `new_<integration_name>_config.json` fixtures mirroring the destination dashboard's payload. Use the closest existing integration's fixtures as the structural template.
-4. **Write `<Name>IntegrationTest.kt`** with one `@Test` per implemented method — `create`, `getDestinationInstance`, `identify`, `track`, and any method on Step 7's work list (`reset`, lifecycle callbacks, etc.). Add `update` tests only if `update()` was overridden per Step 4b. Use the mockk pattern from the scaffold that matches the destination SDK's entry-point shape (recorded in Step 1's "Destination SDK Kotlin API" section). Include a `getDestinationInstance` test that asserts it returns `null` before `create()` runs and the configured instance after — this is the contract the Kotlin SDK relies on.
+4. **Write `<Name>IntegrationTest.kt`** using `@Nested` inner classes to group tests by method (`Create`, `Identify`, `Track`, `Reset`, `ActivityLifecycle`, etc.) — one `@Nested inner class` per logical group, each containing the `@Test` methods for that group. Add `update` tests only if `update()` was overridden per Step 4b. Use the mockk pattern from the scaffold that matches the destination SDK's entry-point shape (recorded in Step 1's "Destination SDK Kotlin API" section). Include a `getDestinationInstance` test that asserts it returns `null` before `create()` runs and the configured instance after — this is the contract the Kotlin SDK relies on.
 5. **Write `UtilsTest.kt`** covering the value-conversion helpers from Step 8 — the test shape depends on the strategy picked in Step 5/6 (Map-based gets type-preservation tests, per-type-getter gets coercion tests, data-class-decode gets valid/invalid JSON tests).
-6. **Write `<Name>PomVerificationTest.kt`** — run `./gradlew :integrations:<integration_name>:generatePomFileForReleasePublication`, copy the generated XML into the test with versions normalized to placeholders per the scaffold, swap the system-property name to match `build.gradle.kts`.
+6. **Write `<Name>PomVerificationTest.kt`** — first run `./gradlew :integrations:<integration_name>:generatePomFileForReleasePublication` and read the generated POM at `build/publications/release/pom-default.xml`. Use that actual output as the expected XML template (normalize versions per the scaffold). Do not guess the dependency list — the generated POM is the source of truth.
 7. **Run the tests**:
    ```bash
    ./gradlew :integrations:<integration_name>:test

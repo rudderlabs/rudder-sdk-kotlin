@@ -19,6 +19,6 @@ Use this mapping when converting a Java integration's logic to the Kotlin equiva
 ## Key Differences
 
 - Java uses a single `dump()` method with `MessageType` checking; Kotlin has separate methods per event type.
-- `create()` and `update()` receive `JsonObject` (not `Map<String, Any>`). Access config via `jsonObject["key"]?.jsonPrimitive?.content` etc.
+- `create()` and `update()` receive `JsonObject` (not `Map<String, Any>`). For destination config, decode to a `@Serializable` data class via `parseConfig<T>()` (see SKILL.md Step 4a). For event properties/traits, use the value-conversion strategy from `value-conversion.md`.
 - `update()` and `getDestinationInstance()` are new in Kotlin with no Java equivalent.
 - **Activity lifecycle timing divergence**: Java v1's `Application.ActivityLifecycleCallbacks` are typically registered at host-app boot (in `Application.onCreate`), so they observe every activity event from the first `onCreate`. The Kotlin SDK's `addLifecycleObserver(this)` is called from the integration's `create()`, which only fires **after** SourceConfig is fetched from the dashboard. By then the host activity may already be RESUMED, and earlier lifecycle events are **not** replayed. If the integration needs an Activity reference for any call site (UI presentation, in-app messages, etc.), prefer preserving the Java-style explicit setter API rather than relying on auto-observe alone.
