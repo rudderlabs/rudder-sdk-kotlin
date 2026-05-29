@@ -109,12 +109,23 @@ object RudderStackBuildConfig {
             override val pomPackaging = "aar"
         }
 
+        object Sprig : IntegrationModuleInfo {
+
+            override val moduleName: String = "sprig"
+            override val versionName: String = "1.0.0"
+            override val versionCode: String = "1"
+
+            override val artifactId = "sprig"
+            override val pomPackaging = "aar"
+        }
+
         fun getModuleInfo(projectName: String): IntegrationModuleInfo = when (projectName) {
             "adjust" -> Adjust
             "braze" -> Braze
             "facebook" -> Facebook
             "firebase" -> Firebase
             "appsflyer" -> AppsFlyer
+            "sprig" -> Sprig
             else -> throw IllegalArgumentException("Unknown integration module: $projectName")
         }
     }
