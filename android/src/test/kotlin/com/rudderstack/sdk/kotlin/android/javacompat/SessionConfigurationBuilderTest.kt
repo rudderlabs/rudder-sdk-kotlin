@@ -3,6 +3,7 @@ package com.rudderstack.sdk.kotlin.android.javacompat
 import com.rudderstack.sdk.kotlin.android.utils.provideSessionConfiguration
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -49,5 +50,19 @@ class SessionConfigurationBuilderTest {
         val expected =
             provideSessionConfiguration(sessionTimeoutInMillis = CUSTOM_TIME_IN_MILLIS, automaticSessionTracking = false)
         assertEquals(expected, config)
+    }
+
+    @Test
+    fun `when SessionConfiguration is built with default values, then updateSessionOnBackgroundEvents should be false`() {
+        val sessionConfiguration = sessionConfigurationBuilder.build()
+
+        assertFalse(sessionConfiguration.updateSessionOnBackgroundEvents)
+    }
+
+    @Test
+    fun `when setUpdateSessionOnBackgroundEvents is set to true, then updateSessionOnBackgroundEvents should be true`() {
+        val sessionConfiguration = sessionConfigurationBuilder.setUpdateSessionOnBackgroundEvents(true).build()
+
+        assertTrue(sessionConfiguration.updateSessionOnBackgroundEvents)
     }
 }
