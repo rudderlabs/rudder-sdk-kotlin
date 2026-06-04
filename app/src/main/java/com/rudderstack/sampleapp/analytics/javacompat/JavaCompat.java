@@ -62,6 +62,7 @@ public class JavaCompat {
         SessionConfiguration sessionConfiguration = new SessionConfigurationBuilder()
                 .setAutomaticSessionTracking(true)
                 .setSessionTimeoutInMillis(30)
+                .setUpdateSessionOnBackgroundEvents(false)
                 .build();
 
         Configuration configuration = new ConfigurationBuilder(application, writeKey, dataPlaneUrl)

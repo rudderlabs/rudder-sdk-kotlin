@@ -40,6 +40,7 @@ object RudderAnalyticsUtils {
                 sessionConfiguration = SessionConfiguration(
                     automaticSessionTracking = true,
                     sessionTimeoutInMillis = 3000,
+                    updateSessionOnBackgroundEvents = false,
                 ),
                 gzipEnabled = true,
                 logger = CustomTimberLogger(),
