@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+# [1.7.0](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.sdk.kotlin.android@v1.6.0...com.rudderstack.sdk.kotlin.android@v1.7.0) (2026-06-03)
+
+## Features
+
+- **session:** Add option to skip session activity updates for background events ([#317](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/317)) ([9beb4d4](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/9beb4d41a04d0d7554712996892e1d0a4bb603c5))
+
+
 # [1.6.0](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.sdk.kotlin.android@v1.5.0...com.rudderstack.sdk.kotlin.android@v1.6.0) (2026-04-02)
 
 ## Features
