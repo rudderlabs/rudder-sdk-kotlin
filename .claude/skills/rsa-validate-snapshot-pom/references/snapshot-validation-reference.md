@@ -244,6 +244,8 @@ Dependencies (5 total):
 
 Data sourced from previous (16 Mar 2026) and latest (02 Apr 2026) snapshot POMs.
 
+> **Scope:** This comparison covers the 7 modules that had both a previous and a latest snapshot in this window. `sprig` is excluded — it was added later and had no earlier snapshot in this window to compare against. The skill itself validates all 8 modules, `sprig` included.
+
 ## Version Changes
 
 | Module | Previous Snapshot | Latest Snapshot | Internal SDK Dep Version Change |
@@ -258,7 +260,7 @@ Data sourced from previous (16 Mar 2026) and latest (02 Apr 2026) snapshot POMs.
 
 ## Non-Version Changes
 
-**None found.** Across all 7 modules, the only differences between previous and latest snapshots were:
+**None found.** Across the 7 compared modules (`sprig` excluded — see the scope note above), the only differences between previous and latest snapshots were:
 - The module's own version number
 - Internal SDK dependency versions (core, android) tracking the new release
 
