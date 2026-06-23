@@ -284,7 +284,9 @@ private fun consumedTopLevelKeysForEvent(
 ): Set<String> {
     val consumed = mutableSetOf(SOURCE_KEY)
     consumed.addAll(eventMapping.consumedSourceKeys())
-    if (productMapping != null) {
+    // Only consume `products` when it is an actual array we build from. A malformed (non-array) `products`
+    // value is left unconsumed so it flows through to metadata instead of being silently dropped.
+    if (productMapping != null && hasExplicitProductsArray) {
         consumed.add(PRODUCTS_KEY)
     }
     // cart_updated folds top-level product fields into products[0] only when no explicit products[] is provided.

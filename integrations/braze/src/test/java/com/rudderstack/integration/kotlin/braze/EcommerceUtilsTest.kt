@@ -260,6 +260,21 @@ class EcommerceUtilsTest {
     }
 
     @Test
+    fun `given a malformed non-array products value, when built, then it flows to metadata instead of being dropped`() {
+        val properties = buildJsonObject {
+            put("order_id", "O1")
+            put("total", 50.0)
+            put("currency", "USD")
+            put("products", "not-an-array") // malformed shape
+        }
+
+        val result = build(properties, BrazeEcommerceEvents.ORDER_REFUNDED)
+
+        assertFalse(result.containsKey("products"))
+        assertEquals(JsonPrimitive("not-an-array"), result.metadata()["products"])
+    }
+
+    @Test
     fun `given checkout started with checkout_id absent, when built, then order_id is used as fallback`() {
         val properties = buildJsonObject {
             put("order_id", "O1")
