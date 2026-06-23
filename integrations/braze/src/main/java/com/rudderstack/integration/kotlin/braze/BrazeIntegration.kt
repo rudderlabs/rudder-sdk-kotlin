@@ -120,13 +120,21 @@ class BrazeIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
     private fun handleRecommendedEcommerceEvent(payload: TrackEvent): Boolean {
         val mapping = getEcommerceMapping(payload.event) ?: return false
 
+        val brazeInstance = this.braze ?: run {
+            analytics.logger.verbose(
+                "BrazeIntegration: Braze is not initialized, dropping recommended ecommerce event " +
+                    "'${mapping.brazeEvent}' for RudderStack event '${payload.event}'."
+            )
+            return true
+        }
+
         val properties = buildEcommerceEventProperties(
             properties = payload.properties,
             brazeEvent = mapping.brazeEvent,
             action = mapping.action,
             logger = analytics.logger,
         )
-        this.braze?.logCustomEvent(mapping.brazeEvent, initBrazeProperties(properties))
+        brazeInstance.logCustomEvent(mapping.brazeEvent, initBrazeProperties(properties))
         analytics.logger.verbose(
             "BrazeIntegration: Recommended ecommerce event '${mapping.brazeEvent}' " +
                 "sent for RudderStack event '${payload.event}'."
