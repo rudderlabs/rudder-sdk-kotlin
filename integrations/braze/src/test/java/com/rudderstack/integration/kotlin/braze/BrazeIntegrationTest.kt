@@ -31,6 +31,10 @@ import io.mockk.mockkStatic
 import io.mockk.slot
 import io.mockk.verify
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonArray
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonArray
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeEach
@@ -43,6 +47,9 @@ private const val pathToNewBrazeConfig = "config/new_braze_config.json"
 private const val pathToBrazeConfigWithAndroidAppIdentifierKey = "config/braze_config_with_android_app_identifier_key.json"
 private const val pathToBrazeConfigWithFlagDisabled = "config/braze_config_with_flag_disabled.json"
 private const val pathToBrazeConfigWithBlankAndroidAppIdentifierKey = "config/braze_config_with_blank_android_app_identifier_key.json"
+private const val pathToBrazeConfigWithRecommendedEcommerce = "config/braze_config_with_recommended_ecommerce.json"
+private const val pathToBrazeConfigHybridWithRecommendedEcommerce =
+    "config/braze_config_hybrid_with_recommended_ecommerce.json"
 
 private const val INSTALL_ATTRIBUTED = "Install Attributed"
 
@@ -56,6 +63,10 @@ class BrazeIntegrationTest {
     private val mockBrazeIntegrationConfigWithDeDupeDisabled: JsonObject =
         readFileAsJsonObject(pathToBrazeConfigWithDeDupeDisabled)
     private val mockNewBrazeIntegrationConfig: JsonObject = readFileAsJsonObject(pathToNewBrazeConfig)
+    private val mockBrazeIntegrationConfigWithRecommendedEcommerce: JsonObject =
+        readFileAsJsonObject(pathToBrazeConfigWithRecommendedEcommerce)
+    private val mockBrazeIntegrationConfigHybridWithRecommendedEcommerce: JsonObject =
+        readFileAsJsonObject(pathToBrazeConfigHybridWithRecommendedEcommerce)
 
     @MockK
     private lateinit var mockAnalytics: Analytics
@@ -260,6 +271,245 @@ class BrazeIntegrationTest {
                 productId = any(),
                 currencyCode = any(),
                 price = any(),
+                quantity = any(),
+                properties = any<BrazeProperties>()
+            )
+        }
+    }
+
+    @Test
+    fun `given recommended ecommerce flag is on and event is Order Completed, when it is made, then it is logged as ecommerce_order_placed and not as a purchase`() {
+        brazeIntegration.create(mockBrazeIntegrationConfigWithRecommendedEcommerce)
+        val trackEvent = provideTrackEvent(
+            eventName = ORDER_COMPLETED,
+            properties = getOrderCompletedProperties(),
+        )
+
+        brazeIntegration.track(trackEvent)
+
+        verify(exactly = 1) {
+            mockBrazeInstance.logCustomEvent(eq(BrazeEcommerceEvents.ORDER_PLACED), any<BrazeProperties>())
+        }
+        verify(exactly = 0) {
+            mockBrazeInstance.logPurchase(
+                productId = any(),
+                currencyCode = any(),
+                price = any(),
+                quantity = any(),
+                properties = any<BrazeProperties>()
+            )
+        }
+    }
+
+    @Test
+    fun `given recommended ecommerce flag is on and event is unmapped, when it is made, then it falls through to a custom event`() {
+        brazeIntegration.create(mockBrazeIntegrationConfigWithRecommendedEcommerce)
+        val trackEvent = provideTrackEvent(
+            eventName = "Cart Viewed",
+            properties = getCustomProperties(),
+        )
+
+        brazeIntegration.track(trackEvent)
+
+        verify(exactly = 1) {
+            mockBrazeInstance.logCustomEvent(eq("Cart Viewed"), any<BrazeProperties>())
+        }
+    }
+
+    @Test
+    fun `given recommended ecommerce flag is off and event is Order Completed, when it is made, then legacy purchase logging is used`() {
+        brazeIntegration.create(mockBrazeIntegrationConfig)
+        val trackEvent = provideTrackEvent(
+            eventName = ORDER_COMPLETED,
+            properties = getOrderCompletedProperties(),
+        )
+
+        brazeIntegration.track(trackEvent)
+
+        verify(exactly = 0) {
+            mockBrazeInstance.logCustomEvent(eq(BrazeEcommerceEvents.ORDER_PLACED), any<BrazeProperties>())
+        }
+        verify(atLeast = 1) {
+            mockBrazeInstance.logPurchase(
+                productId = any(),
+                currencyCode = any(),
+                price = any(),
+                quantity = any(),
+                properties = any<BrazeProperties>()
+            )
+        }
+    }
+
+    @Test
+    fun `given recommended ecommerce flag is on and event is Product Viewed, when it is made, then it is logged as ecommerce_product_viewed`() {
+        brazeIntegration.create(mockBrazeIntegrationConfigWithRecommendedEcommerce)
+        val trackEvent = provideTrackEvent(
+            eventName = "Product Viewed",
+            properties = buildJsonObject {
+                put("product_id", "P1")
+                put("name", "Shoe")
+                put("variant", "red")
+                put("price", 49.99)
+                put("currency", "USD")
+            },
+        )
+
+        brazeIntegration.track(trackEvent)
+
+        verify(exactly = 1) {
+            mockBrazeInstance.logCustomEvent(eq(BrazeEcommerceEvents.PRODUCT_VIEWED), any<BrazeProperties>())
+        }
+    }
+
+    @Test
+    fun `given recommended ecommerce flag is on and event is Product Added, when it is made, then it is logged as ecommerce_cart_updated`() {
+        brazeIntegration.create(mockBrazeIntegrationConfigWithRecommendedEcommerce)
+        val trackEvent = provideTrackEvent(
+            eventName = "Product Added",
+            properties = buildJsonObject {
+                put("cart_id", "C1")
+                put("currency", "USD")
+                put("product_id", "P1")
+                put("name", "Shoe")
+                put("variant", "red")
+                put("quantity", 1)
+                put("price", 49.99)
+            },
+        )
+
+        brazeIntegration.track(trackEvent)
+
+        verify(exactly = 1) {
+            mockBrazeInstance.logCustomEvent(eq(BrazeEcommerceEvents.CART_UPDATED), any<BrazeProperties>())
+        }
+    }
+
+    @Test
+    fun `given recommended ecommerce flag is on and event is Checkout Started, when it is made, then it is logged as ecommerce_checkout_started`() {
+        brazeIntegration.create(mockBrazeIntegrationConfigWithRecommendedEcommerce)
+        val trackEvent = provideTrackEvent(
+            eventName = "Checkout Started",
+            properties = buildJsonObject {
+                put("checkout_id", "CH1")
+                put("total", 99.0)
+                put("currency", "USD")
+                putJsonArray("products") {
+                    add(
+                        buildJsonObject {
+                            put("product_id", "P1")
+                            put("name", "Shoe")
+                            put("variant", "red")
+                            put("quantity", 1)
+                            put("price", 99.0)
+                        }
+                    )
+                }
+            },
+        )
+
+        brazeIntegration.track(trackEvent)
+
+        verify(exactly = 1) {
+            mockBrazeInstance.logCustomEvent(eq(BrazeEcommerceEvents.CHECKOUT_STARTED), any<BrazeProperties>())
+        }
+    }
+
+    @Test
+    fun `given recommended ecommerce flag is on and event is Order Refunded, when it is made, then it is logged as ecommerce_order_refunded`() {
+        brazeIntegration.create(mockBrazeIntegrationConfigWithRecommendedEcommerce)
+        val trackEvent = provideTrackEvent(
+            eventName = "Order Refunded",
+            properties = buildJsonObject {
+                put("order_id", "O1")
+                put("total", 50.0)
+                put("currency", "USD")
+                putJsonArray("products") {
+                    add(
+                        buildJsonObject {
+                            put("product_id", "P1")
+                            put("name", "Shoe")
+                            put("variant", "red")
+                            put("quantity", 1)
+                            put("price", 50.0)
+                        }
+                    )
+                }
+            },
+        )
+
+        brazeIntegration.track(trackEvent)
+
+        verify(exactly = 1) {
+            mockBrazeInstance.logCustomEvent(eq(BrazeEcommerceEvents.ORDER_REFUNDED), any<BrazeProperties>())
+        }
+    }
+
+    @Test
+    fun `given recommended ecommerce flag is on and event is Order Cancelled, when it is made, then it is logged as ecommerce_order_cancelled`() {
+        brazeIntegration.create(mockBrazeIntegrationConfigWithRecommendedEcommerce)
+        val trackEvent = provideTrackEvent(
+            eventName = "Order Cancelled",
+            properties = buildJsonObject {
+                put("order_id", "O1")
+                put("total", 50.0)
+                put("currency", "USD")
+                put("cancel_reason", "out of stock")
+                putJsonArray("products") {
+                    add(
+                        buildJsonObject {
+                            put("product_id", "P1")
+                            put("name", "Shoe")
+                            put("variant", "red")
+                            put("quantity", 1)
+                            put("price", 50.0)
+                        }
+                    )
+                }
+            },
+        )
+
+        brazeIntegration.track(trackEvent)
+
+        verify(exactly = 1) {
+            mockBrazeInstance.logCustomEvent(eq(BrazeEcommerceEvents.ORDER_CANCELLED), any<BrazeProperties>())
+        }
+    }
+
+    @Test
+    fun `given recommended ecommerce flag is on but braze is not initialised, when an ecommerce event is made, then it is dropped without crashing`() {
+        // update() sets the config without initialising the Braze instance, leaving braze == null.
+        brazeIntegration.update(mockBrazeIntegrationConfigWithRecommendedEcommerce)
+        val trackEvent = provideTrackEvent(
+            eventName = ORDER_COMPLETED,
+            properties = getOrderCompletedProperties(),
+        )
+
+        brazeIntegration.track(trackEvent)
+
+        verify(exactly = 0) {
+            mockBrazeInstance.logCustomEvent(any())
+            mockBrazeInstance.logCustomEvent(any(), any())
+        }
+    }
+
+    @Test
+    fun `given hybrid mode is enabled and recommended ecommerce flag is on, when an ecommerce event is made, then no event is logged`() {
+        brazeIntegration.create(mockBrazeIntegrationConfigHybridWithRecommendedEcommerce)
+        val trackEvent = provideTrackEvent(
+            eventName = ORDER_COMPLETED,
+            properties = getOrderCompletedProperties(),
+        )
+
+        brazeIntegration.track(trackEvent)
+
+        verify(exactly = 0) {
+            mockBrazeInstance.logCustomEvent(any())
+            mockBrazeInstance.logCustomEvent(any(), any())
+            mockBrazeInstance.logPurchase(
+                productId = any(),
+                currencyCode = any(),
+                price = any(),
+                quantity = any(),
                 properties = any<BrazeProperties>()
             )
         }
@@ -415,6 +665,7 @@ class BrazeIntegrationTest {
                 productId = any(),
                 currencyCode = any(),
                 price = any(),
+                quantity = any(),
                 properties = any<BrazeProperties>()
             )
         }

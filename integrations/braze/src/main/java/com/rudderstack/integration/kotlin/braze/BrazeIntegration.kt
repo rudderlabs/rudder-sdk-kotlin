@@ -92,6 +92,10 @@ class BrazeIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
             return
         }
 
+        if (brazeConfig.useRecommendedEcommerceEvents && handleRecommendedEcommerceEvent(payload)) {
+            return
+        }
+
         when (payload.event) {
             INSTALL_ATTRIBUTED -> {
                 handleInstallAttributedEvent(payload)
@@ -105,6 +109,29 @@ class BrazeIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
                 handleCustomEvent(payload)
             }
         }
+    }
+
+    /**
+     * Maps a supported RudderStack ecommerce event to a Braze recommended event and logs it.
+     *
+     * @return `true` if the event was handled as a recommended ecommerce event; `false` to fall through
+     * to the legacy track handling.
+     */
+    private fun handleRecommendedEcommerceEvent(payload: TrackEvent): Boolean {
+        val mapping = getEcommerceMapping(payload.event) ?: return false
+
+        val properties = buildEcommerceEventProperties(
+            properties = payload.properties,
+            brazeEvent = mapping.brazeEvent,
+            action = mapping.action,
+            logger = analytics.logger,
+        )
+        this.braze?.logCustomEvent(mapping.brazeEvent, initBrazeProperties(properties))
+        analytics.logger.verbose(
+            "BrazeIntegration: Recommended ecommerce event '${mapping.brazeEvent}' " +
+                "sent for RudderStack event '${payload.event}'."
+        )
+        return true
     }
 
     private fun handleInstallAttributedEvent(payload: TrackEvent) {

@@ -44,6 +44,7 @@ internal sealed class AppKeyResolution {
  * @property customEndpoint The custom endpoint for the data center. Must not be empty or blank.
  * @property supportDedup Flag indicating whether deduplication is supported.
  * @property connectionMode The mode of connection, either HYBRID or DEVICE.
+ * @property useRecommendedEcommerceEvents When enabled, maps supported RudderStack ecommerce track events to Braze recommended events. Defaults to false.
  *
  * @throws IllegalArgumentException if resolved appIdentifierKey or customEndpoint is empty or blank.
  */
@@ -60,6 +61,8 @@ internal data class RudderBrazeConfig(
     val customEndpoint: String,
     val supportDedup: Boolean,
     val connectionMode: ConnectionMode,
+    @SerialName("useRecommendedEcommerceEvents")
+    val useRecommendedEcommerceEvents: Boolean = false,
 ) {
 
     /**
