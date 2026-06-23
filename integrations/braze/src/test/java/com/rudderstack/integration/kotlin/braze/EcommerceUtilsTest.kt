@@ -331,7 +331,7 @@ class EcommerceUtilsTest {
     // region send-anyway value semantics
 
     @Test
-    fun `given a numeric zero value, when built, then it is treated as resolved`() {
+    fun `given a numeric zero value, when built, then it is treated as resolved and coerced to float`() {
         val properties = buildJsonObject {
             put("product_id", "P1")
             put("name", "Free")
@@ -342,7 +342,7 @@ class EcommerceUtilsTest {
 
         val result = build(properties, BrazeEcommerceEvents.PRODUCT_VIEWED)
 
-        assertEquals(JsonPrimitive(0), result["price"])
+        assertEquals(JsonPrimitive(0.0), result["price"])
     }
 
     @Test
@@ -374,6 +374,154 @@ class EcommerceUtilsTest {
         build(properties, BrazeEcommerceEvents.PRODUCT_VIEWED)
 
         verify(exactly = 0) { logger.warn(any()) }
+    }
+
+    // endregion
+
+    // region type-mismatch warnings
+
+    @Test
+    fun `given a numeric float sent as a string, when built, then it is coerced to a number and no warning is logged`() {
+        val properties = buildJsonObject {
+            put("product_id", "P1")
+            put("name", "Shoe")
+            put("variant", "red")
+            put("price", "29.99") // String that can be coerced to Float
+            put("currency", "USD")
+        }
+
+        val result = build(properties, BrazeEcommerceEvents.PRODUCT_VIEWED)
+
+        assertEquals(JsonPrimitive(29.99), result["price"])
+        verify(exactly = 0) { logger.warn(match { it.contains("type-mismatched") }) }
+    }
+
+    @Test
+    fun `given an integer for a float field, when built, then it is coerced to a float`() {
+        val properties = buildJsonObject {
+            put("product_id", "P1")
+            put("name", "Shoe")
+            put("variant", "red")
+            put("price", 30) // Integer for a Float field
+            put("currency", "USD")
+        }
+
+        val result = build(properties, BrazeEcommerceEvents.PRODUCT_VIEWED)
+
+        assertEquals(JsonPrimitive(30.0), result["price"])
+        verify(exactly = 0) { logger.warn(match { it.contains("type-mismatched") }) }
+    }
+
+    @Test
+    fun `given a number for a string field, when built, then it is coerced to a string`() {
+        val properties = buildJsonObject {
+            put("product_id", 12345) // Number for a String field
+            put("name", "Shoe")
+            put("variant", "red")
+            put("price", 10.0)
+            put("currency", "USD")
+        }
+
+        val result = build(properties, BrazeEcommerceEvents.PRODUCT_VIEWED)
+
+        assertEquals(JsonPrimitive("12345"), result["product_id"])
+        verify(exactly = 0) { logger.warn(match { it.contains("type-mismatched") }) }
+    }
+
+    @Test
+    fun `given a per-product quantity sent as a numeric string, when built, then it is coerced to an integer`() {
+        val properties = buildJsonObject {
+            put("order_id", "O1")
+            put("total", 50.0)
+            put("currency", "USD")
+            putJsonArray("products") {
+                add(
+                    buildJsonObject {
+                        put("product_id", "P1")
+                        put("name", "Shoe")
+                        put("variant", "red")
+                        put("quantity", "2") // String that can be coerced to Integer
+                        put("price", 50.0)
+                    }
+                )
+            }
+        }
+
+        val result = build(properties, BrazeEcommerceEvents.ORDER_REFUNDED)
+
+        assertEquals(JsonPrimitive(2), result.products()[0].jsonObject["quantity"])
+        verify(exactly = 0) { logger.warn(match { it.contains("type-mismatched") }) }
+    }
+
+    @Test
+    fun `given a non-numeric string for a float field, when built, then a warning is logged and value is sent as-is`() {
+        val properties = buildJsonObject {
+            put("product_id", "P1")
+            put("name", "Shoe")
+            put("variant", "red")
+            put("price", "free") // cannot be coerced to Float
+            put("currency", "USD")
+        }
+
+        val result = build(properties, BrazeEcommerceEvents.PRODUCT_VIEWED)
+
+        assertEquals(JsonPrimitive("free"), result["price"])
+        verify { logger.warn(match { it.contains("type-mismatched") && it.contains("price") }) }
+    }
+
+    @Test
+    fun `given a per-product quantity sent as a float, when built, then a type-mismatch warning is logged`() {
+        val properties = buildJsonObject {
+            put("order_id", "O1")
+            put("total", 50.0)
+            put("currency", "USD")
+            putJsonArray("products") {
+                add(
+                    buildJsonObject {
+                        put("product_id", "P1")
+                        put("name", "Shoe")
+                        put("variant", "red")
+                        put("quantity", 2.5) // wrong type: not an Integer
+                        put("price", 50.0)
+                    }
+                )
+            }
+        }
+
+        build(properties, BrazeEcommerceEvents.ORDER_REFUNDED)
+
+        verify { logger.warn(match { it.contains("type-mismatched") && it.contains("products[].quantity") }) }
+    }
+
+    @Test
+    fun `given the type field sent as a non-array, when built, then a type-mismatch warning is logged`() {
+        val properties = buildJsonObject {
+            put("product_id", "P1")
+            put("name", "Shoe")
+            put("variant", "red")
+            put("price", 10)
+            put("currency", "USD")
+            put("type", "footwear") // wrong type: String instead of Array of strings
+        }
+
+        build(properties, BrazeEcommerceEvents.PRODUCT_VIEWED)
+
+        verify { logger.warn(match { it.contains("type-mismatched") && it.contains("type") }) }
+    }
+
+    @Test
+    fun `given correct field types including zero values, when built, then no type-mismatch warning is logged`() {
+        val properties = buildJsonObject {
+            put("product_id", "P1")
+            put("name", "Shoe")
+            put("variant", "red")
+            put("price", 0) // valid Float
+            put("currency", "USD")
+        }
+
+        build(properties, BrazeEcommerceEvents.PRODUCT_VIEWED)
+
+        verify(exactly = 0) { logger.warn(match { it.contains("type-mismatched") }) }
     }
 
     // endregion

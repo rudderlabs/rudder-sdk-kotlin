@@ -8,6 +8,8 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.doubleOrNull
+import kotlinx.serialization.json.longOrNull
 import java.util.Locale
 
 /**
@@ -40,16 +42,31 @@ private const val ACTION_KEY = "action"
 private const val ANDROID_SOURCE = "android"
 
 /**
+ * The type Braze expects for a recommended-event field. Resolved values are coerced to this type where
+ * possible; a value that cannot be coerced is sent verbatim and surfaced via a warning.
+ */
+internal enum class BrazeFieldType {
+    STRING,
+    INTEGER,
+    FLOAT,
+    STRING_ARRAY,
+    ARRAY,
+}
+
+/**
  * A single field mapping entry, mirroring the cloud `Braze<Event>Config.json` shape.
  *
  * @property destKey The Braze field name to write.
  * @property sourceKeys Ordered fallback chain of RudderStack property names; the first resolved value wins.
  * @property brazeRequired When true, a missing value contributes to the validation warning.
+ * @property expectedType The type Braze expects for this field; the value is coerced to it where possible,
+ * otherwise sent verbatim with a warning.
  */
 internal data class FieldMapping(
     val destKey: String,
     val sourceKeys: List<String>,
     val brazeRequired: Boolean,
+    val expectedType: BrazeFieldType = BrazeFieldType.STRING,
 )
 
 /** Result of resolving an RS event name to a Braze recommended event. */
@@ -58,8 +75,12 @@ internal data class EcommerceMapping(
     val action: String? = null,
 )
 
-private fun mapping(destKey: String, vararg sourceKeys: String, brazeRequired: Boolean) =
-    FieldMapping(destKey, sourceKeys.toList(), brazeRequired)
+private fun mapping(
+    destKey: String,
+    vararg sourceKeys: String,
+    brazeRequired: Boolean,
+    type: BrazeFieldType = BrazeFieldType.STRING,
+) = FieldMapping(destKey, sourceKeys.toList(), brazeRequired, type)
 
 // Source keys that are not part of the RudderStack ecommerce spec (`ECommerceParamNames`) and are
 // therefore mirrored verbatim from the Braze recommended-event schema.
@@ -81,70 +102,116 @@ private val PRODUCT_VIEWED_MAPPING = listOf(
     mapping("product_id", ECommerceParamNames.PRODUCT_ID, SKU, brazeRequired = true),
     mapping("product_name", NAME, brazeRequired = true),
     mapping("variant_id", VARIANT, SKU, ECommerceParamNames.PRODUCT_ID, brazeRequired = true),
-    mapping("price", ECommerceParamNames.PRICE, brazeRequired = true),
+    mapping("price", ECommerceParamNames.PRICE, brazeRequired = true, type = BrazeFieldType.FLOAT),
     mapping("currency", ECommerceParamNames.CURRENCY, brazeRequired = true),
     mapping("image_url", IMAGE_URL, brazeRequired = false),
     mapping("product_url", URL, brazeRequired = false),
-    mapping("type", TYPE, brazeRequired = false),
+    mapping("type", TYPE, brazeRequired = false, type = BrazeFieldType.STRING_ARRAY),
 )
 
 private val CART_UPDATED_MAPPING = listOf(
     mapping("cart_id", ECommerceParamNames.CART_ID, brazeRequired = true),
-    mapping("total_value", ECommerceParamNames.TOTAL, VALUE, brazeRequired = false),
-    mapping("subtotal_value", SUBTOTAL_VALUE, brazeRequired = false),
-    mapping("tax", TAX, brazeRequired = false),
-    mapping("shipping", SHIPPING, brazeRequired = false),
+    mapping("total_value", ECommerceParamNames.TOTAL, VALUE, brazeRequired = false, type = BrazeFieldType.FLOAT),
+    mapping("subtotal_value", SUBTOTAL_VALUE, brazeRequired = false, type = BrazeFieldType.FLOAT),
+    mapping("tax", TAX, brazeRequired = false, type = BrazeFieldType.FLOAT),
+    mapping("shipping", SHIPPING, brazeRequired = false, type = BrazeFieldType.FLOAT),
     mapping("currency", ECommerceParamNames.CURRENCY, brazeRequired = true),
 )
 
 private val CHECKOUT_STARTED_MAPPING = listOf(
     mapping("checkout_id", ECommerceParamNames.CHECKOUT_ID, ECommerceParamNames.ORDER_ID, brazeRequired = true),
     mapping("cart_id", ECommerceParamNames.CART_ID, brazeRequired = false),
-    mapping("total_value", ECommerceParamNames.TOTAL, ECommerceParamNames.REVENUE, VALUE, brazeRequired = true),
-    mapping("subtotal_value", SUBTOTAL_VALUE, brazeRequired = false),
-    mapping("tax", TAX, brazeRequired = false),
-    mapping("shipping", SHIPPING, brazeRequired = false),
+    mapping(
+        "total_value",
+        ECommerceParamNames.TOTAL,
+        ECommerceParamNames.REVENUE,
+        VALUE,
+        brazeRequired = true,
+        type = BrazeFieldType.FLOAT,
+    ),
+    mapping("subtotal_value", SUBTOTAL_VALUE, brazeRequired = false, type = BrazeFieldType.FLOAT),
+    mapping("tax", TAX, brazeRequired = false, type = BrazeFieldType.FLOAT),
+    mapping("shipping", SHIPPING, brazeRequired = false, type = BrazeFieldType.FLOAT),
     mapping("currency", ECommerceParamNames.CURRENCY, brazeRequired = true),
 )
 
 private val ORDER_PLACED_MAPPING = listOf(
     mapping("order_id", ECommerceParamNames.ORDER_ID, brazeRequired = true),
-    mapping("total_value", ECommerceParamNames.TOTAL, ECommerceParamNames.REVENUE, VALUE, brazeRequired = true),
+    mapping(
+        "total_value",
+        ECommerceParamNames.TOTAL,
+        ECommerceParamNames.REVENUE,
+        VALUE,
+        brazeRequired = true,
+        type = BrazeFieldType.FLOAT,
+    ),
     mapping("currency", ECommerceParamNames.CURRENCY, brazeRequired = true),
     mapping("cart_id", ECommerceParamNames.CART_ID, brazeRequired = false),
-    mapping("tax", TAX, brazeRequired = false),
-    mapping("shipping", SHIPPING, brazeRequired = false),
-    mapping("total_discounts", ECommerceParamNames.DISCOUNT, TOTAL_DISCOUNTS, brazeRequired = false),
-    mapping("subtotal_value", SUBTOTAL_VALUE, brazeRequired = false),
-    mapping("discounts", DISCOUNTS, brazeRequired = false),
+    mapping("tax", TAX, brazeRequired = false, type = BrazeFieldType.FLOAT),
+    mapping("shipping", SHIPPING, brazeRequired = false, type = BrazeFieldType.FLOAT),
+    mapping(
+        "total_discounts",
+        ECommerceParamNames.DISCOUNT,
+        TOTAL_DISCOUNTS,
+        brazeRequired = false,
+        type = BrazeFieldType.FLOAT,
+    ),
+    mapping("subtotal_value", SUBTOTAL_VALUE, brazeRequired = false, type = BrazeFieldType.FLOAT),
+    mapping("discounts", DISCOUNTS, brazeRequired = false, type = BrazeFieldType.ARRAY),
 )
 
 private val ORDER_REFUNDED_MAPPING = listOf(
     mapping("order_id", ECommerceParamNames.ORDER_ID, brazeRequired = true),
-    mapping("total_value", ECommerceParamNames.TOTAL, ECommerceParamNames.REVENUE, VALUE, brazeRequired = true),
+    mapping(
+        "total_value",
+        ECommerceParamNames.TOTAL,
+        ECommerceParamNames.REVENUE,
+        VALUE,
+        brazeRequired = true,
+        type = BrazeFieldType.FLOAT,
+    ),
     mapping("currency", ECommerceParamNames.CURRENCY, brazeRequired = true),
-    mapping("total_discounts", ECommerceParamNames.DISCOUNT, TOTAL_DISCOUNTS, brazeRequired = false),
-    mapping("discounts", DISCOUNTS, brazeRequired = false),
+    mapping(
+        "total_discounts",
+        ECommerceParamNames.DISCOUNT,
+        TOTAL_DISCOUNTS,
+        brazeRequired = false,
+        type = BrazeFieldType.FLOAT,
+    ),
+    mapping("discounts", DISCOUNTS, brazeRequired = false, type = BrazeFieldType.ARRAY),
 )
 
 private val ORDER_CANCELLED_MAPPING = listOf(
     mapping("order_id", ECommerceParamNames.ORDER_ID, brazeRequired = true),
-    mapping("total_value", ECommerceParamNames.TOTAL, ECommerceParamNames.REVENUE, VALUE, brazeRequired = true),
+    mapping(
+        "total_value",
+        ECommerceParamNames.TOTAL,
+        ECommerceParamNames.REVENUE,
+        VALUE,
+        brazeRequired = true,
+        type = BrazeFieldType.FLOAT,
+    ),
     mapping("currency", ECommerceParamNames.CURRENCY, brazeRequired = true),
     mapping("cancel_reason", CANCEL_REASON, ECommerceParamNames.REASON, brazeRequired = true),
-    mapping("tax", TAX, brazeRequired = false),
-    mapping("shipping", SHIPPING, brazeRequired = false),
-    mapping("total_discounts", ECommerceParamNames.DISCOUNT, TOTAL_DISCOUNTS, brazeRequired = false),
-    mapping("subtotal_value", SUBTOTAL_VALUE, brazeRequired = false),
-    mapping("discounts", DISCOUNTS, brazeRequired = false),
+    mapping("tax", TAX, brazeRequired = false, type = BrazeFieldType.FLOAT),
+    mapping("shipping", SHIPPING, brazeRequired = false, type = BrazeFieldType.FLOAT),
+    mapping(
+        "total_discounts",
+        ECommerceParamNames.DISCOUNT,
+        TOTAL_DISCOUNTS,
+        brazeRequired = false,
+        type = BrazeFieldType.FLOAT,
+    ),
+    mapping("subtotal_value", SUBTOTAL_VALUE, brazeRequired = false, type = BrazeFieldType.FLOAT),
+    mapping("discounts", DISCOUNTS, brazeRequired = false, type = BrazeFieldType.ARRAY),
 )
 
 private val ECOMMERCE_PRODUCT_MAPPING = listOf(
     mapping("product_id", ECommerceParamNames.PRODUCT_ID, SKU, brazeRequired = true),
     mapping("product_name", NAME, brazeRequired = true),
     mapping("variant_id", VARIANT, SKU, ECommerceParamNames.PRODUCT_ID, brazeRequired = true),
-    mapping("quantity", ECommerceParamNames.QUANTITY, brazeRequired = true),
-    mapping("price", ECommerceParamNames.PRICE, brazeRequired = true),
+    mapping("quantity", ECommerceParamNames.QUANTITY, brazeRequired = true, type = BrazeFieldType.INTEGER),
+    mapping("price", ECommerceParamNames.PRICE, brazeRequired = true, type = BrazeFieldType.FLOAT),
     mapping("image_url", IMAGE_URL, brazeRequired = false),
     mapping("product_url", URL, brazeRequired = false),
 )
@@ -238,6 +305,9 @@ internal fun buildEcommerceEventProperties(
     // Step 7: single validation warning for any missing Braze-required field.
     logMissingRequiredFields(brazeEvent, eventMapping, productMapping, payload, products, logger)
 
+    // Step 8: warn on any resolved field whose value type still doesn't match Braze's schema after coercion.
+    logTypeMismatchedFields(brazeEvent, eventMapping, productMapping, payload, products, logger)
+
     return JsonObject(payload)
 }
 
@@ -289,9 +359,24 @@ private fun JsonObject.resolveMapping(mapping: List<FieldMapping>): Map<String, 
     mapping.forEach { entry ->
         entry.sourceKeys
             .firstNotNullOfOrNull { key -> this[key]?.takeIf { it.isResolved() } }
-            ?.let { result[entry.destKey] = it }
+            ?.let { result[entry.destKey] = it.coerceToType(entry.expectedType) }
     }
     return result
+}
+
+/**
+ * Coerces a primitive value to the [type] Braze expects, where possible (e.g. numeric string → number,
+ * integer → float, number/boolean → string). Returns the value unchanged when it cannot be coerced
+ * (the residual mismatch is then surfaced by [logTypeMismatchedFields]); arrays/objects are never coerced.
+ */
+private fun JsonElement.coerceToType(type: BrazeFieldType): JsonElement {
+    if (this !is JsonPrimitive) return this
+    return when (type) {
+        BrazeFieldType.STRING -> if (isString) this else JsonPrimitive(content)
+        BrazeFieldType.FLOAT -> doubleOrNull?.let { JsonPrimitive(it) } ?: this
+        BrazeFieldType.INTEGER -> longOrNull?.let { JsonPrimitive(it) } ?: this
+        BrazeFieldType.STRING_ARRAY, BrazeFieldType.ARRAY -> this
+    }
 }
 
 /**
@@ -367,6 +452,55 @@ private fun logMissingRequiredFields(
                 "${missing.distinct()}. Sending the event anyway."
         )
     }
+}
+
+/**
+ * Logs a single warning for any resolved field whose value still does not match the type Braze expects after
+ * coercion (event-level or per-product). The (un-coercible) value is sent verbatim; this surfaces it for visibility.
+ */
+private fun logTypeMismatchedFields(
+    brazeEvent: String,
+    eventMapping: List<FieldMapping>,
+    productMapping: List<FieldMapping>?,
+    payload: Map<String, JsonElement>,
+    products: List<JsonObject>?,
+    logger: Logger,
+) {
+    val mismatched = mutableListOf<String>()
+
+    eventMapping.forEach { entry ->
+        payload[entry.destKey]?.takeIf { !it.matchesType(entry.expectedType) }
+            ?.let { mismatched.add("${entry.destKey} (expected ${entry.expectedType})") }
+    }
+
+    if (productMapping != null && !products.isNullOrEmpty()) {
+        productMapping.forEach { entry ->
+            val hasMismatch = products.any { product ->
+                product[entry.destKey]?.let { !it.matchesType(entry.expectedType) } == true
+            }
+            if (hasMismatch) {
+                mismatched.add("products[].${entry.destKey} (expected ${entry.expectedType})")
+            }
+        }
+    }
+
+    if (mismatched.isNotEmpty()) {
+        logger.warn(
+            "BrazeIntegration: '$brazeEvent' has type-mismatched field(s) (sent as-is): ${mismatched.distinct()}."
+        )
+    }
+}
+
+/**
+ * Returns whether this value matches the [type] Braze expects. `0`/`false` are valid for their respective types;
+ * a numeric written as a string (e.g. `"29.99"`) does not match a numeric type.
+ */
+private fun JsonElement.matchesType(type: BrazeFieldType): Boolean = when (type) {
+    BrazeFieldType.STRING -> this is JsonPrimitive && isString
+    BrazeFieldType.INTEGER -> this is JsonPrimitive && !isString && longOrNull != null
+    BrazeFieldType.FLOAT -> this is JsonPrimitive && !isString && doubleOrNull != null
+    BrazeFieldType.STRING_ARRAY -> this is JsonArray && all { it is JsonPrimitive && it.isString }
+    BrazeFieldType.ARRAY -> this is JsonArray
 }
 
 /**
