@@ -331,7 +331,7 @@ class EcommerceUtilsTest {
     // region send-anyway value semantics
 
     @Test
-    fun `given a numeric zero value, when built, then it is treated as resolved and coerced to float`() {
+    fun `given a numeric zero value, when built, then it is treated as resolved`() {
         val properties = buildJsonObject {
             put("product_id", "P1")
             put("name", "Free")
@@ -342,7 +342,7 @@ class EcommerceUtilsTest {
 
         val result = build(properties, BrazeEcommerceEvents.PRODUCT_VIEWED)
 
-        assertEquals(JsonPrimitive(0.0), result["price"])
+        assertEquals(JsonPrimitive(0), result["price"])
     }
 
     @Test
@@ -397,18 +397,18 @@ class EcommerceUtilsTest {
     }
 
     @Test
-    fun `given an integer for a float field, when built, then it is coerced to a float`() {
+    fun `given an integer for a float field, when built, then it is left as-is without a warning`() {
         val properties = buildJsonObject {
             put("product_id", "P1")
             put("name", "Shoe")
             put("variant", "red")
-            put("price", 30) // Integer for a Float field
+            put("price", 30) // Integer for a Float field — Braze accepts it, so no coercion
             put("currency", "USD")
         }
 
         val result = build(properties, BrazeEcommerceEvents.PRODUCT_VIEWED)
 
-        assertEquals(JsonPrimitive(30.0), result["price"])
+        assertEquals(JsonPrimitive(30), result["price"])
         verify(exactly = 0) { logger.warn(match { it.contains("type-mismatched") }) }
     }
 

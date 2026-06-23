@@ -365,16 +365,17 @@ private fun JsonObject.resolveMapping(mapping: List<FieldMapping>): Map<String, 
 }
 
 /**
- * Coerces a primitive value to the [type] Braze expects, where possible (e.g. numeric string → number,
- * integer → float, number/boolean → string). Returns the value unchanged when it cannot be coerced
- * (the residual mismatch is then surfaced by [logTypeMismatchedFields]); arrays/objects are never coerced.
+ * Coerces a primitive value to the [type] Braze expects, where possible (numeric string → number,
+ * number/boolean → string). Numbers are left as-is for numeric fields (Braze accepts an integer where a float
+ * is expected). Returns the value unchanged when it cannot be coerced (the residual mismatch is then surfaced
+ * by [logTypeMismatchedFields]); arrays/objects are never coerced.
  */
 private fun JsonElement.coerceToType(type: BrazeFieldType): JsonElement {
     if (this !is JsonPrimitive) return this
     return when (type) {
         BrazeFieldType.STRING -> if (isString) this else JsonPrimitive(content)
-        BrazeFieldType.FLOAT -> doubleOrNull?.let { JsonPrimitive(it) } ?: this
-        BrazeFieldType.INTEGER -> longOrNull?.let { JsonPrimitive(it) } ?: this
+        BrazeFieldType.FLOAT -> if (isString) doubleOrNull?.let { JsonPrimitive(it) } ?: this else this
+        BrazeFieldType.INTEGER -> if (isString) longOrNull?.let { JsonPrimitive(it) } ?: this else this
         BrazeFieldType.STRING_ARRAY, BrazeFieldType.ARRAY -> this
     }
 }

@@ -84,7 +84,7 @@ Notes:
 - Events are never dropped on incomplete data: missing Braze-required fields are logged as a warning and the event
   is still sent (`0` and `false` are treated as valid values).
 - Field values are coerced to the type Braze expects where possible (e.g. a numeric string `"29.99"` → `29.99`,
-  an integer → float, a number → string). When a value cannot be coerced (e.g. `quantity` as `2.5`), a warning is
-  logged and the value is sent as-is.
+  a number → string). When a value cannot be coerced (e.g. `quantity` as `2.5`), a warning is logged and the
+  value is sent as-is.
 - Properties not covered by the mapping are forwarded under `metadata` (event level) and `products[].metadata`
   (per product).
