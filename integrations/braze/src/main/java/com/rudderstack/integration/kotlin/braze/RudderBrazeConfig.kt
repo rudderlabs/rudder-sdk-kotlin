@@ -61,7 +61,6 @@ internal data class RudderBrazeConfig(
     val customEndpoint: String,
     val supportDedup: Boolean,
     val connectionMode: ConnectionMode,
-    @SerialName("useRecommendedEcommerceEvents")
     val useRecommendedEcommerceEvents: Boolean = false,
 ) {
 

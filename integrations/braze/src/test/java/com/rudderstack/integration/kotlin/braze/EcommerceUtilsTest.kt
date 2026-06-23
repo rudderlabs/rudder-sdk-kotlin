@@ -6,6 +6,7 @@ import io.mockk.verify
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.put
@@ -272,6 +273,33 @@ class EcommerceUtilsTest {
 
         assertFalse(result.containsKey("products"))
         assertEquals(JsonPrimitive("not-an-array"), result.metadata()["products"])
+    }
+
+    @Test
+    fun `given a products array containing a non-object element, when built, then the whole array flows to metadata`() {
+        val malformedProducts = buildJsonArray {
+            add(
+                buildJsonObject {
+                    put("product_id", "P1")
+                    put("name", "Shoe")
+                    put("variant", "red")
+                    put("quantity", 1)
+                    put("price", 10)
+                }
+            )
+            add(JsonPrimitive("not-a-product"))
+        }
+        val properties = buildJsonObject {
+            put("order_id", "O1")
+            put("total", 50.0)
+            put("currency", "USD")
+            put("products", malformedProducts)
+        }
+
+        val result = build(properties, BrazeEcommerceEvents.ORDER_REFUNDED)
+
+        assertFalse(result.containsKey("products"))
+        assertEquals(malformedProducts, result.metadata()["products"])
     }
 
     @Test

@@ -1,11 +1,14 @@
 package com.rudderstack.integration.kotlin.braze
 
+import com.rudderstack.sdk.kotlin.core.ecommerce.ECommerceEvents
+import com.rudderstack.sdk.kotlin.core.ecommerce.ECommerceParamNames
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import java.util.Locale
 
 /**
  * Braze recommended ecommerce event names.
@@ -29,7 +32,7 @@ internal object CartUpdatedAction {
 }
 
 private const val SOURCE_KEY = "source"
-private const val PRODUCTS_KEY = "products"
+private const val PRODUCTS_KEY = ECommerceParamNames.PRODUCTS
 private const val METADATA_KEY = "metadata"
 private const val ACTION_KEY = "action"
 
@@ -58,76 +61,92 @@ internal data class EcommerceMapping(
 private fun mapping(destKey: String, vararg sourceKeys: String, brazeRequired: Boolean) =
     FieldMapping(destKey, sourceKeys.toList(), brazeRequired)
 
+// Source keys that are not part of the RudderStack ecommerce spec (`ECommerceParamNames`) and are
+// therefore mirrored verbatim from the Braze recommended-event schema.
+private const val SKU = "sku"
+private const val NAME = "name"
+private const val VARIANT = "variant"
+private const val VALUE = "value"
+private const val IMAGE_URL = "image_url"
+private const val URL = "url"
+private const val TYPE = "type"
+private const val SUBTOTAL_VALUE = "subtotal_value"
+private const val TOTAL_DISCOUNTS = "total_discounts"
+private const val DISCOUNTS = "discounts"
+private const val CANCEL_REASON = "cancel_reason"
+private const val TAX = "tax"
+private const val SHIPPING = "shipping"
+
 private val PRODUCT_VIEWED_MAPPING = listOf(
-    mapping("product_id", "product_id", "sku", brazeRequired = true),
-    mapping("product_name", "name", brazeRequired = true),
-    mapping("variant_id", "variant", "sku", "product_id", brazeRequired = true),
-    mapping("price", "price", brazeRequired = true),
-    mapping("currency", "currency", brazeRequired = true),
-    mapping("image_url", "image_url", brazeRequired = false),
-    mapping("product_url", "url", brazeRequired = false),
-    mapping("type", "type", brazeRequired = false),
+    mapping("product_id", ECommerceParamNames.PRODUCT_ID, SKU, brazeRequired = true),
+    mapping("product_name", NAME, brazeRequired = true),
+    mapping("variant_id", VARIANT, SKU, ECommerceParamNames.PRODUCT_ID, brazeRequired = true),
+    mapping("price", ECommerceParamNames.PRICE, brazeRequired = true),
+    mapping("currency", ECommerceParamNames.CURRENCY, brazeRequired = true),
+    mapping("image_url", IMAGE_URL, brazeRequired = false),
+    mapping("product_url", URL, brazeRequired = false),
+    mapping("type", TYPE, brazeRequired = false),
 )
 
 private val CART_UPDATED_MAPPING = listOf(
-    mapping("cart_id", "cart_id", brazeRequired = true),
-    mapping("total_value", "total", "value", brazeRequired = false),
-    mapping("subtotal_value", "subtotal_value", brazeRequired = false),
-    mapping("tax", "tax", brazeRequired = false),
-    mapping("shipping", "shipping", brazeRequired = false),
-    mapping("currency", "currency", brazeRequired = true),
+    mapping("cart_id", ECommerceParamNames.CART_ID, brazeRequired = true),
+    mapping("total_value", ECommerceParamNames.TOTAL, VALUE, brazeRequired = false),
+    mapping("subtotal_value", SUBTOTAL_VALUE, brazeRequired = false),
+    mapping("tax", TAX, brazeRequired = false),
+    mapping("shipping", SHIPPING, brazeRequired = false),
+    mapping("currency", ECommerceParamNames.CURRENCY, brazeRequired = true),
 )
 
 private val CHECKOUT_STARTED_MAPPING = listOf(
-    mapping("checkout_id", "checkout_id", "order_id", brazeRequired = true),
-    mapping("cart_id", "cart_id", brazeRequired = false),
-    mapping("total_value", "total", "revenue", "value", brazeRequired = true),
-    mapping("subtotal_value", "subtotal_value", brazeRequired = false),
-    mapping("tax", "tax", brazeRequired = false),
-    mapping("shipping", "shipping", brazeRequired = false),
-    mapping("currency", "currency", brazeRequired = true),
+    mapping("checkout_id", ECommerceParamNames.CHECKOUT_ID, ECommerceParamNames.ORDER_ID, brazeRequired = true),
+    mapping("cart_id", ECommerceParamNames.CART_ID, brazeRequired = false),
+    mapping("total_value", ECommerceParamNames.TOTAL, ECommerceParamNames.REVENUE, VALUE, brazeRequired = true),
+    mapping("subtotal_value", SUBTOTAL_VALUE, brazeRequired = false),
+    mapping("tax", TAX, brazeRequired = false),
+    mapping("shipping", SHIPPING, brazeRequired = false),
+    mapping("currency", ECommerceParamNames.CURRENCY, brazeRequired = true),
 )
 
 private val ORDER_PLACED_MAPPING = listOf(
-    mapping("order_id", "order_id", brazeRequired = true),
-    mapping("total_value", "total", "revenue", "value", brazeRequired = true),
-    mapping("currency", "currency", brazeRequired = true),
-    mapping("cart_id", "cart_id", brazeRequired = false),
-    mapping("tax", "tax", brazeRequired = false),
-    mapping("shipping", "shipping", brazeRequired = false),
-    mapping("total_discounts", "discount", "total_discounts", brazeRequired = false),
-    mapping("subtotal_value", "subtotal_value", brazeRequired = false),
-    mapping("discounts", "discounts", brazeRequired = false),
+    mapping("order_id", ECommerceParamNames.ORDER_ID, brazeRequired = true),
+    mapping("total_value", ECommerceParamNames.TOTAL, ECommerceParamNames.REVENUE, VALUE, brazeRequired = true),
+    mapping("currency", ECommerceParamNames.CURRENCY, brazeRequired = true),
+    mapping("cart_id", ECommerceParamNames.CART_ID, brazeRequired = false),
+    mapping("tax", TAX, brazeRequired = false),
+    mapping("shipping", SHIPPING, brazeRequired = false),
+    mapping("total_discounts", ECommerceParamNames.DISCOUNT, TOTAL_DISCOUNTS, brazeRequired = false),
+    mapping("subtotal_value", SUBTOTAL_VALUE, brazeRequired = false),
+    mapping("discounts", DISCOUNTS, brazeRequired = false),
 )
 
 private val ORDER_REFUNDED_MAPPING = listOf(
-    mapping("order_id", "order_id", brazeRequired = true),
-    mapping("total_value", "total", "revenue", "value", brazeRequired = true),
-    mapping("currency", "currency", brazeRequired = true),
-    mapping("total_discounts", "discount", "total_discounts", brazeRequired = false),
-    mapping("discounts", "discounts", brazeRequired = false),
+    mapping("order_id", ECommerceParamNames.ORDER_ID, brazeRequired = true),
+    mapping("total_value", ECommerceParamNames.TOTAL, ECommerceParamNames.REVENUE, VALUE, brazeRequired = true),
+    mapping("currency", ECommerceParamNames.CURRENCY, brazeRequired = true),
+    mapping("total_discounts", ECommerceParamNames.DISCOUNT, TOTAL_DISCOUNTS, brazeRequired = false),
+    mapping("discounts", DISCOUNTS, brazeRequired = false),
 )
 
 private val ORDER_CANCELLED_MAPPING = listOf(
-    mapping("order_id", "order_id", brazeRequired = true),
-    mapping("total_value", "total", "revenue", "value", brazeRequired = true),
-    mapping("currency", "currency", brazeRequired = true),
-    mapping("cancel_reason", "cancel_reason", "reason", brazeRequired = true),
-    mapping("tax", "tax", brazeRequired = false),
-    mapping("shipping", "shipping", brazeRequired = false),
-    mapping("total_discounts", "discount", "total_discounts", brazeRequired = false),
-    mapping("subtotal_value", "subtotal_value", brazeRequired = false),
-    mapping("discounts", "discounts", brazeRequired = false),
+    mapping("order_id", ECommerceParamNames.ORDER_ID, brazeRequired = true),
+    mapping("total_value", ECommerceParamNames.TOTAL, ECommerceParamNames.REVENUE, VALUE, brazeRequired = true),
+    mapping("currency", ECommerceParamNames.CURRENCY, brazeRequired = true),
+    mapping("cancel_reason", CANCEL_REASON, ECommerceParamNames.REASON, brazeRequired = true),
+    mapping("tax", TAX, brazeRequired = false),
+    mapping("shipping", SHIPPING, brazeRequired = false),
+    mapping("total_discounts", ECommerceParamNames.DISCOUNT, TOTAL_DISCOUNTS, brazeRequired = false),
+    mapping("subtotal_value", SUBTOTAL_VALUE, brazeRequired = false),
+    mapping("discounts", DISCOUNTS, brazeRequired = false),
 )
 
 private val ECOMMERCE_PRODUCT_MAPPING = listOf(
-    mapping("product_id", "product_id", "sku", brazeRequired = true),
-    mapping("product_name", "name", brazeRequired = true),
-    mapping("variant_id", "variant", "sku", "product_id", brazeRequired = true),
-    mapping("quantity", "quantity", brazeRequired = true),
-    mapping("price", "price", brazeRequired = true),
-    mapping("image_url", "image_url", brazeRequired = false),
-    mapping("product_url", "url", brazeRequired = false),
+    mapping("product_id", ECommerceParamNames.PRODUCT_ID, SKU, brazeRequired = true),
+    mapping("product_name", NAME, brazeRequired = true),
+    mapping("variant_id", VARIANT, SKU, ECommerceParamNames.PRODUCT_ID, brazeRequired = true),
+    mapping("quantity", ECommerceParamNames.QUANTITY, brazeRequired = true),
+    mapping("price", ECommerceParamNames.PRICE, brazeRequired = true),
+    mapping("image_url", IMAGE_URL, brazeRequired = false),
+    mapping("product_url", URL, brazeRequired = false),
 )
 
 private val EVENT_MAPPING_BY_BRAZE_EVENT: Map<String, List<FieldMapping>> = mapOf(
@@ -139,18 +158,20 @@ private val EVENT_MAPPING_BY_BRAZE_EVENT: Map<String, List<FieldMapping>> = mapO
     BrazeEcommerceEvents.ORDER_CANCELLED to ORDER_CANCELLED_MAPPING,
 )
 
-// Case-insensitive RS event name (trimmed, lowercased) → Braze recommended event.
-// `Cart Viewed` and `Cart Updated` are intentionally absent — they fall through to the
-// legacy custom-event path.
+// Normalized RS event name → Braze recommended event. `Cart Viewed` and `Cart Updated` are
+// intentionally absent — they fall through to the legacy custom-event path.
 private val EVENT_NAME_TO_BRAZE: Map<String, EcommerceMapping> = mapOf(
-    "product viewed" to EcommerceMapping(BrazeEcommerceEvents.PRODUCT_VIEWED),
-    "product added" to EcommerceMapping(BrazeEcommerceEvents.CART_UPDATED, CartUpdatedAction.ADD),
-    "product removed" to EcommerceMapping(BrazeEcommerceEvents.CART_UPDATED, CartUpdatedAction.REMOVE),
-    "checkout started" to EcommerceMapping(BrazeEcommerceEvents.CHECKOUT_STARTED),
-    "order completed" to EcommerceMapping(BrazeEcommerceEvents.ORDER_PLACED),
-    "order refunded" to EcommerceMapping(BrazeEcommerceEvents.ORDER_REFUNDED),
-    "order cancelled" to EcommerceMapping(BrazeEcommerceEvents.ORDER_CANCELLED),
-)
+    ECommerceEvents.PRODUCT_VIEWED to EcommerceMapping(BrazeEcommerceEvents.PRODUCT_VIEWED),
+    ECommerceEvents.PRODUCT_ADDED to EcommerceMapping(BrazeEcommerceEvents.CART_UPDATED, CartUpdatedAction.ADD),
+    ECommerceEvents.PRODUCT_REMOVED to EcommerceMapping(BrazeEcommerceEvents.CART_UPDATED, CartUpdatedAction.REMOVE),
+    ECommerceEvents.CHECKOUT_STARTED to EcommerceMapping(BrazeEcommerceEvents.CHECKOUT_STARTED),
+    ECommerceEvents.ORDER_COMPLETED to EcommerceMapping(BrazeEcommerceEvents.ORDER_PLACED),
+    ECommerceEvents.ORDER_REFUNDED to EcommerceMapping(BrazeEcommerceEvents.ORDER_REFUNDED),
+    ECommerceEvents.ORDER_CANCELLED to EcommerceMapping(BrazeEcommerceEvents.ORDER_CANCELLED),
+).mapKeys { normalizeEventName(it.key) }
+
+/** Normalizes an RS event name for case-insensitive lookup using a locale-independent transform. */
+private fun normalizeEventName(eventName: String): String = eventName.trim().lowercase(Locale.ROOT)
 
 /**
  * Resolves the Braze recommended event for a given RudderStack event name.
@@ -159,7 +180,7 @@ private val EVENT_NAME_TO_BRAZE: Map<String, EcommerceMapping> = mapOf(
  * @return The [EcommerceMapping] or `null` when the event is not mapped (caller falls back to the legacy path).
  */
 internal fun getEcommerceMapping(eventName: String?): EcommerceMapping? =
-    eventName?.trim()?.lowercase()?.let { EVENT_NAME_TO_BRAZE[it] }
+    eventName?.let { EVENT_NAME_TO_BRAZE[normalizeEventName(it)] }
 
 /**
  * Builds the `properties` object for a Braze recommended ecommerce event.
@@ -181,13 +202,18 @@ internal fun buildEcommerceEventProperties(
 ): JsonObject {
     val eventMapping = EVENT_MAPPING_BY_BRAZE_EVENT[brazeEvent].orEmpty()
     val productMapping = if (brazeEvent == BrazeEcommerceEvents.PRODUCT_VIEWED) null else ECOMMERCE_PRODUCT_MAPPING
-    val hasExplicitProductsArray = properties[PRODUCTS_KEY] is JsonArray
+    // Only an array whose elements are all objects is treated as an explicit products[]. A malformed
+    // array (containing non-object elements) is left unconsumed so it flows through to metadata.
+    val explicitProducts = properties.explicitProductsArray()
+    val hasExplicitProductsArray = explicitProducts != null
 
     // Step 1+2: event-level field mapping.
     val payload: MutableMap<String, JsonElement> = properties.resolveMapping(eventMapping).toMutableMap()
 
     // Step 3: products[] (skipped for product_viewed — flat, single-product event).
-    val products: List<JsonObject>? = productMapping?.let { buildProductsArray(properties, brazeEvent, it) }
+    val products: List<JsonObject>? = productMapping?.let {
+        buildProductsArray(properties, brazeEvent, it, explicitProducts)
+    }
     if (products != null && products.isNotEmpty()) {
         payload[PRODUCTS_KEY] = JsonArray(products)
     }
@@ -219,23 +245,24 @@ internal fun buildEcommerceEventProperties(
  * Builds the `products[]` array.
  * - `cart_updated` WITHOUT an explicit `products[]`: read top-level product fields directly from [properties]
  *   into a single-element list (no per-product metadata — unmapped keys flow through event-level metadata).
- * - all other cases: map each item in `properties.products` and route unmapped per-product keys to `metadata`.
+ * - all other cases: map each item in [explicitProducts] and route unmapped per-product keys to `metadata`.
+ *
+ * @param explicitProducts The validated array-of-objects `products[]`, or `null` when absent/malformed.
  */
 private fun buildProductsArray(
     properties: JsonObject,
     brazeEvent: String,
     productMapping: List<FieldMapping>,
+    explicitProducts: JsonArray?,
 ): List<JsonObject> {
-    val rawProducts = properties[PRODUCTS_KEY] as? JsonArray
-
-    if (brazeEvent == BrazeEcommerceEvents.CART_UPDATED && rawProducts == null) {
+    if (brazeEvent == BrazeEcommerceEvents.CART_UPDATED && explicitProducts == null) {
         val product = properties.resolveMapping(productMapping)
         return if (product.isNotEmpty()) listOf(JsonObject(product)) else emptyList()
     }
 
     val consumedKeys = productMapping.consumedSourceKeys()
-    return rawProducts.orEmpty()
-        .mapNotNull { it as? JsonObject }
+    return explicitProducts.orEmpty()
+        .filterIsInstance<JsonObject>()
         .map { item ->
             val product = item.resolveMapping(productMapping).toMutableMap()
             val productMetadata = item.pickUnmappedKeys(consumedKeys)
@@ -246,6 +273,13 @@ private fun buildProductsArray(
         }
         .filter { it.isNotEmpty() }
 }
+
+/**
+ * Returns the `products` value as an array only when it is present and every element is a [JsonObject].
+ * A non-array or mixed/malformed array returns `null` so the original value can flow through to metadata.
+ */
+private fun JsonObject.explicitProductsArray(): JsonArray? =
+    (this[PRODUCTS_KEY] as? JsonArray)?.takeIf { array -> array.all { it is JsonObject } }
 
 /**
  * Resolves a field mapping against this object, keeping only entries whose first non-empty source key resolves.
