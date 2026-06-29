@@ -93,7 +93,7 @@ class BrazeIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
         }
 
         val ecommerceMapping = getEcommerceMapping(payload.event)
-        if (brazeConfig.useRecommendedEcommerceEvents && ecommerceMapping != null) {
+        if (brazeConfig.useEcommerceRecommendedEvents && ecommerceMapping != null) {
             handleRecommendedEcommerceEvent(payload, ecommerceMapping)
             return
         }

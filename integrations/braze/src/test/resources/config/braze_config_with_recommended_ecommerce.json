@@ -14,5 +14,5 @@
     "consents" : [ ]
   } ],
   "connectionMode" : "device",
-  "useRecommendedEcommerceEvents": true
+  "useEcommerceRecommendedEvents": true
 }

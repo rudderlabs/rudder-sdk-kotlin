@@ -61,7 +61,7 @@ class MyApplication : Application() {
 
 ## Recommended ecommerce events
 
-When the **`useRecommendedEcommerceEvents`** flag is enabled on the Braze destination, supported RudderStack
+When the **`useEcommerceRecommendedEvents`** flag is enabled on the Braze destination, supported RudderStack
 ecommerce track events are mapped to [Braze recommended events](https://www.braze.com/docs/user_guide/data/activation/events/recommended_events)
 (`ecommerce.*`) and sent via `logCustomEvent`. The flag defaults to off; when off, behaviour is unchanged.
 

@@ -14,5 +14,5 @@
     "consents" : [ ]
   } ],
   "connectionMode" : "hybrid",
-  "useRecommendedEcommerceEvents": true
+  "useEcommerceRecommendedEvents": true
 }
