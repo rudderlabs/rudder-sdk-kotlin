@@ -1,10 +1,14 @@
 package com.rudderstack.sdk.kotlin.core.internals.statemanagement
 
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class StateTest {
 
     private lateinit var state: State<Int>
@@ -41,4 +45,44 @@ class StateTest {
         val afterMultiply = state.value
         assertEquals(6, afterMultiply) // (2 * 3)
     }
+
+    @Test
+    fun `given a collector subscribed before any dispatch, when observeDispatched collected, then the seed is skipped and only dispatched values are emitted`() =
+        runTest {
+            val state = State(0)
+            val values = mutableListOf<Int>()
+
+            val job = launch { state.observeDispatched().collect { values.add(it) } }
+            advanceUntilIdle() // collector is subscribed; seed (0) must NOT be emitted
+
+            state.dispatch(StateAction { 1 })
+            advanceUntilIdle()
+            state.dispatch(StateAction { 2 })
+            advanceUntilIdle()
+
+            assertEquals(listOf(1, 2), values)
+
+            job.cancel()
+        }
+
+    @Test
+    fun `given a value already dispatched before subscribing, when observeDispatched collected, then it immediately emits the current dispatched value and not the seed`() =
+        runTest {
+            val state = State(0)
+            // A real value is dispatched BEFORE the collector subscribes (the late-subscriber case).
+            state.dispatch(StateAction { 7 })
+
+            val values = mutableListOf<Int>()
+            val job = launch { state.observeDispatched().collect { values.add(it) } }
+            advanceUntilIdle()
+
+            // The late subscriber must receive the already-dispatched value (7), never the seed (0).
+            assertEquals(listOf(7), values)
+
+            state.dispatch(StateAction { 9 })
+            advanceUntilIdle()
+            assertEquals(listOf(7, 9), values)
+
+            job.cancel()
+        }
 }

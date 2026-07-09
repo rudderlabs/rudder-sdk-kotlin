@@ -13,19 +13,15 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import com.rudderstack.sdk.kotlin.core.internals.utils.handleInvalidWriteKey
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
-import io.mockk.CapturingSlot
 import io.mockk.MockKAnnotations
-import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.mockk
 import io.mockk.mockkStatic
-import io.mockk.slot
 import io.mockk.spyk
 import io.mockk.verify
-import kotlinx.coroutines.flow.FlowCollector
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -51,16 +47,16 @@ class SourceConfigManagerTest {
     @MockK
     private lateinit var mockState: State<Boolean>
 
-    private lateinit var flowCollectorSlot: CapturingSlot<FlowCollector<Boolean>>
+    private val connectivityFlow = MutableStateFlow(false)
 
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this, relaxed = true)
 
         // Mock the connectivity state and capture the block.
-        flowCollectorSlot = slot()
+        connectivityFlow.value = false
         every { analytics.connectivityState } returns mockState
-        coEvery { mockState.collect(capture(flowCollectorSlot)) }
+        every { mockState.flow } returns connectivityFlow
 
         sourceConfigManager = SourceConfigManager(analytics, sourceConfigState, httpClient)
     }
@@ -241,9 +237,8 @@ class SourceConfigManagerTest {
 
     // This setup is needed to simulate the connection availability and invoking the block.
     private fun TestScope.simulateConnectionAvailability() {
-        backgroundScope.launch {
-            flowCollectorSlot.captured.emit(true)
-        }.also { testDispatcher.scheduler.runCurrent() }
+        connectivityFlow.value = true
+        testDispatcher.scheduler.runCurrent()
     }
 
     @Test
