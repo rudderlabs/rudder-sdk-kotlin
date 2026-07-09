@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+# [1.5.0](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.integration.kotlin.braze@v1.4.1...com.rudderstack.integration.kotlin.braze@v1.5.0) (2026-07-09)
+
+## Features
+
+- Braze ecommerce events onboarding ([#322](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/322)) ([9b997a0](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/9b997a00e81ff2f6665aafd7f029eaff1e8b632a))
+
+
 # [1.4.1](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.integration.kotlin.braze@v1.4.0...com.rudderstack.integration.kotlin.braze@v1.4.1) (2026-06-03)
 
 ## Dependency Updates

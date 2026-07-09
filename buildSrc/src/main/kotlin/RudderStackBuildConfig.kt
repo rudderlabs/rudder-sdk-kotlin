@@ -82,8 +82,8 @@ object RudderStackBuildConfig {
         object Braze : IntegrationModuleInfo {
 
             override val moduleName: String = "braze"
-            override val versionName: String = "1.4.1"
-            override val versionCode: String = "6"
+            override val versionName: String = "1.5.0"
+            override val versionCode: String = "7"
 
             override val artifactId = "braze"
             override val pomPackaging = "aar"
