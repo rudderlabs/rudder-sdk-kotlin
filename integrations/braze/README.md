@@ -58,3 +58,33 @@ class MyApplication : Application() {
     }
 }
 ```
+
+## Recommended ecommerce events
+
+When the **`useEcommerceRecommendedEvents`** flag is enabled on the Braze destination, supported RudderStack
+ecommerce track events are mapped to [Braze recommended events](https://www.braze.com/docs/user_guide/data/activation/events/recommended_events)
+(`ecommerce.*`) and sent via `logCustomEvent`. The flag defaults to off; when off, behaviour is unchanged.
+
+| RudderStack event | Braze event | Action |
+|---|---|---|
+| Product Viewed | `ecommerce.product_viewed` | — |
+| Product Added | `ecommerce.cart_updated` | `add` |
+| Product Removed | `ecommerce.cart_updated` | `remove` |
+| Checkout Started | `ecommerce.checkout_started` | — |
+| Order Completed | `ecommerce.order_placed` | — |
+| Order Refunded | `ecommerce.order_refunded` | — |
+| Order Cancelled | `ecommerce.order_cancelled` | — |
+
+Notes:
+
+- `Cart Viewed` and `Cart Updated` are not mapped — they continue to flow through the generic custom-event path.
+- When the flag is enabled, `Order Completed` emits a single `ecommerce.order_placed` event instead of one purchase
+  per product via the legacy `logPurchase` path.
+- The `source` field is always set to `android`.
+- Events are never dropped on incomplete data: missing Braze-required fields are logged as a warning and the event
+  is still sent (`0` and `false` are treated as valid values).
+- Field values are coerced to the type Braze expects where possible (e.g. a numeric string `"29.99"` → `29.99`,
+  a number → string). When a value cannot be coerced (e.g. `quantity` as `2.5`), a warning is logged and the
+  value is sent as-is.
+- Properties not covered by the mapping are forwarded under `metadata` (event level) and `products[].metadata`
+  (per product).
