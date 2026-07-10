@@ -13,11 +13,7 @@ import kotlinx.coroutines.flow.update
 /**
  * A [State] holds a single value that can only be mutated by dispatching [StateAction]s.
  *
- * It is backed by (composes) a [MutableStateFlow] rather than inheriting it, since
- * [MutableStateFlow] is documented as not stable for inheritance in third-party libraries.
- * Consumers observe the state via [flow] (or [observeDispatched]) and mutate it via [dispatch];
- * there is intentionally no way to write the value directly, so [dispatch] is the single
- * source of truth for updates.
+ * It is backed by (composes) a [MutableStateFlow]. Consumers observe the state via [flow] (or [observeDispatched]) and mutate it via [dispatch].
  */
 interface State<T> {
 
