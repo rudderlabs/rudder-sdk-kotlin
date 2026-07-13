@@ -39,10 +39,14 @@ interface State<T> {
      *
      * Unlike dropping the first emission positionally, this is based on whether a value has actually
      * been dispatched, so it is correct regardless of *when* the collector subscribes:
-     * - a collector that subscribes *before* the first dispatch skips the seed and then receives
-     *   every dispatched value, and
+     * - a collector that subscribes *before* the first dispatch skips the seed and, once dispatching
+     *   begins, receives the current dispatched value followed by subsequent updates, and
      * - a collector that subscribes *after* the first dispatch immediately receives the current
-     *   (already dispatched) value and every subsequent one.
+     *   (already dispatched) value followed by subsequent updates.
+     *
+     * Because this is backed by a [StateFlow], values are conflated: the collector observes the latest
+     * value at the time it starts collecting and every distinct value thereafter, not necessarily each
+     * individual dispatch. The only guarantee is that the initial seed is never observed.
      *
      * Prefer this over collecting [flow] directly whenever a consumer must act only on real values
      * and never on the initial seed.
