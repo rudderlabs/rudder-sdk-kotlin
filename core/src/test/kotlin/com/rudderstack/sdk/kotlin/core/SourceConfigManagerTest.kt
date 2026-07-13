@@ -53,7 +53,7 @@ class SourceConfigManagerTest {
     fun setUp() {
         MockKAnnotations.init(this, relaxed = true)
 
-        // Mock the connectivity state and capture the block.
+        // Back the connectivity state with a MutableStateFlow so tests can toggle availability.
         connectivityFlow.value = false
         every { analytics.connectivityState } returns mockState
         every { mockState.flow } returns connectivityFlow

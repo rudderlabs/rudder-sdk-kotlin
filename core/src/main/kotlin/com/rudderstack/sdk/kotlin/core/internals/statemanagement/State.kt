@@ -46,7 +46,9 @@ interface State<T> {
      *
      * Because this is backed by a [StateFlow], values are conflated: the collector observes the latest
      * value at the time it starts collecting and every distinct value thereafter, not necessarily each
-     * individual dispatch. The only guarantee is that the initial seed is never observed.
+     * individual dispatch. The gate is on *whether* a dispatch has occurred, not on the value: nothing
+     * is emitted until the first dispatch, so the seed is skipped prior to it. (If a dispatch happens to
+     * reduce to a value equal to the seed, that value can still be observed.)
      *
      * Prefer this over collecting [flow] directly whenever a consumer must act only on real values
      * and never on the initial seed.
