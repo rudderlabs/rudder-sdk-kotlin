@@ -28,6 +28,7 @@ import io.mockk.MockKAnnotations
 import io.mockk.MockKVerificationScope
 import io.mockk.clearMocks
 import io.mockk.coVerify
+import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.mockkObject
@@ -159,6 +160,44 @@ class AnalyticsTest {
 
         assertNull(anonymousId)
     }
+
+    @Test
+    fun `given anonymousId is already persisted, when SDK is initialised, then it is not written again`() =
+        runTest(testDispatcher) {
+            // default setup returns a stored ANONYMOUS_ID, so init must not re-persist it
+            testDispatcher.scheduler.runCurrent()
+            disableSource()
+
+            coVerify(exactly = 0) { mockStorage.write(StorageKeys.ANONYMOUS_ID, any<String>()) }
+        }
+
+    @Test
+    fun `given anonymousId is not persisted, when SDK is initialised, then the generated anonymousId is persisted exactly once`() =
+        runTest(testDispatcher) {
+            // simulate empty storage: readString returns whatever default was passed
+            every { mockStorage.readString(StorageKeys.ANONYMOUS_ID, defaultVal = any()) } answers { secondArg<String>() }
+            analytics = spyk(Analytics(configuration = configuration))
+            testDispatcher.scheduler.runCurrent()
+            disableSource()
+
+            coVerify(exactly = 1) { mockStorage.write(StorageKeys.ANONYMOUS_ID, MESSAGE_ID) }
+        }
+
+    @Test
+    fun `given anonymousId is not persisted, when an event is enqueued at init, then anonymousId is persisted before the event is written`() =
+        runTest(testDispatcher) {
+            every { mockStorage.readString(StorageKeys.ANONYMOUS_ID, defaultVal = any()) } answers { secondArg<String>() }
+            analytics = spyk(Analytics(configuration = configuration))
+
+            analytics.track(name = TRACK_EVENT_NAME, properties = provideSampleJsonPayload(), options = provideRudderOption())
+            testDispatcher.scheduler.runCurrent()
+            disableSource()
+
+            coVerifyOrder {
+                mockStorage.write(StorageKeys.ANONYMOUS_ID, MESSAGE_ID)
+                mockStorage.write(StorageKeys.EVENT, any<String>())
+            }
+        }
 
     @Test
     fun `given userId and traits are set, when they are fetched, then the set values are returned`() {
