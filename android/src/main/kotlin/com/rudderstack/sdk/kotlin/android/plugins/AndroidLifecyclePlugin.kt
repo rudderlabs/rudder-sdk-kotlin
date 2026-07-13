@@ -53,8 +53,6 @@ internal class AndroidLifecyclePlugin : Plugin, ProcessLifecycleObserver {
             storage = analytics.storage
             appVersion = getAppVersion()
             if (config.trackApplicationLifecycleEvents) {
-                // Install/update detection and app version persistence are deferred to the first
-                // foreground (onStart) so background-only process starts don't emit ghost events.
                 (analytics as? AndroidAnalytics)?.addLifecycleObserver(this)
             } else {
                 updateAppVersion()
