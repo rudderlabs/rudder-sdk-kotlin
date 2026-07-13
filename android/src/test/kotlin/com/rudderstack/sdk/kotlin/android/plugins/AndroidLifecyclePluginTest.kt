@@ -314,6 +314,23 @@ class AndroidLifecyclePluginTest {
         }
 
     @Test
+    fun `given trackApplicationLifecycleEvents is true and onStart is never called, when only setup is called (background-only start), then no events are tracked and app version is not persisted`() =
+        runTest(testDispatcher) {
+            // given
+            pluginSetup()
+
+            // when (no onStart, i.e. a background-only process start)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            // then
+            verify(exactly = 0) {
+                mockAnalytics.track(any<String>(), any<JsonObject>(), any<RudderOption>())
+            }
+            assert(mockStorage.readLong(StorageKeys.APP_BUILD, -1L) == -1L)
+            assert(mockStorage.readString(StorageKeys.APP_VERSION, String.empty()) == String.empty())
+        }
+
+    @Test
     fun `given trackApplicationLifecycleEvents is false, when setup is called, then build and version are still stored in memory`() =
         runTest(testDispatcher) {
             // when

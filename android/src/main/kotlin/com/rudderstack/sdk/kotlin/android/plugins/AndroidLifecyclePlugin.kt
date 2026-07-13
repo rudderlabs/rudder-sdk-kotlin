@@ -51,12 +51,13 @@ internal class AndroidLifecyclePlugin : Plugin, ProcessLifecycleObserver {
         (analytics.configuration as? AndroidConfiguration)?.let { config ->
             application = config.application
             storage = analytics.storage
-            // update the app version code and build regardless of tracking enabled or not.
             appVersion = getAppVersion()
-            updateAppVersion()
             if (config.trackApplicationLifecycleEvents) {
-                trackApplicationLifecycleEvents()
+                // Install/update detection and app version persistence are deferred to the first
+                // foreground (onStart) so background-only process starts don't emit ghost events.
                 (analytics as? AndroidAnalytics)?.addLifecycleObserver(this)
+            } else {
+                updateAppVersion()
             }
         }
     }
@@ -66,6 +67,10 @@ internal class AndroidLifecyclePlugin : Plugin, ProcessLifecycleObserver {
     }
 
     override fun onStart(owner: LifecycleOwner) {
+        if (firstLaunch.get()) {
+            trackApplicationLifecycleEvents()
+            updateAppVersion()
+        }
         val properties = buildJsonObject {
             if (firstLaunch.get()) {
                 putIfNotNull(VERSION_KEY, appVersion.currentVersionName)
