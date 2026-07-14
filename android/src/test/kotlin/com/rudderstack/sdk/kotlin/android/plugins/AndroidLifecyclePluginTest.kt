@@ -146,6 +146,7 @@ class AndroidLifecyclePluginTest {
 
             // when
             plugin.onStart(mockLifecycleOwner)
+            testDispatcher.scheduler.advanceUntilIdle()
 
             // then
             verify(exactly = 0) {
@@ -186,6 +187,7 @@ class AndroidLifecyclePluginTest {
 
             // when
             plugin.onStart(mockLifecycleOwner)
+            testDispatcher.scheduler.advanceUntilIdle()
             plugin.onStop(mockLifecycleOwner)
             plugin.onStart(mockLifecycleOwner)
 
@@ -242,6 +244,7 @@ class AndroidLifecyclePluginTest {
 
             // when
             plugin.onStart(mockLifecycleOwner)
+            testDispatcher.scheduler.advanceUntilIdle()
 
             // then
             verify(exactly = 0) {
@@ -288,6 +291,7 @@ class AndroidLifecyclePluginTest {
             // when
             pluginSetup()
             plugin.onStart(mockLifecycleOwner)
+            testDispatcher.scheduler.advanceUntilIdle()
 
             // then
             verify(exactly = 0) {

@@ -55,7 +55,7 @@ internal class AndroidLifecyclePlugin : Plugin, ProcessLifecycleObserver {
             if (config.trackApplicationLifecycleEvents) {
                 (analytics as? AndroidAnalytics)?.addLifecycleObserver(this)
             } else {
-                updateAppVersion()
+                analytics.runOnAnalyticsThread { updateAppVersion() }
             }
         }
     }
@@ -65,15 +65,26 @@ internal class AndroidLifecyclePlugin : Plugin, ProcessLifecycleObserver {
     }
 
     override fun onStart(owner: LifecycleOwner) {
-        if (firstLaunch.get()) {
-            trackApplicationLifecycleEvents()
-            updateAppVersion()
+        val isFirstLaunch = firstLaunch.getAndSet(false)
+        if (isFirstLaunch) {
+            // Persist the app version before the install/update event is queued, so a process that
+            // dies right after the event is queued does not re-fire it on the next launch.
+            analytics.runOnAnalyticsThread {
+                updateAppVersion()
+                trackApplicationLifecycleEvents()
+                trackApplicationOpened(isFirstLaunch = true)
+            }
+        } else {
+            trackApplicationOpened(isFirstLaunch = false)
         }
+    }
+
+    private fun trackApplicationOpened(isFirstLaunch: Boolean) {
         val properties = buildJsonObject {
-            if (firstLaunch.get()) {
+            if (isFirstLaunch) {
                 putIfNotNull(VERSION_KEY, appVersion.currentVersionName)
             }
-            put(FROM_BACKGROUND, !firstLaunch.getAndSet(false))
+            put(FROM_BACKGROUND, !isFirstLaunch)
         }
         analytics.track(APPLICATION_OPENED, properties, RudderOption())
     }
@@ -125,10 +136,14 @@ internal class AndroidLifecyclePlugin : Plugin, ProcessLifecycleObserver {
         )
     }
 
-    private fun updateAppVersion() {
-        analytics.runOnAnalyticsThread {
-            appVersion.currentVersionName?.let { storage.write(StorageKeys.APP_VERSION, it) }
+    private suspend fun updateAppVersion() {
+        if (appVersion.currentBuild != appVersion.previousBuild) {
             storage.write(StorageKeys.APP_BUILD, appVersion.currentBuild)
+        }
+        appVersion.currentVersionName?.let { currentVersionName ->
+            if (currentVersionName != appVersion.previousVersionName) {
+                storage.write(StorageKeys.APP_VERSION, currentVersionName)
+            }
         }
     }
 }
