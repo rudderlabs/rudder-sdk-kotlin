@@ -145,7 +145,7 @@ object RudderStackBuildConfig {
         const val SCM_CONNECTION = "scm:git:git://github.com/rudderlabs/rudder-sdk-kotlin.git"
         const val SCM_DEV_CONNECTION = "scm:git:git://github.com:rudderlabs/rudder-sdk-kotlin.git"
 
-        const val LICENCE_NAME = "Elastic License 2.0 (ELv2)"
+        const val LICENCE_NAME = "MIT License"
         const val LICENCE_URL = "https://github.com/rudderlabs/rudder-sdk-kotlin/blob/main/LICENSE.md"
         const val LICENCE_DIST = "repo"
 
