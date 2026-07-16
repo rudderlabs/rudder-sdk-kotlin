@@ -187,9 +187,9 @@ class AndroidLifecyclePluginTest {
 
             // when
             plugin.onStart(mockLifecycleOwner)
-            testDispatcher.scheduler.advanceUntilIdle()
             plugin.onStop(mockLifecycleOwner)
             plugin.onStart(mockLifecycleOwner)
+            testDispatcher.scheduler.advanceUntilIdle()
 
             // then
             verify(exactly = 0) {
@@ -318,20 +318,31 @@ class AndroidLifecyclePluginTest {
         }
 
     @Test
-    fun `given trackApplicationLifecycleEvents is true and onStart is never called, when only setup is called (background-only start), then no events are tracked and app version is not persisted`() =
+    fun `given trackApplicationLifecycleEvents is true and onStart is never called, when only setup is called (background-only start), then install event is tracked and app version is persisted but opened is not tracked`() =
         runTest(testDispatcher) {
             // given
+            val installedProperties = buildJsonObject {
+                put(VERSION_KEY, "1.0.0")
+                put(BUILD_KEY, 100L)
+            }
             pluginSetup()
 
             // when (no onStart, i.e. a background-only process start)
             testDispatcher.scheduler.advanceUntilIdle()
 
             // then
-            verify(exactly = 0) {
-                mockAnalytics.track(any<String>(), any<JsonObject>(), any<RudderOption>())
+            verify(exactly = 1) {
+                mockAnalytics.track(
+                    name = eq(APPLICATION_INSTALLED),
+                    options = eq(RudderOption()),
+                    properties = eq(installedProperties)
+                )
             }
-            assert(mockStorage.readLong(StorageKeys.APP_BUILD, -1L) == -1L)
-            assert(mockStorage.readString(StorageKeys.APP_VERSION, String.empty()) == String.empty())
+            verify(exactly = 0) {
+                mockAnalytics.track(name = eq(APPLICATION_OPENED), any<JsonObject>(), any<RudderOption>())
+            }
+            assert(mockStorage.readLong(StorageKeys.APP_BUILD, -1L) == 100L)
+            assert(mockStorage.readString(StorageKeys.APP_VERSION, String.empty()) == "1.0.0")
         }
 
     @Test

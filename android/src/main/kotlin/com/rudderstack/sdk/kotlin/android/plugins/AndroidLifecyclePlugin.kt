@@ -13,12 +13,14 @@ import com.rudderstack.sdk.kotlin.android.utils.logAndThrowError
 import com.rudderstack.sdk.kotlin.android.utils.putIfNotNull
 import com.rudderstack.sdk.kotlin.android.utils.removeLifecycleObserver
 import com.rudderstack.sdk.kotlin.android.utils.runOnAnalyticsThread
+import com.rudderstack.sdk.kotlin.android.utils.runOnAnalyticsThreadAfter
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
+import kotlinx.coroutines.Job
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import java.util.concurrent.atomic.AtomicBoolean
@@ -45,6 +47,7 @@ internal class AndroidLifecyclePlugin : Plugin, ProcessLifecycleObserver {
 
     // state variables
     private val firstLaunch = AtomicBoolean(true)
+    private var lastLifecycleJob: Job? = null
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
@@ -52,10 +55,16 @@ internal class AndroidLifecyclePlugin : Plugin, ProcessLifecycleObserver {
             application = config.application
             storage = analytics.storage
             appVersion = getAppVersion()
+            lastLifecycleJob = analytics.runOnAnalyticsThread {
+                // Persist the app version before the install/update event is queued, so a process that
+                // dies right after the event is queued does not re-fire it on the next launch.
+                updateAppVersion()
+                if (config.trackApplicationLifecycleEvents) {
+                    trackApplicationLifecycleEvents()
+                }
+            }
             if (config.trackApplicationLifecycleEvents) {
                 (analytics as? AndroidAnalytics)?.addLifecycleObserver(this)
-            } else {
-                analytics.runOnAnalyticsThread { updateAppVersion() }
             }
         }
     }
@@ -66,16 +75,8 @@ internal class AndroidLifecyclePlugin : Plugin, ProcessLifecycleObserver {
 
     override fun onStart(owner: LifecycleOwner) {
         val isFirstLaunch = firstLaunch.getAndSet(false)
-        if (isFirstLaunch) {
-            // Persist the app version before the install/update event is queued, so a process that
-            // dies right after the event is queued does not re-fire it on the next launch.
-            analytics.runOnAnalyticsThread {
-                updateAppVersion()
-                trackApplicationLifecycleEvents()
-                trackApplicationOpened(isFirstLaunch = true)
-            }
-        } else {
-            trackApplicationOpened(isFirstLaunch = false)
+        lastLifecycleJob = analytics.runOnAnalyticsThreadAfter(lastLifecycleJob) {
+            trackApplicationOpened(isFirstLaunch)
         }
     }
 
@@ -90,7 +91,9 @@ internal class AndroidLifecyclePlugin : Plugin, ProcessLifecycleObserver {
     }
 
     override fun onStop(owner: LifecycleOwner) {
-        analytics.track(APPLICATION_BACKGROUNDED, options = RudderOption())
+        lastLifecycleJob = analytics.runOnAnalyticsThreadAfter(lastLifecycleJob) {
+            analytics.track(APPLICATION_BACKGROUNDED, options = RudderOption())
+        }
     }
 
     private fun trackApplicationLifecycleEvents() {
