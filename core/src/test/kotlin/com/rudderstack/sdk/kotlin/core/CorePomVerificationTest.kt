@@ -53,7 +53,7 @@ class CorePomVerificationTest {
           <url>https://github.com/rudderlabs/rudder-sdk-kotlin</url>
           <licenses>
             <license>
-              <name>Elastic License 2.0 (ELv2)</name>
+              <name>MIT License</name>
               <url>https://github.com/rudderlabs/rudder-sdk-kotlin/blob/main/LICENSE.md</url>
               <distribution>repo</distribution>
             </license>
