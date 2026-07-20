@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+# [1.3.2](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.integration.kotlin.appsflyer@v1.3.1...com.rudderstack.integration.kotlin.appsflyer@v1.3.2) (2026-07-20)
+
+## Chores
+
+- Relicense under MIT ([#328](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/328)) ([5a3e230](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/5a3e23092430fd8da7c421abcb87800b420cc4a8))
+
+## Dependency Updates
+
+- The following workspace dependencies were updated
+  - dependencies
+    - @rudderstack/android bumped from 1.7.0 to 1.7.1
+
+
 # [1.3.1](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.integration.kotlin.appsflyer@v1.3.0...com.rudderstack.integration.kotlin.appsflyer@v1.3.1) (2026-06-03)
 
 ## Dependency Updates

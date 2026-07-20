@@ -13,12 +13,14 @@ import com.rudderstack.sdk.kotlin.android.utils.logAndThrowError
 import com.rudderstack.sdk.kotlin.android.utils.putIfNotNull
 import com.rudderstack.sdk.kotlin.android.utils.removeLifecycleObserver
 import com.rudderstack.sdk.kotlin.android.utils.runOnAnalyticsThread
+import com.rudderstack.sdk.kotlin.android.utils.runOnAnalyticsThreadAfter
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
+import kotlinx.coroutines.Job
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import java.util.concurrent.atomic.AtomicBoolean
@@ -45,17 +47,23 @@ internal class AndroidLifecyclePlugin : Plugin, ProcessLifecycleObserver {
 
     // state variables
     private val firstLaunch = AtomicBoolean(true)
+    private var lastLifecycleJob: Job? = null
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
         (analytics.configuration as? AndroidConfiguration)?.let { config ->
             application = config.application
             storage = analytics.storage
-            // update the app version code and build regardless of tracking enabled or not.
             appVersion = getAppVersion()
-            updateAppVersion()
+            lastLifecycleJob = analytics.runOnAnalyticsThread {
+                // Persist the app version before the install/update event is queued, so a process that
+                // dies right after the event is queued does not re-fire it on the next launch.
+                updateAppVersion()
+                if (config.trackApplicationLifecycleEvents) {
+                    trackApplicationLifecycleEvents()
+                }
+            }
             if (config.trackApplicationLifecycleEvents) {
-                trackApplicationLifecycleEvents()
                 (analytics as? AndroidAnalytics)?.addLifecycleObserver(this)
             }
         }
@@ -66,17 +74,26 @@ internal class AndroidLifecyclePlugin : Plugin, ProcessLifecycleObserver {
     }
 
     override fun onStart(owner: LifecycleOwner) {
+        val isFirstLaunch = firstLaunch.getAndSet(false)
+        lastLifecycleJob = analytics.runOnAnalyticsThreadAfter(lastLifecycleJob) {
+            trackApplicationOpened(isFirstLaunch)
+        }
+    }
+
+    private fun trackApplicationOpened(isFirstLaunch: Boolean) {
         val properties = buildJsonObject {
-            if (firstLaunch.get()) {
+            if (isFirstLaunch) {
                 putIfNotNull(VERSION_KEY, appVersion.currentVersionName)
             }
-            put(FROM_BACKGROUND, !firstLaunch.getAndSet(false))
+            put(FROM_BACKGROUND, !isFirstLaunch)
         }
         analytics.track(APPLICATION_OPENED, properties, RudderOption())
     }
 
     override fun onStop(owner: LifecycleOwner) {
-        analytics.track(APPLICATION_BACKGROUNDED, options = RudderOption())
+        lastLifecycleJob = analytics.runOnAnalyticsThreadAfter(lastLifecycleJob) {
+            analytics.track(APPLICATION_BACKGROUNDED, options = RudderOption())
+        }
     }
 
     private fun trackApplicationLifecycleEvents() {
@@ -122,10 +139,14 @@ internal class AndroidLifecyclePlugin : Plugin, ProcessLifecycleObserver {
         )
     }
 
-    private fun updateAppVersion() {
-        analytics.runOnAnalyticsThread {
-            appVersion.currentVersionName?.let { storage.write(StorageKeys.APP_VERSION, it) }
+    private suspend fun updateAppVersion() {
+        if (appVersion.currentBuild != appVersion.previousBuild) {
             storage.write(StorageKeys.APP_BUILD, appVersion.currentBuild)
+        }
+        appVersion.currentVersionName?.let { currentVersionName ->
+            if (currentVersionName != appVersion.previousVersionName) {
+                storage.write(StorageKeys.APP_VERSION, currentVersionName)
+            }
         }
     }
 }

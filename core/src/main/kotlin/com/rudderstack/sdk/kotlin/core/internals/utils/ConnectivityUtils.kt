@@ -14,7 +14,7 @@ private const val ONLY_ONE_ELEMENT = 1
 @InternalRudderApi
 fun Analytics.notifyOnlyOnceOnConnectionAvailable(block: suspend () -> Unit) {
     this.analyticsScope.launch {
-        this@notifyOnlyOnceOnConnectionAvailable.connectivityState
+        this@notifyOnlyOnceOnConnectionAvailable.connectivityState.flow
             .filter { it }
             .take(ONLY_ONE_ELEMENT)
             .collect { block() }

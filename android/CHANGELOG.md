@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+# [1.7.1](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.sdk.kotlin.android@v1.7.0...com.rudderstack.sdk.kotlin.android@v1.7.1) (2026-07-20)
+
+## Bug Fixes
+
+- Prevent duplicate Application Installed events from background SDK init ([#326](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/326)) ([58bec87](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/58bec87119f0b18be7b178c267720746157dbf07))
+- **device-mode:** Apply event filtering for late-subscribing plugins ([#325](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/325)) ([3fa0ee2](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/3fa0ee278ae720bcec1cbaf00a6f6e9e987be9bd))
+
+## Chores
+
+- Relicense under MIT ([#328](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/328)) ([5a3e230](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/5a3e23092430fd8da7c421abcb87800b420cc4a8))
+
+## Dependency Updates
+
+- The following workspace dependencies were updated
+  - dependencies
+    - @rudderstack/core bumped from 1.6.0 to 1.6.1
+
+
 # [1.7.0](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.sdk.kotlin.android@v1.6.0...com.rudderstack.sdk.kotlin.android@v1.7.0) (2026-06-03)
 
 ## Features
