@@ -29,6 +29,7 @@ import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.PluginChain
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
+import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.storage.inmemory.provideInMemoryStorage
 import com.rudderstack.sdk.kotlin.core.internals.storage.provideBasicStorage
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
@@ -90,9 +91,8 @@ open class Analytics protected constructor(
     init {
         logger.info("Analytics(core): Initialized with configuration: $configuration")
         runForBaseTypeOnly()
-        processEvents()
+        processEvents(storeAnonymousId())
         setup()
-        storeAnonymousId()
     }
 
     private fun runForBaseTypeOnly() {
@@ -418,8 +418,9 @@ open class Analytics protected constructor(
      * **NOTE**: This method can be called either before or after the initialization of all plugins (plugin setup occurs in the `init` method).
      * Events sent before this function is invoked will be queued and processed once this function is called, ensuring no events are lost.
      */
-    private fun processEvents() {
+    private fun processEvents(anonymousIdPersistedJob: Job) {
         processEventJob = analyticsScope.launch(analyticsDispatcher) {
+            anonymousIdPersistedJob.join()
             for (event in processEventChannel) {
                 event.updateData(platform = getPlatformType())
                 pluginChain.process(event)
@@ -472,7 +473,7 @@ open class Analytics protected constructor(
      * Get the user traits.
      *
      * The `analyticsInstance.traits` is used to get the `traits` value.
-     * This traits is assigned when an identify event is made.
+     * These traits are assigned when an identify event is made.
      *
      * This can return null if the analytics is shut down.
      *
@@ -487,9 +488,12 @@ open class Analytics protected constructor(
             return userIdentityState.value.traits
         }
 
-    private fun storeAnonymousId() {
-        analyticsScope.launch(keyValueStorageDispatcher) {
-            userIdentityState.value.storeAnonymousId(storage = storage)
+    private fun storeAnonymousId(): Job {
+        return analyticsScope.launch(keyValueStorageDispatcher) {
+            val anonymousId = userIdentityState.value.anonymousId
+            if (storage.readString(StorageKeys.ANONYMOUS_ID, String.empty()) != anonymousId) {
+                userIdentityState.value.storeAnonymousId(storage = storage)
+            }
         }
     }
 }
