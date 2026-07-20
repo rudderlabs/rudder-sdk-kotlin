@@ -88,6 +88,22 @@ class IntegrationsManagementPluginTest {
         }
 
     @Test
+    fun `given sourceConfig is dispatched before setup is called, when an integration is added, then it is initialised`() =
+        runTest {
+            // Config is already present in the state BEFORE the plugin subscribes (warm launch / late subscriber).
+            // This would fail with the previous dropInitialState() implementation, which discarded the cached config.
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
+
+            integrationsManagementPlugin.setup(mockAnalytics)
+            advanceUntilIdle()
+
+            integrationsManagementPlugin.addIntegration(integrationPlugin)
+            advanceUntilIdle()
+
+            verify(exactly = 1) { integrationPlugin.initDestination(sourceConfigWithCorrectApiKey) }
+        }
+
+    @Test
     fun `given an integration plugin, when no sourceConfig is fetched and setup is called, then it is not initialised`() =
         runTest {
             integrationsManagementPlugin.setup(mockAnalytics)
