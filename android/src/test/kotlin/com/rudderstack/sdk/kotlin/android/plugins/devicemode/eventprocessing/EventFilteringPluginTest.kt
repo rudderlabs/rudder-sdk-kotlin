@@ -238,4 +238,60 @@ class EventFilteringPluginTest {
             assertNull(eventFilteringPlugin.intercept(event2))
             assertNull(eventFilteringPlugin.intercept(event3))
         }
+
+    @Test
+    fun `given config already dispatched before the plugin subscribes and an identical refresh, when a blacklisted event is intercepted, then it is dropped`() =
+        runTest(testDispatcher) {
+            val state = State(initialState = SourceConfig.initialState())
+            every { mockAnalytics.sourceConfigState } returns state
+
+            // 1) Cached config is dispatched BEFORE the plugin subscribes (warm launch).
+            state.dispatch(SourceConfig.UpdateAction(sourceConfigWithBlackListEvents))
+
+            // 2) Plugin is added late and subscribes now.
+            val lateSubscribingPlugin = EventFilteringPlugin("MockDestination")
+            lateSubscribingPlugin.setup(mockAnalytics)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            // 3) Network refresh returns an identical config -> de-duped by the state flow.
+            state.dispatch(SourceConfig.UpdateAction(sourceConfigWithBlackListEvents))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val blacklistedEvent = TrackEvent("Track Event 3", emptyJsonObject)
+            val returnedEvent = lateSubscribingPlugin.intercept(blacklistedEvent)
+
+            assertNull(returnedEvent, "Blacklisted 'Track Event 3' must be dropped even on a late subscribe")
+        }
+    
+    @Test
+    fun `given config already dispatched before the plugin subscribes and an identical refresh, when a non-whitelisted event is intercepted, then it is dropped`() =
+        runTest(testDispatcher) {
+            val state = State(initialState = SourceConfig.initialState())
+            every { mockAnalytics.sourceConfigState } returns state
+
+            // 1) Cached config is dispatched BEFORE the plugin subscribes (warm launch).
+            state.dispatch(SourceConfig.UpdateAction(sourceConfigWithWhiteListEvents))
+
+            // 2) Plugin is added late and subscribes now.
+            val lateSubscribingPlugin = EventFilteringPlugin("MockDestination")
+            lateSubscribingPlugin.setup(mockAnalytics)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            // 3) Network refresh returns an identical config -> de-duped by the state flow.
+            state.dispatch(SourceConfig.UpdateAction(sourceConfigWithWhiteListEvents))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val whitelistedEvent = TrackEvent("Track Event 1", emptyJsonObject)
+            val nonWhitelistedEvent = TrackEvent("Track Event 3", emptyJsonObject)
+
+            assertEquals(
+                whitelistedEvent,
+                lateSubscribingPlugin.intercept(whitelistedEvent),
+                "Whitelisted 'Track Event 1' must pass through even on a late subscribe"
+            )
+            assertNull(
+                lateSubscribingPlugin.intercept(nonWhitelistedEvent),
+                "Non-whitelisted 'Track Event 3' must be dropped even on a late subscribe"
+            )
+        }
 }

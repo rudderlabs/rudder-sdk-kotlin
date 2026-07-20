@@ -5,7 +5,6 @@ import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.PluginChain
-import com.rudderstack.sdk.kotlin.core.internals.statemanagement.dropInitialState
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collectIndexed
 import kotlinx.coroutines.flow.filter
@@ -39,7 +38,7 @@ internal class IntegrationsManagementPlugin : Plugin {
         integrationPluginChain.analytics = analytics
         analytics.withIntegrationsDispatcher {
             analytics.sourceConfigState
-                .dropInitialState()
+                .observeDispatched()
                 .filter { it.source.isSourceEnabled }
                 .collectIndexed { index, sourceConfig ->
                     integrationPluginChain.applyClosure { plugin ->

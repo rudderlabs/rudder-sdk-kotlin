@@ -64,7 +64,7 @@ internal class EventQueue(
     private fun observeConfigAndUpdateSchedule() {
         with(analytics) {
             analyticsScope.launch(analyticsDispatcher) {
-                sourceConfigState
+                sourceConfigState.flow
                     .map { it.source.isSourceEnabled }
                     .distinctUntilChanged()
                     .collect { isSourceEnabled ->
