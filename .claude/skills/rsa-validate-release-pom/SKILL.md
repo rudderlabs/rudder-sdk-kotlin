@@ -103,7 +103,7 @@ For each fetched POM, run these checks.
 
 **Check 2: Licence block**
 
-- licence name = `Elastic License 2.0 (ELv2)`
+- licence name = `MIT License`
 - licence url = `https://github.com/rudderlabs/rudder-sdk-kotlin/blob/main/LICENSE.md`
 - licence distribution = `repo`
 

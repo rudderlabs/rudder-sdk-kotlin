@@ -15,7 +15,7 @@ Published: 03 Jun 2026, 07:15:03 UTC | Build #1
   <url>https://github.com/rudderlabs/rudder-sdk-kotlin</url>
   <licenses>
     <license>
-      <name>Elastic License 2.0 (ELv2)</name>
+      <name>MIT License</name>
       <url>https://github.com/rudderlabs/rudder-sdk-kotlin/blob/main/LICENSE.md</url>
       <distribution>repo</distribution>
     </license>
