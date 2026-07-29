@@ -51,7 +51,7 @@ should change between releases - everything else must remain identical.
 Licence:
 | Field | Value |
 |---|---|
-| name | `Elastic License 2.0 (ELv2)` |
+| name | `MIT License` |
 | url | `https://github.com/rudderlabs/rudder-sdk-kotlin/blob/main/LICENSE.md` |
 | distribution | `repo` |
 
