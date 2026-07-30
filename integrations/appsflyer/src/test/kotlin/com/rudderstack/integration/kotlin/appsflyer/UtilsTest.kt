@@ -1,7 +1,7 @@
 package com.rudderstack.integration.kotlin.appsflyer
 
-import com.appsflyer.AFInAppEventParameterName
-import com.appsflyer.AFInAppEventType
+import com.appsflyer.share.AFInAppEventParameterName
+import com.appsflyer.share.AFInAppEventType
 import com.rudderstack.sdk.kotlin.core.ecommerce.ECommerceEvents
 import com.rudderstack.sdk.kotlin.core.ecommerce.ECommerceParamNames
 import kotlinx.serialization.json.buildJsonArray
