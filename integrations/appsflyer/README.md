@@ -37,7 +37,8 @@ This integration supports AppsFlyer Android SDK version:
 > **Using AppsFlyer v6?** Stay on the `1.x` line of this integration. Version `2.0.0` and above require
 > AppsFlyer Android SDK v7 and cannot resolve alongside AppsFlyer 6.x. See AppsFlyer's
 > [Android v6 → v7 migration guide](https://dev.appsflyer.com/hc/docs/migrate-android-sdk-to-v7)
-> before upgrading.
+> before upgrading. Note that v7 also changes how the `identify` email reaches AppsFlyer — see
+> [Identify and email handling](#identify-and-email-handling) below.
 
 AppsFlyer v7 also raises the minimum Android API level to 21 and pulls in
 `com.google.android.play:integrity` as a new transitive dependency.
@@ -102,3 +103,20 @@ class MainActivity : ComponentActivity() {
     }
 }
 ```
+
+### Identify and email handling
+
+AppsFlyer v7 changed how the SDK transmits the email supplied via `identify`.
+
+| | AppsFlyer v6 | AppsFlyer v7 |
+|---|---|---|
+| API this integration calls | `setUserEmails(email)` | `setUserEmail(email)` |
+| Field sent to AppsFlyer | `user_emails` | `email_hashed` |
+| Form | plaintext | SHA-256 hash |
+
+In v6 the email was attached in plaintext to every subsequent in-app event. In v7 the SDK hashes it
+before transmission, so AppsFlyer no longer receives the raw address.
+
+This is handled entirely inside the integration — no code change is required in your app. But if
+anything downstream of AppsFlyer keys on the plaintext `user_emails` field (audience matching, partner
+integrations, exports), it will now receive a SHA-256 hash instead and may need reconfiguring.
