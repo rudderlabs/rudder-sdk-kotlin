@@ -16,9 +16,6 @@ dependencies {
 
     // AppsFlyer Android SDK
     implementation ("com.appsflyer:af-android-sdk:<latest_version>")
-
-    // Required by AppsFlyer v7 for install referrer collection
-    implementation("com.android.installreferrer:installreferrer:2.2")
 }
 ```
 
@@ -103,6 +100,10 @@ class MainActivity : ComponentActivity() {
     }
 }
 ```
+
+> AppsFlyer's v7 migration guide lists `com.android.installreferrer:installreferrer` as a required
+> dependency. You do not need to add it yourself — this integration already declares it, so it comes
+> in transitively.
 
 ### Identify and email handling
 
