@@ -72,8 +72,8 @@ object RudderStackBuildConfig {
         object AppsFlyer : IntegrationModuleInfo {
 
             override val moduleName: String = "appsflyer"
-            override val versionName: String = "1.3.2"
-            override val versionCode: String = "6"
+            override val versionName: String = "2.0.0"
+            override val versionCode: String = "7"
 
             override val artifactId = "appsflyer"
             override val pomPackaging = "aar"
