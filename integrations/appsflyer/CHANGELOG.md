@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+# [2.0.0](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.integration.kotlin.appsflyer@v1.3.2...com.rudderstack.integration.kotlin.appsflyer@v2.0.0) (2026-08-03)
+
+## ⚠ Breaking Changes
+
+- **appsflyer:** Update AppsFlyer Android SDK to v7 ([#333](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/333)) ([447d115](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/447d1156c8ed36477c599cd89f43c9ee9d012931))
+
+## Features
+
+- **appsflyer:** Update AppsFlyer Android SDK to v7 ([#333](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/333)) ([447d115](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/447d1156c8ed36477c599cd89f43c9ee9d012931))
+
+
 # [1.3.2](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.integration.kotlin.appsflyer@v1.3.1...com.rudderstack.integration.kotlin.appsflyer@v1.3.2) (2026-07-20)
 
 ## Chores

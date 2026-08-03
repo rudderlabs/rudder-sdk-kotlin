@@ -16,7 +16,7 @@ nexus = "2.0.0"
 
 #integration dependencies
 adjust-android = { strictly = "[5.1.0, 6.0.0)", prefer = "5.1.0" }
-appsflyer-android-sdk = { strictly = "[6.17.0, 7.0.0)", prefer = "6.17.0" }
+appsflyer-android-sdk = { strictly = "[7.0.1, 8.0.0)", prefer = "7.0.1" }
 android-installreferrer = { strictly = "[2.2, 3.0)", prefer = "2.2" }
 firebase-bom = { strictly = "[33.7.0, 34.0.0)", prefer = "33.7.0" }
 facebook-android-sdk = { strictly = "[18.0.1, 19.0.0)", prefer = "18.0.1" }
