@@ -66,7 +66,7 @@ class AppsFlyerIntegration : StandardIntegration, IntegrationPlugin() {
             ?.get(EMAIL)
             ?.getString()
             ?.takeIf { it.isNotEmpty() }
-            ?.let { appsFlyerInstance?.setUserEmails(it) }
+            ?.let { appsFlyerInstance?.setUserEmail(it) }
 
         analytics.logger.verbose("AppsFlyerIntegration: Identify event processed")
     }

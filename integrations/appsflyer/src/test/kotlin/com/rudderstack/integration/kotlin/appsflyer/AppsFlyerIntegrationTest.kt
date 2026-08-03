@@ -1,9 +1,9 @@
 package com.rudderstack.integration.kotlin.appsflyer
 
 import android.app.Application
-import com.appsflyer.AFInAppEventParameterName
-import com.appsflyer.AFInAppEventType
 import com.appsflyer.AppsFlyerLib
+import com.appsflyer.share.AFInAppEventParameterName
+import com.appsflyer.share.AFInAppEventType
 import com.rudderstack.sdk.kotlin.android.Analytics
 import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.core.ecommerce.ECommerceEvents
@@ -94,7 +94,7 @@ class AppsFlyerIntegrationTest {
     }
 
     @Test
-    fun `given identify event with email trait, when identify is called, then setUserEmails is called`() {
+    fun `given identify event with email trait, when identify is called, then setUserEmail is called`() {
         appsFlyerIntegration.create(emptyJsonObject)
         val email = "test@example.com"
         val traits = buildJsonObject {
@@ -108,7 +108,7 @@ class AppsFlyerIntegrationTest {
 
         appsFlyerIntegration.identify(identifyEvent)
 
-        verify { mockAppsFlyerLib.setUserEmails(email) }
+        verify { mockAppsFlyerLib.setUserEmail(email) }
     }
 
     @Test
@@ -225,7 +225,7 @@ class AppsFlyerIntegrationTest {
     }
 
     @Test
-    fun `given identify event with null email trait, when identify is called, then setUserEmails is not called`() {
+    fun `given identify event with null email trait, when identify is called, then setUserEmail is not called`() {
         appsFlyerIntegration.create(emptyJsonObject)
         val identifyEvent = IdentifyEvent()
         identifyEvent.userId = "user123"
@@ -235,7 +235,7 @@ class AppsFlyerIntegrationTest {
 
         appsFlyerIntegration.identify(identifyEvent)
 
-        verify(exactly = 0) { mockAppsFlyerLib.setUserEmails(any<String>()) }
+        verify(exactly = 0) { mockAppsFlyerLib.setUserEmail(any<String>()) }
     }
 
     @Test
