@@ -115,6 +115,7 @@ dependencies {
 
     // CleverTap SDK
     implementation(libs.clevertap.android.sdk)
+    implementation(libs.androidx.fragment.ktx)
 
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)

@@ -84,6 +84,12 @@ class CleverTapPomVerificationTest {
               <version>[x.y.z, x.y.z)</version>
               <scope>runtime</scope>
             </dependency>
+            <dependency>
+              <groupId>androidx.fragment</groupId>
+              <artifactId>fragment-ktx</artifactId>
+              <version>x.y.z</version>
+              <scope>runtime</scope>
+            </dependency>
           </dependencies>
         </project>
     """.trimIndent()
