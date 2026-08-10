@@ -5,9 +5,8 @@ import android.app.Application
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import com.rudderstack.sdk.kotlin.android.utils.application
+import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.core.Analytics
-import com.rudderstack.sdk.kotlin.core.Configuration
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
@@ -85,8 +84,8 @@ class CleverTapIntegrationTest {
         every { CleverTapSdk.onActivityResumed(any()) } just Runs
         every { CleverTapSdk.onActivityPaused() } just Runs
 
-        every { mockAnalytics.application } returns mockApplication
         every { mockAnalytics.configuration } returns mockConfiguration
+        every { mockConfiguration.application } returns mockApplication
         every { mockConfiguration.logLevel } returns Logger.LogLevel.DEBUG
 
         every { mockCleverTap.instance } returns mockDestinationInstance
