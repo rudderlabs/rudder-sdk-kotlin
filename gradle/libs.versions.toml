@@ -21,6 +21,7 @@ android-installreferrer = { strictly = "[2.2, 3.0)", prefer = "2.2" }
 firebase-bom = { strictly = "[33.7.0, 34.0.0)", prefer = "33.7.0" }
 facebook-android-sdk = { strictly = "[18.0.1, 19.0.0)", prefer = "18.0.1" }
 android-sdk-ui = { strictly = "[35.0.0, 36.0.0)", prefer = "35.0.0" } #braze
+clevertap-android-sdk = { strictly = "[7.3.1, 8.0.0)", prefer = "7.3.1" }
 userleap-android-sdk = { strictly = "[2.23.0, 3.0.0)", prefer = "2.23.0" }
 fragment-ktx = "1.8.9"
 
@@ -39,6 +40,7 @@ ui = "1.7.8"
 [libraries]
 android-sdk-ui = { module = "com.braze:android-sdk-ui", version.ref = "android-sdk-ui" }
 adjust-android = { module = "com.adjust.sdk:adjust-android", version.ref = "adjust-android" }
+clevertap-android-sdk = { module = "com.clevertap.android:clevertap-android-sdk", version.ref = "clevertap-android-sdk" }
 appsflyer-android-sdk = { module = "com.appsflyer:af-android-sdk", version.ref = "appsflyer-android-sdk" }
 android-installreferrer = { module = "com.android.installreferrer:installreferrer", version.ref = "android-installreferrer" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activity-compose" }
