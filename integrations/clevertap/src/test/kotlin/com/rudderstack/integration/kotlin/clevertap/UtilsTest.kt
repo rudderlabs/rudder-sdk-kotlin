@@ -5,6 +5,8 @@ import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.UserIdentity
+import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
+import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import io.mockk.mockk
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.add
@@ -180,6 +182,7 @@ class UtilsTest {
         }
     }
 
+    @OptIn(InternalRudderApi::class)
     private fun provideIdentifyEvent(traits: kotlinx.serialization.json.JsonObject) = IdentifyEvent(
         options = RudderOption(),
         userIdentityState = UserIdentity(
@@ -189,5 +192,6 @@ class UtilsTest {
         ),
     ).also {
         it.context = buildJsonObject { put("traits", traits) }
+        it.updateData(PlatformType.Mobile)
     }
 }

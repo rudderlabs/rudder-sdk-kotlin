@@ -5,7 +5,6 @@ import android.app.Application
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import com.clevertap.android.sdk.CleverTapAPI
 import com.rudderstack.sdk.kotlin.android.utils.application
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
@@ -23,8 +22,9 @@ import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.just
 import io.mockk.mockk
-import io.mockk.mockkStatic
+import io.mockk.mockkObject
 import io.mockk.slot
+import io.mockk.unmockkAll
 import io.mockk.verify
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.add
@@ -34,6 +34,7 @@ import kotlinx.serialization.json.put
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -58,10 +59,12 @@ class CleverTapIntegrationTest {
     private lateinit var mockApplication: Application
 
     @MockK
-    private lateinit var mockCleverTap: CleverTapAPI
+    private lateinit var mockCleverTap: CleverTapClient
 
     @MockK
     private lateinit var mockActivity: Activity
+
+    private val mockDestinationInstance = Any()
 
     private lateinit var integration: CleverTapIntegration
 
@@ -69,19 +72,20 @@ class CleverTapIntegrationTest {
     fun setup() {
         MockKAnnotations.init(this, relaxed = true)
 
-        mockkStatic(CleverTapAPI::class)
-        every { CleverTapAPI.changeCredentials(any(), any()) } just Runs
-        every { CleverTapAPI.changeCredentials(any(), any(), any()) } just Runs
-        every { CleverTapAPI.setDebugLevel(any<CleverTapAPI.LogLevel>()) } just Runs
-        every { CleverTapAPI.getDefaultInstance(any()) } returns mockCleverTap
-        every { CleverTapAPI.setAppForeground(any()) } just Runs
-        every { CleverTapAPI.onActivityResumed(any()) } just Runs
-        every { CleverTapAPI.onActivityPaused() } just Runs
+        mockkObject(CleverTapSdk)
+        every { CleverTapSdk.changeCredentials(any(), any()) } just Runs
+        every { CleverTapSdk.changeCredentials(any(), any(), any()) } just Runs
+        every { CleverTapSdk.setLogLevel(any()) } just Runs
+        every { CleverTapSdk.getDefaultInstance(any()) } returns mockCleverTap
+        every { CleverTapSdk.setAppForeground(any()) } just Runs
+        every { CleverTapSdk.onActivityResumed(any()) } just Runs
+        every { CleverTapSdk.onActivityPaused() } just Runs
 
         every { mockAnalytics.application } returns mockApplication
         every { mockAnalytics.configuration } returns mockk(relaxed = true)
         every { mockAnalytics.configuration.logLevel } returns Logger.LogLevel.DEBUG
 
+        every { mockCleverTap.instance } returns mockDestinationInstance
         every { mockCleverTap.onUserLogin(any()) } just Runs
         every { mockCleverTap.pushEvent(any<String>()) } just Runs
         every { mockCleverTap.pushEvent(any<String>(), any<Map<String, Any>>()) } just Runs
@@ -90,6 +94,11 @@ class CleverTapIntegrationTest {
         every { mockCleverTap.pushDeepLink(any()) } just Runs
 
         integration = CleverTapIntegration().also { it.analytics = mockAnalytics }
+    }
+
+    @AfterEach
+    fun tearDown() {
+        unmockkAll()
     }
 
     @Nested
@@ -104,24 +113,24 @@ class CleverTapIntegrationTest {
         fun `given integration is initialised, when instance is requested, then destination SDK instance is returned`() {
             integration.create(mockIntegrationConfig)
 
-            assertEquals(mockCleverTap, integration.getDestinationInstance())
+            assertEquals(mockDestinationInstance, integration.getDestinationInstance())
         }
 
         @Test
         fun `when integration is initialised with region, then destination SDK is configured with regional credentials`() {
             integration.create(mockIntegrationConfig)
 
-            verify(exactly = 1) { CleverTapAPI.changeCredentials(ACCOUNT_ID, ACCOUNT_TOKEN, REGION) }
-            verify(exactly = 1) { CleverTapAPI.setDebugLevel(CleverTapAPI.LogLevel.DEBUG) }
-            verify(exactly = 1) { CleverTapAPI.getDefaultInstance(mockApplication) }
+            verify(exactly = 1) { CleverTapSdk.changeCredentials(ACCOUNT_ID, ACCOUNT_TOKEN, REGION) }
+            verify(exactly = 1) { CleverTapSdk.setLogLevel(Logger.LogLevel.DEBUG) }
+            verify(exactly = 1) { CleverTapSdk.getDefaultInstance(mockApplication) }
         }
 
         @Test
         fun `when integration is initialised without region, then destination SDK is configured with default credentials`() {
             integration.create(mockNewIntegrationConfig)
 
-            verify(exactly = 1) { CleverTapAPI.changeCredentials(NEW_ACCOUNT_ID, NEW_ACCOUNT_TOKEN) }
-            verify(exactly = 1) { CleverTapAPI.getDefaultInstance(mockApplication) }
+            verify(exactly = 1) { CleverTapSdk.changeCredentials(NEW_ACCOUNT_ID, NEW_ACCOUNT_TOKEN) }
+            verify(exactly = 1) { CleverTapSdk.getDefaultInstance(mockApplication) }
         }
 
         @Test
@@ -129,8 +138,8 @@ class CleverTapIntegrationTest {
             integration.create(mockIntegrationConfig)
             integration.create(mockNewIntegrationConfig)
 
-            verify(exactly = 1) { CleverTapAPI.getDefaultInstance(mockApplication) }
-            verify(exactly = 0) { CleverTapAPI.changeCredentials(NEW_ACCOUNT_ID, NEW_ACCOUNT_TOKEN) }
+            verify(exactly = 1) { CleverTapSdk.getDefaultInstance(mockApplication) }
+            verify(exactly = 0) { CleverTapSdk.changeCredentials(NEW_ACCOUNT_ID, NEW_ACCOUNT_TOKEN) }
         }
     }
 
@@ -242,16 +251,16 @@ class CleverTapIntegrationTest {
         @Test
         fun `given activity has push extras and deep link, when activity is created, then destination receives push callbacks`() {
             integration.create(mockIntegrationConfig)
-            val extras = Bundle().apply { putString("wzrk_id", "notification-id") }
-            val uri = Uri.parse("example://product/123")
-            every { mockActivity.intent } returns Intent().apply {
-                putExtras(extras)
-                data = uri
-            }
+            val extras = mockk<Bundle>()
+            val uri = mockk<Uri>()
+            val intent = mockk<Intent>()
+            every { intent.extras } returns extras
+            every { intent.data } returns uri
+            every { mockActivity.intent } returns intent
 
             integration.onActivityCreated(mockActivity, null)
 
-            verify { CleverTapAPI.setAppForeground(true) }
+            verify { CleverTapSdk.setAppForeground(true) }
             verify { mockCleverTap.pushNotificationClickedEvent(extras) }
             verify { mockCleverTap.pushDeepLink(uri) }
         }
@@ -262,7 +271,7 @@ class CleverTapIntegrationTest {
 
             integration.onActivityResumed(mockActivity)
 
-            verify { CleverTapAPI.onActivityResumed(mockActivity) }
+            verify { CleverTapSdk.onActivityResumed(mockActivity) }
         }
 
         @Test
@@ -271,7 +280,7 @@ class CleverTapIntegrationTest {
 
             integration.onActivityPaused(mockActivity)
 
-            verify { CleverTapAPI.onActivityPaused() }
+            verify { CleverTapSdk.onActivityPaused() }
         }
     }
 
@@ -281,7 +290,7 @@ class CleverTapIntegrationTest {
         @Test
         fun `given push notification extras, when helper is called, then destination receives notification click`() {
             integration.create(mockIntegrationConfig)
-            val extras = Bundle().apply { putString("wzrk_id", "notification-id") }
+            val extras = mockk<Bundle>()
 
             integration.pushNotificationClickedEvent(extras)
 
