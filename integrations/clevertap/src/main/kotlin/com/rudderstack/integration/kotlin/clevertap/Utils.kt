@@ -76,8 +76,7 @@ internal inline fun <reified T> JsonObject.parseConfig(logger: Logger): T? {
     }
 }
 
-internal fun CleverTapDestinationConfig.hasValidCredentials(): Boolean =
-    accountId.isNotBlank() && accountToken.isNotBlank()
+internal fun CleverTapDestinationConfig.hasValidCredentials(): Boolean = accountId.isNotBlank() && accountToken.isNotBlank()
 
 internal fun CleverTapDestinationConfig.hasRegion(): Boolean =
     region.isNotBlank() && !region.equals(DEFAULT_REGION, ignoreCase = true)
@@ -223,8 +222,7 @@ private fun JsonObject.toProductMap(): HashMap<String, Any> {
     return item
 }
 
-private fun JsonElement?.toRevenue(): Double =
-    extractValue(this)?.toString()?.toDoubleOrNull() ?: 0.0
+private fun JsonElement?.toRevenue(): Double = extractValue(this)?.toString()?.toDoubleOrNull() ?: 0.0
 
 internal sealed class CleverTapTrackEvent {
     data class CustomEvent(
