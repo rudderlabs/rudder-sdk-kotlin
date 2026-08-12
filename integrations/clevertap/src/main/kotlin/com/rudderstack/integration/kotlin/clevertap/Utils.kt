@@ -22,6 +22,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.long
 import kotlinx.serialization.json.longOrNull
 import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 
 private const val NAME = "name"
@@ -167,7 +168,7 @@ private fun MutableMap<String, Any>.transformBirthday(logger: Logger) {
     remove(BIRTHDAY)
 }
 
-internal fun String.dateFromString(logger: Logger): java.util.Date? = runCatching {
+internal fun String.dateFromString(logger: Logger): Date? = runCatching {
     SimpleDateFormat(BIRTHDAY_FORMAT, Locale.US).apply { isLenient = false }.parse(this)
 }.getOrElse {
     logger.warn("CleverTapIntegration: Cannot parse birthday '$this'. Expected format $BIRTHDAY_FORMAT.")
