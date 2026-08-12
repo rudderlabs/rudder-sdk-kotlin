@@ -83,7 +83,7 @@ class CleverTapIntegrationTest {
         mockkStatic("com.rudderstack.sdk.kotlin.android.utils.LifecycleManagementUtilsKt")
         every { CleverTapAPI.changeCredentials(any(), any()) } just Runs
         every { CleverTapAPI.changeCredentials(any(), any(), any()) } just Runs
-        every { CleverTapAPI.setDebugLevel(any()) } just Runs
+        every { CleverTapAPI.setDebugLevel(any<CleverTapAPI.LogLevel>()) } just Runs
         every { CleverTapAPI.getDefaultInstance(any<Application>()) } returns mockCleverTap
         every { CleverTapAPI.setAppForeground(any()) } just Runs
         every { CleverTapAPI.onActivityResumed(any()) } just Runs
