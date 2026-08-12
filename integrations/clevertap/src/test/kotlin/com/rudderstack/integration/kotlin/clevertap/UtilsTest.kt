@@ -8,17 +8,16 @@ import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.UserIdentit
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import org.json.JSONArray
-import org.json.JSONObject
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
@@ -97,12 +96,13 @@ class UtilsTest {
                 })
             }
 
-            val profile = provideIdentifyEvent(traits).toCleverTapProfile()
+            val profile = provideIdentifyEvent(traits).toCleverTapProfile(mockk(relaxed = true))
 
             assertEquals("user-123", profile["Identity"])
             assertEquals("Jane", profile["Name"])
             assertEquals("+15551234567", profile["Phone"])
             assertEquals("jane@example.com", profile["Email"])
+            assertEquals("<anonymousId>", profile["anonymousId"])
             assertEquals("M", profile["Gender"])
             assertEquals("company-1", profile["companyId"])
             assertEquals("Acme", profile["companyName"])
@@ -117,11 +117,54 @@ class UtilsTest {
                 put("email", "jane@example.com")
             }
 
-            val profile = provideIdentifyEvent(traits = traits).toCleverTapProfile()
+            val profile = provideIdentifyEvent(traits = traits).toCleverTapProfile(mockk(relaxed = true))
 
             assertEquals("test-user", profile["Identity"])
             assertEquals("Jane", profile["Name"])
             assertEquals("jane@example.com", profile["Email"])
+        }
+
+        @Test
+        fun `given traits include explicit anonymousId, when profile is built, then event anonymousId does not overwrite it`() {
+            val traits = buildJsonObject {
+                put("anonymousId", "explicit-anonymous-id")
+            }
+
+            val profile = provideIdentifyEvent(traits = traits).toCleverTapProfile(mockk(relaxed = true))
+
+            assertEquals("explicit-anonymous-id", profile["anonymousId"])
+        }
+
+        @Test
+        fun `given address and company traits are not objects, when profile is built, then original values are preserved`() {
+            val traits = buildJsonObject {
+                put("address", "123 Main St")
+                put("company", buildJsonArray {
+                    add("Acme")
+                    add("RudderStack")
+                })
+            }
+
+            val profile = provideIdentifyEvent(traits = traits).toCleverTapProfile(mockk(relaxed = true))
+
+            assertEquals("123 Main St", profile["address"])
+            assertEquals(listOf("Acme", "RudderStack"), profile["company"])
+        }
+
+        @Test
+        fun `given invalid birthday, when profile is built, then DOB is dropped and warning is logged`() {
+            val logger = mockk<Logger>(relaxed = true)
+            val traits = buildJsonObject {
+                put("birthday", "1990-13-45")
+            }
+
+            val profile = provideIdentifyEvent(traits = traits).toCleverTapProfile(logger)
+
+            assertFalse(profile.containsKey("birthday"))
+            assertNull(profile["DOB"])
+            verify {
+                logger.warn("CleverTapIntegration: Cannot parse birthday '1990-13-45'. Expected format yyyy-MM-dd.")
+            }
         }
     }
 
@@ -150,35 +193,51 @@ class UtilsTest {
         }
 
         @Test
+        fun `given order completed has missing products and non-numeric revenue, when track event is built, then empty charged event fields are used`() {
+            val properties = buildJsonObject {
+                put("order_id", "order-1")
+                put("revenue", "not-a-number")
+            }
+
+            val event = properties.toCleverTapTrackEvent("Order Completed") as CleverTapTrackEvent.ChargedEvent
+
+            assertEquals("order-1", event.chargeDetails["Charged ID"])
+            assertEquals(0.0, event.chargeDetails["Amount"])
+            assertEquals(emptyList<HashMap<String, Any>>(), event.items)
+        }
+
+        @Test
+        fun `given order completed has empty products, when track event is built, then no items are sent`() {
+            val properties = buildJsonObject {
+                put("products", buildJsonArray {})
+            }
+
+            val event = properties.toCleverTapTrackEvent("Order Completed") as CleverTapTrackEvent.ChargedEvent
+
+            assertEquals(emptyList<HashMap<String, Any>>(), event.items)
+        }
+
+        @Test
+        fun `given order completed has malformed products, when track event is built, then invalid items are ignored`() {
+            val properties = buildJsonObject {
+                put("products", buildJsonArray {
+                    add("bad-product")
+                    add(buildJsonObject { put("product_id", "sku-1") })
+                })
+            }
+
+            val event = properties.toCleverTapTrackEvent("Order Completed") as CleverTapTrackEvent.ChargedEvent
+
+            assertEquals(1, event.items.size)
+            assertEquals("sku-1", event.items.first()["id"])
+        }
+
+        @Test
         fun `given custom properties, when screen event is built, then screen viewed event name is used`() {
             val event = buildJsonObject { put("section", "hero") }.toCleverTapScreenEvent("Home")
 
             assertEquals("Screen Viewed: Home", event.eventName)
             assertEquals(mapOf("section" to "hero"), event.properties)
-        }
-    }
-
-    @Nested
-    inner class StaticContent {
-
-        @Test
-        fun `given integration manifest, when content is read, then required CleverTap permissions are declared`() {
-            val manifest = java.io.File("src/main/AndroidManifest.xml").readText()
-
-            assertTrue(manifest.contains("android.permission.INTERNET"))
-            assertTrue(manifest.contains("android.permission.ACCESS_NETWORK_STATE"))
-            assertTrue(manifest.contains("android.permission.ACCESS_WIFI_STATE"))
-            assertTrue(manifest.contains("com.google.android.finsky.permission.BIND_GET_INSTALL_REFERRER_SERVICE"))
-        }
-
-        @Test
-        fun `given legacy isEmpty helper, when values are checked, then legacy empty semantics are preserved`() {
-            assertTrue(CleverTapIntegration.isEmpty(null))
-            assertTrue(CleverTapIntegration.isEmpty("   "))
-            assertTrue(CleverTapIntegration.isEmpty(JSONArray()))
-            assertTrue(CleverTapIntegration.isEmpty(JSONObject()))
-            assertTrue(CleverTapIntegration.isEmpty(emptyMap<String, Any>()))
-            assertFalse(CleverTapIntegration.isEmpty(listOf<String>()))
         }
     }
 

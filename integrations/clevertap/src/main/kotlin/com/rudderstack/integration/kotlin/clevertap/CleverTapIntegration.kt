@@ -6,9 +6,9 @@ import android.app.Activity
 import android.app.Application
 import android.net.Uri
 import android.os.Bundle
-import androidx.annotation.VisibleForTesting
 import com.clevertap.android.sdk.CleverTapAPI
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.IntegrationPlugin
+import com.rudderstack.sdk.kotlin.android.plugins.devicemode.SdkNotInitializedException
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.StandardIntegration
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleObserver
 import com.rudderstack.sdk.kotlin.android.utils.addLifecycleObserver
@@ -20,8 +20,6 @@ import com.rudderstack.sdk.kotlin.core.internals.models.ScreenEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import kotlinx.serialization.json.JsonObject
-import org.json.JSONArray
-import org.json.JSONObject
 import com.rudderstack.sdk.kotlin.android.Analytics as AndroidAnalytics
 
 private const val CLEVERTAP_KEY = "CleverTap"
@@ -35,33 +33,33 @@ class CleverTapIntegration : StandardIntegration, IntegrationPlugin(), ActivityL
     override val key: String
         get() = CLEVERTAP_KEY
 
-    private var cleverTap: CleverTapClient? = null
+    private var cleverTap: CleverTapAPI? = null
 
     public override fun create(destinationConfig: JsonObject) {
-        cleverTap ?: run {
-            destinationConfig.parseConfig<CleverTapDestinationConfig>(analytics.logger)
-                ?.takeIf { it.hasValidCredentials() }
-                ?.let { config ->
-                    initCleverTap(
-                        application = analytics.application,
-                        config = config,
-                        logLevel = analytics.configuration.logLevel,
-                    )?.let { cleverTapInstance ->
-                        cleverTap = cleverTapInstance
-                        (analytics as? AndroidAnalytics)?.addLifecycleObserver(this)
-                        analytics.logger.info("CleverTapIntegration: CleverTap SDK initialized.")
-                    } ?: analytics.logger.error(
-                        "CleverTapIntegration: Failed to obtain CleverTap SDK instance, aborting."
-                    )
-                } ?: analytics.logger.error("CleverTapIntegration: Invalid CleverTap Account Credentials, aborting.")
+        if (cleverTap != null) return
+
+        val config = destinationConfig.parseConfig<CleverTapDestinationConfig>(analytics.logger)
+            ?: throw SdkNotInitializedException("CleverTapIntegration: Destination config is empty.")
+
+        if (!config.hasValidCredentials()) {
+            throw SdkNotInitializedException("CleverTapIntegration: Account ID or token is blank.")
         }
+
+        cleverTap = initCleverTap(
+            application = analytics.application,
+            config = config,
+            logLevel = analytics.configuration.logLevel,
+        ) ?: throw SdkNotInitializedException("CleverTapIntegration: CleverTap SDK returned no instance.")
+
+        (analytics as? AndroidAnalytics)?.addLifecycleObserver(this)
+        analytics.logger.info("CleverTapIntegration: CleverTap SDK initialized.")
     }
 
-    override fun getDestinationInstance(): Any? = cleverTap?.instance
+    override fun getDestinationInstance(): Any? = cleverTap
 
     override fun identify(payload: IdentifyEvent) {
         runCatching {
-            cleverTap?.onUserLogin(payload.toCleverTapProfile())
+            cleverTap?.onUserLogin(payload.toCleverTapProfile(analytics.logger))
         }.logOnFailure("CleverTapIntegration: Failed to send identify event.")
     }
 
@@ -94,7 +92,7 @@ class CleverTapIntegration : StandardIntegration, IntegrationPlugin(), ActivityL
         if (cleverTap == null) return
 
         runCatching {
-            CleverTapSdk.onActivityResumed(activity)
+            CleverTapAPI.onActivityResumed(activity)
         }.logOnFailure("CleverTapIntegration: Failed to handle activity resumed callback.")
     }
 
@@ -102,7 +100,7 @@ class CleverTapIntegration : StandardIntegration, IntegrationPlugin(), ActivityL
         if (cleverTap == null) return
 
         runCatching {
-            CleverTapSdk.onActivityPaused()
+            CleverTapAPI.onActivityPaused()
         }.logOnFailure("CleverTapIntegration: Failed to handle activity paused callback.")
     }
 
@@ -135,7 +133,7 @@ class CleverTapIntegration : StandardIntegration, IntegrationPlugin(), ActivityL
      */
     fun setAppForeground(isForeground: Boolean) {
         runCatching {
-            CleverTapSdk.setAppForeground(isForeground)
+            CleverTapAPI.setAppForeground(isForeground)
         }.logOnFailure("CleverTapIntegration: Failed to set app foreground state.")
     }
 
@@ -150,114 +148,27 @@ class CleverTapIntegration : StandardIntegration, IntegrationPlugin(), ActivityL
     private fun Result<*>.logOnFailure(message: String) {
         onFailure { analytics.logger.error(message, it) }
     }
-
-    companion object {
-        /**
-         * Preserves the legacy Java integration's public emptiness helper.
-         */
-        @JvmStatic
-        fun isEmpty(value: Any?): Boolean = when (value) {
-            null -> true
-            is String -> value.trim().isEmpty()
-            is JSONArray -> value.length() == 0
-            is JSONObject -> value.length() == 0
-            is Map<*, *> -> value.isEmpty()
-            else -> false
-        }
-    }
 }
 
 private fun initCleverTap(
     application: Application,
     config: CleverTapDestinationConfig,
     logLevel: Logger.LogLevel,
-): CleverTapClient? {
+): CleverTapAPI? {
     if (config.hasRegion()) {
-        CleverTapSdk.changeCredentials(config.accountId, config.accountToken, config.region)
+        CleverTapAPI.changeCredentials(config.accountId, config.accountToken, config.region)
     } else {
-        CleverTapSdk.changeCredentials(config.accountId, config.accountToken)
+        CleverTapAPI.changeCredentials(config.accountId, config.accountToken)
     }
-    CleverTapSdk.setLogLevel(logLevel)
-    return CleverTapSdk.getDefaultInstance(application)
+    CleverTapAPI.setDebugLevel(logLevel.toCleverTapLogLevel())
+    return CleverTapAPI.getDefaultInstance(application)
 }
 
-@VisibleForTesting
-internal object CleverTapSdk {
-    fun changeCredentials(accountId: String, accountToken: String) {
-        CleverTapAPI.changeCredentials(accountId, accountToken)
-    }
-
-    fun changeCredentials(accountId: String, accountToken: String, region: String) {
-        CleverTapAPI.changeCredentials(accountId, accountToken, region)
-    }
-
-    fun getDefaultInstance(application: Application): CleverTapClient? =
-        CleverTapAPI.getDefaultInstance(application)?.let(::CleverTapApiClient)
-
-    fun setAppForeground(isForeground: Boolean) {
-        CleverTapAPI.setAppForeground(isForeground)
-    }
-
-    fun onActivityResumed(activity: Activity) {
-        CleverTapAPI.onActivityResumed(activity)
-    }
-
-    fun onActivityPaused() {
-        CleverTapAPI.onActivityPaused()
-    }
-
-    fun setLogLevel(logLevel: Logger.LogLevel) {
-        when (logLevel) {
-            Logger.LogLevel.VERBOSE, Logger.LogLevel.DEBUG -> CleverTapAPI.LogLevel.DEBUG
-            Logger.LogLevel.INFO,
-            Logger.LogLevel.WARN,
-            Logger.LogLevel.ERROR,
-            Logger.LogLevel.NONE -> CleverTapAPI.LogLevel.INFO
-        }.also(CleverTapAPI::setDebugLevel)
-    }
-}
-
-internal interface CleverTapClient {
-    val instance: Any
-
-    fun onUserLogin(profile: Map<String, Any>)
-
-    fun pushEvent(eventName: String)
-
-    fun pushEvent(eventName: String, properties: Map<String, Any>)
-
-    fun pushChargedEvent(chargeDetails: HashMap<String, Any>, items: ArrayList<HashMap<String, Any>>)
-
-    fun pushNotificationClickedEvent(extras: Bundle?)
-
-    fun pushDeepLink(uri: Uri?)
-}
-
-private class CleverTapApiClient(private val cleverTap: CleverTapAPI) : CleverTapClient {
-    override val instance: Any
-        get() = cleverTap
-
-    override fun onUserLogin(profile: Map<String, Any>) {
-        cleverTap.onUserLogin(profile)
-    }
-
-    override fun pushEvent(eventName: String) {
-        cleverTap.pushEvent(eventName)
-    }
-
-    override fun pushEvent(eventName: String, properties: Map<String, Any>) {
-        cleverTap.pushEvent(eventName, properties)
-    }
-
-    override fun pushChargedEvent(chargeDetails: HashMap<String, Any>, items: ArrayList<HashMap<String, Any>>) {
-        cleverTap.pushChargedEvent(chargeDetails, items)
-    }
-
-    override fun pushNotificationClickedEvent(extras: Bundle?) {
-        cleverTap.pushNotificationClickedEvent(extras)
-    }
-
-    override fun pushDeepLink(uri: Uri?) {
-        cleverTap.pushDeepLink(uri)
-    }
+internal fun Logger.LogLevel.toCleverTapLogLevel(): CleverTapAPI.LogLevel = when (this) {
+    Logger.LogLevel.VERBOSE -> CleverTapAPI.LogLevel.VERBOSE
+    Logger.LogLevel.DEBUG -> CleverTapAPI.LogLevel.DEBUG
+    Logger.LogLevel.NONE -> CleverTapAPI.LogLevel.OFF
+    Logger.LogLevel.INFO,
+    Logger.LogLevel.WARN,
+    Logger.LogLevel.ERROR -> CleverTapAPI.LogLevel.INFO
 }

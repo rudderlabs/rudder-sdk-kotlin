@@ -6,6 +6,10 @@ The CleverTap integration sends RudderStack Android Kotlin SDK events to the Cle
 
 - Android SDK version 21 or higher
 - A CleverTap destination configured in the RudderStack dashboard with an account ID and account token
+- Host app permission `android.permission.INTERNET` (required by CleverTap)
+- Host app permission `android.permission.ACCESS_NETWORK_STATE` (recommended by CleverTap)
+- Host app permission `com.google.android.gms.permission.AD_ID` when targeting Android 13+ and using Google Advertising ID
+- Host app dependency `com.android.installreferrer:installreferrer` for install-referrer attribution; that dependency supplies its own manifest permission
 
 ## Supported Native CleverTap Version
 

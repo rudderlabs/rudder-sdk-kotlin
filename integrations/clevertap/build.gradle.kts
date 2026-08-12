@@ -122,6 +122,9 @@ dependencies {
     testImplementation(libs.mockk)
     testImplementation(libs.mockk.agent)
     testImplementation(libs.json.assert)
+    // CleverTap references com.google.android.gms.tasks in setRequestDevicePushTokenListener
+    // but does not declare Play Services. MockK needs the type present to proxy CleverTapAPI.
+    testImplementation(libs.play.services.tasks)
 
     testRuntimeOnly(libs.junit.jupiter.engine)
 }

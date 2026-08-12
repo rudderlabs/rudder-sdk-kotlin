@@ -22,7 +22,6 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.long
 import kotlinx.serialization.json.longOrNull
 import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
 
 private const val NAME = "name"
@@ -34,6 +33,7 @@ private const val CLEVERTAP_PHONE = "Phone"
 private const val CLEVERTAP_EMAIL = "Email"
 private const val CLEVERTAP_IDENTITY = "Identity"
 private const val ADDRESS = "address"
+private const val ANONYMOUS_ID = "anonymousId"
 private const val COMPANY = "company"
 private const val COMPANY_ID = "companyId"
 private const val COMPANY_NAME = "companyName"
@@ -84,13 +84,16 @@ internal fun CleverTapDestinationConfig.hasRegion(): Boolean =
 internal val IdentifyEvent.traits: JsonObject?
     get() = this.context["traits"]?.jsonObject
 
-internal fun IdentifyEvent.toCleverTapProfile(): Map<String, Any> {
-    val profile = traits.toAnyMap().transformTraits().toMutableMap()
+internal fun IdentifyEvent.toCleverTapProfile(logger: Logger): Map<String, Any> {
+    val profile = traits.toAnyMap().transformTraits(logger).toMutableMap()
     val explicitIdentity = profile[CLEVERTAP_IDENTITY]
     val hasExplicitIdentity = explicitIdentity != null &&
         (explicitIdentity !is String || explicitIdentity.isNotBlank())
     if (userId.isNotBlank() && !hasExplicitIdentity) {
         profile[CLEVERTAP_IDENTITY] = userId
+    }
+    if (ANONYMOUS_ID !in profile && anonymousId.isNotBlank()) {
+        profile[ANONYMOUS_ID] = anonymousId
     }
     return profile
 }
@@ -121,32 +124,33 @@ private fun extractValue(element: JsonElement?): Any? = when (element) {
     is JsonArray -> element.mapNotNull { extractValue(it) }
 }
 
-@Suppress("UNCHECKED_CAST")
-private fun Map<String, Any>.transformTraits(): Map<String, Any> {
+private fun Map<String, Any>.transformTraits(logger: Logger): Map<String, Any> {
     val transformedTraits = mutableMapOf<String, Any>()
 
     for ((key, value) in this) {
         when {
             key in rudderTraitToCleverTapTrait -> transformedTraits[rudderTraitToCleverTapTrait.getValue(key)] = value
-            key == ADDRESS || key == COMPANY -> transformedTraits.putFlattenedNestedTraits(value as? Map<String, Any>)
+            key == ADDRESS || key == COMPANY -> transformedTraits.putFlattenedNestedTraits(key, value)
             else -> transformedTraits[key] = value
         }
     }
 
     transformedTraits.transformGender()
-    transformedTraits.transformBirthday()
+    transformedTraits.transformBirthday(logger)
 
     return transformedTraits
 }
 
-private fun MutableMap<String, Any>.putFlattenedNestedTraits(nestedTraits: Map<String, Any>?) {
+@Suppress("UNCHECKED_CAST")
+private fun MutableMap<String, Any>.putFlattenedNestedTraits(key: String, value: Any) {
+    val nestedTraits = value as? Map<String, Any>
     nestedTraits?.forEach { (nestedKey, nestedValue) ->
         when (nestedKey) {
             ID -> this[COMPANY_ID] = nestedValue
             NAME -> this[COMPANY_NAME] = nestedValue
             else -> this[nestedKey] = nestedValue
         }
-    }
+    } ?: set(key, value)
 }
 
 private fun MutableMap<String, Any>.transformGender() {
@@ -158,17 +162,17 @@ private fun MutableMap<String, Any>.transformGender() {
     remove(GENDER)
 }
 
-private fun MutableMap<String, Any>.transformBirthday() {
-    when (val birthday = this[BIRTHDAY]) {
-        is Date -> this[CLEVERTAP_DOB] = birthday
-        is String -> birthday.dateFromString()?.let { this[CLEVERTAP_DOB] = it }
-    }
+private fun MutableMap<String, Any>.transformBirthday(logger: Logger) {
+    (this[BIRTHDAY] as? String)?.dateFromString(logger)?.let { this[CLEVERTAP_DOB] = it }
     remove(BIRTHDAY)
 }
 
-internal fun String.dateFromString(): Date? = runCatching {
-    SimpleDateFormat(BIRTHDAY_FORMAT, Locale.US).parse(this)
-}.getOrNull()
+internal fun String.dateFromString(logger: Logger): java.util.Date? = runCatching {
+    SimpleDateFormat(BIRTHDAY_FORMAT, Locale.US).apply { isLenient = false }.parse(this)
+}.getOrElse {
+    logger.warn("CleverTapIntegration: Cannot parse birthday '$this'. Expected format $BIRTHDAY_FORMAT.")
+    null
+}
 
 internal fun JsonObject.toCleverTapTrackEvent(eventName: String): CleverTapTrackEvent {
     return if (eventName == ORDER_COMPLETED) {

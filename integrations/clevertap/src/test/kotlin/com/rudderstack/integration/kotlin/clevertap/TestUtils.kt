@@ -13,10 +13,3 @@ internal fun Any.readFileAsJsonObject(fileName: String): JsonObject {
     val jsonString = inputStream!!.bufferedReader().use(BufferedReader::readText)
     return Json.parseToJsonElement(jsonString).jsonObject
 }
-
-/**
- * Merges two JsonObjects with the right-hand side taking priority on key conflicts.
- */
-infix fun JsonObject.mergeWithHigherPriorityTo(other: JsonObject): JsonObject {
-    return JsonObject(this.toMap() + other.toMap())
-}
