@@ -26,7 +26,6 @@ import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.just
 import io.mockk.mockk
-import io.mockk.mockkObject
 import io.mockk.mockkStatic
 import io.mockk.slot
 import io.mockk.unmockkAll
@@ -68,6 +67,9 @@ class CleverTapIntegrationTest {
     private lateinit var mockConfiguration: Configuration
 
     @MockK
+    private lateinit var mockSdk: CleverTapSdkClient
+
+    @MockK
     private lateinit var mockCleverTap: CleverTapClient
 
     @MockK
@@ -81,15 +83,14 @@ class CleverTapIntegrationTest {
     fun setup() {
         MockKAnnotations.init(this, relaxed = true)
 
-        mockkObject(CleverTapSdk)
         mockkStatic("com.rudderstack.sdk.kotlin.android.utils.LifecycleManagementUtilsKt")
-        every { CleverTapSdk.changeCredentials(any(), any()) } just Runs
-        every { CleverTapSdk.changeCredentials(any(), any(), any()) } just Runs
-        every { CleverTapSdk.setLogLevel(any()) } just Runs
-        every { CleverTapSdk.getDefaultInstance(any()) } returns mockCleverTap
-        every { CleverTapSdk.setAppForeground(any()) } just Runs
-        every { CleverTapSdk.onActivityResumed(any()) } just Runs
-        every { CleverTapSdk.onActivityPaused() } just Runs
+        every { mockSdk.changeCredentials(any(), any()) } just Runs
+        every { mockSdk.changeCredentials(any(), any(), any()) } just Runs
+        every { mockSdk.setLogLevel(any()) } just Runs
+        every { mockSdk.getDefaultInstance(any()) } returns mockCleverTap
+        every { mockSdk.setAppForeground(any()) } just Runs
+        every { mockSdk.onActivityResumed(any()) } just Runs
+        every { mockSdk.onActivityPaused() } just Runs
         every { mockAnalytics.addLifecycleObserver(any<ActivityLifecycleObserver>()) } just Runs
         every { mockAnalytics.removeLifecycleObserver(any<ActivityLifecycleObserver>()) } just Runs
 
@@ -105,7 +106,7 @@ class CleverTapIntegrationTest {
         every { mockCleverTap.pushNotificationClickedEvent(any()) } just Runs
         every { mockCleverTap.pushDeepLink(any()) } just Runs
 
-        integration = CleverTapIntegration().also { it.analytics = mockAnalytics }
+        integration = CleverTapIntegration(mockSdk).also { it.analytics = mockAnalytics }
     }
 
     @AfterEach
@@ -118,7 +119,7 @@ class CleverTapIntegrationTest {
 
         @Test
         fun `given integration is not initialised, when instance is requested, then null is returned`() {
-            assertNull(CleverTapIntegration().getDestinationInstance())
+            assertNull(CleverTapIntegration(mockSdk).getDestinationInstance())
         }
 
         @Test
@@ -132,9 +133,9 @@ class CleverTapIntegrationTest {
         fun `when integration is initialised with region, then destination SDK is configured with regional credentials`() {
             integration.create(mockIntegrationConfig)
 
-            verify(exactly = 1) { CleverTapSdk.changeCredentials(ACCOUNT_ID, ACCOUNT_TOKEN, REGION) }
-            verify(exactly = 1) { CleverTapSdk.setLogLevel(Logger.LogLevel.DEBUG) }
-            verify(exactly = 1) { CleverTapSdk.getDefaultInstance(mockApplication) }
+            verify(exactly = 1) { mockSdk.changeCredentials(ACCOUNT_ID, ACCOUNT_TOKEN, REGION) }
+            verify(exactly = 1) { mockSdk.setLogLevel(Logger.LogLevel.DEBUG) }
+            verify(exactly = 1) { mockSdk.getDefaultInstance(mockApplication) }
             verify(exactly = 1) { mockAnalytics.addLifecycleObserver(integration) }
         }
 
@@ -142,8 +143,8 @@ class CleverTapIntegrationTest {
         fun `when integration is initialised without region, then destination SDK is configured with default credentials`() {
             integration.create(mockNewIntegrationConfig)
 
-            verify(exactly = 1) { CleverTapSdk.changeCredentials(NEW_ACCOUNT_ID, NEW_ACCOUNT_TOKEN) }
-            verify(exactly = 1) { CleverTapSdk.getDefaultInstance(mockApplication) }
+            verify(exactly = 1) { mockSdk.changeCredentials(NEW_ACCOUNT_ID, NEW_ACCOUNT_TOKEN) }
+            verify(exactly = 1) { mockSdk.getDefaultInstance(mockApplication) }
         }
 
         @Test
@@ -151,8 +152,8 @@ class CleverTapIntegrationTest {
             integration.create(mockIntegrationConfig)
             integration.create(mockNewIntegrationConfig)
 
-            verify(exactly = 1) { CleverTapSdk.getDefaultInstance(mockApplication) }
-            verify(exactly = 0) { CleverTapSdk.changeCredentials(NEW_ACCOUNT_ID, NEW_ACCOUNT_TOKEN) }
+            verify(exactly = 1) { mockSdk.getDefaultInstance(mockApplication) }
+            verify(exactly = 0) { mockSdk.changeCredentials(NEW_ACCOUNT_ID, NEW_ACCOUNT_TOKEN) }
         }
 
         @Test
@@ -162,7 +163,7 @@ class CleverTapIntegrationTest {
             }
 
             assertEquals("CleverTapIntegration: Destination config is empty.", exception.message)
-            verify(exactly = 0) { CleverTapSdk.getDefaultInstance(any()) }
+            verify(exactly = 0) { mockSdk.getDefaultInstance(any()) }
         }
 
         @Test
@@ -177,12 +178,12 @@ class CleverTapIntegrationTest {
             }
 
             assertEquals("CleverTapIntegration: Account ID or token is blank.", exception.message)
-            verify(exactly = 0) { CleverTapSdk.getDefaultInstance(any()) }
+            verify(exactly = 0) { mockSdk.getDefaultInstance(any()) }
         }
 
         @Test
         fun `given CleverTap returns no instance, when create is called, then SdkNotInitializedException is thrown`() {
-            every { CleverTapSdk.getDefaultInstance(any()) } returns null
+            every { mockSdk.getDefaultInstance(any()) } returns null
 
             val exception = assertThrows(SdkNotInitializedException::class.java) {
                 integration.create(mockIntegrationConfig)
@@ -209,7 +210,7 @@ class CleverTapIntegrationTest {
 
             integration.create(mockIntegrationConfig)
 
-            verify(exactly = 1) { CleverTapSdk.setLogLevel(Logger.LogLevel.VERBOSE) }
+            verify(exactly = 1) { mockSdk.setLogLevel(Logger.LogLevel.VERBOSE) }
         }
     }
 
@@ -378,7 +379,7 @@ class CleverTapIntegrationTest {
 
             integration.onActivityCreated(mockActivity, null)
 
-            verify { CleverTapSdk.setAppForeground(true) }
+            verify { mockSdk.setAppForeground(true) }
             verify { mockCleverTap.pushNotificationClickedEvent(extras) }
             verify { mockCleverTap.pushDeepLink(uri) }
         }
@@ -389,7 +390,7 @@ class CleverTapIntegrationTest {
 
             integration.onActivityResumed(mockActivity)
 
-            verify { CleverTapSdk.onActivityResumed(mockActivity) }
+            verify { mockSdk.onActivityResumed(mockActivity) }
         }
 
         @Test
@@ -398,7 +399,7 @@ class CleverTapIntegrationTest {
 
             integration.onActivityPaused(mockActivity)
 
-            verify { CleverTapSdk.onActivityPaused() }
+            verify { mockSdk.onActivityPaused() }
         }
 
         @Test
@@ -407,9 +408,9 @@ class CleverTapIntegrationTest {
             integration.onActivityResumed(mockActivity)
             integration.onActivityPaused(mockActivity)
 
-            verify(exactly = 0) { CleverTapSdk.setAppForeground(any()) }
-            verify(exactly = 0) { CleverTapSdk.onActivityResumed(any()) }
-            verify(exactly = 0) { CleverTapSdk.onActivityPaused() }
+            verify(exactly = 0) { mockSdk.setAppForeground(any()) }
+            verify(exactly = 0) { mockSdk.onActivityResumed(any()) }
+            verify(exactly = 0) { mockSdk.onActivityPaused() }
             verify(exactly = 0) { mockCleverTap.pushNotificationClickedEvent(any()) }
             verify(exactly = 0) { mockCleverTap.pushDeepLink(any()) }
         }
@@ -442,7 +443,7 @@ class CleverTapIntegrationTest {
         fun `given foreground state, when helper is called, then CleverTap foreground state is updated`() {
             integration.setAppForeground(true)
 
-            verify { CleverTapSdk.setAppForeground(true) }
+            verify { mockSdk.setAppForeground(true) }
         }
     }
 
