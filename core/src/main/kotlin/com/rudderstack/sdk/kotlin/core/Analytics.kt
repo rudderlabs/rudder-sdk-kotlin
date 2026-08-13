@@ -15,6 +15,7 @@ import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.Traits
 import com.rudderstack.sdk.kotlin.core.internals.models.connectivity.ConnectivityState
+import com.rudderstack.sdk.kotlin.core.internals.models.consent.ConsentManagementState
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.models.reset.ResetOptions
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.ResetUserIdentityAction
@@ -80,6 +81,13 @@ open class Analytics protected constructor(
      */
     @InternalRudderApi
     val sourceConfigState = State(initialState = SourceConfig.initialState())
+
+    /**
+     * The `consentManagementState` is a [State] that manages the consent values for the analytics instance.
+     */
+    internal val consentManagementState = State(
+        initialState = ConsentManagementState.initialState(configuration.consentManagement)
+    )
 
     private val processEventChannel: Channel<Event> = Channel(Channel.UNLIMITED)
     private var processEventJob: Job? = null
