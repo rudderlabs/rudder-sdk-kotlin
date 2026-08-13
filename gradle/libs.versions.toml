@@ -21,7 +21,10 @@ android-installreferrer = { strictly = "[2.2, 3.0)", prefer = "2.2" }
 firebase-bom = { strictly = "[33.7.0, 34.0.0)", prefer = "33.7.0" }
 facebook-android-sdk = { strictly = "[18.0.1, 19.0.0)", prefer = "18.0.1" }
 android-sdk-ui = { strictly = "[35.0.0, 36.0.0)", prefer = "35.0.0" } #braze
-clevertap-android-sdk = { strictly = "[7.3.1, 8.0.0)", prefer = "7.3.1" }
+# CleverTap 7.7.0 adds androidx.lifecycle:lifecycle-process:2.9.4. The androidx.lifecycle atomic
+# group then pulls lifecycle-viewmodel-savedstate to 2.9.4, which needs kotlinx-serialization
+# 1.7.3 and therefore Kotlin 2.0. This repo builds with Kotlin 1.9.0, so cap the range below 7.7.0.
+clevertap-android-sdk = { strictly = "[7.3.1, 7.7.0)", prefer = "7.3.1" }
 userleap-android-sdk = { strictly = "[2.23.0, 3.0.0)", prefer = "2.23.0" }
 fragment-ktx = "1.8.9"
 

@@ -13,11 +13,15 @@ The CleverTap integration sends RudderStack Android Kotlin SDK events to the Cle
 
 ## Supported Native CleverTap Version
 
-This integration supports CleverTap Android SDK version:
+This integration supports CleverTap Android SDK versions in the range:
 
 ```text
-7.3.1
+[7.3.1, 7.7.0)
 ```
+
+CleverTap 7.7.0 adds `androidx.lifecycle:lifecycle-process:2.9.4`. The `androidx.lifecycle` atomic
+group then raises `lifecycle-viewmodel-savedstate` to 2.9.4, which requires `kotlinx-serialization`
+1.7.3 and therefore Kotlin 2.0. This SDK builds with Kotlin 1.9.0, so the range stops below 7.7.0.
 
 ## Installation
 
