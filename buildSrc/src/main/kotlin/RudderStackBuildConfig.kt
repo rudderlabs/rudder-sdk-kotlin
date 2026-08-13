@@ -89,6 +89,16 @@ object RudderStackBuildConfig {
             override val pomPackaging = "aar"
         }
 
+        object CleverTap : IntegrationModuleInfo {
+
+            override val moduleName: String = "clevertap"
+            override val versionName: String = "0.0.0"
+            override val versionCode: String = "1"
+
+            override val artifactId = "clevertap"
+            override val pomPackaging = "aar"
+        }
+
         object Facebook : IntegrationModuleInfo {
 
             override val moduleName: String = "facebook"
@@ -122,6 +132,7 @@ object RudderStackBuildConfig {
         fun getModuleInfo(projectName: String): IntegrationModuleInfo = when (projectName) {
             "adjust" -> Adjust
             "braze" -> Braze
+            "clevertap" -> CleverTap
             "facebook" -> Facebook
             "firebase" -> Firebase
             "appsflyer" -> AppsFlyer

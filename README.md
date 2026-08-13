@@ -144,6 +144,7 @@ The following integrations are currently available:
 - [Firebase](integrations/firebase/README.md) - Send your event data to Google Firebase Analytics
 - [Adjust](integrations/adjust/README.md) - Track and attribute your mobile app installs and in-app events
 - [Braze](integrations/braze/README.md) - Send your event data to Braze for customer engagement
+- [CleverTap](integrations/clevertap/README.md) - Send your event data to CleverTap for customer engagement
 - [Facebook](integrations/facebook/README.md) - Send your event data to Facebook for analytics and advertising
 - [AppsFlyer](integrations/appsflyer/README.md) - Send your event data to AppsFlyer for analytics
 
@@ -177,6 +178,7 @@ class MyApplication : Application() {
         // Add integrations
         analytics.add(FirebaseIntegration())
         analytics.add(BrazeIntegration())
+        analytics.add(CleverTapIntegration())
         // Add more integrations as needed
     }
 }

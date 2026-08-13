@@ -1,0 +1,131 @@
+import io.gitlab.arturbosch.detekt.Detekt
+import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
+
+plugins {
+    alias(libs.plugins.android.library)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.detekt)
+    alias(libs.plugins.kotlin.serialization)
+}
+
+detekt {
+    config.setFrom("$rootDir/config/detekt/detekt.yml")
+    buildUponDefaultConfig = true
+    autoCorrect = true
+    parallel = true
+}
+
+tasks.withType<Detekt>().configureEach {
+    reports {
+        html.required.set(true) // observe findings in your browser with structure and code snippets
+    }
+}
+
+tasks.withType<KotlinJvmCompile>().configureEach {
+    compilerOptions.freeCompilerArgs.add("-opt-in=com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi")
+}
+
+tasks.withType<Test> {
+    useJUnitPlatform()
+    testLogging {
+        events("failed")
+    }
+    dependsOn("generatePomFileForReleasePublication")
+    val pomFile = layout.buildDirectory.file("publications/release/pom-default.xml")
+    inputs.file(pomFile)
+    systemProperty("clevertapPomFile", pomFile.get().asFile.absolutePath)
+}
+
+android {
+    namespace = RudderStackBuildConfig.Integrations.CleverTap.namespace
+    compileSdk = RudderStackBuildConfig.AndroidBuild.COMPILE_SDK
+
+    buildFeatures {
+        buildConfig = true
+    }
+
+    defaultConfig {
+        minSdk = RudderStackBuildConfig.AndroidBuild.MIN_SDK
+
+        buildConfigField("String", "VERSION_NAME", "\"${RudderStackBuildConfig.Integrations.CleverTap.versionName}\"")
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles("consumer-rules.pro")
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+    }
+    compileOptions {
+        sourceCompatibility = RudderStackBuildConfig.Build.JAVA_VERSION
+        targetCompatibility = RudderStackBuildConfig.Build.JAVA_VERSION
+    }
+    kotlinOptions {
+        jvmTarget = RudderStackBuildConfig.Build.JVM_TARGET
+    }
+}
+
+// For generating SourcesJar and JavadocJar
+tasks {
+    val sourceFiles = (android.sourceSets["main"].kotlin as com.android.build.gradle.internal.api.DefaultAndroidSourceDirectorySet).srcDirs
+
+    register<Javadoc>("withJavadoc") {
+        isFailOnError = false
+
+        setSource(sourceFiles)
+
+        // add Android runtime classpath
+        android.bootClasspath.forEach { classpath += project.fileTree(it) }
+
+        // add classpath for all dependencies
+        android.libraryVariants.forEach { variant ->
+            variant.javaCompileProvider.get().classpath.files.forEach { file ->
+                classpath += project.fileTree(file)
+            }
+        }
+    }
+
+    register<Jar>("javadocJar") {
+        archiveClassifier.set("javadoc")
+        dependsOn(named("withJavadoc"))
+        val destination = named<Javadoc>("withJavadoc").get().destinationDir
+        from(destination)
+    }
+
+    register<Jar>("sourcesJar") {
+        archiveClassifier.set("sources")
+        from(sourceFiles)
+    }
+}
+
+dependencies {
+    // RudderStack SDK
+    implementation(project(":android"))
+
+    // detekt plugins
+    detektPlugins(libs.detekt.formatting)
+
+    implementation(libs.android.core.ktx)
+
+    // CleverTap SDK
+    implementation(libs.clevertap.android.sdk)
+    implementation(libs.androidx.fragment.ktx)
+
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter)
+    testImplementation(libs.mockk)
+    testImplementation(libs.mockk.agent)
+    testImplementation(libs.json.assert)
+    testImplementation(libs.play.services.tasks) // MockK needs it to proxy CleverTapAPI
+    testImplementation(libs.navigation.runtime) // MockK needs it to mock AndroidAnalytics
+
+    testRuntimeOnly(libs.junit.jupiter.engine)
+}
+
+apply(from = rootProject.file("gradle/publishing/publishing.gradle.kts"))
