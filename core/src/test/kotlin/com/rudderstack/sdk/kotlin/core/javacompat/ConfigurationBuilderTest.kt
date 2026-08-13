@@ -6,6 +6,7 @@ import com.rudderstack.sdk.kotlin.core.Configuration
 import com.rudderstack.sdk.kotlin.core.Configuration.Companion.DEFAULT_CONTROL_PLANE_URL
 import com.rudderstack.sdk.kotlin.core.Configuration.Companion.DEFAULT_FLUSH_POLICIES
 import com.rudderstack.sdk.kotlin.core.Configuration.Companion.DEFAULT_GZIP_STATUS
+import com.rudderstack.sdk.kotlin.core.consent.ConsentManagementConfiguration
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPolicy
@@ -66,6 +67,7 @@ class ConfigurationBuilderTest {
             assertEquals(DEFAULT_GZIP_STATUS, it.gzipEnabled)
             assertEquals(Logger.DEFAULT_LOG_LEVEL, it.logLevel)
             assertEquals(mockLogger, it.logger)
+            assertEquals(ConsentManagementConfiguration(), it.consentManagement)
         }
     }
 
@@ -105,6 +107,19 @@ class ConfigurationBuilderTest {
         val config = configurationBuilder.setGzipEnabled(false).build()
 
         assertFalse(config.gzipEnabled)
+    }
+
+    @Test
+    fun `when setConsentManagement is set with a custom configuration, then consentManagement should be updated`() {
+        val consentManagement = ConsentManagementConfiguration(
+            enabled = true,
+            allowedConsentIds = listOf("marketing"),
+            deniedConsentIds = listOf("advertising"),
+        )
+
+        val config = configurationBuilder.setConsentManagement(consentManagement).build()
+
+        assertEquals(consentManagement, config.consentManagement)
     }
 
     @Test
