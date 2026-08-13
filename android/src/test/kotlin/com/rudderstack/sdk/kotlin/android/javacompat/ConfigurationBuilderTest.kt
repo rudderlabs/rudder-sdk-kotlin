@@ -5,6 +5,7 @@ package com.rudderstack.sdk.kotlin.android.javacompat
 import android.app.Application
 import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.android.utils.provideSessionConfiguration
+import com.rudderstack.sdk.kotlin.core.consent.ConsentManagementConfiguration
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPolicy
@@ -129,6 +130,19 @@ class ConfigurationBuilderTest {
         val configuration = configurationBuilder.setLogger(customLogger).build()
 
         assertEquals(customLogger, configuration.logger)
+    }
+
+    @Test
+    fun `when setConsentManagement is set with a custom configuration, then consentManagement should be updated`() {
+        val consentManagement = ConsentManagementConfiguration(
+            enabled = true,
+            allowedConsentIds = listOf("marketing"),
+            deniedConsentIds = listOf("advertising"),
+        )
+
+        val configuration = configurationBuilder.setConsentManagement(consentManagement).build()
+
+        assertEquals(consentManagement, configuration.consentManagement)
     }
 
     @Test
