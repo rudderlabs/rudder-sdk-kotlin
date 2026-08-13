@@ -2,6 +2,7 @@
 
 package com.rudderstack.sdk.kotlin.core
 
+import com.rudderstack.sdk.kotlin.core.consent.ConsentManagementOptions
 import com.rudderstack.sdk.kotlin.core.internals.logger.KotlinLogger
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.AliasEvent
@@ -16,6 +17,7 @@ import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.Traits
 import com.rudderstack.sdk.kotlin.core.internals.models.connectivity.ConnectivityState
 import com.rudderstack.sdk.kotlin.core.internals.models.consent.ConsentManagementState
+import com.rudderstack.sdk.kotlin.core.internals.models.consent.SetConsentAction
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.models.reset.ResetOptions
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.ResetUserIdentityAction
@@ -417,6 +419,33 @@ open class Analytics protected constructor(
                 entries = options.entries
             )
         }
+    }
+
+    /**
+     * Updates the current consent state with the supplied values.
+     *
+     * The supplied lists fully replace the existing consent state — callers always pass the
+     * complete current state, not a delta. Passing an empty [ConsentManagementOptions] clears
+     * both lists and reverts consent evaluation to the uninitialized fail-open state.
+     *
+     * This method has no effect while consent management is disabled in [Configuration];
+     * enabling consent management is a load-time decision.
+     *
+     * @param options The consent values to apply.
+     */
+    open fun setConsent(options: ConsentManagementOptions) {
+        logger.debug("Analytics(core): setConsent() called")
+        if (!isAnalyticsActive()) return
+
+        if (!consentManagementState.value.enabled) {
+            logger.warn(
+                "Analytics(core): Consent management is disabled; setConsent has no effect. " +
+                    "Enable it via Configuration's consentManagement."
+            )
+            return
+        }
+
+        consentManagementState.dispatch(SetConsentAction(options))
     }
 
     /**
