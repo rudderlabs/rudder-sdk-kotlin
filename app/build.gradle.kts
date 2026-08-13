@@ -95,6 +95,7 @@ dependencies {
     // implementation(project(":integrations:adjust"))
     // implementation(project(":integrations:appsflyer"))
     // implementation(project(":integrations:braze")) // This requires minimum Sdk version of 25 and above.
+    // implementation(project(":integrations:clevertap"))
     // implementation(project(":integrations:facebook"))
     // implementation(project(":integrations:firebase"))
     // implementation(project(":integrations:sprig"))
