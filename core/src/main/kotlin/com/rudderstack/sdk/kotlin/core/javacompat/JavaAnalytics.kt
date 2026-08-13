@@ -2,6 +2,7 @@ package com.rudderstack.sdk.kotlin.core.javacompat
 
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.Configuration
+import com.rudderstack.sdk.kotlin.core.consent.ConsentManagementOptions
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
 import com.rudderstack.sdk.kotlin.core.internals.models.reset.ResetOptions
@@ -381,6 +382,18 @@ open class JavaAnalytics protected constructor(
      */
     open fun reset(options: ResetOptions) {
         analytics.reset(options = options)
+    }
+
+    /**
+     * Updates the current consent state with the supplied values.
+     *
+     * The supplied lists fully replace the existing consent state. Has no effect while
+     * consent management is disabled in the configuration.
+     *
+     * @param options The consent values to apply.
+     */
+    open fun setConsent(options: ConsentManagementOptions) {
+        analytics.setConsent(options)
     }
 }
 
