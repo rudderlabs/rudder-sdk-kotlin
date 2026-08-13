@@ -5,6 +5,7 @@ package com.rudderstack.sdk.kotlin.android
 import android.app.Application
 import com.rudderstack.sdk.kotlin.android.logger.AndroidLogger
 import com.rudderstack.sdk.kotlin.core.Configuration
+import com.rudderstack.sdk.kotlin.core.consent.ConsentManagementConfiguration
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPolicy
@@ -44,6 +45,7 @@ internal const val DEFAULT_SESSION_TIMEOUT_IN_MILLIS = 300_000L
  * @param gzipEnabled Flag to enable or disable GZIP compression for network requests. Defaults to `DEFAULT_GZIP_STATUS`.
  * @param logger An instance of `Logger` for logging SDK events and errors. Defaults to `DEFAULT_LOGGER`.
  * @param logLevel The log level for this configuration instance, determining the minimum severity of messages that will be logged. Defaults to `DEFAULT_LOG_LEVEL`.
+ * @param consentManagement The consent management configuration. Defaults to disabled.
  *
  * ## Example
  * ```kotlin
@@ -73,6 +75,7 @@ data class Configuration @JvmOverloads constructor(
     override val gzipEnabled: Boolean = DEFAULT_GZIP_STATUS,
     override val logger: Logger = DEFAULT_LOGGER,
     override val logLevel: Logger.LogLevel = DEFAULT_LOG_LEVEL,
+    override val consentManagement: ConsentManagementConfiguration = ConsentManagementConfiguration(),
 ) : Configuration(
     writeKey = writeKey,
     dataPlaneUrl = dataPlaneUrl,
