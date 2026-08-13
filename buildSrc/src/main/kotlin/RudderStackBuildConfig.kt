@@ -93,7 +93,7 @@ object RudderStackBuildConfig {
 
             override val moduleName: String = "clevertap"
             override val versionName: String = "1.0.0"
-            override val versionCode: String = "2"
+            override val versionCode: String = "1"
 
             override val artifactId = "clevertap"
             override val pomPackaging = "aar"
