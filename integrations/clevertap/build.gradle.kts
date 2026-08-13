@@ -122,12 +122,8 @@ dependencies {
     testImplementation(libs.mockk)
     testImplementation(libs.mockk.agent)
     testImplementation(libs.json.assert)
-    // CleverTap references com.google.android.gms.tasks in setRequestDevicePushTokenListener
-    // but does not declare Play Services. MockK needs the type present to proxy CleverTapAPI.
-    testImplementation(libs.play.services.tasks)
-    // AndroidAnalytics references NavController for screen tracking, and the android module
-    // declares navigation-runtime as compileOnly. MockK needs the type present to mock it.
-    testImplementation(libs.navigation.runtime)
+    testImplementation(libs.play.services.tasks) // MockK needs it to proxy CleverTapAPI
+    testImplementation(libs.navigation.runtime) // MockK needs it to mock AndroidAnalytics
 
     testRuntimeOnly(libs.junit.jupiter.engine)
 }
