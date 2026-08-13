@@ -171,6 +171,8 @@ class UtilsTest {
     @Nested
     inner class EventMapping {
 
+        private val mockLogger = mockk<Logger>(relaxed = true)
+
         @Test
         fun `given order completed properties, when track event is built, then charged event fields are mapped`() {
             val properties = buildJsonObject {
@@ -184,7 +186,7 @@ class UtilsTest {
                 })
             }
 
-            val event = properties.toCleverTapTrackEvent("Order Completed") as CleverTapTrackEvent.ChargedEvent
+            val event = properties.toCleverTapTrackEvent("Order Completed", mockLogger) as CleverTapTrackEvent.ChargedEvent
 
             assertEquals("order-1", event.chargeDetails["Charged ID"])
             assertEquals(25.5, event.chargeDetails["Amount"])
@@ -193,17 +195,70 @@ class UtilsTest {
         }
 
         @Test
-        fun `given order completed has missing products and non-numeric revenue, when track event is built, then empty charged event fields are used`() {
+        fun `given order completed has missing products and non-numeric revenue, when track event is built, then amount is omitted`() {
             val properties = buildJsonObject {
                 put("order_id", "order-1")
                 put("revenue", "not-a-number")
             }
 
-            val event = properties.toCleverTapTrackEvent("Order Completed") as CleverTapTrackEvent.ChargedEvent
+            val event = properties.toCleverTapTrackEvent("Order Completed", mockLogger) as CleverTapTrackEvent.ChargedEvent
 
             assertEquals("order-1", event.chargeDetails["Charged ID"])
-            assertEquals(0.0, event.chargeDetails["Amount"])
+            assertFalse(event.chargeDetails.containsKey("Amount"))
             assertEquals(emptyList<HashMap<String, Any>>(), event.items)
+            verify { mockLogger.warn(match { it.contains("Cannot parse revenue") }) }
+        }
+
+        @Test
+        fun `given order completed has a numeric revenue string, when track event is built, then amount is mapped`() {
+            val properties = buildJsonObject { put("revenue", "42.50") }
+
+            val event = properties.toCleverTapTrackEvent("Order Completed", mockLogger) as CleverTapTrackEvent.ChargedEvent
+
+            assertEquals(42.5, event.chargeDetails["Amount"])
+            verify(exactly = 0) { mockLogger.warn(any()) }
+        }
+
+        @Test
+        fun `given order completed has no revenue, when track event is built, then amount is absent and nothing is logged`() {
+            val properties = buildJsonObject { put("order_id", "order-1") }
+
+            val event = properties.toCleverTapTrackEvent("Order Completed", mockLogger) as CleverTapTrackEvent.ChargedEvent
+
+            assertFalse(event.chargeDetails.containsKey("Amount"))
+            verify(exactly = 0) { mockLogger.warn(any()) }
+        }
+
+        @Test
+        fun `given order completed has a null revenue, when track event is built, then amount is omitted`() {
+            val properties = buildJsonObject { put("revenue", JsonNull) }
+
+            val event = properties.toCleverTapTrackEvent("Order Completed", mockLogger) as CleverTapTrackEvent.ChargedEvent
+
+            assertFalse(event.chargeDetails.containsKey("Amount"))
+            verify { mockLogger.warn(match { it.contains("Cannot parse revenue") }) }
+        }
+
+        @Test
+        fun `given order completed has a boolean revenue, when track event is built, then amount is omitted`() {
+            val properties = buildJsonObject { put("revenue", true) }
+
+            val event = properties.toCleverTapTrackEvent("Order Completed", mockLogger) as CleverTapTrackEvent.ChargedEvent
+
+            assertFalse(event.chargeDetails.containsKey("Amount"))
+            verify { mockLogger.warn(match { it.contains("Cannot parse revenue") }) }
+        }
+
+        @Test
+        fun `given order completed has an object revenue, when track event is built, then amount is omitted`() {
+            val properties = buildJsonObject {
+                put("revenue", buildJsonObject { put("value", 10) })
+            }
+
+            val event = properties.toCleverTapTrackEvent("Order Completed", mockLogger) as CleverTapTrackEvent.ChargedEvent
+
+            assertFalse(event.chargeDetails.containsKey("Amount"))
+            verify { mockLogger.warn(match { it.contains("Cannot parse revenue") }) }
         }
 
         @Test
@@ -212,7 +267,7 @@ class UtilsTest {
                 put("products", buildJsonArray {})
             }
 
-            val event = properties.toCleverTapTrackEvent("Order Completed") as CleverTapTrackEvent.ChargedEvent
+            val event = properties.toCleverTapTrackEvent("Order Completed", mockLogger) as CleverTapTrackEvent.ChargedEvent
 
             assertEquals(emptyList<HashMap<String, Any>>(), event.items)
         }
@@ -226,7 +281,7 @@ class UtilsTest {
                 })
             }
 
-            val event = properties.toCleverTapTrackEvent("Order Completed") as CleverTapTrackEvent.ChargedEvent
+            val event = properties.toCleverTapTrackEvent("Order Completed", mockLogger) as CleverTapTrackEvent.ChargedEvent
 
             assertEquals(1, event.items.size)
             assertEquals("sku-1", event.items.first()["id"])

@@ -175,9 +175,9 @@ internal fun String.dateFromString(logger: Logger): Date? = runCatching {
     null
 }
 
-internal fun JsonObject.toCleverTapTrackEvent(eventName: String): CleverTapTrackEvent {
+internal fun JsonObject.toCleverTapTrackEvent(eventName: String, logger: Logger): CleverTapTrackEvent {
     return if (eventName == ORDER_COMPLETED) {
-        val (chargeDetails, items) = toChargedEvent()
+        val (chargeDetails, items) = toChargedEvent(logger)
         CleverTapTrackEvent.ChargedEvent(chargeDetails = chargeDetails, items = items)
     } else {
         CleverTapTrackEvent.CustomEvent(eventName = eventName, properties = toAnyMap())
@@ -190,14 +190,14 @@ internal fun JsonObject.toCleverTapScreenEvent(screenName: String): CleverTapTra
         properties = toAnyMap(),
     )
 
-private fun JsonObject.toChargedEvent(): Pair<HashMap<String, Any>, ArrayList<HashMap<String, Any>>> {
+private fun JsonObject.toChargedEvent(logger: Logger): Pair<HashMap<String, Any>, ArrayList<HashMap<String, Any>>> {
     val chargeDetails = hashMapOf<String, Any>()
     var items = arrayListOf<HashMap<String, Any>>()
 
     for ((key, element) in this) {
         when (key) {
             PRODUCTS -> items = element.toProductsList()
-            REVENUE -> chargeDetails[AMOUNT] = element.toRevenue()
+            REVENUE -> element.toRevenue(logger)?.let { chargeDetails[AMOUNT] = it }
             ORDER_ID -> extractValue(element)?.let { chargeDetails[CHARGED_ID] = it }
             else -> extractValue(element)?.let { chargeDetails[key] = it }
         }
@@ -227,7 +227,13 @@ private fun JsonObject.toProductMap(): HashMap<String, Any> {
     return item
 }
 
-private fun JsonElement?.toRevenue(): Double = extractValue(this)?.toString()?.toDoubleOrNull() ?: 0.0
+private fun JsonElement?.toRevenue(logger: Logger): Double? {
+    val value = extractValue(this)
+    return value?.toString()?.toDoubleOrNull() ?: run {
+        logger.warn("CleverTapIntegration: Cannot parse revenue '$value' as a number. $AMOUNT is omitted.")
+        null
+    }
+}
 
 internal sealed class CleverTapTrackEvent {
     data class CustomEvent(

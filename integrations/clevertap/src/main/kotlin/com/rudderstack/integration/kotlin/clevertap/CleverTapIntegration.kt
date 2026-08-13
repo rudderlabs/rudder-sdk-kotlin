@@ -67,7 +67,7 @@ class CleverTapIntegration : StandardIntegration, IntegrationPlugin(), ActivityL
         if (payload.event.isBlank()) return
 
         runCatching {
-            when (val event = payload.properties.toCleverTapTrackEvent(payload.event)) {
+            when (val event = payload.properties.toCleverTapTrackEvent(payload.event, analytics.logger)) {
                 is CleverTapTrackEvent.ChargedEvent -> cleverTap?.pushChargedEvent(event.chargeDetails, event.items)
                 is CleverTapTrackEvent.CustomEvent -> pushCustomEvent(event)
             }
