@@ -16,6 +16,8 @@ internal class SetConsentAction(
 ) : ConsentManagementState.ConsentManagementStateAction {
 
     override fun reduce(currentState: ConsentManagementState): ConsentManagementState {
+        if (!currentState.enabled) return currentState
+
         val allowed = options.allowedConsentIds.normalized()
         val denied = options.deniedConsentIds.normalized()
         return currentState.copy(

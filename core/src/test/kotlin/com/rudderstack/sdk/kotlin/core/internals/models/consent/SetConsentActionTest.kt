@@ -90,6 +90,16 @@ class SetConsentActionTest {
     }
 
     @Test
+    fun `given a disabled state, when options with consent data are reduced, then the state is completely unchanged`() {
+        val currentState = ConsentManagementState(enabled = false, initialized = false)
+        val action = SetConsentAction(ConsentManagementOptions(allowedConsentIds = listOf("marketing")))
+
+        val newState = action.reduce(currentState)
+
+        assertEquals(currentState, newState)
+    }
+
+    @Test
     fun `given an enabled state, when any options are reduced, then enabled and provider are untouched`() {
         val currentState = ConsentManagementState(
             enabled = true,
