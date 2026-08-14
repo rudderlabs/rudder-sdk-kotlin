@@ -59,4 +59,20 @@ class ConsentManagementConfigurationTest {
     fun `given the custom provider, when its wire value is read, then it serializes as custom`() {
         assertEquals("custom", ConsentManagementProvider.CUSTOM.value)
     }
+
+    @Test
+    fun `given a configuration with consent ids, when converted to string, then the ids are redacted`() {
+        val consentManagement = ConsentManagementConfiguration(
+            enabled = true,
+            allowedConsentIds = listOf("marketing"),
+            deniedConsentIds = listOf("advertising"),
+        )
+
+        val result = consentManagement.toString()
+
+        assertFalse(result.contains("marketing"))
+        assertFalse(result.contains("advertising"))
+        assertTrue(result.contains("allowedConsentIds=1 id(s)"))
+        assertTrue(result.contains("deniedConsentIds=1 id(s)"))
+    }
 }
