@@ -43,6 +43,7 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import com.rudderstack.sdk.kotlin.core.internals.utils.isAnalyticsActive
 import com.rudderstack.sdk.kotlin.core.internals.utils.isSourceEnabledWithLogging
 import com.rudderstack.sdk.kotlin.core.internals.utils.resolvePreferredPreviousId
+import com.rudderstack.sdk.kotlin.core.plugins.ConsentManagementPlugin
 import com.rudderstack.sdk.kotlin.core.plugins.LibraryInfoPlugin
 import com.rudderstack.sdk.kotlin.core.plugins.RudderStackDataplanePlugin
 import kotlinx.coroutines.Job
@@ -373,6 +374,7 @@ open class Analytics protected constructor(
      */
     private fun setup() {
         add(LibraryInfoPlugin())
+        add(ConsentManagementPlugin())
         add(RudderStackDataplanePlugin())
     }
 
