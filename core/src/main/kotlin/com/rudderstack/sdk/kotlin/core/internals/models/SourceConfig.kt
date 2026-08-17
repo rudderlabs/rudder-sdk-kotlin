@@ -4,10 +4,18 @@ import com.rudderstack.sdk.kotlin.core.internals.statemanagement.StateAction
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
+import com.rudderstack.sdk.kotlin.core.internals.utils.LenientJson
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.builtins.nullable
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonObject
 import org.jetbrains.annotations.VisibleForTesting
 
@@ -15,11 +23,14 @@ import org.jetbrains.annotations.VisibleForTesting
  * Represents the configuration for a source in the RudderStack server.
  *
  * @property source The configuration details of a RudderStack source.
+ * @property consentManagementMetadata The consent provider metadata for the source, if configured.
  */
 @InternalRudderApi
 @Serializable
 data class SourceConfig(
-    val source: RudderServerConfigSource
+    val source: RudderServerConfigSource,
+    @Serializable(with = LenientConsentManagementMetadataSerializer::class)
+    val consentManagementMetadata: ConsentManagementMetadata? = null
 ) {
 
     companion object {
@@ -176,3 +187,52 @@ data class DestinationDefinition(
     val name: String,
     val displayName: String
 )
+
+/**
+ * Metadata describing the consent providers configured for the source.
+ * Decoded from the root of the sourceConfig response, as a sibling of `source`.
+ *
+ * @property providers The consent provider entries configured for the source.
+ */
+@Serializable
+data class ConsentManagementMetadata(
+    val providers: List<ConsentProviderEntry> = emptyList()
+)
+
+/**
+ * A single consent provider entry within [ConsentManagementMetadata].
+ *
+ * @property provider The provider identifier.
+ * @property resolutionStrategy The source-level resolution strategy for this provider.
+ */
+@Serializable
+data class ConsentProviderEntry(
+    val provider: String? = null,
+    val resolutionStrategy: String? = null
+)
+
+/**
+ * Decodes [ConsentManagementMetadata] tolerantly: a malformed value becomes null
+ * instead of failing the entire [SourceConfig] parse.
+ */
+internal object LenientConsentManagementMetadataSerializer : KSerializer<ConsentManagementMetadata?> {
+
+    private val delegate = ConsentManagementMetadata.serializer().nullable
+
+    override val descriptor: SerialDescriptor = delegate.descriptor
+
+    override fun serialize(encoder: Encoder, value: ConsentManagementMetadata?) {
+        delegate.serialize(encoder, value)
+    }
+
+    override fun deserialize(decoder: Decoder): ConsentManagementMetadata? {
+        val element = (decoder as? JsonDecoder)?.decodeJsonElement() ?: return null
+        return try {
+            LenientJson.decodeFromJsonElement(delegate, element)
+        } catch (ignored: SerializationException) {
+            null
+        } catch (ignored: IllegalArgumentException) {
+            null
+        }
+    }
+}
