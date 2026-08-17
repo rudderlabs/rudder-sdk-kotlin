@@ -89,7 +89,8 @@ open class Analytics protected constructor(
     /**
      * The `consentManagementState` is a [State] that manages the consent values for the analytics instance.
      */
-    internal val consentManagementState = State(
+    @InternalRudderApi
+    val consentManagementState = State(
         initialState = ConsentManagementState.initialState(configuration.consentManagement)
     )
 
