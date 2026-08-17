@@ -6,6 +6,7 @@ import com.rudderstack.sdk.kotlin.android.utils.findDestination
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
+import com.rudderstack.sdk.kotlin.core.internals.models.consent.ConsentResolver
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.plugins.EventPlugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
@@ -103,22 +104,35 @@ abstract class IntegrationPlugin : EventPlugin {
             analytics.logger.debug("IntegrationPlugin[$key]: Non-standard integration, using empty config")
             return emptyJsonObject
         }
-        findDestination(sourceConfig, key)?.let { configDestination ->
-            if (!configDestination.isDestinationEnabled) {
-                val errorMessage = "Destination $key is disabled in dashboard. " +
-                    "No events will be sent to this destination."
-                analytics.logger.warn("IntegrationPlugin: $errorMessage")
-                safelyUpdateOnFailureAndNotify(IllegalStateException(errorMessage))
-                return null
+        val configDestination = findDestination(sourceConfig, key)
+        return when {
+            configDestination == null -> {
+                notifyDestinationFailure(
+                    "Destination $key not found in the source config. " +
+                        "No events will be sent to this destination."
+                )
+                null
             }
-            return configDestination.destinationConfig
-        } ?: run {
-            val errorMessage = "Destination $key not found in the source config. " +
-                "No events will be sent to this destination."
-            analytics.logger.warn("IntegrationPlugin: $errorMessage")
-            safelyUpdateOnFailureAndNotify(IllegalStateException(errorMessage))
-            return null
+            !configDestination.isDestinationEnabled -> {
+                notifyDestinationFailure(
+                    "Destination $key is disabled in dashboard. " +
+                        "No events will be sent to this destination."
+                )
+                null
+            }
+            !ConsentResolver.resolve(analytics.consentManagementState.value, configDestination.destinationConfig) -> {
+                val errorMessage = "Destination $key is denied by user consent. " +
+                    "No events will be sent to this destination."
+                notifyDestinationFailure(errorMessage, ConsentDeniedException(errorMessage))
+                null
+            }
+            else -> configDestination.destinationConfig
         }
+    }
+
+    private fun notifyDestinationFailure(errorMessage: String, throwable: Throwable? = null) {
+        analytics.logger.warn("IntegrationPlugin: $errorMessage")
+        safelyUpdateOnFailureAndNotify(throwable ?: IllegalStateException(errorMessage))
     }
 
     final override suspend fun intercept(event: Event): Event {
