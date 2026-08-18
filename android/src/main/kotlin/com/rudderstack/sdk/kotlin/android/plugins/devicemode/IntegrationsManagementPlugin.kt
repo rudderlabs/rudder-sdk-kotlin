@@ -7,7 +7,10 @@ import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.PluginChain
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collectIndexed
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 
 internal const val MAX_QUEUE_SIZE = 1000
@@ -37,9 +40,15 @@ internal class IntegrationsManagementPlugin : Plugin {
 
         integrationPluginChain.analytics = analytics
         analytics.withIntegrationsDispatcher {
-            analytics.sourceConfigState
-                .observeDispatched()
-                .filter { it.source.isSourceEnabled }
+            combine(
+                analytics.sourceConfigState
+                    .observeDispatched()
+                    .filter { it.source.isSourceEnabled },
+                analytics.consentManagementState
+                    .observeDispatched()
+                    .onStart { emit(analytics.consentManagementState.value) }
+                    .distinctUntilChanged()
+            ) { sourceConfig, _ -> sourceConfig }
                 .collectIndexed { index, sourceConfig ->
                     integrationPluginChain.applyClosure { plugin ->
                         if (plugin is IntegrationPlugin) {
