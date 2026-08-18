@@ -433,7 +433,7 @@ open class Analytics protected constructor(
      *
      * @param options The consent values to apply.
      */
-    open fun setConsent(options: ConsentManagementOptions) {
+    fun setConsent(options: ConsentManagementOptions) {
         logger.debug("Analytics(core): setConsent() called")
         if (!isAnalyticsActive()) return
 

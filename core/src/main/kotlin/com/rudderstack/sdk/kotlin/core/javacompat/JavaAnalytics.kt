@@ -392,7 +392,7 @@ open class JavaAnalytics protected constructor(
      *
      * @param options The consent values to apply.
      */
-    open fun setConsent(options: ConsentManagementOptions) {
+    fun setConsent(options: ConsentManagementOptions) {
         analytics.setConsent(options)
     }
 }
