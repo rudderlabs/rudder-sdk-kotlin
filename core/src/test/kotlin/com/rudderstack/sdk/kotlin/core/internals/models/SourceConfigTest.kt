@@ -157,7 +157,8 @@ private fun provideSourceConfigWithoutDestination() = provideSourceConfig(
                 )
             ),
         ),
-    )
+    ),
+    consentManagementMetadata = provideFixtureConsentMetadata(),
 )
 
 private fun provideSourceConfigWithOneDestination() = provideSourceConfig(
@@ -188,7 +189,8 @@ private fun provideSourceConfigWithOneDestination() = provideSourceConfig(
                 )
             ),
         ),
-    )
+    ),
+    consentManagementMetadata = provideFixtureConsentMetadata(),
 )
 
 private fun provideSourceConfigWithMultipleDestinations() = provideSourceConfig(
@@ -227,7 +229,8 @@ private fun provideSourceConfigWithMultipleDestinations() = provideSourceConfig(
                 )
             ),
         ),
-    )
+    ),
+    consentManagementMetadata = provideFixtureConsentMetadata(),
 )
 
 private fun provideServerConfigWithoutMetrics() = provideSourceConfig(
@@ -238,5 +241,14 @@ private fun provideServerConfigWithoutMetrics() = provideSourceConfig(
         isSourceEnabled = ENABLED,
         workspaceId = WORKSPACE_ID,
         updatedAt = UPDATED_AT,
+    ),
+    consentManagementMetadata = provideFixtureConsentMetadata(),
+)
+
+// The fixture captures carry consent provider metadata at the response root.
+private fun provideFixtureConsentMetadata() = ConsentManagementMetadata(
+    providers = listOf(
+        ConsentProviderEntry(provider = "oneTrust", resolutionStrategy = "and"),
+        ConsentProviderEntry(provider = "ketch", resolutionStrategy = "or"),
     )
 )

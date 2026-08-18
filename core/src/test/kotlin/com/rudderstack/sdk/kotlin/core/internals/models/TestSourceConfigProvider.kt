@@ -3,9 +3,11 @@ package com.rudderstack.sdk.kotlin.core.internals.models
 import kotlinx.serialization.json.JsonObject
 
 internal fun provideSourceConfig(
-    source: RudderServerConfigSource
+    source: RudderServerConfigSource,
+    consentManagementMetadata: ConsentManagementMetadata? = null,
 ): SourceConfig = SourceConfig(
     source = source,
+    consentManagementMetadata = consentManagementMetadata,
 )
 
 internal fun provideRudderServerConfigSource(
