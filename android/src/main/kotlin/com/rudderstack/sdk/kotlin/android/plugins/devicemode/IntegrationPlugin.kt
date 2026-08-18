@@ -1,5 +1,6 @@
 package com.rudderstack.sdk.kotlin.android.plugins.devicemode
 
+import com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing.ConsentGatePlugin
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing.EventFilteringPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing.IntegrationOptionsPlugin
 import com.rudderstack.sdk.kotlin.android.utils.findDestination
@@ -285,6 +286,7 @@ abstract class IntegrationPlugin : EventPlugin {
     }
 
     private fun applyDefaultPlugins() {
+        add(ConsentGatePlugin(key))
         add(EventFilteringPlugin(key))
         add(IntegrationOptionsPlugin(key))
     }
