@@ -236,27 +236,36 @@ jobs:
         run: |
           set -uo pipefail
 
-          artifact_id=$(gh api \
-            -H "Accept: application/vnd.github+json" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            "/repos/${TARGET_REPO}/actions/runs/${RUN_ID}/artifacts" \
-            --jq '.artifacts[] | select(.name == "job-outputs") | .id' | head -1)
-
-          if [ -z "$artifact_id" ]; then
-            echo "::warning::run $RUN_ID published no job-outputs artifact"
-            echo "has_outputs=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          gh api "/repos/${TARGET_REPO}/actions/artifacts/${artifact_id}/zip" > outputs.zip
-          unzip -q -o outputs.zip -d outputs_dir
-          json=$(find outputs_dir -name '*.json' -type f | head -1)
-
-          if [ -z "$json" ] || ! jq empty "$json" 2>/dev/null; then
-            echo "::warning::job-outputs held no readable JSON"
+          give_up() {
+            echo "::warning::$1"
             echo "has_outputs=false" >> "$GITHUB_OUTPUT"
             rm -rf outputs.zip outputs_dir
             exit 0
+          }
+
+          if ! artifacts=$(gh api \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "/repos/${TARGET_REPO}/actions/runs/${RUN_ID}/artifacts" 2>&1); then
+            give_up "could not list the artifacts of run $RUN_ID: $artifacts"
+          fi
+
+          artifact_id=$(printf '%s' "$artifacts" \
+            | jq -r '.artifacts[]? | select(.name == "job-outputs") | .id' 2>/dev/null | head -1)
+
+          case "$artifact_id" in
+            "")            give_up "run $RUN_ID published no job-outputs artifact" ;;
+            *[!0-9]* | 0*) give_up "unusable artifact id for run $RUN_ID: $artifact_id" ;;
+          esac
+
+          if ! gh api "/repos/${TARGET_REPO}/actions/artifacts/${artifact_id}/zip" > outputs.zip 2>/dev/null; then
+            give_up "could not download the job-outputs artifact of run $RUN_ID"
+          fi
+          unzip -q -o outputs.zip -d outputs_dir 2>/dev/null || give_up "job-outputs was not a readable zip"
+          json=$(find outputs_dir -name '*.json' -type f | head -1)
+
+          if [ -z "$json" ] || ! jq empty "$json" 2>/dev/null; then
+            give_up "job-outputs held no readable JSON"
           fi
 
           jq -C '.' "$json"
@@ -338,7 +347,7 @@ jobs:
           release_ticket_id: ${{ steps.release-info.outputs.ticket_id }}
 
       - name: Post the verdict to the release thread
-        if: always() && steps.thread.outputs.channel_id != ''
+        if: always() && steps.thread.outputs.channel_id != '' && steps.thread.outputs.thread_ts != ''
         continue-on-error: true
         uses: ./.github/actions/slack-release-notify
         with:
