@@ -261,7 +261,8 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           # Find previous monorepo tag for compare URL
-          prev_tag=$(git tag -l 'v*.*.*' --sort=-v:refname | grep -v "v${VERSION}" | head -1)
+          # versionsort.suffix ranks pre-release tags (v1.0.0-alpha.1) below GA (v1.0.0)
+          prev_tag=$(git -c versionsort.suffix=- tag -l 'v*.*.*' --sort=-v:refname | grep -v "v${VERSION}" | head -1)
 
           # Build inline module list: "core 6.2.0 · android 6.0.4 · ..."
           module_line=""
