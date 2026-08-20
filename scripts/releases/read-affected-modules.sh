@@ -19,7 +19,8 @@ while IFS='|' read -r name _ _ _ _ _; do
     current_version=$(get_module_version "$name")
 
     # Find the latest tag for this module
-    latest_tag=$(git tag -l "${tag_prefix}@v*" --sort=-v:refname | head -1)
+    # versionsort.suffix ranks pre-release tags (v1.7.0-beta.1) below GA (v1.7.0)
+    latest_tag=$(git -c versionsort.suffix=- tag -l "${tag_prefix}@v*" --sort=-v:refname | head -1)
 
     if [[ -z "$latest_tag" ]]; then
         # No tag exists — this module is new, treat as affected
@@ -29,6 +30,12 @@ while IFS='|' read -r name _ _ _ _ _; do
 
     # Extract version from tag: com.rudderstack.sdk.kotlin.core@v6.0.0 → 6.0.0
     tagged_version="${latest_tag##*@v}"
+
+    # Guard: if the current version is already tagged, the module was already
+    # released — never re-add it to the publish matrix
+    if [[ -n $(git tag -l "${tag_prefix}@v${current_version}") ]]; then
+        continue
+    fi
 
     if [[ "$tagged_version" != "$current_version" ]]; then
         echo "${name}|bumped|${tagged_version}|${current_version}"
