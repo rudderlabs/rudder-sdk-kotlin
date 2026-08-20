@@ -213,6 +213,21 @@ jobs:
           pr_url=$(./scripts/releases/create-backmerge-pr.sh "$VERSION")
           echo "pr_url=${pr_url}" >> "$GITHUB_OUTPUT"
 
+  release-sanity:
+    needs: [detect-modules, publish-release]
+    if: needs.detect-modules.outputs.has_modules == 'true'
+    uses: ./.github/workflows/release-sanity.yml
+    with:
+      phase: post-release
+      snapshot: false
+      affected_modules: ${{ needs.detect-modules.outputs.affected }}
+      release_pr: ${{ github.event.pull_request.html_url }}
+      # The suite waits up to 35m for the Maven Central sync before it can test anything.
+      max_wait_seconds: 5400
+    secrets:
+      RELEASE_PRIVATE_KEY: ${{ secrets.RELEASE_PRIVATE_KEY }}
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
   notify-slack:
     needs: [detect-modules, publish-release, create-github-releases, back-merge]
     if: needs.detect-modules.outputs.has_modules == 'true'
