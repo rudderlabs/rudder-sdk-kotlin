@@ -96,7 +96,6 @@ jobs:
 
       - name: Extract release info from branch
         id: release-info
-        if: steps.version.outputs.should_run == 'true'
         continue-on-error: true
         shell: bash
         env:
@@ -313,10 +312,11 @@ jobs:
 
       - name: Build the verdict
         id: verdict
-        if: ${{ !cancelled() && steps.version.outputs.should_run == 'true' }}
+        if: ${{ !cancelled() }}
         continue-on-error: true
         shell: bash
         env:
+          SHOULD_RUN: ${{ steps.version.outputs.should_run }}
           PHASE: ${{ inputs.phase }}
           SDK_VERSION: ${{ steps.version.outputs.version }}
           RUN_URL: ${{ steps.dispatch.outputs.run_url }}
@@ -328,7 +328,10 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [ "$HAS_OUTPUTS" = "true" ] && [ "$SUCCESS" = "true" ]; then
+          if [ "$SHOULD_RUN" != "true" ]; then
+            icon=":fast_forward:"; headline="$PHASE sanity skipped"
+            detail="This release publishes no android artifact, so there is nothing to test."
+          elif [ "$HAS_OUTPUTS" = "true" ] && [ "$SUCCESS" = "true" ]; then
             icon=":white_check_mark:"; headline="$PHASE sanity passed"
             detail="$SUMMARY"
           elif [ "$HAS_OUTPUTS" = "true" ]; then
@@ -345,7 +348,7 @@ jobs:
             detail="The suite ended without publishing results. Open the suite run to see why."
           fi
 
-          msg="${icon} *Kotlin SDK ${SDK_VERSION} — ${headline}*"
+          msg="${icon} *Kotlin SDK${SDK_VERSION:+ $SDK_VERSION} — ${headline}*"
           msg+=$'\n'"${detail}"
           if [ -n "$REPORT_URL" ]; then
             msg+=$'\n'"<${REPORT_URL}|Full report>"
@@ -357,7 +360,7 @@ jobs:
           {
             echo "### ${icon} ${headline}"
             echo ""
-            echo "- **Version:** \`${SDK_VERSION}\`"
+            [ -z "$SDK_VERSION" ] || echo "- **Version:** \`${SDK_VERSION}\`"
             echo "- **Result:** ${detail}"
             [ -z "$REPORT_URL" ] || echo "- **Report:** ${REPORT_URL}"
             [ -z "$RUN_URL" ] || echo "- **Suite run:** ${RUN_URL}"
@@ -368,11 +371,13 @@ jobs:
           echo "$msg" >> "$GITHUB_OUTPUT"
           echo "${EOF_MARKER}" >> "$GITHUB_OUTPUT"
 
-          [ "$SUCCESS" = "true" ] || echo "::warning::${headline} — ${detail}"
+          if [ "$SHOULD_RUN" = "true" ] && [ "$SUCCESS" != "true" ]; then
+            echo "::warning::${headline} — ${detail}"
+          fi
 
       - name: Download release thread info
         id: thread
-        if: ${{ !cancelled() && steps.version.outputs.should_run == 'true' }}
+        if: ${{ !cancelled() }}
         continue-on-error: true
         uses: ./.github/actions/slack-release-notify
         with:
