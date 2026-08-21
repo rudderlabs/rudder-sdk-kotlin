@@ -222,8 +222,7 @@ jobs:
       snapshot: false
       affected_modules: ${{ needs.detect-modules.outputs.affected }}
       release_pr: ${{ github.event.pull_request.html_url }}
-      # The suite waits up to 35m for the Maven Central sync before it can test anything.
-      max_wait_seconds: 5400
+      max_wait_seconds: 3000
     secrets:
       RELEASE_PRIVATE_KEY: ${{ secrets.RELEASE_PRIVATE_KEY }}
       SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}

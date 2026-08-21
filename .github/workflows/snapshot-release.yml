@@ -122,7 +122,7 @@ jobs:
       snapshot: true
       affected_modules: ${{ needs.detect-modules.outputs.affected }}
       release_pr: ${{ github.event.pull_request.html_url }}
-      max_wait_seconds: 3600
+      max_wait_seconds: 3000
     secrets:
       RELEASE_PRIVATE_KEY: ${{ secrets.RELEASE_PRIVATE_KEY }}
       SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}

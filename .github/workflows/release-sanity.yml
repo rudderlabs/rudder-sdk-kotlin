@@ -29,10 +29,10 @@ on:
         type: string
         default: ""
       max_wait_seconds:
-        description: "How long to wait for the suite. post-release needs more: the suite waits on the Maven Central sync."
+        description: "How long to wait for the suite. Keep at or below 3000. The app token this job mints dies 60 minutes after it is issued, and a dead token reports a passing run as a timeout."
         required: false
         type: number
-        default: 3600
+        default: 3000
     secrets:
       RELEASE_PRIVATE_KEY:
         description: "Private key of the release GitHub App, used to reach the test repository."
@@ -61,15 +61,18 @@ jobs:
     timeout-minutes: 120
     steps:
       - name: Harden the runner (Audit all outbound calls)
+        continue-on-error: true
         uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
         with:
           egress-policy: audit
 
       - name: Checkout code
+        continue-on-error: true
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
 
       - name: Resolve the android version
         id: version
+        continue-on-error: true
         shell: bash
         env:
           AFFECTED: ${{ inputs.affected_modules }}
@@ -94,16 +97,40 @@ jobs:
       - name: Extract release info from branch
         id: release-info
         if: steps.version.outputs.should_run == 'true'
+        continue-on-error: true
         shell: bash
         env:
           BRANCH: ${{ github.event.pull_request.head.ref }}
         run: |
           # Branch format: release/6.2.0-SDK-4567 or hotfix-release/6.2.0-SDK-4567
           suffix="${BRANCH#*/}"
-          version=$(echo "$suffix" | grep -oE '^[0-9]+\.[0-9]+\.[0-9]+')
+          version=$(echo "$suffix" | grep -oE '^[0-9]+\.[0-9]+\.[0-9]+') || version=""
+          if [ -z "$version" ]; then
+            echo "::warning::branch '$BRANCH' carries no version, so the release thread cannot be found"
+            exit 0
+          fi
           ticket_id="${suffix#"${version}"-}"
           echo "version=${version}" >> "$GITHUB_OUTPUT"
           echo "ticket_id=${ticket_id}" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for the version on Maven Central
+        if: steps.version.outputs.should_run == 'true' && !inputs.snapshot
+        continue-on-error: true
+        shell: bash
+        env:
+          SDK_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -uo pipefail
+          url="https://repo1.maven.org/maven2/com/rudderstack/sdk/kotlin/android/${SDK_VERSION}/android-${SDK_VERSION}.pom"
+          deadline=$(( $(date +%s) + 2400 ))
+          until curl -fsI -o /dev/null "$url"; do
+            if [ "$(date +%s)" -ge "$deadline" ]; then
+              echo "::warning::$SDK_VERSION has not reached Maven Central after 40m; dispatching anyway"
+              exit 0
+            fi
+            sleep 30 & wait $!
+          done
+          echo "$SDK_VERSION is on Maven Central"
 
       - name: Generate token
         id: app-token
@@ -208,8 +235,14 @@ jobs:
               continue
             }
 
-            status=$(printf '%s' "$run" | jq -r '.status')
-            conclusion=$(printf '%s' "$run" | jq -r '.conclusion // ""')
+            status=$(printf '%s' "$run" | jq -r '.status' 2>/dev/null) || status=""
+            conclusion=$(printf '%s' "$run" | jq -r '.conclusion // ""' 2>/dev/null) || conclusion=""
+            if [ -z "$status" ]; then
+              echo "::warning::run $RUN_ID returned no readable status; retrying"
+              sleep "$CHECK_INTERVAL" & wait $!
+              elapsed=$((elapsed + CHECK_INTERVAL))
+              continue
+            fi
             echo "status=$status conclusion=$conclusion elapsed=${elapsed}s"
 
             if [ "$status" = "completed" ]; then
@@ -222,12 +255,12 @@ jobs:
             elapsed=$((elapsed + CHECK_INTERVAL))
           done
 
-          echo "::warning::the suite was still running after $((MAX_WAIT / 60))m — $RUN_URL"
+          echo "::warning::stopped waiting after $((MAX_WAIT / 60))m - the suite is still running at $RUN_URL and will report itself"
           echo "conclusion=timed-out" >> "$GITHUB_OUTPUT"
 
       - name: Read the suite outputs
         id: outputs
-        if: always() && steps.dispatch.outputs.run_id != ''
+        if: ${{ !cancelled() && steps.dispatch.outputs.run_id != '' }}
         continue-on-error: true
         shell: bash
         env:
@@ -251,7 +284,7 @@ jobs:
           fi
 
           artifact_id=$(printf '%s' "$artifacts" \
-            | jq -r '.artifacts[]? | select(.name == "job-outputs") | .id' 2>/dev/null | head -1)
+            | jq -r '.artifacts[]? | select(.name == "job-outputs") | .id' 2>/dev/null | head -1) || artifact_id=""
 
           case "$artifact_id" in
             "")            give_up "run $RUN_ID published no job-outputs artifact" ;;
@@ -262,7 +295,7 @@ jobs:
             give_up "could not download the job-outputs artifact of run $RUN_ID"
           fi
           unzip -q -o outputs.zip -d outputs_dir 2>/dev/null || give_up "job-outputs was not a readable zip"
-          json=$(find outputs_dir -name '*.json' -type f | head -1)
+          json=$(find outputs_dir -name '*.json' -type f 2>/dev/null | head -1) || json=""
 
           if [ -z "$json" ] || ! jq empty "$json" 2>/dev/null; then
             give_up "job-outputs held no readable JSON"
@@ -273,14 +306,15 @@ jobs:
             echo "has_outputs=true"
             echo "success=$(jq -r '.test_status.success // false' "$json")"
             echo "summary=$(jq -r '.test_status.summary // ""' "$json" | tr '\n\r' '  ')"
-            echo "report_url=$(jq -r '.report_url // ""' "$json")"
-            echo "slack_message_url=$(jq -r '.slack_message_url // ""' "$json")"
+            echo "report_url=$(jq -r '.report_url // ""' "$json" | tr -d '\n\r')"
+            echo "slack_message_url=$(jq -r '.slack_message_url // ""' "$json" | tr -d '\n\r')"
           } >> "$GITHUB_OUTPUT"
           rm -rf outputs.zip outputs_dir
 
       - name: Build the verdict
         id: verdict
-        if: always() && steps.version.outputs.should_run == 'true'
+        if: ${{ !cancelled() && steps.version.outputs.should_run == 'true' }}
+        continue-on-error: true
         shell: bash
         env:
           PHASE: ${{ inputs.phase }}
@@ -338,7 +372,7 @@ jobs:
 
       - name: Download release thread info
         id: thread
-        if: always() && steps.version.outputs.should_run == 'true'
+        if: ${{ !cancelled() && steps.version.outputs.should_run == 'true' }}
         continue-on-error: true
         uses: ./.github/actions/slack-release-notify
         with:
@@ -347,7 +381,7 @@ jobs:
           release_ticket_id: ${{ steps.release-info.outputs.ticket_id }}
 
       - name: Post the verdict to the release thread
-        if: always() && steps.thread.outputs.channel_id != '' && steps.thread.outputs.thread_ts != ''
+        if: ${{ !cancelled() && steps.thread.outputs.channel_id != '' && steps.thread.outputs.thread_ts != '' }}
         continue-on-error: true
         uses: ./.github/actions/slack-release-notify
         with:
