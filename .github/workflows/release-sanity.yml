@@ -70,6 +70,22 @@ jobs:
         continue-on-error: true
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
 
+      # Not continue-on-error: a missing tool must fail HERE with its name, not downstream as a
+      # skipped dispatch. The verdict step still runs and posts a warning to the release thread.
+      - name: Verify the runner has the tools this job needs
+        shell: bash
+        run: |
+          set -uo pipefail
+          missing=""
+          for tool in gh jq unzip; do
+            command -v "$tool" >/dev/null 2>&1 || missing="$missing $tool"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::this runner is missing:$missing — the suite cannot be dispatched or its outputs read"
+            exit 1
+          fi
+          echo "gh, jq and unzip are all present"
+
       - name: Resolve the android version
         id: version
         continue-on-error: true
@@ -328,9 +344,12 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [ "$SHOULD_RUN" != "true" ]; then
+          if [ "$SHOULD_RUN" = "false" ]; then
             icon=":fast_forward:"; headline="$PHASE sanity skipped"
             detail="This release publishes no android artifact, so there is nothing to test."
+          elif [ -z "$SHOULD_RUN" ]; then
+            icon=":warning:"; headline="$PHASE sanity could not run"
+            detail="The job failed before resolving a version. Check the Release Sanity job in this run."
           elif [ "$HAS_OUTPUTS" = "true" ] && [ "$SUCCESS" = "true" ]; then
             icon=":white_check_mark:"; headline="$PHASE sanity passed"
             detail="$SUMMARY"
@@ -371,7 +390,7 @@ jobs:
           echo "$msg" >> "$GITHUB_OUTPUT"
           echo "${EOF_MARKER}" >> "$GITHUB_OUTPUT"
 
-          if [ "$SHOULD_RUN" = "true" ] && [ "$SUCCESS" != "true" ]; then
+          if [ "$SHOULD_RUN" != "false" ] && [ "$SUCCESS" != "true" ]; then
             echo "::warning::${headline} — ${detail}"
           fi
 
