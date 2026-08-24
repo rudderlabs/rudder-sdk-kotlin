@@ -1,0 +1,416 @@
+# Runs the Kotlin scenario suite in rudderlabs/rudder-mobile-sdk-test against a published android
+# artifact, then reports the verdict into the release Slack thread.
+#
+# Advisory by design: the suite reports, it never fails the release. Every step that can fail is
+# `continue-on-error`, and the job is too, so a broken sanity run can not hold a release.
+#
+# The caller must be triggered by `pull_request` on a release branch. The Slack thread id is keyed
+# by the monorepo version and the ticket id, and both come from the branch name.
+name: Release Sanity
+
+on:
+  workflow_call:
+    inputs:
+      phase:
+        description: "pre-release or post-release. Chooses the suite's own wait budget for the artifact."
+        required: true
+        type: string
+      snapshot:
+        description: "true to test <version>-SNAPSHOT from the snapshots repo."
+        required: true
+        type: boolean
+      affected_modules:
+        description: "The release's `module|bump|old|new` lines. The android line decides whether to run."
+        required: true
+        type: string
+      release_pr:
+        description: "Release PR URL. Linked in the suite's own Slack message."
+        required: false
+        type: string
+        default: ""
+      max_wait_seconds:
+        description: "How long to wait for the suite. Keep at or below 3000. The app token this job mints dies 60 minutes after it is issued, and a dead token reports a passing run as a timeout."
+        required: false
+        type: number
+        default: 3000
+    secrets:
+      RELEASE_PRIVATE_KEY:
+        description: "Private key of the release GitHub App, used to reach the test repository."
+        required: true
+      SLACK_BOT_TOKEN:
+        description: "Slack bot token, for the release thread message."
+        required: false
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  TARGET_REPO: rudderlabs/rudder-mobile-sdk-test
+  TARGET_WORKFLOW: kotlin-release-sanity.yaml
+  # `workflow_dispatch` registers only from the default branch, so the suite is dispatchable on main only.
+  TARGET_REF: main
+  CHECK_INTERVAL: 60
+  CORRELATION_ID: ${{ github.run_id }}-${{ github.run_attempt }}
+
+jobs:
+  sanity:
+    name: Release sanity
+    runs-on: [self-hosted, Linux, X64]
+    continue-on-error: true
+    timeout-minutes: 120
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        continue-on-error: true
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout code
+        continue-on-error: true
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      # Not continue-on-error: a missing tool must fail HERE with its name, not downstream as a
+      # skipped dispatch. The verdict step still runs and posts a warning to the release thread.
+      - name: Verify the runner has the tools this job needs
+        shell: bash
+        run: |
+          set -uo pipefail
+          missing=""
+          for tool in gh jq unzip; do
+            command -v "$tool" >/dev/null 2>&1 || missing="$missing $tool"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::this runner is missing:$missing — the suite cannot be dispatched or its outputs read"
+            exit 1
+          fi
+          echo "gh, jq and unzip are all present"
+
+      - name: Resolve the android version
+        id: version
+        continue-on-error: true
+        shell: bash
+        env:
+          AFFECTED: ${{ inputs.affected_modules }}
+          SNAPSHOT: ${{ inputs.snapshot }}
+        run: |
+          set -euo pipefail
+          version=$(printf '%s\n' "$AFFECTED" | awk -F'|' '$1 == "android" { print $4 }' | head -1)
+
+          if [ -z "$version" ]; then
+            echo "::notice::this release publishes no android artifact — the suite has nothing to test"
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ "$SNAPSHOT" = "true" ]; then
+            version="${version}-SNAPSHOT"
+          fi
+          echo "::notice::testing android $version"
+          echo "should_run=true" >> "$GITHUB_OUTPUT"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+
+      - name: Extract release info from branch
+        id: release-info
+        continue-on-error: true
+        shell: bash
+        env:
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: |
+          # Branch format: release/6.2.0-SDK-4567 or hotfix-release/6.2.0-SDK-4567
+          suffix="${BRANCH#*/}"
+          version=$(echo "$suffix" | grep -oE '^[0-9]+\.[0-9]+\.[0-9]+') || version=""
+          if [ -z "$version" ]; then
+            echo "::warning::branch '$BRANCH' carries no version, so the release thread cannot be found"
+            exit 0
+          fi
+          ticket_id="${suffix#"${version}"-}"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "ticket_id=${ticket_id}" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for the version on Maven Central
+        if: steps.version.outputs.should_run == 'true' && !inputs.snapshot
+        continue-on-error: true
+        shell: bash
+        env:
+          SDK_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -uo pipefail
+          url="https://repo1.maven.org/maven2/com/rudderstack/sdk/kotlin/android/${SDK_VERSION}/android-${SDK_VERSION}.pom"
+          deadline=$(( $(date +%s) + 2400 ))
+          until curl -fsI -o /dev/null "$url"; do
+            if [ "$(date +%s)" -ge "$deadline" ]; then
+              echo "::warning::$SDK_VERSION has not reached Maven Central after 40m; dispatching anyway"
+              exit 0
+            fi
+            sleep 30 & wait $!
+          done
+          echo "$SDK_VERSION is on Maven Central"
+
+      - name: Generate token
+        id: app-token
+        if: steps.version.outputs.should_run == 'true'
+        continue-on-error: true
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
+        with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_PRIVATE_KEY }}
+          permission-actions: write
+          repositories: rudder-mobile-sdk-test
+
+      - name: Dispatch the suite
+        id: dispatch
+        if: steps.version.outputs.should_run == 'true' && steps.app-token.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          SDK_VERSION: ${{ steps.version.outputs.version }}
+          PHASE: ${{ inputs.phase }}
+          RELEASE_PR: ${{ inputs.release_pr }}
+          LINEAR_TICKET: ${{ steps.release-info.outputs.ticket_id }}
+        run: |
+          set -euo pipefail
+
+          # `api_levels` and `suite` are deliberately not sent. An omitted dispatch input takes the
+          # target workflow's own default, so the test repo keeps ownership of what the suite covers.
+          jq -n --arg ref "$TARGET_REF" \
+                --arg version "$SDK_VERSION" \
+                --arg phase "$PHASE" \
+                --arg cid "$CORRELATION_ID" \
+                --arg pr "$RELEASE_PR" \
+                --arg ticket "$LINEAR_TICKET" \
+            '{ref: $ref, inputs: {sdk_version: $version, phase: $phase, correlation_id: $cid,
+                                  release_pr: $pr, linear_ticket: $ticket}}' > dispatch.json
+
+          gh api --method POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            --input dispatch.json \
+            "/repos/${TARGET_REPO}/actions/workflows/${TARGET_WORKFLOW}/dispatches"
+          rm -f dispatch.json
+          echo "dispatched $SDK_VERSION ($PHASE) as $CORRELATION_ID"
+
+          # The dispatch API returns no run id. The suite echoes the correlation id into its
+          # run-name for exactly this lookup, so no timestamp or branch heuristic is needed.
+          run_id=""
+          for _ in $(seq 1 20); do
+            sleep 3
+            run_id=$(gh api \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "/repos/${TARGET_REPO}/actions/workflows/${TARGET_WORKFLOW}/runs?event=workflow_dispatch&per_page=20" \
+              --jq "[.workflow_runs[]
+                     | select(((.display_title // \"\") + \" \" + (.name // \"\"))
+                              | contains(\"[${CORRELATION_ID}]\"))]
+                    | first | .id // empty" 2>/dev/null) || run_id=""
+            [ -z "$run_id" ] || break
+          done
+
+          if [ -z "$run_id" ]; then
+            echo "::warning::dispatched $CORRELATION_ID but no run carried it back within 60s"
+            exit 1
+          fi
+
+          echo "run_id=${run_id}" >> "$GITHUB_OUTPUT"
+          echo "run_url=https://github.com/${TARGET_REPO}/actions/runs/${run_id}" >> "$GITHUB_OUTPUT"
+          echo "found run $run_id"
+
+      - name: Wait for the suite
+        id: wait
+        if: steps.dispatch.outputs.run_id != ''
+        continue-on-error: true
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          RUN_ID: ${{ steps.dispatch.outputs.run_id }}
+          RUN_URL: ${{ steps.dispatch.outputs.run_url }}
+          MAX_WAIT: ${{ inputs.max_wait_seconds }}
+        run: |
+          set -uo pipefail
+
+          # A cancelled release must not leave two emulators running for another half hour.
+          cancel_remote() {
+            echo "cancelling $RUN_URL"
+            gh api --method POST "/repos/${TARGET_REPO}/actions/runs/${RUN_ID}/cancel" >/dev/null 2>&1 || true
+            exit 1
+          }
+          trap cancel_remote SIGTERM SIGINT
+
+          echo "waiting up to $((MAX_WAIT / 60))m for $RUN_URL"
+          elapsed=0
+          while [ "$elapsed" -lt "$MAX_WAIT" ]; do
+            run=$(gh api \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "/repos/${TARGET_REPO}/actions/runs/${RUN_ID}") || {
+              echo "::warning::could not read run $RUN_ID; retrying"
+              sleep "$CHECK_INTERVAL" & wait $!
+              elapsed=$((elapsed + CHECK_INTERVAL))
+              continue
+            }
+
+            status=$(printf '%s' "$run" | jq -r '.status' 2>/dev/null) || status=""
+            conclusion=$(printf '%s' "$run" | jq -r '.conclusion // ""' 2>/dev/null) || conclusion=""
+            if [ -z "$status" ]; then
+              echo "::warning::run $RUN_ID returned no readable status; retrying"
+              sleep "$CHECK_INTERVAL" & wait $!
+              elapsed=$((elapsed + CHECK_INTERVAL))
+              continue
+            fi
+            echo "status=$status conclusion=$conclusion elapsed=${elapsed}s"
+
+            if [ "$status" = "completed" ]; then
+              echo "conclusion=${conclusion}" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+
+            # Backgrounded so the cancel trap fires at once; a foreground sleep defers it a minute.
+            sleep "$CHECK_INTERVAL" & wait $!
+            elapsed=$((elapsed + CHECK_INTERVAL))
+          done
+
+          echo "::warning::stopped waiting after $((MAX_WAIT / 60))m - the suite is still running at $RUN_URL and will report itself"
+          echo "conclusion=timed-out" >> "$GITHUB_OUTPUT"
+
+      - name: Read the suite outputs
+        id: outputs
+        if: ${{ !cancelled() && steps.dispatch.outputs.run_id != '' }}
+        continue-on-error: true
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          RUN_ID: ${{ steps.dispatch.outputs.run_id }}
+        run: |
+          set -uo pipefail
+
+          give_up() {
+            echo "::warning::$1"
+            echo "has_outputs=false" >> "$GITHUB_OUTPUT"
+            rm -rf outputs.zip outputs_dir
+            exit 0
+          }
+
+          if ! artifacts=$(gh api \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "/repos/${TARGET_REPO}/actions/runs/${RUN_ID}/artifacts" 2>&1); then
+            give_up "could not list the artifacts of run $RUN_ID: $artifacts"
+          fi
+
+          artifact_id=$(printf '%s' "$artifacts" \
+            | jq -r '.artifacts[]? | select(.name == "job-outputs") | .id' 2>/dev/null | head -1) || artifact_id=""
+
+          case "$artifact_id" in
+            "")            give_up "run $RUN_ID published no job-outputs artifact" ;;
+            *[!0-9]* | 0*) give_up "unusable artifact id for run $RUN_ID: $artifact_id" ;;
+          esac
+
+          if ! gh api "/repos/${TARGET_REPO}/actions/artifacts/${artifact_id}/zip" > outputs.zip 2>/dev/null; then
+            give_up "could not download the job-outputs artifact of run $RUN_ID"
+          fi
+          unzip -q -o outputs.zip -d outputs_dir 2>/dev/null || give_up "job-outputs was not a readable zip"
+          json=$(find outputs_dir -name '*.json' -type f 2>/dev/null | head -1) || json=""
+
+          if [ -z "$json" ] || ! jq empty "$json" 2>/dev/null; then
+            give_up "job-outputs held no readable JSON"
+          fi
+
+          jq -C '.' "$json"
+          {
+            echo "has_outputs=true"
+            echo "success=$(jq -r '.test_status.success // false' "$json")"
+            echo "summary=$(jq -r '.test_status.summary // ""' "$json" | tr '\n\r' '  ')"
+            echo "report_url=$(jq -r '.report_url // ""' "$json" | tr -d '\n\r')"
+            echo "slack_message_url=$(jq -r '.slack_message_url // ""' "$json" | tr -d '\n\r')"
+          } >> "$GITHUB_OUTPUT"
+          rm -rf outputs.zip outputs_dir
+
+      - name: Build the verdict
+        id: verdict
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        shell: bash
+        env:
+          SHOULD_RUN: ${{ steps.version.outputs.should_run }}
+          PHASE: ${{ inputs.phase }}
+          SDK_VERSION: ${{ steps.version.outputs.version }}
+          RUN_URL: ${{ steps.dispatch.outputs.run_url }}
+          CONCLUSION: ${{ steps.wait.outputs.conclusion }}
+          HAS_OUTPUTS: ${{ steps.outputs.outputs.has_outputs }}
+          SUCCESS: ${{ steps.outputs.outputs.success }}
+          SUMMARY: ${{ steps.outputs.outputs.summary }}
+          REPORT_URL: ${{ steps.outputs.outputs.report_url }}
+        run: |
+          set -euo pipefail
+
+          if [ "$SHOULD_RUN" = "false" ]; then
+            icon=":fast_forward:"; headline="$PHASE sanity skipped"
+            detail="This release publishes no android artifact, so there is nothing to test."
+          elif [ -z "$SHOULD_RUN" ]; then
+            icon=":warning:"; headline="$PHASE sanity could not run"
+            detail="The job failed before resolving a version. Check the Release Sanity job in this run."
+          elif [ "$HAS_OUTPUTS" = "true" ] && [ "$SUCCESS" = "true" ]; then
+            icon=":white_check_mark:"; headline="$PHASE sanity passed"
+            detail="$SUMMARY"
+          elif [ "$HAS_OUTPUTS" = "true" ]; then
+            icon=":x:"; headline="$PHASE sanity failed"
+            detail="$SUMMARY"
+          elif [ -z "$RUN_URL" ]; then
+            icon=":warning:"; headline="$PHASE sanity could not be started"
+            detail="The suite was never dispatched. Check the Release Sanity job in this run."
+          elif [ "$CONCLUSION" = "timed-out" ]; then
+            icon=":hourglass:"; headline="$PHASE sanity did not finish in time"
+            detail="The suite was still running when this job stopped waiting for it."
+          else
+            icon=":warning:"; headline="$PHASE sanity reported nothing"
+            detail="The suite ended without publishing results. Open the suite run to see why."
+          fi
+
+          msg="${icon} *Kotlin SDK${SDK_VERSION:+ $SDK_VERSION} — ${headline}*"
+          msg+=$'\n'"${detail}"
+          if [ -n "$REPORT_URL" ]; then
+            msg+=$'\n'"<${REPORT_URL}|Full report>"
+            [ -z "$RUN_URL" ] || msg+=" · <${RUN_URL}|Suite run>"
+          elif [ -n "$RUN_URL" ]; then
+            msg+=$'\n'"<${RUN_URL}|Suite run>"
+          fi
+
+          {
+            echo "### ${icon} ${headline}"
+            echo ""
+            [ -z "$SDK_VERSION" ] || echo "- **Version:** \`${SDK_VERSION}\`"
+            echo "- **Result:** ${detail}"
+            [ -z "$REPORT_URL" ] || echo "- **Report:** ${REPORT_URL}"
+            [ -z "$RUN_URL" ] || echo "- **Suite run:** ${RUN_URL}"
+          } >> "${GITHUB_STEP_SUMMARY:-/dev/null}"
+
+          EOF_MARKER=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          echo "text<<${EOF_MARKER}" >> "$GITHUB_OUTPUT"
+          echo "$msg" >> "$GITHUB_OUTPUT"
+          echo "${EOF_MARKER}" >> "$GITHUB_OUTPUT"
+
+          if [ "$SHOULD_RUN" != "false" ] && [ "$SUCCESS" != "true" ]; then
+            echo "::warning::${headline} — ${detail}"
+          fi
+
+      - name: Download release thread info
+        id: thread
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        uses: ./.github/actions/slack-release-notify
+        with:
+          mode: download-artifact
+          release_version: ${{ steps.release-info.outputs.version }}
+          release_ticket_id: ${{ steps.release-info.outputs.ticket_id }}
+
+      - name: Post the verdict to the release thread
+        if: ${{ !cancelled() && steps.thread.outputs.channel_id != '' && steps.thread.outputs.thread_ts != '' }}
+        continue-on-error: true
+        uses: ./.github/actions/slack-release-notify
+        with:
+          mode: post-thread
+          slack_bot_token: ${{ secrets.SLACK_BOT_TOKEN }}
+          channel_id: ${{ steps.thread.outputs.channel_id }}
+          thread_ts: ${{ steps.thread.outputs.thread_ts }}
+          message: ${{ steps.verdict.outputs.text }}

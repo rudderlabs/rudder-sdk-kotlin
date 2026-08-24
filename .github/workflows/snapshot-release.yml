@@ -113,6 +113,20 @@ jobs:
         run: |
           ./scripts/releases/publish-module.sh "$MODULE" snapshot "$SNAPSHOT_MODULES"
 
+  release-sanity:
+    needs: [detect-modules, publish-snapshot]
+    if: needs.detect-modules.outputs.has_modules == 'true'
+    uses: ./.github/workflows/release-sanity.yml
+    with:
+      phase: pre-release
+      snapshot: true
+      affected_modules: ${{ needs.detect-modules.outputs.affected }}
+      release_pr: ${{ github.event.pull_request.html_url }}
+      max_wait_seconds: 3000
+    secrets:
+      RELEASE_PRIVATE_KEY: ${{ secrets.RELEASE_PRIVATE_KEY }}
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
   notify-slack:
     needs: [detect-modules, publish-snapshot]
     if: needs.detect-modules.outputs.has_modules == 'true'
