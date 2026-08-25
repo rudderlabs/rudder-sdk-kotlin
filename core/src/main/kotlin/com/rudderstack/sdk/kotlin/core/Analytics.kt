@@ -44,6 +44,7 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.isAnalyticsActive
 import com.rudderstack.sdk.kotlin.core.internals.utils.isSourceEnabledWithLogging
 import com.rudderstack.sdk.kotlin.core.internals.utils.resolvePreferredPreviousId
 import com.rudderstack.sdk.kotlin.core.plugins.ConsentManagementPlugin
+import com.rudderstack.sdk.kotlin.core.plugins.ContextSnapshotPlugin
 import com.rudderstack.sdk.kotlin.core.plugins.LibraryInfoPlugin
 import com.rudderstack.sdk.kotlin.core.plugins.RudderStackDataplanePlugin
 import kotlinx.coroutines.Job
@@ -93,6 +94,13 @@ open class Analytics protected constructor(
     val consentManagementState = State(
         initialState = ConsentManagementState.initialState(configuration.consentManagement)
     )
+
+    /**
+     * Records SDK-stamped base context values for the terminal context guard.
+     * Registered by platform modules after all SDK context stampers.
+     */
+    @InternalRudderApi
+    val contextSnapshotPlugin = ContextSnapshotPlugin()
 
     private val processEventChannel: Channel<Event> = Channel(Channel.UNLIMITED)
     private var processEventJob: Job? = null
