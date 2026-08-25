@@ -1,22 +1,13 @@
 package com.rudderstack.sdk.kotlin.android.plugins
 
-import com.rudderstack.sdk.kotlin.android.models.consent.ConsentManagementState
+import com.rudderstack.sdk.kotlin.android.models.consent.toConsentContextBlock
 import com.rudderstack.sdk.kotlin.android.utils.consentState
 import com.rudderstack.sdk.kotlin.android.utils.mergeWithHigherPriorityTo
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
+import com.rudderstack.sdk.kotlin.core.internals.models.SDKManagedContextKey
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.add
-import kotlinx.serialization.json.buildJsonArray
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
 import java.util.concurrent.atomic.AtomicBoolean
-
-private const val CONSENT_MANAGEMENT_KEY = "consentManagement"
-private const val PROVIDER_KEY = "provider"
-private const val ALLOWED_CONSENT_IDS_KEY = "allowedConsentIds"
-private const val DENIED_CONSENT_IDS_KEY = "deniedConsentIds"
 
 /**
  * Plugin to stamp the current consent state into `context.consentManagement` on every event.
@@ -44,7 +35,7 @@ internal class ConsentManagementPlugin : Plugin {
         val state = analytics.consentState.value
         if (!state.active) return event
 
-        if (event.context.containsKey(CONSENT_MANAGEMENT_KEY) &&
+        if (event.context.containsKey(SDKManagedContextKey.CONSENT_MANAGEMENT.key) &&
             hasWarnedAboutInjectedKey.compareAndSet(false, true)
         ) {
             analytics.logger.warn(
@@ -53,18 +44,7 @@ internal class ConsentManagementPlugin : Plugin {
             )
         }
 
-        event.context = event.context mergeWithHigherPriorityTo buildConsentBlock(state)
+        event.context = event.context mergeWithHigherPriorityTo state.toConsentContextBlock()
         return event
-    }
-
-    private fun buildConsentBlock(state: ConsentManagementState): JsonObject = buildJsonObject {
-        put(
-            CONSENT_MANAGEMENT_KEY,
-            buildJsonObject {
-                put(PROVIDER_KEY, state.provider.value)
-                put(ALLOWED_CONSENT_IDS_KEY, buildJsonArray { state.allowedConsentIds.forEach { add(it) } })
-                put(DENIED_CONSENT_IDS_KEY, buildJsonArray { state.deniedConsentIds.forEach { add(it) } })
-            }
-        )
     }
 }
