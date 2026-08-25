@@ -39,6 +39,7 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import com.rudderstack.sdk.kotlin.core.internals.utils.isAnalyticsActive
 import com.rudderstack.sdk.kotlin.core.internals.utils.isSourceEnabledWithLogging
 import com.rudderstack.sdk.kotlin.core.internals.utils.resolvePreferredPreviousId
+import com.rudderstack.sdk.kotlin.core.plugins.ContextGuardPlugin
 import com.rudderstack.sdk.kotlin.core.plugins.ContextSnapshotPlugin
 import com.rudderstack.sdk.kotlin.core.plugins.LibraryInfoPlugin
 import com.rudderstack.sdk.kotlin.core.plugins.RudderStackDataplanePlugin
@@ -363,6 +364,8 @@ open class Analytics protected constructor(
      */
     private fun setup() {
         add(LibraryInfoPlugin())
+        // Must stay ahead of all terminal delivery plugins — guards both cloud storage and device-mode fan-out.
+        add(ContextGuardPlugin())
         add(RudderStackDataplanePlugin())
     }
 
