@@ -20,8 +20,42 @@ internal class ContextGuardPlugin : Plugin {
     override lateinit var analytics: Analytics
 
     override suspend fun intercept(event: Event): Event {
+        warnOnBaseKeyOverrides(event)
         enforceConsentStamp(event)
         return event
+    }
+
+    /**
+     * Logs a value-free deprecation warning for each SDK-stamped base key carrying a
+     * customer-supplied value — injected via `RudderOption.customContext` or written by a
+     * customer plugin (detected against the snapshot). Detection only: the event is never
+     * modified, so existing overrides keep working unchanged.
+     */
+    private fun warnOnBaseKeyOverrides(event: Event) {
+        val overriddenKeys = linkedSetOf<String>()
+        overriddenKeys += customContextOverrides(event)
+        overriddenKeys += snapshotOverrides(event)
+
+        overriddenKeys.forEach { overriddenKey ->
+            analytics.logger.warn(
+                "ContextGuardPlugin: Detected a custom value for the SDK-managed context key \"$overriddenKey\"; " +
+                    "overriding SDK-managed context keys is deprecated and will be unsupported in a future major version."
+            )
+        }
+    }
+
+    private fun customContextOverrides(event: Event): List<String> = SDKManagedContextKey.baseKeys
+        .map { it.key }
+        .filter { event.options.customContext.containsKey(it) }
+
+    private fun snapshotOverrides(event: Event): List<String> {
+        val snapshot = analytics.contextSnapshotPlugin.consumeSnapshot(event.messageId) ?: return emptyList()
+        return SDKManagedContextKey.baseKeys
+            .map { it.key }
+            .filter { key ->
+                val stampedValue = snapshot[key]
+                stampedValue != null && event.context[key] != stampedValue
+            }
     }
 
     /**
