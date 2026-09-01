@@ -7,7 +7,10 @@ import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.PluginChain
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collectIndexed
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 
 internal const val MAX_QUEUE_SIZE = 1000
@@ -37,8 +40,16 @@ internal class IntegrationsManagementPlugin : Plugin {
 
         integrationPluginChain.analytics = analytics
         analytics.withIntegrationsDispatcher {
-            analytics.sourceConfigState
-                .observeDispatched()
+            combine(
+                analytics.sourceConfigState.observeDispatched(),
+                analytics.consentManagementState
+                    .observeDispatched()
+                    .onStart { emit(analytics.consentManagementState.value) }
+                    .distinctUntilChanged()
+            ) { sourceConfig, _ -> sourceConfig }
+                // Filtered after the combine: filtering the source-config flow first would keep the
+                // last enabled config cached, so a later consent change would replay it and
+                // reinitialize destinations for a source that has since been disabled.
                 .filter { it.source.isSourceEnabled }
                 .collectIndexed { index, sourceConfig ->
                     integrationPluginChain.applyClosure { plugin ->

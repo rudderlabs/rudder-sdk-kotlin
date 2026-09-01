@@ -3,6 +3,7 @@ package com.rudderstack.sdk.kotlin.core.internals.models.consent
 import com.rudderstack.sdk.kotlin.core.consent.ConsentManagementConfiguration
 import com.rudderstack.sdk.kotlin.core.consent.ConsentManagementProvider
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.StateAction
+import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 
 /**
  * In-memory state holding the current consent values.
@@ -10,8 +11,14 @@ import com.rudderstack.sdk.kotlin.core.internals.statemanagement.StateAction
  * The two consent ID lists are never both empty while [enabled] is `true`: a configuration
  * that enables consent management without supplying either list is a configuration error,
  * and the state is built inactive so the feature behaves as if it had never been enabled.
+ *
+ * @property enabled Whether consent management was enabled at load time.
+ * @property provider The active consent provider.
+ * @property allowedConsentIds The consent IDs the user has granted.
+ * @property deniedConsentIds The consent IDs the user has denied.
  */
-internal data class ConsentManagementState(
+@InternalRudderApi
+data class ConsentManagementState(
     val enabled: Boolean = false,
     val provider: ConsentManagementProvider = ConsentManagementProvider.CUSTOM,
     val allowedConsentIds: List<String> = emptyList(),

@@ -2,11 +2,13 @@ package com.rudderstack.sdk.kotlin.android.plugins.devicemode
 
 import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.utils.MockStandardIntegrationPlugin
+import com.rudderstack.sdk.kotlin.android.plugins.devicemode.utils.ReplaceConsentStateAction
 import com.rudderstack.sdk.kotlin.android.utils.mockAnalytics
 import com.rudderstack.sdk.kotlin.android.utils.readFileAsString
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
+import com.rudderstack.sdk.kotlin.core.internals.models.consent.ConsentManagementState
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.utils.LenientJson
 import io.mockk.coVerify
@@ -42,6 +44,10 @@ class IntegrationsManagementPluginTest {
     )
     private val sourceConfigWithAnotherCorrectApiKey = LenientJson.decodeFromString<SourceConfig>(
         readFileAsString(pathToSourceConfigWithAnotherCorrectApiKey)
+    )
+
+    private val disabledSourceConfig = sourceConfigWithCorrectApiKey.copy(
+        source = sourceConfigWithCorrectApiKey.source.copy(isSourceEnabled = false)
     )
 
     private val integrationsManagementPlugin = IntegrationsManagementPlugin()
@@ -112,6 +118,26 @@ class IntegrationsManagementPluginTest {
             advanceUntilIdle()
 
             verify(exactly = 0) { integrationPlugin.initDestination(any()) }
+        }
+
+    @Test
+    fun `given a disabled source config, when consent changes, then destinations are not reinitialised`() =
+        runTest {
+            integrationsManagementPlugin.setup(mockAnalytics)
+            integrationsManagementPlugin.addIntegration(integrationPlugin)
+            advanceUntilIdle()
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
+            advanceUntilIdle()
+            verify(exactly = 1) { integrationPlugin.initDestination(any()) }
+
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(disabledSourceConfig))
+            advanceUntilIdle()
+            mockAnalytics.consentManagementState.dispatch(
+                ReplaceConsentStateAction(ConsentManagementState(enabled = true, allowedConsentIds = listOf("marketing")))
+            )
+            advanceUntilIdle()
+
+            verify(exactly = 1) { integrationPlugin.initDestination(any()) }
         }
 
     @Test
