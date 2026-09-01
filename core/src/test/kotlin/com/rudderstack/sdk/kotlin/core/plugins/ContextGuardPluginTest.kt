@@ -273,7 +273,6 @@ class ContextGuardPluginTest {
                 provider = ConsentManagementProvider.CUSTOM,
                 allowedConsentIds = allowed,
                 deniedConsentIds = denied,
-                initialized = enabled && (allowed.isNotEmpty() || denied.isNotEmpty()),
             )
         )
     }
