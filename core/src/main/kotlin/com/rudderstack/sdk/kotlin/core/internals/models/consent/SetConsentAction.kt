@@ -25,7 +25,6 @@ internal class SetConsentAction(
         return currentState.copy(
             allowedConsentIds = allowed,
             deniedConsentIds = denied,
-            initialized = true,
         )
     }
 }

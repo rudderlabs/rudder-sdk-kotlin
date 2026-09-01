@@ -29,13 +29,12 @@ class ConsentManagementStateTest {
     // Initial state
 
     @Test
-    fun `given an enabled configuration with a non empty list, when the initial state is built, then it is initialized`() {
+    fun `given an enabled configuration with a non empty list, when the initial state is built, then consent management is active`() {
         val configuration = ConsentManagementConfiguration(enabled = true, allowedConsentIds = listOf("marketing"))
 
         val state = ConsentManagementState.initialState(configuration)
 
         assertTrue(state.enabled)
-        assertTrue(state.initialized)
     }
 
     @Test
@@ -57,7 +56,7 @@ class ConsentManagementStateTest {
     }
 
     @Test
-    fun `given a disabled configuration carrying consent lists, when the initial state is built, then it stays uninitialized`() {
+    fun `given a disabled configuration carrying consent lists, when the initial state is built, then consent management is inactive`() {
         val configuration = ConsentManagementConfiguration(
             enabled = false,
             allowedConsentIds = listOf("marketing"),
@@ -67,7 +66,6 @@ class ConsentManagementStateTest {
         val state = ConsentManagementState.initialState(configuration)
 
         assertFalse(state.enabled)
-        assertFalse(state.initialized)
     }
 
     @Test
