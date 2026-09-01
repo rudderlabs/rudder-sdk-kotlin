@@ -281,6 +281,8 @@ class Analytics(
         add(ScreenInfoPlugin())
         add(TimezoneInfoPlugin())
         add(sessionTrackingPlugin)
+        // Must stay after all SDK context stampers so the snapshot records the SDK's own values.
+        add(contextSnapshotPlugin)
         add(integrationsManagementPlugin)
 
         // Add these plugins at last in chain

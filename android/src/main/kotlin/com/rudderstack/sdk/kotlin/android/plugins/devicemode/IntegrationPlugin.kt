@@ -4,10 +4,13 @@ import com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing.Con
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing.EventFilteringPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing.IntegrationOptionsPlugin
 import com.rudderstack.sdk.kotlin.android.utils.findDestination
+import com.rudderstack.sdk.kotlin.android.utils.mergeWithHigherPriorityTo
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
+import com.rudderstack.sdk.kotlin.core.internals.models.SDKManagedContextKey
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.models.consent.ConsentResolver
+import com.rudderstack.sdk.kotlin.core.internals.models.consent.toConsentContextBlock
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.plugins.EventPlugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
@@ -141,9 +144,31 @@ abstract class IntegrationPlugin : EventPlugin {
             event.copy<Event>()
                 .let { pluginChain.applyPlugins(Plugin.PluginType.PreProcess, it) }
                 ?.let { pluginChain.applyPlugins(Plugin.PluginType.OnProcess, it) }
+                ?.let { refreshConsentStamp(it) }
                 ?.let { handleEvent(it) }
         }
 
+        return event
+    }
+
+    /**
+     * Refreshes `context.consentManagement` from the current consent state just before handoff.
+     *
+     * The device-mode queue drains asynchronously, so the stamp applied on the main chain can be
+     * stale by delivery time; drift here is expected, hence the debug-level log.
+     */
+    private fun refreshConsentStamp(event: Event): Event {
+        val state = analytics.consentManagementState.value
+        if (!state.enabled) return event
+
+        val stamp = state.toConsentContextBlock()
+        val consentKey = SDKManagedContextKey.CONSENT_MANAGEMENT.key
+        if (event.context[consentKey] == stamp[consentKey]) return event
+
+        analytics.logger.debug(
+            "IntegrationPlugin: Refreshed the consent stamp before delivery to destination $key."
+        )
+        event.context = event.context mergeWithHigherPriorityTo stamp
         return event
     }
 
