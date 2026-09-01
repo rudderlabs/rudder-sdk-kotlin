@@ -5,6 +5,7 @@ import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.consent.ConsentResolver
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonObject
 
@@ -24,9 +25,15 @@ internal class ConsentGatePlugin(private val key: String) : Plugin {
     @Volatile
     private var destinationConfig: JsonObject? = null
 
+    private var configJob: Job? = null
+
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
-        listenForConfigChanges()
+        configJob = listenForConfigChanges()
+    }
+
+    override fun teardown() {
+        configJob?.cancel()
     }
 
     override suspend fun intercept(event: Event): Event? {
@@ -40,13 +47,11 @@ internal class ConsentGatePlugin(private val key: String) : Plugin {
         }
     }
 
-    private fun listenForConfigChanges() {
-        analytics.analyticsScope.launch {
-            analytics.sourceConfigState
-                .observeDispatched()
-                .collect { sourceConfig ->
-                    destinationConfig = findDestination(sourceConfig, key)?.destinationConfig
-                }
-        }
+    private fun listenForConfigChanges(): Job = analytics.analyticsScope.launch {
+        analytics.sourceConfigState
+            .observeDispatched()
+            .collect { sourceConfig ->
+                destinationConfig = findDestination(sourceConfig, key)?.destinationConfig
+            }
     }
 }
