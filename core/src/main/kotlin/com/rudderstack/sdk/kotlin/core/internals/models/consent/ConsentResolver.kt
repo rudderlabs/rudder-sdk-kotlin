@@ -34,11 +34,11 @@ internal enum class ConsentResolutionStrategy {
 /**
  * The single consent decision point shared by the initialization and event gates.
  *
- * A pure, stateless, fail-open resolution predicate: missing configuration,
- * malformed entries, and unknown strategies all resolve to consented — gating
- * must never break event delivery because of unexpected data. Only
- * `allowedConsentIds` participate in matching; `deniedConsentIds` are stamped
- * on events but never consulted.
+ * A pure, stateless predicate. Missing configuration and malformed entries fail open and
+ * resolve to consented — gating must never break event delivery because of unexpected data.
+ * An unrecognized or absent resolution strategy does not fail open: it normalizes to `ALL`,
+ * the stricter of the two and the dashboard default. Only `allowedConsentIds` participate in
+ * matching; `deniedConsentIds` are stamped on events but never consulted.
  */
 @InternalRudderApi
 object ConsentResolver {
