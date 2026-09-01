@@ -44,7 +44,7 @@ class ConsentPlugin(
      * Hands the CMP's current choices to the SDK. The new lists fully replace the previous
      * consent state and apply from the next event onward.
      */
-    fun pushCurrentConsent() {
+    private fun pushCurrentConsent() {
         analytics.setConsent(
             ConsentManagementOptions(
                 allowedConsentIds = provider.allowedConsentIds,
