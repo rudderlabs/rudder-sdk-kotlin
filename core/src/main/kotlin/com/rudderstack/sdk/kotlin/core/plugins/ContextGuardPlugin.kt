@@ -4,6 +4,7 @@ import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.SDKManagedContextKey
 import com.rudderstack.sdk.kotlin.core.internals.models.consent.toConsentContextBlock
+import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.utils.mergeWithHigherPriorityTo
 
@@ -44,14 +45,19 @@ internal class ContextGuardPlugin : Plugin {
         }
     }
 
-    private fun customContextOverrides(event: Event): List<String> = SDKManagedContextKey.baseKeys
-        .map { it.key }
+    /** The base keys this platform actually stamps; warning about any other key would be noise. */
+    private val managedBaseKeys: List<String>
+        get() = when (analytics.getPlatformType()) {
+            PlatformType.Mobile -> SDKManagedContextKey.baseKeys
+            PlatformType.Server -> SDKManagedContextKey.coreBaseKeys
+        }.map { it.key }
+
+    private fun customContextOverrides(event: Event): List<String> = managedBaseKeys
         .filter { event.options.customContext.containsKey(it) }
 
     private fun snapshotOverrides(event: Event): List<String> {
         val snapshot = analytics.contextSnapshotPlugin.consumeSnapshot(event.messageId) ?: return emptyList()
-        return SDKManagedContextKey.baseKeys
-            .map { it.key }
+        return managedBaseKeys
             .filter { key ->
                 val stampedValue = snapshot[key]
                 stampedValue != null && event.context[key] != stampedValue
