@@ -237,7 +237,6 @@ private fun consentState(allowed: List<String>) = ConsentManagementState(
     provider = ConsentManagementProvider.CUSTOM,
     allowedConsentIds = allowed,
     deniedConsentIds = emptyList(),
-    initialized = true,
 )
 
 private fun gatedSourceConfig(consents: List<String> = listOf("marketing"), strategy: String = "and"): SourceConfig {

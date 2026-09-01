@@ -51,19 +51,19 @@ object ConsentResolver {
      * @return `true` when the destination may receive events.
      */
     fun resolve(state: ConsentManagementState, destinationConfig: JsonObject?): Boolean {
-        // Rules 1 & 2: disabled, or no consent data supplied yet -> consented.
-        if (!state.enabled || !state.initialized) return true
+        // Rule 1: disabled -> consented.
+        if (!state.enabled) return true
 
-        // Rule 3: first entry matching the active provider; none (or no array) -> consented.
+        // Rule 2: first entry matching the active provider; none (or no array) -> consented.
         val entries = destinationConfig?.get(CONSENT_MANAGEMENT_KEY).asObjectList() ?: emptyList()
         val entry = entries.firstOrNull { it.stringValue(PROVIDER_KEY) == state.provider.value } ?: return true
 
-        // Rule 4: configured consent IDs, trimmed with empties dropped; empty -> consented.
+        // Rule 3: configured consent IDs, trimmed with empties dropped; empty -> consented.
         val configuredIds = (entry[CONSENTS_KEY].asObjectList() ?: emptyList()).mapNotNull { it.stringValue(CONSENT_KEY) }
         val cleanedIds = configuredIds.normalized()
         if (cleanedIds.isEmpty()) return true
 
-        // Rules 5 & 6: normalize the strategy, match against the allowed IDs only.
+        // Rules 4 & 5: normalize the strategy, match against the allowed IDs only.
         return when (ConsentResolutionStrategy.from(entry.stringValue(RESOLUTION_STRATEGY_KEY))) {
             ConsentResolutionStrategy.ALL -> cleanedIds.all { it in state.allowedConsentIds }
             ConsentResolutionStrategy.ANY -> cleanedIds.any { it in state.allowedConsentIds }
