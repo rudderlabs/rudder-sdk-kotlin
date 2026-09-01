@@ -118,7 +118,9 @@ class SetConsentApiTest {
 
     @Test
     fun `given consent management enabled, when setConsent is called, then the state carries the new lists`() {
-        val analytics = provideAnalytics(ConsentManagementConfiguration(enabled = true))
+        val analytics = provideAnalytics(
+            ConsentManagementConfiguration(enabled = true, allowedConsentIds = listOf("analytics"))
+        )
 
         analytics.setConsent(
             ConsentManagementOptions(
@@ -134,7 +136,9 @@ class SetConsentApiTest {
 
     @Test
     fun `given a consent state set at runtime, when reset is called, then the consent state is identical before and after`() {
-        val analytics = provideAnalytics(ConsentManagementConfiguration(enabled = true))
+        val analytics = provideAnalytics(
+            ConsentManagementConfiguration(enabled = true, allowedConsentIds = listOf("analytics"))
+        )
         analytics.setConsent(
             ConsentManagementOptions(
                 allowedConsentIds = listOf("marketing"),

@@ -100,6 +100,13 @@ open class Analytics protected constructor(
 
     init {
         logger.info("Analytics(core): Initialized with configuration: $configuration")
+        if (configuration.consentManagement.enabled && !consentManagementState.value.enabled) {
+            logger.info(
+                "Analytics(core): Consent management is enabled but no consent IDs were supplied; " +
+                    "consent management is inactive for this session. Supply allowedConsentIds or " +
+                    "deniedConsentIds in Configuration."
+            )
+        }
         runForBaseTypeOnly()
         processEvents(storeAnonymousId())
         setup()
