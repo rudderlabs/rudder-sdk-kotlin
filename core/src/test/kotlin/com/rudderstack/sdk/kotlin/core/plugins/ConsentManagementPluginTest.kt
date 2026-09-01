@@ -175,7 +175,6 @@ private fun provideConsentState(
         provider = ConsentManagementProvider.CUSTOM,
         allowedConsentIds = allowed,
         deniedConsentIds = denied,
-        initialized = enabled && (allowed.isNotEmpty() || denied.isNotEmpty()),
     )
 )
 
