@@ -6,11 +6,15 @@ import com.rudderstack.android.sampleapp.BuildConfig
 import com.rudderstack.sampleapp.analytics.customlogger.CustomTimberLogger
 import com.rudderstack.sampleapp.analytics.customplugins.AndroidAdvertisingIdPlugin
 import com.rudderstack.sampleapp.analytics.customplugins.AndroidAdvertisingIdPlugin.Companion.isAdvertisingLibraryAvailable
+import com.rudderstack.sampleapp.analytics.customplugins.ConsentCategoryProvider
+import com.rudderstack.sampleapp.analytics.customplugins.ConsentPlugin
 import com.rudderstack.sampleapp.analytics.customplugins.SampleCustomIntegrationPlugin
 import com.rudderstack.sdk.kotlin.android.Analytics
 import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.android.SessionConfiguration
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.IntegrationPlugin
+import com.rudderstack.sdk.kotlin.core.consent.ConsentManagementConfiguration
+import com.rudderstack.sdk.kotlin.core.consent.ConsentManagementProvider
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
@@ -24,6 +28,12 @@ object RudderAnalyticsUtils {
 
     private val androidAdvertisingIdPlugin = AndroidAdvertisingIdPlugin()
     private val sampleIntegrationPlugin = SampleCustomIntegrationPlugin()
+    private val consentProvider = DemoConsentProvider()
+
+    /** A human-readable summary of the demo CMP's current choices, for the sample UI. */
+    val consentSummary: String
+        get() = "Allowed: ${consentProvider.allowedConsentIds.joinToString(", ")}\n" +
+            "Denied: ${consentProvider.deniedConsentIds.joinToString(", ")}"
 
     /**
      * Initializes the RudderStack Analytics SDK with the application context.
@@ -45,9 +55,16 @@ object RudderAnalyticsUtils {
                 gzipEnabled = true,
                 logger = CustomTimberLogger(),
                 logLevel = Logger.LogLevel.VERBOSE,
+                consentManagement = ConsentManagementConfiguration(
+                    enabled = true,
+                    provider = ConsentManagementProvider.CUSTOM,
+                    allowedConsentIds = consentProvider.allowedConsentIds,
+                    deniedConsentIds = consentProvider.deniedConsentIds,
+                ),
             )
         )
         analytics.add(sampleIntegrationPlugin())
+        analytics.add(ConsentPlugin(provider = consentProvider))
     }
 
     /**
@@ -80,6 +97,13 @@ object RudderAnalyticsUtils {
     }
 
     /**
+     * Flips the demo CMP's consent choices, as if the user changed them in a consent dialog.
+     */
+    fun toggleConsent() {
+        consentProvider.toggleConsent()
+    }
+
+    /**
      * Adds the Android Advertising ID plugin to the analytics instance.
      * This enables tracking and handling of advertising IDs in the analytics flow.
      */
@@ -97,5 +121,28 @@ object RudderAnalyticsUtils {
 
     fun removeAndroidAdvertisingIdPlugin() {
         analytics.remove(androidAdvertisingIdPlugin)
+    }
+}
+
+/**
+ * Stands in for a real CMP in this sample. A production app would back these lists with its
+ * Consent Management Platform's current state and call [onConsentChanged] from its callback.
+ */
+class DemoConsentProvider : ConsentCategoryProvider {
+
+    override var allowedConsentIds: List<String> = listOf("marketing", "analytics")
+        private set
+
+    override var deniedConsentIds: List<String> = listOf("advertising")
+        private set
+
+    override var onConsentChanged: (() -> Unit)? = null
+
+    /** Flips the demo consent set, as if the user changed their choices in the CMP. */
+    fun toggleConsent() {
+        val previouslyAllowed = allowedConsentIds
+        allowedConsentIds = deniedConsentIds
+        deniedConsentIds = previouslyAllowed
+        onConsentChanged?.invoke()
     }
 }

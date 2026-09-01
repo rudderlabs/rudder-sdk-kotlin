@@ -30,6 +30,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     init {
         setupPayloadInterceptorPlugin()
+        _state.update { it.copy(consentSummary = RudderAnalyticsUtils.consentSummary) }
     }
 
     /**
@@ -102,6 +103,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             is MainViewModelState.AnalyticsState.StartSessionWithCustomId -> analytics.startSession(sessionId = 1000000001)
             is MainViewModelState.AnalyticsState.EndSession -> analytics.endSession()
             is MainViewModelState.AnalyticsState.NavigateToScreens -> navigateToScreens()
+            is MainViewModelState.AnalyticsState.UpdateConsent -> updateConsent()
         }
     }
 
@@ -117,6 +119,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _state.update { currentState ->
             currentState.copy(log = "")
         }
+    }
+
+    /**
+     * Flips the demo CMP's choices; the plugin pushes them into the SDK, and the next event
+     * carries the new consent block.
+     */
+    private fun updateConsent() {
+        RudderAnalyticsUtils.toggleConsent()
+        _state.update { it.copy(consentSummary = RudderAnalyticsUtils.consentSummary) }
     }
 
     /**

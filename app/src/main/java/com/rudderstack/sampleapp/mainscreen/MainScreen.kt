@@ -66,6 +66,8 @@ fun MainScreenContent(
         Spacer(modifier = Modifier.height(16.dp))
         ButtonsTemplateTwo(viewModel)
         Spacer(modifier = Modifier.height(16.dp))
+        ConsentSection(viewModel)
+        Spacer(modifier = Modifier.height(16.dp))
         AdvertisingIdSwitch(viewModel)
         Spacer(modifier = Modifier.height(16.dp))
         CreateLogcat(viewModel)
@@ -138,6 +140,36 @@ fun ButtonsTemplateTwo(viewModel: MainViewModel) {
         buttonRows.forEach { row ->
             ButtonRow(names = row, viewModel = viewModel)
         }
+    }
+}
+
+@Composable
+fun ConsentSection(viewModel: MainViewModel) {
+    val state by viewModel.state.collectAsState()
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .wrapContentHeight(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "Consent",
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.align(Alignment.Start),
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = state.consentSummary,
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.align(Alignment.Start),
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        ActionButton(
+            modifier = Modifier.fillMaxWidth(),
+            onClick = { viewModel.onMessageClicked(MainViewModelState.AnalyticsState.UpdateConsent) },
+            eventName = MainViewModelState.AnalyticsState.UpdateConsent.eventName.toString(),
+        )
     }
 }
 
