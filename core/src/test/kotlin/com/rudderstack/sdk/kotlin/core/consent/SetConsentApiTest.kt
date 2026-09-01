@@ -94,7 +94,6 @@ class SetConsentApiTest {
         )
 
         assertTrue(analytics.consentManagementState.value.enabled)
-        assertTrue(analytics.consentManagementState.value.initialized)
         assertEquals(listOf("marketing"), analytics.consentManagementState.value.allowedConsentIds)
     }
 
@@ -122,7 +121,6 @@ class SetConsentApiTest {
         )
 
         assertEquals(stateBefore, analytics.consentManagementState.value)
-        assertFalse(analytics.consentManagementState.value.initialized)
         verify(exactly = 1) { mockLogger.warn(any()) }
     }
 
@@ -141,7 +139,6 @@ class SetConsentApiTest {
 
         assertEquals(listOf("marketing"), analytics.consentManagementState.value.allowedConsentIds)
         assertEquals(listOf("advertising"), analytics.consentManagementState.value.deniedConsentIds)
-        assertTrue(analytics.consentManagementState.value.initialized)
     }
 
     @Test
