@@ -13,6 +13,7 @@ import com.rudderstack.sdk.kotlin.android.SessionConfiguration
 import com.rudderstack.sdk.kotlin.android.SessionConfiguration.Companion.DEFAULT_AUTOMATIC_SESSION_TRACKING
 import com.rudderstack.sdk.kotlin.android.SessionConfiguration.Companion.DEFAULT_UPDATE_SESSION_ON_BACKGROUND_EVENTS
 import com.rudderstack.sdk.kotlin.android.logger.AndroidLogger
+import com.rudderstack.sdk.kotlin.core.consent.ConsentManagementConfiguration
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPolicy
@@ -76,6 +77,13 @@ class ConfigurationBuilder(
     }
 
     /**
+     * Sets the consent management configuration.
+     */
+    override fun setConsentManagement(config: ConsentManagementConfiguration) = apply {
+        super.setConsentManagement(config)
+    }
+
+    /**
      * Sets the control plane URL.
      */
     override fun setControlPlaneUrl(url: String) = apply {
@@ -130,6 +138,7 @@ class ConfigurationBuilder(
             gzipEnabled = coreConfig.gzipEnabled,
             logger = logger,
             logLevel = coreConfig.logLevel,
+            consentManagement = coreConfig.consentManagement,
         )
     }
 }

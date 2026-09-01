@@ -2,6 +2,7 @@
 
 package com.rudderstack.sdk.kotlin.core
 
+import com.rudderstack.sdk.kotlin.core.consent.ConsentManagementOptions
 import com.rudderstack.sdk.kotlin.core.internals.logger.KotlinLogger
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.AliasEvent
@@ -15,6 +16,9 @@ import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.Traits
 import com.rudderstack.sdk.kotlin.core.internals.models.connectivity.ConnectivityState
+import com.rudderstack.sdk.kotlin.core.internals.models.consent.ConsentManagementState
+import com.rudderstack.sdk.kotlin.core.internals.models.consent.ConsentManagementState.Companion.normalized
+import com.rudderstack.sdk.kotlin.core.internals.models.consent.SetConsentAction
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.models.reset.ResetOptions
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.ResetUserIdentityAction
@@ -81,6 +85,13 @@ open class Analytics protected constructor(
     @InternalRudderApi
     val sourceConfigState = State(initialState = SourceConfig.initialState())
 
+    /**
+     * The `consentManagementState` is a [State] that manages the consent values for the analytics instance.
+     */
+    internal val consentManagementState = State(
+        initialState = ConsentManagementState.initialState(configuration.consentManagement)
+    )
+
     private val processEventChannel: Channel<Event> = Channel(Channel.UNLIMITED)
     private var processEventJob: Job? = null
 
@@ -90,6 +101,13 @@ open class Analytics protected constructor(
 
     init {
         logger.info("Analytics(core): Initialized with configuration: $configuration")
+        if (configuration.consentManagement.enabled && !consentManagementState.value.enabled) {
+            logger.info(
+                "Analytics(core): Consent management is enabled but no consent IDs were supplied; " +
+                    "consent management is inactive for this session. Supply allowedConsentIds or " +
+                    "deniedConsentIds in Configuration."
+            )
+        }
         runForBaseTypeOnly()
         processEvents(storeAnonymousId())
         setup()
@@ -409,6 +427,45 @@ open class Analytics protected constructor(
                 entries = options.entries
             )
         }
+    }
+
+    /**
+     * Updates the current consent state with the supplied values.
+     *
+     * The supplied lists fully replace the existing consent state — callers always pass the
+     * complete current state, not a delta. An empty [ConsentManagementOptions] is rejected:
+     * a warning is logged and the current consent state is left unchanged. To record that the
+     * user refused everything, pass the refused categories in
+     * [ConsentManagementOptions.deniedConsentIds].
+     *
+     * This method has no effect while consent management is disabled in [Configuration];
+     * enabling consent management is a load-time decision.
+     *
+     * @param options The consent values to apply.
+     */
+    fun setConsent(options: ConsentManagementOptions) {
+        logger.debug("Analytics(core): setConsent() called")
+        if (!isAnalyticsActive()) return
+
+        if (!consentManagementState.value.enabled) {
+            logger.warn(
+                "Analytics(core): Consent management is disabled; setConsent has no effect. " +
+                    "Enable it via Configuration's consentManagement."
+            )
+            return
+        }
+
+        val allowed = options.allowedConsentIds.normalized()
+        val denied = options.deniedConsentIds.normalized()
+        if (allowed.isEmpty() && denied.isEmpty()) {
+            logger.warn(
+                "Analytics(core): setConsent requires at least one consent ID; the call has no effect. " +
+                    "To deny every category, pass them in deniedConsentIds."
+            )
+            return
+        }
+
+        consentManagementState.dispatch(SetConsentAction(options))
     }
 
     /**

@@ -5,6 +5,7 @@ import androidx.navigation.NavController
 import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.android.Analytics
 import com.rudderstack.sdk.kotlin.android.models.reset.ResetOptions
+import com.rudderstack.sdk.kotlin.core.consent.ConsentManagementOptions
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import io.mockk.MockKAnnotations
@@ -152,6 +153,19 @@ class JavaAnalyticsTest {
         javaAnalytics.remove(plugin)
 
         verify { mockAnalytics.remove(plugin) }
+        confirmVerified(mockAnalytics)
+    }
+
+    @Test
+    fun `when setConsent is called, then it should call the corresponding method on Analytics`() {
+        val options = ConsentManagementOptions(
+            allowedConsentIds = listOf("marketing"),
+            deniedConsentIds = listOf("advertising"),
+        )
+
+        javaAnalytics.setConsent(options)
+
+        verify { mockAnalytics.setConsent(options) }
         confirmVerified(mockAnalytics)
     }
 }

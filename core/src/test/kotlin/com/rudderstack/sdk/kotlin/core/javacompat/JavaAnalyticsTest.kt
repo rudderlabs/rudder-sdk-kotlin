@@ -3,6 +3,7 @@ package com.rudderstack.sdk.kotlin.core.javacompat
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.Configuration
 import com.rudderstack.sdk.kotlin.core.assertMapContents
+import com.rudderstack.sdk.kotlin.core.consent.ConsentManagementOptions
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
 import com.rudderstack.sdk.kotlin.core.internals.models.reset.ResetOptions
@@ -302,6 +303,19 @@ class JavaAnalyticsTest {
         javaAnalytics.reset(options)
 
         verify(exactly = 1) { mockAnalytics.reset(options = options) }
+        confirmVerified(mockAnalytics)
+    }
+
+    @Test
+    fun `when setConsent is called, then it should call the setConsent method on Analytics`() {
+        val options = ConsentManagementOptions(
+            allowedConsentIds = listOf("marketing"),
+            deniedConsentIds = listOf("advertising"),
+        )
+
+        javaAnalytics.setConsent(options)
+
+        verify(exactly = 1) { mockAnalytics.setConsent(options) }
         confirmVerified(mockAnalytics)
     }
 }
