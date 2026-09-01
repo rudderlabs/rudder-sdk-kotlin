@@ -3,7 +3,6 @@ package com.rudderstack.sdk.kotlin.core.internals.models.consent
 import com.rudderstack.sdk.kotlin.core.consent.ConsentManagementOptions
 import com.rudderstack.sdk.kotlin.core.consent.ConsentManagementProvider
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -47,7 +46,7 @@ class SetConsentActionTest {
     }
 
     @Test
-    fun `given a populated consent state, when empty options are reduced, then the state reverts to uninitialized`() {
+    fun `given a populated consent state, when empty options are reduced, then the state is unchanged`() {
         val currentState = ConsentManagementState(
             enabled = true,
             allowedConsentIds = listOf("marketing"),
@@ -58,9 +57,22 @@ class SetConsentActionTest {
 
         val newState = action.reduce(currentState)
 
-        assertTrue(newState.allowedConsentIds.isEmpty())
-        assertTrue(newState.deniedConsentIds.isEmpty())
-        assertFalse(newState.initialized)
+        assertEquals(currentState, newState)
+    }
+
+    @Test
+    fun `given a populated consent state, when options whose ids are only whitespace are reduced, then the state is unchanged`() {
+        val currentState = ConsentManagementState(
+            enabled = true,
+            allowedConsentIds = listOf("marketing"),
+            deniedConsentIds = listOf("advertising"),
+            initialized = true,
+        )
+        val action = SetConsentAction(ConsentManagementOptions(allowedConsentIds = listOf("   ", "")))
+
+        val newState = action.reduce(currentState)
+
+        assertEquals(currentState, newState)
     }
 
     @Test
