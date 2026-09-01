@@ -2,6 +2,7 @@ package com.rudderstack.sdk.kotlin.android.plugins.devicemode
 
 import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.utils.MockStandardIntegrationPlugin
+import com.rudderstack.sdk.kotlin.android.plugins.devicemode.utils.ReplaceConsentStateAction
 import com.rudderstack.sdk.kotlin.android.utils.mergeWithHigherPriorityTo
 import com.rudderstack.sdk.kotlin.android.utils.mockAnalytics
 import com.rudderstack.sdk.kotlin.core.Analytics
@@ -14,7 +15,6 @@ import com.rudderstack.sdk.kotlin.core.internals.models.consent.toConsentContext
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
-import com.rudderstack.sdk.kotlin.core.internals.statemanagement.StateAction
 import com.rudderstack.sdk.kotlin.core.internals.utils.LenientJson
 import io.mockk.every
 import io.mockk.mockk
@@ -118,7 +118,7 @@ class ConsentRestampTest {
                 }
             )
 
-            consentManagementState.dispatch(OverrideConsentStateAction(updatedState))
+            consentManagementState.dispatch(ReplaceConsentStateAction(updatedState))
             sourceConfigState.dispatch(SourceConfig.UpdateAction(gatedSourceConfig()))
             testDispatcher.scheduler.advanceUntilIdle()
 
@@ -177,14 +177,6 @@ private class SpoofConsentPlugin : Plugin {
         event.context = event.context mergeWithHigherPriorityTo spoofedConsentPayload()
         return event
     }
-}
-
-// Replaces the consent state wholesale; the android module cannot reach the core-internal SetConsentAction.
-private class OverrideConsentStateAction(
-    private val newState: ConsentManagementState
-) : StateAction<ConsentManagementState> {
-
-    override fun reduce(currentState: ConsentManagementState): ConsentManagementState = newState
 }
 
 private fun consentState(allowed: List<String>) = ConsentManagementState(
