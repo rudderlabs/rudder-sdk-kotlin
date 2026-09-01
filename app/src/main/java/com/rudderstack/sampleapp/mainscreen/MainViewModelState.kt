@@ -3,7 +3,8 @@ package com.rudderstack.sampleapp.mainscreen
 data class MainViewModelState(
     val log: String = "",
     val state: AnalyticsState? = null,
-    val isAdvertisingIdEnabled: Boolean = false
+    val isAdvertisingIdEnabled: Boolean = false,
+    val consentSummary: String = ""
 
 ) {
     sealed class AnalyticsState(val eventName: String? = "") {
@@ -20,6 +21,7 @@ data class MainViewModelState(
         data object StartSessionWithCustomId : AnalyticsState("Start Session with custom id")
         data object EndSession : AnalyticsState("End Session")
         data object NavigateToScreens : AnalyticsState("Navigate to screens")
+        data object UpdateConsent : AnalyticsState("Update Consent")
     }
 }
 
