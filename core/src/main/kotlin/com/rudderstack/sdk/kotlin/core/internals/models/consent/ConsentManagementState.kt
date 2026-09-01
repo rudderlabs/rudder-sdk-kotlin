@@ -7,8 +7,9 @@ import com.rudderstack.sdk.kotlin.core.internals.statemanagement.StateAction
 /**
  * In-memory state holding the current consent values.
  *
- * [initialized] is `false` until consent values have actually been supplied (via configuration
- * or `setConsent`). While uninitialized, consent evaluation fails open — no destination is blocked.
+ * The two consent ID lists are never both empty while [enabled] is `true`: a configuration
+ * that enables consent management without supplying either list is a configuration error,
+ * and the state is built inactive so the feature behaves as if it had never been enabled.
  */
 internal data class ConsentManagementState(
     val enabled: Boolean = false,
@@ -23,18 +24,20 @@ internal data class ConsentManagementState(
         /**
          * Builds the initial consent state from the load-time [configuration].
          *
-         * Consent IDs are trimmed and empties dropped. The state is initialized only when
-         * enabled and at least one non-empty list was supplied.
+         * Consent IDs are trimmed and empties dropped. Enabling consent management without
+         * supplying either list is a configuration error: the state is built inactive, so the
+         * feature behaves exactly as if it had never been enabled.
          */
         fun initialState(configuration: ConsentManagementConfiguration): ConsentManagementState {
             val allowed = configuration.allowedConsentIds.normalized()
             val denied = configuration.deniedConsentIds.normalized()
+            val active = configuration.enabled && (allowed.isNotEmpty() || denied.isNotEmpty())
             return ConsentManagementState(
-                enabled = configuration.enabled,
+                enabled = active,
                 provider = configuration.provider,
                 allowedConsentIds = allowed,
                 deniedConsentIds = denied,
-                initialized = configuration.enabled && (allowed.isNotEmpty() || denied.isNotEmpty()),
+                initialized = active,
             )
         }
 
