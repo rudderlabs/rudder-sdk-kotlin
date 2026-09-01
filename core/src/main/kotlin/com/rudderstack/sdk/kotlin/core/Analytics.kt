@@ -17,6 +17,7 @@ import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.Traits
 import com.rudderstack.sdk.kotlin.core.internals.models.connectivity.ConnectivityState
 import com.rudderstack.sdk.kotlin.core.internals.models.consent.ConsentManagementState
+import com.rudderstack.sdk.kotlin.core.internals.models.consent.ConsentManagementState.Companion.normalized
 import com.rudderstack.sdk.kotlin.core.internals.models.consent.SetConsentAction
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.models.reset.ResetOptions
@@ -432,8 +433,10 @@ open class Analytics protected constructor(
      * Updates the current consent state with the supplied values.
      *
      * The supplied lists fully replace the existing consent state — callers always pass the
-     * complete current state, not a delta. Passing an empty [ConsentManagementOptions] clears
-     * both lists and reverts consent evaluation to the uninitialized fail-open state.
+     * complete current state, not a delta. An empty [ConsentManagementOptions] is rejected:
+     * a warning is logged and the current consent state is left unchanged. To record that the
+     * user refused everything, pass the refused categories in
+     * [ConsentManagementOptions.deniedConsentIds].
      *
      * This method has no effect while consent management is disabled in [Configuration];
      * enabling consent management is a load-time decision.
@@ -448,6 +451,16 @@ open class Analytics protected constructor(
             logger.warn(
                 "Analytics(core): Consent management is disabled; setConsent has no effect. " +
                     "Enable it via Configuration's consentManagement."
+            )
+            return
+        }
+
+        val allowed = options.allowedConsentIds.normalized()
+        val denied = options.deniedConsentIds.normalized()
+        if (allowed.isEmpty() && denied.isEmpty()) {
+            logger.warn(
+                "Analytics(core): setConsent requires at least one consent ID; the call has no effect. " +
+                    "To deny every category, pass them in deniedConsentIds."
             )
             return
         }
