@@ -17,7 +17,7 @@ import org.junit.jupiter.params.provider.MethodSource
 
 class ConsentResolverTest {
 
-    // Rule 1 & 2: state gates
+    // Rule 1: state gate
 
     @Test
     fun `given consent management disabled, when resolved, then the destination is consented`() {
@@ -26,14 +26,7 @@ class ConsentResolverTest {
         assertTrue(ConsentResolver.resolve(state, destinationConfig(entry())))
     }
 
-    @Test
-    fun `given enabled but uninitialized state, when resolved, then the destination is consented`() {
-        val state = consentedState(allowed = listOf("something-else")).copy(initialized = false)
-
-        assertTrue(ConsentResolver.resolve(state, destinationConfig(entry())))
-    }
-
-    // Rule 3: entry lookup
+    // Rule 2: entry lookup
 
     @Test
     fun `given a null destination config, when resolved, then the destination is consented`() {
@@ -82,7 +75,7 @@ class ConsentResolverTest {
         assertTrue(ConsentResolver.resolve(consentedState(allowed = listOf("something-else")), config))
     }
 
-    // Rule 4: configured ids
+    // Rule 3: configured ids
 
     @Test
     fun `given an entry with empty consents, when resolved, then the destination is consented`() {
@@ -105,7 +98,7 @@ class ConsentResolverTest {
         assertTrue(ConsentResolver.resolve(consentedState(allowed = listOf("marketing")), config))
     }
 
-    // Rules 5 & 6: strategy matching
+    // Rules 4 & 5: strategy matching
 
     @ParameterizedTest(name = "given strategy \"{0}\", when one of two ids is allowed, then consented is {1}")
     @MethodSource("strategyAliases")
@@ -214,7 +207,6 @@ private fun consentedState(
     provider = ConsentManagementProvider.CUSTOM,
     allowedConsentIds = allowed,
     deniedConsentIds = denied,
-    initialized = true,
 )
 
 private fun destinationConfig(vararg entries: JsonObject): JsonObject = buildJsonObject {
