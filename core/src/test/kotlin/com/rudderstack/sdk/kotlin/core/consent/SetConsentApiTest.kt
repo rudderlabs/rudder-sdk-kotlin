@@ -99,6 +99,16 @@ class SetConsentApiTest {
     }
 
     @Test
+    fun `given consent management enabled with no consent ids, when analytics is created, then consent management is inactive`() {
+        val mockLogger = mockAnalyticsConfiguration.logger
+
+        val analytics = provideAnalytics(ConsentManagementConfiguration(enabled = true))
+
+        assertFalse(analytics.consentManagementState.value.enabled)
+        verify(exactly = 1) { mockLogger.info(match { it.contains("inactive for this session") }) }
+    }
+
+    @Test
     fun `given consent management disabled, when setConsent is called, then the state is unchanged and a warning is logged`() {
         val analytics = provideAnalytics(ConsentManagementConfiguration(enabled = false))
         val mockLogger = mockAnalyticsConfiguration.logger
