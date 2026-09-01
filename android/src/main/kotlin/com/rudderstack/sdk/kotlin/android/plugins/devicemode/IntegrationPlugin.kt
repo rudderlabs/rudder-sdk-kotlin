@@ -133,7 +133,7 @@ abstract class IntegrationPlugin : EventPlugin {
 
     private fun notifyDestinationFailure(errorMessage: String, throwable: Throwable? = null) {
         analytics.logger.warn("IntegrationPlugin: $errorMessage")
-        safelyUpdateOnFailureAndNotify(throwable ?: IllegalStateException(errorMessage))
+        notifyFailureAndMarkNotReady(throwable ?: IllegalStateException(errorMessage))
     }
 
     final override suspend fun intercept(event: Event): Event {
@@ -233,13 +233,22 @@ abstract class IntegrationPlugin : EventPlugin {
         )
     }
 
-    private fun safelyUpdateOnFailureAndNotify(throwable: Throwable) {
-        safelyUpdateAndApplyBlock(
-            destinationConfig = emptyJsonObject,
-            block = {
-                analytics.logger.debug("IntegrationPlugin: Destination $key updated with empty destinationConfig.")
-                this.isDestinationReady = false
-                notifyCallbacks(Result.Failure(throwable))
+    /**
+     * Marks the destination not ready and reports [throwable] to the ready callbacks.
+     *
+     * The destination is deliberately not updated here: pushing a config into a destination that is
+     * being declared failed can throw on integrations whose config has required fields, which would
+     * replace the reported reason with a parse error. Notification stays wrapped so a throwing
+     * customer callback cannot escape into the re-evaluation coroutine.
+     */
+    private fun notifyFailureAndMarkNotReady(throwable: Throwable) {
+        this.isDestinationReady = false
+        safelyExecute(
+            block = { notifyCallbacks(Result.Failure(throwable)) },
+            onException = { exception ->
+                analytics.logger.error(
+                    "IntegrationPlugin: Failed to notify destination $key callbacks. Error: ${exception.message}"
+                )
             }
         )
     }

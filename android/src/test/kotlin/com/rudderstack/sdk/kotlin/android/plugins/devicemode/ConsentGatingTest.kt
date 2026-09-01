@@ -81,6 +81,44 @@ class ConsentGatingTest {
         }
 
     @Test
+    fun `given a denied destination whose update throws, when initialized, then the callback still reports consent denial`() =
+        runTest(testDispatcher) {
+            stubConsentState(consentState(allowed = listOf("something-else")))
+            plugin.setup(mockAnalytics)
+            every { plugin.update(any()) } throws IllegalArgumentException("Field 'appID' is required")
+            var receivedResult: DestinationResult? = null
+            plugin.onDestinationReady { _, result -> receivedResult = result }
+
+            plugin.initDestination(gatedSourceConfig())
+
+            assertFalse(plugin.isDestinationReady)
+            assertTrue((receivedResult as? Result.Failure)?.error is ConsentDeniedException)
+        }
+
+    @Test
+    fun `given a denied destination, when initialized, then the destination is never updated`() =
+        runTest(testDispatcher) {
+            stubConsentState(consentState(allowed = listOf("something-else")))
+            plugin.setup(mockAnalytics)
+
+            plugin.initDestination(gatedSourceConfig())
+
+            verify(exactly = 0) { plugin.update(any()) }
+        }
+
+    @Test
+    fun `given a consent denied callback that throws, when initialized, then the exception does not escape`() =
+        runTest(testDispatcher) {
+            stubConsentState(consentState(allowed = listOf("something-else")))
+            plugin.setup(mockAnalytics)
+            plugin.onDestinationReady { _, _ -> throw IllegalStateException("callback blew up") }
+
+            plugin.initDestination(gatedSourceConfig())
+
+            assertFalse(plugin.isDestinationReady)
+        }
+
+    @Test
     fun `given consent management disabled, when a gated destination is initialized, then behavior is unchanged`() =
         runTest(testDispatcher) {
             stubConsentState(ConsentManagementState())
