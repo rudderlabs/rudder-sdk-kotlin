@@ -41,14 +41,16 @@ internal class IntegrationsManagementPlugin : Plugin {
         integrationPluginChain.analytics = analytics
         analytics.withIntegrationsDispatcher {
             combine(
-                analytics.sourceConfigState
-                    .observeDispatched()
-                    .filter { it.source.isSourceEnabled },
+                analytics.sourceConfigState.observeDispatched(),
                 analytics.consentManagementState
                     .observeDispatched()
                     .onStart { emit(analytics.consentManagementState.value) }
                     .distinctUntilChanged()
             ) { sourceConfig, _ -> sourceConfig }
+                // Filtered after the combine: filtering the source-config flow first would keep the
+                // last enabled config cached, so a later consent change would replay it and
+                // reinitialize destinations for a source that has since been disabled.
+                .filter { it.source.isSourceEnabled }
                 .collectIndexed { index, sourceConfig ->
                     integrationPluginChain.applyClosure { plugin ->
                         if (plugin is IntegrationPlugin) {
