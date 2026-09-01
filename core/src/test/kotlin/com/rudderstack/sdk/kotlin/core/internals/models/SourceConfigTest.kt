@@ -245,7 +245,7 @@ private fun provideServerConfigWithoutMetrics() = provideSourceConfig(
     consentManagementMetadata = provideFixtureConsentMetadata(),
 )
 
-// The fixture captures carry consent provider metadata at the response root.
+// The captured source configs carry consent provider metadata at the response root.
 private fun provideFixtureConsentMetadata() = ConsentManagementMetadata(
     providers = listOf(
         ConsentProviderEntry(provider = "oneTrust", resolutionStrategy = "and"),
