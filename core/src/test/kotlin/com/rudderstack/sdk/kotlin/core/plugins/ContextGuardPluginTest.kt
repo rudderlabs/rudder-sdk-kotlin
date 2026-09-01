@@ -7,6 +7,7 @@ import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.consent.ConsentManagementState
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
+import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import io.mockk.MockKAnnotations
 import io.mockk.every
@@ -54,6 +55,7 @@ class ContextGuardPluginTest {
         MockKAnnotations.init(this, relaxed = true)
         snapshotPlugin = ContextSnapshotPlugin()
         every { mockAnalytics.contextSnapshotPlugin } returns snapshotPlugin
+        every { mockAnalytics.getPlatformType() } returns PlatformType.Mobile
         plugin = ContextGuardPlugin()
         plugin.setup(mockAnalytics)
     }
@@ -142,6 +144,34 @@ class ContextGuardPluginTest {
         }
 
     // Base-key override detection
+
+    @ParameterizedTest
+    @ValueSource(strings = ["app", "device", "locale", "network", "os", "screen", "timezone", "sessionId"])
+    fun `given a server platform, when a mobile base key is injected via customContext, then no warning is logged`(
+        baseKey: String,
+    ) = runTest {
+        every { mockAnalytics.getPlatformType() } returns PlatformType.Server
+        stubConsentState(enabled = false)
+        val event = provideEvent(customContext = buildJsonObject { put(baseKey, CUSTOM_VALUE_SENTINEL) })
+
+        plugin.intercept(event)
+
+        verify(exactly = 0) { mockAnalytics.logger.warn(any()) }
+    }
+
+    @Test
+    fun `given a server platform, when library is injected via customContext, then it still warns`() =
+        runTest {
+            every { mockAnalytics.getPlatformType() } returns PlatformType.Server
+            stubConsentState(enabled = false)
+            val event = provideEvent(customContext = buildJsonObject { put("library", CUSTOM_VALUE_SENTINEL) })
+
+            plugin.intercept(event)
+
+            val messages = mutableListOf<String>()
+            verify(exactly = 1) { mockAnalytics.logger.warn(capture(messages)) }
+            assertTrue(messages.single().contains("\"library\""))
+        }
 
     @ParameterizedTest
     @ValueSource(strings = ["app", "device", "library", "locale", "network", "os", "screen", "timezone", "sessionId"])
