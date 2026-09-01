@@ -192,7 +192,6 @@ private fun consentState(allowed: List<String>) = ConsentManagementState(
     provider = ConsentManagementProvider.CUSTOM,
     allowedConsentIds = allowed,
     deniedConsentIds = emptyList(),
-    initialized = true,
 )
 
 private fun expectedStamp(state: ConsentManagementState) = state.toConsentContextBlock()[CONSENT_MANAGEMENT_KEY]
