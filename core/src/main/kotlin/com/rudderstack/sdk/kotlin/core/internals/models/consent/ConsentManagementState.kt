@@ -16,7 +16,6 @@ internal data class ConsentManagementState(
     val provider: ConsentManagementProvider = ConsentManagementProvider.CUSTOM,
     val allowedConsentIds: List<String> = emptyList(),
     val deniedConsentIds: List<String> = emptyList(),
-    val initialized: Boolean = false,
 ) {
 
     companion object {
@@ -37,7 +36,6 @@ internal data class ConsentManagementState(
                 provider = configuration.provider,
                 allowedConsentIds = allowed,
                 deniedConsentIds = denied,
-                initialized = active,
             )
         }
 
