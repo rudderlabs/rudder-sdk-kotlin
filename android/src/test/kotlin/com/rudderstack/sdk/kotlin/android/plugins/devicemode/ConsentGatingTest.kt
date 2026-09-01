@@ -2,6 +2,7 @@ package com.rudderstack.sdk.kotlin.android.plugins.devicemode
 
 import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.utils.MockStandardIntegrationPlugin
+import com.rudderstack.sdk.kotlin.android.plugins.devicemode.utils.ReplaceConsentStateAction
 import com.rudderstack.sdk.kotlin.android.utils.mockAnalytics
 import com.rudderstack.sdk.kotlin.core.consent.ConsentManagementProvider
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
@@ -260,14 +261,6 @@ class ConsentGatingTest {
 
     private fun trackEvent(name: String): TrackEvent =
         TrackEvent(name, emptyJsonObject).also { applyBaseDataToEvent(it) }
-}
-
-// Replaces the consent state wholesale; the android module cannot reach the core-internal SetConsentAction.
-private class ReplaceConsentStateAction(
-    private val newState: ConsentManagementState
-) : StateAction<ConsentManagementState> {
-
-    override fun reduce(currentState: ConsentManagementState): ConsentManagementState = newState
 }
 
 private fun consentState(allowed: List<String>) = ConsentManagementState(
