@@ -7,8 +7,8 @@ import com.rudderstack.sdk.kotlin.core.internals.models.consent.ConsentManagemen
  * Replaces the consent lists in [ConsentManagementState].
  *
  * This is a full replacement, not a merge: the supplied lists overwrite both existing lists.
- * Empty options clear everything and revert the state to uninitialized (fail-open), matching
- * the JS SDK. [ConsentManagementState.enabled] and [ConsentManagementState.provider] are
+ * An update carrying no consent IDs at all is rejected — the current state is returned
+ * unchanged. [ConsentManagementState.enabled] and [ConsentManagementState.provider] are
  * load-time settings and are never modified at runtime.
  */
 internal class SetConsentAction(
@@ -20,10 +20,12 @@ internal class SetConsentAction(
 
         val allowed = options.allowedConsentIds.normalized()
         val denied = options.deniedConsentIds.normalized()
+        if (allowed.isEmpty() && denied.isEmpty()) return currentState
+
         return currentState.copy(
             allowedConsentIds = allowed,
             deniedConsentIds = denied,
-            initialized = allowed.isNotEmpty() || denied.isNotEmpty(),
+            initialized = true,
         )
     }
 }

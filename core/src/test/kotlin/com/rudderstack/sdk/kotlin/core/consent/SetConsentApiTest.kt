@@ -135,6 +135,20 @@ class SetConsentApiTest {
     }
 
     @Test
+    fun `given consent management enabled, when setConsent is called with empty options, then the state is unchanged and a warning is logged`() {
+        val analytics = provideAnalytics(
+            ConsentManagementConfiguration(enabled = true, allowedConsentIds = listOf("analytics"))
+        )
+        val mockLogger = mockAnalyticsConfiguration.logger
+        val stateBefore = analytics.consentManagementState.value
+
+        analytics.setConsent(ConsentManagementOptions())
+
+        assertEquals(stateBefore, analytics.consentManagementState.value)
+        verify(exactly = 1) { mockLogger.warn(any()) }
+    }
+
+    @Test
     fun `given a consent state set at runtime, when reset is called, then the consent state is identical before and after`() {
         val analytics = provideAnalytics(
             ConsentManagementConfiguration(enabled = true, allowedConsentIds = listOf("analytics"))
