@@ -1,9 +1,21 @@
-package com.rudderstack.sdk.kotlin.core.consent
+@file:Suppress("DEPRECATION")
 
-import com.rudderstack.sdk.kotlin.core.Configuration
+package com.rudderstack.sdk.kotlin.android.consent
+
+import android.app.Application
+import com.rudderstack.sdk.kotlin.android.Configuration
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
+import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import io.mockk.MockKAnnotations
+import io.mockk.every
+import io.mockk.impl.annotations.MockK
+import io.mockk.mockkObject
+import io.mockk.unmockkAll
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 private const val TEST_WRITE_KEY = "test-write-key"
@@ -11,9 +23,29 @@ private const val TEST_DATA_PLANE_URL = "https://test-data-plane.com"
 
 class ConsentManagementConfigurationTest {
 
+    @MockK
+    private lateinit var mockApplication: Application
+
+    @MockK
+    private lateinit var mockLogger: Logger
+
+    @BeforeEach
+    fun setUp() {
+        MockKAnnotations.init(this, relaxed = true)
+
+        mockkObject(LoggerAnalytics)
+        every { LoggerAnalytics.logger } returns mockLogger
+    }
+
+    @AfterEach
+    fun tearDown() {
+        unmockkAll()
+    }
+
     @Test
     fun `given no consent configuration, when a configuration is created, then consent management is disabled with defaults`() {
         val configuration = Configuration(
+            application = mockApplication,
             writeKey = TEST_WRITE_KEY,
             dataPlaneUrl = TEST_DATA_PLANE_URL,
         )
@@ -34,6 +66,7 @@ class ConsentManagementConfigurationTest {
         )
 
         val configuration = Configuration(
+            application = mockApplication,
             writeKey = TEST_WRITE_KEY,
             dataPlaneUrl = TEST_DATA_PLANE_URL,
             consentManagement = consentManagement,

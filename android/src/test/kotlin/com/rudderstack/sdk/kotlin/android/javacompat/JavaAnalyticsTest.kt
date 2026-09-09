@@ -5,7 +5,7 @@ import androidx.navigation.NavController
 import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.android.Analytics
 import com.rudderstack.sdk.kotlin.android.models.reset.ResetOptions
-import com.rudderstack.sdk.kotlin.core.consent.ConsentManagementOptions
+import com.rudderstack.sdk.kotlin.android.consent.ConsentManagementOptions
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import io.mockk.MockKAnnotations
