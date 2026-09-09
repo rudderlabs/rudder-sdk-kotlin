@@ -1,12 +1,12 @@
-package com.rudderstack.sdk.kotlin.core.plugins
+package com.rudderstack.sdk.kotlin.android.plugins
 
-import com.rudderstack.sdk.kotlin.core.Analytics
-import com.rudderstack.sdk.kotlin.core.consent.ConsentManagementOptions
-import com.rudderstack.sdk.kotlin.core.consent.ConsentManagementProvider
+import com.rudderstack.sdk.kotlin.android.Analytics
+import com.rudderstack.sdk.kotlin.android.consent.ConsentManagementOptions
+import com.rudderstack.sdk.kotlin.android.consent.ConsentManagementProvider
+import com.rudderstack.sdk.kotlin.android.models.consent.ConsentManagementState
+import com.rudderstack.sdk.kotlin.android.models.consent.SetConsentAction
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
-import com.rudderstack.sdk.kotlin.core.internals.models.consent.ConsentManagementState
-import com.rudderstack.sdk.kotlin.core.internals.models.consent.SetConsentAction
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import io.mockk.MockKAnnotations
