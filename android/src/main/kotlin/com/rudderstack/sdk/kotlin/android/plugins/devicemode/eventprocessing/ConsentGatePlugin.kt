@@ -1,9 +1,10 @@
 package com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing
 
+import com.rudderstack.sdk.kotlin.android.models.consent.ConsentResolver
+import com.rudderstack.sdk.kotlin.android.utils.consentState
 import com.rudderstack.sdk.kotlin.android.utils.findDestination
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
-import com.rudderstack.sdk.kotlin.core.internals.models.consent.ConsentResolver
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -37,7 +38,7 @@ internal class ConsentGatePlugin(private val key: String) : Plugin {
     }
 
     override suspend fun intercept(event: Event): Event? {
-        return if (ConsentResolver.resolve(analytics.consentManagementState.value, destinationConfig)) {
+        return if (ConsentResolver.resolve(analytics.consentState.value, destinationConfig)) {
             event
         } else {
             analytics.logger.debug(

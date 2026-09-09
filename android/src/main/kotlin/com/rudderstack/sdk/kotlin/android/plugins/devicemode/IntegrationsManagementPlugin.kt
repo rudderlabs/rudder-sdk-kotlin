@@ -1,5 +1,6 @@
 package com.rudderstack.sdk.kotlin.android.plugins.devicemode
 
+import com.rudderstack.sdk.kotlin.android.utils.consentState
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
@@ -42,9 +43,9 @@ internal class IntegrationsManagementPlugin : Plugin {
         analytics.withIntegrationsDispatcher {
             combine(
                 analytics.sourceConfigState.observeDispatched(),
-                analytics.consentManagementState
+                analytics.consentState
                     .observeDispatched()
-                    .onStart { emit(analytics.consentManagementState.value) }
+                    .onStart { emit(analytics.consentState.value) }
                     .distinctUntilChanged()
             ) { sourceConfig, _ -> sourceConfig }
                 // Filtered after the combine: filtering the source-config flow first would keep the
