@@ -3,7 +3,7 @@
 package com.rudderstack.sdk.kotlin.android
 
 import android.app.Application
-import com.rudderstack.sdk.kotlin.core.consent.ConsentManagementConfiguration
+import com.rudderstack.sdk.kotlin.android.consent.ConsentManagementConfiguration
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import io.mockk.MockKAnnotations
@@ -42,7 +42,7 @@ class ConfigurationTest {
     }
 
     @Test
-    fun `given no consent configuration, when an android configuration is created, then it inherits the disabled default`() {
+    fun `given no consent configuration, when an android configuration is created, then it carries the disabled default`() {
         val configuration = Configuration(
             application = mockApplication,
             writeKey = TEST_WRITE_KEY,
@@ -54,7 +54,7 @@ class ConfigurationTest {
     }
 
     @Test
-    fun `given a consent configuration, when an android configuration is created, then it inherits the consent management field`() {
+    fun `given a consent configuration, when an android configuration is created, then it carries the consent management field`() {
         val consentManagement = ConsentManagementConfiguration(
             enabled = true,
             allowedConsentIds = listOf("marketing"),

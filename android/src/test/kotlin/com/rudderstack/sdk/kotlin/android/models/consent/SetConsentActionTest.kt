@@ -1,7 +1,7 @@
-package com.rudderstack.sdk.kotlin.core.internals.models.consent
+package com.rudderstack.sdk.kotlin.android.models.consent
 
-import com.rudderstack.sdk.kotlin.core.consent.ConsentManagementOptions
-import com.rudderstack.sdk.kotlin.core.consent.ConsentManagementProvider
+import com.rudderstack.sdk.kotlin.android.consent.ConsentManagementOptions
+import com.rudderstack.sdk.kotlin.android.consent.ConsentManagementProvider
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test

@@ -1,24 +1,34 @@
-package com.rudderstack.sdk.kotlin.core.consent
+package com.rudderstack.sdk.kotlin.android.consent
 
-import com.rudderstack.sdk.kotlin.core.Analytics
+import android.app.Application
+import com.rudderstack.sdk.kotlin.android.Analytics
+import com.rudderstack.sdk.kotlin.android.Configuration
+import com.rudderstack.sdk.kotlin.android.plugins.DeviceInfoPlugin
+import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleManagementPlugin
+import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ProcessLifecycleManagementPlugin
 import com.rudderstack.sdk.kotlin.core.AnalyticsConfiguration
-import com.rudderstack.sdk.kotlin.core.Configuration
-import com.rudderstack.sdk.kotlin.core.SourceConfigManager
-import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
+import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
+import com.rudderstack.sdk.kotlin.core.internals.utils.DateTimeUtils
 import com.rudderstack.sdk.kotlin.core.provideAnalyticsConfiguration
-import com.rudderstack.sdk.kotlin.core.provideSourceConfigManager
 import io.mockk.MockKAnnotations
+import io.mockk.Runs
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
+import io.mockk.just
+import io.mockk.mockkConstructor
+import io.mockk.mockkObject
 import io.mockk.mockkStatic
 import io.mockk.unmockkAll
 import io.mockk.verify
-import kotlinx.coroutines.CompletableJob
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -28,9 +38,13 @@ import org.junit.jupiter.api.Test
 
 private const val TEST_WRITE_KEY = "test-write-key"
 private const val TEST_DATA_PLANE_URL = "https://test-data-plane.com"
+private const val TEST_SYSTEM_TIME = 1234567890000L
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SetConsentApiTest {
+
+    @MockK
+    private lateinit var mockApplication: Application
 
     @MockK
     private lateinit var mockAnalyticsConfiguration: AnalyticsConfiguration
@@ -39,48 +53,55 @@ class SetConsentApiTest {
     private lateinit var mockStorage: Storage
 
     @MockK
-    private lateinit var mockConnectivityState: State<Boolean>
-
-    @MockK
-    private lateinit var mockSourceConfigManager: SourceConfigManager
+    private lateinit var mockLogger: Logger
 
     private val testDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
-    private lateinit var mockAnalyticsJob: CompletableJob
 
     @BeforeEach
     fun setup() {
         MockKAnnotations.init(this, relaxed = true)
+        // Although we don't need this in the current test class, it is needed due to the know issue with the use of Dispatchers.main.
+        Dispatchers.setMain(testDispatcher)
 
-        mockAnalyticsJob = SupervisorJob()
+        mockkConstructor(DeviceInfoPlugin::class)
+        every { anyConstructed<DeviceInfoPlugin>().getDeviceInfo() } returns emptyJsonObject
+
+        mockkConstructor(ProcessLifecycleManagementPlugin::class)
+        every { anyConstructed<ProcessLifecycleManagementPlugin>().setup(any()) } just Runs
+
+        mockkConstructor(ActivityLifecycleManagementPlugin::class)
+        every { anyConstructed<ActivityLifecycleManagementPlugin>().setup(any()) } just Runs
 
         mockkStatic(::provideAnalyticsConfiguration)
         every { provideAnalyticsConfiguration(any(), any()) } returns mockAnalyticsConfiguration
         mockAnalyticsConfiguration.apply {
+            every { logger } returns mockLogger
             every { analyticsScope } returns testScope
             every { analyticsDispatcher } returns testDispatcher
             every { fileStorageDispatcher } returns testDispatcher
             every { keyValueStorageDispatcher } returns testDispatcher
             every { networkDispatcher } returns testDispatcher
-
-            mockkStatic(::provideSourceConfigManager)
-            every { provideSourceConfigManager(any(), any()) } returns mockSourceConfigManager
-            every { sourceConfigManager } returns mockSourceConfigManager
-
+            every { integrationsDispatcher } returns testDispatcher
             every { storage } returns mockStorage
-            every { connectivityState } returns mockConnectivityState
-            every { analyticsJob } returns mockAnalyticsJob
         }
+
+        mockkObject(DateTimeUtils)
+        every { DateTimeUtils.getSystemCurrentTime() } returns TEST_SYSTEM_TIME
+
+        mockkObject(LoggerAnalytics)
     }
 
     @AfterEach
     fun tearDown() {
+        Dispatchers.resetMain()
         unmockkAll()
     }
 
     private fun provideAnalytics(consentManagement: ConsentManagementConfiguration): Analytics =
         Analytics(
             configuration = Configuration(
+                application = mockApplication,
                 writeKey = TEST_WRITE_KEY,
                 dataPlaneUrl = TEST_DATA_PLANE_URL,
                 consentManagement = consentManagement,
@@ -99,8 +120,6 @@ class SetConsentApiTest {
 
     @Test
     fun `given consent management enabled with no consent ids, when analytics is created, then consent management is inactive`() {
-        val mockLogger = mockAnalyticsConfiguration.logger
-
         val analytics = provideAnalytics(ConsentManagementConfiguration(enabled = true))
 
         assertFalse(analytics.consentManagementState.value.enabled)
@@ -110,7 +129,6 @@ class SetConsentApiTest {
     @Test
     fun `given consent management disabled, when setConsent is called, then the state is unchanged and a warning is logged`() {
         val analytics = provideAnalytics(ConsentManagementConfiguration(enabled = false))
-        val mockLogger = mockAnalyticsConfiguration.logger
         val stateBefore = analytics.consentManagementState.value
 
         analytics.setConsent(
@@ -146,7 +164,6 @@ class SetConsentApiTest {
         val analytics = provideAnalytics(
             ConsentManagementConfiguration(enabled = true, allowedConsentIds = listOf("analytics"))
         )
-        val mockLogger = mockAnalyticsConfiguration.logger
         val stateBefore = analytics.consentManagementState.value
 
         analytics.setConsent(ConsentManagementOptions())
