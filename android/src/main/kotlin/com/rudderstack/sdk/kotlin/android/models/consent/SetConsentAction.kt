@@ -1,7 +1,7 @@
-package com.rudderstack.sdk.kotlin.core.internals.models.consent
+package com.rudderstack.sdk.kotlin.android.models.consent
 
-import com.rudderstack.sdk.kotlin.core.consent.ConsentManagementOptions
-import com.rudderstack.sdk.kotlin.core.internals.models.consent.ConsentManagementState.Companion.normalized
+import com.rudderstack.sdk.kotlin.android.consent.ConsentManagementOptions
+import com.rudderstack.sdk.kotlin.android.models.consent.ConsentManagementState.Companion.normalized
 
 /**
  * Replaces the consent lists in [ConsentManagementState].

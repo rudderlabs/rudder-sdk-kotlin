@@ -12,8 +12,8 @@ import com.rudderstack.sdk.kotlin.android.DEFAULT_SESSION_TIMEOUT_IN_MILLIS
 import com.rudderstack.sdk.kotlin.android.SessionConfiguration
 import com.rudderstack.sdk.kotlin.android.SessionConfiguration.Companion.DEFAULT_AUTOMATIC_SESSION_TRACKING
 import com.rudderstack.sdk.kotlin.android.SessionConfiguration.Companion.DEFAULT_UPDATE_SESSION_ON_BACKGROUND_EVENTS
+import com.rudderstack.sdk.kotlin.android.consent.ConsentManagementConfiguration
 import com.rudderstack.sdk.kotlin.android.logger.AndroidLogger
-import com.rudderstack.sdk.kotlin.core.consent.ConsentManagementConfiguration
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPolicy
@@ -40,6 +40,7 @@ class ConfigurationBuilder(
 
     private var logger: Logger = LoggerAnalytics.logger ?: AndroidLogger()
     private var sessionConfiguration: SessionConfiguration = SessionConfigurationBuilder().build()
+    private var consentManagement: ConsentManagementConfiguration = ConsentManagementConfiguration()
 
     /**
      * Sets whether to track application lifecycle events.
@@ -79,8 +80,8 @@ class ConfigurationBuilder(
     /**
      * Sets the consent management configuration.
      */
-    override fun setConsentManagement(config: ConsentManagementConfiguration) = apply {
-        super.setConsentManagement(config)
+    fun setConsentManagement(config: ConsentManagementConfiguration) = apply {
+        consentManagement = config
     }
 
     /**
@@ -138,7 +139,7 @@ class ConfigurationBuilder(
             gzipEnabled = coreConfig.gzipEnabled,
             logger = logger,
             logLevel = coreConfig.logLevel,
-            consentManagement = coreConfig.consentManagement,
+            consentManagement = consentManagement,
         )
     }
 }

@@ -3,9 +3,9 @@
 package com.rudderstack.sdk.kotlin.android
 
 import android.app.Application
+import com.rudderstack.sdk.kotlin.android.consent.ConsentManagementConfiguration
 import com.rudderstack.sdk.kotlin.android.logger.AndroidLogger
 import com.rudderstack.sdk.kotlin.core.Configuration
-import com.rudderstack.sdk.kotlin.core.consent.ConsentManagementConfiguration
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPolicy
@@ -75,7 +75,7 @@ data class Configuration @JvmOverloads constructor(
     override val gzipEnabled: Boolean = DEFAULT_GZIP_STATUS,
     override val logger: Logger = DEFAULT_LOGGER,
     override val logLevel: Logger.LogLevel = DEFAULT_LOG_LEVEL,
-    override val consentManagement: ConsentManagementConfiguration = ConsentManagementConfiguration(),
+    val consentManagement: ConsentManagementConfiguration = ConsentManagementConfiguration(),
 ) : Configuration(
     writeKey = writeKey,
     dataPlaneUrl = dataPlaneUrl,

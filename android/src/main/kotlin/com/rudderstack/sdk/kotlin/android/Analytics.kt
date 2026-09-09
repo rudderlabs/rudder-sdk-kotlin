@@ -6,7 +6,11 @@ import android.app.Activity
 import androidx.navigation.NavController
 import androidx.navigation.NavController.OnDestinationChangedListener
 import com.rudderstack.sdk.kotlin.android.connectivity.AndroidConnectivityObserverPlugin
+import com.rudderstack.sdk.kotlin.android.consent.ConsentManagementOptions
 import com.rudderstack.sdk.kotlin.android.logger.AndroidLogger
+import com.rudderstack.sdk.kotlin.android.models.consent.ConsentManagementState
+import com.rudderstack.sdk.kotlin.android.models.consent.ConsentManagementState.Companion.normalized
+import com.rudderstack.sdk.kotlin.android.models.consent.SetConsentAction
 import com.rudderstack.sdk.kotlin.android.plugins.AndroidLifecyclePlugin
 import com.rudderstack.sdk.kotlin.android.plugins.AppInfoPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.DeeplinkPlugin
@@ -32,6 +36,7 @@ import com.rudderstack.sdk.kotlin.core.internals.models.reset.ResetOptions
 import com.rudderstack.sdk.kotlin.core.internals.platform.Platform
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
+import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.utils.isAnalyticsActive
 import com.rudderstack.sdk.kotlin.core.internals.utils.isSourceEnabled
 import com.rudderstack.sdk.kotlin.core.provideAnalyticsConfiguration
@@ -82,7 +87,21 @@ class Analytics(
     private val integrationsManagementPlugin = IntegrationsManagementPlugin()
     private val sessionTrackingPlugin = SessionTrackingPlugin()
 
+    /**
+     * The `consentManagementState` is a [State] that manages the consent values for the analytics instance.
+     */
+    internal val consentManagementState = State(
+        initialState = ConsentManagementState.initialState(configuration.consentManagement)
+    )
+
     init {
+        if (configuration.consentManagement.enabled && !consentManagementState.value.enabled) {
+            logger.info(
+                "Analytics(android): Consent management is enabled but no consent IDs were supplied; " +
+                    "consent management is inactive for this session. Supply allowedConsentIds or " +
+                    "deniedConsentIds in Configuration."
+            )
+        }
         setup()
     }
 
@@ -110,6 +129,45 @@ class Analytics(
         if (!isAnalyticsActive()) return
 
         sessionTrackingPlugin.sessionManager.endSession()
+    }
+
+    /**
+     * Updates the current consent state with the supplied values.
+     *
+     * The supplied lists fully replace the existing consent state — callers always pass the
+     * complete current state, not a delta. An empty [ConsentManagementOptions] is rejected:
+     * a warning is logged and the current consent state is left unchanged. To record that the
+     * user refused everything, pass the refused categories in
+     * [ConsentManagementOptions.deniedConsentIds].
+     *
+     * This method has no effect while consent management is disabled in [Configuration];
+     * enabling consent management is a load-time decision.
+     *
+     * @param options The consent values to apply.
+     */
+    fun setConsent(options: ConsentManagementOptions) {
+        logger.debug("Analytics(android): setConsent() called")
+        if (!isAnalyticsActive()) return
+
+        if (!consentManagementState.value.enabled) {
+            logger.warn(
+                "Analytics(android): Consent management is disabled; setConsent has no effect. " +
+                    "Enable it via Configuration's consentManagement."
+            )
+            return
+        }
+
+        val allowed = options.allowedConsentIds.normalized()
+        val denied = options.deniedConsentIds.normalized()
+        if (allowed.isEmpty() && denied.isEmpty()) {
+            logger.warn(
+                "Analytics(android): setConsent requires at least one consent ID; the call has no effect. " +
+                    "To deny every category, pass them in deniedConsentIds."
+            )
+            return
+        }
+
+        consentManagementState.dispatch(SetConsentAction(options))
     }
 
     /**

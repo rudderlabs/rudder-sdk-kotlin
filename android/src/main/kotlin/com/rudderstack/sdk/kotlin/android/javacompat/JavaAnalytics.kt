@@ -4,6 +4,7 @@ import android.app.Activity
 import androidx.navigation.NavController
 import com.rudderstack.sdk.kotlin.android.Analytics
 import com.rudderstack.sdk.kotlin.android.Configuration
+import com.rudderstack.sdk.kotlin.android.consent.ConsentManagementOptions
 import com.rudderstack.sdk.kotlin.core.internals.models.reset.ResetOptions
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.javacompat.JavaAnalytics
@@ -47,6 +48,18 @@ class JavaAnalytics private constructor(
      */
     fun endSession() {
         analytics.endSession()
+    }
+
+    /**
+     * Updates the current consent state with the supplied values.
+     *
+     * The supplied lists fully replace the existing consent state. Has no effect while
+     * consent management is disabled in the configuration.
+     *
+     * @param options The consent values to apply.
+     */
+    fun setConsent(options: ConsentManagementOptions) {
+        analytics.setConsent(options)
     }
 
     /**
