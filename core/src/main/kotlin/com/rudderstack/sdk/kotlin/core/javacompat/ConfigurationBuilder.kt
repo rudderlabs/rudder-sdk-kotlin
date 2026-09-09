@@ -6,7 +6,6 @@ import com.rudderstack.sdk.kotlin.core.Configuration
 import com.rudderstack.sdk.kotlin.core.Configuration.Companion.DEFAULT_CONTROL_PLANE_URL
 import com.rudderstack.sdk.kotlin.core.Configuration.Companion.DEFAULT_FLUSH_POLICIES
 import com.rudderstack.sdk.kotlin.core.Configuration.Companion.DEFAULT_GZIP_STATUS
-import com.rudderstack.sdk.kotlin.core.consent.ConsentManagementConfiguration
 import com.rudderstack.sdk.kotlin.core.internals.logger.KotlinLogger
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
@@ -25,18 +24,10 @@ open class ConfigurationBuilder(
     private var controlPlaneUrl: String = DEFAULT_CONTROL_PLANE_URL
     private var gzipEnabled: Boolean = DEFAULT_GZIP_STATUS
     private var flushPolicies: List<FlushPolicy> = DEFAULT_FLUSH_POLICIES
-    private var consentManagement: ConsentManagementConfiguration = ConsentManagementConfiguration()
 
     private var logger: Logger = LoggerAnalytics.logger ?: KotlinLogger()
 
     private var logLevel: Logger.LogLevel = LoggerAnalytics.logLevel
-
-    /**
-     * Sets the consent management configuration.
-     */
-    open fun setConsentManagement(config: ConsentManagementConfiguration) = apply {
-        consentManagement = config
-    }
 
     /**
      * Sets the control plane URL.
@@ -84,8 +75,7 @@ open class ConfigurationBuilder(
             flushPolicies = flushPolicies,
             gzipEnabled = gzipEnabled,
             logger = logger,
-            logLevel = logLevel,
-            consentManagement = consentManagement,
+            logLevel = logLevel
         )
     }
 }

@@ -1,8 +1,8 @@
-package com.rudderstack.sdk.kotlin.core.javacompat
+package com.rudderstack.sdk.kotlin.android.javacompat
 
-import com.rudderstack.sdk.kotlin.core.consent.ConsentManagementConfiguration
-import com.rudderstack.sdk.kotlin.core.consent.ConsentManagementConfiguration.Companion.DEFAULT_CONSENT_MANAGEMENT_ENABLED
-import com.rudderstack.sdk.kotlin.core.consent.ConsentManagementProvider
+import com.rudderstack.sdk.kotlin.android.consent.ConsentManagementConfiguration
+import com.rudderstack.sdk.kotlin.android.consent.ConsentManagementConfiguration.Companion.DEFAULT_CONSENT_MANAGEMENT_ENABLED
+import com.rudderstack.sdk.kotlin.android.consent.ConsentManagementProvider
 
 /**
  * Builder for ConsentManagementConfiguration instances.

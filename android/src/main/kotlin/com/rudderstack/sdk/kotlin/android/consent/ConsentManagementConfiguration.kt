@@ -1,4 +1,4 @@
-package com.rudderstack.sdk.kotlin.core.consent
+package com.rudderstack.sdk.kotlin.android.consent
 
 /**
  * Configuration for consent management.

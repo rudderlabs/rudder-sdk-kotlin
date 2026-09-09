@@ -5,7 +5,6 @@ package com.rudderstack.sdk.kotlin.core
 import com.rudderstack.sdk.kotlin.core.Configuration.Companion.DEFAULT_CONTROL_PLANE_URL
 import com.rudderstack.sdk.kotlin.core.Configuration.Companion.DEFAULT_FLUSH_POLICIES
 import com.rudderstack.sdk.kotlin.core.Configuration.Companion.DEFAULT_GZIP_STATUS
-import com.rudderstack.sdk.kotlin.core.consent.ConsentManagementConfiguration
 import com.rudderstack.sdk.kotlin.core.internals.logger.KotlinLogger
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
@@ -27,7 +26,6 @@ import org.jetbrains.annotations.VisibleForTesting
  * @property storageType The storage type for analytics data persistence. Defaults to [DEFAULT_STORAGE_TYPE].
  * @property logger The logger instance used for logging SDK events and errors. Defaults to [DEFAULT_LOGGER].
  * @property logLevel The log level for this configuration instance, determining the minimum severity of messages that will be logged. Defaults to [DEFAULT_LOG_LEVEL].
- * @property consentManagement The consent management configuration. Defaults to disabled.
  */
 open class Configuration @JvmOverloads constructor(
     open val writeKey: String,
@@ -37,8 +35,7 @@ open class Configuration @JvmOverloads constructor(
     open val flushPolicies: List<FlushPolicy> = DEFAULT_FLUSH_POLICIES,
     val storageType: StorageType = DEFAULT_STORAGE_TYPE,
     open val logger: Logger = DEFAULT_LOGGER,
-    open val logLevel: Logger.LogLevel = DEFAULT_LOG_LEVEL,
-    open val consentManagement: ConsentManagementConfiguration = ConsentManagementConfiguration(),
+    open val logLevel: Logger.LogLevel = DEFAULT_LOG_LEVEL
 ) {
 
     override fun toString(): String {
@@ -49,8 +46,7 @@ open class Configuration @JvmOverloads constructor(
             "gzipEnabled=$gzipEnabled, " +
             "flushPolicies=$flushPolicies, " +
             "storageType=$storageType, " +
-            "logLevel=$logLevel, " +
-            "consentManagement=$consentManagement" +
+            "logLevel=$logLevel" +
             ")"
     }
 
