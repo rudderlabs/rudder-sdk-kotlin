@@ -38,13 +38,13 @@ private val RESERVED_KEY = SDKManagedContextKey.CONSENT_MANAGEMENT
 private val STUB_VALUE = JsonPrimitive("sdk-owned-value")
 private val CUSTOMER_VALUE = JsonPrimitive("customer-value")
 
-class ContextGuardPluginTest {
+class SchemaGuardPluginTest {
 
     @MockK
     private lateinit var mockAnalytics: Analytics
 
     private lateinit var snapshotPlugin: ContextSnapshotPlugin
-    private lateinit var plugin: ContextGuardPlugin
+    private lateinit var plugin: SchemaGuardPlugin
     private val registry = mutableMapOf<SDKManagedContextKey, ReservedContextValue>()
 
     @BeforeEach
@@ -55,7 +55,7 @@ class ContextGuardPluginTest {
         every { mockAnalytics.getPlatformType() } returns PlatformType.Mobile
         // Empty by default: nothing is reserved unless a test registers a supplier.
         every { mockAnalytics.reservedContextValues } returns registry
-        plugin = ContextGuardPlugin()
+        plugin = SchemaGuardPlugin()
         plugin.setup(mockAnalytics)
     }
 
