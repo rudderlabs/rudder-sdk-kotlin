@@ -1,11 +1,11 @@
 package com.rudderstack.sdk.kotlin.core.plugins
 
 import com.rudderstack.sdk.kotlin.core.Analytics
-import com.rudderstack.sdk.kotlin.core.consent.ConsentManagementProvider
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
+import com.rudderstack.sdk.kotlin.core.internals.models.ReservedContextValue
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
+import com.rudderstack.sdk.kotlin.core.internals.models.SDKManagedContextKey
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
-import com.rudderstack.sdk.kotlin.core.internals.models.consent.ConsentManagementState
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
@@ -16,9 +16,9 @@ import io.mockk.unmockkAll
 import io.mockk.verify
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.add
-import kotlinx.serialization.json.buildJsonArray
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.junit.jupiter.api.AfterEach
@@ -29,18 +29,14 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
-import org.skyscreamer.jsonassert.JSONAssert
-
-private const val CONSENT_MANAGEMENT_KEY = "consentManagement"
-private const val PROVIDER_KEY = "provider"
-private const val ALLOWED_CONSENT_IDS_KEY = "allowedConsentIds"
-private const val DENIED_CONSENT_IDS_KEY = "deniedConsentIds"
 
 private const val EVENT_NAME = "Sample Event"
-private const val SPOOFED_PROVIDER = "spoofed"
-private const val SPOOFED_CONSENT_ID = "spoofed-id"
 private const val CUSTOM_VALUE_SENTINEL = "sentinel-custom-value"
 private const val NON_MANAGED_KEY = "campaign"
+private const val STUB_ADVICE = "stub advice for a reserved key."
+private val RESERVED_KEY = SDKManagedContextKey.CONSENT_MANAGEMENT
+private val STUB_VALUE = JsonPrimitive("sdk-owned-value")
+private val CUSTOMER_VALUE = JsonPrimitive("customer-value")
 
 class ContextGuardPluginTest {
 
@@ -49,6 +45,7 @@ class ContextGuardPluginTest {
 
     private lateinit var snapshotPlugin: ContextSnapshotPlugin
     private lateinit var plugin: ContextGuardPlugin
+    private val registry = mutableMapOf<SDKManagedContextKey, ReservedContextValue>()
 
     @BeforeEach
     fun setup() {
@@ -56,6 +53,8 @@ class ContextGuardPluginTest {
         snapshotPlugin = ContextSnapshotPlugin()
         every { mockAnalytics.contextSnapshotPlugin } returns snapshotPlugin
         every { mockAnalytics.getPlatformType() } returns PlatformType.Mobile
+        // Empty by default: nothing is reserved unless a test registers a supplier.
+        every { mockAnalytics.reservedContextValues } returns registry
         plugin = ContextGuardPlugin()
         plugin.setup(mockAnalytics)
     }
@@ -65,82 +64,92 @@ class ContextGuardPluginTest {
         unmockkAll()
     }
 
-    // Consent stamp enforcement
+    // Reserved-key re-assertion
+    //
+    // The registered value is deliberately not a consent block: the guard is driven by the
+    // registry, so it must re-assert whatever it is handed, for any reserved key.
 
     @Test
-    fun `given enabled state, when a plugin rewrote consentManagement, then the guard warns once and restores the stamp`() =
+    fun `given a registered reserved value, when a plugin rewrote the key, then the guard warns once and restores it`() =
         runTest {
-            stubConsentState(enabled = true, allowed = listOf("marketing"))
-            val event = provideEvent().also { it.context = provideSpoofedConsentPayload() }
+            registry[RESERVED_KEY] = StubReservedValue(STUB_VALUE)
+            val event = provideEvent().also {
+                it.context = buildJsonObject { put(RESERVED_KEY.key, CUSTOMER_VALUE) }
+            }
 
             plugin.intercept(event)
 
-            JSONAssert.assertEquals(
-                provideConsentContextPayload(allowed = listOf("marketing")).toString(),
-                event.context.toString(),
-                true
-            )
-            val messages = mutableListOf<String>()
-            val mockLogger = mockAnalytics.logger
-            verify(exactly = 1) { mockLogger.warn(capture(messages)) }
-            assertTrue(messages.single().contains("setConsent()"))
-        }
-
-    @Test
-    fun `given enabled state, when consentManagement is missing at the terminal boundary, then the guard warns and restamps`() =
-        runTest {
-            stubConsentState(enabled = true, allowed = listOf("marketing"))
-            val event = provideEvent()
-
-            plugin.intercept(event)
-
-            JSONAssert.assertEquals(
-                provideConsentContextPayload(allowed = listOf("marketing")).toString(),
-                event.context.toString(),
-                true
-            )
+            assertEquals(STUB_VALUE, event.context[RESERVED_KEY.key])
             val mockLogger = mockAnalytics.logger
             verify(exactly = 1) { mockLogger.warn(any()) }
         }
 
     @Test
-    fun `given a legacy injection already replaced by the early stamper, when the guard runs, then it stays silent`() =
-        runTest {
-            stubConsentState(enabled = true, allowed = listOf("marketing"))
-            val stamper = ConsentManagementPlugin().also { it.setup(mockAnalytics) }
-            val event = provideEvent().also { it.context = provideSpoofedConsentPayload() }
+    fun `given a registered reserved value, when the key is absent, then the guard stamps it`() = runTest {
+        registry[RESERVED_KEY] = StubReservedValue(STUB_VALUE)
+        val event = provideEvent()
 
-            stamper.intercept(event)
-            plugin.intercept(event)
+        plugin.intercept(event)
 
-            val mockLogger = mockAnalytics.logger
-            verify(exactly = 1) { mockLogger.warn(any()) }
-        }
+        assertEquals(STUB_VALUE, event.context[RESERVED_KEY.key])
+    }
 
     @Test
-    fun `given consent management disabled, when an event carries a customer consent block, then it passes through untouched`() =
+    fun `given a registered value the event already carries, when the guard runs, then it stays silent`() = runTest {
+        registry[RESERVED_KEY] = StubReservedValue(STUB_VALUE)
+        val event = provideEvent().also {
+            it.context = buildJsonObject { put(RESERVED_KEY.key, STUB_VALUE) }
+        }
+
+        plugin.intercept(event)
+
+        assertEquals(STUB_VALUE, event.context[RESERVED_KEY.key])
+        val mockLogger = mockAnalytics.logger
+        verify(exactly = 0) { mockLogger.warn(any()) }
+    }
+
+    @Test
+    fun `given a supplier asserting no value, when the guard runs, then the event passes through untouched`() =
         runTest {
-            stubConsentState(enabled = false)
-            val event = provideEvent().also { it.context = provideSpoofedConsentPayload() }
+            registry[RESERVED_KEY] = StubReservedValue(null)
+            val event = provideEvent().also {
+                it.context = buildJsonObject { put(RESERVED_KEY.key, CUSTOMER_VALUE) }
+            }
 
             plugin.intercept(event)
 
-            JSONAssert.assertEquals(provideSpoofedConsentPayload().toString(), event.context.toString(), true)
+            assertEquals(CUSTOMER_VALUE, event.context[RESERVED_KEY.key])
             val mockLogger = mockAnalytics.logger
             verify(exactly = 0) { mockLogger.warn(any()) }
         }
 
     @Test
-    fun `given the same state, when the guard restamps, then the block matches the early stamper output exactly`() =
+    fun `given no registered supplier, when the guard runs, then the key is not reserved`() = runTest {
+        val event = provideEvent().also {
+            it.context = buildJsonObject { put(RESERVED_KEY.key, CUSTOMER_VALUE) }
+        }
+
+        plugin.intercept(event)
+
+        assertEquals(CUSTOMER_VALUE, event.context[RESERVED_KEY.key])
+        val mockLogger = mockAnalytics.logger
+        verify(exactly = 0) { mockLogger.warn(any()) }
+    }
+
+    @Test
+    fun `given a registered supplier, when the guard warns, then the message carries that supplier's advice`() =
         runTest {
-            stubConsentState(enabled = true, allowed = listOf("marketing"), denied = listOf("advertising"))
-            val stamperEvent = provideEvent()
-            ConsentManagementPlugin().also { it.setup(mockAnalytics) }.intercept(stamperEvent)
-            val guardEvent = provideEvent().also { it.context = provideSpoofedConsentPayload() }
+            registry[RESERVED_KEY] = StubReservedValue(STUB_VALUE)
+            val event = provideEvent().also {
+                it.context = buildJsonObject { put(RESERVED_KEY.key, CUSTOMER_VALUE) }
+            }
 
-            plugin.intercept(guardEvent)
+            plugin.intercept(event)
 
-            JSONAssert.assertEquals(stamperEvent.context.toString(), guardEvent.context.toString(), true)
+            val messages = mutableListOf<String>()
+            val mockLogger = mockAnalytics.logger
+            verify(exactly = 1) { mockLogger.warn(capture(messages)) }
+            assertTrue(messages.single().contains(STUB_ADVICE))
         }
 
     // Base-key override detection
@@ -151,7 +160,6 @@ class ContextGuardPluginTest {
         baseKey: String,
     ) = runTest {
         every { mockAnalytics.getPlatformType() } returns PlatformType.Server
-        stubConsentState(enabled = false)
         val event = provideEvent(customContext = buildJsonObject { put(baseKey, CUSTOM_VALUE_SENTINEL) })
 
         plugin.intercept(event)
@@ -163,7 +171,6 @@ class ContextGuardPluginTest {
     fun `given a server platform, when library is injected via customContext, then it still warns`() =
         runTest {
             every { mockAnalytics.getPlatformType() } returns PlatformType.Server
-            stubConsentState(enabled = false)
             val event = provideEvent(customContext = buildJsonObject { put("library", CUSTOM_VALUE_SENTINEL) })
 
             plugin.intercept(event)
@@ -178,7 +185,6 @@ class ContextGuardPluginTest {
     fun `given a base key injected via customContext, when the guard runs, then one warning names the key`(
         baseKey: String,
     ) = runTest {
-        stubConsentState(enabled = false)
         val event = provideEvent(customContext = buildJsonObject { put(baseKey, CUSTOM_VALUE_SENTINEL) })
 
         plugin.intercept(event)
@@ -194,7 +200,6 @@ class ContextGuardPluginTest {
     fun `given a plugin changed a base key after the snapshot, when the guard runs, then one warning names the key`(
         baseKey: String,
     ) = runTest {
-        stubConsentState(enabled = false)
         val event = provideEvent().also { it.context = buildJsonObject { put(baseKey, "sdk-value") } }
         snapshotPlugin.intercept(event)
         event.context = buildJsonObject { put(baseKey, CUSTOM_VALUE_SENTINEL) }
@@ -210,7 +215,6 @@ class ContextGuardPluginTest {
     @Test
     fun `given the same key hit via customContext and the snapshot diff, when the guard runs, then it warns only once`() =
         runTest {
-            stubConsentState(enabled = false)
             val event = provideEvent(customContext = buildJsonObject { put("library", CUSTOM_VALUE_SENTINEL) })
             event.context = buildJsonObject { put("library", "sdk-value") }
             snapshotPlugin.intercept(event)
@@ -224,7 +228,6 @@ class ContextGuardPluginTest {
 
     @Test
     fun `given a non-managed custom key injected and mutated, when the guard runs, then it stays silent`() = runTest {
-        stubConsentState(enabled = false)
         val event = provideEvent(customContext = buildJsonObject { put(NON_MANAGED_KEY, CUSTOM_VALUE_SENTINEL) })
         event.context = buildJsonObject { put(NON_MANAGED_KEY, "initial") }
         snapshotPlugin.intercept(event)
@@ -239,7 +242,6 @@ class ContextGuardPluginTest {
 
     @Test
     fun `given a base key override, when the guard warns, then the message never contains the custom value`() = runTest {
-        stubConsentState(enabled = false)
         val event = provideEvent(customContext = buildJsonObject { put("library", CUSTOM_VALUE_SENTINEL) })
 
         plugin.intercept(event)
@@ -252,7 +254,6 @@ class ContextGuardPluginTest {
 
     @Test
     fun `given a base key override detected, when the guard runs, then the delivered value is left untouched`() = runTest {
-        stubConsentState(enabled = false)
         val event = provideEvent().also { it.context = buildJsonObject { put("library", "sdk-value") } }
         snapshotPlugin.intercept(event)
         event.context = buildJsonObject { put("library", CUSTOM_VALUE_SENTINEL) }
@@ -265,7 +266,6 @@ class ContextGuardPluginTest {
     @Test
     fun `given a stale snapshot from another event, when the guard runs, then it stays silent and clears the slot`() =
         runTest {
-            stubConsentState(enabled = false)
             val staleEvent = provideEvent().also { it.context = buildJsonObject { put("library", "sdk-value") } }
             snapshotPlugin.intercept(staleEvent)
             val event = provideEvent().also { it.context = buildJsonObject { put("library", CUSTOM_VALUE_SENTINEL) } }
@@ -279,7 +279,6 @@ class ContextGuardPluginTest {
 
     @Test
     fun `given a plugin rebuilt the context through serialization, when the guard runs, then it stays silent`() = runTest {
-        stubConsentState(enabled = false)
         val event = provideEvent().also { it.context = provideMixedTypeContextPayload() }
         snapshotPlugin.intercept(event)
         event.context = Json.decodeFromString(JsonObject.serializer(), Json.encodeToString(JsonObject.serializer(), event.context))
@@ -292,20 +291,6 @@ class ContextGuardPluginTest {
 
     // Helpers
 
-    private fun stubConsentState(
-        enabled: Boolean,
-        allowed: List<String> = emptyList(),
-        denied: List<String> = emptyList(),
-    ) {
-        every { mockAnalytics.consentManagementState } returns State(
-            initialState = ConsentManagementState(
-                enabled = enabled,
-                provider = ConsentManagementProvider.CUSTOM,
-                allowedConsentIds = allowed,
-                deniedConsentIds = denied,
-            )
-        )
-    }
 }
 
 private fun provideEvent(customContext: JsonObject = emptyJsonObject): Event = TrackEvent(
@@ -314,30 +299,6 @@ private fun provideEvent(customContext: JsonObject = emptyJsonObject): Event = T
     options = RudderOption(customContext = customContext),
 )
 
-private fun provideConsentContextPayload(
-    allowed: List<String> = emptyList(),
-    denied: List<String> = emptyList(),
-): JsonObject = buildJsonObject {
-    put(
-        CONSENT_MANAGEMENT_KEY,
-        buildJsonObject {
-            put(PROVIDER_KEY, ConsentManagementProvider.CUSTOM.value)
-            put(ALLOWED_CONSENT_IDS_KEY, buildJsonArray { allowed.forEach { add(it) } })
-            put(DENIED_CONSENT_IDS_KEY, buildJsonArray { denied.forEach { add(it) } })
-        }
-    )
-}
-
-private fun provideSpoofedConsentPayload(): JsonObject = buildJsonObject {
-    put(
-        CONSENT_MANAGEMENT_KEY,
-        buildJsonObject {
-            put(PROVIDER_KEY, SPOOFED_PROVIDER)
-            put(ALLOWED_CONSENT_IDS_KEY, buildJsonArray { add(SPOOFED_CONSENT_ID) })
-        }
-    )
-}
-
 private fun provideMixedTypeContextPayload(): JsonObject = buildJsonObject {
     put("app", buildJsonObject { put("name", "sample") })
     put("device", buildJsonObject { put("attTrackingStatus", 3) })
@@ -345,4 +306,12 @@ private fun provideMixedTypeContextPayload(): JsonObject = buildJsonObject {
     put("screen", buildJsonObject { put("density", 3) })
     put("timezone", "Asia/Kolkata")
     put("sessionId", 1724500000000L)
+}
+
+private class StubReservedValue(
+    private val value: JsonElement?,
+    override val overrideAdvice: String = STUB_ADVICE,
+) : ReservedContextValue {
+
+    override fun current(): JsonElement? = value
 }

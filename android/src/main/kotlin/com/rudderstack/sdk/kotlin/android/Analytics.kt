@@ -8,6 +8,7 @@ import androidx.navigation.NavController.OnDestinationChangedListener
 import com.rudderstack.sdk.kotlin.android.connectivity.AndroidConnectivityObserverPlugin
 import com.rudderstack.sdk.kotlin.android.consent.ConsentManagementOptions
 import com.rudderstack.sdk.kotlin.android.logger.AndroidLogger
+import com.rudderstack.sdk.kotlin.android.models.consent.ConsentContextValue
 import com.rudderstack.sdk.kotlin.android.models.consent.ConsentManagementState
 import com.rudderstack.sdk.kotlin.android.models.consent.ConsentManagementState.Companion.normalized
 import com.rudderstack.sdk.kotlin.android.models.consent.SetConsentAction
@@ -33,6 +34,7 @@ import com.rudderstack.sdk.kotlin.android.plugins.sessiontracking.SessionTrackin
 import com.rudderstack.sdk.kotlin.android.storage.provideAndroidStorage
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.models.SDKManagedContextKey
 import com.rudderstack.sdk.kotlin.core.internals.models.reset.ResetOptions
 import com.rudderstack.sdk.kotlin.core.internals.platform.Platform
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
@@ -331,6 +333,7 @@ class Analytics(
 
     private fun setup() {
         LoggerAnalytics.setPlatformLogger(logger = AndroidLogger())
+        reservedContextValues[SDKManagedContextKey.CONSENT_MANAGEMENT] = ConsentContextValue(this)
         add(ConsentManagementPlugin())
         add(AndroidConnectivityObserverPlugin(connectivityState))
         add(DeviceInfoPlugin())

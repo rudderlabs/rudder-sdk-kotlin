@@ -162,7 +162,7 @@ abstract class IntegrationPlugin : EventPlugin {
      * stale by delivery time; drift here is expected, hence the debug-level log.
      */
     private fun refreshConsentStamp(event: Event): Event {
-        val state = analytics.consentManagementState.value
+        val state = analytics.consentState.value
         if (!state.enabled) return event
 
         val stamp = state.toConsentContextBlock()

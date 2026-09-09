@@ -3,10 +3,11 @@ package com.rudderstack.sdk.kotlin.core.plugins
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.SDKManagedContextKey
-import com.rudderstack.sdk.kotlin.core.internals.models.consent.toConsentContextBlock
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.utils.mergeWithHigherPriorityTo
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 
 /**
  * A terminal plugin that re-asserts SDK-owned context keys after all customer plugins have run.
@@ -22,7 +23,7 @@ internal class ContextGuardPlugin : Plugin {
 
     override suspend fun intercept(event: Event): Event {
         warnOnBaseKeyOverrides(event)
-        enforceConsentStamp(event)
+        enforceReservedKeys(event)
         return event
     }
 
@@ -65,23 +66,28 @@ internal class ContextGuardPlugin : Plugin {
     }
 
     /**
-     * Re-asserts `context.consentManagement` from the current consent state.
+     * Re-asserts every reserved context key from its current SDK-owned value.
      *
-     * Active only while consent management is enabled — while disabled the key is not
-     * reserved and the event passes through untouched.
+     * A key with no registered supplier, or a supplier asserting no value, is not reserved for
+     * this event and passes through untouched.
+     *
+     * The value written is the state at this instant, not the state the event was created under.
+     * Anything downstream needing to know which decision an event belongs to must carry its own
+     * marker - this key is rewritten in flight and cannot answer that question.
      */
-    private fun enforceConsentStamp(event: Event) {
-        val state = analytics.consentManagementState.value
-        if (!state.enabled) return
+    private fun enforceReservedKeys(event: Event) {
+        SDKManagedContextKey.reservedKeys.forEach { managedKey ->
+            val reserved = analytics.reservedContextValues[managedKey] ?: return@forEach
+            val current = reserved.current() ?: return@forEach
+            if (event.context[managedKey.key] == current) return@forEach
 
-        val stamp = state.toConsentContextBlock()
-        val consentKey = SDKManagedContextKey.CONSENT_MANAGEMENT.key
-        if (event.context[consentKey] == stamp[consentKey]) return
-
-        analytics.logger.warn(
-            "ContextGuardPlugin: Replacing the \"consentManagement\" key found in the event context; " +
-                "the SDK owns this key while consent management is enabled. Migrate to setConsent()."
-        )
-        event.context = event.context mergeWithHigherPriorityTo stamp
+            analytics.logger.warn(
+                "ContextGuardPlugin: Replacing the \"${managedKey.key}\" key found in the event context; " +
+                    reserved.overrideAdvice
+            )
+            event.context = event.context mergeWithHigherPriorityTo buildJsonObject {
+                put(managedKey.key, current)
+            }
+        }
     }
 }
