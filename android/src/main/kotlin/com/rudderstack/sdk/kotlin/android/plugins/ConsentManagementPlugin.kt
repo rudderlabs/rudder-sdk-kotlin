@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * While consent management is enabled, the complete block — provider, allowedConsentIds and
  * deniedConsentIds — is written on each event, replacing any value injected via custom context.
  * While disabled, events pass through untouched, so a legacy customContext injection keeps
- * working. `ContextGuardPlugin` re-asserts the stamp at the terminal boundary, and device-mode
+ * working. `SchemaGuardPlugin` re-asserts the stamp at the terminal boundary, and device-mode
  * delivery refreshes it before each destination handoff.
  *
  * A customer still injecting the key does so on every event, so the replacement is warned about

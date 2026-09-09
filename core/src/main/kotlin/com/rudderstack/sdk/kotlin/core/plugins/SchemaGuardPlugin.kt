@@ -15,7 +15,7 @@ import kotlinx.serialization.json.put
  * Registered first in the terminal phase, so its re-stamped event flows into both delivery
  * paths — cloud-mode storage plus the device-mode fan-out queue.
  */
-internal class ContextGuardPlugin : Plugin {
+internal class SchemaGuardPlugin : Plugin {
 
     override val pluginType: Plugin.PluginType = Plugin.PluginType.Terminal
 
@@ -40,7 +40,7 @@ internal class ContextGuardPlugin : Plugin {
 
         overriddenKeys.forEach { overriddenKey ->
             analytics.logger.warn(
-                "ContextGuardPlugin: Detected a custom value for the SDK-managed context key \"$overriddenKey\"; " +
+                "SchemaGuardPlugin: Detected a custom value for the SDK-managed context key \"$overriddenKey\"; " +
                     "overriding SDK-managed context keys is deprecated and will be unsupported in a future major version."
             )
         }
@@ -82,7 +82,7 @@ internal class ContextGuardPlugin : Plugin {
             if (event.context[managedKey.key] == current) return@forEach
 
             analytics.logger.warn(
-                "ContextGuardPlugin: Replacing the \"${managedKey.key}\" key found in the event context; " +
+                "SchemaGuardPlugin: Replacing the \"${managedKey.key}\" key found in the event context; " +
                     reserved.overrideAdvice
             )
             event.context = event.context mergeWithHigherPriorityTo buildJsonObject {

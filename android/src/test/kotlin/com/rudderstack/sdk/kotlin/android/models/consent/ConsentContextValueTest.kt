@@ -25,7 +25,7 @@ private const val EVENT_NAME = "Sample Event"
 /**
  * The android half of the terminal re-stamp.
  *
- * `ContextGuardPlugin` lives in core and re-asserts whatever this supplier returns; core's own
+ * `SchemaGuardPlugin` lives in core and re-asserts whatever this supplier returns; core's own
  * tests cover that mechanism with a stub. What belongs here is the consent binding: the value
  * asserted, when nothing is asserted, and that it matches what the early stamper writes.
  */
