@@ -1,7 +1,6 @@
 package com.rudderstack.sdk.kotlin.android.models.consent
 
 import com.rudderstack.sdk.kotlin.android.models.consent.ConsentManagementState.Companion.normalized
-import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -40,8 +39,7 @@ internal enum class ConsentResolutionStrategy {
  * the stricter of the two and the dashboard default. Only `allowedConsentIds` participate in
  * matching; `deniedConsentIds` are stamped on events but never consulted.
  */
-@InternalRudderApi
-object ConsentResolver {
+internal object ConsentResolver {
 
     /**
      * Resolves whether a destination is consented under the current consent [state].

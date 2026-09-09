@@ -1,13 +1,14 @@
 package com.rudderstack.sdk.kotlin.android.plugins.devicemode
 
+import com.rudderstack.sdk.kotlin.android.models.consent.ConsentResolver
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing.ConsentGatePlugin
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing.EventFilteringPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing.IntegrationOptionsPlugin
+import com.rudderstack.sdk.kotlin.android.utils.consentState
 import com.rudderstack.sdk.kotlin.android.utils.findDestination
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
-import com.rudderstack.sdk.kotlin.core.internals.models.consent.ConsentResolver
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.plugins.EventPlugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
@@ -121,7 +122,7 @@ abstract class IntegrationPlugin : EventPlugin {
                 )
                 null
             }
-            !ConsentResolver.resolve(analytics.consentManagementState.value, configDestination.destinationConfig) -> {
+            !ConsentResolver.resolve(analytics.consentState.value, configDestination.destinationConfig) -> {
                 val errorMessage = "Destination $key is denied by user consent. " +
                     "No events will be sent to this destination."
                 notifyDestinationFailure(errorMessage, ConsentDeniedException(errorMessage))

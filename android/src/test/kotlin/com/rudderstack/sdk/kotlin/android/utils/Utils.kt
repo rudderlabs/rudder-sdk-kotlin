@@ -9,7 +9,7 @@ import com.rudderstack.sdk.kotlin.android.SessionConfiguration.Companion.DEFAULT
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
-import com.rudderstack.sdk.kotlin.core.internals.models.consent.ConsentManagementState
+import com.rudderstack.sdk.kotlin.android.models.consent.ConsentManagementState
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import io.mockk.every
 import io.mockk.mockk
@@ -19,7 +19,7 @@ import kotlinx.coroutines.test.TestScope
 import java.io.BufferedReader
 import com.rudderstack.sdk.kotlin.android.Analytics as AndroidAnalytics
 
-fun mockAnalytics(testScope: TestScope, testDispatcher: TestDispatcher): Analytics {
+fun mockAnalytics(testScope: TestScope, testDispatcher: TestDispatcher): AndroidAnalytics {
     val mockAnalytics = mockk<AndroidAnalytics>(relaxed = true)
 
     mockAnalytics.also {

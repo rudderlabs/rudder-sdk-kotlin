@@ -3,7 +3,6 @@ package com.rudderstack.sdk.kotlin.android.models.consent
 import com.rudderstack.sdk.kotlin.android.consent.ConsentManagementConfiguration
 import com.rudderstack.sdk.kotlin.android.consent.ConsentManagementProvider
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.StateAction
-import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 
 /**
  * In-memory state holding the current consent values.
@@ -18,8 +17,7 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
  * @property allowedConsentIds The consent IDs the user has granted.
  * @property deniedConsentIds The consent IDs the user has denied.
  */
-@InternalRudderApi
-data class ConsentManagementState(
+internal data class ConsentManagementState(
     val active: Boolean = false,
     val provider: ConsentManagementProvider = ConsentManagementProvider.CUSTOM,
     val allowedConsentIds: List<String> = emptyList(),
