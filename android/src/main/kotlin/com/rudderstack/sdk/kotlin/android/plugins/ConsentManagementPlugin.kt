@@ -1,10 +1,11 @@
-package com.rudderstack.sdk.kotlin.core.plugins
+package com.rudderstack.sdk.kotlin.android.plugins
 
+import com.rudderstack.sdk.kotlin.android.models.consent.ConsentManagementState
+import com.rudderstack.sdk.kotlin.android.utils.consentState
+import com.rudderstack.sdk.kotlin.android.utils.mergeWithHigherPriorityTo
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
-import com.rudderstack.sdk.kotlin.core.internals.models.consent.ConsentManagementState
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
-import com.rudderstack.sdk.kotlin.core.internals.utils.mergeWithHigherPriorityTo
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
@@ -32,7 +33,7 @@ internal class ConsentManagementPlugin : Plugin {
     override lateinit var analytics: Analytics
 
     override suspend fun intercept(event: Event): Event {
-        val state = analytics.consentManagementState.value
+        val state = analytics.consentState.value
         if (!state.enabled) return event
 
         if (event.context.containsKey(CONSENT_MANAGEMENT_KEY)) {
