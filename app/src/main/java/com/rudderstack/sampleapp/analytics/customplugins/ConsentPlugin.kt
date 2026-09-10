@@ -36,8 +36,10 @@ class ConsentPlugin(
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
-        provider.onConsentChanged = { pushCurrentConsent() }
+        // Push before subscribing, so a failure here leaves no callback behind: a plugin whose
+        // setup throws is never added to the chain, so its teardown() can never run.
         pushCurrentConsent()
+        provider.onConsentChanged = { pushCurrentConsent() }
     }
 
     override fun teardown() {
