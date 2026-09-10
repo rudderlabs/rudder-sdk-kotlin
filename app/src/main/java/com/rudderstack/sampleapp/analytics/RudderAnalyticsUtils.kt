@@ -128,7 +128,7 @@ object RudderAnalyticsUtils {
  * Stands in for a real CMP in this sample. A production app would back these lists with its
  * Consent Management Platform's current state and call [onConsentChanged] from its callback.
  */
-class DemoConsentProvider : ConsentCategoryProvider {
+private class DemoConsentProvider : ConsentCategoryProvider {
 
     override var allowedConsentIds: List<String> = listOf("marketing", "analytics")
         private set
