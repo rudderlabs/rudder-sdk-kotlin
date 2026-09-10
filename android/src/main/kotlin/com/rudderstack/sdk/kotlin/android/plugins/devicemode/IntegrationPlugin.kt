@@ -18,6 +18,8 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.safelyExecute
 import kotlinx.serialization.json.JsonObject
 import java.util.concurrent.CopyOnWriteArrayList
 
+private const val DELIVERY_HALTED_NOTICE = "No events will be sent to this destination."
+
 /**
  * Base plugin class for all integration plugins.
  *
@@ -109,22 +111,15 @@ abstract class IntegrationPlugin : EventPlugin {
         val configDestination = findDestination(sourceConfig, key)
         return when {
             configDestination == null -> {
-                notifyDestinationFailure(
-                    "Destination $key not found in the source config. " +
-                        "No events will be sent to this destination."
-                )
+                notifyDestinationFailure("Destination $key not found in the source config. $DELIVERY_HALTED_NOTICE")
                 null
             }
             !configDestination.isDestinationEnabled -> {
-                notifyDestinationFailure(
-                    "Destination $key is disabled in dashboard. " +
-                        "No events will be sent to this destination."
-                )
+                notifyDestinationFailure("Destination $key is disabled in dashboard. $DELIVERY_HALTED_NOTICE")
                 null
             }
             !ConsentResolver.resolve(analytics.consentState.value, configDestination.destinationConfig) -> {
-                val errorMessage = "Destination $key is denied by user consent. " +
-                    "No events will be sent to this destination."
+                val errorMessage = "Destination $key is denied by user consent. $DELIVERY_HALTED_NOTICE"
                 notifyDestinationFailure(errorMessage, ConsentDeniedException(errorMessage))
                 null
             }
