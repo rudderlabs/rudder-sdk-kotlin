@@ -34,7 +34,6 @@ import kotlinx.serialization.json.put
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import com.rudderstack.sdk.kotlin.android.Analytics as AndroidAnalytics
 
 class DeeplinkPluginTest {
 
@@ -66,7 +65,7 @@ class DeeplinkPluginTest {
             scheme = "app",
             host = "testApplication"
         )
-        every { (mockAnalytics as AndroidAnalytics).addLifecycleObserver(plugin) } just Runs
+        every { mockAnalytics.addLifecycleObserver(plugin) } just Runs
         mockkObject(CheckBuildVersionUseCase)
         every { CheckBuildVersionUseCase.isAndroidVersionAtLeast(Build.VERSION_CODES.LOLLIPOP_MR1) } returns true
     }
@@ -90,7 +89,7 @@ class DeeplinkPluginTest {
 
             plugin.setup(analytics = mockAnalytics)
 
-            verify(exactly = 0) { (mockAnalytics as AndroidAnalytics).addLifecycleObserver(plugin) }
+            verify(exactly = 0) { mockAnalytics.addLifecycleObserver(plugin) }
         }
 
     @Test
@@ -105,7 +104,7 @@ class DeeplinkPluginTest {
 
             plugin.setup(analytics = mockAnalytics)
 
-            verify(exactly = 1) { (mockAnalytics as AndroidAnalytics).addLifecycleObserver(plugin) }
+            verify(exactly = 1) { mockAnalytics.addLifecycleObserver(plugin) }
         }
 
     @Test
@@ -199,6 +198,6 @@ class DeeplinkPluginTest {
 
         plugin.teardown()
 
-        verify { (mockAnalytics as AndroidAnalytics).removeLifecycleObserver(plugin) }
+        verify { mockAnalytics.removeLifecycleObserver(plugin) }
     }
 }
