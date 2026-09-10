@@ -1,6 +1,6 @@
 package com.rudderstack.sampleapp.analytics.customplugins
 
-import com.rudderstack.sdk.kotlin.core.Analytics
+import com.rudderstack.sdk.kotlin.android.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import io.mockk.mockk
