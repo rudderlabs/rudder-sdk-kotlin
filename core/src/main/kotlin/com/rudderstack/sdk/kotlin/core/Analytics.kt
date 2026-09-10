@@ -376,6 +376,9 @@ open class Analytics protected constructor(
      */
     private fun setup() {
         add(LibraryInfoPlugin())
+        // Platform modules register the snapshot after their own context stampers. A base-type
+        // instance has none, so it registers here, right after the only base key core stamps.
+        if (this::class == Analytics::class) add(contextSnapshotPlugin)
         // Must stay ahead of all terminal delivery plugins — guards both cloud storage and device-mode fan-out.
         add(SchemaGuardPlugin())
         add(RudderStackDataplanePlugin())
