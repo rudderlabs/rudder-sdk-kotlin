@@ -13,8 +13,8 @@ import com.rudderstack.sdk.kotlin.android.Analytics
 import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.android.SessionConfiguration
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.IntegrationPlugin
-import com.rudderstack.sdk.kotlin.core.consent.ConsentManagementConfiguration
-import com.rudderstack.sdk.kotlin.core.consent.ConsentManagementProvider
+import com.rudderstack.sdk.kotlin.android.consent.ConsentManagementConfiguration
+import com.rudderstack.sdk.kotlin.android.consent.ConsentManagementProvider
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent

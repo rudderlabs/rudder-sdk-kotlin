@@ -1,8 +1,9 @@
 package com.rudderstack.sampleapp.analytics.customplugins
 
+import com.rudderstack.sdk.kotlin.android.consent.ConsentManagementOptions
 import com.rudderstack.sdk.kotlin.core.Analytics
-import com.rudderstack.sdk.kotlin.core.consent.ConsentManagementOptions
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
+import com.rudderstack.sdk.kotlin.android.Analytics as AndroidAnalytics
 
 /**
  * A sample pattern for bridging a Consent Management Platform into the SDK. This is example
@@ -18,6 +19,9 @@ import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
  * ```
  * Adding it pushes whatever the CMP already knows, then keeps the SDK in sync as the user
  * changes their choices.
+ *
+ * Consent management lives in the android SDK, so this plugin must be added to an
+ * `com.rudderstack.sdk.kotlin.android.Analytics` instance.
  *
  * @param provider The CMP adapter this plugin reads consent choices from.
  */
@@ -45,7 +49,9 @@ class ConsentPlugin(
      * consent state and apply from the next event onward.
      */
     private fun pushCurrentConsent() {
-        analytics.setConsent(
+        // Consent is android-only, so a non-android instance is a wiring mistake, not a state
+        // this plugin should quietly tolerate.
+        (analytics as AndroidAnalytics).setConsent(
             ConsentManagementOptions(
                 allowedConsentIds = provider.allowedConsentIds,
                 deniedConsentIds = provider.deniedConsentIds,
