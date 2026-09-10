@@ -61,7 +61,7 @@ class SetConsentApiTest {
     @BeforeEach
     fun setup() {
         MockKAnnotations.init(this, relaxed = true)
-        // Although we don't need this in the current test class, it is needed due to the know issue with the use of Dispatchers.main.
+        // Although we don't need this in the current test class, it is needed due to the known issue with the use of Dispatchers.main.
         Dispatchers.setMain(testDispatcher)
 
         mockkConstructor(DeviceInfoPlugin::class)
