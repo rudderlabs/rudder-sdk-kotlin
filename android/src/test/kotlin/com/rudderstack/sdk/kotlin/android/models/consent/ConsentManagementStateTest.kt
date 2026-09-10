@@ -29,7 +29,7 @@ class ConsentManagementStateTest {
     // Initial state
 
     @Test
-    fun `given an enabled configuration with a non empty list, when the initial state is built, then consent management is active`() {
+    fun `given an enabled configuration with a non-empty list, when the initial state is built, then consent management is active`() {
         val configuration = ConsentManagementConfiguration(enabled = true, allowedConsentIds = listOf("marketing"))
 
         val state = ConsentManagementState.initialState(configuration)
