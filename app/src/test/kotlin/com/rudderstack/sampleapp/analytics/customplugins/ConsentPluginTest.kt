@@ -12,8 +12,10 @@ import kotlinx.serialization.json.put
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 import org.skyscreamer.jsonassert.JSONAssert
+import com.rudderstack.sdk.kotlin.core.Analytics as CoreAnalytics
 
 private const val EVENT_NAME = "Sample Event"
 private val emptyJsonObject = JsonObject(emptyMap())
@@ -63,6 +65,18 @@ class ConsentPluginTest {
 
         assertNull(provider.onConsentChanged)
         verify(exactly = 1) { mockAnalytics.setConsent(any()) }
+    }
+
+    @Test
+    fun `given a non-android analytics instance, when the plugin is set up, then no callback is left behind`() {
+        val provider = SpyConsentProvider()
+        val plugin = ConsentPlugin(provider)
+
+        assertThrows(IllegalStateException::class.java) {
+            plugin.setup(mockk<CoreAnalytics>(relaxed = true))
+        }
+
+        assertNull(provider.onConsentChanged)
     }
 
     @Test
