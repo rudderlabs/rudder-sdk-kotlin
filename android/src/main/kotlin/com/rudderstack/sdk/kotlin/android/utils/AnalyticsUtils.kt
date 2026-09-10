@@ -47,7 +47,7 @@ internal fun AndroidAnalytics.runOnMainThread(block: suspend () -> Unit) = analy
     block()
 }
 
-private val InactiveConsentState: State<ConsentManagementState> = State(ConsentManagementState())
+private val INACTIVE_CONSENT_STATE: State<ConsentManagementState> = State(ConsentManagementState())
 
 /**
  * The consent state of the android SDK instance, or an inactive state when there is none.
@@ -57,4 +57,4 @@ private val InactiveConsentState: State<ConsentManagementState> = State(ConsentM
  * same default the resolver applies to missing configuration.
  */
 internal val Analytics.consentState: State<ConsentManagementState>
-    get() = (this as? AndroidAnalytics)?.consentManagementState ?: InactiveConsentState
+    get() = (this as? AndroidAnalytics)?.consentManagementState ?: INACTIVE_CONSENT_STATE
