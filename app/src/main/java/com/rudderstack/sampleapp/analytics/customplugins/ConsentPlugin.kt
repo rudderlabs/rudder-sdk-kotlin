@@ -49,9 +49,12 @@ class ConsentPlugin(
      * consent state and apply from the next event onward.
      */
     private fun pushCurrentConsent() {
-        // Consent is android-only, so a non-android instance is a wiring mistake, not a state
-        // this plugin should quietly tolerate.
-        (analytics as AndroidAnalytics).setConsent(
+        // Consent management is android-only, so a non-android instance is a wiring mistake rather
+        // than a state this plugin should quietly tolerate - fail loudly, and say why.
+        val androidAnalytics = analytics as? AndroidAnalytics
+            ?: error("ConsentPlugin requires the android Analytics instance; consent management is Android-only.")
+
+        androidAnalytics.setConsent(
             ConsentManagementOptions(
                 allowedConsentIds = provider.allowedConsentIds,
                 deniedConsentIds = provider.deniedConsentIds,
