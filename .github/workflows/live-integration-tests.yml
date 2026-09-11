@@ -1,0 +1,166 @@
+# Sends a pull request's own build of a device-mode integration to a REAL destination, and reports
+# whether the destination accepted it.
+#
+# The test rig lives in `rudderlabs/rudder-mobile-sdk-test`, and this repository cannot run it. The
+# rig needs real vendor credentials, that repository is INTERNAL, and this one is PUBLIC. So this
+# job dispatches the rig's workflow, waits for it, and exits with the same conclusion. A failure
+# shows up here as an ordinary red check.
+#
+# NOTHING MAKES THIS CHECK REQUIRED. That is deliberate: it talks to third-party APIs, so an outage
+# at a vendor must not hold a pull request. Do not add it to the branch protection rules.
+#
+# Only the integrations with a live scenario are listed below. See `scenarios/live/README.md` in
+# the rig for what adding another one costs.
+#
+# Variables: RELEASE_APP_ID. Secrets: RELEASE_PRIVATE_KEY. The GitHub App behind them must be
+# installed on `rudder-mobile-sdk-test` with ACTIONS WRITE — contents write alone cannot start a
+# workflow.
+
+name: Live Integration Tests
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+    paths:
+      - 'integrations/clevertap/**'
+      - 'integrations/facebook/**'
+      - 'integrations/firebase/**'
+      # A core or android change reaches every destination, and names none of them.
+      - 'core/**'
+      - 'android/**'
+
+concurrency:
+  group: live-integration-tests-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: read
+
+env:
+  RIG_REPO: rudderlabs/rudder-mobile-sdk-test
+  RIG_WORKFLOW: live-pr-check-kotlin.yaml
+
+jobs:
+  live:
+    name: Device-mode live tests
+    # A fork gets no secrets, so it cannot mint the token that starts the rig. The check is not
+    # required, so a fork pull request simply has one fewer check.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    # The rig caps itself at 45 minutes. This adds room for the queue ahead of it.
+    timeout-minutes: 70
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
+        with:
+          egress-policy: audit
+
+      - name: Decide which destinations this pull request touches
+        id: vendors
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          vendors=""
+          add() {
+            case ",${vendors}," in
+              *",$1,"*) ;;
+              *) vendors="${vendors:+${vendors},}$1" ;;
+            esac
+          }
+          files="$(gh api "repos/${REPO}/pulls/${PR}/files" --paginate --jq '.[].filename')"
+          while IFS= read -r f; do
+            case "$f" in
+              integrations/clevertap/*) add clevertap ;;
+              integrations/facebook/*)  add facebook ;;
+              integrations/firebase/*)  add firebase ;;
+              core/*|android/*)         add clevertap; add facebook; add firebase ;;
+            esac
+          done <<< "$files"
+          # The path filter fired, so something matched. An empty list here means a path was added
+          # to the trigger and not to the mapping above, and a silent skip would hide that.
+          [ -n "$vendors" ] || {
+            echo "::error::the path filter started this job, but no changed file maps to a"
+            echo "::error::destination. Keep the trigger's paths list and the case statement"
+            echo "::error::above in step with each other."
+            exit 1; }
+          echo "::notice::destinations to test: ${vendors}"
+          echo "vendors=${vendors}" >> "$GITHUB_OUTPUT"
+
+      - name: Generate a token for the rig
+        id: app-token
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
+        with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_PRIVATE_KEY }}
+          owner: rudderlabs
+          repositories: rudder-mobile-sdk-test
+          permission-actions: write
+
+      - name: Run the live scenarios and wait for the verdict
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          VENDORS: ${{ steps.vendors.outputs.vendors }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          # The dispatch API returns no run id, and matching on a timestamp races another pull
+          # request. The rig echoes this id into its run name, which is what makes it findable.
+          cid="pr-${PR}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+
+          gh workflow run "${RIG_WORKFLOW}" --repo "${RIG_REPO}" --ref main \
+            -f sdk_repo="${GITHUB_REPOSITORY}" \
+            -f sdk_ref="${HEAD_SHA}" \
+            -f vendors="${VENDORS}" \
+            -f pr_number="${PR}" \
+            -f correlation_id="${cid}"
+          echo "::notice::dispatched ${RIG_WORKFLOW} for ${HEAD_SHA} [${cid}]"
+
+          find_run() {
+            gh api "repos/${RIG_REPO}/actions/workflows/${RIG_WORKFLOW}/runs?per_page=50" \
+              --jq "[.workflow_runs[] | select(.display_title | contains(\"[${cid}]\")) | .id] | first // empty"
+          }
+
+          # The run appears a few seconds after the dispatch. Two minutes is generous; beyond that
+          # the dispatch itself did not take.
+          run_id=""
+          for _ in $(seq 1 24); do
+            sleep 5
+            run_id="$(find_run)"
+            if [ -n "$run_id" ]; then break; fi
+          done
+          [ -n "$run_id" ] || {
+            echo "::error::no run in ${RIG_REPO} carries [${cid}] two minutes after the dispatch."
+            echo "::error::Check that the App token holds actions:write on that repository."
+            exit 1; }
+
+          url="https://github.com/${RIG_REPO}/actions/runs/${run_id}"
+          echo "::notice::watching ${url}"
+          echo "The live scenarios run in [${RIG_REPO} run ${run_id}](${url})." >> "$GITHUB_STEP_SUMMARY"
+
+          # 20-second poll for up to an hour. `gh run watch` would do this, but it streams the log
+          # of an internal repository into a public one's job output.
+          conclusion=""
+          for _ in $(seq 1 180); do
+            state="$(gh api "repos/${RIG_REPO}/actions/runs/${run_id}" \
+              --jq '"\(.status) \(.conclusion // "")"')"
+            conclusion="${state#* }"
+            if [ "${state%% *}" = "completed" ]; then break; fi
+            sleep 20
+          done
+
+          case "$conclusion" in
+            success)
+              echo "::notice::the live scenarios passed — ${url}" ;;
+            "")
+              echo "::error::the rig run did not finish within the hour. See ${url}"
+              exit 1 ;;
+            *)
+              echo "::error::the live scenarios reported '${conclusion}'. The report artifact on"
+              echo "::error::${url} carries the wire capture and the device log."
+              exit 1 ;;
+          esac
