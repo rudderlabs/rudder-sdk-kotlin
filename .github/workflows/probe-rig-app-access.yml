@@ -1,0 +1,89 @@
+# THROWAWAY. Answers one question and is then deleted: does the release GitHub App already reach
+# `rudder-mobile-sdk-test`, and with which permission?
+#
+# `live-integration-tests.yml` starts a workflow there, which needs ACTIONS WRITE. The App is used
+# today only inside this repository, with contents and pull-requests write, so nobody knows whether
+# it is installed on the rig at all. Asking infra for access we already hold has cost us a round
+# trip before.
+#
+# It writes NOTHING. Each step mints a token and reads. A mint fails when the App is not installed
+# on the target, or when it lacks the permission asked for, so the mint IS most of the test.
+#
+# The `push:` trigger is scoped to this branch on purpose: `workflow_dispatch` only fires for a
+# workflow already on the default branch, and this one must never get there.
+
+name: probe-rig-app-access
+
+on:
+  push:
+    branches: [feat/sdk-5362-live-integration-tests]
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Is the app id even configured
+        env:
+          APP_ID: ${{ vars.RELEASE_APP_ID }}
+        run: |
+          set -euo pipefail
+          if [ -n "$APP_ID" ]; then
+            echo "RELEASE_APP_ID is set"
+          else
+            echo "::error::RELEASE_APP_ID is EMPTY for this repository — it is not an org variable"
+            echo "::error::shared here, so nothing below can work."
+          fi
+
+      - name: Mint a token with actions write
+        id: actions_write
+        continue-on-error: true
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
+        with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_PRIVATE_KEY }}
+          owner: rudderlabs
+          repositories: rudder-mobile-sdk-test
+          permission-actions: write
+
+      # Separates "the App is not installed on the rig" from "it is installed without actions".
+      # Contents write is what a repository_dispatch needs, which is the fallback design.
+      - name: Mint a token with contents write
+        id: contents_write
+        continue-on-error: true
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
+        with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_PRIVATE_KEY }}
+          owner: rudderlabs
+          repositories: rudder-mobile-sdk-test
+          permission-contents: write
+
+      # A mint can succeed and still not reach the repository. This is the one that settles it.
+      - name: Read the rig's workflows with the actions token
+        id: read_back
+        if: steps.actions_write.outcome == 'success'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ steps.actions_write.outputs.token }}
+        run: |
+          set -euo pipefail
+          gh api repos/rudderlabs/rudder-mobile-sdk-test/actions/workflows \
+            --jq '.workflows[] | "  \(.path)"'
+
+      - name: Verdict
+        run: |
+          {
+            echo "## Does the release App reach rudder-mobile-sdk-test?"
+            echo
+            echo "| Ask | Result |"
+            echo "|---|---|"
+            echo "| token with \`actions: write\` | ${{ steps.actions_write.outcome }} |"
+            echo "| token with \`contents: write\` | ${{ steps.contents_write.outcome }} |"
+            echo "| list the rig's workflows | ${{ steps.read_back.outcome }} |"
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "actions:write  -> ${{ steps.actions_write.outcome }}"
+          echo "contents:write -> ${{ steps.contents_write.outcome }}"
+          echo "read-back      -> ${{ steps.read_back.outcome }}"
