@@ -7,24 +7,25 @@ import com.rudderstack.sdk.kotlin.android.models.consent.ConsentManagementState.
  * Replaces the consent lists in [ConsentManagementState].
  *
  * This is a full replacement, not a merge: the supplied lists overwrite both existing lists.
- * An update carrying no consent IDs at all is rejected — the current state is returned
- * unchanged. [ConsentManagementState.active] and [ConsentManagementState.provider] are
- * load-time settings and are never modified at runtime.
+ * An inactive state never takes a runtime update. [ConsentManagementState.active] and
+ * [ConsentManagementState.provider] are load-time settings and are never modified at runtime.
+ *
+ * Validating the update itself belongs to `Analytics.setConsent`, which refuses one carrying no
+ * consent IDs at all and warns. Repeating that check here would leave two copies of one rule free
+ * to drift apart.
  */
 internal class SetConsentAction(
     private val options: ConsentManagementOptions,
 ) : ConsentManagementState.ConsentManagementStateAction {
 
     override fun reduce(currentState: ConsentManagementState): ConsentManagementState {
+        // The feature's master switch, not a repeat of setConsent's validation: while consent
+        // management is off the state declines the update outright, rather than copying itself.
         if (!currentState.active) return currentState
 
-        val allowed = options.allowedConsentIds.normalized()
-        val denied = options.deniedConsentIds.normalized()
-        if (allowed.isEmpty() && denied.isEmpty()) return currentState
-
         return currentState.copy(
-            allowedConsentIds = allowed,
-            deniedConsentIds = denied,
+            allowedConsentIds = options.allowedConsentIds.normalized(),
+            deniedConsentIds = options.deniedConsentIds.normalized(),
         )
     }
 }

@@ -44,7 +44,7 @@ class SetConsentActionTest {
     }
 
     @Test
-    fun `given a populated consent state, when empty options are reduced, then the state is unchanged`() {
+    fun `given empty options, when reduced, then both lists are cleared because validation belongs to the caller`() {
         val currentState = ConsentManagementState(
             active = true,
             allowedConsentIds = listOf("marketing"),
@@ -54,21 +54,8 @@ class SetConsentActionTest {
 
         val newState = action.reduce(currentState)
 
-        assertEquals(currentState, newState)
-    }
-
-    @Test
-    fun `given a populated consent state, when options whose ids are only whitespace are reduced, then the state is unchanged`() {
-        val currentState = ConsentManagementState(
-            active = true,
-            allowedConsentIds = listOf("marketing"),
-            deniedConsentIds = listOf("advertising"),
-        )
-        val action = SetConsentAction(ConsentManagementOptions(allowedConsentIds = listOf("   ", "")))
-
-        val newState = action.reduce(currentState)
-
-        assertEquals(currentState, newState)
+        assertTrue(newState.allowedConsentIds.isEmpty())
+        assertTrue(newState.deniedConsentIds.isEmpty())
     }
 
     @Test
