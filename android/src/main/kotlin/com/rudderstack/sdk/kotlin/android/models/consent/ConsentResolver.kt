@@ -49,8 +49,8 @@ internal object ConsentResolver {
      * @return `true` when the destination may receive events.
      */
     fun resolve(state: ConsentManagementState, destinationConfig: JsonObject?): Boolean {
-        // Rule 1: disabled -> consented.
-        if (!state.enabled) return true
+        // Rule 1: inactive -> consented.
+        if (!state.active) return true
 
         // Rule 2: first entry matching the active provider; none (or no array) -> consented.
         val entries = destinationConfig?.get(CONSENT_MANAGEMENT_KEY).asObjectList() ?: emptyList()

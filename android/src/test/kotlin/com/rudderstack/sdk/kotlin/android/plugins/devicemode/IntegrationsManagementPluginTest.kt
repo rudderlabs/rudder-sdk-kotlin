@@ -133,7 +133,7 @@ class IntegrationsManagementPluginTest {
             mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(disabledSourceConfig))
             advanceUntilIdle()
             mockAnalytics.consentManagementState.dispatch(
-                ReplaceConsentStateAction(ConsentManagementState(enabled = true, allowedConsentIds = listOf("marketing")))
+                ReplaceConsentStateAction(ConsentManagementState(active = true, allowedConsentIds = listOf("marketing")))
             )
             advanceUntilIdle()
 

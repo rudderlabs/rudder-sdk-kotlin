@@ -21,7 +21,7 @@ class ConsentResolverTest {
 
     @Test
     fun `given consent management disabled, when resolved, then the destination is consented`() {
-        val state = consentedState(allowed = listOf("something-else")).copy(enabled = false)
+        val state = consentedState(allowed = listOf("something-else")).copy(active = false)
 
         assertTrue(ConsentResolver.resolve(state, destinationConfig(entry())))
     }
@@ -203,7 +203,7 @@ private fun consentedState(
     allowed: List<String> = emptyList(),
     denied: List<String> = emptyList(),
 ) = ConsentManagementState(
-    enabled = true,
+    active = true,
     provider = ConsentManagementProvider.CUSTOM,
     allowedConsentIds = allowed,
     deniedConsentIds = denied,

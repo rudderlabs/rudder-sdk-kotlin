@@ -264,7 +264,7 @@ class ConsentGatingTest {
 }
 
 private fun consentState(allowed: List<String>) = ConsentManagementState(
-    enabled = true,
+    active = true,
     provider = ConsentManagementProvider.CUSTOM,
     allowedConsentIds = allowed,
     deniedConsentIds = emptyList(),
