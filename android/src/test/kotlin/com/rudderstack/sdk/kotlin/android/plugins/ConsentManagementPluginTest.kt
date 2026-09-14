@@ -14,7 +14,11 @@ import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.unmockkAll
 import io.mockk.verify
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
@@ -44,14 +48,21 @@ class ConsentManagementPluginTest {
 
     private lateinit var plugin: ConsentManagementPlugin
 
+    private val testDispatcher = StandardTestDispatcher()
+
     @BeforeEach
     fun setup() {
         MockKAnnotations.init(this, relaxed = true)
+        // Reading the consent state touches AnalyticsUtils, which captures Dispatchers.Main in a
+        // file-level val the first time it loads. Without a Main dispatcher installed, that capture
+        // poisons every later test in the JVM that dispatches to the main thread.
+        Dispatchers.setMain(testDispatcher)
         plugin = ConsentManagementPlugin()
     }
 
     @AfterEach
     fun tearDown() {
+        Dispatchers.resetMain()
         unmockkAll()
     }
 
@@ -107,6 +118,20 @@ class ConsentManagementPluginTest {
         verify(exactly = 1) { mockLogger.warn(capture(messages)) }
         assertTrue(messages.single().contains(CONSENT_MANAGEMENT_KEY))
         assertFalse(messages.single().contains(LEGACY_CONSENT_ID))
+    }
+
+    @Test
+    fun `given the key is injected on every event, when several are intercepted, then only the first warns`() = runTest {
+        every { mockAnalytics.consentManagementState } returns provideConsentState(
+            enabled = true,
+            allowed = listOf("marketing"),
+        )
+        val mockLogger = mockAnalytics.logger
+        plugin.setup(mockAnalytics)
+
+        repeat(times = 3) { plugin.intercept(provideEventWithLegacyKey()) }
+
+        verify(exactly = 1) { mockLogger.warn(any()) }
     }
 
     @Test
