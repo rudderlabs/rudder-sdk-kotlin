@@ -166,7 +166,7 @@ abstract class IntegrationPlugin : EventPlugin {
      */
     private fun gateAndRefreshConsentStamp(event: Event): Event? {
         val state = analytics.consentState.value
-        if (!state.enabled) return event
+        if (!state.active) return event
 
         if (!ConsentResolver.resolve(state, destinationConfig)) {
             analytics.logger.debug(

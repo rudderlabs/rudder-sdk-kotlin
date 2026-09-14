@@ -16,5 +16,5 @@ internal class ConsentContextValue(private val analytics: Analytics) : ReservedC
     override val overrideAdvice: String =
         "the SDK owns this key while consent management is enabled. Migrate to setConsent()."
 
-    override fun current(): JsonElement? = analytics.consentManagementState.value.takeIf { it.enabled }?.consentStamp
+    override fun current(): JsonElement? = analytics.consentManagementState.value.takeIf { it.active }?.consentStamp
 }
