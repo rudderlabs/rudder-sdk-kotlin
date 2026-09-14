@@ -49,21 +49,21 @@ class ConsentContextValueTest {
 
     @Test
     fun `given consent management enabled, when the reserved value is read, then it is the inner consent stamp`() {
-        val state = stubConsentState(enabled = true, allowed = listOf("marketing"), denied = listOf("advertising"))
+        val state = stubConsentState(active = true, allowed = listOf("marketing"), denied = listOf("advertising"))
 
         assertEquals(state.consentStamp, reservedValue.current())
     }
 
     @Test
     fun `given consent management disabled, when the reserved value is read, then nothing is asserted`() {
-        stubConsentState(enabled = false, allowed = listOf("marketing"))
+        stubConsentState(active = false, allowed = listOf("marketing"))
 
         assertNull(reservedValue.current())
     }
 
     @Test
     fun `given the same state, when the stamper runs, then it writes exactly the reserved value`() = runTest {
-        stubConsentState(enabled = true, allowed = listOf("marketing"), denied = listOf("advertising"))
+        stubConsentState(active = true, allowed = listOf("marketing"), denied = listOf("advertising"))
         val event = provideEvent()
 
         ConsentManagementPlugin().also { it.setup(mockAnalytics) }.intercept(event)
@@ -77,12 +77,12 @@ class ConsentContextValueTest {
     }
 
     private fun stubConsentState(
-        enabled: Boolean,
+        active: Boolean,
         allowed: List<String> = emptyList(),
         denied: List<String> = emptyList(),
     ): ConsentManagementState {
         val state = ConsentManagementState(
-            enabled = enabled,
+            active = active,
             provider = ConsentManagementProvider.CUSTOM,
             allowedConsentIds = allowed,
             deniedConsentIds = denied,

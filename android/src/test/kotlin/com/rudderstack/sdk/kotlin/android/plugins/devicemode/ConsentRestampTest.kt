@@ -221,7 +221,7 @@ private class ParkingPlugin(private val released: CompletableDeferred<Unit>) : P
 }
 
 private fun consentState(allowed: List<String>) = ConsentManagementState(
-    enabled = true,
+    active = true,
     provider = ConsentManagementProvider.CUSTOM,
     allowedConsentIds = allowed,
     deniedConsentIds = emptyList(),
