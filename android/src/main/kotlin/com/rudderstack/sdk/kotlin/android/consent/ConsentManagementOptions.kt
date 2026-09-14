@@ -12,7 +12,16 @@ package com.rudderstack.sdk.kotlin.android.consent
  * @param allowedConsentIds Consent category IDs the user has granted. Defaults to an empty list.
  * @param deniedConsentIds Consent category IDs the user has denied. Defaults to an empty list.
  */
-class ConsentManagementOptions @JvmOverloads constructor(
+data class ConsentManagementOptions @JvmOverloads constructor(
     val allowedConsentIds: List<String> = emptyList(),
     val deniedConsentIds: List<String> = emptyList(),
-)
+) {
+    /**
+     * Redacts the consent category IDs — the lists reflect the user's consent choices and
+     * must not leak into logs or crash reports.
+     */
+    override fun toString(): String {
+        return "ConsentManagementOptions(allowedConsentIds=${allowedConsentIds.size} id(s), " +
+            "deniedConsentIds=${deniedConsentIds.size} id(s))"
+    }
+}
