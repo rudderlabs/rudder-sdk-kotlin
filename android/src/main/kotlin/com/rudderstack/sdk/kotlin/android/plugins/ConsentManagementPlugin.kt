@@ -11,6 +11,7 @@ import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import java.util.concurrent.atomic.AtomicBoolean
 
 private const val CONSENT_MANAGEMENT_KEY = "consentManagement"
 private const val PROVIDER_KEY = "provider"
@@ -25,6 +26,9 @@ private const val DENIED_CONSENT_IDS_KEY = "deniedConsentIds"
  * While disabled, events pass through untouched, so a legacy customContext injection keeps
  * working. The stamp reflects the state at event creation; events already in the pipeline are
  * not restamped.
+ *
+ * A customer still injecting the key does so on every event, so the replacement is warned about
+ * once per analytics instance rather than once per event.
  */
 internal class ConsentManagementPlugin : Plugin {
 
@@ -32,11 +36,17 @@ internal class ConsentManagementPlugin : Plugin {
 
     override lateinit var analytics: Analytics
 
+    // Events are intercepted on a multi-threaded dispatcher, so the first-warning check has to be
+    // atomic - a plain flag would let two concurrent events both warn.
+    private val hasWarnedAboutInjectedKey = AtomicBoolean(false)
+
     override suspend fun intercept(event: Event): Event {
         val state = analytics.consentState.value
         if (!state.enabled) return event
 
-        if (event.context.containsKey(CONSENT_MANAGEMENT_KEY)) {
+        if (event.context.containsKey(CONSENT_MANAGEMENT_KEY) &&
+            hasWarnedAboutInjectedKey.compareAndSet(false, true)
+        ) {
             analytics.logger.warn(
                 "ConsentManagementPlugin: Replacing the \"consentManagement\" key found in the event context; " +
                     "the SDK owns this key while consent management is enabled. Migrate to setConsent()."
