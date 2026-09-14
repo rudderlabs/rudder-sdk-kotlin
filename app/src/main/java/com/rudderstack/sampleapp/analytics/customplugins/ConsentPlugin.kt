@@ -36,27 +36,29 @@ class ConsentPlugin(
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
-        // Push before subscribing, so a failure here leaves no callback behind: a plugin whose
-        // setup throws is never added to the chain, so its teardown() can never run.
-        pushCurrentConsent()
+        // Fail before subscribing: a plugin whose setup throws is never added to the chain, so its
+        // teardown() never runs and the callback would leak. With the check hoisted, subscribing
+        // first costs nothing - and a CMP change racing setup is still delivered.
+        androidAnalytics()
         provider.onConsentChanged = { pushCurrentConsent() }
+        pushCurrentConsent()
     }
 
     override fun teardown() {
         provider.onConsentChanged = null
     }
 
+    // Consent management is android-only, so a non-android instance is a wiring mistake rather
+    // than a state this plugin should quietly tolerate - fail loudly, and say why.
+    private fun androidAnalytics(): AndroidAnalytics = analytics as? AndroidAnalytics
+        ?: error("ConsentPlugin requires the android Analytics instance; consent management is Android-only.")
+
     /**
      * Hands the CMP's current choices to the SDK. The new lists fully replace the previous
      * consent state and apply from the next event onward.
      */
     private fun pushCurrentConsent() {
-        // Consent management is android-only, so a non-android instance is a wiring mistake rather
-        // than a state this plugin should quietly tolerate - fail loudly, and say why.
-        val androidAnalytics = analytics as? AndroidAnalytics
-            ?: error("ConsentPlugin requires the android Analytics instance; consent management is Android-only.")
-
-        androidAnalytics.setConsent(
+        androidAnalytics().setConsent(
             ConsentManagementOptions(
                 allowedConsentIds = provider.allowedConsentIds,
                 deniedConsentIds = provider.deniedConsentIds,
