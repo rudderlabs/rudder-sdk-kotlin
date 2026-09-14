@@ -3,6 +3,7 @@ package com.rudderstack.sampleapp.analytics.customplugins
 import com.rudderstack.sdk.kotlin.android.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
+import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.test.runTest
@@ -38,6 +39,19 @@ class ConsentPluginTest {
                 match { it.allowedConsentIds == listOf("marketing") && it.deniedConsentIds == listOf("advertising") }
             )
         }
+    }
+
+    @Test
+    fun `given a plugin backed by a CMP, when it is set up, then the listener is installed before the first push`() {
+        // A CMP change arriving between the first push and the subscription would be dropped, so
+        // the subscription has to come first.
+        val order = mutableListOf<String>()
+        val provider = OrderRecordingProvider { order += "subscribed" }
+        every { mockAnalytics.setConsent(any()) } answers { order += "pushed" }
+
+        ConsentPlugin(provider).setup(mockAnalytics)
+
+        assertEquals(listOf("subscribed", "pushed"), order)
     }
 
     @Test
@@ -93,6 +107,19 @@ class ConsentPluginTest {
 
             assertEquals(event, returned)
             JSONAssert.assertEquals(originalContext, event.context.toString(), true)
+        }
+}
+
+private class OrderRecordingProvider(private val onSubscribe: () -> Unit) : ConsentCategoryProvider {
+
+    override val allowedConsentIds: List<String> = listOf("marketing")
+
+    override val deniedConsentIds: List<String> = emptyList()
+
+    override var onConsentChanged: (() -> Unit)? = null
+        set(value) {
+            field = value
+            if (value != null) onSubscribe()
         }
 }
 
