@@ -42,7 +42,7 @@ internal class ConsentManagementPlugin : Plugin {
 
     override suspend fun intercept(event: Event): Event {
         val state = analytics.consentState.value
-        if (!state.enabled) return event
+        if (!state.active) return event
 
         if (event.context.containsKey(CONSENT_MANAGEMENT_KEY) &&
             hasWarnedAboutInjectedKey.compareAndSet(false, true)
