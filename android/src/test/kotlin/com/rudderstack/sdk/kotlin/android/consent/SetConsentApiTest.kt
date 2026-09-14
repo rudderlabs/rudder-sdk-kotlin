@@ -173,6 +173,25 @@ class SetConsentApiTest {
     }
 
     @Test
+    fun `given a shutdown analytics instance, when setConsent is called, then the state is unchanged`() {
+        val analytics = provideAnalytics(
+            ConsentManagementConfiguration(enabled = true, allowedConsentIds = listOf("analytics"))
+        )
+        val stateBefore = analytics.consentManagementState.value
+        analytics.shutdown()
+
+        analytics.setConsent(
+            ConsentManagementOptions(
+                allowedConsentIds = listOf("marketing"),
+                deniedConsentIds = listOf("advertising"),
+            )
+        )
+
+        assertEquals(stateBefore, analytics.consentManagementState.value)
+        verify { mockLogger.warn(match { it.contains("has been shutdown") }) }
+    }
+
+    @Test
     fun `given a consent state set at runtime, when reset is called, then the consent state is identical before and after`() {
         val analytics = provideAnalytics(
             ConsentManagementConfiguration(enabled = true, allowedConsentIds = listOf("analytics"))
