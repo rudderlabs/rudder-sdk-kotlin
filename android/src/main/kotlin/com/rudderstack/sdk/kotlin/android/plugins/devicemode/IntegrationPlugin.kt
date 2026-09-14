@@ -105,10 +105,7 @@ abstract class IntegrationPlugin : EventPlugin {
     //  only once and destination is initialised only once even when this method is called multiple times.
     //  There should be no side effect of calling this method multiple times with same SourceConfig.
     internal fun initDestination(sourceConfig: SourceConfig) {
-        isDestinationConfigured(sourceConfig)?.let { config ->
-            destinationConfig = config
-            safelyInitOrUpdateAndNotify(config)
-        }
+        isDestinationConfigured(sourceConfig)?.let { safelyInitOrUpdateAndNotify(it) }
     }
 
     private fun isDestinationConfigured(sourceConfig: SourceConfig): JsonObject? {
@@ -117,6 +114,9 @@ abstract class IntegrationPlugin : EventPlugin {
             return emptyJsonObject
         }
         val configDestination = findDestination(sourceConfig, key)
+        // Recorded whatever the outcome below: the handoff gate needs the destination's current
+        // consent rules, and a rejected update still changes what those rules are.
+        destinationConfig = configDestination?.destinationConfig
         return when {
             configDestination == null -> {
                 notifyDestinationFailure("Destination $key not found in the source config. $DELIVERY_HALTED_NOTICE")
