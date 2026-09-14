@@ -46,12 +46,18 @@ internal class SchemaGuardPlugin : Plugin {
         }
     }
 
-    /** The base keys this platform actually stamps; warning about any other key would be noise. */
-    private val managedBaseKeys: List<String>
-        get() = when (analytics.getPlatformType()) {
+    /**
+     * The base keys this platform actually stamps; warning about any other key would be noise.
+     *
+     * Resolved once: an instance's platform type never changes, and this is read on the terminal
+     * path of every event.
+     */
+    private val managedBaseKeys: List<String> by lazy {
+        when (analytics.getPlatformType()) {
             PlatformType.Mobile -> SDKManagedContextKey.baseKeys
             PlatformType.Server -> SDKManagedContextKey.coreBaseKeys
         }.map { it.key }
+    }
 
     private fun customContextOverrides(event: Event): List<String> = managedBaseKeys
         .filter { event.options.customContext.containsKey(it) }
