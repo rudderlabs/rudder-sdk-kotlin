@@ -34,7 +34,7 @@ class ConsentManagementStateTest {
 
         val state = ConsentManagementState.initialState(configuration)
 
-        assertTrue(state.enabled)
+        assertTrue(state.active)
     }
 
     @Test
@@ -43,7 +43,7 @@ class ConsentManagementStateTest {
 
         val state = ConsentManagementState.initialState(configuration)
 
-        assertFalse(state.enabled)
+        assertFalse(state.active)
     }
 
     @Test
@@ -52,7 +52,7 @@ class ConsentManagementStateTest {
 
         val state = ConsentManagementState.initialState(configuration)
 
-        assertFalse(state.enabled)
+        assertFalse(state.active)
     }
 
     @Test
@@ -65,7 +65,7 @@ class ConsentManagementStateTest {
 
         val state = ConsentManagementState.initialState(configuration)
 
-        assertFalse(state.enabled)
+        assertFalse(state.active)
     }
 
     @Test

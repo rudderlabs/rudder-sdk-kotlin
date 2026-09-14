@@ -7,12 +7,12 @@ import com.rudderstack.sdk.kotlin.core.internals.statemanagement.StateAction
 /**
  * In-memory state holding the current consent values.
  *
- * The two consent ID lists are never both empty while [enabled] is `true`: a configuration
+ * The two consent ID lists are never both empty while [active] is `true`: a configuration
  * that enables consent management without supplying either list is a configuration error,
  * and the state is built inactive so the feature behaves as if it had never been enabled.
  */
 internal data class ConsentManagementState(
-    val enabled: Boolean = false,
+    val active: Boolean = false,
     val provider: ConsentManagementProvider = ConsentManagementProvider.CUSTOM,
     val allowedConsentIds: List<String> = emptyList(),
     val deniedConsentIds: List<String> = emptyList(),
@@ -30,9 +30,8 @@ internal data class ConsentManagementState(
         fun initialState(configuration: ConsentManagementConfiguration): ConsentManagementState {
             val allowed = configuration.allowedConsentIds.normalized()
             val denied = configuration.deniedConsentIds.normalized()
-            val active = configuration.enabled && (allowed.isNotEmpty() || denied.isNotEmpty())
             return ConsentManagementState(
-                enabled = active,
+                active = configuration.enabled && (allowed.isNotEmpty() || denied.isNotEmpty()),
                 provider = configuration.provider,
                 allowedConsentIds = allowed,
                 deniedConsentIds = denied,
