@@ -68,7 +68,9 @@ internal object ConsentResolver {
         }
     }
 
-    // Any non-object element voids the whole list, keeping list handling wholesale rather than per-entry.
+    // Any non-object element voids the whole list, so one malformed entry leaves the destination
+    // ungated rather than partially gated. Fail-open is the deliberate posture for consent
+    // configuration errors - a bad config must never turn into silent data loss.
     private fun Any?.asObjectList(): List<JsonObject>? {
         val array = this as? JsonArray ?: return null
         val objects = array.filterIsInstance<JsonObject>()
