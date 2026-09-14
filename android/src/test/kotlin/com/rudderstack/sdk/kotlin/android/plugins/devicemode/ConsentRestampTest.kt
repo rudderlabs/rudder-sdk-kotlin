@@ -21,8 +21,10 @@ import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.unmockkAll
 import io.mockk.verify
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.resetMain
@@ -158,6 +160,32 @@ class ConsentRestampTest {
             verify(exactly = 0) { plugin.track(any()) }
         }
 
+    @Test
+    fun `given consent revoked while an event is mid chain, when it resumes, then it is not delivered`() =
+        runTest(testDispatcher) {
+            val consentManagementState = State(initialState = consentState(allowed = listOf("marketing")))
+            every { mockAnalytics.consentManagementState } returns consentManagementState
+            val sourceConfigState = State(initialState = SourceConfig.initialState())
+            every { mockAnalytics.sourceConfigState } returns sourceConfigState
+            plugin.setup(mockAnalytics)
+            sourceConfigState.dispatch(SourceConfig.UpdateAction(gatedSourceConfig()))
+            testDispatcher.scheduler.advanceUntilIdle()
+            plugin.initDestination(gatedSourceConfig())
+
+            // A customer plugin doing suspending work parks the event inside the destination chain,
+            // after the consent gate has already passed it.
+            val released = CompletableDeferred<Unit>()
+            plugin.add(ParkingPlugin(released))
+            launch { plugin.intercept(trackEvent("in-flight-event")) }
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            consentManagementState.dispatch(ReplaceConsentStateAction(consentState(allowed = listOf("something-else"))))
+            released.complete(Unit)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify(exactly = 0) { plugin.track(any()) }
+        }
+
     private fun stubConsentState(state: ConsentManagementState) {
         every { mockAnalytics.consentManagementState } returns State(initialState = state)
     }
@@ -175,6 +203,19 @@ private class SpoofConsentPlugin : Plugin {
 
     override suspend fun intercept(event: Event): Event {
         event.context = event.context mergeWithHigherPriorityTo spoofedConsentPayload()
+        return event
+    }
+}
+
+// A customer plugin doing real suspending work, holding the event inside the destination chain.
+private class ParkingPlugin(private val released: CompletableDeferred<Unit>) : Plugin {
+
+    override val pluginType: Plugin.PluginType = Plugin.PluginType.OnProcess
+
+    override lateinit var analytics: Analytics
+
+    override suspend fun intercept(event: Event): Event {
+        released.await()
         return event
     }
 }
