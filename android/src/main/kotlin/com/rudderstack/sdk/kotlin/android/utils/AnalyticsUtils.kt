@@ -47,6 +47,12 @@ internal fun AndroidAnalytics.runOnMainThread(block: suspend () -> Unit) = analy
     block()
 }
 
+/**
+ * The inactive state handed to every non-android instance, and therefore shared by all of them.
+ *
+ * It must never be dispatched to: a mutation here would leak into every other instance falling back
+ * to it. Consumers only ever read it.
+ */
 private val INACTIVE_CONSENT_STATE: State<ConsentManagementState> = State(ConsentManagementState())
 
 /**
