@@ -11,7 +11,7 @@ class SetConsentActionTest {
     @Test
     fun `given existing consent lists, when new options are reduced, then both lists are fully replaced`() {
         val currentState = ConsentManagementState(
-            enabled = true,
+            active = true,
             allowedConsentIds = listOf("old-allowed"),
             deniedConsentIds = listOf("old-denied"),
         )
@@ -31,7 +31,7 @@ class SetConsentActionTest {
     @Test
     fun `given both lists populated, when options carrying only an allowed list are reduced, then the omitted denied list is cleared`() {
         val currentState = ConsentManagementState(
-            enabled = true,
+            active = true,
             allowedConsentIds = listOf("marketing"),
             deniedConsentIds = listOf("advertising"),
         )
@@ -46,7 +46,7 @@ class SetConsentActionTest {
     @Test
     fun `given a populated consent state, when empty options are reduced, then the state is unchanged`() {
         val currentState = ConsentManagementState(
-            enabled = true,
+            active = true,
             allowedConsentIds = listOf("marketing"),
             deniedConsentIds = listOf("advertising"),
         )
@@ -60,7 +60,7 @@ class SetConsentActionTest {
     @Test
     fun `given a populated consent state, when options whose ids are only whitespace are reduced, then the state is unchanged`() {
         val currentState = ConsentManagementState(
-            enabled = true,
+            active = true,
             allowedConsentIds = listOf("marketing"),
             deniedConsentIds = listOf("advertising"),
         )
@@ -73,7 +73,7 @@ class SetConsentActionTest {
 
     @Test
     fun `given a state with no consent lists, when options with consent data are reduced, then the lists are applied`() {
-        val currentState = ConsentManagementState(enabled = true)
+        val currentState = ConsentManagementState(active = true)
         val action = SetConsentAction(ConsentManagementOptions(deniedConsentIds = listOf("advertising")))
 
         val newState = action.reduce(currentState)
@@ -84,7 +84,7 @@ class SetConsentActionTest {
 
     @Test
     fun `given options with messy consent ids, when reduced, then the lists are normalized`() {
-        val currentState = ConsentManagementState(enabled = true)
+        val currentState = ConsentManagementState(active = true)
         val action = SetConsentAction(
             ConsentManagementOptions(
                 allowedConsentIds = listOf(" marketing ", ""),
@@ -99,8 +99,8 @@ class SetConsentActionTest {
     }
 
     @Test
-    fun `given a disabled state, when options with consent data are reduced, then the state is completely unchanged`() {
-        val currentState = ConsentManagementState(enabled = false)
+    fun `given an inactive state, when options with consent data are reduced, then the state is completely unchanged`() {
+        val currentState = ConsentManagementState(active = false)
         val action = SetConsentAction(ConsentManagementOptions(allowedConsentIds = listOf("marketing")))
 
         val newState = action.reduce(currentState)
@@ -109,16 +109,16 @@ class SetConsentActionTest {
     }
 
     @Test
-    fun `given an enabled state, when any options are reduced, then enabled and provider are untouched`() {
+    fun `given an active state, when any options are reduced, then active and provider are untouched`() {
         val currentState = ConsentManagementState(
-            enabled = true,
+            active = true,
             provider = ConsentManagementProvider.CUSTOM,
         )
         val action = SetConsentAction(ConsentManagementOptions(allowedConsentIds = listOf("marketing")))
 
         val newState = action.reduce(currentState)
 
-        assertTrue(newState.enabled)
+        assertTrue(newState.active)
         assertEquals(ConsentManagementProvider.CUSTOM, newState.provider)
     }
 }

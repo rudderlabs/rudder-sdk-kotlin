@@ -95,7 +95,7 @@ class Analytics(
     )
 
     init {
-        if (configuration.consentManagement.enabled && !consentManagementState.value.enabled) {
+        if (configuration.consentManagement.enabled && !consentManagementState.value.active) {
             logger.info(
                 "Analytics(android): Consent management is enabled but no consent IDs were supplied; " +
                     "consent management is inactive for this session. Supply allowedConsentIds or " +
@@ -149,7 +149,7 @@ class Analytics(
         logger.debug("Analytics(android): setConsent() called")
         if (!isAnalyticsActive()) return
 
-        if (!consentManagementState.value.enabled) {
+        if (!consentManagementState.value.active) {
             logger.warn(
                 "Analytics(android): Consent management is disabled; setConsent has no effect. " +
                     "Enable it via Configuration's consentManagement."
