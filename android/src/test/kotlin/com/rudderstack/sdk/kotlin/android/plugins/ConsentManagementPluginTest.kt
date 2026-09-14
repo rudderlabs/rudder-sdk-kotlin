@@ -69,7 +69,7 @@ class ConsentManagementPluginTest {
     @Test
     fun `given consent management enabled, when an event is intercepted, then the exact block is stamped`() = runTest {
         every { mockAnalytics.consentManagementState } returns provideConsentState(
-            enabled = true,
+            active = true,
             allowed = listOf("marketing"),
             denied = listOf("advertising"),
         )
@@ -87,7 +87,7 @@ class ConsentManagementPluginTest {
 
     @Test
     fun `given consent management disabled, when an event is intercepted, then the consentManagement key is absent`() = runTest {
-        every { mockAnalytics.consentManagementState } returns provideConsentState(enabled = false)
+        every { mockAnalytics.consentManagementState } returns provideConsentState(active = false)
         val event = provideEvent()
 
         plugin.setup(mockAnalytics)
@@ -100,7 +100,7 @@ class ConsentManagementPluginTest {
     @Test
     fun `given a legacy injected key while enabled, when an event is intercepted, then the sdk block wins and a warning is logged`() = runTest {
         every { mockAnalytics.consentManagementState } returns provideConsentState(
-            enabled = true,
+            active = true,
             allowed = listOf("marketing"),
         )
         val mockLogger = mockAnalytics.logger
@@ -123,7 +123,7 @@ class ConsentManagementPluginTest {
     @Test
     fun `given the key is injected on every event, when several are intercepted, then only the first warns`() = runTest {
         every { mockAnalytics.consentManagementState } returns provideConsentState(
-            enabled = true,
+            active = true,
             allowed = listOf("marketing"),
         )
         val mockLogger = mockAnalytics.logger
@@ -136,7 +136,7 @@ class ConsentManagementPluginTest {
 
     @Test
     fun `given a legacy injected key while disabled, when an event is intercepted, then the key is preserved with no warning`() = runTest {
-        every { mockAnalytics.consentManagementState } returns provideConsentState(enabled = false)
+        every { mockAnalytics.consentManagementState } returns provideConsentState(active = false)
         val mockLogger = mockAnalytics.logger
         val event = provideEventWithLegacyKey()
 
@@ -149,7 +149,7 @@ class ConsentManagementPluginTest {
 
     @Test
     fun `given the state is updated between events, when a second event is intercepted, then it carries the new lists`() = runTest {
-        val consentState = provideConsentState(enabled = true, allowed = listOf("marketing"))
+        val consentState = provideConsentState(active = true, allowed = listOf("marketing"))
         every { mockAnalytics.consentManagementState } returns consentState
         plugin.setup(mockAnalytics)
 
@@ -191,12 +191,12 @@ private fun provideEventWithLegacyKey(): Event = provideEvent().also {
 }
 
 private fun provideConsentState(
-    enabled: Boolean,
+    active: Boolean,
     allowed: List<String> = emptyList(),
     denied: List<String> = emptyList(),
 ): State<ConsentManagementState> = State(
     initialState = ConsentManagementState(
-        enabled = enabled,
+        active = active,
         provider = ConsentManagementProvider.CUSTOM,
         allowedConsentIds = allowed,
         deniedConsentIds = denied,
