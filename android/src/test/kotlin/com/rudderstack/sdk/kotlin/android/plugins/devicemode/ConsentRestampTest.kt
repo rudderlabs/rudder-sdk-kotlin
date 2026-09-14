@@ -186,6 +186,33 @@ class ConsentRestampTest {
             verify(exactly = 0) { plugin.track(any()) }
         }
 
+    @Test
+    fun `given the source config tightens consent while an event is mid chain, when it resumes, then it is not delivered`() =
+        runTest(testDispatcher) {
+            val consentManagementState = State(initialState = consentState(allowed = listOf("marketing")))
+            every { mockAnalytics.consentManagementState } returns consentManagementState
+            val sourceConfigState = State(initialState = SourceConfig.initialState())
+            every { mockAnalytics.sourceConfigState } returns sourceConfigState
+            plugin.setup(mockAnalytics)
+            sourceConfigState.dispatch(SourceConfig.UpdateAction(gatedSourceConfig()))
+            testDispatcher.scheduler.advanceUntilIdle()
+            plugin.initDestination(gatedSourceConfig())
+
+            val released = CompletableDeferred<Unit>()
+            plugin.add(ParkingPlugin(released))
+            launch { plugin.intercept(trackEvent("in-flight-event")) }
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            // The dashboard now demands a second consent the user has never granted. The update is
+            // rejected, so the destination is no longer ready - but the parked event already passed
+            // that check and must be judged against the new rules, not the ones it started under.
+            plugin.initDestination(gatedSourceConfig(consents = listOf("marketing", "analytics")))
+            released.complete(Unit)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify(exactly = 0) { plugin.track(any()) }
+        }
+
     private fun stubConsentState(state: ConsentManagementState) {
         every { mockAnalytics.consentManagementState } returns State(initialState = state)
     }
