@@ -35,7 +35,7 @@ class ConsentGatePluginTest {
         every { mockAnalytics.sourceConfigState } returns State(initialState = SourceConfig.initialState())
         every { mockAnalytics.consentManagementState } returns State(
             initialState = ConsentManagementState(
-                enabled = true,
+                active = true,
                 provider = ConsentManagementProvider.CUSTOM,
                 allowedConsentIds = listOf("analytics"),
             )
