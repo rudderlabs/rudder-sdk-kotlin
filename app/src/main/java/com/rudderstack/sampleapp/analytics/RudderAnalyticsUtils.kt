@@ -55,6 +55,10 @@ object RudderAnalyticsUtils {
                 gzipEnabled = true,
                 logger = CustomTimberLogger(),
                 logLevel = Logger.LogLevel.VERBOSE,
+                // Seeding the lists here is what activates consent management: enabling it with
+                // both lists empty leaves it inactive for the whole session, and every later
+                // setConsent is refused. ConsentPlugin below then keeps the SDK in sync as the
+                // user changes their choices, and covers events tracked before it is added.
                 consentManagement = ConsentManagementConfiguration(
                     enabled = true,
                     provider = ConsentManagementProvider.CUSTOM,
