@@ -9,7 +9,9 @@ import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.GroupEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.Properties
+import com.rudderstack.sdk.kotlin.core.internals.models.ReservedContextValue
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
+import com.rudderstack.sdk.kotlin.core.internals.models.SDKManagedContextKey
 import com.rudderstack.sdk.kotlin.core.internals.models.ScreenEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
@@ -39,13 +41,16 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import com.rudderstack.sdk.kotlin.core.internals.utils.isAnalyticsActive
 import com.rudderstack.sdk.kotlin.core.internals.utils.isSourceEnabledWithLogging
 import com.rudderstack.sdk.kotlin.core.internals.utils.resolvePreferredPreviousId
+import com.rudderstack.sdk.kotlin.core.plugins.ContextSnapshotPlugin
 import com.rudderstack.sdk.kotlin.core.plugins.LibraryInfoPlugin
 import com.rudderstack.sdk.kotlin.core.plugins.RudderStackDataplanePlugin
+import com.rudderstack.sdk.kotlin.core.plugins.SchemaGuardPlugin
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import org.jetbrains.annotations.VisibleForTesting
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * The `Analytics` class is the core of the RudderStack SDK, responsible for tracking events,
@@ -80,6 +85,22 @@ open class Analytics protected constructor(
      */
     @InternalRudderApi
     val sourceConfigState = State(initialState = SourceConfig.initialState())
+
+    /**
+     * Records SDK-stamped base context values for the terminal context guard.
+     * Registered by platform modules after all SDK context stampers.
+     */
+    @InternalRudderApi
+    val contextSnapshotPlugin = ContextSnapshotPlugin()
+
+    /**
+     * Suppliers for the context keys the SDK re-asserts at the terminal boundary.
+     *
+     * Populated by whichever module owns the feature behind a key. Empty means nothing is
+     * reserved, which is the correct behaviour while a platform module is still constructing.
+     */
+    @InternalRudderApi
+    val reservedContextValues: MutableMap<SDKManagedContextKey, ReservedContextValue> = ConcurrentHashMap()
 
     private val processEventChannel: Channel<Event> = Channel(Channel.UNLIMITED)
     private var processEventJob: Job? = null
@@ -355,6 +376,11 @@ open class Analytics protected constructor(
      */
     private fun setup() {
         add(LibraryInfoPlugin())
+        // Platform modules register the snapshot after their own context stampers. A base-type
+        // instance has none, so it registers here, right after the only base key core stamps.
+        if (this::class == Analytics::class) add(contextSnapshotPlugin)
+        // Must stay ahead of all terminal delivery plugins — guards both cloud storage and device-mode fan-out.
+        add(SchemaGuardPlugin())
         add(RudderStackDataplanePlugin())
     }
 

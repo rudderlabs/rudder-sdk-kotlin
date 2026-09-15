@@ -1,13 +1,16 @@
 package com.rudderstack.sdk.kotlin.android.plugins.devicemode
 
 import com.rudderstack.sdk.kotlin.android.models.consent.ConsentResolver
+import com.rudderstack.sdk.kotlin.android.models.consent.toConsentContextBlock
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing.ConsentGatePlugin
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing.EventFilteringPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing.IntegrationOptionsPlugin
 import com.rudderstack.sdk.kotlin.android.utils.consentState
 import com.rudderstack.sdk.kotlin.android.utils.findDestination
+import com.rudderstack.sdk.kotlin.android.utils.mergeWithHigherPriorityTo
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
+import com.rudderstack.sdk.kotlin.core.internals.models.SDKManagedContextKey
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.plugins.EventPlugin
@@ -45,6 +48,10 @@ abstract class IntegrationPlugin : EventPlugin {
     @Volatile
     internal var isDestinationReady = false
         private set
+
+    // Kept for the handoff gate, so it costs no source-config lookup per event.
+    @Volatile
+    private var destinationConfig: JsonObject? = null
 
     /**
      * The key for the destination present in the source config.
@@ -98,9 +105,7 @@ abstract class IntegrationPlugin : EventPlugin {
     //  only once and destination is initialised only once even when this method is called multiple times.
     //  There should be no side effect of calling this method multiple times with same SourceConfig.
     internal fun initDestination(sourceConfig: SourceConfig) {
-        isDestinationConfigured(sourceConfig)?.let { destinationConfig ->
-            safelyInitOrUpdateAndNotify(destinationConfig)
-        }
+        isDestinationConfigured(sourceConfig)?.let { safelyInitOrUpdateAndNotify(it) }
     }
 
     private fun isDestinationConfigured(sourceConfig: SourceConfig): JsonObject? {
@@ -109,6 +114,9 @@ abstract class IntegrationPlugin : EventPlugin {
             return emptyJsonObject
         }
         val configDestination = findDestination(sourceConfig, key)
+        // Recorded whatever the outcome below: the handoff gate needs the destination's current
+        // consent rules, and a rejected update still changes what those rules are.
+        destinationConfig = configDestination?.destinationConfig
         return when {
             configDestination == null -> {
                 notifyDestinationFailure("Destination $key not found in the source config. $DELIVERY_HALTED_NOTICE")
@@ -137,9 +145,45 @@ abstract class IntegrationPlugin : EventPlugin {
             event.copy<Event>()
                 .let { pluginChain.applyPlugins(Plugin.PluginType.PreProcess, it) }
                 ?.let { pluginChain.applyPlugins(Plugin.PluginType.OnProcess, it) }
+                ?.let { gateAndRefreshConsentStamp(it) }
                 ?.let { handleEvent(it) }
         }
 
+        return event
+    }
+
+    /**
+     * Applies the live consent decision at the handoff boundary, then refreshes
+     * `context.consentManagement` from the same state.
+     *
+     * The chain can suspend - a customer plugin added via [add] may do real work - so consent can be
+     * revoked after [ConsentGatePlugin] has already passed the event. Gating here too makes that
+     * guarantee hold all the way to delivery rather than only at chain entry. The state is read once
+     * so the verdict and the stamp can never disagree.
+     *
+     * The device-mode queue drains asynchronously, so a refreshed stamp is expected rather than
+     * exceptional; hence the debug-level logs.
+     */
+    private fun gateAndRefreshConsentStamp(event: Event): Event? {
+        val state = analytics.consentState.value
+        if (!state.active) return event
+
+        if (!ConsentResolver.resolve(state, destinationConfig)) {
+            analytics.logger.debug(
+                "IntegrationPlugin: Dropped event for destination $key - consent was revoked while the " +
+                    "event was in the device-mode chain (messageId=${event.messageId})."
+            )
+            return null
+        }
+
+        val stamp = state.toConsentContextBlock()
+        val consentKey = SDKManagedContextKey.CONSENT_MANAGEMENT.key
+        if (event.context[consentKey] == stamp[consentKey]) return event
+
+        analytics.logger.debug(
+            "IntegrationPlugin: Refreshed the consent stamp before delivery to destination $key."
+        )
+        event.context = event.context mergeWithHigherPriorityTo stamp
         return event
     }
 

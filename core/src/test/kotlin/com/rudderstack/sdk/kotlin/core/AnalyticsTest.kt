@@ -73,6 +73,7 @@ private const val USER_ID = "User Id 1"
 private const val ALIAS_ID = "Alias Id 1"
 private const val PREVIOUS_ID = "Previous Id 1"
 private const val NEW_EVENT_NAME = "New Event Name"
+private const val CUSTOM_LIBRARY_VALUE = "<custom-library>"
 
 class AnalyticsTest {
 
@@ -845,6 +846,23 @@ class AnalyticsTest {
         }
     }
 
+    @Test
+    fun `given a plugin overrides a base context key, when an event is tracked, then the guard warns`() =
+        runTest(testDispatcher) {
+            analytics.add(provideLibraryOverridingPlugin())
+
+            analytics.track(TRACK_EVENT_NAME)
+            testDispatcher.scheduler.runCurrent()
+            disableSource()
+
+            val messages = mutableListOf<String>()
+            verify { mockAnalyticsConfiguration.logger.warn(capture(messages)) }
+            assertTrue(
+                messages.any { it.contains("SchemaGuardPlugin") && it.contains("\"library\"") },
+                "Expected a base-key override warning for \"library\", got: $messages"
+            )
+        }
+
     private fun disableSource() {
         analytics.sourceConfigState.dispatch(
             SourceConfig.UpdateAction(
@@ -906,6 +924,19 @@ private fun provideLibraryVersion(): LibraryVersion {
     return object : LibraryVersion {
         override fun getLibraryName(): String = "com.rudderstack.kotlin.sdk"
         override fun getVersionName(): String = "1.0.0"
+    }
+}
+
+private fun provideLibraryOverridingPlugin() = object : Plugin {
+    override val pluginType: Plugin.PluginType = Plugin.PluginType.OnProcess
+    override lateinit var analytics: Analytics
+
+    override suspend fun intercept(event: Event): Event {
+        event.context = buildJsonObject {
+            event.context.forEach { (key, value) -> put(key, value) }
+            put("library", CUSTOM_LIBRARY_VALUE)
+        }
+        return event
     }
 }
 
