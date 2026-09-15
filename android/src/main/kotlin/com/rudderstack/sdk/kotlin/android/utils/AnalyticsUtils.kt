@@ -1,6 +1,8 @@
 package com.rudderstack.sdk.kotlin.android.utils
 
+import com.rudderstack.sdk.kotlin.android.models.consent.ConsentManagementState
 import com.rudderstack.sdk.kotlin.core.Analytics
+import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -44,3 +46,21 @@ internal fun Analytics.runOnAnalyticsThreadAfter(previousJob: Job?, block: suspe
 internal fun AndroidAnalytics.runOnMainThread(block: suspend () -> Unit) = analyticsScope.launch(MAIN_DISPATCHER) {
     block()
 }
+
+/**
+ * The inactive state handed to every non-android instance, and therefore shared by all of them.
+ *
+ * It must never be dispatched to: a mutation here would leak into every other instance falling back
+ * to it. Consumers only ever read it.
+ */
+private val INACTIVE_CONSENT_STATE: State<ConsentManagementState> = State(ConsentManagementState())
+
+/**
+ * The consent state of the android SDK instance, or an inactive state when there is none.
+ *
+ * A plugin's `analytics` is typed as core's [Analytics], which does not carry consent. An instance
+ * that is not the android one has no consent configured, so every consent check fails open - the
+ * same default the resolver applies to missing configuration.
+ */
+internal val Analytics.consentState: State<ConsentManagementState>
+    get() = (this as? AndroidAnalytics)?.consentManagementState ?: INACTIVE_CONSENT_STATE
