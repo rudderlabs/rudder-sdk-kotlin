@@ -35,7 +35,6 @@ import kotlinx.serialization.json.put
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import com.rudderstack.sdk.kotlin.android.Analytics as AndroidAnalytics
 
 class AndroidLifecyclePluginTest {
 
@@ -62,7 +61,7 @@ class AndroidLifecyclePluginTest {
 
         mockStorage = MockMemoryStorage()
 
-        every { (mockAnalytics as AndroidAnalytics).addLifecycleObserver(plugin) } just Runs
+        every { mockAnalytics.addLifecycleObserver(plugin) } just Runs
         every { mockAnalytics.track(any<String>(), any<JsonObject>(), any<RudderOption>()) } returns Unit
     }
 
@@ -76,14 +75,14 @@ class AndroidLifecyclePluginTest {
     fun `given trackApplicationLifecycleEvents is false, when plugin is setup, then addObserver is not called`() {
         pluginSetup(trackingEnabled = false)
 
-        verify(exactly = 0) { (mockAnalytics as AndroidAnalytics).addLifecycleObserver(plugin) }
+        verify(exactly = 0) { mockAnalytics.addLifecycleObserver(plugin) }
     }
 
     @Test
     fun `given trackApplicationLifecycleEvents is true, when plugin is setup, then addObserver is called`() {
         pluginSetup(trackingEnabled = true)
 
-        verify(exactly = 1) { (mockAnalytics as AndroidAnalytics).addLifecycleObserver(plugin) }
+        verify(exactly = 1) { mockAnalytics.addLifecycleObserver(plugin) }
     }
 
     @Test
@@ -363,7 +362,7 @@ class AndroidLifecyclePluginTest {
 
         plugin.teardown()
 
-        verify { (mockAnalytics as AndroidAnalytics).removeLifecycleObserver(plugin) }
+        verify { mockAnalytics.removeLifecycleObserver(plugin) }
     }
 
     private fun pluginSetup(trackingEnabled: Boolean = true) {
