@@ -4,6 +4,7 @@ import com.rudderstack.sdk.kotlin.core.internals.models.exception.UnknownEventKe
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.UserIdentity
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.utils.DateTimeUtils
+import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import com.rudderstack.sdk.kotlin.core.internals.utils.addPersistedValues
 import com.rudderstack.sdk.kotlin.core.internals.utils.addRudderOptionFields
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
@@ -121,7 +122,8 @@ sealed class Event {
      * Keyed by [SDKManagedContextKey.key]. Transient — it never reaches the payload.
      */
     @Transient
-    internal var capturedReservedContext: Map<String, JsonElement>? = null
+    @InternalRudderApi
+    var capturedReservedContext: Map<String, JsonElement>? = null
 
     /**
      * Updates the event data with the platform type, integrations and custom context and add persisted values.

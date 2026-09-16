@@ -64,11 +64,16 @@ class ConsentContextValueTest {
     @Test
     fun `given the same state, when the stamper runs, then it writes exactly the reserved value`() = runTest {
         stubConsentState(active = true, allowed = listOf("marketing"), denied = listOf("advertising"))
-        val event = provideEvent()
+        // The value reaches the stamper the way it does in production: captured from this supplier
+        // when the event was created, rather than read from live state at stamping time.
+        val captured = checkNotNull(reservedValue.current())
+        val event = provideEvent().also {
+            it.capturedReservedContext = mapOf(SDKManagedContextKey.CONSENT_MANAGEMENT.key to captured)
+        }
 
         ConsentManagementPlugin().also { it.setup(mockAnalytics) }.intercept(event)
 
-        assertEquals(reservedValue.current(), event.context[SDKManagedContextKey.CONSENT_MANAGEMENT.key])
+        assertEquals(captured, event.context[SDKManagedContextKey.CONSENT_MANAGEMENT.key])
     }
 
     @Test

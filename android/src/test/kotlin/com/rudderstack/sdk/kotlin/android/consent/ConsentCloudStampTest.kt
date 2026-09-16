@@ -31,6 +31,7 @@ import io.mockk.mockkObject
 import io.mockk.mockkStatic
 import io.mockk.slot
 import io.mockk.unmockkAll
+import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -47,6 +48,7 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -156,6 +158,24 @@ class ConsentCloudStampTest {
             disableSource(analytics)
 
             assertEquals(listOf(ALLOWED_ID), deliveredAllowedConsentIds())
+        }
+
+    // A consent change landing while an event is in flight is not a customer override, so the
+    // guard must not report one. Only genuine tampering should reach the customer as a warning.
+    @Test
+    fun `given consent changed while the event was in flight, when it is delivered, then no override warning is logged`() =
+        runTest(testDispatcher) {
+            val analytics = provideAnalytics()
+
+            analytics.track("pre-change-event")
+            analytics.setConsent(ConsentManagementOptions(allowedConsentIds = listOf(ALLOWED_ID, ADDED_ID)))
+
+            testDispatcher.scheduler.runCurrent()
+            disableSource(analytics)
+
+            val messages = mutableListOf<String>()
+            verify(atLeast = 0) { mockLogger.warn(capture(messages)) }
+            assertTrue(messages.none { it.contains(CONSENT_KEY) }, "unexpected override warning: $messages")
         }
 
     // Helpers
