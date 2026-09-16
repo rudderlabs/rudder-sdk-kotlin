@@ -72,27 +72,28 @@ internal class SchemaGuardPlugin : Plugin {
     }
 
     /**
-     * Re-asserts every reserved context key from its current SDK-owned value.
+     * Re-asserts every reserved context key from the value the SDK asserted when the event was
+     * created.
      *
-     * A key with no registered supplier, or a supplier asserting no value, is not reserved for
-     * this event and passes through untouched.
+     * A key with no registered supplier, or one the SDK asserted no value for at creation, is not
+     * reserved for this event and passes through untouched.
      *
-     * The value written is the state at this instant, not the state the event was created under.
-     * Anything downstream needing to know which decision an event belongs to must carry its own
-     * marker - this key is rewritten in flight and cannot answer that question.
+     * The value restored is the one captured at creation, not the state at this instant, so a
+     * decision taken while the event was in flight cannot rewrite what the event recorded. Any
+     * remaining difference is therefore a customer override, which is what the warning reports.
      */
     private fun enforceReservedKeys(event: Event) {
         SDKManagedContextKey.reservedKeys.forEach { managedKey ->
             val reserved = analytics.reservedContextValues[managedKey] ?: return@forEach
-            val current = reserved.current() ?: return@forEach
-            if (event.context[managedKey.key] == current) return@forEach
+            val captured = event.capturedReservedContext?.get(managedKey.key) ?: return@forEach
+            if (event.context[managedKey.key] == captured) return@forEach
 
             analytics.logger.warn(
                 "SchemaGuardPlugin: Replacing the \"${managedKey.key}\" key found in the event context; " +
                     reserved.overrideAdvice
             )
             event.context = event.context mergeWithHigherPriorityTo buildJsonObject {
-                put(managedKey.key, current)
+                put(managedKey.key, captured)
             }
         }
     }

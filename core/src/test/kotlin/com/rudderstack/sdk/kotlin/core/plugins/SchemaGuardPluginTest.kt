@@ -37,6 +37,10 @@ private const val STUB_ADVICE = "stub advice for a reserved key."
 private val RESERVED_KEY = SDKManagedContextKey.CONSENT_MANAGEMENT
 private val STUB_VALUE = JsonPrimitive("sdk-owned-value")
 private val CUSTOMER_VALUE = JsonPrimitive("customer-value")
+private val DELIVERY_TIME_VALUE = JsonPrimitive("value-at-delivery")
+
+/** What the SDK asserted for the reserved key when the event was created. */
+private val CAPTURED_STUB = mapOf(RESERVED_KEY.key to STUB_VALUE)
 
 class SchemaGuardPluginTest {
 
@@ -68,12 +72,15 @@ class SchemaGuardPluginTest {
     //
     // The registered value is deliberately not a consent block: the guard is driven by the
     // registry, so it must re-assert whatever it is handed, for any reserved key.
+    //
+    // A key is reserved for an event only when the SDK asserted a value for it at creation.
+    // The registry supplies the migration advice; the event supplies the value to restore.
 
     @Test
     fun `given a registered reserved value, when a plugin rewrote the key, then the guard warns once and restores it`() =
         runTest {
             registry[RESERVED_KEY] = StubReservedValue(STUB_VALUE)
-            val event = provideEvent().also {
+            val event = provideEvent(capturedReservedValues = CAPTURED_STUB).also {
                 it.context = buildJsonObject { put(RESERVED_KEY.key, CUSTOMER_VALUE) }
             }
 
@@ -87,7 +94,7 @@ class SchemaGuardPluginTest {
     @Test
     fun `given a registered reserved value, when the key is absent, then the guard stamps it`() = runTest {
         registry[RESERVED_KEY] = StubReservedValue(STUB_VALUE)
-        val event = provideEvent()
+        val event = provideEvent(capturedReservedValues = CAPTURED_STUB)
 
         plugin.intercept(event)
 
@@ -97,7 +104,7 @@ class SchemaGuardPluginTest {
     @Test
     fun `given a registered value the event already carries, when the guard runs, then it stays silent`() = runTest {
         registry[RESERVED_KEY] = StubReservedValue(STUB_VALUE)
-        val event = provideEvent().also {
+        val event = provideEvent(capturedReservedValues = CAPTURED_STUB).also {
             it.context = buildJsonObject { put(RESERVED_KEY.key, STUB_VALUE) }
         }
 
@@ -140,7 +147,7 @@ class SchemaGuardPluginTest {
     fun `given a registered supplier, when the guard warns, then the message carries that supplier's advice`() =
         runTest {
             registry[RESERVED_KEY] = StubReservedValue(STUB_VALUE)
-            val event = provideEvent().also {
+            val event = provideEvent(capturedReservedValues = CAPTURED_STUB).also {
                 it.context = buildJsonObject { put(RESERVED_KEY.key, CUSTOMER_VALUE) }
             }
 
@@ -150,6 +157,32 @@ class SchemaGuardPluginTest {
             val mockLogger = mockAnalytics.logger
             verify(exactly = 1) { mockLogger.warn(capture(messages)) }
             assertTrue(messages.single().contains(STUB_ADVICE))
+        }
+
+    @Test
+    fun `given the supplier changed after the event was created, when the guard runs, then it restores the captured value`() =
+        runTest {
+            registry[RESERVED_KEY] = StubReservedValue(DELIVERY_TIME_VALUE)
+            val event = provideEvent(capturedReservedValues = CAPTURED_STUB)
+
+            plugin.intercept(event)
+
+            assertEquals(STUB_VALUE, event.context[RESERVED_KEY.key])
+        }
+
+    @Test
+    fun `given nothing was captured at creation, when a supplier now asserts a value, then the key is not reserved`() =
+        runTest {
+            registry[RESERVED_KEY] = StubReservedValue(STUB_VALUE)
+            val event = provideEvent().also {
+                it.context = buildJsonObject { put(RESERVED_KEY.key, CUSTOMER_VALUE) }
+            }
+
+            plugin.intercept(event)
+
+            assertEquals(CUSTOMER_VALUE, event.context[RESERVED_KEY.key])
+            val mockLogger = mockAnalytics.logger
+            verify(exactly = 0) { mockLogger.warn(any()) }
         }
 
     // Base-key override detection
@@ -293,11 +326,14 @@ class SchemaGuardPluginTest {
 
 }
 
-private fun provideEvent(customContext: JsonObject = emptyJsonObject): Event = TrackEvent(
+private fun provideEvent(
+    customContext: JsonObject = emptyJsonObject,
+    capturedReservedValues: Map<String, JsonElement>? = null,
+): Event = TrackEvent(
     event = EVENT_NAME,
     properties = emptyJsonObject,
     options = RudderOption(customContext = customContext),
-)
+).also { it.capturedReservedContext = capturedReservedValues }
 
 private fun provideMixedTypeContextPayload(): JsonObject = buildJsonObject {
     put("app", buildJsonObject { put("name", "sample") })

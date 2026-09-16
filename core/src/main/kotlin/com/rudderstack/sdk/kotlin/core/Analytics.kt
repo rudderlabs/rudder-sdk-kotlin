@@ -170,6 +170,8 @@ open class Analytics protected constructor(
             userIdentityState = userIdentityState.value,
         )
 
+        captureReservedContext(event)
+
         processEventChannel.trySend(event).apply {
             if (isFailure) logger.warn("Analytics(core): Failed to enqueue track event — channel closed or full")
         }
@@ -206,6 +208,8 @@ open class Analytics protected constructor(
             userIdentityState = userIdentityState.value,
         )
 
+        captureReservedContext(event)
+
         processEventChannel.trySend(event).apply {
             if (isFailure) logger.warn("Analytics(core): Failed to enqueue screen event — channel closed or full")
         }
@@ -230,6 +234,8 @@ open class Analytics protected constructor(
             options = options,
             userIdentityState = userIdentityState.value,
         )
+
+        captureReservedContext(event)
 
         processEventChannel.trySend(event).apply {
             if (isFailure) logger.warn("Analytics(core): Failed to enqueue group event — channel closed or full")
@@ -273,6 +279,8 @@ open class Analytics protected constructor(
             userIdentityState = userIdentityState.value,
         )
 
+        captureReservedContext(event)
+
         processEventChannel.trySend(event).apply {
             if (isFailure) logger.warn("Analytics(core): Failed to enqueue identify event — channel closed or full")
         }
@@ -310,9 +318,32 @@ open class Analytics protected constructor(
             userIdentityState = userIdentityState.value,
         )
 
+        captureReservedContext(event)
+
         processEventChannel.trySend(event).apply {
             if (isFailure) logger.warn("Analytics(core): Failed to enqueue alias event — channel closed or full")
         }
+    }
+
+    /**
+     * Records the values the SDK asserts for its reserved context keys, on the caller's thread,
+     * before the event is queued.
+     *
+     * The terminal guard re-asserts these keys after every customer plugin has run. Reading the
+     * registry there would capture the decision in force at delivery rather than the one the
+     * event was created under, so the values are taken here — the only point that unambiguously
+     * means "when the event happened".
+     */
+    private fun captureReservedContext(event: Event) {
+        if (reservedContextValues.isEmpty()) return
+
+        val captured = SDKManagedContextKey.reservedKeys
+            .mapNotNull { managedKey ->
+                reservedContextValues[managedKey]?.current()?.let { managedKey.key to it }
+            }
+            .toMap()
+
+        event.capturedReservedContext = captured.takeIf { it.isNotEmpty() }
     }
 
     /**

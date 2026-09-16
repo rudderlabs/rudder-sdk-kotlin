@@ -41,7 +41,9 @@ import kotlinx.coroutines.test.setMain
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -55,6 +57,8 @@ private const val CONSENT_KEY = "consentManagement"
 private const val PROVIDER_KEY = "provider"
 private const val SPOOFED_PROVIDER = "spoofed"
 private const val ALLOWED_ID = "marketing"
+private const val ALLOWED_IDS_KEY = "allowedConsentIds"
+private const val ADDED_ID = "analytics"
 
 /**
  * The cloud delivery path, end to end.
@@ -135,6 +139,25 @@ class ConsentCloudStampTest {
             assertEquals(ConsentManagementProvider.CUSTOM.value, deliveredConsentProvider())
         }
 
+    // Consent is judged at capture time: an event recorded under one decision keeps that
+    // decision's values even when a later, wider one lands before it is delivered. Widening
+    // consent must never retroactively authorise data the user had not consented to.
+    @Test
+    fun `given an event created before a consent change, when it is delivered, then it carries the consent captured at creation`() =
+        runTest(testDispatcher) {
+            val analytics = provideAnalytics()
+
+            // Queued but deliberately not drained yet, so the event is still in flight when
+            // the consent decision changes underneath it.
+            analytics.track("pre-change-event")
+            analytics.setConsent(ConsentManagementOptions(allowedConsentIds = listOf(ALLOWED_ID, ADDED_ID)))
+
+            testDispatcher.scheduler.runCurrent()
+            disableSource(analytics)
+
+            assertEquals(listOf(ALLOWED_ID), deliveredAllowedConsentIds())
+        }
+
     // Helpers
 
     private fun provideAnalytics(): Analytics = Analytics(
@@ -164,6 +187,16 @@ class ConsentCloudStampTest {
         coVerify { mockStorage.write(StorageKeys.EVENT, capture(payload)) }
         val context = Json.parseToJsonElement(payload.captured).jsonObject["context"]?.jsonObject
         return context?.get(CONSENT_KEY)?.jsonObject?.get(PROVIDER_KEY)?.toString()?.trim('"')
+    }
+
+    /** Reads `context.consentManagement.allowedConsentIds` out of the payload written to storage. */
+    private fun deliveredAllowedConsentIds(): List<String> {
+        val payload = slot<String>()
+        coVerify { mockStorage.write(StorageKeys.EVENT, capture(payload)) }
+        val context = Json.parseToJsonElement(payload.captured).jsonObject["context"]?.jsonObject
+        return context?.get(CONSENT_KEY)?.jsonObject?.get(ALLOWED_IDS_KEY)?.jsonArray
+            ?.map { it.jsonPrimitive.content }
+            .orEmpty()
     }
 }
 
