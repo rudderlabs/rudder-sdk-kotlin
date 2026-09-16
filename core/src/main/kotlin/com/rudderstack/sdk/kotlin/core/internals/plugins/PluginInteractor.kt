@@ -61,17 +61,6 @@ class PluginInteractor(private var pluginList: CopyOnWriteArrayList<Plugin> = Co
     }
 
     /**
-     * Re-applies the state the SDK owns rather than the plugin: the event's identity, the options
-     * it was created with, and the values the SDK asserted for its reserved context keys. Payload
-     * fields are deliberately left alone - reshaping those is what a plugin is for.
-     */
-    private fun Event.restoreSdkOwnedState(from: Event) {
-        messageId = from.messageId
-        options = from.options
-        capturedReservedContext = from.capturedReservedContext
-    }
-
-    /**
      * Applies a closure on all registered plugins.
      */
     fun applyClosure(closure: (Plugin) -> Unit) {

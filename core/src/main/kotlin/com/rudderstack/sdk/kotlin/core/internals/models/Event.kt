@@ -184,6 +184,19 @@ sealed class Event {
         @Suppress("UNCHECKED_CAST")
         return copy as T // This is ok because resultant type will be same as input type
     }
+
+    /**
+     * Re-applies the state the SDK owns rather than a plugin, taken from [from]: the event's identity,
+     * the options it was created with, and the values the SDK asserted for its reserved context keys.
+     * Payload fields are deliberately left alone - reshaping those is what a plugin is for.
+     *
+     * Used where a plugin has returned a newly constructed event instead of the one it was handed.
+     */
+    internal fun restoreSdkOwnedState(from: Event) {
+        messageId = from.messageId
+        options = from.options
+        capturedReservedContext = from.capturedReservedContext
+    }
 }
 
 /**
