@@ -75,6 +75,12 @@ internal class SchemaGuardPlugin : Plugin {
      * Re-asserts every reserved context key from the value the SDK asserted when the event was
      * created.
      *
+     * The registry is not the value's source at this point. `ReservedContextValue.current()` is
+     * read once when the event is created — `Analytics.captureReservedContext` calls it on the
+     * caller's thread and stores the result on the event — so here the registry supplies only
+     * `overrideAdvice`. Reading `current()` again would re-date the event, which is exactly what
+     * carrying the value on the event exists to prevent.
+     *
      * A key with no registered supplier, or one the SDK asserted no value for at creation, is not
      * reserved for this event and passes through untouched.
      *
