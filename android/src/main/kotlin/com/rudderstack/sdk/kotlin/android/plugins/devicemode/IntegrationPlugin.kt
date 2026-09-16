@@ -1,7 +1,6 @@
 package com.rudderstack.sdk.kotlin.android.plugins.devicemode
 
 import com.rudderstack.sdk.kotlin.android.models.consent.ConsentResolver
-import com.rudderstack.sdk.kotlin.android.models.consent.toConsentContextBlock
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing.ConsentGatePlugin
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing.EventFilteringPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing.IntegrationOptionsPlugin
@@ -19,6 +18,8 @@ import com.rudderstack.sdk.kotlin.core.internals.plugins.PluginChain
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import com.rudderstack.sdk.kotlin.core.internals.utils.safelyExecute
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import java.util.concurrent.CopyOnWriteArrayList
 
 private const val DELIVERY_HALTED_NOTICE = "No events will be sent to this destination."
@@ -153,7 +154,7 @@ abstract class IntegrationPlugin : EventPlugin {
             event.copy<Event>()
                 .let { pluginChain.applyPlugins(Plugin.PluginType.PreProcess, it) }
                 ?.let { pluginChain.applyPlugins(Plugin.PluginType.OnProcess, it) }
-                ?.let { gateAndRefreshConsentStamp(it) }
+                ?.let { gateAndRestoreConsentStamp(it) }
                 ?.let { handleEvent(it) }
         }
 
@@ -161,18 +162,22 @@ abstract class IntegrationPlugin : EventPlugin {
     }
 
     /**
-     * Applies the live consent decision at the handoff boundary, then refreshes
-     * `context.consentManagement` from the same state.
+     * Applies the live consent decision at the handoff boundary, then restores
+     * `context.consentManagement` to the value the event was created under.
      *
      * The chain can suspend - a customer plugin added via [add] may do real work - so consent can be
      * revoked after [ConsentGatePlugin] has already passed the event. Gating here too makes that
-     * guarantee hold all the way to delivery rather than only at chain entry. The state is read once
-     * so the verdict and the stamp can never disagree.
+     * guarantee hold all the way to delivery rather than only at chain entry.
      *
-     * The device-mode queue drains asynchronously, so a refreshed stamp is expected rather than
-     * exceptional; hence the debug-level logs.
+     * The two halves read deliberately different sources. The gate reads live state, because a
+     * revocation must stop delivery now. The stamp does not: it restores what the event recorded at
+     * creation, so a decision taken while the event was in flight cannot rewrite what it says the
+     * user had agreed to. An event carrying no captured value is left untouched.
+     *
+     * Because the captured value never changes, a difference here can only be a destination-chain
+     * plugin having overwritten the key after the main-chain guard ran.
      */
-    private fun gateAndRefreshConsentStamp(event: Event): Event? {
+    private fun gateAndRestoreConsentStamp(event: Event): Event? {
         val state = analytics.consentState.value
         if (!state.active) return event
 
@@ -184,14 +189,14 @@ abstract class IntegrationPlugin : EventPlugin {
             return null
         }
 
-        val stamp = state.toConsentContextBlock()
         val consentKey = SDKManagedContextKey.CONSENT_MANAGEMENT.key
-        if (event.context[consentKey] == stamp[consentKey]) return event
+        val captured = event.capturedReservedContext?.get(consentKey)
+        if (captured == null || event.context[consentKey] == captured) return event
 
         analytics.logger.debug(
-            "IntegrationPlugin: Refreshed the consent stamp before delivery to destination $key."
+            "IntegrationPlugin: Restored the consent stamp before delivery to destination $key."
         )
-        event.context = event.context mergeWithHigherPriorityTo stamp
+        event.context = event.context mergeWithHigherPriorityTo buildJsonObject { put(consentKey, captured) }
         return event
     }
 

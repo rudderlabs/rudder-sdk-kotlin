@@ -11,6 +11,7 @@ import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.android.models.consent.ConsentManagementState
+import com.rudderstack.sdk.kotlin.android.models.consent.consentStamp
 import com.rudderstack.sdk.kotlin.android.models.consent.toConsentContextBlock
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
@@ -75,7 +76,9 @@ class ConsentRestampTest {
             plugin.setup(mockAnalytics)
             plugin.initDestination(gatedSourceConfig())
 
-            plugin.intercept(trackEvent("injected-event").also { it.context = spoofedConsentPayload() })
+            plugin.intercept(
+                trackEvent("injected-event", capturedUnder = state).also { it.context = spoofedConsentPayload() }
+            )
 
             verify(exactly = 1) {
                 plugin.track(match { it.context[CONSENT_MANAGEMENT_KEY] == expectedStamp(state) })
@@ -91,15 +94,17 @@ class ConsentRestampTest {
             plugin.initDestination(gatedSourceConfig())
             plugin.add(SpoofConsentPlugin())
 
-            plugin.intercept(trackEvent("spoofed-event"))
+            plugin.intercept(trackEvent("spoofed-event", capturedUnder = state))
 
             verify(exactly = 1) {
                 plugin.track(match { it.context[CONSENT_MANAGEMENT_KEY] == expectedStamp(state) })
             }
         }
 
+    // The stamp records the decision the event was created under. Replaying it later, under a
+    // newer decision, must not rewrite what it says the user had agreed to at the time.
     @Test
-    fun `given events buffered before source config, when replayed after a consent change, then they carry the stamp current at delivery`() =
+    fun `given events buffered before source config, when replayed after a consent change, then they carry the stamp captured at creation`() =
         runTest(testDispatcher) {
             val initialState = consentState(allowed = listOf("marketing", "analytics"))
             val updatedState = consentState(allowed = listOf("marketing"))
@@ -113,9 +118,10 @@ class ConsentRestampTest {
             plugin.setup(mockAnalytics)
             managementPlugin.addIntegration(plugin)
 
-            // Buffered while the destination awaits its source config, stamped with the initial state.
+            // Buffered while the destination awaits its source config, carrying the decision that
+            // was in force when it was created.
             managementPlugin.intercept(
-                trackEvent("buffered-event").also {
+                trackEvent("buffered-event", capturedUnder = initialState).also {
                     it.context = it.context mergeWithHigherPriorityTo initialState.toConsentContextBlock()
                 }
             )
@@ -125,7 +131,7 @@ class ConsentRestampTest {
             testDispatcher.scheduler.advanceUntilIdle()
 
             verify(exactly = 1) {
-                plugin.track(match { it.context[CONSENT_MANAGEMENT_KEY] == expectedStamp(updatedState) })
+                plugin.track(match { it.context[CONSENT_MANAGEMENT_KEY] == expectedStamp(initialState) })
             }
         }
 
@@ -217,8 +223,13 @@ class ConsentRestampTest {
         every { mockAnalytics.consentManagementState } returns State(initialState = state)
     }
 
-    private fun trackEvent(name: String): TrackEvent =
-        TrackEvent(name, emptyJsonObject).also { applyBaseDataToEvent(it) }
+    private fun trackEvent(name: String, capturedUnder: ConsentManagementState? = null): TrackEvent =
+        TrackEvent(name, emptyJsonObject).also {
+            applyBaseDataToEvent(it)
+            if (capturedUnder != null) {
+                it.capturedReservedContext = mapOf(CONSENT_MANAGEMENT_KEY to capturedUnder.consentStamp)
+            }
+        }
 }
 
 // Customer-style destination plugin overwriting the consent block after the main-chain stamp.
