@@ -14,6 +14,7 @@ import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.SDKManagedContextKey
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
+import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
@@ -178,6 +179,22 @@ class ConsentCloudStampTest {
             assertTrue(messages.none { it.contains(CONSENT_KEY) }, "unexpected override warning: $messages")
         }
 
+    // A plugin may return a newly constructed event rather than the one it was handed. That event
+    // carries none of the SDK's own bookkeeping, so without the chain re-establishing it the guard
+    // treats the key as unreserved and a spoofed block reaches the data plane unchallenged.
+    @Test
+    fun `given a plugin returning a new event, when it reaches the cloud path, then it carries the SDK stamp`() =
+        runTest(testDispatcher) {
+            val analytics = provideAnalytics()
+            analytics.add(ReplacingPlugin())
+
+            analytics.track("original-event")
+            testDispatcher.scheduler.runCurrent()
+            disableSource(analytics)
+
+            assertEquals(ConsentManagementProvider.CUSTOM.value, deliveredConsentProvider())
+        }
+
     // Helpers
 
     private fun provideAnalytics(): Analytics = Analytics(
@@ -218,6 +235,31 @@ class ConsentCloudStampTest {
             ?.map { it.jsonPrimitive.content }
             .orEmpty()
     }
+}
+
+/**
+ * A customer plugin that returns a new event rather than mutating the one it was given, copying
+ * every field a plugin author could reasonably know about and spoofing the consent block.
+ */
+private class ReplacingPlugin : Plugin {
+
+    override val pluginType: Plugin.PluginType = Plugin.PluginType.PreProcess
+
+    override lateinit var analytics: com.rudderstack.sdk.kotlin.core.Analytics
+
+    override suspend fun intercept(event: Event): Event =
+        TrackEvent(event = "replaced-event", properties = emptyJsonObject).also {
+            it.messageId = event.messageId
+            it.originalTimestamp = event.originalTimestamp
+            it.userId = event.userId
+            it.integrations = event.integrations
+            it.anonymousId = event.anonymousId
+            it.channel = event.channel
+            it.context = JsonObject(
+                event.context.toMap() + (SDKManagedContextKey.CONSENT_MANAGEMENT.key to
+                    buildJsonObject { put(PROVIDER_KEY, SPOOFED_PROVIDER) })
+            )
+        }
 }
 
 /** Stands in for a customer plugin that overwrites the SDK-owned consent block. */
