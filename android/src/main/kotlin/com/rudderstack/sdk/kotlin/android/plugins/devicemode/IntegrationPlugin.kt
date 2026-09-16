@@ -21,6 +21,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.atomic.AtomicBoolean
 
 private const val DELIVERY_HALTED_NOTICE = "No events will be sent to this destination."
 
@@ -53,6 +54,10 @@ abstract class IntegrationPlugin : EventPlugin {
     // Kept for the handoff gate, so it costs no source-config lookup per event.
     @Volatile
     private var destinationConfig: JsonObject? = null
+
+    // A plugin on this destination's chain that overwrites the key does so on every event, so the
+    // replacement is reported once per destination rather than once per event.
+    private val hasWarnedAboutRestoredStamp = AtomicBoolean(false)
 
     /**
      * The key for the destination present in the source config.
@@ -175,7 +180,10 @@ abstract class IntegrationPlugin : EventPlugin {
      * user had agreed to. An event carrying no captured value is left untouched.
      *
      * Because the captured value never changes, a difference here can only be a destination-chain
-     * plugin having overwritten the key after the main-chain guard ran.
+     * plugin having overwritten the key after the main-chain guard ran. That guard never sees such
+     * a write, so this is the only place the customer can be told about it - hence a warning rather
+     * than a debug line, raised once per destination so a plugin spoofing every event cannot flood
+     * the log.
      */
     private fun gateAndRestoreConsentStamp(event: Event): Event? {
         val state = analytics.consentState.value
@@ -193,9 +201,13 @@ abstract class IntegrationPlugin : EventPlugin {
         val captured = event.capturedReservedContext?.get(consentKey)
         if (captured == null || event.context[consentKey] == captured) return event
 
-        analytics.logger.debug(
-            "IntegrationPlugin: Restored the consent stamp before delivery to destination $key."
-        )
+        if (hasWarnedAboutRestoredStamp.compareAndSet(false, true)) {
+            analytics.logger.warn(
+                "IntegrationPlugin: Replacing the \"consentManagement\" key written by a plugin on " +
+                    "destination $key; the SDK owns this key while consent management is enabled. " +
+                    "Migrate to setConsent()."
+            )
+        }
         event.context = event.context mergeWithHigherPriorityTo buildJsonObject { put(consentKey, captured) }
         return event
     }

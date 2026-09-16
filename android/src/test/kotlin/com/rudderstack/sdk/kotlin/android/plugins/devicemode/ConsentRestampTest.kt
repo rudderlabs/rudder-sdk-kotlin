@@ -37,6 +37,7 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.put
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -217,6 +218,25 @@ class ConsentRestampTest {
             testDispatcher.scheduler.advanceUntilIdle()
 
             verify(exactly = 0) { plugin.track(any()) }
+        }
+
+    // The main-chain guard never sees a write made inside a destination's own chain, so this is the
+    // only place the customer hears about it. A plugin that spoofs does so on every event, so the
+    // report is raised once per destination rather than once per event.
+    @Test
+    fun `given a destination plugin spoofing on every event, when several are delivered, then only the first is reported`() =
+        runTest(testDispatcher) {
+            val state = consentState(allowed = listOf("marketing"))
+            stubConsentState(state)
+            plugin.setup(mockAnalytics)
+            plugin.initDestination(gatedSourceConfig())
+            plugin.add(SpoofConsentPlugin())
+
+            repeat(times = 3) { plugin.intercept(trackEvent("spoofed-event", capturedUnder = state)) }
+
+            val messages = mutableListOf<String>()
+            verify(atLeast = 0) { mockAnalytics.logger.warn(capture(messages)) }
+            assertEquals(1, messages.count { it.contains(CONSENT_MANAGEMENT_KEY) }, "warnings: $messages")
         }
 
     private fun stubConsentState(state: ConsentManagementState) {
