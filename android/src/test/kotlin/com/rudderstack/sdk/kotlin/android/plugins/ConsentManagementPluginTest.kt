@@ -82,7 +82,8 @@ class ConsentManagementPluginTest {
 
     @Test
     fun `given consent management disabled, when an event is intercepted, then the consentManagement key is absent`() = runTest {
-        every { mockAnalytics.consentManagementState } returns provideConsentState(active = false)
+        // "Disabled" is represented by the absence of a captured value: the reserved-value supplier
+        // asserts nothing while consent management is inactive, so nothing is captured at creation.
         val event = provideEvent()
 
         plugin.setup(mockAnalytics)
@@ -140,7 +141,6 @@ class ConsentManagementPluginTest {
 
     @Test
     fun `given a legacy injected key while disabled, when an event is intercepted, then the key is preserved with no warning`() = runTest {
-        every { mockAnalytics.consentManagementState } returns provideConsentState(active = false)
         val mockLogger = mockAnalytics.logger
         val event = provideEventWithLegacyKey()
 
