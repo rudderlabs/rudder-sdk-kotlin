@@ -115,14 +115,15 @@ abstract class IntegrationPlugin : EventPlugin {
     }
 
     private fun isDestinationConfigured(sourceConfig: SourceConfig): JsonObject? {
+        val configDestination = findDestination(sourceConfig, key)
+        // Recorded for every integration, whatever the outcome below: the handoff gate needs the
+        // destination's current consent rules - the same ones ConsentGatePlugin resolves by key -
+        // and a rejected update still changes what those rules are.
+        destinationConfig = configDestination?.destinationConfig
         if (!isStandardIntegration) {
             analytics.logger.debug("IntegrationPlugin[$key]: Non-standard integration, using empty config")
             return emptyJsonObject
         }
-        val configDestination = findDestination(sourceConfig, key)
-        // Recorded whatever the outcome below: the handoff gate needs the destination's current
-        // consent rules, and a rejected update still changes what those rules are.
-        destinationConfig = configDestination?.destinationConfig
         return when {
             configDestination == null -> {
                 notifyDashboardFailure("Destination $key not found in the source config. $DELIVERY_HALTED_NOTICE")

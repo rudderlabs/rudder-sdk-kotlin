@@ -1,6 +1,7 @@
 package com.rudderstack.sdk.kotlin.android.plugins.devicemode
 
 import com.rudderstack.sdk.kotlin.android.Configuration
+import com.rudderstack.sdk.kotlin.android.plugins.devicemode.utils.MockCustomIntegrationPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.utils.MockStandardIntegrationPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.utils.ReplaceConsentStateAction
 import com.rudderstack.sdk.kotlin.android.utils.mergeWithHigherPriorityTo
@@ -38,6 +39,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.put
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -191,6 +193,35 @@ class ConsentRestampTest {
             testDispatcher.scheduler.advanceUntilIdle()
 
             verify(exactly = 0) { plugin.track(any()) }
+        }
+
+    // A custom integration skips the source config at creation, but ConsentGatePlugin still resolves
+    // its consent rules from the destination matching its key. The handoff gate has to apply the same
+    // rules, or a revocation landing while the event is parked is honoured at entry and ignored here.
+    @Test
+    fun `given a custom integration with consent rules, when consent is revoked while an event is mid chain, then it is not delivered`() =
+        runTest(testDispatcher) {
+            val consentManagementState = State(initialState = consentState(allowed = listOf("marketing")))
+            every { mockAnalytics.consentManagementState } returns consentManagementState
+            val sourceConfigState = State(initialState = SourceConfig.initialState())
+            every { mockAnalytics.sourceConfigState } returns sourceConfigState
+            val customPlugin = spyk(MockCustomIntegrationPlugin())
+            customPlugin.setup(mockAnalytics)
+            sourceConfigState.dispatch(SourceConfig.UpdateAction(gatedSourceConfig()))
+            testDispatcher.scheduler.advanceUntilIdle()
+            customPlugin.initDestination(gatedSourceConfig())
+            assertTrue(customPlugin.isDestinationReady, "Precondition: the custom integration is ready.")
+
+            val released = CompletableDeferred<Unit>()
+            customPlugin.add(ParkingPlugin(released))
+            launch { customPlugin.intercept(trackEvent("in-flight-event")) }
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            consentManagementState.dispatch(ReplaceConsentStateAction(consentState(allowed = listOf("something-else"))))
+            released.complete(Unit)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify(exactly = 0) { customPlugin.track(any()) }
         }
 
     @Test
