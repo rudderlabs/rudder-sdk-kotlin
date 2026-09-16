@@ -1,21 +1,30 @@
 package com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing
 
+import com.rudderstack.sdk.kotlin.android.models.consent.ConsentManagementState
 import com.rudderstack.sdk.kotlin.android.models.consent.ConsentResolver
+import com.rudderstack.sdk.kotlin.android.models.consent.toConsentManagementState
 import com.rudderstack.sdk.kotlin.android.utils.consentState
 import com.rudderstack.sdk.kotlin.android.utils.findDestination
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
+import com.rudderstack.sdk.kotlin.core.internals.models.SDKManagedContextKey
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonObject
 
 /**
- * A plugin to drop events for a destination while it is denied by user consent.
+ * A plugin to drop events for a destination unless it is consented both when the event was
+ * created and at the moment of delivery.
  *
- * The consent state is read live per event, so a consent change applies to the very
- * next event. Evaluation fails open: without consent data or destination consent
- * configuration, every event passes through.
+ * The two checks answer different questions, and an event must satisfy both. Live state is read
+ * per event, so a revocation applies to the very next one. The value captured at creation is read
+ * from the event, so a later grant cannot reach back and authorise an event recorded while this
+ * destination was denied.
+ *
+ * The result is conservative in both directions: granting consent never delivers anything
+ * retroactively, and revoking it stops delivery immediately. Evaluation fails open - without
+ * consent data or destination consent configuration, every event passes through.
  */
 internal class ConsentGatePlugin(private val key: String) : Plugin {
 
@@ -38,7 +47,12 @@ internal class ConsentGatePlugin(private val key: String) : Plugin {
     }
 
     override suspend fun intercept(event: Event): Event? {
-        return if (ConsentResolver.resolve(analytics.consentState.value, destinationConfig)) {
+        val allowedNow = ConsentResolver.resolve(analytics.consentState.value, destinationConfig)
+        val allowedWhenCreated = capturedConsent(event)
+            ?.let { ConsentResolver.resolve(it, destinationConfig) }
+            ?: true
+
+        return if (allowedNow && allowedWhenCreated) {
             event
         } else {
             analytics.logger.debug(
@@ -47,6 +61,14 @@ internal class ConsentGatePlugin(private val key: String) : Plugin {
             null
         }
     }
+
+    /**
+     * The consent this event was created under, or `null` when it carries none - an event created
+     * while consent management was inactive, which the caller treats as consented.
+     */
+    private fun capturedConsent(event: Event): ConsentManagementState? =
+        (event.capturedReservedContext?.get(SDKManagedContextKey.CONSENT_MANAGEMENT.key) as? JsonObject)
+            ?.toConsentManagementState()
 
     private fun listenForConfigChanges(): Job = analytics.analyticsScope.launch {
         analytics.sourceConfigState

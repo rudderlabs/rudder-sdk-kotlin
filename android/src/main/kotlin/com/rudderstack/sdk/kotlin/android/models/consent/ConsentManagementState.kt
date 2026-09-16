@@ -4,7 +4,9 @@ import com.rudderstack.sdk.kotlin.android.consent.ConsentManagementConfiguration
 import com.rudderstack.sdk.kotlin.android.consent.ConsentManagementProvider
 import com.rudderstack.sdk.kotlin.core.internals.models.SDKManagedContextKey
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.StateAction
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
@@ -85,4 +87,27 @@ internal val ConsentManagementState.consentStamp: JsonObject
  */
 internal fun ConsentManagementState.toConsentContextBlock(): JsonObject = buildJsonObject {
     put(SDKManagedContextKey.CONSENT_MANAGEMENT.key, consentStamp)
+}
+
+/**
+ * Rebuilds the state from a stamp produced by [consentStamp] - the inverse operation.
+ *
+ * [ConsentManagementState.active] is `true` rather than assumed: the reserved-value supplier
+ * asserts nothing while consent management is inactive, so a stamp exists only for an event
+ * created while it was active. An unrecognised provider falls back to the only one the SDK
+ * supports, matching the resolver's fail-open posture.
+ */
+internal fun JsonObject.toConsentManagementState(): ConsentManagementState = ConsentManagementState(
+    active = true,
+    provider = ConsentManagementProvider.values().firstOrNull { it.value == stringValue(PROVIDER_KEY) }
+        ?: ConsentManagementProvider.CUSTOM,
+    allowedConsentIds = stringList(ALLOWED_CONSENT_IDS_KEY),
+    deniedConsentIds = stringList(DENIED_CONSENT_IDS_KEY),
+)
+
+// Non-string primitives read as null rather than being coerced to text, matching ConsentResolver.
+private fun JsonObject.stringValue(key: String): String? = (this[key] as? JsonPrimitive)?.takeIf { it.isString }?.content
+
+private fun JsonObject.stringList(key: String): List<String> = (this[key] as? JsonArray).orEmpty().mapNotNull { element ->
+    (element as? JsonPrimitive)?.takeIf { it.isString }?.content
 }
