@@ -87,11 +87,11 @@ class PluginInteractorTest {
     }
 
     // The plugin contract lets intercept return a newly constructed event rather than the one it
-    // was handed. Such an event cannot carry the SDK's own bookkeeping - the fields are not
-    // constructor parameters - so the chain has to re-establish them, or they are lost silently:
-    // no compile error, no crash, just consent enforcement and override detection quietly failing.
+    // was handed. Such an event cannot carry the consent the SDK recorded - that field is not a
+    // constructor parameter - so the chain puts it back; everything the plugin chose, its own
+    // messageId and options included, is left as the plugin returned it.
     @Test
-    fun `given a plugin returning a replacement event, when executed, then sdk-owned fields survive`() = runTest {
+    fun `given a plugin returning a replacement event, when executed, then the captured context survives and the plugin's identity and options are kept`() = runTest {
         val captured = mapOf("consentManagement" to JsonPrimitive("captured-at-creation"))
         val original = realEvent().also {
             it.options = RudderOption(customContext = buildJsonObject { put("library", "injected") })
@@ -101,9 +101,9 @@ class PluginInteractorTest {
 
         val result = pluginInteractor.execute(original)
 
-        assertEquals(original.messageId, result?.messageId, "messageId was not preserved")
+        assertEquals(ReplacingPlugin.MESSAGE_ID, result?.messageId, "the plugin's messageId was replaced")
         assertEquals(captured, result?.capturedReservedContext, "capturedReservedContext was not preserved")
-        assertEquals(original.options.customContext, result?.options?.customContext, "options were not preserved")
+        assertEquals(ReplacingPlugin.CUSTOM_CONTEXT, result?.options?.customContext, "the plugin's options were replaced")
     }
 
     @Test
@@ -188,7 +188,10 @@ class PluginInteractorTest {
     }
 }
 
-/** A customer plugin that returns a new event instead of mutating the one it was given. */
+/**
+ * A customer plugin that returns a new event, with its own messageId and options, instead of
+ * mutating the one it was given.
+ */
 private class ReplacingPlugin : Plugin {
 
     override val pluginType: Plugin.PluginType = Plugin.PluginType.PreProcess
@@ -196,11 +199,21 @@ private class ReplacingPlugin : Plugin {
     override lateinit var analytics: com.rudderstack.sdk.kotlin.core.Analytics
 
     override suspend fun intercept(event: Event): Event =
-        TrackEvent(event = "replaced", properties = emptyJsonObject).also {
+        TrackEvent(
+            event = "replaced",
+            properties = emptyJsonObject,
+            options = RudderOption(customContext = CUSTOM_CONTEXT),
+        ).also {
+            it.messageId = MESSAGE_ID
             it.context = event.context
             it.userId = event.userId
             it.integrations = event.integrations
             it.anonymousId = event.anonymousId
             it.channel = event.channel
         }
+
+    companion object {
+        const val MESSAGE_ID = "plugin-message-id"
+        val CUSTOM_CONTEXT = buildJsonObject { put("library", "plugin") }
+    }
 }

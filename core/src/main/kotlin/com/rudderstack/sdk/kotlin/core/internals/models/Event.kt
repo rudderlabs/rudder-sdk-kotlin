@@ -186,15 +186,14 @@ sealed class Event {
     }
 
     /**
-     * Re-applies the state the SDK owns rather than a plugin, taken from [from]: the event's identity,
-     * the options it was created with, and the values the SDK asserted for its reserved context keys.
-     * Payload fields are deliberately left alone - reshaping those is what a plugin is for.
+     * Re-applies the state the SDK owns rather than a plugin, taken from [from]: the values the SDK
+     * asserted for its reserved context keys when the event was created. Everything a plugin can
+     * set - the payload, its own messageId and options included - is left exactly as the plugin
+     * returned it.
      *
      * Used where a plugin has returned a newly constructed event instead of the one it was handed.
      */
     internal fun restoreSdkOwnedState(from: Event) {
-        messageId = from.messageId
-        options = from.options
         capturedReservedContext = from.capturedReservedContext
     }
 }

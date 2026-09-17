@@ -37,10 +37,11 @@ class PluginInteractor(private var pluginList: CopyOnWriteArrayList<Plugin> = Co
      *
      * A plugin may return a newly constructed event rather than the one it was handed - the
      * contract allows it, and nothing about the return type says otherwise. Such an event carries
-     * none of the SDK's own bookkeeping, because those are not constructor parameters, so the
-     * chain re-establishes them here. Without this they are lost silently: no compile error, no
-     * crash, and the reserved-key guard, the consent gate and the override detection all fall back
-     * to treating the event as if the SDK had recorded nothing about it.
+     * none of the consent the SDK recorded at creation, because that is not a constructor
+     * parameter, so the chain puts it back here. Without this it is lost silently: no compile
+     * error, no crash, and the reserved-key guard and the consent gate both fall back to treating
+     * the event as if the SDK had recorded nothing about it. Everything else the plugin returned,
+     * its own messageId and options included, is kept.
      *
      * Only a genuine replacement is touched; the common case of a plugin returning the event it
      * was given is left alone.
