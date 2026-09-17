@@ -185,6 +185,23 @@ class SetConsentApiTest {
     }
 
     @Test
+    fun `given options whose consent ids are only whitespace, when setConsent is called, then the update is refused`() {
+        val analytics = provideAnalytics(
+            ConsentManagementConfiguration(enabled = true, allowedConsentIds = listOf("analytics"))
+        )
+        val stateBefore = analytics.consentManagementState.value
+
+        analytics.setConsent(
+            ConsentManagementOptions(allowedConsentIds = listOf("   ", ""), deniedConsentIds = listOf(" "))
+        )
+
+        // Trimming happens before the emptiness check, so a CMP returning padded strings is
+        // refused rather than recorded as a one-entry list.
+        assertEquals(stateBefore, analytics.consentManagementState.value)
+        verify(exactly = 1) { mockLogger.warn(match { it.contains("requires at least one consent ID") }) }
+    }
+
+    @Test
     fun `given a shutdown analytics instance, when setConsent is called, then the state is unchanged`() {
         val analytics = provideAnalytics(
             ConsentManagementConfiguration(enabled = true, allowedConsentIds = listOf("analytics"))
