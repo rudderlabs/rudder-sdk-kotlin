@@ -9,6 +9,7 @@ import com.rudderstack.sdk.kotlin.android.SessionConfiguration.Companion.DEFAULT
 import com.rudderstack.sdk.kotlin.android.models.consent.ConsentManagementState
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import io.mockk.every
 import io.mockk.mockk
@@ -29,6 +30,7 @@ fun mockAnalytics(testScope: TestScope, testDispatcher: TestDispatcher): Android
         every { it.networkDispatcher } returns testDispatcher
         every { it.integrationsDispatcher } returns testDispatcher
         every { it.consentManagementState } returns State(initialState = ConsentManagementState())
+        every { it.sourceConfigState } returns State(initialState = SourceConfig.initialState())
     }
 
     return mockAnalytics

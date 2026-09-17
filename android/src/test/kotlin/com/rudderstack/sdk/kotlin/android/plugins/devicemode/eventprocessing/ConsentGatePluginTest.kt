@@ -149,6 +149,20 @@ class ConsentGatePluginTest {
 
             assertNotNull(plugin.intercept(TrackEvent("no-captured-consent", emptyJsonObject)))
         }
+
+    // The collector delivers asynchronously, so a destination registered after the source config
+    // arrived is set up before its first emission. The gate must already know the destination's rules
+    // there, or an unresolvable config fails open.
+    @Test
+    fun `given a gate set up after the source config arrived, when its first event is intercepted before the collector runs, then it is gated`() =
+        runTest(testDispatcher) {
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfig(gated = true)))
+
+            plugin.setup(mockAnalytics)
+
+            // No scheduler advance: the source-config collector has not emitted yet.
+            assertNull(plugin.intercept(TrackEvent("first-event", emptyJsonObject)))
+        }
 }
 
 private fun sourceConfig(gated: Boolean): SourceConfig {

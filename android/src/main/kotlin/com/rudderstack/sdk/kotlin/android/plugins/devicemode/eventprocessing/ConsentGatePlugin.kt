@@ -39,6 +39,7 @@ internal class ConsentGatePlugin(private val key: String) : Plugin {
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
+        seedDestinationConfig()
         configJob = listenForConfigChanges()
     }
 
@@ -69,6 +70,17 @@ internal class ConsentGatePlugin(private val key: String) : Plugin {
     private fun capturedConsent(event: Event): ConsentManagementState? =
         (event.capturedReservedContext?.get(SDKManagedContextKey.CONSENT_MANAGEMENT.key) as? JsonObject)
             ?.toConsentManagementState()
+
+    /**
+     * Reads the config already held in state, synchronously.
+     *
+     * The collector below delivers asynchronously, so without this the gate is blind between [setup]
+     * and its first emission - and a destination registered after the source config arrived is set up
+     * inside that window, where an unresolvable config fails open.
+     */
+    private fun seedDestinationConfig() {
+        destinationConfig = findDestination(analytics.sourceConfigState.value, key)?.destinationConfig
+    }
 
     private fun listenForConfigChanges(): Job = analytics.analyticsScope.launch {
         analytics.sourceConfigState
