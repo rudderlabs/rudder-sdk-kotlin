@@ -282,6 +282,38 @@ class ConsentGatingTest {
             assertTrue((receivedResult as? Result.Failure)?.error === failure)
             // No buffer exists in this SDK, so the event is skipped rather than held for a retry.
             verify(exactly = 0) { failing.track(any()) }
+        }
+
+    @Test
+    fun `given a grant while events are queued, when the drain reaches them, then a post grant event is delivered`() =
+        runTest(testDispatcher) {
+            val denied = consentState(allowed = listOf("something-else"))
+            val consentManagementState = State(initialState = denied)
+            every { mockAnalytics.consentManagementState } returns consentManagementState
+            val sourceConfigState = State(initialState = SourceConfig.initialState())
+            every { mockAnalytics.sourceConfigState } returns sourceConfigState
+
+            val managementPlugin = IntegrationsManagementPlugin()
+            managementPlugin.setup(mockAnalytics)
+            plugin.setup(mockAnalytics)
+            managementPlugin.addIntegration(plugin)
+            sourceConfigState.dispatch(SourceConfig.UpdateAction(gatedSourceConfig()))
+            testDispatcher.scheduler.advanceUntilIdle()
+            assertFalse(plugin.isDestinationReady)
+
+            val granted = consentState(allowed = listOf("marketing"))
+            // Deliberately no advance between these three: the backlog leaves the drain loop runnable,
+            // so the re-evaluation the grant queues has to wait its turn behind it.
+            managementPlugin.intercept(trackEvent("queued-before-grant", capturedUnder = denied))
+            consentManagementState.dispatch(ReplaceConsentStateAction(granted))
+            managementPlugin.intercept(trackEvent("after-grant", capturedUnder = granted))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify(exactly = 1) { plugin.track(match { it.event == "after-grant" }) }
+            // The grant must not reach back: this one was recorded while the destination was denied.
+            verify(exactly = 0) { plugin.track(match { it.event == "queued-before-grant" }) }
+        }
+
     // The existing denied-window tests pass because the destination is not ready, so the event is
     // skipped before consent is consulted at all. This one deliberately keeps the destination ready
     // and live consent permitting, which is the only path that reaches the copy and then the gate.
