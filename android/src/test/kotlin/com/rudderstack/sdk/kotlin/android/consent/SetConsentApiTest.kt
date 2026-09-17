@@ -139,7 +139,19 @@ class SetConsentApiTest {
         )
 
         assertEquals(stateBefore, analytics.consentManagementState.value)
-        verify(exactly = 1) { mockLogger.warn(any()) }
+        verify(exactly = 1) { mockLogger.warn(match { it.contains("Consent management is not active") }) }
+    }
+
+    @Test
+    fun `given consent management enabled with no consent ids, when setConsent is called, then the warning names the missing ids`() {
+        val analytics = provideAnalytics(ConsentManagementConfiguration(enabled = true))
+        val stateBefore = analytics.consentManagementState.value
+
+        analytics.setConsent(ConsentManagementOptions(allowedConsentIds = listOf("marketing")))
+
+        assertEquals(stateBefore, analytics.consentManagementState.value)
+        // "disabled" would be untrue here — the customer did enable it, they just supplied no ids.
+        verify(exactly = 1) { mockLogger.warn(match { it.contains("provide at least one consent ID") }) }
     }
 
     @Test
