@@ -10,7 +10,12 @@ import androidx.navigation.NavController;
 
 import com.rudderstack.sdk.kotlin.android.Configuration;
 import com.rudderstack.sdk.kotlin.android.SessionConfiguration;
+import com.rudderstack.sdk.kotlin.android.consent.ConsentManagementConfiguration;
+import com.rudderstack.sdk.kotlin.android.consent.ConsentManagementOptions;
+import com.rudderstack.sdk.kotlin.android.consent.ConsentManagementProvider;
 import com.rudderstack.sdk.kotlin.android.javacompat.ConfigurationBuilder;
+import com.rudderstack.sdk.kotlin.android.javacompat.ConsentManagementConfigurationBuilder;
+import com.rudderstack.sdk.kotlin.android.javacompat.ConsentManagementOptionsBuilder;
 import com.rudderstack.sdk.kotlin.android.javacompat.ResetEntriesBuilder;
 import com.rudderstack.sdk.kotlin.android.javacompat.ResetOptionsBuilder;
 import com.rudderstack.sdk.kotlin.android.javacompat.SessionConfigurationBuilder;
@@ -65,12 +70,22 @@ public class JavaCompat {
                 .setUpdateSessionOnBackgroundEvents(false)
                 .build();
 
+        // Seeding the lists here is what activates consent management: enabling it with both lists
+        // empty leaves it inactive for the whole session, and every later setConsent is refused.
+        ConsentManagementConfiguration consentManagement = new ConsentManagementConfigurationBuilder()
+                .setEnabled(true)
+                .setProvider(ConsentManagementProvider.CUSTOM)
+                .setAllowedConsentIds(Arrays.asList("marketing", "analytics"))
+                .setDeniedConsentIds(Arrays.asList("advertising"))
+                .build();
+
         Configuration configuration = new ConfigurationBuilder(application, writeKey, dataPlaneUrl)
                 .setTrackApplicationLifecycleEvents(true)
                 .setSessionConfiguration(sessionConfiguration)
                 .setGzipEnabled(true)
                 .setLogLevel(Logger.LogLevel.VERBOSE)
                 .setLogger(new JavaCustomLogger())
+                .setConsentManagement(consentManagement)
                 .build();
 
 
@@ -195,6 +210,19 @@ public class JavaCompat {
      */
     public void setNavigationDestinationsTracking(NavController navController, Activity activity) {
         analytics.setNavigationDestinationsTracking(navController, activity);
+    }
+
+    /**
+     * Update consent at runtime. The supplied lists fully replace the current consent state, so
+     * callers pass the user's complete choices rather than a delta.
+     */
+    public void setConsent() {
+        ConsentManagementOptions options = new ConsentManagementOptionsBuilder()
+                .setAllowedConsentIds(Arrays.asList("marketing", "analytics"))
+                .setDeniedConsentIds(Arrays.asList("advertising"))
+                .build();
+
+        analytics.setConsent(options);
     }
 
     // Core

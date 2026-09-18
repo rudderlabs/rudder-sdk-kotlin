@@ -3,6 +3,7 @@ package com.rudderstack.sampleapp.analytics.javacompat
 import android.app.Activity
 import androidx.navigation.NavController
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
+import com.rudderstack.sdk.kotlin.android.consent.ConsentManagementOptions
 import com.rudderstack.sdk.kotlin.android.javacompat.JavaAnalytics
 import com.rudderstack.sdk.kotlin.android.models.reset.ResetOptions
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
@@ -63,6 +64,20 @@ class JavaCompatTest {
         verify(exactly = 1) {
             mockJavaAnalytics.reset()
         }
+        confirmVerified(mockJavaAnalytics)
+    }
+
+    @Test
+    fun `when setConsent is called, then the options carry both lists`() {
+        val optionsSlot = slot<ConsentManagementOptions>()
+
+        javaCompat.setConsent()
+
+        verify(exactly = 1) {
+            mockJavaAnalytics.setConsent(capture(optionsSlot))
+        }
+        assertEquals(listOf("marketing", "analytics"), optionsSlot.captured.allowedConsentIds)
+        assertEquals(listOf("advertising"), optionsSlot.captured.deniedConsentIds)
         confirmVerified(mockJavaAnalytics)
     }
 
