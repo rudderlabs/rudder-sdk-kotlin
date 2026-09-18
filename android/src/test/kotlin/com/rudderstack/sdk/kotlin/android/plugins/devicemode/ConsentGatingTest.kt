@@ -341,6 +341,33 @@ class ConsentGatingTest {
             verify(exactly = 1) { plugin.track(match { it.event == "allowed-window" }) }
         }
 
+    // The gate fills its own config cache from an asynchronous collector, while `initDestination`
+    // receives the config directly. A destination registered before the first source config arrives
+    // is set up inside that window, so the gate is still holding no config and fails open on both
+    // halves - leaving the handoff as the only thing between a pre-grant event and the destination.
+    @Test
+    fun `given a destination configured before the gate's cache fills, when an event captured under a denying decision arrives, then it is not delivered`() =
+        runTest(testDispatcher) {
+            val granted = consentState(allowed = listOf("marketing"))
+            stubConsentState(granted)
+            // Deliberately never dispatched: the seed finds no destination and the collector has
+            // nothing to deliver, exactly as at start-up before the first source config lands.
+            every { mockAnalytics.sourceConfigState } returns State(initialState = SourceConfig.initialState())
+            plugin.setup(mockAnalytics)
+            plugin.initDestination(gatedSourceConfig())
+            assertTrue(plugin.isDestinationReady)
+
+            // Recorded while this destination was denied; consent has since been granted.
+            plugin.intercept(
+                trackEvent("denied-window", capturedUnder = consentState(allowed = listOf("something-else")))
+            )
+            // Control, so a setup that silently delivers nothing cannot pass as a success.
+            plugin.intercept(trackEvent("allowed-window", capturedUnder = granted))
+
+            verify(exactly = 0) { plugin.track(match { it.event == "denied-window" }) }
+            verify(exactly = 1) { plugin.track(match { it.event == "allowed-window" }) }
+        }
+
     private fun stubConsentState(state: ConsentManagementState) {
         every { mockAnalytics.consentManagementState } returns State(initialState = state)
     }

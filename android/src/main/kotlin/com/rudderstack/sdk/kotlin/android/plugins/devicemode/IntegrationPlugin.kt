@@ -1,6 +1,7 @@
 package com.rudderstack.sdk.kotlin.android.plugins.devicemode
 
 import com.rudderstack.sdk.kotlin.android.models.consent.ConsentResolver
+import com.rudderstack.sdk.kotlin.android.models.consent.toConsentManagementState
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing.ConsentGatePlugin
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing.EventFilteringPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing.IntegrationOptionsPlugin
@@ -168,15 +169,22 @@ abstract class IntegrationPlugin : EventPlugin {
     }
 
     /**
-     * Applies the live consent decision at the handoff boundary, then restores
+     * Applies the consent decision at the handoff boundary, then restores
      * `context.consentManagement` to the value the event was created under.
      *
      * The chain can suspend - a customer plugin added via [add] may do real work - so consent can be
      * revoked after [ConsentGatePlugin] has already passed the event. Gating here too makes that
      * guarantee hold all the way to delivery rather than only at chain entry.
      *
-     * The two halves read deliberately different sources. The gate reads live state, because a
-     * revocation must stop delivery now. The stamp does not: it restores what the event recorded at
+     * Both the live decision and the one recorded at creation are applied, exactly as
+     * [ConsentGatePlugin] applies them. The gate resolves against a config cache filled by an
+     * asynchronous collector, so a destination registered before the first source config arrives is
+     * set up while that cache is still empty, and every event it sees fails open. This boundary
+     * resolves against the config the destination was configured with, so it is the first point that
+     * can judge those events at all - and without the creation-time half, a later grant would deliver
+     * an event recorded while this destination was denied.
+     *
+     * The stamp is a separate question from the gate: it restores what the event recorded at
      * creation, so a decision taken while the event was in flight cannot rewrite what it says the
      * user had agreed to. An event carrying no captured value is left untouched.
      *
@@ -190,10 +198,19 @@ abstract class IntegrationPlugin : EventPlugin {
         val state = analytics.consentState.value
         if (!state.active) return event
 
-        if (!ConsentResolver.resolve(state, destinationConfig)) {
+        val dropReason = when {
+            !ConsentResolver.resolve(state, destinationConfig) ->
+                "consent was revoked while the event was in the device-mode chain"
+
+            !allowedWhenCreated(event) ->
+                "it was created while this destination was denied"
+
+            else -> null
+        }
+        if (dropReason != null) {
             analytics.logger.debug(
-                "IntegrationPlugin: Dropped event for destination $key - consent was revoked while the " +
-                    "event was in the device-mode chain (messageId=${event.messageId})."
+                "IntegrationPlugin: Dropped event for destination $key - $dropReason " +
+                    "(messageId=${event.messageId})."
             )
             return null
         }
@@ -211,6 +228,20 @@ abstract class IntegrationPlugin : EventPlugin {
         }
         event.context = event.context mergeWithHigherPriorityTo buildJsonObject { put(consentKey, captured) }
         return event
+    }
+
+    /**
+     * Whether this destination was consented under the decision the event was created with.
+     *
+     * An event carrying no captured value was created while consent management was inactive, which
+     * counts as consented.
+     */
+    private fun allowedWhenCreated(event: Event): Boolean {
+        val captured = event.capturedReservedContext
+            ?.get(SDKManagedContextKey.CONSENT_MANAGEMENT.key) as? JsonObject
+            ?: return true
+
+        return ConsentResolver.resolve(captured.toConsentManagementState(), destinationConfig)
     }
 
     /**
