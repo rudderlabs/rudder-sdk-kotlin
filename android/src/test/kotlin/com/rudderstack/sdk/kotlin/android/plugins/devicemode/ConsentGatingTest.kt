@@ -13,6 +13,7 @@ import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.StateAction
 import com.rudderstack.sdk.kotlin.core.internals.utils.LenientJson
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
+import kotlinx.serialization.json.JsonObject
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
@@ -253,6 +254,32 @@ class ConsentGatingTest {
                 plugin.track(match { it.event == "after-grant-1" })
                 plugin.track(match { it.event == "after-grant-2" })
             }
+        }
+
+    // Initialization failure, consent granted
+
+    @Test
+    fun `given a consented destination whose create throws, when an event arrives, then it is skipped for that destination`() =
+        runTest(testDispatcher) {
+            stubConsentState(consentState(allowed = listOf("marketing")))
+            val failure = IllegalStateException("destination sdk refused to start")
+            val failing = spyk(object : StandardIntegration, IntegrationPlugin() {
+                override val key: String get() = "MockDestination"
+                override fun create(destinationConfig: JsonObject) = throw failure
+                override fun getDestinationInstance(): Any? = null
+            })
+            var receivedResult: DestinationResult? = null
+            failing.setup(mockAnalytics)
+            failing.onDestinationReady { _, result -> receivedResult = result }
+
+            failing.initDestination(gatedSourceConfig())
+            failing.intercept(trackEvent("after-failed-init"))
+
+            assertFalse(failing.isDestinationReady, "A destination whose create() threw is not ready.")
+            // The failure must carry the real reason, not a consent one: consent was granted here.
+            assertTrue((receivedResult as? Result.Failure)?.error === failure)
+            // No buffer exists in this SDK, so the event is skipped rather than held for a retry.
+            verify(exactly = 0) { failing.track(any()) }
         }
 
     private fun stubConsentState(state: ConsentManagementState) {
