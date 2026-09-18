@@ -13,6 +13,7 @@ import com.rudderstack.sdk.kotlin.android.models.consent.ConsentManagementState.
 import com.rudderstack.sdk.kotlin.android.models.consent.SetConsentAction
 import com.rudderstack.sdk.kotlin.android.plugins.AndroidLifecyclePlugin
 import com.rudderstack.sdk.kotlin.android.plugins.AppInfoPlugin
+import com.rudderstack.sdk.kotlin.android.plugins.ConsentManagementPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.DeeplinkPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.DeviceInfoPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.LocaleInfoPlugin
@@ -330,6 +331,7 @@ class Analytics(
 
     private fun setup() {
         LoggerAnalytics.setPlatformLogger(logger = AndroidLogger())
+        add(ConsentManagementPlugin())
         add(AndroidConnectivityObserverPlugin(connectivityState))
         add(DeviceInfoPlugin())
         add(AppInfoPlugin())
