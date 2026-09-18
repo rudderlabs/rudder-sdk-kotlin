@@ -10,6 +10,12 @@ import com.rudderstack.sdk.kotlin.core.internals.statemanagement.StateAction
  * The two consent ID lists are never both empty while [active] is `true`: a configuration
  * that enables consent management without supplying either list is a configuration error,
  * and the state is built inactive so the feature behaves as if it had never been enabled.
+ *
+ * @property active Whether consent management is in force: enabled at load time with at
+ *                  least one consent ID supplied.
+ * @property provider The active consent provider.
+ * @property allowedConsentIds The consent IDs the user has granted.
+ * @property deniedConsentIds The consent IDs the user has denied.
  */
 internal data class ConsentManagementState(
     val active: Boolean = false,

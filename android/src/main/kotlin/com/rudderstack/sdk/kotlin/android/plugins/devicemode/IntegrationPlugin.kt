@@ -1,7 +1,10 @@
 package com.rudderstack.sdk.kotlin.android.plugins.devicemode
 
+import com.rudderstack.sdk.kotlin.android.models.consent.ConsentResolver
+import com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing.ConsentGatePlugin
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing.EventFilteringPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing.IntegrationOptionsPlugin
+import com.rudderstack.sdk.kotlin.android.utils.consentState
 import com.rudderstack.sdk.kotlin.android.utils.findDestination
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
@@ -14,6 +17,8 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import com.rudderstack.sdk.kotlin.core.internals.utils.safelyExecute
 import kotlinx.serialization.json.JsonObject
 import java.util.concurrent.CopyOnWriteArrayList
+
+private const val DELIVERY_HALTED_NOTICE = "No events will be sent to this destination."
 
 /**
  * Base plugin class for all integration plugins.
@@ -103,22 +108,36 @@ abstract class IntegrationPlugin : EventPlugin {
             analytics.logger.debug("IntegrationPlugin[$key]: Non-standard integration, using empty config")
             return emptyJsonObject
         }
-        findDestination(sourceConfig, key)?.let { configDestination ->
-            if (!configDestination.isDestinationEnabled) {
-                val errorMessage = "Destination $key is disabled in dashboard. " +
-                    "No events will be sent to this destination."
-                analytics.logger.warn("IntegrationPlugin: $errorMessage")
-                safelyUpdateOnFailureAndNotify(IllegalStateException(errorMessage))
-                return null
+        val configDestination = findDestination(sourceConfig, key)
+        return when {
+            configDestination == null -> {
+                notifyDashboardFailure("Destination $key not found in the source config. $DELIVERY_HALTED_NOTICE")
+                null
             }
-            return configDestination.destinationConfig
-        } ?: run {
-            val errorMessage = "Destination $key not found in the source config. " +
-                "No events will be sent to this destination."
-            analytics.logger.warn("IntegrationPlugin: $errorMessage")
-            safelyUpdateOnFailureAndNotify(IllegalStateException(errorMessage))
-            return null
+            !configDestination.isDestinationEnabled -> {
+                notifyDashboardFailure("Destination $key is disabled in dashboard. $DELIVERY_HALTED_NOTICE")
+                null
+            }
+            !ConsentResolver.resolve(analytics.consentState.value, configDestination.destinationConfig) -> {
+                notifyConsentDenial("Destination $key is denied by user consent. $DELIVERY_HALTED_NOTICE")
+                null
+            }
+            else -> configDestination.destinationConfig
         }
+    }
+
+    // A destination missing from, or disabled in, the dashboard keeps its long-standing handling: it is
+    // updated with an empty config before the failure is reported.
+    private fun notifyDashboardFailure(errorMessage: String) {
+        analytics.logger.warn("IntegrationPlugin: $errorMessage")
+        safelyUpdateOnFailureAndNotify(IllegalStateException(errorMessage))
+    }
+
+    // A destination denied by consent must not be updated: pushing an empty config can throw, which would
+    // replace the consent reason with a parse error, and can reset a live destination's state.
+    private fun notifyConsentDenial(errorMessage: String) {
+        analytics.logger.warn("IntegrationPlugin: $errorMessage")
+        notifyFailureAndMarkNotReady(ConsentDeniedException(errorMessage))
     }
 
     final override suspend fun intercept(event: Event): Event {
@@ -218,6 +237,32 @@ abstract class IntegrationPlugin : EventPlugin {
         )
     }
 
+    /**
+     * Marks the destination not ready and reports [throwable] to the ready callbacks.
+     *
+     * The destination is deliberately not updated here: pushing a config into a destination that is
+     * being declared failed can throw on integrations whose config has required fields, which would
+     * replace the reported reason with a parse error. Notification stays wrapped so a throwing
+     * customer callback cannot escape into the re-evaluation coroutine.
+     */
+    private fun notifyFailureAndMarkNotReady(throwable: Throwable) {
+        this.isDestinationReady = false
+        safelyExecute(
+            block = { notifyCallbacks(Result.Failure(throwable)) },
+            onException = { exception ->
+                analytics.logger.error(
+                    "IntegrationPlugin: Failed to notify destination $key callbacks. Error: ${exception.message}"
+                )
+            }
+        )
+    }
+
+    /**
+     * Updates the destination with an empty config, then marks it not ready and reports [throwable].
+     *
+     * The update is what tells a destination the SDK owns no config for it any more, so a destination
+     * withheld by the dashboard can clear itself.
+     */
     private fun safelyUpdateOnFailureAndNotify(throwable: Throwable) {
         safelyUpdateAndApplyBlock(
             destinationConfig = emptyJsonObject,
@@ -271,6 +316,7 @@ abstract class IntegrationPlugin : EventPlugin {
     }
 
     private fun applyDefaultPlugins() {
+        add(ConsentGatePlugin(key))
         add(EventFilteringPlugin(key))
         add(IntegrationOptionsPlugin(key))
     }

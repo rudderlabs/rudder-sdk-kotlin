@@ -1,5 +1,6 @@
 package com.rudderstack.sdk.kotlin.android.plugins.devicemode
 
+import com.rudderstack.sdk.kotlin.android.utils.consentState
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
@@ -7,6 +8,7 @@ import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.PluginChain
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collectIndexed
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 
@@ -37,8 +39,17 @@ internal class IntegrationsManagementPlugin : Plugin {
 
         integrationPluginChain.analytics = analytics
         analytics.withIntegrationsDispatcher {
-            analytics.sourceConfigState
-                .observeDispatched()
+            // A trigger, not a data join: the consent value is discarded and the init gate re-reads
+            // it live. `flow` emits the current value first, so the combine still fires on the first
+            // source config when setConsent is never called. The source-config arm must keep
+            // skipping its seed, which reports an enabled source carrying no destinations.
+            combine(
+                analytics.sourceConfigState.observeDispatched(),
+                analytics.consentState.flow
+            ) { sourceConfig, _ -> sourceConfig }
+                // Filtered after the combine: filtering the source-config flow first would keep the
+                // last enabled config cached, so a later consent change would replay it and
+                // reinitialize destinations for a source that has since been disabled.
                 .filter { it.source.isSourceEnabled }
                 .collectIndexed { index, sourceConfig ->
                     integrationPluginChain.applyClosure { plugin ->
