@@ -1,6 +1,9 @@
 package com.rudderstack.sdk.kotlin.android.models.consent
 
 import com.rudderstack.sdk.kotlin.android.consent.ConsentManagementProvider
+import com.rudderstack.sdk.kotlin.android.utils.findDestination
+import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
+import com.rudderstack.sdk.kotlin.core.internals.utils.LenientJson
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.addJsonObject
@@ -195,9 +198,54 @@ class ConsentResolverTest {
             Arguments.of("unknown-strategy", false),
         )
     }
+
+    // Rule 6: legacy fields are not consent rules
+
+    @Test
+    fun `given a destination carrying legacy consent fields, when resolved, then only consentManagement decides`() {
+        val sourceConfig = LenientJson.decodeFromString<SourceConfig>(LEGACY_FIELDS_SOURCE_CONFIG)
+        val config = findDestination(sourceConfig, "MockDestination")?.destinationConfig
+
+        assertTrue(
+            config?.containsKey("oneTrustCookieCategories") == true,
+            "The legacy field must survive parsing untouched."
+        )
+        // C0004 is deliberately absent from the granted list: a resolver that read the legacy
+        // categories would deny this destination.
+        assertTrue(
+            ConsentResolver.resolve(consentedState(allowed = listOf("marketing")), config),
+            "Only consentManagement may gate; the legacy categories must be ignored."
+        )
+    }
 }
 
 // Helpers
+
+private val LEGACY_FIELDS_SOURCE_CONFIG = """
+{
+  "source": {
+    "id": "source-id", "name": "Android", "writeKey": "write-key", "enabled": true,
+    "workspaceId": "workspace-id", "updatedAt": "2026-01-01T00:00:00.000Z",
+    "destinations": [
+      {
+        "id": "destination-id", "name": "Mock Destination", "enabled": true,
+        "config": {
+          "apiKey": "test-api-key",
+          "oneTrustCookieCategories": [ { "oneTrustCookieCategory": "C0004" } ],
+          "consentManagement": [
+            { "provider": "custom", "consents": [ { "consent": "marketing" } ], "resolutionStrategy": "and" }
+          ]
+        },
+        "destinationDefinitionId": "destination-definition-id",
+        "destinationDefinition": { "name": "MOCK DESTINATION", "displayName": "MockDestination" },
+        "updatedAt": "2026-01-01T00:00:00.000Z",
+        "shouldApplyDeviceModeTransformation": false,
+        "propagateEventsUntransformedOnError": false
+      }
+    ]
+  }
+}
+""".trimIndent()
 
 private fun consentedState(
     allowed: List<String> = emptyList(),
