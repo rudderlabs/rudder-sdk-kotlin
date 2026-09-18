@@ -1,6 +1,7 @@
 package com.rudderstack.sdk.kotlin.android.plugins
 
 import com.rudderstack.sdk.kotlin.android.Analytics
+import com.rudderstack.sdk.kotlin.android.consent.ConsentManagementConfiguration
 import com.rudderstack.sdk.kotlin.android.consent.ConsentManagementOptions
 import com.rudderstack.sdk.kotlin.android.consent.ConsentManagementProvider
 import com.rudderstack.sdk.kotlin.android.models.consent.ConsentManagementState
@@ -93,6 +94,23 @@ class ConsentManagementPluginTest {
         plugin.setup(mockAnalytics)
         plugin.intercept(event)
 
+        assertFalse(event.context.containsKey(CONSENT_MANAGEMENT_KEY))
+        assertEquals(emptyJsonObject, event.context)
+    }
+
+    @Test
+    fun `given consent management enabled with no consent ids, when an event is intercepted, then the consentManagement key is absent`() = runTest {
+        // Built through the real factory, not a hand-made inactive state: enabling consent management
+        // without supplying either list is a configuration error, and the stamp must key off that
+        // outcome rather than off the enabled flag.
+        val state = ConsentManagementState.initialState(ConsentManagementConfiguration(enabled = true))
+        every { mockAnalytics.consentManagementState } returns State(initialState = state)
+        val event = provideEvent()
+
+        plugin.setup(mockAnalytics)
+        plugin.intercept(event)
+
+        assertFalse(state.active, "Enabling with neither list must leave the session inactive.")
         assertFalse(event.context.containsKey(CONSENT_MANAGEMENT_KEY))
         assertEquals(emptyJsonObject, event.context)
     }
