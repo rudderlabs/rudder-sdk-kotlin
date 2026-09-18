@@ -5,6 +5,9 @@ import com.rudderstack.sdk.kotlin.android.consent.ConsentManagementProvider
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.android.models.consent.ConsentManagementState
+import com.rudderstack.sdk.kotlin.android.models.consent.consentStamp
+import com.rudderstack.sdk.kotlin.android.plugins.devicemode.utils.ReplaceConsentStateAction
+import com.rudderstack.sdk.kotlin.core.internals.models.SDKManagedContextKey
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.utils.LenientJson
@@ -69,6 +72,96 @@ class ConsentGatePluginTest {
             testDispatcher.scheduler.advanceUntilIdle()
 
             assertNull(plugin.intercept(TrackEvent("after-teardown", emptyJsonObject)))
+        }
+
+    // Consent is judged at capture time as well as at delivery. A later grant belongs to later
+    // events; it must not reach back and authorise one recorded while the destination was denied.
+    @Test
+    fun `given an event captured while the destination was denied, when consent is later granted, then it is still dropped`() =
+        runTest(testDispatcher) {
+            val denied = ConsentManagementState(
+                active = true,
+                provider = ConsentManagementProvider.CUSTOM,
+                allowedConsentIds = listOf("something-else"),
+            )
+            val granted = denied.copy(allowedConsentIds = listOf("marketing"))
+            val consentManagementState = State(initialState = denied)
+            every { mockAnalytics.consentManagementState } returns consentManagementState
+
+            plugin.setup(mockAnalytics)
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfig(gated = true)))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val event = TrackEvent("denied-window", emptyJsonObject).also {
+                it.capturedReservedContext =
+                    mapOf(SDKManagedContextKey.CONSENT_MANAGEMENT.key to denied.consentStamp)
+            }
+
+            // The user later grants exactly what this destination requires.
+            consentManagementState.dispatch(ReplaceConsentStateAction(granted))
+
+            assertNull(plugin.intercept(event))
+        }
+
+    // The other half of the pair: a revocation applies immediately, whatever the event recorded.
+    @Test
+    fun `given an event captured while allowed, when consent is later revoked, then it is dropped`() =
+        runTest(testDispatcher) {
+            val allowed = ConsentManagementState(
+                active = true,
+                provider = ConsentManagementProvider.CUSTOM,
+                allowedConsentIds = listOf("marketing"),
+            )
+            val consentManagementState = State(initialState = allowed)
+            every { mockAnalytics.consentManagementState } returns consentManagementState
+
+            plugin.setup(mockAnalytics)
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfig(gated = true)))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val event = TrackEvent("allowed-window", emptyJsonObject).also {
+                it.capturedReservedContext =
+                    mapOf(SDKManagedContextKey.CONSENT_MANAGEMENT.key to allowed.consentStamp)
+            }
+
+            consentManagementState.dispatch(
+                ReplaceConsentStateAction(allowed.copy(allowedConsentIds = listOf("something-else")))
+            )
+
+            assertNull(plugin.intercept(event))
+        }
+
+    // Events created while consent management was inactive carry nothing, so live state alone
+    // decides and behaviour is unchanged for them.
+    @Test
+    fun `given an event carrying no captured consent, when the destination is allowed live, then it passes`() =
+        runTest(testDispatcher) {
+            every { mockAnalytics.consentManagementState } returns State(
+                initialState = ConsentManagementState(
+                    active = true,
+                    provider = ConsentManagementProvider.CUSTOM,
+                    allowedConsentIds = listOf("marketing"),
+                )
+            )
+            plugin.setup(mockAnalytics)
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfig(gated = true)))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            assertNotNull(plugin.intercept(TrackEvent("no-captured-consent", emptyJsonObject)))
+        }
+
+    // The collector delivers asynchronously, so a destination registered after the source config
+    // arrived is set up before its first emission. The gate must already know the destination's rules
+    // there, or an unresolvable config fails open.
+    @Test
+    fun `given a gate set up after the source config arrived, when its first event is intercepted before the collector runs, then it is gated`() =
+        runTest(testDispatcher) {
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfig(gated = true)))
+
+            plugin.setup(mockAnalytics)
+
+            // No scheduler advance: the source-config collector has not emitted yet.
+            assertNull(plugin.intercept(TrackEvent("first-event", emptyJsonObject)))
         }
 }
 

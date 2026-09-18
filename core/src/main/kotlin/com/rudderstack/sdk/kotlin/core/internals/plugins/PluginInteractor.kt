@@ -34,6 +34,17 @@ class PluginInteractor(private var pluginList: CopyOnWriteArrayList<Plugin> = Co
 
     /**
      * Executes all plugins in the list.
+     *
+     * A plugin may return a newly constructed event rather than the one it was handed - the
+     * contract allows it, and nothing about the return type says otherwise. Such an event carries
+     * none of the consent the SDK recorded at creation, because that is not a constructor
+     * parameter, so the chain puts it back here. Without this it is lost silently: no compile
+     * error, no crash, and the reserved-key guard and the consent gate both fall back to treating
+     * the event as if the SDK had recorded nothing about it. Everything else the plugin returned,
+     * its own messageId and options included, is kept.
+     *
+     * Only a genuine replacement is touched; the common case of a plugin returning the event it
+     * was given is left alone.
      */
     suspend fun execute(event: Event): Event? {
         var result: Event? = event
@@ -41,7 +52,9 @@ class PluginInteractor(private var pluginList: CopyOnWriteArrayList<Plugin> = Co
         pluginList.forEach { plugin ->
             result?.let { message ->
                 val copy = message.copy<Event>()
-                result = plugin.intercept(copy)
+                result = plugin.intercept(copy)?.also { returned ->
+                    if (returned !== copy) returned.restoreSdkOwnedState(from = copy)
+                }
             }
         }
 

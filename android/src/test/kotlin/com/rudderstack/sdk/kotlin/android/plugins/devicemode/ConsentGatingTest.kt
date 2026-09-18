@@ -8,6 +8,8 @@ import com.rudderstack.sdk.kotlin.android.consent.ConsentManagementProvider
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.android.models.consent.ConsentManagementState
+import com.rudderstack.sdk.kotlin.android.models.consent.consentStamp
+import com.rudderstack.sdk.kotlin.core.internals.models.SDKManagedContextKey
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.StateAction
@@ -282,12 +284,102 @@ class ConsentGatingTest {
             verify(exactly = 0) { failing.track(any()) }
         }
 
+    @Test
+    fun `given a grant while events are queued, when the drain reaches them, then a post grant event is delivered`() =
+        runTest(testDispatcher) {
+            val denied = consentState(allowed = listOf("something-else"))
+            val consentManagementState = State(initialState = denied)
+            every { mockAnalytics.consentManagementState } returns consentManagementState
+            val sourceConfigState = State(initialState = SourceConfig.initialState())
+            every { mockAnalytics.sourceConfigState } returns sourceConfigState
+
+            val managementPlugin = IntegrationsManagementPlugin()
+            managementPlugin.setup(mockAnalytics)
+            plugin.setup(mockAnalytics)
+            managementPlugin.addIntegration(plugin)
+            sourceConfigState.dispatch(SourceConfig.UpdateAction(gatedSourceConfig()))
+            testDispatcher.scheduler.advanceUntilIdle()
+            assertFalse(plugin.isDestinationReady)
+
+            val granted = consentState(allowed = listOf("marketing"))
+            // Deliberately no advance between these three: the backlog leaves the drain loop runnable,
+            // so the re-evaluation the grant queues has to wait its turn behind it.
+            managementPlugin.intercept(trackEvent("queued-before-grant", capturedUnder = denied))
+            consentManagementState.dispatch(ReplaceConsentStateAction(granted))
+            managementPlugin.intercept(trackEvent("after-grant", capturedUnder = granted))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify(exactly = 1) { plugin.track(match { it.event == "after-grant" }) }
+            // The grant must not reach back: this one was recorded while the destination was denied.
+            verify(exactly = 0) { plugin.track(match { it.event == "queued-before-grant" }) }
+        }
+
+    // The existing denied-window tests pass because the destination is not ready, so the event is
+    // skipped before consent is consulted at all. This one deliberately keeps the destination ready
+    // and live consent permitting, which is the only path that reaches the copy and then the gate.
+    @Test
+    fun `given a ready destination, when an event captured under a denying decision arrives, then it is not delivered`() =
+        runTest(testDispatcher) {
+            val granted = consentState(allowed = listOf("marketing"))
+            stubConsentState(granted)
+            val sourceConfigState = State(initialState = SourceConfig.initialState())
+            every { mockAnalytics.sourceConfigState } returns sourceConfigState
+            plugin.setup(mockAnalytics)
+            sourceConfigState.dispatch(SourceConfig.UpdateAction(gatedSourceConfig()))
+            testDispatcher.scheduler.advanceUntilIdle()
+            plugin.initDestination(gatedSourceConfig())
+            assertTrue(plugin.isDestinationReady)
+
+            // Recorded while this destination was denied, released only now.
+            plugin.intercept(
+                trackEvent("denied-window", capturedUnder = consentState(allowed = listOf("something-else")))
+            )
+            // Control, so a setup that silently delivers nothing cannot pass as a success.
+            plugin.intercept(trackEvent("allowed-window", capturedUnder = granted))
+
+            verify(exactly = 0) { plugin.track(match { it.event == "denied-window" }) }
+            verify(exactly = 1) { plugin.track(match { it.event == "allowed-window" }) }
+        }
+
+    // The gate fills its own config cache from an asynchronous collector, while `initDestination`
+    // receives the config directly. A destination registered before the first source config arrives
+    // is set up inside that window, so the gate is still holding no config and fails open on both
+    // halves - leaving the handoff as the only thing between a pre-grant event and the destination.
+    @Test
+    fun `given a destination configured before the gate's cache fills, when an event captured under a denying decision arrives, then it is not delivered`() =
+        runTest(testDispatcher) {
+            val granted = consentState(allowed = listOf("marketing"))
+            stubConsentState(granted)
+            // Deliberately never dispatched: the seed finds no destination and the collector has
+            // nothing to deliver, exactly as at start-up before the first source config lands.
+            every { mockAnalytics.sourceConfigState } returns State(initialState = SourceConfig.initialState())
+            plugin.setup(mockAnalytics)
+            plugin.initDestination(gatedSourceConfig())
+            assertTrue(plugin.isDestinationReady)
+
+            // Recorded while this destination was denied; consent has since been granted.
+            plugin.intercept(
+                trackEvent("denied-window", capturedUnder = consentState(allowed = listOf("something-else")))
+            )
+            // Control, so a setup that silently delivers nothing cannot pass as a success.
+            plugin.intercept(trackEvent("allowed-window", capturedUnder = granted))
+
+            verify(exactly = 0) { plugin.track(match { it.event == "denied-window" }) }
+            verify(exactly = 1) { plugin.track(match { it.event == "allowed-window" }) }
+        }
+
     private fun stubConsentState(state: ConsentManagementState) {
         every { mockAnalytics.consentManagementState } returns State(initialState = state)
     }
 
-    private fun trackEvent(name: String): TrackEvent =
-        TrackEvent(name, emptyJsonObject).also { applyBaseDataToEvent(it) }
+    private fun trackEvent(name: String, capturedUnder: ConsentManagementState? = null): TrackEvent =
+        TrackEvent(name, emptyJsonObject).also {
+            applyBaseDataToEvent(it)
+            if (capturedUnder != null) {
+                it.capturedReservedContext =
+                    mapOf(SDKManagedContextKey.CONSENT_MANAGEMENT.key to capturedUnder.consentStamp)
+            }
+        }
 }
 
 private fun consentState(allowed: List<String>) = ConsentManagementState(

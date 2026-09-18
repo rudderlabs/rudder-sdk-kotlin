@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.collectIndexed
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.yield
 
 internal const val MAX_QUEUE_SIZE = 1000
 internal const val FIRST_INDEX = 0
@@ -136,9 +137,14 @@ internal class IntegrationsManagementPlugin : Plugin {
         }
     }
 
+    // The collector in setup() shares this single-threaded dispatcher, and `process` usually completes
+    // without suspending, so a backlog would otherwise be drained in full before a re-evaluation queued
+    // by a consent change ever runs - and every event in it would meet a destination that is still not
+    // ready. Yielding hands that re-evaluation its turn first.
     private fun processEvents() {
         analytics.withIntegrationsDispatcher {
             for (event in queuedEventsChannel) {
+                yield()
                 integrationPluginChain.process(event)
             }
         }

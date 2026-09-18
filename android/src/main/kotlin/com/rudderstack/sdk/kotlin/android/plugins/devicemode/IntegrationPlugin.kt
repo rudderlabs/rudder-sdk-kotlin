@@ -1,13 +1,16 @@
 package com.rudderstack.sdk.kotlin.android.plugins.devicemode
 
 import com.rudderstack.sdk.kotlin.android.models.consent.ConsentResolver
+import com.rudderstack.sdk.kotlin.android.models.consent.toConsentManagementState
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing.ConsentGatePlugin
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing.EventFilteringPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing.IntegrationOptionsPlugin
 import com.rudderstack.sdk.kotlin.android.utils.consentState
 import com.rudderstack.sdk.kotlin.android.utils.findDestination
+import com.rudderstack.sdk.kotlin.android.utils.mergeWithHigherPriorityTo
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
+import com.rudderstack.sdk.kotlin.core.internals.models.SDKManagedContextKey
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.plugins.EventPlugin
@@ -16,7 +19,10 @@ import com.rudderstack.sdk.kotlin.core.internals.plugins.PluginChain
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import com.rudderstack.sdk.kotlin.core.internals.utils.safelyExecute
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.atomic.AtomicBoolean
 
 private const val DELIVERY_HALTED_NOTICE = "No events will be sent to this destination."
 
@@ -45,6 +51,14 @@ abstract class IntegrationPlugin : EventPlugin {
     @Volatile
     internal var isDestinationReady = false
         private set
+
+    // Kept for the handoff gate, so it costs no source-config lookup per event.
+    @Volatile
+    private var destinationConfig: JsonObject? = null
+
+    // A plugin on this destination's chain that overwrites the key does so on every event, so the
+    // replacement is reported once per destination rather than once per event.
+    private val hasWarnedAboutRestoredStamp = AtomicBoolean(false)
 
     /**
      * The key for the destination present in the source config.
@@ -98,17 +112,19 @@ abstract class IntegrationPlugin : EventPlugin {
     //  only once and destination is initialised only once even when this method is called multiple times.
     //  There should be no side effect of calling this method multiple times with same SourceConfig.
     internal fun initDestination(sourceConfig: SourceConfig) {
-        isDestinationConfigured(sourceConfig)?.let { destinationConfig ->
-            safelyInitOrUpdateAndNotify(destinationConfig)
-        }
+        isDestinationConfigured(sourceConfig)?.let { safelyInitOrUpdateAndNotify(it) }
     }
 
     private fun isDestinationConfigured(sourceConfig: SourceConfig): JsonObject? {
+        val configDestination = findDestination(sourceConfig, key)
+        // Recorded for every integration, whatever the outcome below: the handoff gate needs the
+        // destination's current consent rules - the same ones ConsentGatePlugin resolves by key -
+        // and a rejected update still changes what those rules are.
+        destinationConfig = configDestination?.destinationConfig
         if (!isStandardIntegration) {
             analytics.logger.debug("IntegrationPlugin[$key]: Non-standard integration, using empty config")
             return emptyJsonObject
         }
-        val configDestination = findDestination(sourceConfig, key)
         return when {
             configDestination == null -> {
                 notifyDashboardFailure("Destination $key not found in the source config. $DELIVERY_HALTED_NOTICE")
@@ -145,10 +161,87 @@ abstract class IntegrationPlugin : EventPlugin {
             event.copy<Event>()
                 .let { pluginChain.applyPlugins(Plugin.PluginType.PreProcess, it) }
                 ?.let { pluginChain.applyPlugins(Plugin.PluginType.OnProcess, it) }
+                ?.let { gateAndRestoreConsentStamp(it) }
                 ?.let { handleEvent(it) }
         }
 
         return event
+    }
+
+    /**
+     * Applies the consent decision at the handoff boundary, then restores
+     * `context.consentManagement` to the value the event was created under.
+     *
+     * The chain can suspend - a customer plugin added via [add] may do real work - so consent can be
+     * revoked after [ConsentGatePlugin] has already passed the event. Gating here too makes that
+     * guarantee hold all the way to delivery rather than only at chain entry.
+     *
+     * Both the live decision and the one recorded at creation are applied, exactly as
+     * [ConsentGatePlugin] applies them. The gate resolves against a config cache filled by an
+     * asynchronous collector, so a destination registered before the first source config arrives is
+     * set up while that cache is still empty, and every event it sees fails open. This boundary
+     * resolves against the config the destination was configured with, so it is the first point that
+     * can judge those events at all - and without the creation-time half, a later grant would deliver
+     * an event recorded while this destination was denied.
+     *
+     * The stamp is a separate question from the gate: it restores what the event recorded at
+     * creation, so a decision taken while the event was in flight cannot rewrite what it says the
+     * user had agreed to. An event carrying no captured value is left untouched.
+     *
+     * Because the captured value never changes, a difference here can only be a destination-chain
+     * plugin having overwritten the key after the main-chain guard ran. That guard never sees such
+     * a write, so this is the only place the customer can be told about it - hence a warning rather
+     * than a debug line, raised once per destination so a plugin spoofing every event cannot flood
+     * the log.
+     */
+    private fun gateAndRestoreConsentStamp(event: Event): Event? {
+        val state = analytics.consentState.value
+        if (!state.active) return event
+
+        val dropReason = when {
+            !ConsentResolver.resolve(state, destinationConfig) ->
+                "consent was revoked while the event was in the device-mode chain"
+
+            !allowedWhenCreated(event) ->
+                "it was created while this destination was denied"
+
+            else -> null
+        }
+        if (dropReason != null) {
+            analytics.logger.debug(
+                "IntegrationPlugin: Dropped event for destination $key - $dropReason " +
+                    "(messageId=${event.messageId})."
+            )
+            return null
+        }
+
+        val consentKey = SDKManagedContextKey.CONSENT_MANAGEMENT.key
+        val captured = event.capturedReservedContext?.get(consentKey)
+        if (captured == null || event.context[consentKey] == captured) return event
+
+        if (hasWarnedAboutRestoredStamp.compareAndSet(false, true)) {
+            analytics.logger.warn(
+                "IntegrationPlugin: Replacing the \"consentManagement\" key written by a plugin on " +
+                    "destination $key; the SDK owns this key while consent management is enabled. " +
+                    "Migrate to setConsent()."
+            )
+        }
+        event.context = event.context mergeWithHigherPriorityTo buildJsonObject { put(consentKey, captured) }
+        return event
+    }
+
+    /**
+     * Whether this destination was consented under the decision the event was created with.
+     *
+     * An event carrying no captured value was created while consent management was inactive, which
+     * counts as consented.
+     */
+    private fun allowedWhenCreated(event: Event): Boolean {
+        val captured = event.capturedReservedContext
+            ?.get(SDKManagedContextKey.CONSENT_MANAGEMENT.key) as? JsonObject
+            ?: return true
+
+        return ConsentResolver.resolve(captured.toConsentManagementState(), destinationConfig)
     }
 
     /**

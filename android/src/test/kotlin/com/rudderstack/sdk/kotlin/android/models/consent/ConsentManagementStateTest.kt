@@ -3,6 +3,10 @@ package com.rudderstack.sdk.kotlin.android.models.consent
 import com.rudderstack.sdk.kotlin.android.consent.ConsentManagementConfiguration
 import com.rudderstack.sdk.kotlin.android.consent.ConsentManagementProvider
 import com.rudderstack.sdk.kotlin.android.models.consent.ConsentManagementState.Companion.normalized
+import kotlinx.serialization.json.add
+import kotlinx.serialization.json.buildJsonArray
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -96,5 +100,38 @@ class ConsentManagementStateTest {
         assertEquals(ConsentManagementProvider.CUSTOM, state.provider)
         assertEquals(listOf("marketing"), state.allowedConsentIds)
         assertEquals(listOf("advertising"), state.deniedConsentIds)
+    }
+
+    // Stamp round-trip
+    //
+    // The stamp is what an event carries from creation to delivery, and the gate reads it back to
+    // judge the event against the decision it was created under. If the two operations disagree,
+    // that judgement is made against something the user never chose.
+
+    @Test
+    fun `given an active state, when its stamp is read back, then the state round-trips unchanged`() {
+        val state = ConsentManagementState(
+            active = true,
+            provider = ConsentManagementProvider.CUSTOM,
+            allowedConsentIds = listOf("marketing", "analytics"),
+            deniedConsentIds = listOf("advertising"),
+        )
+
+        assertEquals(state, state.consentStamp.toConsentManagementState())
+    }
+
+    @Test
+    fun `given a stamp naming an unknown provider, when it is read back, then it falls back to the supported provider`() {
+        val stamp = buildJsonObject {
+            put("provider", "some-future-cmp")
+            put("allowedConsentIds", buildJsonArray { add("marketing") })
+            put("deniedConsentIds", buildJsonArray { })
+        }
+
+        val state = stamp.toConsentManagementState()
+
+        assertEquals(ConsentManagementProvider.CUSTOM, state.provider)
+        assertEquals(listOf("marketing"), state.allowedConsentIds)
+        assertTrue(state.active)
     }
 }

@@ -1,6 +1,8 @@
 package com.rudderstack.integration.kotlin.appsflyer
 
 import com.rudderstack.sdk.kotlin.android.Analytics
+import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
+import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.TestDispatcher
@@ -16,6 +18,7 @@ fun mockAnalytics(testScope: TestScope, testDispatcher: TestDispatcher): Analyti
         every { it.fileStorageDispatcher } returns testDispatcher
         every { it.networkDispatcher } returns testDispatcher
         every { it.integrationsDispatcher } returns testDispatcher
+        every { it.sourceConfigState } returns State(initialState = SourceConfig.initialState())
     }
 
     return mockAnalytics
