@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+# [1.8.0](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.sdk.kotlin.android@v1.7.1...com.rudderstack.sdk.kotlin.android@v1.8.0) (2026-09-22)
+
+## Features
+
+- **core:** Guard sdk-managed context keys via a reserved-key registry ([#346](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/346)) ([614fabf](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/614fabf3bf6ca67289c41bfae1dbca143d3723bb))
+- **android:** Gate device-mode destinations on user consent ([#343](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/343)) ([bf3ace4](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/bf3ace43a80d6e012ac35213771d14e35e7c44b9))
+- **android:** Add consent management stamping plugin ([#341](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/341)) ([da09877](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/da0987743a56444ece171c58d0dc6f92cb938e43))
+- **android:** Add consent management configuration and setConsent API ([#340](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/340)) ([cfa466e](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/cfa466e82a91ced74b58c4a03186e9af6344c707))
+
+## Dependency Updates
+
+- The following workspace dependencies were updated
+  - dependencies
+    - @rudderstack/core bumped from 1.6.1 to 1.7.0
+
+
 # [1.7.1](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.sdk.kotlin.android@v1.7.0...com.rudderstack.sdk.kotlin.android@v1.7.1) (2026-07-20)
 
 ## Bug Fixes
