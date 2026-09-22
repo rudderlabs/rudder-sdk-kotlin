@@ -11,7 +11,6 @@ concurrency:
 
 permissions:
   contents: read
-  actions: read
 
 jobs:
   detect-modules:
@@ -116,6 +115,9 @@ jobs:
   release-sanity:
     needs: [detect-modules, publish-snapshot]
     if: needs.detect-modules.outputs.has_modules == 'true'
+    permissions:
+      contents: read
+      actions: read
     uses: ./.github/workflows/release-sanity.yml
     with:
       phase: pre-release
@@ -131,6 +133,9 @@ jobs:
     needs: [detect-modules, publish-snapshot]
     if: needs.detect-modules.outputs.has_modules == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
     continue-on-error: true
 
     steps:
