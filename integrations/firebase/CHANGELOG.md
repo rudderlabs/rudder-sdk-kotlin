@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+# [1.4.0](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.integration.kotlin.firebase@v1.3.3...com.rudderstack.integration.kotlin.firebase@v1.4.0) (2026-09-22)
+
+## Features
+
+- **core:** Guard sdk-managed context keys via a reserved-key registry ([#346](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/346)) ([614fabf](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/614fabf3bf6ca67289c41bfae1dbca143d3723bb))
+
+## Dependency Updates
+
+- The following workspace dependencies were updated
+  - dependencies
+    - @rudderstack/android bumped from 1.7.1 to 1.8.0
+
+
 # [1.3.3](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.integration.kotlin.firebase@v1.3.2...com.rudderstack.integration.kotlin.firebase@v1.3.3) (2026-07-20)
 
 ## Chores

@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+# [1.7.0](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.sdk.kotlin.core@v1.6.1...com.rudderstack.sdk.kotlin.core@v1.7.0) (2026-09-22)
+
+## Features
+
+- **core:** Guard sdk-managed context keys via a reserved-key registry ([#346](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/346)) ([614fabf](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/614fabf3bf6ca67289c41bfae1dbca143d3723bb))
+- **android:** Gate device-mode destinations on user consent ([#343](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/343)) ([bf3ace4](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/bf3ace43a80d6e012ac35213771d14e35e7c44b9))
+
+
 # [1.6.1](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.sdk.kotlin.core@v1.6.0...com.rudderstack.sdk.kotlin.core@v1.6.1) (2026-07-20)
 
 ## Bug Fixes
