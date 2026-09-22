@@ -31,6 +31,24 @@ class CleverTapPomVerificationTest {
     }
 
     /**
+     * Modules published together in the current build, as passed by `-PsnapshotModules`.
+     * A project dependency in this set is pinned by publishing.gradle.kts to its exact snapshot
+     * instead of carrying a release range.
+     */
+    private val snapshotModules: Set<String> =
+        System.getProperty("snapshotModules").orEmpty()
+            .split(",")
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+            .toSet()
+
+    /**
+     * The normalised version constraint the POM carries for the android module: pinned to the exact
+     * snapshot when android is published in the same batch, a release range otherwise.
+     */
+    private val androidVersion: String = if ("android" in snapshotModules) "x.y.z" else "[x.y.z, x.y.z)"
+
+    /**
      * Normalises the numeric version endpoints inside every `<version>...</version>` element so that
      * version bumps do not break the test, while leaving surrounding syntax intact.
      */
@@ -84,7 +102,7 @@ class CleverTapPomVerificationTest {
             <dependency>
               <groupId>com.rudderstack.sdk.kotlin</groupId>
               <artifactId>android</artifactId>
-              <version>[x.y.z, x.y.z)</version>
+              <version>$androidVersion</version>
               <scope>runtime</scope>
             </dependency>
             <dependency>
