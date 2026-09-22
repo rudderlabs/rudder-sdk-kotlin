@@ -6,9 +6,11 @@ import android.net.Uri
 import com.rudderstack.sdk.kotlin.android.DEFAULT_SESSION_TIMEOUT_IN_MILLIS
 import com.rudderstack.sdk.kotlin.android.SessionConfiguration
 import com.rudderstack.sdk.kotlin.android.SessionConfiguration.Companion.DEFAULT_AUTOMATIC_SESSION_TRACKING
-import com.rudderstack.sdk.kotlin.core.Analytics
+import com.rudderstack.sdk.kotlin.android.models.consent.ConsentManagementState
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
+import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
@@ -17,7 +19,7 @@ import kotlinx.coroutines.test.TestScope
 import java.io.BufferedReader
 import com.rudderstack.sdk.kotlin.android.Analytics as AndroidAnalytics
 
-fun mockAnalytics(testScope: TestScope, testDispatcher: TestDispatcher): Analytics {
+fun mockAnalytics(testScope: TestScope, testDispatcher: TestDispatcher): AndroidAnalytics {
     val mockAnalytics = mockk<AndroidAnalytics>(relaxed = true)
 
     mockAnalytics.also {
@@ -27,6 +29,8 @@ fun mockAnalytics(testScope: TestScope, testDispatcher: TestDispatcher): Analyti
         every { it.keyValueStorageDispatcher } returns testDispatcher
         every { it.networkDispatcher } returns testDispatcher
         every { it.integrationsDispatcher } returns testDispatcher
+        every { it.consentManagementState } returns State(initialState = ConsentManagementState())
+        every { it.sourceConfigState } returns State(initialState = SourceConfig.initialState())
     }
 
     return mockAnalytics

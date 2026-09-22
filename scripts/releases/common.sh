@@ -47,7 +47,8 @@ sed_inplace() {
 # --- Monorepo tag ---
 
 find_monorepo_tag() {
-    git tag -l 'v*.*.*' --sort=-v:refname | head -1
+    # versionsort.suffix ranks pre-release tags (v1.0.0-alpha.1) below GA (v1.0.0)
+    git -c versionsort.suffix=- tag -l 'v*.*.*' --sort=-v:refname | head -1
     return 0
 }
 

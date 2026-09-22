@@ -34,6 +34,9 @@ tasks.withType<Test> {
     val pomFile = layout.buildDirectory.file("publications/release/pom-default.xml")
     inputs.file(pomFile)
     systemProperty("clevertapPomFile", pomFile.get().asFile.absolutePath)
+    // Lets the POM test know whether project dependencies are pinned to a snapshot
+    // or carry a release range, which publishing.gradle.kts decides from this property.
+    systemProperty("snapshotModules", providers.gradleProperty("snapshotModules").getOrElse(""))
 }
 
 android {

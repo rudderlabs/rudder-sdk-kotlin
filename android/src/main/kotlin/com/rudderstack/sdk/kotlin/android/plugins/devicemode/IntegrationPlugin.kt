@@ -1,10 +1,16 @@
 package com.rudderstack.sdk.kotlin.android.plugins.devicemode
 
+import com.rudderstack.sdk.kotlin.android.models.consent.ConsentResolver
+import com.rudderstack.sdk.kotlin.android.models.consent.toConsentManagementState
+import com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing.ConsentGatePlugin
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing.EventFilteringPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing.IntegrationOptionsPlugin
+import com.rudderstack.sdk.kotlin.android.utils.consentState
 import com.rudderstack.sdk.kotlin.android.utils.findDestination
+import com.rudderstack.sdk.kotlin.android.utils.mergeWithHigherPriorityTo
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
+import com.rudderstack.sdk.kotlin.core.internals.models.SDKManagedContextKey
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.plugins.EventPlugin
@@ -13,7 +19,12 @@ import com.rudderstack.sdk.kotlin.core.internals.plugins.PluginChain
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import com.rudderstack.sdk.kotlin.core.internals.utils.safelyExecute
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.atomic.AtomicBoolean
+
+private const val DELIVERY_HALTED_NOTICE = "No events will be sent to this destination."
 
 /**
  * Base plugin class for all integration plugins.
@@ -40,6 +51,14 @@ abstract class IntegrationPlugin : EventPlugin {
     @Volatile
     internal var isDestinationReady = false
         private set
+
+    // Kept for the handoff gate, so it costs no source-config lookup per event.
+    @Volatile
+    private var destinationConfig: JsonObject? = null
+
+    // A plugin on this destination's chain that overwrites the key does so on every event, so the
+    // replacement is reported once per destination rather than once per event.
+    private val hasWarnedAboutRestoredStamp = AtomicBoolean(false)
 
     /**
      * The key for the destination present in the source config.
@@ -93,32 +112,48 @@ abstract class IntegrationPlugin : EventPlugin {
     //  only once and destination is initialised only once even when this method is called multiple times.
     //  There should be no side effect of calling this method multiple times with same SourceConfig.
     internal fun initDestination(sourceConfig: SourceConfig) {
-        isDestinationConfigured(sourceConfig)?.let { destinationConfig ->
-            safelyInitOrUpdateAndNotify(destinationConfig)
-        }
+        isDestinationConfigured(sourceConfig)?.let { safelyInitOrUpdateAndNotify(it) }
     }
 
     private fun isDestinationConfigured(sourceConfig: SourceConfig): JsonObject? {
+        val configDestination = findDestination(sourceConfig, key)
+        // Recorded for every integration, whatever the outcome below: the handoff gate needs the
+        // destination's current consent rules - the same ones ConsentGatePlugin resolves by key -
+        // and a rejected update still changes what those rules are.
+        destinationConfig = configDestination?.destinationConfig
         if (!isStandardIntegration) {
             analytics.logger.debug("IntegrationPlugin[$key]: Non-standard integration, using empty config")
             return emptyJsonObject
         }
-        findDestination(sourceConfig, key)?.let { configDestination ->
-            if (!configDestination.isDestinationEnabled) {
-                val errorMessage = "Destination $key is disabled in dashboard. " +
-                    "No events will be sent to this destination."
-                analytics.logger.warn("IntegrationPlugin: $errorMessage")
-                safelyUpdateOnFailureAndNotify(IllegalStateException(errorMessage))
-                return null
+        return when {
+            configDestination == null -> {
+                notifyDashboardFailure("Destination $key not found in the source config. $DELIVERY_HALTED_NOTICE")
+                null
             }
-            return configDestination.destinationConfig
-        } ?: run {
-            val errorMessage = "Destination $key not found in the source config. " +
-                "No events will be sent to this destination."
-            analytics.logger.warn("IntegrationPlugin: $errorMessage")
-            safelyUpdateOnFailureAndNotify(IllegalStateException(errorMessage))
-            return null
+            !configDestination.isDestinationEnabled -> {
+                notifyDashboardFailure("Destination $key is disabled in dashboard. $DELIVERY_HALTED_NOTICE")
+                null
+            }
+            !ConsentResolver.resolve(analytics.consentState.value, configDestination.destinationConfig) -> {
+                notifyConsentDenial("Destination $key is denied by user consent. $DELIVERY_HALTED_NOTICE")
+                null
+            }
+            else -> configDestination.destinationConfig
         }
+    }
+
+    // A destination missing from, or disabled in, the dashboard keeps its long-standing handling: it is
+    // updated with an empty config before the failure is reported.
+    private fun notifyDashboardFailure(errorMessage: String) {
+        analytics.logger.warn("IntegrationPlugin: $errorMessage")
+        safelyUpdateOnFailureAndNotify(IllegalStateException(errorMessage))
+    }
+
+    // A destination denied by consent must not be updated: pushing an empty config can throw, which would
+    // replace the consent reason with a parse error, and can reset a live destination's state.
+    private fun notifyConsentDenial(errorMessage: String) {
+        analytics.logger.warn("IntegrationPlugin: $errorMessage")
+        notifyFailureAndMarkNotReady(ConsentDeniedException(errorMessage))
     }
 
     final override suspend fun intercept(event: Event): Event {
@@ -126,10 +161,87 @@ abstract class IntegrationPlugin : EventPlugin {
             event.copy<Event>()
                 .let { pluginChain.applyPlugins(Plugin.PluginType.PreProcess, it) }
                 ?.let { pluginChain.applyPlugins(Plugin.PluginType.OnProcess, it) }
+                ?.let { gateAndRestoreConsentStamp(it) }
                 ?.let { handleEvent(it) }
         }
 
         return event
+    }
+
+    /**
+     * Applies the consent decision at the handoff boundary, then restores
+     * `context.consentManagement` to the value the event was created under.
+     *
+     * The chain can suspend - a customer plugin added via [add] may do real work - so consent can be
+     * revoked after [ConsentGatePlugin] has already passed the event. Gating here too makes that
+     * guarantee hold all the way to delivery rather than only at chain entry.
+     *
+     * Both the live decision and the one recorded at creation are applied, exactly as
+     * [ConsentGatePlugin] applies them. The gate resolves against a config cache filled by an
+     * asynchronous collector, so a destination registered before the first source config arrives is
+     * set up while that cache is still empty, and every event it sees fails open. This boundary
+     * resolves against the config the destination was configured with, so it is the first point that
+     * can judge those events at all - and without the creation-time half, a later grant would deliver
+     * an event recorded while this destination was denied.
+     *
+     * The stamp is a separate question from the gate: it restores what the event recorded at
+     * creation, so a decision taken while the event was in flight cannot rewrite what it says the
+     * user had agreed to. An event carrying no captured value is left untouched.
+     *
+     * Because the captured value never changes, a difference here can only be a destination-chain
+     * plugin having overwritten the key after the main-chain guard ran. That guard never sees such
+     * a write, so this is the only place the customer can be told about it - hence a warning rather
+     * than a debug line, raised once per destination so a plugin spoofing every event cannot flood
+     * the log.
+     */
+    private fun gateAndRestoreConsentStamp(event: Event): Event? {
+        val state = analytics.consentState.value
+        if (!state.active) return event
+
+        val dropReason = when {
+            !ConsentResolver.resolve(state, destinationConfig) ->
+                "consent was revoked while the event was in the device-mode chain"
+
+            !allowedWhenCreated(event) ->
+                "it was created while this destination was denied"
+
+            else -> null
+        }
+        if (dropReason != null) {
+            analytics.logger.debug(
+                "IntegrationPlugin: Dropped event for destination $key - $dropReason " +
+                    "(messageId=${event.messageId})."
+            )
+            return null
+        }
+
+        val consentKey = SDKManagedContextKey.CONSENT_MANAGEMENT.key
+        val captured = event.capturedReservedContext?.get(consentKey)
+        if (captured == null || event.context[consentKey] == captured) return event
+
+        if (hasWarnedAboutRestoredStamp.compareAndSet(false, true)) {
+            analytics.logger.warn(
+                "IntegrationPlugin: Replacing the \"consentManagement\" key written by a plugin on " +
+                    "destination $key; the SDK owns this key while consent management is enabled. " +
+                    "Migrate to setConsent()."
+            )
+        }
+        event.context = event.context mergeWithHigherPriorityTo buildJsonObject { put(consentKey, captured) }
+        return event
+    }
+
+    /**
+     * Whether this destination was consented under the decision the event was created with.
+     *
+     * An event carrying no captured value was created while consent management was inactive, which
+     * counts as consented.
+     */
+    private fun allowedWhenCreated(event: Event): Boolean {
+        val captured = event.capturedReservedContext
+            ?.get(SDKManagedContextKey.CONSENT_MANAGEMENT.key) as? JsonObject
+            ?: return true
+
+        return ConsentResolver.resolve(captured.toConsentManagementState(), destinationConfig)
     }
 
     /**
@@ -218,6 +330,32 @@ abstract class IntegrationPlugin : EventPlugin {
         )
     }
 
+    /**
+     * Marks the destination not ready and reports [throwable] to the ready callbacks.
+     *
+     * The destination is deliberately not updated here: pushing a config into a destination that is
+     * being declared failed can throw on integrations whose config has required fields, which would
+     * replace the reported reason with a parse error. Notification stays wrapped so a throwing
+     * customer callback cannot escape into the re-evaluation coroutine.
+     */
+    private fun notifyFailureAndMarkNotReady(throwable: Throwable) {
+        this.isDestinationReady = false
+        safelyExecute(
+            block = { notifyCallbacks(Result.Failure(throwable)) },
+            onException = { exception ->
+                analytics.logger.error(
+                    "IntegrationPlugin: Failed to notify destination $key callbacks. Error: ${exception.message}"
+                )
+            }
+        )
+    }
+
+    /**
+     * Updates the destination with an empty config, then marks it not ready and reports [throwable].
+     *
+     * The update is what tells a destination the SDK owns no config for it any more, so a destination
+     * withheld by the dashboard can clear itself.
+     */
     private fun safelyUpdateOnFailureAndNotify(throwable: Throwable) {
         safelyUpdateAndApplyBlock(
             destinationConfig = emptyJsonObject,
@@ -271,6 +409,7 @@ abstract class IntegrationPlugin : EventPlugin {
     }
 
     private fun applyDefaultPlugins() {
+        add(ConsentGatePlugin(key))
         add(EventFilteringPlugin(key))
         add(IntegrationOptionsPlugin(key))
     }

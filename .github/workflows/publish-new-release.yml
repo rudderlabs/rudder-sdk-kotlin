@@ -11,7 +11,6 @@ concurrency:
 
 permissions:
   contents: read
-  actions: read
 
 jobs:
   detect-modules:
@@ -213,10 +212,30 @@ jobs:
           pr_url=$(./scripts/releases/create-backmerge-pr.sh "$VERSION")
           echo "pr_url=${pr_url}" >> "$GITHUB_OUTPUT"
 
+  release-sanity:
+    needs: [detect-modules, publish-release]
+    if: needs.detect-modules.outputs.has_modules == 'true'
+    permissions:
+      contents: read
+      actions: read
+    uses: ./.github/workflows/release-sanity.yml
+    with:
+      phase: post-release
+      snapshot: false
+      affected_modules: ${{ needs.detect-modules.outputs.affected }}
+      release_pr: ${{ github.event.pull_request.html_url }}
+      max_wait_seconds: 3000
+    secrets:
+      RELEASE_PRIVATE_KEY: ${{ secrets.RELEASE_PRIVATE_KEY }}
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
   notify-slack:
     needs: [detect-modules, publish-release, create-github-releases, back-merge]
     if: needs.detect-modules.outputs.has_modules == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
     continue-on-error: true
 
     steps:
@@ -261,7 +280,8 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           # Find previous monorepo tag for compare URL
-          prev_tag=$(git tag -l 'v*.*.*' --sort=-v:refname | grep -v "v${VERSION}" | head -1)
+          # versionsort.suffix ranks pre-release tags (v1.0.0-alpha.1) below GA (v1.0.0)
+          prev_tag=$(git -c versionsort.suffix=- tag -l 'v*.*.*' --sort=-v:refname | grep -v "v${VERSION}" | head -1)
 
           # Build inline module list: "core 6.2.0 · android 6.0.4 · ..."
           module_line=""

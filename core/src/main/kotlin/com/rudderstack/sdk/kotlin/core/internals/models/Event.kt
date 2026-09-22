@@ -4,6 +4,7 @@ import com.rudderstack.sdk.kotlin.core.internals.models.exception.UnknownEventKe
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.UserIdentity
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.utils.DateTimeUtils
+import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import com.rudderstack.sdk.kotlin.core.internals.utils.addPersistedValues
 import com.rudderstack.sdk.kotlin.core.internals.utils.addRudderOptionFields
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
@@ -111,6 +112,20 @@ sealed class Event {
     abstract var options: RudderOption
 
     /**
+     * The values the SDK asserted for its reserved context keys when this event was created.
+     *
+     * Reserved keys are re-asserted at the terminal boundary. Reading live state there would
+     * record the decision in force at delivery rather than the one the event was created under,
+     * so the creation-time values are carried here and every re-assert restores what was
+     * actually true when the event happened.
+     *
+     * Keyed by [SDKManagedContextKey.key]. Transient — it never reaches the payload.
+     */
+    @Transient
+    @InternalRudderApi
+    var capturedReservedContext: Map<String, JsonElement>? = null
+
+    /**
      * Updates the event data with the platform type, integrations and custom context and add persisted values.
      *
      * @param platform The platform type associated with the event.
@@ -164,9 +179,22 @@ sealed class Event {
             anonymousId = original.anonymousId
             channel = original.channel
             userId = original.userId
+            capturedReservedContext = original.capturedReservedContext
         }
         @Suppress("UNCHECKED_CAST")
         return copy as T // This is ok because resultant type will be same as input type
+    }
+
+    /**
+     * Re-applies the state the SDK owns rather than a plugin, taken from [from]: the values the SDK
+     * asserted for its reserved context keys when the event was created. Everything a plugin can
+     * set - the payload, its own messageId and options included - is left exactly as the plugin
+     * returned it.
+     *
+     * Used where a plugin has returned a newly constructed event instead of the one it was handed.
+     */
+    internal fun restoreSdkOwnedState(from: Event) {
+        capturedReservedContext = from.capturedReservedContext
     }
 }
 

@@ -231,6 +231,36 @@ class StandardIntegrationPluginTest {
         }
 
     @Test
+    fun `given an initialised integration, when the destination is disabled in the dashboard, then it is updated with an empty config`() =
+        runTest {
+            plugin.initDestination(sourceConfigWithCorrectApiKey)
+            val sourceConfigWithDisabledDestination = LenientJson.decodeFromString<SourceConfig>(
+                readFileAsString(pathToSourceConfigWithDestinationDisabled)
+            )
+
+            plugin.initDestination(sourceConfigWithDisabledDestination)
+
+            // Long-standing behaviour: a destination switched off in the dashboard is told to clear
+            // itself. Consent denial is the one reason that deliberately skips this.
+            verify(exactly = 1) { plugin.update(emptyJsonObject) }
+            assertFalse(plugin.isDestinationReady)
+        }
+
+    @Test
+    fun `given an initialised integration, when the destination is absent from the source config, then it is updated with an empty config`() =
+        runTest {
+            plugin.initDestination(sourceConfigWithCorrectApiKey)
+            val sourceConfigWithAbsentDestinationConfig = LenientJson.decodeFromString<SourceConfig>(
+                readFileAsString(pathToSourceConfigWithAbsentDestinationConfig)
+            )
+
+            plugin.initDestination(sourceConfigWithAbsentDestinationConfig)
+
+            verify(exactly = 1) { plugin.update(emptyJsonObject) }
+            assertFalse(plugin.isDestinationReady)
+        }
+
+    @Test
     fun `given an integration which is not ready, when the plugin is updated with a new correct sourceConfig, then integration becomes ready`() =
         runTest {
             plugin.initDestination(sourceConfigWithIncorrectApiKey)
