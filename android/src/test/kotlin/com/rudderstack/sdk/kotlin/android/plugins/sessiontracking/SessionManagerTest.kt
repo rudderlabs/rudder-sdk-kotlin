@@ -78,7 +78,7 @@ class SessionManagerTest {
     }
 
     @Test
-    fun `given an automatic session enabled, when app is launched and session is timed out, then new session starts`() =
+    fun `given an automatic session enabled, when app is first foregrounded and session is timed out, then new session starts`() =
         runTest(testDispatcher) {
             val automaticSessionTrackingEnabled = true
             val initialSessionId = 1234567890L
@@ -95,6 +95,7 @@ class SessionManagerTest {
                 automaticSessionTracking = automaticSessionTrackingEnabled,
                 sessionTimeoutInMillis = 300_000L
             )
+            sessionManager.checkAndStartSessionOnForeground()
             testDispatcher.scheduler.advanceUntilIdle()
 
             assertNotEquals(initialSessionId, mockStorage.readLong(StorageKeys.SESSION_ID, 0L))
@@ -103,7 +104,7 @@ class SessionManagerTest {
         }
 
     @Test
-    fun `given previous session was manual, when automatic session enabled and app launched, then new automatic session starts`() =
+    fun `given previous session was manual, when automatic session enabled and app first foregrounded, then new automatic session starts`() =
         runTest(testDispatcher) {
             val automaticSessionTrackingEnabled = true
             val initialSessionId = 1234567890L
@@ -111,6 +112,7 @@ class SessionManagerTest {
             mockStorage.write(StorageKeys.IS_SESSION_MANUAL, true)
 
             sessionManagerSetup(automaticSessionTracking = automaticSessionTrackingEnabled)
+            sessionManager.checkAndStartSessionOnForeground()
             testDispatcher.scheduler.advanceUntilIdle()
 
             assertNotEquals(initialSessionId, mockStorage.readLong(StorageKeys.SESSION_ID, 0L))
@@ -118,13 +120,14 @@ class SessionManagerTest {
         }
 
     @Test
-    fun `given no session id stored previously, when automatic session enabled and app launched, then new automatic session is started with correct session id`() =
+    fun `given no session id stored previously, when automatic session enabled and app first foregrounded, then new automatic session is started with correct session id`() =
         runTest(testDispatcher) {
             val automaticSessionTrackingEnabled = true
             val currentTime = System.currentTimeMillis()
             mockSystemCurrentTime(currentTime)
 
             sessionManagerSetup(automaticSessionTracking = automaticSessionTrackingEnabled)
+            sessionManager.checkAndStartSessionOnForeground()
             testDispatcher.scheduler.advanceUntilIdle()
 
             assertNotEquals(0L, mockStorage.readLong(StorageKeys.SESSION_ID, 0L))
@@ -295,40 +298,94 @@ class SessionManagerTest {
     }
 
     @Test
-    fun `given app is in foreground, when shouldUpdateLastActivityTime is called, then activity time should be updated`() {
+    fun `given app is in foreground, when countsAsUserActivity is called, then activity time should be updated`() {
         val observerSlot = captureProcessLifecycleObserver()
         sessionManagerSetup(automaticSessionTracking = true)
         // Simulate the OS delivering a foreground lifecycle event to the captured observer.
         observerSlot.captured.onStart(mockk<LifecycleOwner>())
 
-        val result = sessionManager.shouldUpdateLastActivityTime()
+        val result = sessionManager.countsAsUserActivity()
 
         assertTrue(result)
     }
 
     @Test
-    fun `given app is in background and updateSessionOnBackgroundEvents is disabled, when shouldUpdateLastActivityTime is called, then activity time should not be updated`() {
+    fun `given app is in background and updateSessionOnBackgroundEvents is disabled, when countsAsUserActivity is called, then activity time should not be updated`() {
         val observerSlot = captureProcessLifecycleObserver()
         sessionManagerSetup(automaticSessionTracking = true, updateSessionOnBackgroundEvents = false)
         // Simulate the OS delivering a background lifecycle event to the captured observer.
         observerSlot.captured.onStop(mockk<LifecycleOwner>())
 
-        val result = sessionManager.shouldUpdateLastActivityTime()
+        val result = sessionManager.countsAsUserActivity()
 
         assertFalse(result)
     }
 
     @Test
-    fun `given app is in background and updateSessionOnBackgroundEvents is enabled, when shouldUpdateLastActivityTime is called, then activity time should be updated`() {
+    fun `given app is in background and updateSessionOnBackgroundEvents is enabled, when countsAsUserActivity is called, then activity time should be updated`() {
         val observerSlot = captureProcessLifecycleObserver()
         sessionManagerSetup(automaticSessionTracking = true, updateSessionOnBackgroundEvents = true)
         // Simulate the OS delivering a background lifecycle event to the captured observer.
         observerSlot.captured.onStop(mockk<LifecycleOwner>())
 
-        val result = sessionManager.shouldUpdateLastActivityTime()
+        val result = sessionManager.countsAsUserActivity()
 
         assertTrue(result)
     }
+
+    @Test
+    fun `given automatic session enabled, when the process starts but is never foregrounded, then no session starts`() =
+        runTest(testDispatcher) {
+            sessionManagerSetup(automaticSessionTracking = true)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            assertEquals(DEFAULT_SESSION_ID, sessionManager.sessionId)
+            assertEquals(0L, mockStorage.readLong(StorageKeys.SESSION_ID, 0L))
+        }
+
+    @Test
+    fun `given automatic session enabled and a stored session, when the process starts but is never foregrounded, then the stored session is untouched`() =
+        runTest(testDispatcher) {
+            val previousSessionId = 1234567890L
+            mockStorage.write(StorageKeys.SESSION_ID, previousSessionId)
+            mockStorage.write(StorageKeys.IS_SESSION_MANUAL, false)
+            mockStorage.write(StorageKeys.LAST_ACTIVITY_TIME, System.currentTimeMillis() - 600_000L)
+
+            sessionManagerSetup(automaticSessionTracking = true, sessionTimeoutInMillis = 300_000L)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            assertEquals(previousSessionId, mockStorage.readLong(StorageKeys.SESSION_ID, 0L))
+        }
+
+    @Test
+    fun `given automatic session enabled and the app was never foregrounded, when startSession is called, then a manual session still starts`() =
+        runTest(testDispatcher) {
+            val manualSessionId = 1234567890L
+            sessionManagerSetup(automaticSessionTracking = true)
+
+            sessionManager.startSession(manualSessionId, isSessionManual = true)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            assertEquals(manualSessionId, sessionManager.sessionId)
+            assertEquals(manualSessionId, mockStorage.readLong(StorageKeys.SESSION_ID, 0L))
+            assertTrue(mockStorage.readBoolean(StorageKeys.IS_SESSION_MANUAL, false))
+        }
+
+    @Test
+    fun `given an automatic session started on the first foreground, when the app is foregrounded again within the timeout, then the session id is unchanged`() =
+        runTest(testDispatcher) {
+            sessionManagerSetup(automaticSessionTracking = true, sessionTimeoutInMillis = 300_000L)
+
+            sessionManager.checkAndStartSessionOnForeground()
+            testDispatcher.scheduler.advanceUntilIdle()
+            val firstSessionId = sessionManager.sessionId
+            sessionManager.updateLastActivityTime()
+            sessionManager.checkAndStartSessionOnForeground()
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            assertNotEquals(DEFAULT_SESSION_ID, firstSessionId)
+            assertEquals(firstSessionId, sessionManager.sessionId)
+        }
 
     private fun sessionManagerSetup(
         automaticSessionTracking: Boolean = true,

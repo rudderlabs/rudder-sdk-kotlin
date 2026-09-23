@@ -15,6 +15,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.properties.Delegates
 import com.rudderstack.sdk.kotlin.android.Analytics as AndroidAnalytics
 
@@ -33,6 +34,9 @@ internal class SessionManager(
 
     private var sessionInfo: State<SessionInfo> = State(SessionInfo.initialState(storage))
     internal var sessionTimeout by Delegates.notNull<Long>()
+
+    // The first foreground of a process replaces the old on-launch check, so it uses the launch rules.
+    private val isFirstForegroundPending = AtomicBoolean(true)
 
     internal val sessionId
         get() = sessionInfo.value.sessionId
@@ -56,7 +60,7 @@ internal class SessionManager(
 
         when {
             sessionConfiguration.automaticSessionTracking -> {
-                checkAndStartSessionOnLaunch()
+                // An automatic session starts on the first foreground, never on a bare process start.
                 attachSessionTrackingObservers()
             }
             !isSessionManual -> {
@@ -125,18 +129,21 @@ internal class SessionManager(
         }
     }
 
-    internal fun shouldUpdateLastActivityTime(): Boolean {
+    internal fun countsAsUserActivity(): Boolean {
         return sessionConfiguration.updateSessionOnBackgroundEvents || sessionTrackingObserver.isInForeground.get()
     }
 
-    private fun checkAndStartSessionOnLaunch() {
-        if (shouldStartNewSessionOnLaunch()) {
+    private fun checkAndStartSessionOnFirstForeground() {
+        if (shouldStartNewSessionOnFirstForeground()) {
             startSession(sessionId = generateSessionId(), isSessionManual = false)
         }
     }
 
+    // The first foreground applies the launch rules; every later one only restarts a timed-out session.
     internal fun checkAndStartSessionOnForeground() {
-        if (shouldStartNewSessionOnForeground()) {
+        if (isFirstForegroundPending.compareAndSet(true, false)) {
+            checkAndStartSessionOnFirstForeground()
+        } else if (shouldStartNewSessionOnForeground()) {
             startSession(sessionId = generateSessionId(), isSessionManual = false)
         }
     }
@@ -181,7 +188,7 @@ internal class SessionManager(
         return sessionId != DEFAULT_SESSION_ID && !isSessionManual && hasSessionTimedOut()
     }
 
-    private fun shouldStartNewSessionOnLaunch(): Boolean {
+    private fun shouldStartNewSessionOnFirstForeground(): Boolean {
         return sessionId == DEFAULT_SESSION_ID || isSessionManual || hasSessionTimedOut()
     }
 

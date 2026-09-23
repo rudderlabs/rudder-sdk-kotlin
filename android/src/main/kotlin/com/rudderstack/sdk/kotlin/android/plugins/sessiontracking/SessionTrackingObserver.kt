@@ -8,17 +8,18 @@ import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLif
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ProcessLifecycleObserver
 import java.util.concurrent.atomic.AtomicBoolean
 
+// ON_CREATE also fires on a background process start, so this observer never treats it as foreground.
 internal class SessionTrackingObserver(
     private val sessionManager: SessionManager
 ) : ProcessLifecycleObserver, ActivityLifecycleObserver {
 
     @VisibleForTesting
-    internal val isSessionAlreadyUpdated = AtomicBoolean(true)
+    internal val isSessionAlreadyUpdated = AtomicBoolean(false)
     internal val isInForeground = AtomicBoolean(false)
 
-    override fun onCreate(owner: LifecycleOwner) { updateSession() }
-
     override fun onStart(owner: LifecycleOwner) { updateSession() }
+
+    override fun onResume(owner: LifecycleOwner) { updateSession() }
 
     override fun onActivityCreated(activity: Activity, bundle: Bundle?) { updateSession() }
 

@@ -1,9 +1,11 @@
 package com.rudderstack.sdk.kotlin.android.plugins.sessiontracking
 
 import com.rudderstack.sdk.kotlin.android.SessionConfiguration
+import com.rudderstack.sdk.kotlin.android.plugins.LIFECYCLE_EVENTS
 import com.rudderstack.sdk.kotlin.android.utils.mergeWithHigherPriorityTo
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
+import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -33,25 +35,37 @@ internal class SessionTrackingPlugin : Plugin {
     }
 
     override suspend fun intercept(event: Event): Event {
-        if (sessionManager.sessionId != DEFAULT_SESSION_ID) {
-            analytics.logger.verbose(
-                "SessionTrackingPlugin: Attaching sessionId=${sessionManager.sessionId} to the event payload " +
+        if (!hasSession()) return event
+
+        if (!isEligibleForSession(event)) {
+            analytics.logger.debug(
+                "SessionTrackingPlugin: Skipping session data for a background event " +
                     "(messageId=${event.messageId})"
             )
-            addSessionIdToEvent(event)
-            if (sessionManager.isSessionManual) return event
+            return event
+        }
 
-            if (sessionManager.shouldUpdateLastActivityTime()) {
-                sessionManager.updateLastActivityTime()
-            } else {
-                analytics.logger.debug(
-                    "SessionTrackingPlugin: Not updating activity time for event — app is in the background " +
-                        "and background event updates are disabled"
-                )
-            }
+        analytics.logger.verbose(
+            "SessionTrackingPlugin: Attaching sessionId=${sessionManager.sessionId} to the event payload " +
+                "(messageId=${event.messageId})"
+        )
+        addSessionIdToEvent(event)
+
+        if (countsAsUserActivity()) {
+            sessionManager.updateLastActivityTime()
         }
         return event
     }
+
+    private fun hasSession(): Boolean = sessionManager.sessionId != DEFAULT_SESSION_ID
+
+    // A lifecycle event keeps its session in the background, so a session stays measurable end to end.
+    private fun isEligibleForSession(event: Event): Boolean =
+        sessionManager.isSessionManual || countsAsUserActivity() || event.isLifecycleEvent()
+
+    private fun countsAsUserActivity(): Boolean = !sessionManager.isSessionManual && sessionManager.countsAsUserActivity()
+
+    private fun Event.isLifecycleEvent(): Boolean = this is TrackEvent && event in LIFECYCLE_EVENTS
 
     private fun addSessionIdToEvent(event: Event) {
         val sessionPayload = buildJsonObject {

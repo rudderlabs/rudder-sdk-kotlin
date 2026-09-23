@@ -1,6 +1,7 @@
 package com.rudderstack.sdk.kotlin.android.plugins.sessiontracking
 
 import com.rudderstack.sdk.kotlin.android.SessionConfiguration
+import com.rudderstack.sdk.kotlin.android.plugins.APPLICATION_BACKGROUNDED
 import com.rudderstack.sdk.kotlin.android.utils.MockMemoryStorage
 import com.rudderstack.sdk.kotlin.android.utils.mockAnalytics
 import com.rudderstack.sdk.kotlin.core.Analytics
@@ -56,6 +57,8 @@ class SessionTrackingPluginTest {
             val firstEvent = TrackEvent("test", emptyJsonObject)
             val secondEvent = TrackEvent("test", emptyJsonObject)
             pluginSetup(automaticSessionTracking = true)
+            every { sessionManager.countsAsUserActivity() } returns true
+            sessionManager.checkAndStartSessionOnForeground()
 
             testDispatcher.scheduler.advanceUntilIdle()
 
@@ -115,7 +118,7 @@ class SessionTrackingPluginTest {
         mockStorage.write(StorageKeys.IS_SESSION_MANUAL, false)
         mockStorage.write(StorageKeys.LAST_ACTIVITY_TIME, sessionId * 1000 - 600_000L)
         pluginSetup(automaticSessionTracking = true)
-        every { sessionManager.shouldUpdateLastActivityTime() } returns true
+        every { sessionManager.countsAsUserActivity() } returns true
 
         sessionTrackingPlugin.intercept(message)
         testDispatcher.scheduler.advanceUntilIdle()
@@ -127,7 +130,7 @@ class SessionTrackingPluginTest {
         runTest(testDispatcher) {
             val message = TrackEvent("test", emptyJsonObject)
             pluginSetup(automaticSessionTracking = true)
-            every { sessionManager.shouldUpdateLastActivityTime() } returns false
+            every { sessionManager.countsAsUserActivity() } returns false
 
             sessionTrackingPlugin.intercept(message)
             testDispatcher.scheduler.advanceUntilIdle()
@@ -140,11 +143,70 @@ class SessionTrackingPluginTest {
         runTest(testDispatcher) {
             val message = TrackEvent("test", emptyJsonObject)
             pluginSetup(automaticSessionTracking = true)
-            every { sessionManager.shouldUpdateLastActivityTime() } returns true
+            sessionManager.checkAndStartSessionOnForeground()
+            every { sessionManager.countsAsUserActivity() } returns true
 
             sessionTrackingPlugin.intercept(message)
             testDispatcher.scheduler.advanceUntilIdle()
 
+            verify(exactly = 1) { sessionManager.updateLastActivityTime() }
+        }
+
+    @Test
+    fun `given automatic session enabled and the app was never foregrounded, when intercept called, then no session payload is attached`() =
+        runTest(testDispatcher) {
+            val event = TrackEvent("test", emptyJsonObject)
+            pluginSetup(automaticSessionTracking = true)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            sessionTrackingPlugin.intercept(event)
+
+            assertEquals(null, event.context[SESSION_ID])
+            assertEquals(null, event.context[SESSION_START])
+        }
+
+    @Test
+    fun `given a background event and background updates disabled, when intercept called, then no session payload is attached`() =
+        runTest(testDispatcher) {
+            val event = TrackEvent("test", emptyJsonObject)
+            pluginSetup(automaticSessionTracking = true)
+            sessionManager.checkAndStartSessionOnForeground()
+            every { sessionManager.countsAsUserActivity() } returns false
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            sessionTrackingPlugin.intercept(event)
+
+            assertEquals(null, event.context[SESSION_ID])
+            assertEquals(null, event.context[SESSION_START])
+            verify(exactly = 0) { sessionManager.updateLastActivityTime() }
+        }
+
+    @Test
+    fun `given a background lifecycle event and background updates disabled, when intercept called, then session payload is attached`() =
+        runTest(testDispatcher) {
+            val event = TrackEvent(APPLICATION_BACKGROUNDED, emptyJsonObject)
+            pluginSetup(automaticSessionTracking = true)
+            sessionManager.checkAndStartSessionOnForeground()
+            every { sessionManager.countsAsUserActivity() } returns false
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            sessionTrackingPlugin.intercept(event)
+
+            assertEquals(sessionManager.sessionId.toString(), event.context[SESSION_ID].toString())
+            verify(exactly = 0) { sessionManager.updateLastActivityTime() }
+        }
+
+    @Test
+    fun `given a background event and background updates enabled, when intercept called, then session payload is attached`() =
+        runTest(testDispatcher) {
+            val event = TrackEvent("test", emptyJsonObject)
+            pluginSetup(automaticSessionTracking = true, updateSessionOnBackgroundEvents = true)
+            sessionManager.checkAndStartSessionOnForeground()
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            sessionTrackingPlugin.intercept(event)
+
+            assertEquals(sessionManager.sessionId.toString(), event.context[SESSION_ID].toString())
             verify(exactly = 1) { sessionManager.updateLastActivityTime() }
         }
 
@@ -158,7 +220,8 @@ class SessionTrackingPluginTest {
 
     private fun pluginSetup(
         automaticSessionTracking: Boolean = true,
-        sessionTimeoutInMillis: Long = 300000L
+        sessionTimeoutInMillis: Long = 300000L,
+        updateSessionOnBackgroundEvents: Boolean = false,
     ) {
         sessionManager = spyk(
             SessionManager(
@@ -166,7 +229,8 @@ class SessionTrackingPluginTest {
                 analytics = mockAnalytics,
                 sessionConfiguration = SessionConfiguration(
                     automaticSessionTracking = automaticSessionTracking,
-                    sessionTimeoutInMillis = sessionTimeoutInMillis
+                    sessionTimeoutInMillis = sessionTimeoutInMillis,
+                    updateSessionOnBackgroundEvents = updateSessionOnBackgroundEvents,
                 )
             )
         )

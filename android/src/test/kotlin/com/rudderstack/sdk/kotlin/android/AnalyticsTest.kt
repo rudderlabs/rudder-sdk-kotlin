@@ -29,6 +29,7 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.just
+import io.mockk.mockk
 import io.mockk.mockkConstructor
 import io.mockk.mockkObject
 import io.mockk.mockkStatic
@@ -138,10 +139,23 @@ class AnalyticsTest {
     @Test
     fun `given sessionId is of invalid length, when manual session is invoked, then session should not change`() {
         val sessionId = 1234L
+        foregroundApp()
 
         analytics.startSession(sessionId)
 
         assertEquals(DEFAULT_SESSION_ID, analytics.sessionId)
+    }
+
+    @Test
+    fun `given the app is never foregrounded, when sessionId is fetched, then it is null`() {
+        assertNull(analytics.sessionId)
+    }
+
+    @Test
+    fun `given the app is never foregrounded, when startSession is called, then a manual session still starts`() {
+        analytics.startSession(NEW_SESSION_ID)
+
+        assertEquals(NEW_SESSION_ID, analytics.sessionId)
     }
 
     @Test
@@ -156,6 +170,8 @@ class AnalyticsTest {
 
     @Test
     fun `given session is active, when sessionID is fetched, then it should match with the expected value`() {
+        foregroundApp()
+
         val sessionId = analytics.sessionId
 
         assertEquals(DEFAULT_SESSION_ID, sessionId)
@@ -170,6 +186,7 @@ class AnalyticsTest {
 
     @Test
     fun `given session is active, when reset is called, then session should refresh`() {
+        foregroundApp()
         every { DateTimeUtils.getSystemCurrentTime() } returns NEW_SESSION_ID.toMilliSeconds()
 
         analytics.reset()
@@ -180,6 +197,7 @@ class AnalyticsTest {
     @Test
     fun `given user data and session exist, when reset is called with Android ResetOptions with all flags enabled, then all data including session should be reset`() {
         // Setup initial state with user data
+        foregroundApp()
         analytics.identify(userId = USER_ID, traits = TRAITS)
         val originalAnonymousId = analytics.anonymousId
         val originalSessionId = analytics.sessionId
@@ -277,6 +295,7 @@ class AnalyticsTest {
     @Test
     fun `given mixed Android flags, when reset is called, then only enabled flags should be processed`() {
         // Setup initial state with user data
+        foregroundApp()
         analytics.identify(userId = USER_ID, traits = TRAITS)
         val originalAnonymousId = analytics.anonymousId
         val originalTraits = analytics.traits
@@ -370,6 +389,11 @@ class AnalyticsTest {
         testDispatcher.scheduler.runCurrent()
 
         assertNull(analytics.sessionId)
+    }
+
+    // An automatic session now starts on the first foreground, so simulate one.
+    private fun foregroundApp() {
+        analytics.processLifecycleManagementPlugin.onStart(mockk(relaxed = true))
     }
 
     private fun disableSource() {
