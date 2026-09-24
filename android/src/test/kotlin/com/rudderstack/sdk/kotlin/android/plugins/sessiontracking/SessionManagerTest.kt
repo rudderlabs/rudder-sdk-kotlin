@@ -339,7 +339,7 @@ class SessionManagerTest {
             sessionManagerSetup(automaticSessionTracking = true)
             testDispatcher.scheduler.advanceUntilIdle()
 
-            assertEquals(DEFAULT_SESSION_ID, sessionManager.sessionId)
+            assertEquals(NO_SESSION_ID, sessionManager.sessionId)
             assertEquals(0L, mockStorage.readLong(StorageKeys.SESSION_ID, 0L))
         }
 
@@ -383,7 +383,7 @@ class SessionManagerTest {
             sessionManager.checkAndStartSessionOnForeground()
             testDispatcher.scheduler.advanceUntilIdle()
 
-            assertNotEquals(DEFAULT_SESSION_ID, firstSessionId)
+            assertNotEquals(NO_SESSION_ID, firstSessionId)
             assertEquals(firstSessionId, sessionManager.sessionId)
         }
 

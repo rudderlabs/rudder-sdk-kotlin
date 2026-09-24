@@ -35,7 +35,7 @@ internal class SessionTrackingPlugin : Plugin {
     }
 
     override suspend fun intercept(event: Event): Event {
-        if (sessionManager.sessionId == DEFAULT_SESSION_ID) return event
+        if (!sessionManager.isSessionOngoing) return event
 
         if (!shouldAttachSession(event)) {
             logBackgroundEventSkipped(event)

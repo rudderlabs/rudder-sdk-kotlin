@@ -46,6 +46,8 @@ internal class SessionManager(
         get() = sessionInfo.value.isSessionManual
     internal val isSessionStart
         get() = sessionInfo.value.isSessionStart
+    internal val isSessionOngoing
+        get() = sessionId != NO_SESSION_ID
 
     init {
         sessionTimeout = if (sessionConfiguration.sessionTimeoutInMillis >= 0) {
@@ -167,7 +169,7 @@ internal class SessionManager(
     }
 
     internal fun refreshSession() {
-        if (sessionId != DEFAULT_SESSION_ID) {
+        if (isSessionOngoing) {
             startSession(sessionId = generateSessionId(), shouldUpdateIsSessionManual = false)
         }
     }
@@ -185,11 +187,11 @@ internal class SessionManager(
     }
 
     private fun shouldStartNewSessionOnForeground(): Boolean {
-        return sessionId != DEFAULT_SESSION_ID && !isSessionManual && hasSessionTimedOut()
+        return isSessionOngoing && !isSessionManual && hasSessionTimedOut()
     }
 
     private fun shouldStartNewSessionOnFirstForeground(): Boolean {
-        return sessionId == DEFAULT_SESSION_ID || isSessionManual || hasSessionTimedOut()
+        return !isSessionOngoing || isSessionManual || hasSessionTimedOut()
     }
 
     /**
