@@ -35,37 +35,43 @@ internal class SessionTrackingPlugin : Plugin {
     }
 
     override suspend fun intercept(event: Event): Event {
-        if (!hasSession()) return event
+        if (sessionManager.sessionId == DEFAULT_SESSION_ID) return event
 
-        if (!isEligibleForSession(event)) {
-            analytics.logger.debug(
-                "SessionTrackingPlugin: Skipping session data for a background event " +
-                    "(messageId=${event.messageId})"
-            )
+        if (!shouldAttachSession(event)) {
+            logBackgroundEventSkipped(event)
             return event
         }
 
-        analytics.logger.verbose(
-            "SessionTrackingPlugin: Attaching sessionId=${sessionManager.sessionId} to the event payload " +
-                "(messageId=${event.messageId})"
-        )
+        logSessionAttached(event)
         addSessionIdToEvent(event)
-
-        if (countsAsUserActivity()) {
-            sessionManager.updateLastActivityTime()
-        }
+        refreshActivityTimeIfNeeded()
         return event
     }
 
-    private fun hasSession(): Boolean = sessionManager.sessionId != DEFAULT_SESSION_ID
+    private fun shouldAttachSession(event: Event): Boolean = when {
+        sessionManager.isSessionManual -> true
+        sessionManager.countsAsUserActivity() -> true
+        // Our own lifecycle events keep their session in the background, so a session stays measurable.
+        else -> event.isLifecycleEvent()
+    }
 
-    // A lifecycle event keeps its session in the background, so a session stays measurable end to end.
-    private fun isEligibleForSession(event: Event): Boolean =
-        sessionManager.isSessionManual || countsAsUserActivity() || event.isLifecycleEvent()
-
-    private fun countsAsUserActivity(): Boolean = !sessionManager.isSessionManual && sessionManager.countsAsUserActivity()
+    private fun refreshActivityTimeIfNeeded() {
+        if (!sessionManager.isSessionManual && sessionManager.countsAsUserActivity()) {
+            sessionManager.updateLastActivityTime()
+        }
+    }
 
     private fun Event.isLifecycleEvent(): Boolean = this is TrackEvent && event in LIFECYCLE_EVENTS
+
+    private fun logSessionAttached(event: Event) = analytics.logger.verbose(
+        "SessionTrackingPlugin: Attaching sessionId=${sessionManager.sessionId} to the event payload " +
+            "(messageId=${event.messageId})"
+    )
+
+    private fun logBackgroundEventSkipped(event: Event) = analytics.logger.debug(
+        "SessionTrackingPlugin: Skipping session data for a background event " +
+            "(messageId=${event.messageId})"
+    )
 
     private fun addSessionIdToEvent(event: Event) {
         val sessionPayload = buildJsonObject {
