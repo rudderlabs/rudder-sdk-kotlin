@@ -1,12 +1,12 @@
 [versions]
 
 #sdk dependencies
-agp = "8.7.2"
+agp = "8.11.1"
 android-core-ktx = "1.16.0"
 detekt = "1.23.6"
 json-assert = "1.5.0"
 junit-bom = "5.11.4"
-kotlin = "1.9.0"
+kotlin = "2.1.21"
 kotlinx-coroutines-core = "1.8.0"
 kotlinx-serialization-json = "1.5.1"
 mockk = "1.13.10"
@@ -21,7 +21,7 @@ android-installreferrer = { strictly = "[2.2, 3.0)", prefer = "2.2" }
 firebase-bom = { strictly = "[33.7.0, 34.0.0)", prefer = "33.7.0" }
 facebook-android-sdk = { strictly = "[18.0.1, 19.0.0)", prefer = "18.0.1" }
 android-sdk-ui = { strictly = "[35.0.0, 36.0.0)", prefer = "35.0.0" } #braze
-clevertap-android-sdk = { strictly = "[7.3.1, 7.7.0)", prefer = "7.3.1" } # 7.7.0+ needs Kotlin 2.0
+clevertap-android-sdk = { strictly = "[8.4.1, 9.0.0)", prefer = "8.4.1" }
 userleap-android-sdk = { strictly = "[2.23.0, 3.0.0)", prefer = "2.23.0" }
 fragment-ktx = "1.8.9"
 
@@ -81,5 +81,6 @@ android-library = { id = "com.android.library", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 nexus = { id = "io.github.gradle-nexus.publish-plugin", version.ref = "nexus" }
