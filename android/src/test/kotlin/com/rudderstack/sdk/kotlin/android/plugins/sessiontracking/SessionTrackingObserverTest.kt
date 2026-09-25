@@ -34,13 +34,37 @@ class SessionTrackingObserverTest {
     }
 
     @Test
-    fun `given session is not already updated, when onCreate is called, then checkAndStartSessionOnForeground is invoked`() {
+    fun `given a background process start, when onCreate is called, then no session starts and the app is not marked foreground`() {
         sessionTrackingObserver = spyk(sessionTrackingObserver, recordPrivateCalls = true)
         sessionTrackingObserver.isSessionAlreadyUpdated.set(false)
 
         sessionTrackingObserver.onCreate(mockk<LifecycleOwner>())
 
+        verify(exactly = 0) { mockSessionManager.checkAndStartSessionOnForeground() }
+        assertFalse(sessionTrackingObserver.isInForeground.get())
+    }
+
+    @Test
+    fun `given the observer is created, when the first onStart arrives, then checkAndStartSessionOnForeground is invoked`() {
+        sessionTrackingObserver.onStart(mockk<LifecycleOwner>())
+
+        verify(exactly = 1) { mockSessionManager.checkAndStartSessionOnForeground() }
+    }
+
+    @Test
+    fun `given session is not already updated, when onResume is called, then checkAndStartSessionOnForeground is invoked`() {
+        sessionTrackingObserver.isSessionAlreadyUpdated.set(false)
+
+        sessionTrackingObserver.onResume(mockk<LifecycleOwner>())
+
         verify { mockSessionManager.checkAndStartSessionOnForeground() }
+    }
+
+    @Test
+    fun `given app is in background, when onResume is called, then isInForeground is true`() {
+        sessionTrackingObserver.onResume(mockk<LifecycleOwner>())
+
+        assertTrue(sessionTrackingObserver.isInForeground.get())
     }
 
     @Test
@@ -84,7 +108,7 @@ class SessionTrackingObserverTest {
     fun `given session is already updated, when updateSession is called, then checkAndStartSessionOnForeground is not invoked`() {
         sessionTrackingObserver.isSessionAlreadyUpdated.set(true)
 
-        sessionTrackingObserver.onCreate(mockk<LifecycleOwner>()) // Triggers updateSession()
+        sessionTrackingObserver.onStart(mockk<LifecycleOwner>()) // Triggers updateSession()
 
         verify(exactly = 0) { mockSessionManager.checkAndStartSessionOnForeground() }
     }

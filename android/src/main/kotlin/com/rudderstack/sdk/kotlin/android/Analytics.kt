@@ -29,7 +29,6 @@ import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ProcessLife
 import com.rudderstack.sdk.kotlin.android.plugins.screenrecording.ActivityTrackingPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.screenrecording.NavContext
 import com.rudderstack.sdk.kotlin.android.plugins.screenrecording.NavControllerTrackingPlugin
-import com.rudderstack.sdk.kotlin.android.plugins.sessiontracking.DEFAULT_SESSION_ID
 import com.rudderstack.sdk.kotlin.android.plugins.sessiontracking.SessionTrackingPlugin
 import com.rudderstack.sdk.kotlin.android.storage.provideAndroidStorage
 import com.rudderstack.sdk.kotlin.core.Analytics
@@ -368,7 +367,7 @@ class Analytics(
      */
     val sessionId: Long?
         get() {
-            if (!isAnalyticsActive() || sessionTrackingPlugin.sessionManager.sessionId == DEFAULT_SESSION_ID) return null
+            if (!isAnalyticsActive() || !sessionTrackingPlugin.sessionManager.isSessionOngoing) return null
             return sessionTrackingPlugin.sessionManager.sessionId
         }
 }
