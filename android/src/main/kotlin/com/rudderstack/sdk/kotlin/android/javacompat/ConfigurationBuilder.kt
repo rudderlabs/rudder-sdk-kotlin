@@ -169,7 +169,7 @@ class SessionConfigurationBuilder {
 
     /**
      * Sets whether events sent while the app is in the background carry the session and extend it.
-     * Events sent before the first activity is created count as background. Only applies when automatic session tracking is enabled.
+     * When enabled, a background event starts a new session when none exists or the current one has timed out. Events sent before the first activity is created count as background. Only applies when automatic session tracking is enabled.
      */
     fun setIncludeBackgroundEventsInSession(includeBackgroundEventsInSession: Boolean) = apply {
         this.includeBackgroundEventsInSession = includeBackgroundEventsInSession

@@ -371,42 +371,6 @@ class SessionManagerTest {
     }
 
     @Test
-    fun `given a stored automatic session past its timeout and background events are included, when visibleSessionId is read in the background, then it is null`() =
-        runTest(testDispatcher) {
-            givenStoredAutomaticSession(lastActivityTime = System.currentTimeMillis() - 600_000L)
-            sessionManagerSetup(automaticSessionTracking = true, sessionTimeoutInMillis = 300_000L, includeBackgroundEventsInSession = true)
-
-            assertNull(sessionManager.visibleSessionId)
-        }
-
-    @Test
-    fun `given a session past its timeout, when hasExpiredInBackground is called for a background event, then it is true`() =
-        runTest(testDispatcher) {
-            givenStoredAutomaticSession(lastActivityTime = System.currentTimeMillis() - 600_000L)
-            sessionManagerSetup(automaticSessionTracking = true, sessionTimeoutInMillis = 300_000L)
-
-            assertTrue(sessionManager.hasExpiredInBackground(wasInForeground = false))
-        }
-
-    @Test
-    fun `given a session past its timeout, when hasExpiredInBackground is called for a foreground event, then it is false`() =
-        runTest(testDispatcher) {
-            givenStoredAutomaticSession(lastActivityTime = System.currentTimeMillis() - 600_000L)
-            sessionManagerSetup(automaticSessionTracking = true, sessionTimeoutInMillis = 300_000L)
-
-            assertFalse(sessionManager.hasExpiredInBackground(wasInForeground = true))
-        }
-
-    @Test
-    fun `given a session within its timeout, when hasExpiredInBackground is called for a background event, then it is false`() =
-        runTest(testDispatcher) {
-            givenStoredAutomaticSession(lastActivityTime = System.currentTimeMillis())
-            sessionManagerSetup(automaticSessionTracking = true, sessionTimeoutInMillis = 300_000L)
-
-            assertFalse(sessionManager.hasExpiredInBackground(wasInForeground = false))
-        }
-
-    @Test
     fun `given a manual session in the background, when visibleSessionId is read, then it is the session id`() = runTest(testDispatcher) {
         sessionManagerSetup(automaticSessionTracking = false, includeBackgroundEventsInSession = false)
         sessionManager.startSession(sessionId = 1234567890L, isSessionManual = true)
@@ -437,6 +401,102 @@ class SessionManagerTest {
             testDispatcher.scheduler.advanceUntilIdle()
 
             assertEquals(previousSessionId, mockStorage.readLong(StorageKeys.SESSION_ID, 0L))
+        }
+
+    @Test
+    fun `given background events are included, when the process starts but is never foregrounded, then no session starts`() =
+        runTest(testDispatcher) {
+            sessionManagerSetup(automaticSessionTracking = true, includeBackgroundEventsInSession = true)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            assertEquals(NO_SESSION_ID, sessionManager.sessionId)
+        }
+
+    @Test
+    fun `given background events are included and no session, when a background event arrives, then a session starts`() =
+        runTest(testDispatcher) {
+            sessionManagerSetup(automaticSessionTracking = true, includeBackgroundEventsInSession = true)
+
+            sessionManager.maybeStartSessionOnBackgroundEvent()
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            assertEquals(DateTimeUtils.getSystemCurrentTime() / 1000, sessionManager.sessionId)
+            assertTrue(sessionManager.isSessionStart)
+        }
+
+    @Test
+    fun `given background events are included and a live session, when a background event arrives, then the session continues`() =
+        runTest(testDispatcher) {
+            givenStoredSession(lastActivityTime = DateTimeUtils.getSystemCurrentTime() - 60_000L)
+            sessionManagerSetup(automaticSessionTracking = true, sessionTimeoutInMillis = 300_000L, includeBackgroundEventsInSession = true)
+
+            sessionManager.maybeStartSessionOnBackgroundEvent()
+
+            assertEquals(STORED_SESSION_ID, sessionManager.sessionId)
+        }
+
+    @Test
+    fun `given background events are included and a timed-out session, when a background event arrives, then a new session starts`() =
+        runTest(testDispatcher) {
+            givenStoredSession(lastActivityTime = DateTimeUtils.getSystemCurrentTime() - 600_000L)
+            sessionManagerSetup(automaticSessionTracking = true, sessionTimeoutInMillis = 300_000L, includeBackgroundEventsInSession = true)
+
+            sessionManager.maybeStartSessionOnBackgroundEvent()
+
+            assertEquals(DateTimeUtils.getSystemCurrentTime() / 1000, sessionManager.sessionId)
+        }
+
+    @Test
+    fun `given background events are included and activity at this exact moment, when a background event arrives, then the session continues`() =
+        runTest(testDispatcher) {
+            givenStoredSession(lastActivityTime = DateTimeUtils.getSystemCurrentTime())
+            sessionManagerSetup(automaticSessionTracking = true, includeBackgroundEventsInSession = true)
+
+            sessionManager.maybeStartSessionOnBackgroundEvent()
+
+            assertEquals(STORED_SESSION_ID, sessionManager.sessionId)
+        }
+
+    @Test
+    fun `given background events are included and a stored manual session, when a background event arrives, then an automatic session replaces it`() =
+        runTest(testDispatcher) {
+            givenStoredSession(lastActivityTime = DateTimeUtils.getSystemCurrentTime(), isSessionManual = true)
+            sessionManagerSetup(automaticSessionTracking = true, includeBackgroundEventsInSession = true)
+
+            sessionManager.maybeStartSessionOnBackgroundEvent()
+
+            assertEquals(DateTimeUtils.getSystemCurrentTime() / 1000, sessionManager.sessionId)
+            assertFalse(sessionManager.isSessionManual)
+        }
+
+    @Test
+    fun `given background events are excluded, when a background event arrives, then no session starts`() =
+        runTest(testDispatcher) {
+            sessionManagerSetup(automaticSessionTracking = true, includeBackgroundEventsInSession = false)
+
+            sessionManager.maybeStartSessionOnBackgroundEvent()
+
+            assertEquals(NO_SESSION_ID, sessionManager.sessionId)
+        }
+
+    @Test
+    fun `given background events are included and the app ended the session, when a background event arrives, then no session starts`() =
+        runTest(testDispatcher) {
+            sessionManagerSetup(automaticSessionTracking = true, includeBackgroundEventsInSession = true)
+            sessionManager.endSession()
+
+            sessionManager.maybeStartSessionOnBackgroundEvent()
+
+            assertEquals(NO_SESSION_ID, sessionManager.sessionId)
+        }
+
+    @Test
+    fun `given background events are included and a timed-out session, when visibleSessionId is read in the background, then it is null`() =
+        runTest(testDispatcher) {
+            givenStoredSession(lastActivityTime = DateTimeUtils.getSystemCurrentTime() - 600_000L)
+            sessionManagerSetup(automaticSessionTracking = true, sessionTimeoutInMillis = 300_000L, includeBackgroundEventsInSession = true)
+
+            assertNull(sessionManager.visibleSessionId)
         }
 
     @Test
@@ -487,9 +547,9 @@ class SessionManagerTest {
         )
     }
 
-    private suspend fun givenStoredAutomaticSession(lastActivityTime: Long) {
-        mockStorage.write(StorageKeys.SESSION_ID, 1234567890L)
-        mockStorage.write(StorageKeys.IS_SESSION_MANUAL, false)
+    private suspend fun givenStoredSession(lastActivityTime: Long, isSessionManual: Boolean = false) {
+        mockStorage.write(StorageKeys.SESSION_ID, STORED_SESSION_ID)
+        mockStorage.write(StorageKeys.IS_SESSION_MANUAL, isSessionManual)
         mockStorage.write(StorageKeys.LAST_ACTIVITY_TIME, lastActivityTime)
     }
 
@@ -522,3 +582,5 @@ class SessionManagerTest {
         every { DateTimeUtils.getSystemCurrentTime() } returns currentTime
     }
 }
+
+private const val STORED_SESSION_ID = 1234567890L

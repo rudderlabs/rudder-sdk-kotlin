@@ -37,9 +37,10 @@ internal class SessionTrackingPlugin : Plugin {
     }
 
     override suspend fun intercept(event: Event): Event {
+        val wasInForeground = event.wasCreatedInForeground()
+        if (!wasInForeground) sessionManager.maybeStartSessionOnBackgroundEvent()
         if (!sessionManager.isSessionOngoing) return event
 
-        val wasInForeground = event.wasCreatedInForeground()
         if (!shouldAttachSession(event, wasInForeground)) {
             logBackgroundEventSkipped(event)
             return event
@@ -55,7 +56,6 @@ internal class SessionTrackingPlugin : Plugin {
 
     private fun shouldAttachSession(event: Event, wasInForeground: Boolean): Boolean = when {
         sessionManager.isSessionManual -> true
-        sessionManager.hasExpiredInBackground(wasInForeground) -> false
         sessionManager.countsAsUserActivity(wasInForeground) -> true
         // Our own lifecycle events keep their session in the background, so a session stays measurable.
         else -> event.isLifecycleEvent()
