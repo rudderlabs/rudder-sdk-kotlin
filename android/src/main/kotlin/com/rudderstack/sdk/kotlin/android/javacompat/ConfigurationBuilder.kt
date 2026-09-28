@@ -11,7 +11,7 @@ import com.rudderstack.sdk.kotlin.android.Configuration.Companion.DEFAULT_TRACK_
 import com.rudderstack.sdk.kotlin.android.DEFAULT_SESSION_TIMEOUT_IN_MILLIS
 import com.rudderstack.sdk.kotlin.android.SessionConfiguration
 import com.rudderstack.sdk.kotlin.android.SessionConfiguration.Companion.DEFAULT_AUTOMATIC_SESSION_TRACKING
-import com.rudderstack.sdk.kotlin.android.SessionConfiguration.Companion.DEFAULT_UPDATE_SESSION_ON_BACKGROUND_EVENTS
+import com.rudderstack.sdk.kotlin.android.SessionConfiguration.Companion.DEFAULT_INCLUDE_BACKGROUND_EVENTS_IN_SESSION
 import com.rudderstack.sdk.kotlin.android.consent.ConsentManagementConfiguration
 import com.rudderstack.sdk.kotlin.android.logger.AndroidLogger
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
@@ -151,7 +151,7 @@ class SessionConfigurationBuilder {
 
     private var automaticSessionTracking: Boolean = DEFAULT_AUTOMATIC_SESSION_TRACKING
     private var sessionTimeoutInMillis: Long = DEFAULT_SESSION_TIMEOUT_IN_MILLIS
-    private var updateSessionOnBackgroundEvents: Boolean = DEFAULT_UPDATE_SESSION_ON_BACKGROUND_EVENTS
+    private var includeBackgroundEventsInSession: Boolean = DEFAULT_INCLUDE_BACKGROUND_EVENTS_IN_SESSION
 
     /**
      * Sets whether to enable automatic session tracking.
@@ -168,10 +168,10 @@ class SessionConfigurationBuilder {
     }
 
     /**
-     * Sets whether background events should update the session's last activity timestamp. Only applies when automatic session tracking is enabled.
+     * Sets whether events sent while the app is in the background carry the session and extend it. Only applies when automatic session tracking is enabled.
      */
-    fun setUpdateSessionOnBackgroundEvents(updateSessionOnBackgroundEvents: Boolean) = apply {
-        this.updateSessionOnBackgroundEvents = updateSessionOnBackgroundEvents
+    fun setIncludeBackgroundEventsInSession(includeBackgroundEventsInSession: Boolean) = apply {
+        this.includeBackgroundEventsInSession = includeBackgroundEventsInSession
     }
 
     /**
@@ -181,7 +181,7 @@ class SessionConfigurationBuilder {
         return SessionConfiguration(
             automaticSessionTracking = automaticSessionTracking,
             sessionTimeoutInMillis = sessionTimeoutInMillis,
-            updateSessionOnBackgroundEvents = updateSessionOnBackgroundEvents,
+            includeBackgroundEventsInSession = includeBackgroundEventsInSession,
         )
     }
 }

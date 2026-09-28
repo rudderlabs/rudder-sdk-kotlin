@@ -26,6 +26,7 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -298,39 +299,84 @@ class SessionManagerTest {
     }
 
     @Test
-    fun `given app is in foreground, when countsAsUserActivity is called, then activity time should be updated`() {
+    fun `given a foreground lifecycle event, when isInForeground is read, then it is true`() {
         val observerSlot = captureProcessLifecycleObserver()
         sessionManagerSetup(automaticSessionTracking = true)
-        // Simulate the OS delivering a foreground lifecycle event to the captured observer.
         observerSlot.captured.onStart(mockk<LifecycleOwner>())
 
-        val result = sessionManager.countsAsUserActivity()
-
-        assertTrue(result)
+        assertTrue(sessionManager.isInForeground)
     }
 
     @Test
-    fun `given app is in background and updateSessionOnBackgroundEvents is disabled, when countsAsUserActivity is called, then activity time should not be updated`() {
+    fun `given a background lifecycle event, when isInForeground is read, then it is false`() {
         val observerSlot = captureProcessLifecycleObserver()
-        sessionManagerSetup(automaticSessionTracking = true, updateSessionOnBackgroundEvents = false)
-        // Simulate the OS delivering a background lifecycle event to the captured observer.
+        sessionManagerSetup(automaticSessionTracking = true)
+        observerSlot.captured.onStart(mockk<LifecycleOwner>())
         observerSlot.captured.onStop(mockk<LifecycleOwner>())
 
-        val result = sessionManager.countsAsUserActivity()
-
-        assertFalse(result)
+        assertFalse(sessionManager.isInForeground)
     }
 
     @Test
-    fun `given app is in background and updateSessionOnBackgroundEvents is enabled, when countsAsUserActivity is called, then activity time should be updated`() {
+    fun `given an event from the foreground, when countsAsUserActivity is called, then it counts`() {
+        sessionManagerSetup(automaticSessionTracking = true, includeBackgroundEventsInSession = false)
+
+        assertTrue(sessionManager.countsAsUserActivity(wasInForeground = true))
+    }
+
+    @Test
+    fun `given an event from the background and background events are excluded, when countsAsUserActivity is called, then it does not count`() {
+        sessionManagerSetup(automaticSessionTracking = true, includeBackgroundEventsInSession = false)
+
+        assertFalse(sessionManager.countsAsUserActivity(wasInForeground = false))
+    }
+
+    @Test
+    fun `given an event from the background and background events are included, when countsAsUserActivity is called, then it counts`() {
+        sessionManagerSetup(automaticSessionTracking = true, includeBackgroundEventsInSession = true)
+
+        assertTrue(sessionManager.countsAsUserActivity(wasInForeground = false))
+    }
+
+    @Test
+    fun `given an automatic session in the foreground, when visibleSessionId is read, then it is the session id`() = runTest(testDispatcher) {
         val observerSlot = captureProcessLifecycleObserver()
-        sessionManagerSetup(automaticSessionTracking = true, updateSessionOnBackgroundEvents = true)
-        // Simulate the OS delivering a background lifecycle event to the captured observer.
+        sessionManagerSetup(automaticSessionTracking = true)
+        observerSlot.captured.onStart(mockk<LifecycleOwner>())
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(sessionManager.sessionId, sessionManager.visibleSessionId)
+    }
+
+    @Test
+    fun `given an automatic session in the background and background events are excluded, when visibleSessionId is read, then it is null`() = runTest(testDispatcher) {
+        val observerSlot = captureProcessLifecycleObserver()
+        sessionManagerSetup(automaticSessionTracking = true, includeBackgroundEventsInSession = false)
+        observerSlot.captured.onStart(mockk<LifecycleOwner>())
         observerSlot.captured.onStop(mockk<LifecycleOwner>())
+        testDispatcher.scheduler.advanceUntilIdle()
 
-        val result = sessionManager.countsAsUserActivity()
+        assertNull(sessionManager.visibleSessionId)
+    }
 
-        assertTrue(result)
+    @Test
+    fun `given an automatic session in the background and background events are included, when visibleSessionId is read, then it is the session id`() = runTest(testDispatcher) {
+        val observerSlot = captureProcessLifecycleObserver()
+        sessionManagerSetup(automaticSessionTracking = true, includeBackgroundEventsInSession = true)
+        observerSlot.captured.onStart(mockk<LifecycleOwner>())
+        observerSlot.captured.onStop(mockk<LifecycleOwner>())
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(sessionManager.sessionId, sessionManager.visibleSessionId)
+    }
+
+    @Test
+    fun `given a manual session in the background, when visibleSessionId is read, then it is the session id`() = runTest(testDispatcher) {
+        sessionManagerSetup(automaticSessionTracking = false, includeBackgroundEventsInSession = false)
+        sessionManager.startSession(sessionId = 1234567890L, isSessionManual = true)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(1234567890L, sessionManager.visibleSessionId)
     }
 
     @Test
@@ -390,12 +436,12 @@ class SessionManagerTest {
     private fun sessionManagerSetup(
         automaticSessionTracking: Boolean = true,
         sessionTimeoutInMillis: Long = 300_000L,
-        updateSessionOnBackgroundEvents: Boolean = false,
+        includeBackgroundEventsInSession: Boolean = false,
     ) {
         sessionConfiguration = SessionConfiguration(
             automaticSessionTracking = automaticSessionTracking,
             sessionTimeoutInMillis = sessionTimeoutInMillis,
-            updateSessionOnBackgroundEvents = updateSessionOnBackgroundEvents
+            includeBackgroundEventsInSession = includeBackgroundEventsInSession
         )
 
         sessionManager = SessionManager(

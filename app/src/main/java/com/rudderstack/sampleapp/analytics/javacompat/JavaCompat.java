@@ -67,7 +67,7 @@ public class JavaCompat {
         SessionConfiguration sessionConfiguration = new SessionConfigurationBuilder()
                 .setAutomaticSessionTracking(true)
                 .setSessionTimeoutInMillis(30)
-                .setUpdateSessionOnBackgroundEvents(false)
+                .setIncludeBackgroundEventsInSession(false)
                 .build();
 
         // Seeding the lists here is what activates consent management: enabling it with both lists

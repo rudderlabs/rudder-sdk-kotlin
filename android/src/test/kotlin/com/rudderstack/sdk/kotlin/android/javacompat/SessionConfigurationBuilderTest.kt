@@ -53,16 +53,16 @@ class SessionConfigurationBuilderTest {
     }
 
     @Test
-    fun `when SessionConfiguration is built with default values, then updateSessionOnBackgroundEvents should be false`() {
+    fun `when SessionConfiguration is built with default values, then includeBackgroundEventsInSession should be false`() {
         val sessionConfiguration = sessionConfigurationBuilder.build()
 
-        assertFalse(sessionConfiguration.updateSessionOnBackgroundEvents)
+        assertFalse(sessionConfiguration.includeBackgroundEventsInSession)
     }
 
     @Test
-    fun `when setUpdateSessionOnBackgroundEvents is set to true, then updateSessionOnBackgroundEvents should be true`() {
-        val sessionConfiguration = sessionConfigurationBuilder.setUpdateSessionOnBackgroundEvents(true).build()
+    fun `when setIncludeBackgroundEventsInSession is set to true, then includeBackgroundEventsInSession should be true`() {
+        val sessionConfiguration = sessionConfigurationBuilder.setIncludeBackgroundEventsInSession(true).build()
 
-        assertTrue(sessionConfiguration.updateSessionOnBackgroundEvents)
+        assertTrue(sessionConfiguration.includeBackgroundEventsInSession)
     }
 }

@@ -131,8 +131,14 @@ internal class SessionManager(
         }
     }
 
-    internal fun countsAsUserActivity(): Boolean {
-        return sessionConfiguration.updateSessionOnBackgroundEvents || sessionTrackingObserver.isInForeground.get()
+    internal val isInForeground: Boolean
+        get() = sessionTrackingObserver.isInForeground.get()
+
+    internal val visibleSessionId: Long?
+        get() = sessionId.takeIf { isSessionOngoing && (isSessionManual || countsAsUserActivity(isInForeground)) }
+
+    internal fun countsAsUserActivity(wasInForeground: Boolean): Boolean {
+        return sessionConfiguration.includeBackgroundEventsInSession || wasInForeground
     }
 
     private fun maybeStartSessionOnFirstForeground() {

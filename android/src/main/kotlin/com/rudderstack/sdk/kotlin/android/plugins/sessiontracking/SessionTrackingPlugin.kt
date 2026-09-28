@@ -1,9 +1,11 @@
 package com.rudderstack.sdk.kotlin.android.plugins.sessiontracking
 
 import com.rudderstack.sdk.kotlin.android.SessionConfiguration
+import com.rudderstack.sdk.kotlin.android.plugins.LIFECYCLE_EVENTS
 import com.rudderstack.sdk.kotlin.android.utils.mergeWithHigherPriorityTo
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
+import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -25,39 +27,50 @@ internal class SessionTrackingPlugin : Plugin {
 
         (analytics.configuration as? AndroidConfiguration)?.let { config ->
             sessionManager = provideSessionManager(analytics, config.sessionConfiguration)
+            analytics.foregroundStateProvider = { sessionManager.isInForeground }
         }
     }
 
     override fun teardown() {
+        analytics.foregroundStateProvider = null
         sessionManager.detachSessionTrackingObservers()
     }
 
     override suspend fun intercept(event: Event): Event {
         if (!sessionManager.isSessionOngoing) return event
 
+        val isUserActivity = sessionManager.countsAsUserActivity(event.wasCreatedInForeground())
+        if (!belongsToSession(event, isUserActivity)) {
+            logBackgroundEventSkipped(event)
+            return event
+        }
+
         logSessionAttached(event)
         addSessionIdToEvent(event)
-        extendSessionIfUserActivity(event)
+        if (isUserActivity && !sessionManager.isSessionManual) {
+            sessionManager.updateLastActivityTime()
+        }
         return event
     }
 
-    private fun extendSessionIfUserActivity(event: Event) {
-        if (sessionManager.isSessionManual) return
-
-        if (sessionManager.countsAsUserActivity()) {
-            sessionManager.updateLastActivityTime()
-        } else {
-            logSessionNotExtended(event)
-        }
+    private fun belongsToSession(event: Event, isUserActivity: Boolean): Boolean = when {
+        sessionManager.isSessionManual -> true
+        isUserActivity -> true
+        // Our own lifecycle events keep their session in the background, so a session stays measurable.
+        else -> event.isLifecycleEvent()
     }
+
+    private fun Event.wasCreatedInForeground(): Boolean = createdInForeground ?: sessionManager.isInForeground
+
+    private fun Event.isLifecycleEvent(): Boolean = this is TrackEvent && event in LIFECYCLE_EVENTS
 
     private fun logSessionAttached(event: Event) = analytics.logger.verbose(
         "SessionTrackingPlugin: Attaching sessionId=${sessionManager.sessionId} to the event payload " +
             "(messageId=${event.messageId})"
     )
 
-    private fun logSessionNotExtended(event: Event) = analytics.logger.debug(
-        "SessionTrackingPlugin: Not extending the session for a background event " +
+    private fun logBackgroundEventSkipped(event: Event) = analytics.logger.debug(
+        "SessionTrackingPlugin: Skipping session data for a background event " +
             "(messageId=${event.messageId})"
     )
 

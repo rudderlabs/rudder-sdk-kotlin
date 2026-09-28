@@ -35,6 +35,13 @@ internal const val VERSION_KEY = "version"
 internal const val BUILD_KEY = "build"
 internal const val FROM_BACKGROUND = "from_background"
 
+internal val LIFECYCLE_EVENTS = setOf(
+    APPLICATION_INSTALLED,
+    APPLICATION_OPENED,
+    APPLICATION_UPDATED,
+    APPLICATION_BACKGROUNDED,
+)
+
 // plugin to manage default lifecycle events
 internal class AndroidLifecyclePlugin : Plugin, ProcessLifecycleObserver {
 

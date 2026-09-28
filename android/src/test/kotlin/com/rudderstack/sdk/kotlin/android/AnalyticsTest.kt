@@ -152,6 +152,14 @@ class AnalyticsTest {
     }
 
     @Test
+    fun `given an automatic session and the app in the background, when sessionId is fetched, then it is null`() {
+        foregroundApp()
+        backgroundApp()
+
+        assertNull(analytics.sessionId)
+    }
+
+    @Test
     fun `given the app is never foregrounded, when startSession is called, then a manual session still starts`() {
         analytics.startSession(NEW_SESSION_ID)
 
@@ -394,6 +402,10 @@ class AnalyticsTest {
     // An automatic session now starts on the first foreground, so simulate one.
     private fun foregroundApp() {
         analytics.processLifecycleManagementPlugin.onStart(mockk(relaxed = true))
+    }
+
+    private fun backgroundApp() {
+        analytics.processLifecycleManagementPlugin.onStop(mockk(relaxed = true))
     }
 
     private fun disableSource() {
