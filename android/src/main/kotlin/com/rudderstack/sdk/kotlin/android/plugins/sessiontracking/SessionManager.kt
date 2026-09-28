@@ -135,16 +135,16 @@ internal class SessionManager(
         return sessionConfiguration.updateSessionOnBackgroundEvents || sessionTrackingObserver.isInForeground.get()
     }
 
-    private fun checkAndStartSessionOnFirstForeground() {
+    private fun maybeStartSessionOnFirstForeground() {
         if (shouldStartNewSessionOnFirstForeground()) {
             startSession(sessionId = generateSessionId(), isSessionManual = false)
         }
     }
 
     // The first foreground applies the launch rules; every later one only restarts a timed-out session.
-    internal fun checkAndStartSessionOnForeground() {
+    internal fun maybeStartSessionOnForeground() {
         if (isFirstForegroundPending.compareAndSet(true, false)) {
-            checkAndStartSessionOnFirstForeground()
+            maybeStartSessionOnFirstForeground()
         } else if (shouldStartNewSessionOnForeground()) {
             startSession(sessionId = generateSessionId(), isSessionManual = false)
         }

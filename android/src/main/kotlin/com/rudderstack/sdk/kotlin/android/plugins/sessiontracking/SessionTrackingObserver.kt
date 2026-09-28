@@ -34,7 +34,7 @@ internal class SessionTrackingObserver(
     private fun updateSession() {
         isInForeground.set(true)
         if (isSessionAlreadyUpdated.compareAndSet(false, true)) {
-            sessionManager.checkAndStartSessionOnForeground()
+            sessionManager.maybeStartSessionOnForeground()
         }
     }
 }

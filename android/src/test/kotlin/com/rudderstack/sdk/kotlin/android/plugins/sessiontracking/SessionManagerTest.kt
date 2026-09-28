@@ -95,7 +95,7 @@ class SessionManagerTest {
                 automaticSessionTracking = automaticSessionTrackingEnabled,
                 sessionTimeoutInMillis = 300_000L
             )
-            sessionManager.checkAndStartSessionOnForeground()
+            sessionManager.maybeStartSessionOnForeground()
             testDispatcher.scheduler.advanceUntilIdle()
 
             assertNotEquals(initialSessionId, mockStorage.readLong(StorageKeys.SESSION_ID, 0L))
@@ -112,7 +112,7 @@ class SessionManagerTest {
             mockStorage.write(StorageKeys.IS_SESSION_MANUAL, true)
 
             sessionManagerSetup(automaticSessionTracking = automaticSessionTrackingEnabled)
-            sessionManager.checkAndStartSessionOnForeground()
+            sessionManager.maybeStartSessionOnForeground()
             testDispatcher.scheduler.advanceUntilIdle()
 
             assertNotEquals(initialSessionId, mockStorage.readLong(StorageKeys.SESSION_ID, 0L))
@@ -127,7 +127,7 @@ class SessionManagerTest {
             mockSystemCurrentTime(currentTime)
 
             sessionManagerSetup(automaticSessionTracking = automaticSessionTrackingEnabled)
-            sessionManager.checkAndStartSessionOnForeground()
+            sessionManager.maybeStartSessionOnForeground()
             testDispatcher.scheduler.advanceUntilIdle()
 
             assertNotEquals(0L, mockStorage.readLong(StorageKeys.SESSION_ID, 0L))
@@ -182,7 +182,7 @@ class SessionManagerTest {
                 automaticSessionTracking = automaticSessionTrackingEnabled,
                 sessionTimeoutInMillis = 300_000L
             )
-            sessionManager.checkAndStartSessionOnForeground() // app is foregrounded
+            sessionManager.maybeStartSessionOnForeground() // app is foregrounded
             testDispatcher.scheduler.advanceUntilIdle()
 
             assertNotEquals(previousSessionId, mockStorage.readLong(StorageKeys.SESSION_ID, 0L))
@@ -376,11 +376,11 @@ class SessionManagerTest {
         runTest(testDispatcher) {
             sessionManagerSetup(automaticSessionTracking = true, sessionTimeoutInMillis = 300_000L)
 
-            sessionManager.checkAndStartSessionOnForeground()
+            sessionManager.maybeStartSessionOnForeground()
             testDispatcher.scheduler.advanceUntilIdle()
             val firstSessionId = sessionManager.sessionId
             sessionManager.updateLastActivityTime()
-            sessionManager.checkAndStartSessionOnForeground()
+            sessionManager.maybeStartSessionOnForeground()
             testDispatcher.scheduler.advanceUntilIdle()
 
             assertNotEquals(NO_SESSION_ID, firstSessionId)
