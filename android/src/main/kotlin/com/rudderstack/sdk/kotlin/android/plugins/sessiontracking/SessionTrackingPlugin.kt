@@ -40,27 +40,29 @@ internal class SessionTrackingPlugin : Plugin {
         if (!sessionManager.isSessionOngoing) return event
 
         val wasInForeground = event.wasCreatedInForeground()
-        val isUserActivity = sessionManager.countsAsUserActivity(wasInForeground)
-        if (!belongsToSession(event, wasInForeground, isUserActivity)) {
+        if (!shouldAttachSession(event, wasInForeground)) {
             logBackgroundEventSkipped(event)
             return event
         }
 
         logSessionAttached(event)
         addSessionIdToEvent(event)
-        if (isUserActivity && !sessionManager.isSessionManual) {
+        if (shouldExtendSession(wasInForeground)) {
             sessionManager.updateLastActivityTime()
         }
         return event
     }
 
-    private fun belongsToSession(event: Event, wasInForeground: Boolean, isUserActivity: Boolean): Boolean = when {
+    private fun shouldAttachSession(event: Event, wasInForeground: Boolean): Boolean = when {
         sessionManager.isSessionManual -> true
         sessionManager.hasExpiredInBackground(wasInForeground) -> false
-        isUserActivity -> true
+        sessionManager.countsAsUserActivity(wasInForeground) -> true
         // Our own lifecycle events keep their session in the background, so a session stays measurable.
         else -> event.isLifecycleEvent()
     }
+
+    private fun shouldExtendSession(wasInForeground: Boolean): Boolean =
+        !sessionManager.isSessionManual && sessionManager.countsAsUserActivity(wasInForeground)
 
     private fun Event.wasCreatedInForeground(): Boolean = createdInForeground ?: sessionManager.isInForeground
 
