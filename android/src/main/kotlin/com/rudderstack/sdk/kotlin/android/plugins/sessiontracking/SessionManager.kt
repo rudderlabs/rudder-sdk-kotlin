@@ -35,7 +35,7 @@ internal class SessionManager(
     private var sessionInfo: State<SessionInfo> = State(SessionInfo.initialState(storage))
     internal var sessionTimeout by Delegates.notNull<Long>()
 
-    // The first foreground of a process replaces the old on-launch check, so it uses the launch rules.
+    // The first foreground of a process applies the launch rules.
     private val isFirstForegroundPending = AtomicBoolean(true)
 
     internal val sessionId
@@ -135,10 +135,23 @@ internal class SessionManager(
         get() = sessionTrackingObserver.isInForeground.get()
 
     internal val visibleSessionId: Long?
-        get() = sessionId.takeIf { isSessionOngoing && (isSessionManual || countsAsUserActivity(isInForeground)) }
+        get() {
+            val session = sessionInfo.value
+            if (session.sessionId == NO_SESSION_ID) return null
+            if (session.isSessionManual) return session.sessionId
+
+            val inForeground = isInForeground
+            val isVisible = countsAsUserActivity(inForeground) && !hasExpiredInBackground(inForeground, session)
+            return session.sessionId.takeIf { isVisible }
+        }
 
     internal fun countsAsUserActivity(wasInForeground: Boolean): Boolean {
         return sessionConfiguration.includeBackgroundEventsInSession || wasInForeground
+    }
+
+    // A background event cannot revive an automatic session that is already past its timeout.
+    internal fun hasExpiredInBackground(wasInForeground: Boolean, session: SessionInfo = sessionInfo.value): Boolean {
+        return !wasInForeground && DateTimeUtils.getSystemCurrentTime() - session.lastActivityTime > sessionTimeout
     }
 
     private fun maybeStartSessionOnFirstForeground() {

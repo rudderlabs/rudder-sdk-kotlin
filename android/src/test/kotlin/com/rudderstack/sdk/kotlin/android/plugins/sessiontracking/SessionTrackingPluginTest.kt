@@ -56,8 +56,8 @@ class SessionTrackingPluginTest {
         runTest(testDispatcher) {
             val sessionId = 1234567890L
             mockSystemCurrentTime(sessionId * 1000)
-            val firstEvent = TrackEvent("test", emptyJsonObject)
-            val secondEvent = TrackEvent("test", emptyJsonObject)
+            val firstEvent = TrackEvent("test", emptyJsonObject).also { it.createdInForeground = true }
+            val secondEvent = TrackEvent("test", emptyJsonObject).also { it.createdInForeground = true }
             pluginSetup(automaticSessionTracking = true)
             every { sessionManager.countsAsUserActivity(any()) } returns true
             sessionManager.maybeStartSessionOnForeground()
@@ -115,7 +115,7 @@ class SessionTrackingPluginTest {
     fun `given an automatic session is ongoing, when an event is made, then last activity time is updated`() = runTest(testDispatcher) {
         val sessionId = 1234567890L
         mockSystemCurrentTime(sessionId * 1000)
-        val message = TrackEvent("test", emptyJsonObject)
+        val message = TrackEvent("test", emptyJsonObject).also { it.createdInForeground = true }
         mockStorage.write(StorageKeys.SESSION_ID, sessionId)
         mockStorage.write(StorageKeys.IS_SESSION_MANUAL, false)
         mockStorage.write(StorageKeys.LAST_ACTIVITY_TIME, sessionId * 1000 - 600_000L)
@@ -143,7 +143,7 @@ class SessionTrackingPluginTest {
     @Test
     fun `given activity time update is required, when event is intercepted, then updateLastActivityTime is called`() =
         runTest(testDispatcher) {
-            val message = TrackEvent("test", emptyJsonObject)
+            val message = TrackEvent("test", emptyJsonObject).also { it.createdInForeground = true }
             pluginSetup(automaticSessionTracking = true)
             sessionManager.maybeStartSessionOnForeground()
             every { sessionManager.countsAsUserActivity(any()) } returns true
@@ -187,6 +187,7 @@ class SessionTrackingPluginTest {
     fun `given a background lifecycle event and background events are excluded, when intercept called, then session payload is attached`() =
         runTest(testDispatcher) {
             val event = TrackEvent(APPLICATION_BACKGROUNDED, emptyJsonObject)
+            mockStorage.write(StorageKeys.LAST_ACTIVITY_TIME, DateTimeUtils.getSystemCurrentTime())
             pluginSetup(automaticSessionTracking = true)
             sessionManager.maybeStartSessionOnForeground()
             every { sessionManager.countsAsUserActivity(any()) } returns false
@@ -246,6 +247,7 @@ class SessionTrackingPluginTest {
     fun `given a background event and background updates enabled, when intercept called, then session payload is attached`() =
         runTest(testDispatcher) {
             val event = TrackEvent("test", emptyJsonObject)
+            mockStorage.write(StorageKeys.LAST_ACTIVITY_TIME, DateTimeUtils.getSystemCurrentTime())
             pluginSetup(automaticSessionTracking = true, includeBackgroundEventsInSession = true)
             sessionManager.maybeStartSessionOnForeground()
             testDispatcher.scheduler.advanceUntilIdle()
@@ -254,6 +256,39 @@ class SessionTrackingPluginTest {
 
             assertEquals(sessionManager.sessionId.toString(), event.context[SESSION_ID].toString())
             verify(exactly = 1) { sessionManager.updateLastActivityTime() }
+        }
+
+    @Test
+    fun `given background events are included and the stored session has timed out, when a background event is intercepted, then no session payload is attached`() =
+        runTest(testDispatcher) {
+            val currentTime = DateTimeUtils.getSystemCurrentTime()
+            val event = TrackEvent("test", emptyJsonObject).also { it.createdInForeground = false }
+            mockStorage.write(StorageKeys.SESSION_ID, 1234567890L)
+            mockStorage.write(StorageKeys.IS_SESSION_MANUAL, false)
+            mockStorage.write(StorageKeys.LAST_ACTIVITY_TIME, currentTime - 600_000L)
+            pluginSetup(automaticSessionTracking = true, includeBackgroundEventsInSession = true)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            sessionTrackingPlugin.intercept(event)
+
+            assertEquals(null, event.context[SESSION_ID])
+            verify(exactly = 0) { sessionManager.updateLastActivityTime() }
+            assertEquals(currentTime - 600_000L, mockStorage.readLong(StorageKeys.LAST_ACTIVITY_TIME, 0L))
+        }
+
+    @Test
+    fun `given the stored session has timed out, when a foreground event is intercepted, then session payload is attached`() =
+        runTest(testDispatcher) {
+            val event = TrackEvent("test", emptyJsonObject).also { it.createdInForeground = true }
+            mockStorage.write(StorageKeys.SESSION_ID, 1234567890L)
+            mockStorage.write(StorageKeys.IS_SESSION_MANUAL, false)
+            mockStorage.write(StorageKeys.LAST_ACTIVITY_TIME, DateTimeUtils.getSystemCurrentTime() - 600_000L)
+            pluginSetup(automaticSessionTracking = true, includeBackgroundEventsInSession = true)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            sessionTrackingPlugin.intercept(event)
+
+            assertEquals("1234567890", event.context[SESSION_ID].toString())
         }
 
     @Test

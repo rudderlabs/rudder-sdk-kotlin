@@ -371,6 +371,42 @@ class SessionManagerTest {
     }
 
     @Test
+    fun `given a stored automatic session past its timeout and background events are included, when visibleSessionId is read in the background, then it is null`() =
+        runTest(testDispatcher) {
+            givenStoredAutomaticSession(lastActivityTime = System.currentTimeMillis() - 600_000L)
+            sessionManagerSetup(automaticSessionTracking = true, sessionTimeoutInMillis = 300_000L, includeBackgroundEventsInSession = true)
+
+            assertNull(sessionManager.visibleSessionId)
+        }
+
+    @Test
+    fun `given a session past its timeout, when hasExpiredInBackground is called for a background event, then it is true`() =
+        runTest(testDispatcher) {
+            givenStoredAutomaticSession(lastActivityTime = System.currentTimeMillis() - 600_000L)
+            sessionManagerSetup(automaticSessionTracking = true, sessionTimeoutInMillis = 300_000L)
+
+            assertTrue(sessionManager.hasExpiredInBackground(wasInForeground = false))
+        }
+
+    @Test
+    fun `given a session past its timeout, when hasExpiredInBackground is called for a foreground event, then it is false`() =
+        runTest(testDispatcher) {
+            givenStoredAutomaticSession(lastActivityTime = System.currentTimeMillis() - 600_000L)
+            sessionManagerSetup(automaticSessionTracking = true, sessionTimeoutInMillis = 300_000L)
+
+            assertFalse(sessionManager.hasExpiredInBackground(wasInForeground = true))
+        }
+
+    @Test
+    fun `given a session within its timeout, when hasExpiredInBackground is called for a background event, then it is false`() =
+        runTest(testDispatcher) {
+            givenStoredAutomaticSession(lastActivityTime = System.currentTimeMillis())
+            sessionManagerSetup(automaticSessionTracking = true, sessionTimeoutInMillis = 300_000L)
+
+            assertFalse(sessionManager.hasExpiredInBackground(wasInForeground = false))
+        }
+
+    @Test
     fun `given a manual session in the background, when visibleSessionId is read, then it is the session id`() = runTest(testDispatcher) {
         sessionManagerSetup(automaticSessionTracking = false, includeBackgroundEventsInSession = false)
         sessionManager.startSession(sessionId = 1234567890L, isSessionManual = true)
@@ -449,6 +485,12 @@ class SessionManagerTest {
             analytics = mockAnalytics,
             sessionConfiguration = sessionConfiguration
         )
+    }
+
+    private suspend fun givenStoredAutomaticSession(lastActivityTime: Long) {
+        mockStorage.write(StorageKeys.SESSION_ID, 1234567890L)
+        mockStorage.write(StorageKeys.IS_SESSION_MANUAL, false)
+        mockStorage.write(StorageKeys.LAST_ACTIVITY_TIME, lastActivityTime)
     }
 
     private fun captureProcessLifecycleObserver(): CapturingSlot<ProcessLifecycleObserver> {
