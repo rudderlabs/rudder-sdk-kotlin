@@ -105,8 +105,8 @@ Because destination creation happens after source config is fetched, activities 
 
 ```xml
 <application>
-    <meta-data android:name="CLEVERTAP_ACCOUNT_ID" android:value="<ACCOUNT_ID>" />
-    <meta-data android:name="CLEVERTAP_TOKEN" android:value="<ACCOUNT_TOKEN>" />
+    <meta-data android:name="CLEVERTAP_ACCOUNT_ID" android:value="YOUR_ACCOUNT_ID" />
+    <meta-data android:name="CLEVERTAP_TOKEN" android:value="YOUR_ACCOUNT_TOKEN" />
 </application>
 ```
 
