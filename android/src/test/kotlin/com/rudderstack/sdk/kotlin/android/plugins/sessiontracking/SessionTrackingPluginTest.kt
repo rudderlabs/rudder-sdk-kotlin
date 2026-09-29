@@ -17,13 +17,19 @@ import io.mockk.mockkObject
 import io.mockk.spyk
 import io.mockk.unmockkAll
 import io.mockk.verify
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.concurrent.thread
 
 class SessionTrackingPluginTest {
 
@@ -299,6 +305,32 @@ class SessionTrackingPluginTest {
 
             assertEquals("1234567890", event.context[SESSION_ID].toString())
         }
+
+    @Test
+    fun `given a session starts on another thread while an event is processed, when intercept runs, then the event keeps one consistent session`() {
+        pluginSetup(automaticSessionTracking = true)
+        sessionManager.maybeStartSessionOnForeground()
+        val firstSessionId = sessionManager.sessionId
+        sessionManager.updateIsSessionStartIfChanged(false)
+        val raceStarted = AtomicBoolean(false)
+        val racingCallDone = CountDownLatch(1)
+        every { sessionManager.isSessionStart } answers {
+            if (raceStarted.compareAndSet(false, true)) {
+                thread { sessionManager.startSession(sessionId = firstSessionId + 1); racingCallDone.countDown() }
+                racingCallDone.await(200, TimeUnit.MILLISECONDS)
+            }
+            callOriginal()
+        }
+        val event = TrackEvent("test", emptyJsonObject).also { it.createdInForeground = true }
+
+        runBlocking { sessionTrackingPlugin.intercept(event) }
+        racingCallDone.await(2, TimeUnit.SECONDS)
+
+        assertEquals(firstSessionId.toString(), event.context[SESSION_ID].toString())
+        assertEquals(null, event.context[SESSION_START])
+        assertEquals(firstSessionId + 1, sessionManager.sessionId)
+        assertTrue(sessionManager.isSessionStart)
+    }
 
     @Test
     fun `when setup is called, then the foreground state provider reports the session manager's state`() = runTest {

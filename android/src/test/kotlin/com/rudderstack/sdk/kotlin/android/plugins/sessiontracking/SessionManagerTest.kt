@@ -19,6 +19,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.slot
+import io.mockk.spyk
 import io.mockk.unmockkAll
 import io.mockk.verify
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -32,6 +33,9 @@ import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import kotlin.concurrent.thread
 
 class SessionManagerTest {
 
@@ -491,6 +495,95 @@ class SessionManagerTest {
         }
 
     @Test
+    fun `given the app ended the session, when a foreground callback already in flight runs, then no session starts`() =
+        runTest(testDispatcher) {
+            sessionManagerSetup(automaticSessionTracking = true)
+            sessionManager.endSession()
+
+            sessionManager.maybeStartSessionOnForeground()
+
+            assertEquals(NO_SESSION_ID, sessionManager.sessionId)
+        }
+
+    @Test
+    fun `given the app started a manual session, when a foreground callback already in flight runs, then the manual session remains`() =
+        runTest(testDispatcher) {
+            sessionManagerSetup(automaticSessionTracking = true)
+            sessionManager.startSession(sessionId = STORED_SESSION_ID, isSessionManual = true)
+
+            sessionManager.maybeStartSessionOnForeground()
+
+            assertEquals(STORED_SESSION_ID, sessionManager.sessionId)
+            assertTrue(sessionManager.isSessionManual)
+        }
+
+    @Test
+    fun `given a background event started a session, when the app comes to the foreground at once, then the same session continues`() =
+        runTest(testDispatcher) {
+            givenStoredSession(lastActivityTime = DateTimeUtils.getSystemCurrentTime() - 600_000L)
+            sessionManagerSetup(automaticSessionTracking = true, sessionTimeoutInMillis = 300_000L, includeBackgroundEventsInSession = true)
+            sessionManager.maybeStartSessionOnBackgroundEvent()
+            val startedSessionId = sessionManager.sessionId
+            sessionManager.updateIsSessionStartIfChanged(false)
+
+            sessionManager.maybeStartSessionOnForeground()
+
+            assertEquals(startedSessionId, sessionManager.sessionId)
+            assertFalse(sessionManager.isSessionStart)
+        }
+
+    @Test
+    fun `given activity in the same millisecond, when the app is first foregrounded, then the stored session continues`() =
+        runTest(testDispatcher) {
+            givenStoredSession(lastActivityTime = DateTimeUtils.getSystemCurrentTime())
+            sessionManagerSetup(automaticSessionTracking = true)
+
+            sessionManager.maybeStartSessionOnForeground()
+
+            assertEquals(STORED_SESSION_ID, sessionManager.sessionId)
+        }
+
+    @Test
+    fun `given automatic tracking and a manual session left by an earlier process, when the SDK starts, then no session remains`() =
+        runTest(testDispatcher) {
+            givenStoredSession(lastActivityTime = DateTimeUtils.getSystemCurrentTime(), isSessionManual = true)
+
+            sessionManagerSetup(automaticSessionTracking = true)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            assertEquals(NO_SESSION_ID, sessionManager.sessionId)
+            assertNull(sessionManager.visibleSessionId)
+            assertEquals(0L, mockStorage.readLong(StorageKeys.SESSION_ID, 0L))
+        }
+
+    @Test
+    fun `given background events are included, when the app ends the session while a background event starts one, then no session remains`() {
+        sessionManagerSetup(automaticSessionTracking = true, includeBackgroundEventsInSession = true)
+        val manager = spyk(sessionManager)
+        val racingCallDone = runOnAnotherThreadWhileStarting(manager) { manager.endSession() }
+
+        manager.maybeStartSessionOnBackgroundEvent()
+        racingCallDone.await(2, TimeUnit.SECONDS)
+
+        assertEquals(NO_SESSION_ID, manager.sessionId)
+    }
+
+    @Test
+    fun `given background events are included, when the app starts a manual session while a background event starts one, then the manual session remains`() {
+        sessionManagerSetup(automaticSessionTracking = true, includeBackgroundEventsInSession = true)
+        val manager = spyk(sessionManager)
+        val racingCallDone = runOnAnotherThreadWhileStarting(manager) {
+            manager.startSession(sessionId = STORED_SESSION_ID, isSessionManual = true)
+        }
+
+        manager.maybeStartSessionOnBackgroundEvent()
+        racingCallDone.await(2, TimeUnit.SECONDS)
+
+        assertEquals(STORED_SESSION_ID, manager.sessionId)
+        assertTrue(manager.isSessionManual)
+    }
+
+    @Test
     fun `given background events are included and a timed-out session, when visibleSessionId is read in the background, then it is null`() =
         runTest(testDispatcher) {
             givenStoredSession(lastActivityTime = DateTimeUtils.getSystemCurrentTime() - 600_000L)
@@ -553,6 +646,17 @@ class SessionManagerTest {
         mockStorage.write(StorageKeys.LAST_ACTIVITY_TIME, lastActivityTime)
     }
 
+    // Pauses a session start where it picks the id, and runs `racingCall` on another thread meanwhile.
+    private fun runOnAnotherThreadWhileStarting(manager: SessionManager, racingCall: () -> Unit): CountDownLatch {
+        val racingCallDone = CountDownLatch(1)
+        every { manager.generateSessionId() } answers {
+            thread { racingCall(); racingCallDone.countDown() }
+            racingCallDone.await(RACE_WINDOW_MS, TimeUnit.MILLISECONDS)
+            callOriginal()
+        }
+        return racingCallDone
+    }
+
     private fun captureProcessLifecycleObserver(): CapturingSlot<ProcessLifecycleObserver> {
         // SessionManager owns the observer privately; capture it via MockK so we can drive lifecycle callbacks.
         val observerSlot = slot<ProcessLifecycleObserver>()
@@ -584,3 +688,4 @@ class SessionManagerTest {
 }
 
 private const val STORED_SESSION_ID = 1234567890L
+private const val RACE_WINDOW_MS = 200L

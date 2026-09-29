@@ -38,6 +38,10 @@ internal class SessionTrackingPlugin : Plugin {
 
     override suspend fun intercept(event: Event): Event {
         val wasInForeground = event.wasCreatedInForeground()
+        return sessionManager.withSessionLock { applySession(event, wasInForeground) }
+    }
+
+    private fun applySession(event: Event, wasInForeground: Boolean): Event {
         if (!wasInForeground) sessionManager.maybeStartSessionOnBackgroundEvent()
         if (!sessionManager.isSessionOngoing) return event
 

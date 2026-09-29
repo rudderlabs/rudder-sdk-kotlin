@@ -39,8 +39,8 @@ internal class SessionManager(
     private val isFirstForegroundPending = AtomicBoolean(true)
     private val isAutomaticTrackingActive = AtomicBoolean(false)
 
-    // Foreground callbacks and background events can both start a session, on different threads.
-    private val sessionStartLock = Any()
+    // The app, foreground callbacks and background events change the session from different threads.
+    private val sessionLock = Any()
 
     internal val sessionId
         get() = sessionInfo.value.sessionId
@@ -66,7 +66,8 @@ internal class SessionManager(
 
         when {
             sessionConfiguration.automaticSessionTracking -> {
-                // An automatic session starts on the first foreground, never on a bare process start.
+                // A manual session left by an earlier process is over; an automatic one starts on the first foreground.
+                if (isSessionManual) clearSession()
                 attachSessionTrackingObservers()
             }
             !isSessionManual -> {
@@ -92,14 +93,18 @@ internal class SessionManager(
         isSessionManual: Boolean = false,
         shouldUpdateIsSessionManual: Boolean = true
     ) {
-        updateIsSessionStartIfChanged(true)
-        if (shouldUpdateIsSessionManual) {
-            updateIsSessionManualIfChanged(isSessionManual)
+        synchronized(sessionLock) {
+            updateIsSessionStartIfChanged(true)
+            if (shouldUpdateIsSessionManual) {
+                updateIsSessionManualIfChanged(isSessionManual)
+            }
+            if (isSessionManual) {
+                detachSessionTrackingObservers()
+            }
+            updateSessionId(sessionId)
+            // A new session starts active now; a stale time would make the next foreground rotate it again.
+            recordActivityNow()
         }
-        if (isSessionManual) {
-            detachSessionTrackingObservers()
-        }
-        updateSessionId(sessionId)
     }
 
     private fun updateSessionId(sessionId: Long) {
@@ -128,12 +133,19 @@ internal class SessionManager(
     }
 
     internal fun updateLastActivityTime() {
+        synchronized(sessionLock) { recordActivityNow() }
+    }
+
+    private fun recordActivityNow() {
         val lastActivityTime = DateTimeUtils.getSystemCurrentTime()
         sessionInfo.dispatch(SessionInfo.UpdateLastActivityTimeAction(lastActivityTime))
         withSessionDispatcher {
             sessionInfo.value.storeLastActivityTime(lastActivityTime, storage)
         }
     }
+
+    // Runs the plugin's per-event session steps as one unit, so no other thread changes the session midway.
+    internal fun <T> withSessionLock(block: () -> T): T = synchronized(sessionLock, block)
 
     internal val isInForeground: Boolean
         get() = sessionTrackingObserver.isInForeground.get()
@@ -147,7 +159,7 @@ internal class SessionManager(
             val inForeground = isInForeground
             if (!countsAsUserActivity(inForeground)) return null
             // An expired session is replaced by the next background event, so it is no longer the current one.
-            if (!inForeground && isIdlePastTimeout(session.lastActivityTime)) return null
+            if (!inForeground && hasSessionTimedOut(session.lastActivityTime)) return null
             return session.sessionId
         }
 
@@ -163,7 +175,9 @@ internal class SessionManager(
 
     // The first foreground applies the launch rules; every later one only restarts a timed-out session.
     internal fun maybeStartSessionOnForeground() {
-        synchronized(sessionStartLock) {
+        synchronized(sessionLock) {
+            // A callback already in flight when the app ended or took over the session must not restart it.
+            if (!isAutomaticTrackingActive.get()) return
             if (isFirstForegroundPending.compareAndSet(true, false)) {
                 maybeStartSessionOnFirstForeground()
             } else if (shouldStartNewSessionOnForeground()) {
@@ -174,19 +188,14 @@ internal class SessionManager(
 
     // With background events included, a background event starts a new session when no live one exists.
     internal fun maybeStartSessionOnBackgroundEvent() {
-        if (!sessionConfiguration.includeBackgroundEventsInSession || !isAutomaticTrackingActive.get()) return
+        if (!sessionConfiguration.includeBackgroundEventsInSession) return
 
-        synchronized(sessionStartLock) {
-            if (!isSessionOngoing || isSessionManual || isIdlePastTimeout(lastActivityTime)) {
+        synchronized(sessionLock) {
+            if (!isAutomaticTrackingActive.get()) return
+            if (!isSessionOngoing || isSessionManual || hasSessionTimedOut()) {
                 startSession(sessionId = generateSessionId(), isSessionManual = false)
             }
         }
-    }
-
-    // Unlike hasSessionTimedOut, zero elapsed time is not expiry, so back-to-back events keep one session.
-    private fun isIdlePastTimeout(lastActivityTime: Long): Boolean {
-        val now = DateTimeUtils.getSystemCurrentTime()
-        return now < lastActivityTime || now - lastActivityTime > sessionTimeout
     }
 
     private fun attachSessionTrackingObservers() {
@@ -210,13 +219,21 @@ internal class SessionManager(
     }
 
     internal fun refreshSession() {
-        if (isSessionOngoing) {
-            startSession(sessionId = generateSessionId(), shouldUpdateIsSessionManual = false)
+        synchronized(sessionLock) {
+            if (isSessionOngoing) {
+                startSession(sessionId = generateSessionId(), shouldUpdateIsSessionManual = false)
+            }
         }
     }
 
     internal fun endSession() {
-        detachSessionTrackingObservers()
+        synchronized(sessionLock) {
+            detachSessionTrackingObservers()
+            clearSession()
+        }
+    }
+
+    private fun clearSession() {
         sessionInfo.dispatch(SessionInfo.EndSessionAction)
         withSessionDispatcher {
             sessionInfo.value.removeSessionData(storage)
@@ -242,16 +259,18 @@ internal class SessionManager(
      * activity exceeds the configured session timeout.
      *
      * This method uses system current time. If the current system
-     * time is less than or equal to the last activity time, it indicates that the clock has been tampered with.
-     * In such cases, the session is treated as expired.
+     * time is earlier than the last activity time, it indicates that the clock has been tampered with.
+     * In such cases, the session is treated as expired. Zero elapsed time does not count as expired, so two
+     * events in the same millisecond stay in one session.
      *
+     * @param lastActivityTime The last activity time to measure from. Defaults to the current session's.
      * @return `true` if the session has timed out, `false` otherwise.
      */
-    private fun hasSessionTimedOut(): Boolean {
+    private fun hasSessionTimedOut(lastActivityTime: Long = this.lastActivityTime): Boolean {
         val timeDifference = DateTimeUtils.getSystemCurrentTime() - lastActivityTime
-        if (timeDifference <= 0) {
+        if (timeDifference < 0) {
             analytics.logger.warn(
-                "SessionManager: Current system time is less than or equal to last activity time." +
+                "SessionManager: Current system time is earlier than the last activity time." +
                     " This indicates potential clock tampering. Resetting the session"
             )
             return true
