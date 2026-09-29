@@ -2,25 +2,21 @@
 
 package com.rudderstack.integration.kotlin.clevertap
 
-import android.app.Activity
 import android.app.Application
 import android.net.Uri
 import android.os.Bundle
+import com.clevertap.android.sdk.ActivityLifecycleCallback
 import com.clevertap.android.sdk.CleverTapAPI
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.IntegrationPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.SdkNotInitializedException
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.StandardIntegration
-import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleObserver
-import com.rudderstack.sdk.kotlin.android.utils.addLifecycleObserver
 import com.rudderstack.sdk.kotlin.android.utils.application
-import com.rudderstack.sdk.kotlin.android.utils.removeLifecycleObserver
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.ScreenEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import kotlinx.serialization.json.JsonObject
-import com.rudderstack.sdk.kotlin.android.Analytics as AndroidAnalytics
 
 private const val CLEVERTAP_KEY = "CleverTap"
 
@@ -28,7 +24,7 @@ private const val CLEVERTAP_KEY = "CleverTap"
  * CleverTapIntegration is a plugin that sends events to the CleverTap Android SDK.
  */
 @OptIn(InternalRudderApi::class)
-class CleverTapIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifecycleObserver {
+class CleverTapIntegration : StandardIntegration, IntegrationPlugin() {
 
     override val key: String
         get() = CLEVERTAP_KEY
@@ -51,7 +47,8 @@ class CleverTapIntegration : StandardIntegration, IntegrationPlugin(), ActivityL
             logLevel = analytics.configuration.logLevel,
         ) ?: throw SdkNotInitializedException("CleverTapIntegration: CleverTap SDK returned no instance.")
 
-        (analytics as? AndroidAnalytics)?.addLifecycleObserver(this)
+        // CleverTap registers its activity tracking once, so an app that already registered it is not affected.
+        ActivityLifecycleCallback.register(analytics.application)
         analytics.logger.info("CleverTapIntegration: CleverTap SDK initialized.")
     }
 
@@ -80,33 +77,8 @@ class CleverTapIntegration : StandardIntegration, IntegrationPlugin(), ActivityL
         }.logOnFailure("CleverTapIntegration: Failed to send screen event '${payload.screenName}'.")
     }
 
-    override fun onActivityCreated(activity: Activity, bundle: Bundle?) {
-        if (cleverTap == null) return
-
-        setAppForeground(true)
-        pushNotificationClickedEvent(activity.intent?.extras)
-        pushDeepLink(activity.intent?.data)
-    }
-
-    override fun onActivityResumed(activity: Activity) {
-        if (cleverTap == null) return
-
-        runCatching {
-            CleverTapAPI.onActivityResumed(activity)
-        }.logOnFailure("CleverTapIntegration: Failed to handle activity resumed callback.")
-    }
-
-    override fun onActivityPaused(activity: Activity) {
-        if (cleverTap == null) return
-
-        runCatching {
-            CleverTapAPI.onActivityPaused()
-        }.logOnFailure("CleverTapIntegration: Failed to handle activity paused callback.")
-    }
-
     override fun teardown() {
         super.teardown()
-        (analytics as? AndroidAnalytics)?.removeLifecycleObserver(this)
         cleverTap = null
     }
 

@@ -141,11 +141,6 @@ object RudderStackBuildConfig {
         }
     }
 
-    object Kotlin {
-
-        const val COMPILER_EXTENSION_VERSION = "1.5.1"
-    }
-
     object POM {
 
         const val NAME = "Analytics Kotlin SDK"

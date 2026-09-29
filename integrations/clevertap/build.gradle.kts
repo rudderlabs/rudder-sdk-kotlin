@@ -48,7 +48,7 @@ android {
     }
 
     defaultConfig {
-        minSdk = RudderStackBuildConfig.AndroidBuild.MIN_SDK
+        minSdk = 23 // CleverTap 8.1.0+ requires API 23
 
         buildConfigField("String", "VERSION_NAME", "\"${RudderStackBuildConfig.Integrations.CleverTap.versionName}\"")
 
