@@ -4,7 +4,7 @@ import com.rudderstack.sdk.kotlin.core.internals.statemanagement.StateAction
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 
-internal const val DEFAULT_SESSION_ID = 0L
+internal const val NO_SESSION_ID = 0L
 internal const val DEFAULT_LAST_ACTIVITY_TIME = 0L
 
 internal data class SessionInfo(
@@ -18,7 +18,7 @@ internal data class SessionInfo(
 
         fun initialState(storage: Storage): SessionInfo {
             return SessionInfo(
-                sessionId = storage.readLong(StorageKeys.SESSION_ID, DEFAULT_SESSION_ID),
+                sessionId = storage.readLong(StorageKeys.SESSION_ID, NO_SESSION_ID),
                 lastActivityTime = storage.readLong(StorageKeys.LAST_ACTIVITY_TIME, DEFAULT_LAST_ACTIVITY_TIME),
                 isSessionManual = storage.readBoolean(StorageKeys.IS_SESSION_MANUAL, false),
                 isSessionStart = storage.readBoolean(StorageKeys.IS_SESSION_START, false),
