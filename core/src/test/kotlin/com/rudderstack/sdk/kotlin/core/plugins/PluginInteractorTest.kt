@@ -96,6 +96,7 @@ class PluginInteractorTest {
         val original = realEvent().also {
             it.options = RudderOption(customContext = buildJsonObject { put("library", "injected") })
             it.capturedReservedContext = captured
+            it.createdInForeground = true
         }
         pluginList.add(ReplacingPlugin())
 
@@ -103,6 +104,7 @@ class PluginInteractorTest {
 
         assertEquals(ReplacingPlugin.MESSAGE_ID, result?.messageId, "the plugin's messageId was replaced")
         assertEquals(captured, result?.capturedReservedContext, "capturedReservedContext was not preserved")
+        assertEquals(true, result?.createdInForeground, "createdInForeground was not preserved")
         assertEquals(ReplacingPlugin.CUSTOM_CONTEXT, result?.options?.customContext, "the plugin's options were replaced")
     }
 
