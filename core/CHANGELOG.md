@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+# [1.8.0](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.sdk.kotlin.core@v1.7.0...com.rudderstack.sdk.kotlin.core@v1.8.0) (2026-09-29)
+
+## Features
+
+- **core:** Record whether the app was in the foreground when an event was created ([#361](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/361)) ([951c160](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/951c16033b9ca489a366403fb541f0aa2d9888d4))
+
+
 # [1.7.0](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.sdk.kotlin.core@v1.6.1...com.rudderstack.sdk.kotlin.core@v1.7.0) (2026-09-22)
 
 ## Features
