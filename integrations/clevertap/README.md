@@ -96,13 +96,23 @@ Nested `address` and `company` traits are flattened to match the legacy Java int
 
 ### Lifecycle and Push Handling
 
-The integration observes Android activity lifecycle callbacks through the RudderStack Android SDK after the destination is created:
+When the destination is created, the integration calls CleverTap's `ActivityLifecycleCallback.register(application)`. CleverTap then tracks activities itself: app launch, foreground state, notification clicks and deep links from the activity intent. CleverTap registers these callbacks once, so an app that already calls `ActivityLifecycleCallback.register` keeps a single registration and no event is recorded twice.
 
-- `onActivityCreated` calls `CleverTapAPI.setAppForeground(true)`, forwards notification click extras, and forwards deep links from the activity intent.
-- `onActivityResumed` calls `CleverTapAPI.onActivityResumed(activity)`.
-- `onActivityPaused` calls `CleverTapAPI.onActivityPaused()`.
+Because destination creation happens after source config is fetched, activities created before that are not tracked. To track the first screen, do both steps below, as CleverTap's Android setup describes:
 
-Because destination creation happens after source config is fetched, early activity callbacks may not be replayed. If your app needs to forward a notification click or deep link before the callback is observed, keep a reference to the integration instance and call:
+1. Add your CleverTap account ID and token to the host application manifest. Use the same account as the RudderStack destination. If the destination sets a region, also add `CLEVERTAP_REGION`.
+2. Call `ActivityLifecycleCallback.register(this)` in your `Application.onCreate`, before `super.onCreate()`.
+
+```xml
+<application>
+    <meta-data android:name="CLEVERTAP_ACCOUNT_ID" android:value="<ACCOUNT_ID>" />
+    <meta-data android:name="CLEVERTAP_TOKEN" android:value="<ACCOUNT_TOKEN>" />
+</application>
+```
+
+CleverTap reads its credentials once, when it starts. An early `register` starts CleverTap before the integration supplies the dashboard credentials. Without the manifest credentials, CleverTap has no account, and the integration fails to create the destination.
+
+If your app needs to forward a notification click or deep link that arrives in a way CleverTap does not observe, such as `onNewIntent`, keep a reference to the integration instance and call:
 
 ```kotlin
 val cleverTapIntegration = CleverTapIntegration()
@@ -125,7 +135,7 @@ For Firebase Cloud Messaging push delivery, configure the host app according to 
 </service>
 ```
 
-If you initialize CleverTap directly from manifest metadata in addition to RudderStack dashboard configuration, add the CleverTap account metadata in the host application manifest. This integration normally supplies credentials from the RudderStack dashboard, so manifest credentials are optional.
+If your app does not call `register` before the destination is created, manifest credentials are optional. The integration then supplies the credentials from the RudderStack dashboard. If CleverTap started before the destination was created, CleverTap keeps the credentials it started with, and the dashboard credentials have no effect.
 
 ## Notes
 
