@@ -11,6 +11,7 @@ plugins {
     alias(libs.plugins.android.library) apply false
     alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.detekt) apply false
     alias(libs.plugins.nexus)
 }
@@ -74,6 +75,19 @@ tasks.register("setupGitHooks") {
 subprojects {
     tasks.matching { it.name == "build" || it.name.startsWith("assemble") }.configureEach {
         dependsOn(rootProject.tasks.named("setupGitHooks"))
+    }
+}
+
+// Compile with Kotlin 2.x but publish artifacts consumable by Kotlin 1.9 projects.
+subprojects {
+    plugins.withId("maven-publish") {
+        tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask<*>>().configureEach {
+            compilerOptions {
+                languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9)
+                apiVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9)
+            }
+        }
+        extensions.findByType<org.jetbrains.kotlin.gradle.dsl.KotlinProjectExtension>()?.coreLibrariesVersion = "1.9.0"
     }
 }
 
