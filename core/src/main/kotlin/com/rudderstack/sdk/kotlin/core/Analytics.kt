@@ -102,6 +102,11 @@ open class Analytics protected constructor(
     @InternalRudderApi
     val reservedContextValues: MutableMap<SDKManagedContextKey, ReservedContextValue> = ConcurrentHashMap()
 
+    /** Reports whether the app is in the foreground; `null` on platforms without one. */
+    @InternalRudderApi
+    @Volatile
+    var foregroundStateProvider: (() -> Boolean)? = null
+
     private val processEventChannel: Channel<Event> = Channel(Channel.UNLIMITED)
     private var processEventJob: Job? = null
 
@@ -170,7 +175,7 @@ open class Analytics protected constructor(
             userIdentityState = userIdentityState.value,
         )
 
-        captureReservedContext(event)
+        captureCreationState(event)
 
         processEventChannel.trySend(event).apply {
             if (isFailure) logger.warn("Analytics(core): Failed to enqueue track event — channel closed or full")
@@ -208,7 +213,7 @@ open class Analytics protected constructor(
             userIdentityState = userIdentityState.value,
         )
 
-        captureReservedContext(event)
+        captureCreationState(event)
 
         processEventChannel.trySend(event).apply {
             if (isFailure) logger.warn("Analytics(core): Failed to enqueue screen event — channel closed or full")
@@ -235,7 +240,7 @@ open class Analytics protected constructor(
             userIdentityState = userIdentityState.value,
         )
 
-        captureReservedContext(event)
+        captureCreationState(event)
 
         processEventChannel.trySend(event).apply {
             if (isFailure) logger.warn("Analytics(core): Failed to enqueue group event — channel closed or full")
@@ -279,7 +284,7 @@ open class Analytics protected constructor(
             userIdentityState = userIdentityState.value,
         )
 
-        captureReservedContext(event)
+        captureCreationState(event)
 
         processEventChannel.trySend(event).apply {
             if (isFailure) logger.warn("Analytics(core): Failed to enqueue identify event — channel closed or full")
@@ -318,11 +323,17 @@ open class Analytics protected constructor(
             userIdentityState = userIdentityState.value,
         )
 
-        captureReservedContext(event)
+        captureCreationState(event)
 
         processEventChannel.trySend(event).apply {
             if (isFailure) logger.warn("Analytics(core): Failed to enqueue alias event — channel closed or full")
         }
+    }
+
+    // Runs on the caller's thread before the event is queued, so it records the state at creation.
+    private fun captureCreationState(event: Event) {
+        captureReservedContext(event)
+        event.createdInForeground = foregroundStateProvider?.invoke()
     }
 
     /**
@@ -363,7 +374,7 @@ open class Analytics protected constructor(
 
     /**
      * Shuts down the analytics instance, stopping all the operations, removing all the plugins and freeing up the resources.
-     * All the events made up to to the point of shutdown are written down on disk, but they are flushed only after next initialisation.
+     * All the events made up to the point of shutdown are written down on disk, but they are flushed only after next initialisation.
      *
      *  **NOTE**: This operation is irreversible. However, no saved data is lost in shutdown.
      */
