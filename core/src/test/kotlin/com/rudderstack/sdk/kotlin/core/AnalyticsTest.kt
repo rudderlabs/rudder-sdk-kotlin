@@ -863,6 +863,35 @@ class AnalyticsTest {
             )
         }
 
+    @Test
+    fun `given a foreground state provider, when the state changes after an event is tracked, then the event keeps the state at creation`() =
+        runTest(testDispatcher) {
+            val intercepted = mutableListOf<Event>()
+            analytics.add(provideRecordingPlugin(intercepted))
+            var isInForeground = true
+            analytics.foregroundStateProvider = { isInForeground }
+
+            analytics.track(TRACK_EVENT_NAME)
+            isInForeground = false
+            testDispatcher.scheduler.runCurrent()
+            disableSource()
+
+            assertEquals(true, intercepted.single().createdInForeground)
+        }
+
+    @Test
+    fun `given no foreground state provider, when an event is tracked, then the foreground state is unknown`() =
+        runTest(testDispatcher) {
+            val intercepted = mutableListOf<Event>()
+            analytics.add(provideRecordingPlugin(intercepted))
+
+            analytics.track(TRACK_EVENT_NAME)
+            testDispatcher.scheduler.runCurrent()
+            disableSource()
+
+            assertEquals(null, intercepted.single().createdInForeground)
+        }
+
     private fun disableSource() {
         analytics.sourceConfigState.dispatch(
             SourceConfig.UpdateAction(
@@ -924,6 +953,16 @@ private fun provideLibraryVersion(): LibraryVersion {
     return object : LibraryVersion {
         override fun getLibraryName(): String = "com.rudderstack.kotlin.sdk"
         override fun getVersionName(): String = "1.0.0"
+    }
+}
+
+private fun provideRecordingPlugin(intercepted: MutableList<Event>) = object : Plugin {
+    override val pluginType: Plugin.PluginType = Plugin.PluginType.OnProcess
+    override lateinit var analytics: Analytics
+
+    override suspend fun intercept(event: Event): Event {
+        intercepted += event
+        return event
     }
 }
 

@@ -317,16 +317,47 @@ class AndroidLifecyclePluginTest {
         }
 
     @Test
-    fun `given trackApplicationLifecycleEvents is true and onStart is never called, when only setup is called (background-only start), then install event is tracked and app version is persisted but opened is not tracked`() =
+    fun `given trackApplicationLifecycleEvents is true and onStart is never called, when only setup is called (background-only start), then no event is tracked and the app version marker is not consumed`() =
         runTest(testDispatcher) {
             // given
-            val installedProperties = buildJsonObject {
-                put(VERSION_KEY, "1.0.0")
-                put(BUILD_KEY, 100L)
-            }
             pluginSetup()
 
             // when (no onStart, i.e. a background-only process start)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            // then
+            verify(exactly = 0) {
+                mockAnalytics.track(name = eq(APPLICATION_INSTALLED), any<JsonObject>(), any<RudderOption>())
+            }
+            verify(exactly = 0) {
+                mockAnalytics.track(name = eq(APPLICATION_UPDATED), any<JsonObject>(), any<RudderOption>())
+            }
+            verify(exactly = 0) {
+                mockAnalytics.track(name = eq(APPLICATION_OPENED), any<JsonObject>(), any<RudderOption>())
+            }
+            // the marker must stay unwritten, so the next foreground start can still fire the event
+            assert(mockStorage.readLong(StorageKeys.APP_BUILD, -1L) == -1L)
+            assert(mockStorage.readString(StorageKeys.APP_VERSION, String.empty()) == String.empty())
+        }
+
+    @Test
+    fun `given a background-only start wrote no marker, when a later process is foregrounded, then Application Installed still fires`() =
+        runTest(testDispatcher) {
+            // given a background-only process start that emitted nothing
+            pluginSetup()
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            // when a later process start reaches the foreground, sharing the same storage
+            val nextPlugin = spyk(AndroidLifecyclePlugin())
+            every { mockAnalytics.addLifecycleObserver(nextPlugin) } just Runs
+            every { nextPlugin.getAppVersion() } returns AppVersion(
+                currentBuild = 100L,
+                currentVersionName = "1.0.0",
+                previousBuild = mockStorage.readLong(StorageKeys.APP_BUILD, -1L),
+                previousVersionName = mockStorage.readString(StorageKeys.APP_VERSION, String.empty()).ifEmpty { null }
+            )
+            nextPlugin.setup(analytics = mockAnalytics)
+            nextPlugin.onStart(mockLifecycleOwner)
             testDispatcher.scheduler.advanceUntilIdle()
 
             // then
@@ -334,14 +365,51 @@ class AndroidLifecyclePluginTest {
                 mockAnalytics.track(
                     name = eq(APPLICATION_INSTALLED),
                     options = eq(RudderOption()),
-                    properties = eq(installedProperties)
+                    properties = eq(
+                        buildJsonObject {
+                            put(VERSION_KEY, "1.0.0")
+                            put(BUILD_KEY, 100L)
+                        }
+                    )
                 )
-            }
-            verify(exactly = 0) {
-                mockAnalytics.track(name = eq(APPLICATION_OPENED), any<JsonObject>(), any<RudderOption>())
             }
             assert(mockStorage.readLong(StorageKeys.APP_BUILD, -1L) == 100L)
             assert(mockStorage.readString(StorageKeys.APP_VERSION, String.empty()) == "1.0.0")
+        }
+
+    @Test
+    fun `given a fresh install, when the first onStart arrives, then Application Installed is tracked before Application Opened`() =
+        runTest(testDispatcher) {
+            // given
+            pluginSetup()
+
+            // when
+            plugin.onStart(mockLifecycleOwner)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            // then
+            verify(ordering = Ordering.ORDERED) {
+                mockAnalytics.track(name = eq(APPLICATION_INSTALLED), any<JsonObject>(), any<RudderOption>())
+                mockAnalytics.track(name = eq(APPLICATION_OPENED), any<JsonObject>(), any<RudderOption>())
+            }
+        }
+
+    @Test
+    fun `given a fresh install, when onStart is called twice, then Application Installed is tracked only once`() =
+        runTest(testDispatcher) {
+            // given
+            pluginSetup()
+
+            // when
+            plugin.onStart(mockLifecycleOwner)
+            plugin.onStop(mockLifecycleOwner)
+            plugin.onStart(mockLifecycleOwner)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            // then
+            verify(exactly = 1) {
+                mockAnalytics.track(name = eq(APPLICATION_INSTALLED), any<JsonObject>(), any<RudderOption>())
+            }
         }
 
     @Test

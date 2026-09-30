@@ -125,6 +125,11 @@ sealed class Event {
     @InternalRudderApi
     var capturedReservedContext: Map<String, JsonElement>? = null
 
+    /** Whether the app was in the foreground when this event was created; `null` if the platform has none. */
+    @Transient
+    @InternalRudderApi
+    var createdInForeground: Boolean? = null
+
     /**
      * Updates the event data with the platform type, integrations and custom context and add persisted values.
      *
@@ -180,6 +185,7 @@ sealed class Event {
             channel = original.channel
             userId = original.userId
             capturedReservedContext = original.capturedReservedContext
+            createdInForeground = original.createdInForeground
         }
         @Suppress("UNCHECKED_CAST")
         return copy as T // This is ok because resultant type will be same as input type
@@ -187,7 +193,7 @@ sealed class Event {
 
     /**
      * Re-applies the state the SDK owns rather than a plugin, taken from [from]: the values the SDK
-     * asserted for its reserved context keys when the event was created. Everything a plugin can
+     * captured when the event was created. Everything a plugin can
      * set - the payload, its own messageId and options included - is left exactly as the plugin
      * returned it.
      *
@@ -195,6 +201,7 @@ sealed class Event {
      */
     internal fun restoreSdkOwnedState(from: Event) {
         capturedReservedContext = from.capturedReservedContext
+        createdInForeground = from.createdInForeground
     }
 }
 

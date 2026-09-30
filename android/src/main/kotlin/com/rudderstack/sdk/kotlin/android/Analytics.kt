@@ -29,7 +29,6 @@ import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ProcessLife
 import com.rudderstack.sdk.kotlin.android.plugins.screenrecording.ActivityTrackingPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.screenrecording.NavContext
 import com.rudderstack.sdk.kotlin.android.plugins.screenrecording.NavControllerTrackingPlugin
-import com.rudderstack.sdk.kotlin.android.plugins.sessiontracking.DEFAULT_SESSION_ID
 import com.rudderstack.sdk.kotlin.android.plugins.sessiontracking.SessionTrackingPlugin
 import com.rudderstack.sdk.kotlin.android.storage.provideAndroidStorage
 import com.rudderstack.sdk.kotlin.core.Analytics
@@ -364,11 +363,12 @@ class Analytics(
     override fun getPlatformType(): PlatformType = PlatformType.Mobile
 
     /**
-     * Returns the current session ID.
+     * Returns the current session ID, or `null` when there is no session. With `includeBackgroundEventsInSession`
+     * off, an automatic session is not visible while the app is in the background, so this also returns `null` then.
      */
     val sessionId: Long?
         get() {
-            if (!isAnalyticsActive() || sessionTrackingPlugin.sessionManager.sessionId == DEFAULT_SESSION_ID) return null
-            return sessionTrackingPlugin.sessionManager.sessionId
+            if (!isAnalyticsActive()) return null
+            return sessionTrackingPlugin.sessionManager.visibleSessionId
         }
 }

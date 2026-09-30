@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+# [2.0.0](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.sdk.kotlin.android@v1.8.0...com.rudderstack.sdk.kotlin.android@v2.0.0) (2026-09-29)
+
+## ⚠ Breaking Changes
+
+- **android:** Start a session and lifecycle events on the first foreground ([#358](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/358)) ([2cd7e14](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/2cd7e14149990a11d1e6af20e5c68dc0f8ff25d5))
+
+## Features
+
+- **android:** Start a session and lifecycle events on the first foreground ([#358](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/358)) ([2cd7e14](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/2cd7e14149990a11d1e6af20e5c68dc0f8ff25d5))
+
+## Dependency Updates
+
+- The following workspace dependencies were updated
+  - dependencies
+    - @rudderstack/core bumped from 1.7.0 to 1.8.0
+
+
 # [1.8.0](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.sdk.kotlin.android@v1.7.1...com.rudderstack.sdk.kotlin.android@v1.8.0) (2026-09-22)
 
 ## Features

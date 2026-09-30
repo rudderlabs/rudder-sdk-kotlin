@@ -4,6 +4,7 @@ import java.util.Properties
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.compose)
 }
 
 val rudderStackPropertiesFile: File = rootProject.file("${projectDir}/rudderstack.properties")
@@ -23,7 +24,6 @@ tasks.withType<Test> {
 }
 
 android {
-    val composeCompilerVersion = RudderStackBuildConfig.Kotlin.COMPILER_EXTENSION_VERSION
     val androidCompileSdkVersion = RudderStackBuildConfig.AndroidBuild.COMPILE_SDK
     val androidMinSdkVersion = RudderStackBuildConfig.AndroidBuild.MIN_SDK
     val majorVersion = 0
@@ -77,9 +77,6 @@ android {
     buildFeatures {
         buildConfig = true
         compose = true
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion = composeCompilerVersion
     }
     packaging {
         resources {

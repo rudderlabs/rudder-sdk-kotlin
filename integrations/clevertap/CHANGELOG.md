@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+# [2.0.0](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.integration.kotlin.clevertap@v1.0.1...com.rudderstack.integration.kotlin.clevertap@v2.0.0) (2026-09-29)
+
+## ⚠ Breaking Changes
+
+- **clevertap:** Require CleverTap 8.4.1 and minSdk 23 ([#359](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/359)) ([03b7a8f](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/03b7a8f2cde242c9489022d9b5c426d969b7b552))
+
+## Features
+
+- **clevertap:** Require CleverTap 8.4.1 and minSdk 23 ([#359](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/359)) ([03b7a8f](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/03b7a8f2cde242c9489022d9b5c426d969b7b552))
+
+## Dependency Updates
+
+- The following workspace dependencies were updated
+  - dependencies
+    - @rudderstack/android bumped from 1.8.0 to 2.0.0
+
+
 # [1.0.1](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.integration.kotlin.clevertap@v1.0.0...com.rudderstack.integration.kotlin.clevertap@v1.0.1) (2026-09-22)
 
 ## Bug Fixes

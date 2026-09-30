@@ -53,6 +53,30 @@ class EventCopyTest {
         assertFalse(payload.contains(CAPTURED_MARKER), "captured value reached the payload: $payload")
     }
 
+    @Test
+    fun `given every event type carrying its foreground state, when copied, then the copy retains it`() {
+        listOf(true, false).forEach { state ->
+            allEventTypes().forEach { event ->
+                event.createdInForeground = state
+
+                val copy = event.copy<Event>()
+
+                assertEquals(state, copy.createdInForeground, "${event::class.simpleName} lost its foreground state when copied")
+            }
+        }
+    }
+
+    @Test
+    fun `given an event carrying its foreground state, when serialized, then it never reaches the payload`() {
+        val event = TrackEvent(event = "payload-check", properties = emptyJsonObject)
+            .withBaseData()
+            .also { it.createdInForeground = true }
+
+        val payload = event.encodeToString()
+
+        assertFalse(payload.contains("createdInForeground"), "internal field reached the payload: $payload")
+    }
+
     private fun allEventTypes(): List<Event> = listOf(
         TrackEvent(event = "track", properties = emptyJsonObject),
         ScreenEvent(screenName = "screen", properties = emptyJsonObject),
