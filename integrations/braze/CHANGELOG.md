@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+# [2.0.0](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.integration.kotlin.braze@v1.5.2...com.rudderstack.integration.kotlin.braze@v2.0.0) (2026-09-29)
+
+## Dependency Updates
+
+- The following workspace dependencies were updated
+  - dependencies
+    - @rudderstack/android bumped from 1.8.0 to 2.0.0
+
+
 # [1.5.2](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.integration.kotlin.braze@v1.5.1...com.rudderstack.integration.kotlin.braze@v1.5.2) (2026-09-22)
 
 ## Dependency Updates

@@ -23,7 +23,7 @@ object RudderStackBuildConfig {
 
         object Core {
 
-            const val VERSION_NAME = "1.7.0"
+            const val VERSION_NAME = "1.8.0"
 
             object LibraryInfo : LibraryInfoContract {
 
@@ -39,8 +39,8 @@ object RudderStackBuildConfig {
 
         object Android {
 
-            const val VERSION_NAME = "1.8.0"
-            const val VERSION_CODE = "14"
+            const val VERSION_NAME = "2.0.0"
+            const val VERSION_CODE = "15"
 
             object LibraryInfo : LibraryInfoContract {
 
@@ -62,8 +62,8 @@ object RudderStackBuildConfig {
         object Adjust : IntegrationModuleInfo {
 
             override val moduleName: String = "adjust"
-            override val versionName: String = "1.4.3"
-            override val versionCode: String = "8"
+            override val versionName: String = "2.0.0"
+            override val versionCode: String = "9"
 
             override val artifactId = "adjust"
             override val pomPackaging = "aar"
@@ -72,8 +72,8 @@ object RudderStackBuildConfig {
         object AppsFlyer : IntegrationModuleInfo {
 
             override val moduleName: String = "appsflyer"
-            override val versionName: String = "2.1.0"
-            override val versionCode: String = "8"
+            override val versionName: String = "3.0.0"
+            override val versionCode: String = "9"
 
             override val artifactId = "appsflyer"
             override val pomPackaging = "aar"
@@ -82,8 +82,8 @@ object RudderStackBuildConfig {
         object Braze : IntegrationModuleInfo {
 
             override val moduleName: String = "braze"
-            override val versionName: String = "1.5.2"
-            override val versionCode: String = "9"
+            override val versionName: String = "2.0.0"
+            override val versionCode: String = "10"
 
             override val artifactId = "braze"
             override val pomPackaging = "aar"
@@ -92,8 +92,8 @@ object RudderStackBuildConfig {
         object CleverTap : IntegrationModuleInfo {
 
             override val moduleName: String = "clevertap"
-            override val versionName: String = "1.0.1"
-            override val versionCode: String = "2"
+            override val versionName: String = "2.0.0"
+            override val versionCode: String = "3"
 
             override val artifactId = "clevertap"
             override val pomPackaging = "aar"
@@ -102,8 +102,8 @@ object RudderStackBuildConfig {
         object Facebook : IntegrationModuleInfo {
 
             override val moduleName: String = "facebook"
-            override val versionName: String = "1.3.0"
-            override val versionCode: String = "8"
+            override val versionName: String = "2.0.0"
+            override val versionCode: String = "9"
 
             override val artifactId = "facebook"
             override val pomPackaging = "aar"
@@ -112,8 +112,8 @@ object RudderStackBuildConfig {
         object Firebase : IntegrationModuleInfo {
 
             override val moduleName: String = "firebase"
-            override val versionName: String = "1.4.0"
-            override val versionCode: String = "9"
+            override val versionName: String = "2.0.0"
+            override val versionCode: String = "10"
 
             override val artifactId = "firebase"
             override val pomPackaging = "aar"
@@ -122,8 +122,8 @@ object RudderStackBuildConfig {
         object Sprig : IntegrationModuleInfo {
 
             override val moduleName: String = "sprig"
-            override val versionName: String = "1.0.3"
-            override val versionCode: String = "4"
+            override val versionName: String = "2.0.0"
+            override val versionCode: String = "5"
 
             override val artifactId = "sprig"
             override val pomPackaging = "aar"
