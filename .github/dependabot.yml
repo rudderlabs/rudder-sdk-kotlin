@@ -1,0 +1,96 @@
+version: 2
+updates:
+  # GitHub Actions - group all action updates into a single PR
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+      timezone: "UTC"
+    target-branch: "develop"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    open-pull-requests-limit: 10
+    groups:
+      github-actions-deps:
+        patterns:
+          - "*"
+
+  # Gradle dependencies
+  - package-ecosystem: "gradle"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+      timezone: "UTC"
+    target-branch: "develop"
+    labels:
+      - "dependencies"
+      - "gradle"
+    open-pull-requests-limit: 10
+    groups:
+      # Kotlin compiler + kotlinx libraries should move together
+      kotlin-and-kotlinx:
+        patterns:
+          - "org.jetbrains.kotlin*"
+          - "org.jetbrains.kotlinx*"
+
+      # All AndroidX dependencies grouped
+      androidx:
+        patterns:
+          - "androidx.*"
+
+      # Test dependencies grouped
+      testing:
+        patterns:
+          - "org.junit*"
+          - "io.mockk*"
+          - "org.skyscreamer*"
+
+      # Build tooling and Gradle plugins
+      build-plugins:
+        patterns:
+          - "com.android.tools.build*"
+          - "io.gitlab.arturbosch.detekt*"
+          - "io.github.gradle-nexus*"
+
+      # Integration SDKs - minor and patch only (strictly versioned)
+      integrations:
+        patterns:
+          - "com.adjust.sdk*"
+          - "com.appsflyer*"
+          - "com.google.firebase*"
+          - "com.facebook.android*"
+          - "com.braze*"
+          - "com.android.installreferrer*"
+        update-types:
+          - "minor"
+          - "patch"
+
+      # Sample app dependencies
+      sample-app-deps:
+        patterns:
+          - "com.google.android.gms*"
+          - "com.jakewharton.timber*"
+
+    # Ignore major updates for integration SDKs (they have strictly bounded version ranges)
+    ignore:
+      - dependency-name: "com.adjust.sdk*"
+        update-types:
+          - "version-update:semver-major"
+      - dependency-name: "com.appsflyer*"
+        update-types:
+          - "version-update:semver-major"
+      - dependency-name: "com.google.firebase*"
+        update-types:
+          - "version-update:semver-major"
+      - dependency-name: "com.facebook.android*"
+        update-types:
+          - "version-update:semver-major"
+      - dependency-name: "com.braze*"
+        update-types:
+          - "version-update:semver-major"
+      - dependency-name: "com.android.installreferrer*"
+        update-types:
+          - "version-update:semver-major"
