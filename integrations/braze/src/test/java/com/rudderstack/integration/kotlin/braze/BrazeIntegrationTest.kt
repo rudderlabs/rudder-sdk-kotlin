@@ -2,8 +2,10 @@
 
 package com.rudderstack.integration.kotlin.braze
 
+import android.app.Activity
 import android.app.Application
 import com.braze.Braze
+import com.braze.BrazeUser
 import com.braze.configuration.BrazeConfig
 import com.braze.enums.Month
 import com.braze.models.outgoing.BrazeProperties
@@ -55,6 +57,8 @@ private const val INSTALL_ATTRIBUTED = "Install Attributed"
 private const val CUSTOM_TRACK_EVENT = "Custom Track Event"
 
 private const val ORDER_COMPLETED = "Order Completed"
+
+private const val ANONYMOUS_ID = "anonymous-id"
 
 class BrazeIntegrationTest {
 
@@ -777,6 +781,138 @@ class BrazeIntegrationTest {
             mockBrazeConfigBuilder.setApiKey("legacyAppKey")
         }
     }
+
+    // region Lite mode
+
+    private fun provideLiteIntegration(braze: Braze = mockBrazeInstance) =
+        BrazeIntegration(braze).also { it.analytics = mockAnalytics }
+
+    @Test
+    fun `given lite mode, when instance is requested before any config, then the customer's instance is returned`() {
+        val customerBraze: Braze = mockk(relaxed = true)
+
+        val liteIntegration = provideLiteIntegration(customerBraze)
+
+        assertEquals(customerBraze, liteIntegration.getDestinationInstance())
+    }
+
+    @Test
+    fun `given lite mode, when config is received, then Braze is never initialised by the integration`() {
+        val liteIntegration = provideLiteIntegration()
+
+        liteIntegration.update(mockBrazeIntegrationConfig)
+
+        verify(exactly = 0) {
+            initBrazeConfig()
+            Braze.configure(any(), any())
+            Braze.getInstance(any())
+        }
+    }
+
+    @Test
+    fun `given lite mode, when the first config is received, then alias id is set, and later configs do not set it again`() {
+        val brazeUser: BrazeUser = mockk(relaxed = true)
+        every { mockBrazeInstance.currentUser } returns brazeUser
+        every { mockAnalytics.anonymousId } returns ANONYMOUS_ID
+        val liteIntegration = provideLiteIntegration()
+
+        liteIntegration.update(mockBrazeIntegrationConfig)
+        verify(exactly = 1) { brazeUser.addAlias(ANONYMOUS_ID, ALIAS_LABEL) }
+
+        liteIntegration.update(mockBrazeIntegrationConfigWithDeDupeDisabled)
+        verify(exactly = 1) { brazeUser.addAlias(any(), any()) }
+    }
+
+    @Test
+    fun `given lite mode, when an empty config arrives before a valid one, then nothing is set until the valid config arrives`() {
+        val brazeUser: BrazeUser = mockk(relaxed = true)
+        every { mockBrazeInstance.currentUser } returns brazeUser
+        every { mockAnalytics.anonymousId } returns ANONYMOUS_ID
+        val liteIntegration = provideLiteIntegration()
+
+        // The SDK sends an empty config when the destination is absent or disabled in the dashboard.
+        liteIntegration.update(JsonObject(emptyMap()))
+        verify(exactly = 0) { brazeUser.addAlias(any(), any()) }
+
+        liteIntegration.update(mockBrazeIntegrationConfig)
+        verify(exactly = 1) { brazeUser.addAlias(ANONYMOUS_ID, ALIAS_LABEL) }
+    }
+
+    @Test
+    fun `given standard mode, when the config is updated, then alias id is not set again`() {
+        val brazeUser: BrazeUser = mockk(relaxed = true)
+        every { mockBrazeInstance.currentUser } returns brazeUser
+        every { mockAnalytics.anonymousId } returns ANONYMOUS_ID
+        brazeIntegration.create(mockBrazeIntegrationConfig)
+
+        brazeIntegration.update(mockBrazeIntegrationConfigWithDeDupeDisabled)
+
+        verify(exactly = 1) { brazeUser.addAlias(any(), any()) }
+    }
+
+    @Test
+    fun `given lite mode, when a custom track event is made, then it is logged on the customer's instance`() {
+        val customerBraze: Braze = mockk(relaxed = true)
+        val liteIntegration = provideLiteIntegration(customerBraze)
+        liteIntegration.update(mockBrazeIntegrationConfig)
+
+        liteIntegration.track(provideTrackEvent(eventName = CUSTOM_TRACK_EVENT))
+
+        verify(exactly = 1) { customerBraze.logCustomEvent(CUSTOM_TRACK_EVENT) }
+    }
+
+    @Test
+    fun `given lite mode, when identify event is made, then preferred ID and all traits are set on the customer's instance`() {
+        val liteIntegration = provideLiteIntegration()
+        liteIntegration.update(mockBrazeIntegrationConfig)
+
+        liteIntegration.identify(provideIdentifyEvent())
+
+        verifyTraits()
+    }
+
+    @Test
+    fun `given lite mode and hybrid mode is enabled in the dashboard, when a custom track event is made, then no event is logged`() {
+        val liteIntegration = provideLiteIntegration()
+        liteIntegration.update(mockNewBrazeIntegrationConfig)
+
+        liteIntegration.track(provideTrackEvent(eventName = CUSTOM_TRACK_EVENT))
+
+        verify(exactly = 0) {
+            mockBrazeInstance.logCustomEvent(any())
+            mockBrazeInstance.logCustomEvent(any(), any())
+        }
+    }
+
+    @Test
+    fun `given lite mode, when an activity starts and stops, then the integration does not manage Braze sessions`() {
+        val liteIntegration = provideLiteIntegration()
+        val activity: Activity = mockk()
+
+        liteIntegration.onActivityStarted(activity)
+        liteIntegration.onActivityStopped(activity)
+
+        verify(exactly = 0) {
+            mockBrazeInstance.openSession(any())
+            mockBrazeInstance.closeSession(any())
+        }
+    }
+
+    @Test
+    fun `given standard mode, when an activity starts and stops, then the integration manages Braze sessions`() {
+        brazeIntegration.create(mockBrazeIntegrationConfig)
+        val activity: Activity = mockk()
+
+        brazeIntegration.onActivityStarted(activity)
+        brazeIntegration.onActivityStopped(activity)
+
+        verify(exactly = 1) {
+            mockBrazeInstance.openSession(activity)
+            mockBrazeInstance.closeSession(activity)
+        }
+    }
+
+    // endregion
 
     private fun verifyTraits() {
         mockBrazeInstance.currentUser?.apply {

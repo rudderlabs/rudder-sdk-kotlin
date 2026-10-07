@@ -375,6 +375,20 @@ class StandardIntegrationPluginTest {
         }
 
     @Test
+    fun `given an integration that holds a pre-initialised instance, when a callback is registered before any source config, then it waits for the config and is called with success result`() =
+        runTest {
+            val preInitialisedSdk = mockk<MockDestinationSdk>()
+            every { plugin.getDestinationInstance() } returns preInitialisedSdk
+            val callback = mockk<(Any?, DestinationResult) -> Unit>(relaxed = true)
+
+            plugin.onDestinationReady(callback)
+            verify(exactly = 0) { callback.invoke(any(), any()) }
+
+            plugin.initDestination(sourceConfigWithCorrectApiKey)
+            verify(exactly = 1) { callback.invoke(preInitialisedSdk, ofType(Result.Success::class) as DestinationResult) }
+        }
+
+    @Test
     fun `given an uninitialised integration, when a callback is registered for it and then it is initialised, then callback is called with success result`() =
         runTest {
             val callback = mockk<(Any?, DestinationResult) -> Unit>(relaxed = true)

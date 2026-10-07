@@ -43,6 +43,9 @@ abstract class IntegrationPlugin : EventPlugin {
     private val pluginList = CopyOnWriteArrayList<Plugin>()
     private val destinationReadyCallbacks = mutableListOf<(Any?, DestinationResult) -> Unit>()
 
+    // Whether a readiness result has been reported yet. Guarded by `this`, like the callbacks list.
+    private var hasDestinationResult = false
+
     private var isStandardIntegration: Boolean = true
 
     @Volatile
@@ -290,19 +293,21 @@ abstract class IntegrationPlugin : EventPlugin {
      */
     // todo: refactor this API to support dynamic callbacks
     fun onDestinationReady(callback: (Any?, DestinationResult) -> Unit) {
-        getDestinationInstance()?.let { destinationInstance ->
-            if (isDestinationReady) {
-                callback(destinationInstance, Result.Success(Unit))
-            } else {
-                callback(
-                    null,
-                    Result.Failure(IllegalStateException("Destination $key is absent or disabled in dashboard."))
-                )
-            }
-        } ?: run {
-            synchronized(this) {
+        val destinationInstance = synchronized(this) {
+            // An instance alone does not mean the destination is resolved: an integration can be handed a
+            // pre-initialised instance before any source config arrives, so wait for the first result too.
+            getDestinationInstance()?.takeIf { hasDestinationResult } ?: run {
                 destinationReadyCallbacks.add(callback)
+                return
             }
+        }
+        if (isDestinationReady) {
+            callback(destinationInstance, Result.Success(Unit))
+        } else {
+            callback(
+                null,
+                Result.Failure(IllegalStateException("Destination $key is absent or disabled in dashboard."))
+            )
         }
     }
 
@@ -398,6 +403,7 @@ abstract class IntegrationPlugin : EventPlugin {
 
     private fun notifyCallbacks(destinationResult: DestinationResult) {
         synchronized(this) {
+            hasDestinationResult = true
             if (destinationReadyCallbacks.isNotEmpty()) {
                 analytics.logger.debug(
                     "IntegrationPlugin[$key]: Notifying ${destinationReadyCallbacks.size} deferred callback(s)"

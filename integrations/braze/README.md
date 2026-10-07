@@ -8,11 +8,15 @@ The Braze integration allows you to send your event data from RudderStack to Bra
 
 ## Supported Native Braze Version
 
-This integration supports Braze Android SDK version:
+This integration supports Braze Android SDK versions:
 
 ```
-35.0.0
+[35.0.0, 45.0.0)
 ```
+
+It resolves to `35.0.0` by default. If your app declares a higher Braze version, Gradle uses yours. The upper
+bound is not enforced: an app on Braze 45 or later still builds, but that combination is untested. An app on a
+version below 35.0.0 is upgraded to 35.0.0.
 
 ## Installation
 
@@ -58,6 +62,38 @@ class MyApplication : Application() {
     }
 }
 ```
+
+## Lite mode: bring your own Braze instance
+
+By default, the integration initialises Braze for you using the App Identifier Key and endpoint from the RudderStack
+dashboard. If you need Braze options the dashboard does not expose (push notifications, in-app message settings,
+SDK authentication, and so on), initialise Braze yourself and pass the instance to the integration:
+
+```kotlin
+// 1. Configure and initialise Braze with any options you need.
+Braze.configure(
+    this,
+    BrazeConfig.Builder()
+        .setApiKey("<BRAZE_API_KEY>")
+        .setCustomEndpoint("<BRAZE_ENDPOINT>")
+        .setHandlePushDeepLinksAutomatically(true)
+        .build()
+)
+registerActivityLifecycleCallbacks(BrazeActivityLifecycleCallbackListener())
+
+// 2. Pass your instance to RudderStack.
+analytics.add(BrazeIntegration(Braze.getInstance(this)))
+```
+
+In lite mode:
+
+- The integration **never initialises Braze** and never opens or closes Braze sessions. You own the Braze
+  configuration and lifecycle.
+- The integration still **maps and forwards events** (track, identify, flush) exactly as in standard mode.
+- The Braze destination must still exist and be enabled in the dashboard. Its event-mapping settings (connection
+  mode, de-duplication, recommended ecommerce events) still apply; its App Identifier Key and endpoint are ignored.
+- You choose the Braze SDK version. The integration requires Braze **35.0.0 or higher** and has been tested
+  against **35.0.0 and 44.0.0**; if your app declares a newer Braze version, Gradle uses yours.
 
 ## Recommended ecommerce events
 

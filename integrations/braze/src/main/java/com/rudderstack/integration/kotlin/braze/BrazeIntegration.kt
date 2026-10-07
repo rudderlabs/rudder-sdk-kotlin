@@ -39,14 +39,33 @@ private const val BRAZE_KEY = "Braze"
 
 /**
  * BrazeIntegration is a plugin that sends events to the Braze SDK.
+ *
+ * It runs in one of two modes:
+ * - **Standard** (`BrazeIntegration()`): the integration initialises Braze with the App Identifier Key and
+ *   endpoint configured in the RudderStack dashboard.
+ * - **Lite** (`BrazeIntegration(braze)`): you configure and initialise Braze yourself, with any [BrazeConfig]
+ *   options you need, and pass the instance in. The integration never initialises Braze and never manages its
+ *   sessions; it only maps and forwards events. Dashboard settings that govern event mapping (connection mode,
+ *   de-duplication, recommended ecommerce events) still apply.
  */
 @OptIn(InternalRudderApi::class)
-class BrazeIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifecycleObserver {
+class BrazeIntegration private constructor(
+    private var braze: Braze?,
+    private val isLiteMode: Boolean,
+) : StandardIntegration, IntegrationPlugin(), ActivityLifecycleObserver {
+
+    /**
+     * Creates the integration in standard mode: Braze is initialised from the dashboard configuration.
+     */
+    constructor() : this(braze = null, isLiteMode = false)
+
+    /**
+     * Creates the integration in lite mode, using a [braze] instance that you have already configured.
+     */
+    constructor(braze: Braze) : this(braze = braze, isLiteMode = true)
 
     override val key: String
         get() = BRAZE_KEY
-
-    private var braze: Braze? = null
 
     private var previousIdentifyTraits: IdentifyTraits? = null
 
@@ -76,9 +95,16 @@ class BrazeIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
         }
     }
 
+    /**
+     * In lite mode the Braze instance exists from the start, so the SDK never calls [create] and this is also
+     * the first-config path: the alias is set when the first valid config arrives, as [create] does in
+     * standard mode.
+     */
     override fun update(destinationConfig: JsonObject) {
+        val isFirstConfig = !this::brazeConfig.isInitialized
         destinationConfig.parse<RudderBrazeConfig>(analytics.logger)?.let { updatedConfig ->
             this.brazeConfig = updatedConfig
+            if (isLiteMode && isFirstConfig) setUserAlias()
         }
     }
 
@@ -220,12 +246,13 @@ class BrazeIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
         analytics.logger.verbose("BrazeIntegration: Flush call completed")
     }
 
+    // In lite mode you own Braze sessions (e.g. via BrazeActivityLifecycleCallbackListener).
     override fun onActivityStarted(activity: Activity) {
-        braze?.openSession(activity)
+        if (!isLiteMode) braze?.openSession(activity)
     }
 
     override fun onActivityStopped(activity: Activity) {
-        braze?.closeSession(activity)
+        if (!isLiteMode) braze?.closeSession(activity)
     }
 }
 
