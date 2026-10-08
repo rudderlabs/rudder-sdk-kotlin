@@ -40,6 +40,22 @@ tasks.withType<Test> {
     systemProperty("corePomFile", pomFile.get().asFile.absolutePath)
 }
 
+// Manual load test for server mode. CI does not run it.
+// e.g., ./gradlew :core:serverLoadTest -PloadTestEventsPerSecond=10000 -PloadTestDurationSeconds=300
+tasks.register<JavaExec>("serverLoadTest") {
+    group = "verification"
+    description = "Runs the server-mode load test against a local fake data plane."
+    classpath = sourceSets["test"].runtimeClasspath
+    mainClass.set("com.rudderstack.sdk.kotlin.core.server.loadtest.ServerLoadTestKt")
+    maxHeapSize = "512m"
+    args(
+        listOfNotNull(
+            findProperty("loadTestEventsPerSecond")?.toString(),
+            findProperty("loadTestDurationSeconds")?.toString(),
+        )
+    )
+}
+
 // For generating SourcesJar and JavadocJar
 tasks {
     val sourcesJar by creating(Jar::class) {
