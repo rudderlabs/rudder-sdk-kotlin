@@ -3,17 +3,27 @@ package com.rudderstack.sdk.kotlin.core.internals.queue
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.KotlinLogger
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
+import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
+import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.models.provider.provideEvent
+import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.UserIdentity
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPoliciesFacade
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
+import com.rudderstack.sdk.kotlin.core.internals.storage.exception.QueueFullException
 import com.rudderstack.sdk.kotlin.core.internals.utils.encodeToString
 import com.rudderstack.sdk.kotlin.core.mockAnalytics
+import com.rudderstack.sdk.kotlin.core.server.DropListener
+import com.rudderstack.sdk.kotlin.core.server.DropReason
+import com.rudderstack.sdk.kotlin.core.server.ServerConfiguration
 import com.rudderstack.sdk.kotlin.core.setupLogger
 import io.mockk.MockKAnnotations
+import io.mockk.Runs
+import io.mockk.andThenJust
 import io.mockk.clearMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -35,7 +45,10 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -466,5 +479,66 @@ class EventQueueTest {
         eventQueue.stop()
 
         verify { mockEventUpload.cancel() }
+    }
+
+    @Nested
+    inner class ServerMode {
+
+        private val mockDropListener: DropListener = mockk(relaxed = true)
+        private val mockLogger: Logger = mockk(relaxed = true)
+
+        @BeforeEach
+        fun setUpServerMode() {
+            every { mockAnalytics.logger } returns mockLogger
+            every { mockAnalytics.configuration } returns ServerConfiguration(
+                writeKey = "<write-key>",
+                dataPlaneUrl = "https://test.dataplane.com",
+                dropListener = mockDropListener,
+            )
+            eventQueue = EventQueue(
+                analytics = mockAnalytics,
+                flushPoliciesFacade = mockFlushPoliciesFacade,
+                eventUpload = mockEventUpload,
+            )
+        }
+
+        @Test
+        fun `given events of two users and one event has an empty anonymousId, when the events are queued, then storage does not roll over and the empty anonymousId is not stored`() =
+            runTest {
+                val storedEvents = mutableListOf<String>()
+                coEvery { mockStorage.write(StorageKeys.EVENT, capture(storedEvents)) } just runs
+                eventQueue.start()
+
+                eventQueue.put(provideServerEvent(anonymousId = "", userId = "user-1"))
+                eventQueue.put(provideServerEvent(anonymousId = "anonymous-2", userId = ""))
+                testDispatcher.scheduler.advanceUntilIdle()
+
+                coVerify(exactly = 0) { mockStorage.rollover() }
+                coVerify(exactly = 0) { mockStorage.write(StorageKeys.LAST_EVENT_ANONYMOUS_ID, any<String>()) }
+                assertEquals(2, storedEvents.size)
+                assertFalse(storedEvents[0].contains("anonymousId"))
+                assertTrue(storedEvents[1].contains(""""anonymousId":"anonymous-2""""))
+            }
+
+        @Test
+        fun `given the queue becomes full two times, when events are queued, then each dropped event is reported and each state change is logged one time`() =
+            runTest {
+                coEvery { mockStorage.write(StorageKeys.EVENT, any<String>()) } throws
+                    QueueFullException() andThenThrows QueueFullException() andThenJust Runs andThenThrows QueueFullException()
+                eventQueue.start()
+
+                repeat(4) { eventQueue.put(provideServerEvent(anonymousId = "", userId = "user-1")) }
+                testDispatcher.scheduler.advanceUntilIdle()
+
+                verify(exactly = 3) { mockDropListener.onDrop(DropReason.QUEUE_FULL, 1) }
+                verify(exactly = 2) { mockLogger.warn(match { it.contains("The queue is full") }) }
+                verify(exactly = 1) { mockLogger.info(match { it.contains("The queue has space again") }) }
+            }
+
+        private fun provideServerEvent(anonymousId: String, userId: String) = TrackEvent(
+            event = "Sample Event",
+            properties = emptyJsonObject,
+            userIdentityState = UserIdentity(anonymousId = anonymousId, userId = userId, traits = emptyJsonObject),
+        ).also { it.updateData(PlatformType.Server) }
     }
 }

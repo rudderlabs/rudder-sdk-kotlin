@@ -32,6 +32,7 @@ import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.PluginChain
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
+import com.rudderstack.sdk.kotlin.core.internals.storage.inmemory.UNLIMITED_EVENTS
 import com.rudderstack.sdk.kotlin.core.internals.storage.inmemory.provideInMemoryStorage
 import com.rudderstack.sdk.kotlin.core.internals.storage.provideBasicStorage
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
@@ -45,6 +46,7 @@ import com.rudderstack.sdk.kotlin.core.plugins.ContextSnapshotPlugin
 import com.rudderstack.sdk.kotlin.core.plugins.LibraryInfoPlugin
 import com.rudderstack.sdk.kotlin.core.plugins.RudderStackDataplanePlugin
 import com.rudderstack.sdk.kotlin.core.plugins.SchemaGuardPlugin
+import com.rudderstack.sdk.kotlin.core.server.asServerConfigurationOrNull
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
@@ -149,7 +151,11 @@ open class Analytics protected constructor(
         configuration = configuration,
         analyticsConfiguration = provideAnalyticsConfiguration(configuration) { writeKey, logger ->
             when (configuration.storageType) {
-                StorageType.IN_MEMORY -> provideInMemoryStorage(writeKey, logger)
+                StorageType.IN_MEMORY -> provideInMemoryStorage(
+                    writeKey = writeKey,
+                    logger = logger,
+                    maxEvents = configuration.asServerConfigurationOrNull()?.maxQueuedEvents ?: UNLIMITED_EVENTS,
+                )
                 StorageType.FILE -> provideBasicStorage(writeKey, PlatformType.Server, logger)
             }
         },

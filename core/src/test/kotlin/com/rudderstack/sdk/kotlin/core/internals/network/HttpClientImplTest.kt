@@ -175,6 +175,21 @@ class HttpClientImplTest {
     }
 
     @Test
+    fun `given a blank and a non-blank anonymousId header value, when sendData is called, then only the non-blank value is set`() {
+        every { mockConnection.responseCode } returns 200
+        val httpClientWithBlankHeader = provideHttpClientImplForPostRequest(
+            connectionFactory = mockConnectionFactory,
+            anonymousIdHeaderString = "",
+        )
+
+        httpClientWithBlankHeader.sendData(REQUEST_BODY)
+        verify(exactly = 0) { mockConnection.setRequestProperty("AnonymousId", any()) }
+
+        postHttpClient.sendData(REQUEST_BODY)
+        verify(exactly = 1) { mockConnection.setRequestProperty("AnonymousId", "anonymous-id") }
+    }
+
+    @Test
     fun `given connection is successful and response code is 2xx, when sendData is called, then return Success`() {
         every { mockConnection.responseCode } returns 299
 

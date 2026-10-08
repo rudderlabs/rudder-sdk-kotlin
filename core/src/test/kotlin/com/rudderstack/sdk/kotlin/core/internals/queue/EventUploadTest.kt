@@ -20,6 +20,9 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.generateUUID
 import com.rudderstack.sdk.kotlin.core.internals.utils.handleInvalidWriteKey
 import com.rudderstack.sdk.kotlin.core.mockAnalytics
 import com.rudderstack.sdk.kotlin.core.readFileTrimmed
+import com.rudderstack.sdk.kotlin.core.server.DropListener
+import com.rudderstack.sdk.kotlin.core.server.DropReason
+import com.rudderstack.sdk.kotlin.core.server.ServerConfiguration
 import com.rudderstack.sdk.kotlin.core.setupLogger
 import io.mockk.MockKAnnotations
 import io.mockk.clearMocks
@@ -41,6 +44,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
@@ -57,6 +61,8 @@ private const val unprocessedBatchWithTwoEvents = "message/batch/unprocessed_bat
 private const val processedBatchWithTwoEvents = "message/batch/processed_batch_with_two_events.json"
 
 private const val MAX_ATTEMPT = 5
+private const val SERVER_MAX_RETRIES = 2
+private const val EVENTS_IN_BATCH = 2
 
 class EventUploadTest {
 
@@ -356,6 +362,70 @@ class EventUploadTest {
             eventUpload.cancel()
             mockAnalytics.handleInvalidWriteKey()
         }
+    }
+
+    @Nested
+    inner class ServerMode {
+
+        private val mockDropListener: DropListener = mockk(relaxed = true)
+
+        @BeforeEach
+        fun setUpServerMode() {
+            every { mockAnalytics.configuration } returns ServerConfiguration(
+                writeKey = "<write-key>",
+                dataPlaneUrl = "https://test.dataplane.com",
+                maxRetries = SERVER_MAX_RETRIES,
+                dropListener = mockDropListener,
+            )
+            eventUpload = spyk(
+                EventUpload(
+                    analytics = mockAnalytics,
+                    httpClientFactory = mockHttpClient,
+                    maxAttemptsWithBackoff = mockMaxAttemptsWithBackoff,
+                    retryHeadersProvider = mockRetryHeadersProvider,
+                )
+            )
+        }
+
+        @Test
+        fun `given the server always returns a retry able error, when flush is called, then the batch is dropped after the last retry and reported`() =
+            runTest {
+                prepareSingleBatch(readFileTrimmed(unprocessedBatchWithTwoEvents))
+                every { mockHttpClient.sendData(any(), any()) } returns Result.Failure(NetworkErrorStatus.ErrorUnknown)
+
+                processMessage()
+
+                verify(exactly = SERVER_MAX_RETRIES + 1) { mockHttpClient.sendData(any(), any()) }
+                coVerify(exactly = SERVER_MAX_RETRIES) { mockMaxAttemptsWithBackoff.delayWithBackoff() }
+                verify(exactly = 1) { mockStorage.remove(singleFilePath) }
+                verify(exactly = 1) { mockDropListener.onDrop(DropReason.RETRIES_EXHAUSTED, EVENTS_IN_BATCH) }
+            }
+
+        @Test
+        fun `given the server rejects batches with 404, 400 and 413, when flush is called, then each batch is dropped and reported and the next batch is uploaded`() =
+            runTest {
+                val batchPaths = listOf("batch-0", "batch-1", "batch-2", "batch-3")
+                val unprocessedBatch = readFileTrimmed(unprocessedBatchWithTwoEvents)
+                every { mockStorage.readString(StorageKeys.EVENT, String.empty()) } returns batchPaths.joinToString(",")
+                batchPaths.forEach { path ->
+                    every { mockStorage.readBatchContent(path) } returns unprocessedBatch
+                }
+                every { mockHttpClient.sendData(any(), any()) } returnsMany listOf(
+                    Result.Failure(NetworkErrorStatus.Error404),
+                    Result.Failure(NetworkErrorStatus.Error400),
+                    Result.Failure(NetworkErrorStatus.Error413),
+                    Result.Success("Ok"),
+                )
+
+                processMessage()
+
+                batchPaths.forEach { path ->
+                    verify(exactly = 1) { mockStorage.remove(path) }
+                }
+                verify(exactly = 3) { mockDropListener.onDrop(DropReason.REJECTED_BY_SERVER, EVENTS_IN_BATCH) }
+                verify(exactly = 0) { eventUpload.cancel() }
+                verify(exactly = 0) { mockHttpClient.updateAnonymousIdHeaderString(any()) }
+            }
     }
 
     private fun prepareMultipleBatch() {

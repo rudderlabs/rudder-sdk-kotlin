@@ -231,7 +231,9 @@ internal class HttpClientImpl private constructor(
                 setRequestProperty(key, value)
             }
             setRequestProperty(CONTENT_TYPE, APPLICATION_JSON)
-            setRequestProperty(ANONYMOUS_ID_HEADER, postConfig.anonymousIdHeaderString)
+            postConfig.anonymousIdHeaderString
+                .takeIf { it.isNotBlank() }
+                ?.let { setRequestProperty(ANONYMOUS_ID_HEADER, it) }
             if (postConfig.isGZIPEnabled) {
                 setRequestProperty(CONTENT_ENCODING, GZIP)
                 GZIPOutputStream(outputStream).writeBodyToStream(body)

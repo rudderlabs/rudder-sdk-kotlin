@@ -22,16 +22,18 @@ import source.version.VersionConstants
  *
  * @param writeKey The key used to identify this storage instance.
  * @param prefsStore The key-value storage for non-event data.
+ * @param maxEvents The maximum number of events held in memory. Defaults to [UNLIMITED_EVENTS].
  */
 @Suppress("Detekt.TooManyFunctions")
 @InternalRudderApi
 internal class InMemoryStorage(
     writeKey: String,
     private val logger: Logger,
-    private val prefsStore: KeyValueStorage = InMemoryPrefsStore(logger)
+    private val prefsStore: KeyValueStorage = InMemoryPrefsStore(logger),
+    maxEvents: Int = UNLIMITED_EVENTS,
 ) : Storage {
 
-    private val eventBatchFile = InMemoryBatchManager(writeKey, prefsStore)
+    private val eventBatchFile = InMemoryBatchManager(writeKey, prefsStore, maxEvents)
 
     override suspend fun write(key: StorageKeys, value: Boolean) {
         if (key != StorageKeys.EVENT) {
@@ -130,8 +132,9 @@ internal class InMemoryStorage(
  * Provides an instance of [InMemoryStorage] with the given [writeKey].
  *
  * @param writeKey The key used to identify the storage instance.
+ * @param maxEvents The maximum number of events held in memory. Defaults to [UNLIMITED_EVENTS].
  * @return An instance of [InMemoryStorage] with the provided [writeKey].
  */
-internal fun provideInMemoryStorage(writeKey: String, logger: Logger): Storage {
-    return InMemoryStorage(writeKey = writeKey, logger = logger)
+internal fun provideInMemoryStorage(writeKey: String, logger: Logger, maxEvents: Int = UNLIMITED_EVENTS): Storage {
+    return InMemoryStorage(writeKey = writeKey, logger = logger, maxEvents = maxEvents)
 }

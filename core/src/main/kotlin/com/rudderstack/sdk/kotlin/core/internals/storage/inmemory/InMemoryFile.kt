@@ -20,6 +20,12 @@ internal class InMemoryFile(val name: String) {
     private var created = false
 
     /**
+     * The number of events stored in this file.
+     */
+    internal var eventCount: Int = 0
+        private set
+
+    /**
      * The current length of the content stored in this file.
      */
     internal val length: Int
@@ -56,6 +62,16 @@ internal class InMemoryFile(val name: String) {
      */
     internal fun append(content: String) {
         buffer.append(content)
+    }
+
+    /**
+     * Appends one event to this file and counts it.
+     *
+     * @param content The event payload, with its separator when the file already has an event.
+     */
+    internal fun appendEvent(content: String) {
+        append(content)
+        eventCount++
     }
 
     /**

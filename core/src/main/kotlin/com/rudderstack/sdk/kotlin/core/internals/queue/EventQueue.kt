@@ -4,9 +4,13 @@ import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPoliciesFacade
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
+import com.rudderstack.sdk.kotlin.core.internals.storage.exception.QueueFullException
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import com.rudderstack.sdk.kotlin.core.internals.utils.encodeToString
 import com.rudderstack.sdk.kotlin.core.internals.utils.isSourceEnabled
+import com.rudderstack.sdk.kotlin.core.server.DropReason
+import com.rudderstack.sdk.kotlin.core.server.asServerConfigurationOrNull
+import com.rudderstack.sdk.kotlin.core.server.reportDrop
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
@@ -33,6 +37,8 @@ internal class EventQueue(
     private val storage
         get() = analytics.storage
     private val flushSignal = QueueMessage(QueueMessage.QueueMessageType.FLUSH_SIGNAL)
+    private val isServerMode = analytics.configuration.asServerConfigurationOrNull() != null
+    private var isQueueFull = false
     private var lastEventAnonymousId = storage.readString(
         StorageKeys.LAST_EVENT_ANONYMOUS_ID,
         analytics.anonymousId ?: String.empty()
@@ -95,7 +101,7 @@ internal class EventQueue(
     }
 
     internal fun stringifyBaseEvent(payload: Event): String {
-        return payload.encodeToString()
+        return payload.encodeToString(omitBlankAnonymousId = isServerMode)
     }
 
     @Suppress("TooGenericExceptionCaught")
@@ -104,7 +110,7 @@ internal class EventQueue(
             val isFlushSignal = (queueMessage.type == QueueMessage.QueueMessageType.FLUSH_SIGNAL)
 
             if (!isFlushSignal) {
-                updateAnonymousIdAndRolloverIfNeeded(queueMessage)
+                if (!isServerMode) updateAnonymousIdAndRolloverIfNeeded(queueMessage)
                 try {
                     queueMessage.event?.let {
                         stringifyBaseEvent(it).also { stringValue ->
@@ -112,7 +118,10 @@ internal class EventQueue(
                             storage.write(StorageKeys.EVENT, stringValue)
                         }
                         flushPoliciesFacade.updateState()
+                        markQueueHasSpace()
                     }
+                } catch (expected: QueueFullException) {
+                    dropEventForFullQueue()
                 } catch (e: Exception) {
                     analytics.logger.error(
                         "EventQueue: Error adding payload (messageId=${queueMessage.event?.messageId}): $queueMessage",
@@ -126,6 +135,21 @@ internal class EventQueue(
                 analytics.logger.debug("EventQueue: Flush signal sent to upload channel")
                 flushPoliciesFacade.reset()
             }
+        }
+    }
+
+    private fun dropEventForFullQueue() {
+        if (!isQueueFull) {
+            isQueueFull = true
+            analytics.logger.warn("EventQueue: The queue is full. The SDK drops each new event until an upload frees space")
+        }
+        analytics.reportDrop(DropReason.QUEUE_FULL, eventCount = 1)
+    }
+
+    private fun markQueueHasSpace() {
+        if (isQueueFull) {
+            isQueueFull = false
+            analytics.logger.info("EventQueue: The queue has space again. The SDK accepts new events")
         }
     }
 

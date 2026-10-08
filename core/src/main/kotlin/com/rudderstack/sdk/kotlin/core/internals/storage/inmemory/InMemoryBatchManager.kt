@@ -5,12 +5,15 @@ import com.rudderstack.sdk.kotlin.core.internals.storage.BATCH_SENT_AT_SUFFIX
 import com.rudderstack.sdk.kotlin.core.internals.storage.KeyValueStorage
 import com.rudderstack.sdk.kotlin.core.internals.storage.MAX_BATCH_SIZE
 import com.rudderstack.sdk.kotlin.core.internals.storage.TMP_SUFFIX
+import com.rudderstack.sdk.kotlin.core.internals.storage.exception.QueueFullException
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import com.rudderstack.sdk.kotlin.core.internals.utils.toFileDirectory
 import kotlinx.coroutines.sync.Semaphore
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
 
 internal const val BATCH_INDEX = "rudderstack.event.batch.index."
+internal const val UNLIMITED_EVENTS = Int.MAX_VALUE
 private const val BATCH_PREFIX = "{\"batch\":["
 
 /**
@@ -22,11 +25,13 @@ private const val BATCH_PREFIX = "{\"batch\":["
  *
  * @property writeKey A unique key used to name and identify batches.
  * @property keyValueStorage A [KeyValueStorage] instance for storing and retrieving batch index information.
+ * @property maxEvents The maximum number of events held across all batches. Defaults to [UNLIMITED_EVENTS].
  */
 @InternalRudderApi
 internal class InMemoryBatchManager(
     private val writeKey: String,
-    private val keyValueStorage: KeyValueStorage
+    private val keyValueStorage: KeyValueStorage,
+    private val maxEvents: Int = UNLIMITED_EVENTS,
 ) {
 
     /**
@@ -45,6 +50,11 @@ internal class InMemoryBatchManager(
     private var curFile: InMemoryFile? = null
 
     /**
+     * The number of events held across all batches.
+     */
+    private val eventCount = AtomicInteger(0)
+
+    /**
      * A semaphore to control concurrent access to batch operations.
      */
     private val semaphore = Semaphore(1)
@@ -54,8 +64,11 @@ internal class InMemoryBatchManager(
      * batch size, it is finalized and a new file is started.
      *
      * @param eventPayload The event payload to be stored.
+     * @throws QueueFullException when the manager already holds [maxEvents] events.
      */
     internal suspend fun storeEvent(eventPayload: String) = withLock {
+        if (eventCount.get() >= maxEvents) throw QueueFullException()
+
         var newFile = false
         var file = currentFile()
 
@@ -74,7 +87,8 @@ internal class InMemoryBatchManager(
         }
 
         val contents = if (newFile) eventPayload else ",$eventPayload"
-        writeToFile(contents, file)
+        file.appendEvent(contents)
+        eventCount.incrementAndGet()
     }
 
     /**
@@ -97,7 +111,9 @@ internal class InMemoryBatchManager(
      * @return `true` if the file existed and was removed, `false` otherwise.
      */
     internal fun remove(filePath: String): Boolean {
-        return files.remove(filePath) != null
+        val removedFile = files.remove(filePath) ?: return false
+        eventCount.addAndGet(-removedFile.eventCount)
+        return true
     }
 
     /**
@@ -191,6 +207,7 @@ internal class InMemoryBatchManager(
      */
     internal fun delete() {
         files.clear()
+        eventCount.set(0)
         reset()
     }
 
