@@ -11,6 +11,13 @@ object RudderStackBuildConfig {
         const val JVM_TOOLCHAIN = 17
     }
 
+    object CoreBuild {
+
+        val JAVA_VERSION = JavaVersion.VERSION_1_8
+        const val JVM_TARGET = "1.8"
+        const val JAVA_RELEASE = 8
+    }
+
     object AndroidBuild {
 
         const val COMPILE_SDK = 35
@@ -34,6 +41,7 @@ object RudderStackBuildConfig {
 
                 override val artifactId = "core"
                 override val pomPackaging = "jar"
+                override val pomDescription = "Kotlin JVM (server-side, public beta) and core of the Android SDK"
             }
         }
 
@@ -169,6 +177,8 @@ interface MavenPublishConfig {
 
     val artifactId: String
     val pomPackaging: String
+    val pomDescription: String
+        get() = RudderStackBuildConfig.POM.DESCRIPTION
 }
 
 interface IntegrationModuleInfo : MavenPublishConfig {

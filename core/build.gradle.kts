@@ -1,4 +1,5 @@
 import io.gitlab.arturbosch.detekt.Detekt
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 plugins {
@@ -9,15 +10,23 @@ plugins {
 }
 
 java {
-    sourceCompatibility = RudderStackBuildConfig.Build.JAVA_VERSION
-    targetCompatibility = RudderStackBuildConfig.Build.JAVA_VERSION
+    sourceCompatibility = RudderStackBuildConfig.CoreBuild.JAVA_VERSION
+    targetCompatibility = RudderStackBuildConfig.CoreBuild.JAVA_VERSION
 }
 kotlin {
     jvmToolchain(RudderStackBuildConfig.Build.JVM_TOOLCHAIN)
 }
 
+tasks.withType<JavaCompile>().configureEach {
+    options.release.set(RudderStackBuildConfig.CoreBuild.JAVA_RELEASE)
+}
+
 tasks.withType<KotlinJvmCompile>().configureEach {
-    compilerOptions.freeCompilerArgs.add("-opt-in=com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi")
+    compilerOptions {
+        jvmTarget.set(JvmTarget.fromTarget(RudderStackBuildConfig.CoreBuild.JVM_TARGET))
+        freeCompilerArgs.add("-Xjdk-release=${RudderStackBuildConfig.CoreBuild.JVM_TARGET}")
+        freeCompilerArgs.add("-opt-in=com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi")
+    }
 }
 
 tasks.withType<Test> {
