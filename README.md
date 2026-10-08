@@ -223,6 +223,10 @@ ServerConfiguration(
 
 The SDK calls the listener on an SDK thread. Do not block in the listener.
 
+### Server samples
+
+The [`samples`](samples/README.md) folder has a Ktor sample and a Spring Boot sample.
+
 ### Storage on a server
 
 - `StorageType.IN_MEMORY` is the default. We recommend it for a server.
