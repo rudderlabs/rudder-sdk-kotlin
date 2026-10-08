@@ -9,9 +9,9 @@ import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
  * Creates a new channel if the current channel is closed for send or receive.
  */
 @OptIn(DelicateCoroutinesApi::class)
-internal fun <T> Channel<T>.createNewIfClosed(): Channel<T> {
+internal fun <T> Channel<T>.createNewIfClosed(newChannel: () -> Channel<T> = ::createUnlimitedCapacityChannel): Channel<T> {
     return if (isClosedForSend || isClosedForReceive) {
-        createUnlimitedCapacityChannel()
+        newChannel()
     } else {
         this
     }

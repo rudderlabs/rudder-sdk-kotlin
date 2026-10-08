@@ -11,6 +11,7 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.isSourceEnabled
 import com.rudderstack.sdk.kotlin.core.server.DropReason
 import com.rudderstack.sdk.kotlin.core.server.asServerConfigurationOrNull
 import com.rudderstack.sdk.kotlin.core.server.reportDrop
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
@@ -36,7 +37,6 @@ internal class EventQueue(
     private var writeChannel: Channel<QueueMessage>
     private val storage
         get() = analytics.storage
-    private val flushSignal = QueueMessage(QueueMessage.QueueMessageType.FLUSH_SIGNAL)
     private val isServerMode = analytics.configuration.asServerConfigurationOrNull() != null
     private var isQueueFull = false
     private var lastEventAnonymousId = storage.readString(
@@ -86,8 +86,11 @@ internal class EventQueue(
         }
     }
 
-    internal fun flush() {
-        writeChannel.trySend(flushSignal)
+    internal fun flush(ack: CompletableDeferred<Boolean>? = null) {
+        val flushSignal = QueueMessage(QueueMessage.QueueMessageType.FLUSH_SIGNAL, ack = ack)
+        if (writeChannel.trySend(flushSignal).isFailure) {
+            ack?.complete(false)
+        }
     }
 
     internal fun stop() {
@@ -131,9 +134,11 @@ internal class EventQueue(
             }
 
             if ((isFlushSignal || flushPoliciesFacade.shouldFlush()) && analytics.isSourceEnabled()) {
-                eventUpload.flush()
+                eventUpload.flush(queueMessage.ack)
                 analytics.logger.debug("EventQueue: Flush signal sent to upload channel")
                 flushPoliciesFacade.reset()
+            } else {
+                queueMessage.ack?.complete(false)
             }
         }
     }
@@ -170,6 +175,7 @@ internal class EventQueue(
 private data class QueueMessage(
     val type: QueueMessageType,
     val event: Event? = null,
+    val ack: CompletableDeferred<Boolean>? = null,
 ) {
 
     enum class QueueMessageType {

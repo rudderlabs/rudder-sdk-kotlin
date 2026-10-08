@@ -10,6 +10,7 @@ import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.plugins.EventPlugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.queue.EventQueue
+import kotlinx.coroutines.CompletableDeferred
 import org.jetbrains.annotations.VisibleForTesting
 
 internal class RudderStackDataplanePlugin : EventPlugin {
@@ -45,8 +46,13 @@ internal class RudderStackDataplanePlugin : EventPlugin {
         eventQueue = EventQueue(analytics).apply { start() }
     }
 
-    internal fun flush() {
-        eventQueue?.flush()
+    internal fun flush(ack: CompletableDeferred<Boolean>? = null) {
+        val queue = eventQueue
+        if (queue == null) {
+            ack?.complete(false)
+        } else {
+            queue.flush(ack)
+        }
     }
 
     override fun teardown() {

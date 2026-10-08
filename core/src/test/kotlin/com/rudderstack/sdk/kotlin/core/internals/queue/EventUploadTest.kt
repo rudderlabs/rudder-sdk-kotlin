@@ -38,11 +38,15 @@ import io.mockk.runs
 import io.mockk.spyk
 import io.mockk.unmockkObject
 import io.mockk.verify
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -425,6 +429,35 @@ class EventUploadTest {
                 verify(exactly = 3) { mockDropListener.onDrop(DropReason.REJECTED_BY_SERVER, EVENTS_IN_BATCH) }
                 verify(exactly = 0) { eventUpload.cancel() }
                 verify(exactly = 0) { mockHttpClient.updateAnonymousIdHeaderString(any()) }
+            }
+
+        @OptIn(ExperimentalCoroutinesApi::class)
+        @Test
+        fun `given flush calls with an ack, when the batch is sent, dropped, or the upload is cancelled, then the ack is true only for the sent batch`() =
+            runTest {
+                prepareSingleBatch(readFileTrimmed(unprocessedBatchWithTwoEvents))
+                every { mockHttpClient.sendData(any(), any()) } returnsMany listOf(
+                    Result.Success("Ok"),
+                    Result.Failure(NetworkErrorStatus.Error404),
+                )
+                val ackForSentBatch = CompletableDeferred<Boolean>()
+                val ackForDroppedBatch = CompletableDeferred<Boolean>()
+                val ackForCancelledUpload = CompletableDeferred<Boolean>()
+                val ackAfterCancel = CompletableDeferred<Boolean>()
+                eventUpload.start()
+
+                eventUpload.flush(ackForSentBatch)
+                eventUpload.flush(ackForDroppedBatch)
+                testDispatcher.scheduler.advanceUntilIdle()
+                eventUpload.flush(ackForCancelledUpload)
+                eventUpload.cancel()
+                eventUpload.flush(ackAfterCancel)
+                testDispatcher.scheduler.advanceUntilIdle()
+
+                assertTrue(ackForSentBatch.getCompleted())
+                assertFalse(ackForDroppedBatch.getCompleted())
+                assertFalse(ackForCancelledUpload.getCompleted())
+                assertFalse(ackAfterCancel.getCompleted())
             }
     }
 

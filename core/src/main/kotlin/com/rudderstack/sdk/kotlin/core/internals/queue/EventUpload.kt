@@ -18,7 +18,6 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.LenientJson
 import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
 import com.rudderstack.sdk.kotlin.core.internals.utils.createIfInactive
 import com.rudderstack.sdk.kotlin.core.internals.utils.createNewIfClosed
-import com.rudderstack.sdk.kotlin.core.internals.utils.createUnlimitedCapacityChannel
 import com.rudderstack.sdk.kotlin.core.internals.utils.disableSource
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import com.rudderstack.sdk.kotlin.core.internals.utils.encodeToBase64
@@ -29,8 +28,10 @@ import com.rudderstack.sdk.kotlin.core.server.DropReason
 import com.rudderstack.sdk.kotlin.core.server.asServerConfigurationOrNull
 import com.rudderstack.sdk.kotlin.core.server.reportDrop
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
@@ -42,7 +43,6 @@ import kotlin.coroutines.coroutineContext
 
 private const val BATCH_ENDPOINT = "/v1/batch"
 private val ANONYMOUS_ID_REGEX = """"anonymousId"\s*:\s*"([^"]+)"""".toRegex()
-private const val UPLOAD_SIG = "#!upload"
 private const val BATCH_KEY = "batch"
 
 /**
@@ -50,7 +50,7 @@ private const val BATCH_KEY = "batch"
  */
 internal class EventUpload(
     private val analytics: Analytics,
-    private var uploadChannel: Channel<String> = createUnlimitedCapacityChannel(),
+    private var uploadChannel: Channel<UploadSignal> = createUploadChannel(),
     private val httpClientFactory: HttpClient = with(analytics.configuration) {
         return@with HttpClientImpl.createPostHttpClient(
             baseUrl = dataPlaneUrl,
@@ -81,20 +81,26 @@ internal class EventUpload(
     private var uploadJob: Job? = null
 
     internal fun start() {
-        uploadChannel = uploadChannel.createNewIfClosed()
+        uploadChannel = uploadChannel.createNewIfClosed(::createUploadChannel)
         uploadJob = uploadJob.createIfInactive(newJob = ::upload)
     }
 
-    internal fun flush() {
-        uploadChannel.trySend(UPLOAD_SIG)
+    internal fun flush(ack: CompletableDeferred<Boolean>? = null) {
+        if (uploadChannel.trySend(UploadSignal(ack)).isFailure) {
+            ack?.complete(false)
+        }
     }
 
-    @Suppress("TooGenericExceptionCaught")
     private fun upload() = analytics.analyticsScope.launch(analytics.networkDispatcher) {
-        uploadChannel.consumeEach {
+        uploadChannel.consumeEach { signal ->
             analytics.logger.debug("EventUpload: Performing flush")
-            prepareForUpload()
-            processAndUploadEvent()
+            var areAllBatchesSent = false
+            try {
+                prepareForUpload()
+                areAllBatchesSent = processAndUploadEvent()
+            } finally {
+                signal.ack?.complete(areAllBatchesSent)
+            }
         }
     }
 
@@ -111,9 +117,10 @@ internal class EventUpload(
     }
 
     @Suppress("TooGenericExceptionCaught")
-    private suspend fun processAndUploadEvent() {
+    private suspend fun processAndUploadEvent(): Boolean {
         val fileUrlList = storage.readString(StorageKeys.EVENT, String.empty()).parseFilePaths()
         analytics.logger.debug("EventUpload: Processing ${fileUrlList.size} batch file(s) for upload")
+        var areAllBatchesSent = true
         for (filePath in fileUrlList) {
             // ensureActive will help in cancelling the coroutine
             coroutineContext.ensureActive()
@@ -121,7 +128,7 @@ internal class EventUpload(
             try {
                 storage.readBatchContent(filePath)?.let { batch ->
                     updateAnonymousIdHeaderIfChanged(batch)
-                    uploadEvents(batch, filePath)
+                    areAllBatchesSent = uploadEvents(batch, filePath) && areAllBatchesSent
                 } ?: analytics.logger.warn("EventUpload: Batch file returned null content, skipping")
             } catch (e: CancellationException) {
                 analytics.logger.error("EventUpload: Job was cancelled. Stopping the upload process.", e)
@@ -129,8 +136,10 @@ internal class EventUpload(
             } catch (e: Exception) {
                 analytics.logger.error("EventUpload: Error when processing batch payload. Deleting the file.", e)
                 cleanup(filePath)
+                areAllBatchesSent = false
             }
         }
+        return areAllBatchesSent
     }
 
     private fun updateAnonymousIdHeaderIfChanged(batchPayload: String) {
@@ -151,7 +160,7 @@ internal class EventUpload(
         }
     }
 
-    private suspend fun uploadEvents(batchPayload: String, filePath: String) {
+    private suspend fun uploadEvents(batchPayload: String, filePath: String): Boolean {
         val batchId = storage.getBatchId(filePath)
         var failedAttempts = 0
         var result: EventUploadResult
@@ -173,7 +182,7 @@ internal class EventUpload(
                     analytics.logger.debug("EventUpload: ${result.formatStatusCodeMessage()}. Retry able error occurred.")
                     if (serverConfiguration != null && ++failedAttempts > serverConfiguration.maxRetries) {
                         dropBatchAfterLastRetry(batchPayload, filePath)
-                        return
+                        return false
                     }
                     retryHeadersProvider.recordFailure(batchId, currentTimestampInMillis, result)
                     analytics.logger.debug("EventUpload: Retry attempt recorded. Backing off before next attempt")
@@ -186,6 +195,7 @@ internal class EventUpload(
                 }
             }
         } while (result is RetryAbleEventUploadError)
+        return result is Success
     }
 
     private suspend fun dropBatchAfterLastRetry(batchPayload: String, filePath: String) {
@@ -271,3 +281,10 @@ private fun countEventsInBatch(batchPayload: String): Int {
         LenientJson.parseToJsonElement(batchPayload).jsonObject[BATCH_KEY]?.jsonArray?.size
     }.getOrNull() ?: 0
 }
+
+internal class UploadSignal(val ack: CompletableDeferred<Boolean>? = null)
+
+private fun createUploadChannel(): Channel<UploadSignal> = Channel(
+    capacity = UNLIMITED,
+    onUndeliveredElement = { signal -> signal.ack?.complete(false) },
+)

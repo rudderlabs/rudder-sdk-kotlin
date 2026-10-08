@@ -35,6 +35,7 @@ import io.mockk.runs
 import io.mockk.spyk
 import io.mockk.unmockkAll
 import io.mockk.verify
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -480,6 +481,22 @@ class EventQueueTest {
 
         verify { mockEventUpload.cancel() }
     }
+
+    @Test
+    fun `given a flush call with an ack, when the queue is running and then stopped, then the ack goes to the upload and then completes with false`() =
+        runTest {
+            val ackWhileRunning = CompletableDeferred<Boolean>()
+            val ackAfterStop = CompletableDeferred<Boolean>()
+            eventQueue.start()
+
+            eventQueue.flush(ackWhileRunning)
+            testDispatcher.scheduler.advanceUntilIdle()
+            eventQueue.stop()
+            eventQueue.flush(ackAfterStop)
+
+            verify(exactly = 1) { mockEventUpload.flush(ackWhileRunning) }
+            assertFalse(ackAfterStop.getCompleted())
+        }
 
     @Nested
     inner class ServerMode {
