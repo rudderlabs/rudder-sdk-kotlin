@@ -35,6 +35,7 @@ The Kotlin SDK enables you to track customer event data from your Android or Kot
 - [**Initializing the SDK**](#initializing-the-sdk)
 - [**Identifying your users**](#identifying-users)
 - [**Tracking user actions**](#tracking-user-actions)
+- [**Using the SDK on a server (public beta)**](#using-the-sdk-on-a-server-public-beta)
 - [**Integrations**](#integrations)
 - [**Development**](#development)
 - [**Contact us**](#contact-us)
@@ -56,7 +57,9 @@ Replace `<latest_version>` with the version number you want to use. You can find
 
 ## Installing the Kotlin JVM SDK
 
-Add the SDK to your Kotlin JVM project using Gradle:
+> The Kotlin JVM server-side SDK is in public beta. See [**Using the SDK on a server**](#using-the-sdk-on-a-server-public-beta).
+
+Add the SDK to your Kotlin JVM project using Gradle. The SDK needs Java 8 or later.
 
 ```kotlin
 dependencies {
@@ -135,6 +138,97 @@ analytics.track(
     }
 )
 ```
+
+---
+
+## Using the SDK on a server (public beta)
+
+> The Kotlin JVM server-side SDK is in public beta. Its API can change before the stable release.
+
+Use the `ServerAnalytics` class in a backend service, for example Ktor, Spring Boot, a batch job, or AWS Lambda.
+
+### Initializing the server SDK
+
+Create one instance for each write key. Keep that instance for the life of the process. All request threads can use it.
+
+```kotlin
+import com.rudderstack.sdk.kotlin.core.server.ServerAnalytics
+import com.rudderstack.sdk.kotlin.core.server.ServerConfiguration
+
+val analytics = ServerAnalytics(
+    ServerConfiguration(
+        writeKey = "<WRITE_KEY>",
+        dataPlaneUrl = "<DATA_PLANE_URL>",
+    )
+)
+```
+
+### Sending events from a server
+
+`ServerAnalytics` stores no user. Give the `userId`, the `anonymousId`, or both on each call.
+
+```kotlin
+analytics.identify(
+    userId = "1hKOmRA4el9Zt1WSfVJIVo4GRlm",
+    traits = buildJsonObject { put("email", "alex@example.com") },
+)
+
+analytics.track(
+    name = "Order Completed",
+    userId = "1hKOmRA4el9Zt1WSfVJIVo4GRlm",
+    properties = buildJsonObject { put("revenue", 30) },
+)
+```
+
+- The `screen`, `group`, and `alias` calls follow the same pattern. The beta has no `page` call.
+- The SDK drops a call that has no `userId` and no `anonymousId`.
+- The SDK sends the traits of an `identify` call with that call only.
+
+### Shutting down the server SDK
+
+The default storage is in memory, so the process loses each unsent event when it exits.
+Call `shutdown` in the stop hook of your framework. The call rejects new events, sends the queued events, and waits for the result.
+
+```kotlin
+// In a coroutine
+val isEachEventSent = analytics.shutdown(timeout = 10.seconds)
+
+// In a blocking stop hook
+Runtime.getRuntime().addShutdownHook(
+    Thread { analytics.shutdownBlocking(timeoutMillis = 10_000) }
+)
+```
+
+- `shutdown` returns `false` when the timeout ends first or when the SDK dropped a batch.
+- On Kubernetes, keep the timeout below the termination grace period (30 seconds by default).
+- `flushAndWait` and `flushBlocking` send the queued events and wait, with no shutdown. Use them at the end of a batch job step or an AWS Lambda invocation.
+- Do not call `shutdownBlocking` or `flushBlocking` from a coroutine.
+
+### Limits and dropped events
+
+| Setting | Default | Behaviour |
+| --- | --- | --- |
+| `maxQueuedEvents` | 20,000 | The SDK drops a new event when the in-memory queue holds this number of events. |
+| `maxRetries` | 3 | The SDK drops a batch when its upload fails after this number of retries. |
+
+A `DropListener` receives the reason and the number of events for each drop:
+
+```kotlin
+ServerConfiguration(
+    writeKey = "<WRITE_KEY>",
+    dataPlaneUrl = "<DATA_PLANE_URL>",
+    dropListener = { reason, eventCount -> logger.warn("RudderStack dropped $eventCount event(s): $reason") },
+)
+```
+
+The SDK calls the listener on an SDK thread. Do not block in the listener.
+
+### Storage on a server
+
+- `StorageType.IN_MEMORY` is the default. We recommend it for a server.
+- `StorageType.FILE` is not stable in the beta. It writes event files to `/tmp/rudderstack-analytics-kotlin` with default permissions, so other users of the host can read them.
+
+---
 
 ## Integrations
 
