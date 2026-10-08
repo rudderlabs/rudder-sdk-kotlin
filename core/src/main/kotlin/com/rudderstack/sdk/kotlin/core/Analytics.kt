@@ -55,6 +55,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import org.jetbrains.annotations.VisibleForTesting
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * The `Analytics` class is the core of the RudderStack SDK, responsible for tracking events,
@@ -113,6 +114,7 @@ open class Analytics protected constructor(
 
     private val processEventChannel: Channel<ProcessMessage> = Channel(Channel.UNLIMITED)
     private var processEventJob: Job? = null
+    private val queuedEventDropCount = AtomicLong()
 
     @Volatile
     internal var isAnalyticsShutdown = false
@@ -348,17 +350,23 @@ open class Analytics protected constructor(
         }
     }
 
+    internal fun markQueuedEventsDropped() {
+        queuedEventDropCount.incrementAndGet()
+    }
+
     /**
      * Uploads each event queued before this call and waits for the result.
      *
-     * @return `true` when the upload sent each batch. `false` when a batch was dropped or the instance is shut down.
+     * @return `true` when the upload sent each batch. `false` when the SDK dropped a queued event during the call
+     * or the instance is shut down.
      */
     internal suspend fun drain(): Boolean {
         if (isAnalyticsShutdown) return false
 
+        val dropCountAtStart = queuedEventDropCount.get()
         val ack = CompletableDeferred<Boolean>()
         if (processEventChannel.trySend(ProcessMessage.Barrier(ack)).isFailure) return false
-        return ack.await()
+        return ack.await() && queuedEventDropCount.get() == dropCountAtStart
     }
 
     // Runs on the caller's thread before the event is queued, so it records the state at creation.
@@ -538,6 +546,7 @@ open class Analytics protected constructor(
             throw e
         } catch (e: Exception) {
             if (configuration.asServerConfigurationOrNull() == null) throw e
+            markQueuedEventsDropped()
             logger.error("Analytics(core): Failed to process ${event.type} event (messageId=${event.messageId})", e)
         }
     }

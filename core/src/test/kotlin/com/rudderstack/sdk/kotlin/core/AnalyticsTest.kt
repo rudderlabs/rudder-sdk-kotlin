@@ -20,6 +20,7 @@ import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.storage.LibraryVersion
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
+import com.rudderstack.sdk.kotlin.core.internals.storage.exception.QueueFullException
 import com.rudderstack.sdk.kotlin.core.internals.utils.DateTimeUtils
 import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
@@ -28,6 +29,7 @@ import com.rudderstack.sdk.kotlin.core.server.ServerConfiguration
 import io.mockk.MockKAnnotations
 import io.mockk.MockKVerificationScope
 import io.mockk.clearMocks
+import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.coVerifyOrder
 import io.mockk.every
@@ -38,6 +40,7 @@ import io.mockk.spyk
 import io.mockk.verify
 import io.mockk.verifyOrder
 import kotlinx.coroutines.CompletableJob
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
@@ -913,7 +916,7 @@ class AnalyticsTest {
             runTest(testDispatcher) {
                 analytics.track(name = TRACK_EVENT_NAME)
 
-                val isDrained = async { analytics.drain() }
+                val isDrained = async(start = CoroutineStart.UNDISPATCHED) { analytics.drain() }
                 testDispatcher.scheduler.runCurrent()
                 disableSource()
 
@@ -922,6 +925,20 @@ class AnalyticsTest {
                     mockStorage.write(StorageKeys.EVENT, any<String>())
                     mockStorage.rollover()
                 }
+            }
+
+        @OptIn(ExperimentalCoroutinesApi::class)
+        @Test
+        fun `given a queued event is dropped after drain is called, when the upload completes, then drain returns false`() =
+            runTest(testDispatcher) {
+                coEvery { mockStorage.write(StorageKeys.EVENT, any<String>()) } throws QueueFullException()
+                analytics.track(name = TRACK_EVENT_NAME)
+
+                val isDrained = async(start = CoroutineStart.UNDISPATCHED) { analytics.drain() }
+                testDispatcher.scheduler.runCurrent()
+                disableSource()
+
+                assertFalse(isDrained.getCompleted())
             }
 
         @Test

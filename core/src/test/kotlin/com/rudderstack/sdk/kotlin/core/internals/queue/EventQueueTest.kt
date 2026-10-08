@@ -538,7 +538,7 @@ class EventQueueTest {
             }
 
         @Test
-        fun `given the queue becomes full two times, when events are queued, then each dropped event is reported and each state change is logged one time`() =
+        fun `given the queue becomes full two times, when events are queued, then each dropped event is reported and each state change is logged and starts one upload`() =
             runTest {
                 coEvery { mockStorage.write(StorageKeys.EVENT, any<String>()) } throws
                     QueueFullException() andThenThrows QueueFullException() andThenJust Runs andThenThrows QueueFullException()
@@ -548,6 +548,8 @@ class EventQueueTest {
                 testDispatcher.scheduler.advanceUntilIdle()
 
                 verify(exactly = 3) { mockDropListener.onDrop(DropReason.QUEUE_FULL, 1) }
+                verify(exactly = 3) { mockAnalytics.markQueuedEventsDropped() }
+                verify(exactly = 2) { mockEventUpload.flush() }
                 verify(exactly = 2) { mockLogger.warn(match { it.contains("The queue is full") }) }
                 verify(exactly = 1) { mockLogger.info(match { it.contains("The queue has space again") }) }
             }

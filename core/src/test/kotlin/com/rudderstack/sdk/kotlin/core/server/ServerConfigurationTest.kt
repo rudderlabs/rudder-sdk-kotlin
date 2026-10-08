@@ -34,9 +34,15 @@ class ServerConfigurationTest {
             maxQueuedEvents = 0,
             maxRetries = -1,
         )
+        val configurationAboveRetryLimit = ServerConfiguration(
+            writeKey = WRITE_KEY,
+            dataPlaneUrl = DATA_PLANE_URL,
+            maxRetries = ServerConfiguration.MAX_RETRIES_LIMIT + 1,
+        )
 
         assertEquals(ServerConfiguration.DEFAULT_MAX_QUEUED_EVENTS, configuration.maxQueuedEvents)
         assertEquals(ServerConfiguration.DEFAULT_MAX_RETRIES, configuration.maxRetries)
+        assertEquals(ServerConfiguration.DEFAULT_MAX_RETRIES, configurationAboveRetryLimit.maxRetries)
     }
 
     @Test

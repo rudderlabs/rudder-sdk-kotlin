@@ -126,6 +126,7 @@ internal class EventQueue(
                 } catch (expected: QueueFullException) {
                     dropEventForFullQueue()
                 } catch (e: Exception) {
+                    analytics.markQueuedEventsDropped()
                     analytics.logger.error(
                         "EventQueue: Error adding payload (messageId=${queueMessage.event?.messageId}): $queueMessage",
                         e
@@ -147,7 +148,10 @@ internal class EventQueue(
         if (!isQueueFull) {
             isQueueFull = true
             analytics.logger.warn("EventQueue: The queue is full. The SDK drops each new event until an upload frees space")
+            // A flush policy that counts stored events cannot start the upload that frees space.
+            eventUpload.flush()
         }
+        analytics.markQueuedEventsDropped()
         analytics.reportDrop(DropReason.QUEUE_FULL, eventCount = 1)
     }
 

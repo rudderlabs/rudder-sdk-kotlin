@@ -28,11 +28,14 @@ import kotlin.time.Duration.Companion.milliseconds
  * One instance is safe for all request threads. Create one instance for each write key and keep it for the life of the process.
  *
  * Call [shutdown] or [shutdownBlocking] before the process exits. In-memory storage loses each unsent event at exit.
- *
- * @param configuration The server configuration.
  */
 class ServerAnalytics internal constructor(private val analytics: Analytics) {
 
+    /**
+     * Creates the instance and starts the SDK.
+     *
+     * @param configuration The server configuration.
+     */
     constructor(configuration: ServerConfiguration) : this(Analytics(configuration))
 
     private val isShutdown = AtomicBoolean(false)
@@ -175,7 +178,8 @@ class ServerAnalytics internal constructor(private val analytics: Analytics) {
      * Uploads each event queued before this call and waits for the result.
      *
      * @param timeout The maximum time to wait. Defaults to [DEFAULT_TIMEOUT_IN_MILLIS].
-     * @return `true` when the SDK sent each batch. `false` on a timeout, after a shutdown, or when the SDK dropped a batch.
+     * @return `true` when the SDK sent each batch. `false` on a timeout, after a shutdown, or when the SDK dropped
+     * a queued event during the call.
      */
     suspend fun flushAndWait(timeout: Duration = DEFAULT_TIMEOUT_IN_MILLIS.milliseconds): Boolean {
         if (isShutdown.get()) return false
@@ -187,7 +191,8 @@ class ServerAnalytics internal constructor(private val analytics: Analytics) {
      * The blocking form of [flushAndWait]. Do not call this method from a coroutine.
      *
      * @param timeoutMillis The maximum time to wait, in milliseconds. Defaults to [DEFAULT_TIMEOUT_IN_MILLIS].
-     * @return `true` when the SDK sent each batch. `false` on a timeout, after a shutdown, or when the SDK dropped a batch.
+     * @return `true` when the SDK sent each batch. `false` on a timeout, after a shutdown, or when the SDK dropped
+     * a queued event during the call.
      */
     @JvmOverloads
     fun flushBlocking(timeoutMillis: Long = DEFAULT_TIMEOUT_IN_MILLIS): Boolean = runBlocking {
@@ -200,7 +205,8 @@ class ServerAnalytics internal constructor(private val analytics: Analytics) {
      * An event call that runs at the same time as this call can lose its event.
      *
      * @param timeout The maximum time to wait for the upload. Defaults to [DEFAULT_TIMEOUT_IN_MILLIS].
-     * @return `true` when the SDK sent each batch. `false` on a timeout, on a second call, or when the SDK dropped a batch.
+     * @return `true` when the SDK sent each batch. `false` on a timeout, on a second call, or when the SDK dropped
+     * a queued event during the call.
      */
     suspend fun shutdown(timeout: Duration = DEFAULT_TIMEOUT_IN_MILLIS.milliseconds): Boolean {
         if (!isShutdown.compareAndSet(false, true)) return false
@@ -220,7 +226,8 @@ class ServerAnalytics internal constructor(private val analytics: Analytics) {
      * The blocking form of [shutdown]. Do not call this method from a coroutine.
      *
      * @param timeoutMillis The maximum time to wait for the upload, in milliseconds. Defaults to [DEFAULT_TIMEOUT_IN_MILLIS].
-     * @return `true` when the SDK sent each batch. `false` on a timeout, on a second call, or when the SDK dropped a batch.
+     * @return `true` when the SDK sent each batch. `false` on a timeout, on a second call, or when the SDK dropped
+     * a queued event during the call.
      */
     @JvmOverloads
     fun shutdownBlocking(timeoutMillis: Long = DEFAULT_TIMEOUT_IN_MILLIS): Boolean = runBlocking {

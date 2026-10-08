@@ -135,6 +135,7 @@ internal class EventUpload(
                 throw e
             } catch (e: Exception) {
                 analytics.logger.error("EventUpload: Error when processing batch payload. Deleting the file.", e)
+                analytics.markQueuedEventsDropped()
                 cleanup(filePath)
                 areAllBatchesSent = false
             }
@@ -205,6 +206,7 @@ internal class EventUpload(
     }
 
     private fun dropBatch(reason: DropReason, batchPayload: String, filePath: String) {
+        analytics.markQueuedEventsDropped()
         cleanup(filePath)
         if (serverConfiguration?.dropListener != null) {
             analytics.reportDrop(reason, countEventsInBatch(batchPayload))

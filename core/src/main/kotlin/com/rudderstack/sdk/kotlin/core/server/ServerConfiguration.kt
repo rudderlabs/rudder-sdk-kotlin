@@ -7,6 +7,7 @@ import com.rudderstack.sdk.kotlin.core.internals.policies.FlushPolicy
 import com.rudderstack.sdk.kotlin.core.server.ServerConfiguration.Companion.DEFAULT_MAX_QUEUED_EVENTS
 import com.rudderstack.sdk.kotlin.core.server.ServerConfiguration.Companion.DEFAULT_MAX_RETRIES
 import com.rudderstack.sdk.kotlin.core.server.ServerConfiguration.Companion.DEFAULT_SERVER_GZIP_STATUS
+import com.rudderstack.sdk.kotlin.core.server.ServerConfiguration.Companion.MAX_RETRIES_LIMIT
 
 /**
  * The configuration of the SDK for server-side use (public beta).
@@ -24,7 +25,7 @@ import com.rudderstack.sdk.kotlin.core.server.ServerConfiguration.Companion.DEFA
  * @param maxQueuedEvents The maximum number of events that the SDK holds in memory. Defaults to [DEFAULT_MAX_QUEUED_EVENTS].
  * A value below 1 sets the default.
  * @param maxRetries The maximum number of retries for the upload of one batch. Defaults to [DEFAULT_MAX_RETRIES].
- * A value below 0 sets the default.
+ * A value below 0 or above [MAX_RETRIES_LIMIT] sets the default.
  * @property dropListener The listener that receives a report for each drop. Defaults to `null`.
  */
 class ServerConfiguration @JvmOverloads constructor(
@@ -56,7 +57,7 @@ class ServerConfiguration @JvmOverloads constructor(
     /**
      * The maximum number of retries for the upload of one batch. The SDK drops the batch after the last retry fails.
      */
-    val maxRetries: Int = maxRetries.takeIf { it >= 0 } ?: DEFAULT_MAX_RETRIES
+    val maxRetries: Int = maxRetries.takeIf { it in 0..MAX_RETRIES_LIMIT } ?: DEFAULT_MAX_RETRIES
 
     override fun toString(): String {
         return "ServerConfiguration(" +
@@ -87,6 +88,11 @@ class ServerConfiguration @JvmOverloads constructor(
          * The default maximum number of retries for the upload of one batch.
          */
         const val DEFAULT_MAX_RETRIES: Int = 3
+
+        /**
+         * The highest value of `maxRetries`. The backoff doubles on each retry, so a higher value blocks uploads for hours.
+         */
+        const val MAX_RETRIES_LIMIT: Int = 5
     }
 }
 
