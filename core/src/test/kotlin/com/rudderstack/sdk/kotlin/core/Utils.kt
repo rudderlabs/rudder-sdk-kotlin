@@ -11,6 +11,7 @@ import com.rudderstack.sdk.kotlin.core.internals.models.provider.provideSampleEx
 import com.rudderstack.sdk.kotlin.core.internals.models.provider.provideSampleIntegrationsPayload
 import com.rudderstack.sdk.kotlin.core.internals.models.provider.provideSampleJsonPayload
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.UserIdentity
+import com.rudderstack.sdk.kotlin.core.internals.pipeline.providePipelineRules
 import com.rudderstack.sdk.kotlin.core.internals.policies.DEFAULT_FLUSH_INTERVAL_IN_MILLIS
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import io.mockk.every
@@ -41,6 +42,7 @@ fun mockAnalytics(testScope: TestScope, testDispatcher: TestDispatcher): Analyti
     every { mock.fileStorageDispatcher } returns testDispatcher
     every { mock.keyValueStorageDispatcher } returns testDispatcher
     every { mock.networkDispatcher } returns testDispatcher
+    every { mock.pipelineRules } answers { providePipelineRules(mock.getPlatformType(), mock.configuration) }
     return mock
 }
 

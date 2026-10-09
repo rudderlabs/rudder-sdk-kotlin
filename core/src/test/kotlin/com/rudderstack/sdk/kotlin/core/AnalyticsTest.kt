@@ -20,13 +20,16 @@ import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.storage.LibraryVersion
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
+import com.rudderstack.sdk.kotlin.core.internals.storage.exception.QueueFullException
 import com.rudderstack.sdk.kotlin.core.internals.utils.DateTimeUtils
 import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import com.rudderstack.sdk.kotlin.core.internals.utils.generateUUID
+import com.rudderstack.sdk.kotlin.core.server.ServerConfiguration
 import io.mockk.MockKAnnotations
 import io.mockk.MockKVerificationScope
 import io.mockk.clearMocks
+import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.coVerifyOrder
 import io.mockk.every
@@ -37,13 +40,16 @@ import io.mockk.spyk
 import io.mockk.verify
 import io.mockk.verifyOrder
 import kotlinx.coroutines.CompletableJob
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import kotlinx.serialization.json.JsonObject
@@ -51,6 +57,7 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
@@ -892,6 +899,74 @@ class AnalyticsTest {
             assertEquals(null, intercepted.single().createdInForeground)
         }
 
+    @Nested
+    inner class ServerMode {
+
+        @BeforeEach
+        fun setUpServerMode() {
+            // The instance from the outer setup shares the test scheduler, so its flush schedule must stop first.
+            disableSource()
+            testDispatcher.scheduler.runCurrent()
+            analytics = Analytics(ServerConfiguration(writeKey = "<writeKey>", dataPlaneUrl = "<data_plane_url>"))
+        }
+
+        @OptIn(ExperimentalCoroutinesApi::class)
+        @Test
+        fun `given an event is queued, when drain is called, then the event is stored before the upload runs and drain returns true`() =
+            runTest(testDispatcher) {
+                analytics.track(name = TRACK_EVENT_NAME)
+
+                val isDrained = async(start = CoroutineStart.UNDISPATCHED) { analytics.drain() }
+                testDispatcher.scheduler.runCurrent()
+                disableSource()
+
+                assertTrue(isDrained.getCompleted())
+                coVerifyOrder {
+                    mockStorage.write(StorageKeys.EVENT, any<String>())
+                    mockStorage.rollover()
+                }
+            }
+
+        @OptIn(ExperimentalCoroutinesApi::class)
+        @Test
+        fun `given a queued event is dropped after drain is called, when the upload completes, then drain returns false`() =
+            runTest(testDispatcher) {
+                coEvery { mockStorage.write(StorageKeys.EVENT, any<String>()) } throws QueueFullException()
+                analytics.track(name = TRACK_EVENT_NAME)
+
+                val isDrained = async(start = CoroutineStart.UNDISPATCHED) { analytics.drain() }
+                testDispatcher.scheduler.runCurrent()
+                disableSource()
+
+                assertFalse(isDrained.getCompleted())
+            }
+
+        @Test
+        fun `given the SDK is shut down, when drain is called, then drain returns false`() = runTest(testDispatcher) {
+            analytics.shutdown()
+
+            assertFalse(analytics.drain())
+        }
+
+        @Test
+        fun `given a plugin throws for one event, when the next event is queued, then the next event is stored`() =
+            runTest(testDispatcher) {
+                analytics.add(provideThrowingPlugin(eventNameToFail = TRACK_EVENT_NAME))
+
+                analytics.track(name = TRACK_EVENT_NAME)
+                analytics.track(name = NEW_EVENT_NAME)
+                testDispatcher.scheduler.runCurrent()
+                disableSource()
+
+                coVerify(exactly = 1) {
+                    mockStorage.write(StorageKeys.EVENT, match<String> { it.contains(NEW_EVENT_NAME) })
+                }
+                coVerify(exactly = 0) {
+                    mockStorage.write(StorageKeys.EVENT, match<String> { it.contains(TRACK_EVENT_NAME) })
+                }
+            }
+    }
+
     private fun disableSource() {
         analytics.sourceConfigState.dispatch(
             SourceConfig.UpdateAction(
@@ -953,6 +1028,16 @@ private fun provideLibraryVersion(): LibraryVersion {
     return object : LibraryVersion {
         override fun getLibraryName(): String = "com.rudderstack.kotlin.sdk"
         override fun getVersionName(): String = "1.0.0"
+    }
+}
+
+private fun provideThrowingPlugin(eventNameToFail: String) = object : Plugin {
+    override val pluginType: Plugin.PluginType = Plugin.PluginType.OnProcess
+    override lateinit var analytics: Analytics
+
+    override suspend fun intercept(event: Event): Event {
+        check((event as? TrackEvent)?.event != eventNameToFail) { "Plugin failure" }
+        return event
     }
 }
 

@@ -1,4 +1,5 @@
 import io.gitlab.arturbosch.detekt.Detekt
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 plugins {
@@ -9,15 +10,23 @@ plugins {
 }
 
 java {
-    sourceCompatibility = RudderStackBuildConfig.Build.JAVA_VERSION
-    targetCompatibility = RudderStackBuildConfig.Build.JAVA_VERSION
+    sourceCompatibility = RudderStackBuildConfig.CoreBuild.JAVA_VERSION
+    targetCompatibility = RudderStackBuildConfig.CoreBuild.JAVA_VERSION
 }
 kotlin {
     jvmToolchain(RudderStackBuildConfig.Build.JVM_TOOLCHAIN)
 }
 
+tasks.withType<JavaCompile>().configureEach {
+    options.release.set(RudderStackBuildConfig.CoreBuild.JAVA_RELEASE)
+}
+
 tasks.withType<KotlinJvmCompile>().configureEach {
-    compilerOptions.freeCompilerArgs.add("-opt-in=com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi")
+    compilerOptions {
+        jvmTarget.set(JvmTarget.fromTarget(RudderStackBuildConfig.CoreBuild.JVM_TARGET))
+        freeCompilerArgs.add("-Xjdk-release=${RudderStackBuildConfig.CoreBuild.JVM_TARGET}")
+        freeCompilerArgs.add("-opt-in=com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi")
+    }
 }
 
 tasks.withType<Test> {
@@ -29,6 +38,22 @@ tasks.withType<Test> {
     val pomFile = layout.buildDirectory.file("publications/release/pom-default.xml")
     inputs.file(pomFile)
     systemProperty("corePomFile", pomFile.get().asFile.absolutePath)
+}
+
+// Manual load test for server mode. CI does not run it.
+// e.g., ./gradlew :core:serverLoadTest -PloadTestEventsPerSecond=10000 -PloadTestDurationSeconds=300
+tasks.register<JavaExec>("serverLoadTest") {
+    group = "verification"
+    description = "Runs the server-mode load test against a local fake data plane."
+    classpath = sourceSets["test"].runtimeClasspath
+    mainClass.set("com.rudderstack.sdk.kotlin.core.server.loadtest.ServerLoadTestKt")
+    maxHeapSize = "512m"
+    args(
+        listOfNotNull(
+            findProperty("loadTestEventsPerSecond")?.toString(),
+            findProperty("loadTestDurationSeconds")?.toString(),
+        )
+    )
 }
 
 // For generating SourcesJar and JavadocJar

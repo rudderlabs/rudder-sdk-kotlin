@@ -2,7 +2,6 @@ package com.rudderstack.sdk.kotlin.core.internals.utils
 
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
-import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 
 /**
  * Checks if the analytics instance is active.
@@ -25,7 +24,7 @@ fun Analytics.isAnalyticsActive(): Boolean {
  */
 @InternalRudderApi
 fun Analytics.isSourceEnabled(): Boolean {
-    if (getPlatformType() == PlatformType.Mobile) {
+    if (pipelineRules.usesSourceConfig) {
         return sourceConfigState.value.source.isSourceEnabled
     }
     return true
@@ -68,7 +67,7 @@ internal fun Analytics.handleInvalidWriteKey() {
  * When the source is disabled, the SDK will reject subsequent tracking operations.
  */
 internal fun Analytics.disableSource() {
-    if (getPlatformType() == PlatformType.Mobile) {
+    if (pipelineRules.usesSourceConfig) {
         sourceConfigState.dispatch(SourceConfig.DisableSourceAction())
     }
 }

@@ -2,6 +2,7 @@ package com.rudderstack.sdk.kotlin.core.internals.storage.inmemory
 
 import com.rudderstack.sdk.kotlin.core.internals.models.DEFAULT_SENT_AT_TIMESTAMP
 import com.rudderstack.sdk.kotlin.core.internals.storage.TMP_SUFFIX
+import com.rudderstack.sdk.kotlin.core.internals.storage.exception.QueueFullException
 import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -10,7 +11,9 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 private const val TEST_WRITE_KEY = "testWriteKey"
 private const val EVENT_PAYLOAD_1 = """{"id":"123","message":"test"}"""
@@ -204,6 +207,52 @@ class InMemoryBatchManagerTest {
 
         val expectedContent = """{"batch":[$EVENT_PAYLOAD_1,$EVENT_PAYLOAD_2],"sentAt":"$DEFAULT_SENT_AT_TIMESTAMP"}"""
         rolloverAndAssertBatchEquals(expectedContent)
+    }
+
+    @Nested
+    inner class EventLimit {
+
+        @Test
+        fun `given the manager holds the maximum number of events, when a batch is removed or all batches are deleted, then the manager accepts events again`() =
+            runBlocking {
+                val manager = InMemoryBatchManager(TEST_WRITE_KEY, keyValueStorage, maxEvents = 2)
+                manager.storeEvent(EVENT_PAYLOAD_1)
+                manager.storeEvent(EVENT_PAYLOAD_2)
+                assertQueueIsFull(manager)
+
+                manager.rollover()
+                assertQueueIsFull(manager)
+
+                manager.remove(manager.read().first())
+                manager.storeEvent(EVENT_PAYLOAD_1)
+                manager.storeEvent(EVENT_PAYLOAD_2)
+                assertQueueIsFull(manager)
+
+                manager.delete()
+                manager.storeEvent(EVENT_PAYLOAD_3)
+            }
+
+        @Test
+        fun `given a full manager dropped the first event of a new batch, when the next event is stored, then the batch JSON is valid`() =
+            runBlocking {
+                val manager = InMemoryBatchManager(TEST_WRITE_KEY, keyValueStorage, maxEvents = 1)
+                manager.storeEvent(EVENT_PAYLOAD_1)
+                manager.rollover()
+                assertQueueIsFull(manager)
+                manager.remove(manager.read().single())
+
+                manager.storeEvent(EVENT_PAYLOAD_3)
+                manager.rollover()
+
+                val expectedContent = """{"batch":[$EVENT_PAYLOAD_3],"sentAt":"$DEFAULT_SENT_AT_TIMESTAMP"}"""
+                assertEquals(expectedContent, manager.readContent(manager.read().single()))
+            }
+
+        private fun assertQueueIsFull(manager: InMemoryBatchManager) {
+            assertThrows<QueueFullException> {
+                runBlocking { manager.storeEvent(EVENT_PAYLOAD_3) }
+            }
+        }
     }
 
     private suspend fun rolloverAndAssertBatchContains(expected: String) {

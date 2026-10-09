@@ -8,6 +8,7 @@ import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
@@ -44,17 +45,22 @@ val LenientJson = Json {
 
 /**
  * Encodes the event to a JSON string, filtering out empty JSON objects.
+ *
+ * @param omitBlankAnonymousId `true` to leave an empty `anonymousId` out of the JSON string.
  */
-internal fun Event.encodeToString(): String {
+internal fun Event.encodeToString(omitBlankAnonymousId: Boolean = false): String {
     val stringEvent = LenientJson.encodeToString(this)
     val filteredEvent = LenientJson.parseToJsonElement(stringEvent)
         .jsonObject.filterNot { (k, v) ->
             (k == "properties" && v == emptyJsonObject) ||
                 (k == "traits" && v == emptyJsonObject) ||
-                (k == "userId" && v is JsonPrimitive && v.content == String.empty())
+                (k == "userId" && v.isEmptyString()) ||
+                (omitBlankAnonymousId && k == "anonymousId" && v.isEmptyString())
         }
     return LenientJson.encodeToString(filteredEvent)
 }
+
+private fun JsonElement.isEmptyString() = this is JsonPrimitive && content == String.empty()
 
 /**
  * Merges the current JSON object with another JSON object, giving higher priority to the other JSON object.

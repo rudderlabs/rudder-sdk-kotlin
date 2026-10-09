@@ -49,7 +49,7 @@ class CorePomVerificationTest {
           <artifactId>core</artifactId>
           <version>x.y.z</version>
           <name>Analytics Kotlin SDK</name>
-          <description>RudderStack's SDK for android</description>
+          <description>Kotlin JVM (server-side, public beta) and core of the Android SDK</description>
           <url>https://github.com/rudderlabs/rudder-sdk-kotlin</url>
           <licenses>
             <license>

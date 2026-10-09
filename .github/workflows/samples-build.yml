@@ -1,0 +1,46 @@
+name: Samples Build
+
+on:
+  pull_request:
+    paths:
+      - "samples/**"
+      - ".github/workflows/samples-build.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.head_ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # The samples are standalone builds. They use the published core artifact, not the :core module.
+  build-samples:
+    name: Build Server Samples
+    runs-on: arc-amd64
+    permissions:
+      contents: read
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout code
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # v4.8.0
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build the Ktor sample
+        run: ./gradlew -p samples/ktor build
+
+      - name: Build the Spring Boot sample
+        run: ./gradlew -p samples/spring-boot build

@@ -26,6 +26,8 @@ import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.UserIdentit
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.resetUserIdentity
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.storeUserId
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.storeUserIdAndTraits
+import com.rudderstack.sdk.kotlin.core.internals.pipeline.PipelineRules
+import com.rudderstack.sdk.kotlin.core.internals.pipeline.providePipelineRules
 import com.rudderstack.sdk.kotlin.core.internals.platform.Platform
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
@@ -45,12 +47,15 @@ import com.rudderstack.sdk.kotlin.core.plugins.ContextSnapshotPlugin
 import com.rudderstack.sdk.kotlin.core.plugins.LibraryInfoPlugin
 import com.rudderstack.sdk.kotlin.core.plugins.RudderStackDataplanePlugin
 import com.rudderstack.sdk.kotlin.core.plugins.SchemaGuardPlugin
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import org.jetbrains.annotations.VisibleForTesting
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * The `Analytics` class is the core of the RudderStack SDK, responsible for tracking events,
@@ -80,6 +85,8 @@ open class Analytics protected constructor(
 
     private val pluginChain: PluginChain = PluginChain().also { it.analytics = this }
 
+    internal val pipelineRules: PipelineRules by lazy { providePipelineRules(getPlatformType(), configuration) }
+
     /**
      * The `sourceConfigState` is a [State] that manages the source configuration for the analytics instance.
      */
@@ -107,8 +114,9 @@ open class Analytics protected constructor(
     @Volatile
     var foregroundStateProvider: (() -> Boolean)? = null
 
-    private val processEventChannel: Channel<Event> = Channel(Channel.UNLIMITED)
+    private val processEventChannel: Channel<ProcessMessage> = Channel(Channel.UNLIMITED)
     private var processEventJob: Job? = null
+    private val queuedEventDropCount = AtomicLong()
 
     @Volatile
     internal var isAnalyticsShutdown = false
@@ -149,7 +157,11 @@ open class Analytics protected constructor(
         configuration = configuration,
         analyticsConfiguration = provideAnalyticsConfiguration(configuration) { writeKey, logger ->
             when (configuration.storageType) {
-                StorageType.IN_MEMORY -> provideInMemoryStorage(writeKey, logger)
+                StorageType.IN_MEMORY -> provideInMemoryStorage(
+                    writeKey = writeKey,
+                    logger = logger,
+                    maxEvents = providePipelineRules(PlatformType.Server, configuration).maxQueuedEvents,
+                )
                 StorageType.FILE -> provideBasicStorage(writeKey, PlatformType.Server, logger)
             }
         },
@@ -177,7 +189,7 @@ open class Analytics protected constructor(
 
         captureCreationState(event)
 
-        processEventChannel.trySend(event).apply {
+        processEventChannel.trySend(ProcessMessage.EventMessage(event)).apply {
             if (isFailure) logger.warn("Analytics(core): Failed to enqueue track event — channel closed or full")
         }
     }
@@ -215,7 +227,7 @@ open class Analytics protected constructor(
 
         captureCreationState(event)
 
-        processEventChannel.trySend(event).apply {
+        processEventChannel.trySend(ProcessMessage.EventMessage(event)).apply {
             if (isFailure) logger.warn("Analytics(core): Failed to enqueue screen event — channel closed or full")
         }
     }
@@ -242,7 +254,7 @@ open class Analytics protected constructor(
 
         captureCreationState(event)
 
-        processEventChannel.trySend(event).apply {
+        processEventChannel.trySend(ProcessMessage.EventMessage(event)).apply {
             if (isFailure) logger.warn("Analytics(core): Failed to enqueue group event — channel closed or full")
         }
     }
@@ -286,7 +298,7 @@ open class Analytics protected constructor(
 
         captureCreationState(event)
 
-        processEventChannel.trySend(event).apply {
+        processEventChannel.trySend(ProcessMessage.EventMessage(event)).apply {
             if (isFailure) logger.warn("Analytics(core): Failed to enqueue identify event — channel closed or full")
         }
     }
@@ -325,9 +337,38 @@ open class Analytics protected constructor(
 
         captureCreationState(event)
 
-        processEventChannel.trySend(event).apply {
+        processEventChannel.trySend(ProcessMessage.EventMessage(event)).apply {
             if (isFailure) logger.warn("Analytics(core): Failed to enqueue alias event — channel closed or full")
         }
+    }
+
+    internal fun enqueue(event: Event) {
+        if (!isAnalyticsActive()) return
+
+        captureCreationState(event)
+
+        processEventChannel.trySend(ProcessMessage.EventMessage(event)).apply {
+            if (isFailure) logger.warn("Analytics(core): Failed to enqueue ${event.type} event — channel closed or full")
+        }
+    }
+
+    internal fun markQueuedEventsDropped() {
+        queuedEventDropCount.incrementAndGet()
+    }
+
+    /**
+     * Uploads each event queued before this call and waits for the result.
+     *
+     * @return `true` when the upload sent each batch. `false` when the SDK dropped a queued event during the call
+     * or the instance is shut down.
+     */
+    internal suspend fun drain(): Boolean {
+        if (isAnalyticsShutdown) return false
+
+        val dropCountAtStart = queuedEventDropCount.get()
+        val ack = CompletableDeferred<Boolean>()
+        if (processEventChannel.trySend(ProcessMessage.Barrier(ack)).isFailure) return false
+        return ack.await() && queuedEventDropCount.get() == dropCountAtStart
     }
 
     // Runs on the caller's thread before the event is queued, so it records the state at creation.
@@ -489,11 +530,45 @@ open class Analytics protected constructor(
     private fun processEvents(anonymousIdPersistedJob: Job) {
         processEventJob = analyticsScope.launch(analyticsDispatcher) {
             anonymousIdPersistedJob.join()
-            for (event in processEventChannel) {
-                event.updateData(platform = getPlatformType())
-                pluginChain.process(event)
+            for (message in processEventChannel) {
+                when (message) {
+                    is ProcessMessage.EventMessage -> processEvent(message.event)
+                    is ProcessMessage.Barrier -> flushWithAck(message.ack)
+                }
             }
         }
+    }
+
+    @Suppress("TooGenericExceptionCaught")
+    private suspend fun processEvent(event: Event) {
+        try {
+            event.updateData(platform = getPlatformType())
+            pluginChain.process(event)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            if (!pipelineRules.continuesAfterEventFailure) throw e
+            markQueuedEventsDropped()
+            logger.error("Analytics(core): Failed to process ${event.type} event (messageId=${event.messageId})", e)
+        }
+    }
+
+    private fun flushWithAck(ack: CompletableDeferred<Boolean>) {
+        var isFlushRequested = false
+        pluginChain.applyClosure {
+            if (it is RudderStackDataplanePlugin) {
+                it.flush(ack)
+                isFlushRequested = true
+            }
+        }
+        if (!isFlushRequested) ack.complete(false)
+    }
+
+    private sealed interface ProcessMessage {
+
+        class EventMessage(val event: Event) : ProcessMessage
+
+        class Barrier(val ack: CompletableDeferred<Boolean>) : ProcessMessage
     }
 
     override fun getPlatformType(): PlatformType = PlatformType.Server

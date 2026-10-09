@@ -1,7 +1,15 @@
 package com.rudderstack.sdk.kotlin.core.internals.utils
 
 import com.rudderstack.sdk.kotlin.core.internals.models.ExternalId
+import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
+import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
+import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.UserIdentity
+import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Test
 import org.skyscreamer.jsonassert.JSONAssert
 
@@ -46,6 +54,23 @@ class JSONUtilsTest {
 
         val expectedJson = "{}"
         JSONAssert.assertEquals(expectedJson, externalIdsJsonString, false)
+    }
+
+    @Test
+    fun `given an event with an empty anonymousId, when it is encoded, then anonymousId is absent only with the omit flag`() {
+        val event = TrackEvent(
+            event = "Order Completed",
+            properties = emptyJsonObject,
+            userIdentityState = UserIdentity(anonymousId = String.empty(), userId = "user-1", traits = emptyJsonObject),
+        ).also { it.updateData(PlatformType.Server) }
+
+        val defaultJson = LenientJson.parseToJsonElement(event.encodeToString()).jsonObject
+        val serverJson = LenientJson.parseToJsonElement(event.encodeToString(omitBlankAnonymousId = true)).jsonObject
+
+        assertEquals(String.empty(), defaultJson["anonymousId"]?.jsonPrimitive?.content)
+        assertFalse(serverJson.containsKey("anonymousId"))
+        assertEquals("user-1", serverJson["userId"]?.jsonPrimitive?.content)
+        assertEquals("server", serverJson["channel"]?.jsonPrimitive?.content)
     }
 }
 

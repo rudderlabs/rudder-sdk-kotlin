@@ -16,26 +16,29 @@ data class ModuleConfig(
     val artifactId: String,
     val version: String,
     val pomPackaging: String,
+    val pomDescription: String,
 )
 
 // ── Module Config Resolution ────────────────────────────────────────────────────
 
 // Returns the base (release) config for any module by name.
-// e.g., "core"    -> ModuleConfig("com.rudderstack.sdk.kotlin", "core", "6.0.0", "jar")
-// e.g., "android" -> ModuleConfig("com.rudderstack.sdk.kotlin", "android", "6.0.0", "aar")
-// e.g., "adjust"  -> ModuleConfig("com.rudderstack.integration.kotlin", "adjust", "6.0.0", "aar")
+// e.g., "core"    -> ModuleConfig("com.rudderstack.sdk.kotlin", "core", "6.0.0", "jar", "<core description>")
+// e.g., "android" -> ModuleConfig("com.rudderstack.sdk.kotlin", "android", "6.0.0", "aar", "<default description>")
+// e.g., "adjust"  -> ModuleConfig("com.rudderstack.integration.kotlin", "adjust", "6.0.0", "aar", "<default description>")
 fun getModuleConfig(moduleName: String): ModuleConfig = when (moduleName) {
     "core" -> ModuleConfig(
         groupId = RudderStackBuildConfig.SDK.PACKAGE_NAME,
         artifactId = RudderStackBuildConfig.SDK.Core.PublishConfig.artifactId,
         version = RudderStackBuildConfig.SDK.Core.VERSION_NAME,
         pomPackaging = RudderStackBuildConfig.SDK.Core.PublishConfig.pomPackaging,
+        pomDescription = RudderStackBuildConfig.SDK.Core.PublishConfig.pomDescription,
     )
     "android" -> ModuleConfig(
         groupId = RudderStackBuildConfig.SDK.PACKAGE_NAME,
         artifactId = RudderStackBuildConfig.SDK.Android.PublishConfig.artifactId,
         version = RudderStackBuildConfig.SDK.Android.VERSION_NAME,
         pomPackaging = RudderStackBuildConfig.SDK.Android.PublishConfig.pomPackaging,
+        pomDescription = RudderStackBuildConfig.SDK.Android.PublishConfig.pomDescription,
     )
     else -> {
         val info = RudderStackBuildConfig.Integrations.getModuleInfo(moduleName)
@@ -44,6 +47,7 @@ fun getModuleConfig(moduleName: String): ModuleConfig = when (moduleName) {
             artifactId = info.artifactId,
             version = info.versionName,
             pomPackaging = info.pomPackaging,
+            pomDescription = info.pomDescription,
         )
     }
 }
@@ -122,7 +126,7 @@ configure<PublishingExtension> {
             pom {
                 name.set(RudderStackBuildConfig.POM.NAME)
                 packaging = config.pomPackaging
-                description.set(RudderStackBuildConfig.POM.DESCRIPTION)
+                description.set(config.pomDescription)
                 url.set(RudderStackBuildConfig.POM.URL)
 
                 licenses {
