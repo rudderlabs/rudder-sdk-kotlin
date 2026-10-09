@@ -95,5 +95,3 @@ class ServerConfiguration @JvmOverloads constructor(
         const val MAX_RETRIES_LIMIT: Int = 5
     }
 }
-
-internal fun Configuration.asServerConfigurationOrNull(): ServerConfiguration? = this as? ServerConfiguration

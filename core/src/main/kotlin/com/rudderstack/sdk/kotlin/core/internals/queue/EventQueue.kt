@@ -9,7 +9,6 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import com.rudderstack.sdk.kotlin.core.internals.utils.encodeToString
 import com.rudderstack.sdk.kotlin.core.internals.utils.isSourceEnabled
 import com.rudderstack.sdk.kotlin.core.server.DropReason
-import com.rudderstack.sdk.kotlin.core.server.asServerConfigurationOrNull
 import com.rudderstack.sdk.kotlin.core.server.reportDrop
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -37,7 +36,7 @@ internal class EventQueue(
     private var writeChannel: Channel<QueueMessage>
     private val storage
         get() = analytics.storage
-    private val isServerMode = analytics.configuration.asServerConfigurationOrNull() != null
+    private val pipelineRules = analytics.pipelineRules
     private var isQueueFull = false
     private var lastEventAnonymousId = storage.readString(
         StorageKeys.LAST_EVENT_ANONYMOUS_ID,
@@ -104,7 +103,7 @@ internal class EventQueue(
     }
 
     internal fun stringifyBaseEvent(payload: Event): String {
-        return payload.encodeToString(omitBlankAnonymousId = isServerMode)
+        return payload.encodeToString(omitBlankAnonymousId = pipelineRules.omitsBlankAnonymousId)
     }
 
     @Suppress("TooGenericExceptionCaught")
@@ -113,7 +112,7 @@ internal class EventQueue(
             val isFlushSignal = (queueMessage.type == QueueMessage.QueueMessageType.FLUSH_SIGNAL)
 
             if (!isFlushSignal) {
-                if (!isServerMode) updateAnonymousIdAndRolloverIfNeeded(queueMessage)
+                if (pipelineRules.splitsBatchByAnonymousId) updateAnonymousIdAndRolloverIfNeeded(queueMessage)
                 try {
                     queueMessage.event?.let {
                         stringifyBaseEvent(it).also { stringValue ->

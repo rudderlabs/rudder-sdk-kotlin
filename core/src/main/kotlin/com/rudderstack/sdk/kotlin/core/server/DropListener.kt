@@ -39,7 +39,7 @@ enum class DropReason {
 
 @Suppress("TooGenericExceptionCaught")
 internal fun Analytics.reportDrop(reason: DropReason, eventCount: Int) {
-    val dropListener = configuration.asServerConfigurationOrNull()?.dropListener ?: return
+    val dropListener = pipelineRules.dropListener ?: return
     try {
         dropListener.onDrop(reason, eventCount)
     } catch (e: Exception) {

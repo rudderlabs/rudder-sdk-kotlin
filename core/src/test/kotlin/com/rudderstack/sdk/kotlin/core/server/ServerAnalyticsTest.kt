@@ -9,6 +9,7 @@ import com.rudderstack.sdk.kotlin.core.internals.models.ScreenEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.UserIdentity
+import com.rudderstack.sdk.kotlin.core.internals.pipeline.providePipelineRules
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.utils.LenientJson
 import com.rudderstack.sdk.kotlin.core.internals.utils.encodeToString
@@ -50,11 +51,13 @@ class ServerAnalyticsTest {
 
     @BeforeEach
     fun setUp() {
-        every { mockAnalytics.configuration } returns ServerConfiguration(
+        val configuration = ServerConfiguration(
             writeKey = "<write-key>",
             dataPlaneUrl = "https://test.dataplane.com",
             dropListener = mockDropListener,
         )
+        every { mockAnalytics.configuration } returns configuration
+        every { mockAnalytics.pipelineRules } returns providePipelineRules(PlatformType.Server, configuration)
         every { mockAnalytics.enqueue(capture(queuedEvents)) } just runs
 
         serverAnalytics = ServerAnalytics(mockAnalytics)

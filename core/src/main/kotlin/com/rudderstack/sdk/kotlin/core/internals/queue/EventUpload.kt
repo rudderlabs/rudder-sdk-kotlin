@@ -10,6 +10,7 @@ import com.rudderstack.sdk.kotlin.core.internals.network.Success
 import com.rudderstack.sdk.kotlin.core.internals.network.createPostConfig
 import com.rudderstack.sdk.kotlin.core.internals.network.formatStatusCodeMessage
 import com.rudderstack.sdk.kotlin.core.internals.network.toEventUploadResult
+import com.rudderstack.sdk.kotlin.core.internals.pipeline.SourceNotFoundAction
 import com.rudderstack.sdk.kotlin.core.internals.policies.backoff.MaxAttemptsWithBackoff
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.DateTimeUtils
@@ -25,7 +26,6 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.generateUUID
 import com.rudderstack.sdk.kotlin.core.internals.utils.handleInvalidWriteKey
 import com.rudderstack.sdk.kotlin.core.internals.utils.parseFilePaths
 import com.rudderstack.sdk.kotlin.core.server.DropReason
-import com.rudderstack.sdk.kotlin.core.server.asServerConfigurationOrNull
 import com.rudderstack.sdk.kotlin.core.server.reportDrop
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
@@ -59,22 +59,22 @@ internal class EventUpload(
             postConfig = createPostConfig(
                 isGZIPEnabled = gzipEnabled,
                 anonymousIdHeaderString = analytics.anonymousId
-                    ?.takeIf { asServerConfigurationOrNull() == null }
+                    ?.takeIf { analytics.pipelineRules.sendsAnonymousIdHeader }
                     ?: String.empty(),
             ),
             logger = analytics.logger,
         )
     },
     private val maxAttemptsWithBackoff: MaxAttemptsWithBackoff =
-        analytics.configuration.asServerConfigurationOrNull()
-            ?.let { MaxAttemptsWithBackoff(logger = analytics.logger, maxAttempts = it.maxRetries) }
+        analytics.pipelineRules.maxRetries
+            ?.let { MaxAttemptsWithBackoff(logger = analytics.logger, maxAttempts = it) }
             ?: MaxAttemptsWithBackoff(logger = analytics.logger),
     private val retryHeadersProvider: RetryHeadersProvider = RetryHeadersProviderImpl(analytics.storage, analytics.logger),
 ) {
 
     private var lastBatchAnonymousId = String.empty()
     private val storage get() = analytics.storage
-    private val serverConfiguration = analytics.configuration.asServerConfigurationOrNull()
+    private val pipelineRules = analytics.pipelineRules
 
     // This job is required to mainly stop the upload process when the source is disabled.
     // The type is null to clear the job reference when the source is disabled.
@@ -106,13 +106,13 @@ internal class EventUpload(
 
     private suspend fun prepareForUpload() {
         analytics.logger.verbose("EventUpload: Preparing for upload — rolling over current batch file")
-        if (serverConfiguration != null) {
-            // The write loop can hold the file dispatcher under load, and an upload must not wait for it.
-            storage.rollover()
-        } else {
+        if (pipelineRules.usesFileDispatcherForRollover) {
             withContext(analytics.fileStorageDispatcher) {
                 storage.rollover()
             }
+        } else {
+            // The write loop can hold the file dispatcher under load, and an upload must not wait for it.
+            storage.rollover()
         }
     }
 
@@ -144,7 +144,7 @@ internal class EventUpload(
     }
 
     private fun updateAnonymousIdHeaderIfChanged(batchPayload: String) {
-        if (serverConfiguration != null) return
+        if (!pipelineRules.sendsAnonymousIdHeader) return
 
         val currentBatchAnonymousId = getAnonymousIdFromBatch(batchPayload)
         if (lastBatchAnonymousId != currentBatchAnonymousId) {
@@ -163,6 +163,7 @@ internal class EventUpload(
 
     private suspend fun uploadEvents(batchPayload: String, filePath: String): Boolean {
         val batchId = storage.getBatchId(filePath)
+        val maxRetries = pipelineRules.maxRetries
         var failedAttempts = 0
         var result: EventUploadResult
         do {
@@ -181,7 +182,7 @@ internal class EventUpload(
 
                 is RetryAbleEventUploadError -> {
                     analytics.logger.debug("EventUpload: ${result.formatStatusCodeMessage()}. Retry able error occurred.")
-                    if (serverConfiguration != null && ++failedAttempts > serverConfiguration.maxRetries) {
+                    if (maxRetries != null && ++failedAttempts > maxRetries) {
                         dropBatchAfterLastRetry(batchPayload, filePath)
                         return false
                     }
@@ -208,7 +209,7 @@ internal class EventUpload(
     private fun dropBatch(reason: DropReason, batchPayload: String, filePath: String) {
         analytics.markQueuedEventsDropped()
         cleanup(filePath)
-        if (serverConfiguration?.dropListener != null) {
+        if (pipelineRules.dropListener != null) {
             analytics.reportDrop(reason, countEventsInBatch(batchPayload))
         }
     }
@@ -233,18 +234,22 @@ internal class EventUpload(
                 analytics.handleInvalidWriteKey()
             }
 
-            NonRetryAbleEventUploadError.ERROR_404 -> if (serverConfiguration != null) {
-                analytics.logger.error(
-                    "EventUpload: ${status.formatStatusCodeMessage()}. Source is disabled. Dropping the batch."
-                )
-                dropBatch(DropReason.REJECTED_BY_SERVER, batchPayload, filePath)
-            } else {
-                analytics.logger.error(
-                    "EventUpload: ${status.formatStatusCodeMessage()}. Source is disabled. " +
-                        "Stopping the events upload process until the source is enabled again."
-                )
-                cancel()
-                analytics.disableSource()
+            NonRetryAbleEventUploadError.ERROR_404 -> when (pipelineRules.onSourceNotFound) {
+                SourceNotFoundAction.DROP_BATCH -> {
+                    analytics.logger.error(
+                        "EventUpload: ${status.formatStatusCodeMessage()}. Source is disabled. Dropping the batch."
+                    )
+                    dropBatch(DropReason.REJECTED_BY_SERVER, batchPayload, filePath)
+                }
+
+                SourceNotFoundAction.STOP_UPLOADS -> {
+                    analytics.logger.error(
+                        "EventUpload: ${status.formatStatusCodeMessage()}. Source is disabled. " +
+                            "Stopping the events upload process until the source is enabled again."
+                    )
+                    cancel()
+                    analytics.disableSource()
+                }
             }
 
             NonRetryAbleEventUploadError.ERROR_413 -> {

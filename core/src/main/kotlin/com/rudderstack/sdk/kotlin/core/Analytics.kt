@@ -26,13 +26,14 @@ import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.UserIdentit
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.resetUserIdentity
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.storeUserId
 import com.rudderstack.sdk.kotlin.core.internals.models.useridentity.storeUserIdAndTraits
+import com.rudderstack.sdk.kotlin.core.internals.pipeline.PipelineRules
+import com.rudderstack.sdk.kotlin.core.internals.pipeline.providePipelineRules
 import com.rudderstack.sdk.kotlin.core.internals.platform.Platform
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.PluginChain
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
-import com.rudderstack.sdk.kotlin.core.internals.storage.inmemory.UNLIMITED_EVENTS
 import com.rudderstack.sdk.kotlin.core.internals.storage.inmemory.provideInMemoryStorage
 import com.rudderstack.sdk.kotlin.core.internals.storage.provideBasicStorage
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
@@ -46,7 +47,6 @@ import com.rudderstack.sdk.kotlin.core.plugins.ContextSnapshotPlugin
 import com.rudderstack.sdk.kotlin.core.plugins.LibraryInfoPlugin
 import com.rudderstack.sdk.kotlin.core.plugins.RudderStackDataplanePlugin
 import com.rudderstack.sdk.kotlin.core.plugins.SchemaGuardPlugin
-import com.rudderstack.sdk.kotlin.core.server.asServerConfigurationOrNull
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
@@ -84,6 +84,8 @@ open class Analytics protected constructor(
 ) : AnalyticsConfiguration by analyticsConfiguration, Platform {
 
     private val pluginChain: PluginChain = PluginChain().also { it.analytics = this }
+
+    internal val pipelineRules: PipelineRules by lazy { providePipelineRules(getPlatformType(), configuration) }
 
     /**
      * The `sourceConfigState` is a [State] that manages the source configuration for the analytics instance.
@@ -158,7 +160,7 @@ open class Analytics protected constructor(
                 StorageType.IN_MEMORY -> provideInMemoryStorage(
                     writeKey = writeKey,
                     logger = logger,
-                    maxEvents = configuration.asServerConfigurationOrNull()?.maxQueuedEvents ?: UNLIMITED_EVENTS,
+                    maxEvents = providePipelineRules(PlatformType.Server, configuration).maxQueuedEvents,
                 )
                 StorageType.FILE -> provideBasicStorage(writeKey, PlatformType.Server, logger)
             }
@@ -545,7 +547,7 @@ open class Analytics protected constructor(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            if (configuration.asServerConfigurationOrNull() == null) throw e
+            if (!pipelineRules.continuesAfterEventFailure) throw e
             markQueuedEventsDropped()
             logger.error("Analytics(core): Failed to process ${event.type} event (messageId=${event.messageId})", e)
         }

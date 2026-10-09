@@ -2,6 +2,7 @@ package com.rudderstack.sdk.kotlin.core.server
 
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.StorageType
+import com.rudderstack.sdk.kotlin.core.internals.pipeline.PipelineRules
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -51,11 +52,7 @@ class ServerConfigurationTest {
         val dropListener: DropListener = mockk()
         every { dropListener.onDrop(any(), any()) } throws exception
         val analytics: Analytics = mockk(relaxed = true)
-        every { analytics.configuration } returns ServerConfiguration(
-            writeKey = WRITE_KEY,
-            dataPlaneUrl = DATA_PLANE_URL,
-            dropListener = dropListener,
-        )
+        every { analytics.pipelineRules } returns PipelineRules(usesSourceConfig = false, dropListener = dropListener)
 
         analytics.reportDrop(DropReason.QUEUE_FULL, eventCount = 1)
 
