@@ -43,7 +43,11 @@ abstract class IntegrationPlugin : EventPlugin {
     private val pluginList = CopyOnWriteArrayList<Plugin>()
     private val destinationReadyCallbacks = mutableListOf<(Any?, DestinationResult) -> Unit>()
 
-    private var isStandardIntegration: Boolean = true
+    private val isStandardIntegration: Boolean = this is StandardIntegration
+
+    // An instance can exist before `create` runs, so the instance alone does not prove that `create` ran.
+    @Volatile
+    private var hasCreateSucceeded = false
 
     @Volatile
     private var isPluginSetup = false
@@ -66,8 +70,19 @@ abstract class IntegrationPlugin : EventPlugin {
     abstract val key: String
 
     /**
-     * Creates the destination instance. Override this method for the initialisation of destination.
-     * This method must return true if the destination was created successfully, false otherwise.
+     * Whether the app initialised the destination SDK and passed it to this integration.
+     *
+     * A lite integration only maps and forwards events. It must not initialise the destination SDK in
+     * [create], and it can return the instance from [getDestinationInstance] before [create] runs.
+     */
+    protected open val isLiteMode: Boolean
+        get() = false
+
+    /**
+     * Creates the destination. The SDK calls this method with the first valid configuration.
+     *
+     * In standard mode, initialise the destination SDK here. In lite mode, apply the configuration only.
+     * Throw an exception to report that the destination was not created.
      *
      * @param destinationConfig The configuration for the destination.
      */
@@ -100,7 +115,9 @@ abstract class IntegrationPlugin : EventPlugin {
 
     final override fun setup(analytics: Analytics) {
         super.setup(analytics)
-        isStandardIntegration = this is StandardIntegration
+        if (isLiteMode) {
+            analytics.logger.debug("IntegrationPlugin[$key]: Lite mode. The app initialises the destination SDK.")
+        }
         pluginChain = PluginChain().also { it.analytics = analytics }
         isPluginSetup = true
         pluginList.forEach { plugin -> add(plugin) }
@@ -290,28 +307,34 @@ abstract class IntegrationPlugin : EventPlugin {
      */
     // todo: refactor this API to support dynamic callbacks
     fun onDestinationReady(callback: (Any?, DestinationResult) -> Unit) {
-        getDestinationInstance()?.let { destinationInstance ->
-            if (isDestinationReady) {
-                callback(destinationInstance, Result.Success(Unit))
-            } else {
-                callback(
-                    null,
-                    Result.Failure(IllegalStateException("Destination $key is absent or disabled in dashboard."))
-                )
-            }
-        } ?: run {
-            synchronized(this) {
+        synchronized(this) {
+            if (!isDestinationCreated()) {
                 destinationReadyCallbacks.add(callback)
+                return
             }
+        }
+        if (isDestinationReady) {
+            callback(getDestinationInstance(), Result.Success(Unit))
+        } else {
+            callback(
+                null,
+                Result.Failure(IllegalStateException("Destination $key is absent or disabled in dashboard."))
+            )
         }
     }
 
     private fun safelyInitOrUpdateAndNotify(destinationConfig: JsonObject) {
-        if (getDestinationInstance() == null) {
+        if (!isDestinationCreated()) {
             safelyCreateAndNotify(destinationConfig)
         } else {
             safelyUpdateAndNotify(destinationConfig)
         }
+    }
+
+    private fun isDestinationCreated(): Boolean = when {
+        isLiteMode -> hasCreateSucceeded
+        isStandardIntegration -> getDestinationInstance() != null
+        else -> hasCreateSucceeded && getDestinationInstance() != null
     }
 
     private fun safelyCreateAndNotify(destinationConfig: JsonObject) {
@@ -320,6 +343,7 @@ abstract class IntegrationPlugin : EventPlugin {
                 create(destinationConfig)
                 analytics.logger.debug("IntegrationPlugin: Destination $key created successfully.")
                 this.isDestinationReady = true
+                hasCreateSucceeded = true
                 notifyCallbacks(Result.Success(Unit))
             },
             onException = { exception ->
@@ -397,15 +421,14 @@ abstract class IntegrationPlugin : EventPlugin {
     }
 
     private fun notifyCallbacks(destinationResult: DestinationResult) {
-        synchronized(this) {
-            if (destinationReadyCallbacks.isNotEmpty()) {
-                analytics.logger.debug(
-                    "IntegrationPlugin[$key]: Notifying ${destinationReadyCallbacks.size} deferred callback(s)"
-                )
-            }
-            destinationReadyCallbacks.forEach { callback -> callback(getDestinationInstance(), destinationResult) }
-            destinationReadyCallbacks.clear()
+        val callbacks = synchronized(this) {
+            destinationReadyCallbacks.toList().also { destinationReadyCallbacks.clear() }
         }
+        if (callbacks.isNotEmpty()) {
+            analytics.logger.debug("IntegrationPlugin[$key]: Notifying ${callbacks.size} deferred callback(s)")
+        }
+        val destinationInstance = getDestinationInstance()
+        callbacks.forEach { callback -> callback(destinationInstance, destinationResult) }
     }
 
     private fun applyDefaultPlugins() {
