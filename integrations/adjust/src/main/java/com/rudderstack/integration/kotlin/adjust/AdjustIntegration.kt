@@ -12,8 +12,9 @@ import com.adjust.sdk.LogLevel
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.IntegrationPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.StandardIntegration
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleObserver
-import com.rudderstack.sdk.kotlin.android.utils.addLifecycleObserver
+import com.rudderstack.sdk.kotlin.android.utils.addLifecycleObserverWithCurrentState
 import com.rudderstack.sdk.kotlin.android.utils.application
+import com.rudderstack.sdk.kotlin.android.utils.removeLifecycleObserver
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
@@ -57,7 +58,7 @@ class AdjustIntegration : StandardIntegration, IntegrationPlugin(), ActivityLife
                     attributionCallback = ::sendInstallAttributedEvent,
                     logger = analytics.logger,
                 )
-                (analytics as? AndroidAnalytics)?.addLifecycleObserver(this)
+                (analytics as? AndroidAnalytics)?.addLifecycleObserverWithCurrentState(this)
                 analytics.logger.verbose("AdjustIntegration: Adjust SDK initialized.")
             }
         }
@@ -99,6 +100,11 @@ class AdjustIntegration : StandardIntegration, IntegrationPlugin(), ActivityLife
     override fun reset() {
         Adjust.removeGlobalPartnerParameters()
         analytics.logger.verbose("AdjustIntegration: Reset call completed.")
+    }
+
+    override fun teardown() {
+        super.teardown()
+        (analytics as? AndroidAnalytics)?.removeLifecycleObserver(this)
     }
 
     private fun Event.setSessionParams() {

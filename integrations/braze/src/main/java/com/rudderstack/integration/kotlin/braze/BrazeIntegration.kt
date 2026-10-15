@@ -15,7 +15,9 @@ import com.braze.support.BrazeLogger
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.IntegrationPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.StandardIntegration
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleObserver
+import com.rudderstack.sdk.kotlin.android.utils.addLifecycleObserverWithCurrentState
 import com.rudderstack.sdk.kotlin.android.utils.application
+import com.rudderstack.sdk.kotlin.android.utils.removeLifecycleObserver
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
@@ -29,6 +31,7 @@ import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.long
 import kotlinx.serialization.json.longOrNull
 import java.util.Calendar
+import com.rudderstack.sdk.kotlin.android.Analytics as AndroidAnalytics
 
 private const val INSTALL_ATTRIBUTED = "Install Attributed"
 
@@ -60,6 +63,7 @@ class BrazeIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
                     braze = it
                     setUserAlias()
                 }
+                (analytics as? AndroidAnalytics)?.addLifecycleObserverWithCurrentState(this)
                 analytics.logger.verbose("BrazeIntegration: Braze SDK initialized")
             }
         }
@@ -218,6 +222,11 @@ class BrazeIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
     override fun flush() {
         this.braze?.requestImmediateDataFlush()
         analytics.logger.verbose("BrazeIntegration: Flush call completed")
+    }
+
+    override fun teardown() {
+        super.teardown()
+        (analytics as? AndroidAnalytics)?.removeLifecycleObserver(this)
     }
 
     override fun onActivityStarted(activity: Activity) {
