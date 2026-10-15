@@ -16,9 +16,6 @@ class MockLiteIntegrationPlugin(private val appInstance: MockDestinationSdk) : S
     override val key: String
         get() = "MockDestination"
 
-    override val isLiteMode: Boolean
-        get() = true
-
     override fun create(destinationConfig: JsonObject) {
         createCount++
         createError?.let { throw it }

@@ -45,16 +45,17 @@ abstract class IntegrationPlugin : EventPlugin {
 
     private val isStandardIntegration: Boolean = this is StandardIntegration
 
-    // An instance can exist before `create` runs, so the instance alone does not prove that `create` ran.
-    @Volatile
-    private var hasCreateSucceeded = false
-
     @Volatile
     private var isPluginSetup = false
 
+    // One lock for the state and the stored callbacks, so a callback cannot miss a state change.
+    private val stateLock = Any()
+
     @Volatile
-    internal var isDestinationReady = false
-        private set
+    private var state: DestinationState = DestinationState.NotCreated
+
+    internal val isDestinationReady: Boolean
+        get() = state == DestinationState.Ready
 
     // Kept for the handoff gate, so it costs no source-config lookup per event.
     @Volatile
@@ -70,19 +71,11 @@ abstract class IntegrationPlugin : EventPlugin {
     abstract val key: String
 
     /**
-     * Whether the app initialised the destination SDK and passed it to this integration.
+     * Creates the destination. The SDK calls this method once, with the first valid configuration.
      *
-     * A lite integration only maps and forwards events. It must not initialise the destination SDK in
-     * [create], and it can return the instance from [getDestinationInstance] before [create] runs.
-     */
-    protected open val isLiteMode: Boolean
-        get() = false
-
-    /**
-     * Creates the destination. The SDK calls this method with the first valid configuration.
-     *
-     * In standard mode, initialise the destination SDK here. In lite mode, apply the configuration only.
-     * Throw an exception to report that the destination was not created.
+     * Initialise the destination SDK here, unless the integration already holds an instance that the app passed.
+     * Throw an exception when the destination cannot be created. The SDK then calls this method again with the next
+     * valid configuration.
      *
      * @param destinationConfig The configuration for the destination.
      */
@@ -115,9 +108,6 @@ abstract class IntegrationPlugin : EventPlugin {
 
     final override fun setup(analytics: Analytics) {
         super.setup(analytics)
-        if (isLiteMode) {
-            analytics.logger.debug("IntegrationPlugin[$key]: Lite mode. The app initialises the destination SDK.")
-        }
         pluginChain = PluginChain().also { it.analytics = analytics }
         isPluginSetup = true
         pluginList.forEach { plugin -> add(plugin) }
@@ -307,7 +297,7 @@ abstract class IntegrationPlugin : EventPlugin {
      */
     // todo: refactor this API to support dynamic callbacks
     fun onDestinationReady(callback: (Any?, DestinationResult) -> Unit) {
-        synchronized(this) {
+        synchronized(stateLock) {
             if (!isDestinationCreated()) {
                 destinationReadyCallbacks.add(callback)
                 return
@@ -331,25 +321,19 @@ abstract class IntegrationPlugin : EventPlugin {
         }
     }
 
-    private fun isDestinationCreated(): Boolean = when {
-        isLiteMode -> hasCreateSucceeded
-        isStandardIntegration -> getDestinationInstance() != null
-        else -> hasCreateSucceeded && getDestinationInstance() != null
-    }
+    // Not derived from the instance: an integration can hold one before `create` runs, or never hold one.
+    private fun isDestinationCreated(): Boolean = state != DestinationState.NotCreated
 
     private fun safelyCreateAndNotify(destinationConfig: JsonObject) {
         safelyExecute(
             block = {
                 create(destinationConfig)
                 analytics.logger.debug("IntegrationPlugin: Destination $key created successfully.")
-                this.isDestinationReady = true
-                hasCreateSucceeded = true
-                notifyCallbacks(Result.Success(Unit))
+                changeStateAndNotify(DestinationState.Ready, Result.Success(Unit))
             },
             onException = { exception ->
                 analytics.logger.error("IntegrationPlugin: Failed to create destination $key. Error: ${exception.message}")
-                this.isDestinationReady = false
-                notifyCallbacks(Result.Failure(exception))
+                changeStateAndNotify(DestinationState.NotCreated, Result.Failure(exception))
             }
         )
     }
@@ -363,9 +347,8 @@ abstract class IntegrationPlugin : EventPlugin {
      * customer callback cannot escape into the re-evaluation coroutine.
      */
     private fun notifyFailureAndMarkNotReady(throwable: Throwable) {
-        this.isDestinationReady = false
         safelyExecute(
-            block = { notifyCallbacks(Result.Failure(throwable)) },
+            block = { changeStateAndNotify(notReadyState(), Result.Failure(throwable)) },
             onException = { exception ->
                 analytics.logger.error(
                     "IntegrationPlugin: Failed to notify destination $key callbacks. Error: ${exception.message}"
@@ -385,8 +368,7 @@ abstract class IntegrationPlugin : EventPlugin {
             destinationConfig = emptyJsonObject,
             block = {
                 analytics.logger.debug("IntegrationPlugin: Destination $key updated with empty destinationConfig.")
-                this.isDestinationReady = false
-                notifyCallbacks(Result.Failure(throwable))
+                changeStateAndNotify(notReadyState(), Result.Failure(throwable))
             }
         )
     }
@@ -398,8 +380,7 @@ abstract class IntegrationPlugin : EventPlugin {
                 analytics.logger.debug(
                     "IntegrationPlugin: Destination $key updated with destinationConfig: $destinationConfig."
                 )
-                this.isDestinationReady = true
-                notifyCallbacks(Result.Success(Unit))
+                changeStateAndNotify(DestinationState.Ready, Result.Success(Unit))
             }
         )
     }
@@ -414,14 +395,18 @@ abstract class IntegrationPlugin : EventPlugin {
             },
             onException = { exception ->
                 analytics.logger.error("IntegrationPlugin: Failed to update destination $key. Error: ${exception.message}")
-                this.isDestinationReady = false
-                notifyCallbacks(Result.Failure(exception))
+                changeStateAndNotify(notReadyState(), Result.Failure(exception))
             }
         )
     }
 
-    private fun notifyCallbacks(destinationResult: DestinationResult) {
-        val callbacks = synchronized(this) {
+    // A destination that `create` never set up stays NotCreated, so the next valid config still calls `create`.
+    private fun notReadyState(): DestinationState =
+        if (state == DestinationState.NotCreated) DestinationState.NotCreated else DestinationState.Paused
+
+    private fun changeStateAndNotify(newState: DestinationState, destinationResult: DestinationResult) {
+        val callbacks = synchronized(stateLock) {
+            state = newState
             destinationReadyCallbacks.toList().also { destinationReadyCallbacks.clear() }
         }
         if (callbacks.isNotEmpty()) {
@@ -435,5 +420,17 @@ abstract class IntegrationPlugin : EventPlugin {
         add(ConsentGatePlugin(key))
         add(EventFilteringPlugin(key))
         add(IntegrationOptionsPlugin(key))
+    }
+
+    private sealed interface DestinationState {
+
+        /** The next valid config calls `create`. */
+        data object NotCreated : DestinationState
+
+        /** The SDK forwards events to the destination. */
+        data object Ready : DestinationState
+
+        /** Created, but absent or disabled in the dashboard, denied by consent, or `update` failed. */
+        data object Paused : DestinationState
     }
 }

@@ -106,6 +106,22 @@ class LiteModeIntegrationPluginTest {
         }
 
     @Test
+    fun `given a ready lite integration, when the destination is disabled and enabled again, then the SDK calls update and not create`() =
+        runTest {
+            plugin.initDestination(sourceConfig)
+
+            plugin.initDestination(decodeSourceConfig(pathToSourceConfigWithDestinationDisabled))
+
+            assertFalse(plugin.isDestinationReady)
+
+            plugin.initDestination(sourceConfig)
+
+            assertEquals(1, plugin.createCount)
+            assertEquals(2, plugin.updateCount)
+            assertTrue(plugin.isDestinationReady)
+        }
+
+    @Test
     fun `given a lite integration whose create throws, when the next config arrives, then the callback gets failure and create runs again`() =
         runTest {
             val callback = mockk<(Any?, DestinationResult) -> Unit>(relaxed = true)
