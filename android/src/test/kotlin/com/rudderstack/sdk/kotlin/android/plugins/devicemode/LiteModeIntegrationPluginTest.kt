@@ -170,7 +170,7 @@ class LiteModeIntegrationPluginTest {
         }
 
     @Test
-    fun `given pending callbacks where a later one throws, when the destination is created, then the earlier callback runs only once`() =
+    fun `given pending callbacks where a later one throws, when the destination is created, then the earlier callback runs only once and the next config calls update`() =
         runTest {
             val firstCallback = mockk<(Any?, DestinationResult) -> Unit>(relaxed = true)
             plugin.onDestinationReady(firstCallback)
@@ -179,6 +179,12 @@ class LiteModeIntegrationPluginTest {
             plugin.initDestination(sourceConfig)
 
             verify(exactly = 1) { firstCallback.invoke(any(), any()) }
+
+            plugin.initDestination(sourceConfig)
+
+            assertEquals(1, plugin.createCount)
+            assertEquals(1, plugin.updateCount)
+            assertTrue(plugin.isDestinationReady)
         }
 
     private fun decodeSourceConfig(path: String): SourceConfig =

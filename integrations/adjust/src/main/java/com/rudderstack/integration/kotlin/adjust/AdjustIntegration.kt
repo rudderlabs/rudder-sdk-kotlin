@@ -47,19 +47,19 @@ class AdjustIntegration : StandardIntegration, IntegrationPlugin(), ActivityLife
 
     public override fun create(destinationConfig: JsonObject) {
         adjustInstance ?: run {
-            destinationConfig.parseConfig<AdjustDestinationConfig>(analytics.logger)?.let { config ->
-                eventToTokenMappings = config.eventToTokenMappings
-                enableInstallAttributionTracking = config.enableInstallAttributionTracking
-                adjustInstance = initAdjust(
-                    application = analytics.application,
-                    appToken = config.appToken,
-                    logLevel = analytics.configuration.logLevel,
-                    attributionCallback = ::sendInstallAttributedEvent,
-                    logger = analytics.logger,
-                )
-                (analytics as? AndroidAnalytics)?.addLifecycleObserver(this)
-                analytics.logger.verbose("AdjustIntegration: Adjust SDK initialized.")
-            }
+            val config = destinationConfig.parseConfig<AdjustDestinationConfig>(analytics.logger)
+                ?: throw IllegalArgumentException("AdjustIntegration: The destination config is empty.")
+            eventToTokenMappings = config.eventToTokenMappings
+            enableInstallAttributionTracking = config.enableInstallAttributionTracking
+            adjustInstance = initAdjust(
+                application = analytics.application,
+                appToken = config.appToken,
+                logLevel = analytics.configuration.logLevel,
+                attributionCallback = ::sendInstallAttributedEvent,
+                logger = analytics.logger,
+            )
+            (analytics as? AndroidAnalytics)?.addLifecycleObserver(this)
+            analytics.logger.verbose("AdjustIntegration: Adjust SDK initialized.")
         }
     }
 

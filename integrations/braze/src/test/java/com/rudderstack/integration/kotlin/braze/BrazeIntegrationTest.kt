@@ -38,6 +38,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import java.math.BigDecimal
 
 private const val pathToBrazeConfig = "config/braze_config.json"
@@ -717,14 +718,17 @@ class BrazeIntegrationTest {
     }
 
     @Test
-    fun `given an empty integration config, when either SDK is initialised or config is updated, then no error should be thrown`() {
+    fun `given an empty config, when create runs, then it throws, update does not, and a later valid config initialises Braze`() {
         val emptyJsonObject = JsonObject(emptyMap())
 
-        // No exception should be thrown
-        brazeIntegration.create(emptyJsonObject)
+        assertThrows<IllegalArgumentException> { brazeIntegration.create(emptyJsonObject) }
 
         // No exception should be thrown
         brazeIntegration.update(emptyJsonObject)
+
+        brazeIntegration.create(mockBrazeIntegrationConfig)
+
+        verify(exactly = 1) { Braze.configure(any(), any()) }
     }
 
     @Test

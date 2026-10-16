@@ -333,7 +333,8 @@ abstract class IntegrationPlugin : EventPlugin {
             },
             onException = { exception ->
                 analytics.logger.error("IntegrationPlugin: Failed to create destination $key. Error: ${exception.message}")
-                changeStateAndNotify(DestinationState.NotCreated, Result.Failure(exception))
+                // A callback can throw after `create` succeeded; the destination then stays created.
+                changeStateAndNotify(notReadyState(), Result.Failure(exception))
             }
         )
     }
