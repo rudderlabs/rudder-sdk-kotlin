@@ -86,9 +86,7 @@ internal class IntegrationsManagementPlugin : Plugin {
     }
 
     override fun teardown() {
-        val integrations = buildList {
-            integrationPluginChain.applyClosure { plugin -> if (plugin is IntegrationPlugin) add(plugin) }
-        }
+        val integrations = integrationPluginChain.findAll(Plugin.PluginType.Terminal, IntegrationPlugin::class)
         integrationPluginChain.removeAll()
         integrations.forEach { it.resetDestination() }
         queuedEventsChannel.cancel()
