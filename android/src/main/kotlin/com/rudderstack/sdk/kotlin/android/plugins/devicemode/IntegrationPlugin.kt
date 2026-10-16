@@ -52,7 +52,7 @@ abstract class IntegrationPlugin : EventPlugin {
     private val stateLock = Any()
 
     @Volatile
-    private var state: DestinationState = DestinationState.NotCreated
+    private var state: DestinationState = DestinationState.PendingCreate
 
     internal val isDestinationReady: Boolean
         get() = state == DestinationState.Ready
@@ -271,7 +271,7 @@ abstract class IntegrationPlugin : EventPlugin {
     internal fun resetDestination() {
         synchronized(stateLock) {
             isPluginSetup = false
-            state = DestinationState.NotCreated
+            state = DestinationState.PendingCreate
         }
     }
 
@@ -334,7 +334,7 @@ abstract class IntegrationPlugin : EventPlugin {
     }
 
     // Not derived from the instance: an integration can hold one before `create` runs, or never hold one.
-    private fun isDestinationCreated(): Boolean = state != DestinationState.NotCreated
+    private fun isDestinationCreated(): Boolean = state != DestinationState.PendingCreate
 
     private fun safelyCreateAndNotify(destinationConfig: JsonObject) {
         safelyExecute(
@@ -345,7 +345,7 @@ abstract class IntegrationPlugin : EventPlugin {
             },
             onException = { exception ->
                 analytics.logger.error("IntegrationPlugin: Failed to create destination $key. Error: ${exception.message}")
-                changeStateAndNotify(DestinationState.NotCreated, Result.Failure(exception))
+                changeStateAndNotify(DestinationState.PendingCreate, Result.Failure(exception))
             }
         )
     }
@@ -404,9 +404,9 @@ abstract class IntegrationPlugin : EventPlugin {
         )
     }
 
-    // A destination that `create` never set up stays NotCreated, so the next valid config still calls `create`.
+    // A destination that `create` never set up stays PendingCreate, so the next valid config still calls `create`.
     private fun notReadyState(): DestinationState =
-        if (state == DestinationState.NotCreated) DestinationState.NotCreated else DestinationState.Paused
+        if (state == DestinationState.PendingCreate) DestinationState.PendingCreate else DestinationState.Paused
 
     private fun changeStateAndNotify(newState: DestinationState, destinationResult: DestinationResult) {
         val callbacks = synchronized(stateLock) {
@@ -440,8 +440,11 @@ abstract class IntegrationPlugin : EventPlugin {
 
     private sealed interface DestinationState {
 
-        /** The next valid config calls `create`. */
-        data object NotCreated : DestinationState
+        /**
+         * The next valid config calls `create`. The destination was never created, `create` failed, or the app removed
+         * the integration.
+         */
+        data object PendingCreate : DestinationState
 
         /** The SDK forwards events to the destination. */
         data object Ready : DestinationState
