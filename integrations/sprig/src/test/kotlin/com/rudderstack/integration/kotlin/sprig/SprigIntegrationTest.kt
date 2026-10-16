@@ -37,6 +37,7 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import java.io.BufferedReader
 
 private const val PATH_TO_SPRIG_CONFIG = "config/sprig_config.json"
@@ -117,13 +118,15 @@ class SprigIntegrationTest {
         }
 
         @Test
-        fun `given an empty config, when create is called, then Sprig is not initialised`() {
-            sprigIntegration.create(emptyJsonObject)
+        fun `given an empty config, when create runs, then it throws, and a later valid config initialises Sprig`() {
+            assertThrows<IllegalArgumentException> { sprigIntegration.create(emptyJsonObject) }
 
-            val instance = sprigIntegration.getDestinationInstance()
-
-            assertNull(instance)
+            assertNull(sprigIntegration.getDestinationInstance())
             verify(exactly = 0) { Sprig.configure(any(), any()) }
+
+            sprigIntegration.create(mockSprigConfig)
+
+            verify(exactly = 1) { Sprig.configure(any(), any()) }
         }
     }
 

@@ -125,6 +125,15 @@ class FacebookIntegrationTest {
     }
 
     @Test
+    fun `given a created integration, when create runs again with a new config, then the data processing options update and the logger is created once`() {
+        facebookIntegration.create(readJsonObjectFromFile(pathToSourceConfigWithLimitedDataUseDisabled))
+        facebookIntegration.create(readJsonObjectFromFile(pathToSourceConfigWithLimitedDataUseEnabled))
+
+        verify(exactly = 1) { FacebookSdk.setDataProcessingOptions(arrayOf("LDU"), 0, 0) }
+        verify(exactly = 1) { facebookIntegration.provideAppEventsLogger() }
+    }
+
+    @Test
     fun `when facebook integration is updated, then data processing options gets updated for facebook sdk`() {
         val sourceConfigWithLimitedDataUseDisabled = readJsonObjectFromFile(pathToSourceConfigWithLimitedDataUseDisabled)
 
