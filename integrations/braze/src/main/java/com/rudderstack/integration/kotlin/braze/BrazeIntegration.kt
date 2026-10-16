@@ -53,10 +53,10 @@ class BrazeIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
     private lateinit var brazeConfig: RudderBrazeConfig
 
     public override fun create(destinationConfig: JsonObject) {
+        val config = destinationConfig.parse<RudderBrazeConfig>(analytics.logger)
+            ?: throw IllegalArgumentException("BrazeIntegration: The destination config is empty.")
+        this.brazeConfig = config
         braze ?: run {
-            val config = destinationConfig.parse<RudderBrazeConfig>(analytics.logger)
-                ?: throw IllegalArgumentException("BrazeIntegration: The destination config is empty.")
-            this.brazeConfig = config
             initBraze(analytics.application, config, analytics.logger, analytics.configuration.logLevel).also {
                 braze = it
                 setUserAlias()

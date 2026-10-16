@@ -122,6 +122,89 @@ class LiteModeIntegrationPluginTest {
         }
 
     @Test
+    fun `given a created integration, when it is removed, then it is not ready and a callback waits until it is added again and created`() =
+        runTest {
+            plugin.initDestination(sourceConfig)
+
+            plugin.teardown()
+            val callback = mockk<(Any?, DestinationResult) -> Unit>(relaxed = true)
+            plugin.onDestinationReady(callback)
+
+            assertFalse(plugin.isDestinationReady)
+            verify(exactly = 0) { callback.invoke(any(), any()) }
+
+            plugin.setup(mockAnalytics)
+            plugin.initDestination(sourceConfig)
+
+            assertEquals(2, plugin.createCount)
+            assertEquals(0, plugin.updateCount)
+            verify(exactly = 1) { callback.invoke(appInstance, ofType(Result.Success::class) as DestinationResult) }
+        }
+
+    @Test
+    fun `given a ready integration, when setup runs again without teardown, then it stays ready and the next config calls update`() =
+        runTest {
+            plugin.initDestination(sourceConfig)
+
+            plugin.setup(mockAnalytics)
+
+            assertTrue(plugin.isDestinationReady)
+
+            plugin.initDestination(sourceConfig)
+
+            assertEquals(1, plugin.createCount)
+            assertEquals(1, plugin.updateCount)
+        }
+
+    @Test
+    fun `given a removed integration, when a config queued before the removal arrives, then it is not created`() =
+        runTest {
+            plugin.teardown()
+
+            plugin.initDestination(sourceConfig)
+
+            assertEquals(0, plugin.createCount)
+            assertFalse(plugin.isDestinationReady)
+        }
+
+    @Test
+    fun `given a custom integration with a callback that throws, when it is created, then it stays ready`() =
+        runTest {
+            val customPlugin = object : IntegrationPlugin() {
+                override val key: String
+                    get() = "MockDestination"
+
+                override fun create(destinationConfig: JsonObject) = Unit
+
+                override fun getDestinationInstance(): Any? = null
+            }
+            customPlugin.setup(mockAnalytics)
+            customPlugin.onDestinationReady { _, _ -> throw IllegalStateException("Callback failed") }
+
+            customPlugin.initDestination(sourceConfig)
+            customPlugin.initDestination(sourceConfig)
+
+            assertTrue(customPlugin.isDestinationReady)
+        }
+
+    @Test
+    fun `given an initDestination that started before teardown, when its create finishes, then its state change is dropped`() =
+        runTest {
+            plugin.onCreate = { plugin.teardown() }
+
+            plugin.initDestination(sourceConfig)
+
+            assertFalse(plugin.isDestinationReady)
+
+            plugin.onCreate = null
+            plugin.setup(mockAnalytics)
+            plugin.initDestination(sourceConfig)
+
+            assertEquals(2, plugin.createCount)
+            assertTrue(plugin.isDestinationReady)
+        }
+
+    @Test
     fun `given a lite integration whose create throws, when the next config arrives, then the callback gets failure and create runs again`() =
         runTest {
             val callback = mockk<(Any?, DestinationResult) -> Unit>(relaxed = true)
@@ -170,15 +253,19 @@ class LiteModeIntegrationPluginTest {
         }
 
     @Test
-    fun `given pending callbacks where a later one throws, when the destination is created, then the earlier callback runs only once and the next config calls update`() =
+    fun `given pending callbacks where one throws, when the destination is created, then every other callback runs once, the destination stays ready, and the next config calls update`() =
         runTest {
             val firstCallback = mockk<(Any?, DestinationResult) -> Unit>(relaxed = true)
+            val lastCallback = mockk<(Any?, DestinationResult) -> Unit>(relaxed = true)
             plugin.onDestinationReady(firstCallback)
             plugin.onDestinationReady { _, _ -> throw IllegalStateException("Callback failed") }
+            plugin.onDestinationReady(lastCallback)
 
             plugin.initDestination(sourceConfig)
 
-            verify(exactly = 1) { firstCallback.invoke(any(), any()) }
+            verify(exactly = 1) { firstCallback.invoke(appInstance, ofType(Result.Success::class) as DestinationResult) }
+            verify(exactly = 1) { lastCallback.invoke(appInstance, ofType(Result.Success::class) as DestinationResult) }
+            assertTrue(plugin.isDestinationReady)
 
             plugin.initDestination(sourceConfig)
 

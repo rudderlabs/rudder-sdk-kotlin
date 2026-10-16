@@ -46,11 +46,11 @@ class AdjustIntegration : StandardIntegration, IntegrationPlugin(), ActivityLife
     private var enableInstallAttributionTracking: Boolean = false
 
     public override fun create(destinationConfig: JsonObject) {
+        val config = destinationConfig.parseConfig<AdjustDestinationConfig>(analytics.logger)
+            ?: throw IllegalArgumentException("AdjustIntegration: The destination config is empty.")
+        eventToTokenMappings = config.eventToTokenMappings
+        enableInstallAttributionTracking = config.enableInstallAttributionTracking
         adjustInstance ?: run {
-            val config = destinationConfig.parseConfig<AdjustDestinationConfig>(analytics.logger)
-                ?: throw IllegalArgumentException("AdjustIntegration: The destination config is empty.")
-            eventToTokenMappings = config.eventToTokenMappings
-            enableInstallAttributionTracking = config.enableInstallAttributionTracking
             adjustInstance = initAdjust(
                 application = analytics.application,
                 appToken = config.appToken,

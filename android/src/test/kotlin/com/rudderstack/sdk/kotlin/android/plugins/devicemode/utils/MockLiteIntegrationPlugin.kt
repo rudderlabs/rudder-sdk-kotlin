@@ -12,12 +12,14 @@ class MockLiteIntegrationPlugin(private val appInstance: MockDestinationSdk) : S
     internal var updateCount = 0
         private set
     internal var createError: Exception? = null
+    internal var onCreate: (() -> Unit)? = null
 
     override val key: String
         get() = "MockDestination"
 
     override fun create(destinationConfig: JsonObject) {
         createCount++
+        onCreate?.invoke()
         createError?.let { throw it }
     }
 

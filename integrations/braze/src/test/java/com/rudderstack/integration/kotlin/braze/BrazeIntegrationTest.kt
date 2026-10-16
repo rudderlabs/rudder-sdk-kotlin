@@ -638,6 +638,20 @@ class BrazeIntegrationTest {
     }
 
     @Test
+    fun `given a created integration, when create runs again with a hybrid mode config, then hybrid mode applies and Braze is configured once`() {
+        brazeIntegration.create(mockBrazeIntegrationConfig)
+        brazeIntegration.create(mockNewBrazeIntegrationConfig)
+
+        brazeIntegration.track(provideTrackEvent(eventName = CUSTOM_TRACK_EVENT))
+
+        verify(exactly = 0) {
+            mockBrazeInstance.logCustomEvent(any())
+            mockBrazeInstance.logCustomEvent(any(), any())
+        }
+        verify(exactly = 1) { Braze.configure(any(), any()) }
+    }
+
+    @Test
     fun `given hybrid mode is enabled, when a custom track event is made, then no event is logged`() {
         brazeIntegration.create(mockNewBrazeIntegrationConfig)
         val trackEvent = provideTrackEvent(eventName = CUSTOM_TRACK_EVENT)

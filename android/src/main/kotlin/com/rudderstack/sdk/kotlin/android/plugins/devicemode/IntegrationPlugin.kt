@@ -48,7 +48,7 @@ abstract class IntegrationPlugin : EventPlugin {
     @Volatile
     private var isPluginSetup = false
 
-    // One lock for the state and the stored callbacks, so a callback cannot miss a state change.
+    // One lock for the state, the stored callbacks, and the remove, so neither can race a state change.
     private val stateLock = Any()
 
     @Volatile
@@ -119,6 +119,8 @@ abstract class IntegrationPlugin : EventPlugin {
     //  only once and destination is initialised only once even when this method is called multiple times.
     //  There should be no side effect of calling this method multiple times with same SourceConfig.
     internal fun initDestination(sourceConfig: SourceConfig) {
+        // A config queued before the app removed this integration must not create it.
+        if (!isPluginSetup) return
         isDestinationConfigured(sourceConfig)?.let { safelyInitOrUpdateAndNotify(it) }
     }
 
@@ -254,12 +256,22 @@ abstract class IntegrationPlugin : EventPlugin {
     /**
      * Override this method to cleanup any resources before this integration plugin is removed.
      *
-     * **Note**: Calling of `super.teardown()` is recommended when overriding this method.
+     * **Note**: Call `super.teardown()` when overriding this method. It resets the destination, so the SDK calls
+     * [create] again when the app adds this integration again.
      */
     override fun teardown() {
         pluginList.clear()
         if (isPluginSetup) {
             pluginChain.removeAll()
+        }
+        resetDestination()
+    }
+
+    // The SDK also calls this on remove and shutdown, so the reset does not depend on `super.teardown()`.
+    internal fun resetDestination() {
+        synchronized(stateLock) {
+            isPluginSetup = false
+            state = DestinationState.NotCreated
         }
     }
 
@@ -333,8 +345,7 @@ abstract class IntegrationPlugin : EventPlugin {
             },
             onException = { exception ->
                 analytics.logger.error("IntegrationPlugin: Failed to create destination $key. Error: ${exception.message}")
-                // A callback can throw after `create` succeeded; the destination then stays created.
-                changeStateAndNotify(notReadyState(), Result.Failure(exception))
+                changeStateAndNotify(DestinationState.NotCreated, Result.Failure(exception))
             }
         )
     }
@@ -344,18 +355,10 @@ abstract class IntegrationPlugin : EventPlugin {
      *
      * The destination is deliberately not updated here: pushing a config into a destination that is
      * being declared failed can throw on integrations whose config has required fields, which would
-     * replace the reported reason with a parse error. Notification stays wrapped so a throwing
-     * customer callback cannot escape into the re-evaluation coroutine.
+     * replace the reported reason with a parse error.
      */
     private fun notifyFailureAndMarkNotReady(throwable: Throwable) {
-        safelyExecute(
-            block = { changeStateAndNotify(notReadyState(), Result.Failure(throwable)) },
-            onException = { exception ->
-                analytics.logger.error(
-                    "IntegrationPlugin: Failed to notify destination $key callbacks. Error: ${exception.message}"
-                )
-            }
-        )
+        changeStateAndNotify(notReadyState(), Result.Failure(throwable))
     }
 
     /**
@@ -407,6 +410,8 @@ abstract class IntegrationPlugin : EventPlugin {
 
     private fun changeStateAndNotify(newState: DestinationState, destinationResult: DestinationResult) {
         val callbacks = synchronized(stateLock) {
+            // The app can remove this integration while `create` or `update` runs.
+            if (!isPluginSetup) return
             state = newState
             destinationReadyCallbacks.toList().also { destinationReadyCallbacks.clear() }
         }
@@ -414,7 +419,17 @@ abstract class IntegrationPlugin : EventPlugin {
             analytics.logger.debug("IntegrationPlugin[$key]: Notifying ${callbacks.size} deferred callback(s)")
         }
         val destinationInstance = getDestinationInstance()
-        callbacks.forEach { callback -> callback(destinationInstance, destinationResult) }
+        // A failing app callback must not change the state or stop the other callbacks.
+        callbacks.forEach { callback ->
+            safelyExecute(
+                block = { callback(destinationInstance, destinationResult) },
+                onException = { exception ->
+                    analytics.logger.error(
+                        "IntegrationPlugin: A ready callback of destination $key failed. Error: ${exception.message}"
+                    )
+                }
+            )
+        }
     }
 
     private fun applyDefaultPlugins() {
