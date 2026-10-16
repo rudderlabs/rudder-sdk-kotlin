@@ -64,9 +64,10 @@ class BrazeIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
                 braze = it
                 setUserAlias()
             }
-            (analytics as? AndroidAnalytics)?.addLifecycleObserverWithCurrentState(this)
             analytics.logger.verbose("BrazeIntegration: Braze SDK initialized")
         }
+        // Outside the init-once block: `teardown` removes the observer, and a re-added integration needs it again.
+        (analytics as? AndroidAnalytics)?.addLifecycleObserverWithCurrentState(this)
     }
 
     /**

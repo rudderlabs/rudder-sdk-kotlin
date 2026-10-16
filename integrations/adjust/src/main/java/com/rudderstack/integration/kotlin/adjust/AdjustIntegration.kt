@@ -59,9 +59,10 @@ class AdjustIntegration : StandardIntegration, IntegrationPlugin(), ActivityLife
                 attributionCallback = ::sendInstallAttributedEvent,
                 logger = analytics.logger,
             )
-            (analytics as? AndroidAnalytics)?.addLifecycleObserverWithCurrentState(this)
             analytics.logger.verbose("AdjustIntegration: Adjust SDK initialized.")
         }
+        // Outside the init-once block: `teardown` removes the observer, and a re-added integration needs it again.
+        (analytics as? AndroidAnalytics)?.addLifecycleObserverWithCurrentState(this)
     }
 
     override fun getDestinationInstance(): Any? {
