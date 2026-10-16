@@ -8,6 +8,7 @@ import com.rudderstack.sdk.kotlin.android.utils.readFileAsString
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
+import kotlinx.serialization.json.JsonObject
 import com.rudderstack.sdk.kotlin.android.models.consent.ConsentManagementState
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.utils.LenientJson
@@ -26,6 +27,9 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -151,6 +155,43 @@ class IntegrationsManagementPluginTest {
 
         verify(exactly = 1) { integrationPlugin.teardown() }
     }
+
+    @Test
+    fun `given an integration whose teardown does not call super, when it is removed and added again, then it is created again`() =
+        runTest {
+            var createCount = 0
+            var instance: Any? = null
+            val plugin = object : IntegrationPlugin() {
+                override val key: String
+                    get() = "MockDestination"
+
+                override fun create(destinationConfig: JsonObject) {
+                    createCount++
+                    instance = Any()
+                }
+
+                override fun getDestinationInstance(): Any? = instance
+
+                override fun teardown() {
+                    instance = null
+                }
+            }
+            integrationsManagementPlugin.setup(mockAnalytics)
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
+            advanceUntilIdle()
+            integrationsManagementPlugin.addIntegration(plugin)
+            advanceUntilIdle()
+
+            integrationsManagementPlugin.removeIntegration(plugin)
+
+            assertFalse(plugin.isDestinationReady)
+
+            integrationsManagementPlugin.addIntegration(plugin)
+            advanceUntilIdle()
+
+            assertEquals(2, createCount)
+            assertTrue(plugin.isDestinationReady)
+        }
 
     @Test
     fun `given an integration plugin, when sourceConfig is emitted multiple times, then integration is updated`() =

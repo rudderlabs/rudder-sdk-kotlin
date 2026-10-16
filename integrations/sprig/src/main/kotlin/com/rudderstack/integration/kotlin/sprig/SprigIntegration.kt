@@ -43,13 +43,13 @@ class SprigIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
 
     public override fun create(destinationConfig: JsonObject) {
         sprig ?: run {
-            destinationConfig.parseConfig<SprigConfig>(analytics.logger)?.let { config ->
-                loggingListener = registerSprigLogging(analytics.logger, analytics.configuration.logLevel)
-                sprig = Sprig
-                sprig?.configure(analytics.application.applicationContext, config.environmentId)
-                (analytics as? AndroidAnalytics)?.addLifecycleObserver(this)
-                analytics.logger.info("SprigIntegration: Sprig SDK initialized")
-            }
+            val config = destinationConfig.parseConfig<SprigConfig>(analytics.logger)
+                ?: throw IllegalArgumentException("SprigIntegration: The destination config is empty.")
+            loggingListener = registerSprigLogging(analytics.logger, analytics.configuration.logLevel)
+            sprig = Sprig
+            sprig?.configure(analytics.application.applicationContext, config.environmentId)
+            (analytics as? AndroidAnalytics)?.addLifecycleObserver(this)
+            analytics.logger.info("SprigIntegration: Sprig SDK initialized")
         }
     }
 

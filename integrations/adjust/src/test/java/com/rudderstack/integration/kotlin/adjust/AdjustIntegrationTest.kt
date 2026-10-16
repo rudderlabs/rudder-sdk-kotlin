@@ -295,12 +295,32 @@ class AdjustIntegrationTest {
     }
 
     @Test
-    fun `given an empty integration config, when either SDK is initialised or config is updated, then no error should be thrown`() {
-        // No exception should be thrown
-        adjustIntegration.create(emptyJsonObject)
+    fun `given a created integration, when create runs again with a new config, then the new mapping applies and Adjust is initialised once`() {
+        adjustIntegration.create(mockAdjustIntegrationConfig)
+        adjustIntegration.create(mockNewAdjustIntegrationConfig)
+        val newTrackEvent = provideTrackEvent(
+            eventName = TRACK_EVENT_ALLOWED_NEW,
+            properties = buildJsonObject {
+                put("key1", "value1")
+            },
+        )
+
+        adjustIntegration.track(newTrackEvent)
+
+        verify(exactly = 1) { Adjust.trackEvent(mockAdjustEvent) }
+        verify(exactly = 1) { Adjust.initSdk(mockAdjustConfig) }
+    }
+
+    @Test
+    fun `given an empty config, when create runs, then it throws, update does not, and a later valid config initialises Adjust`() {
+        assertThrows<IllegalArgumentException> { adjustIntegration.create(emptyJsonObject) }
 
         // No exception should be thrown
         adjustIntegration.update(JsonObject(emptyMap()))
+
+        adjustIntegration.create(mockAdjustIntegrationConfig)
+
+        verify(exactly = 1) { Adjust.initSdk(mockAdjustConfig) }
     }
 
     @Test

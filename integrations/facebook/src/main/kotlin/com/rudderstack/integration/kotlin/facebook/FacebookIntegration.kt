@@ -44,18 +44,16 @@ class FacebookIntegration : StandardIntegration, IntegrationPlugin() {
         get() = FACEBOOK_KEY
 
     public override fun create(destinationConfig: JsonObject) {
-        facebookAppEventsLogger ?: run {
-            destinationConfig.parseConfig<FacebookDestinationConfig>()
-                .let { config ->
-                    if (analytics.configuration.logLevel <= Logger.LogLevel.DEBUG) {
-                        FacebookSdk.setIsDebugEnabled(true)
-                        FacebookSdk.addLoggingBehavior(LoggingBehavior.APP_EVENTS)
-                    }
-
-                    setDataProcessingOptions(config)
-                    AppEventsLogger.activateApp(analytics.application, config.appId)
-                    facebookAppEventsLogger = provideAppEventsLogger()
-                }
+        val config = destinationConfig.parseConfig<FacebookDestinationConfig>()
+        val isFirstCreate = facebookAppEventsLogger == null
+        if (isFirstCreate && analytics.configuration.logLevel <= Logger.LogLevel.DEBUG) {
+            FacebookSdk.setIsDebugEnabled(true)
+            FacebookSdk.addLoggingBehavior(LoggingBehavior.APP_EVENTS)
+        }
+        setDataProcessingOptions(config)
+        if (isFirstCreate) {
+            AppEventsLogger.activateApp(analytics.application, config.appId)
+            facebookAppEventsLogger = provideAppEventsLogger()
         }
     }
 
