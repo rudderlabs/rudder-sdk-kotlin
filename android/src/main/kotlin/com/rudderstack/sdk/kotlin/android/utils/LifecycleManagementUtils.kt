@@ -13,6 +13,17 @@ fun Analytics.addLifecycleObserver(observer: ActivityLifecycleObserver) {
     activityLifecycleManagementPlugin.addObserver(observer)
 }
 
+/**
+ * Adds the given [observer], then tells it about the activity that is on screen now.
+ *
+ * Use it for an observer that registers late, for example when the source config arrives, so it does not miss
+ * the activity that started before it.
+ */
+@InternalRudderApi
+fun Analytics.addLifecycleObserverWithCurrentState(observer: ActivityLifecycleObserver) {
+    activityLifecycleManagementPlugin.addObserverWithCurrentState(observer)
+}
+
 internal fun Analytics.addLifecycleObserver(observer: ProcessLifecycleObserver) {
     processLifecycleManagementPlugin.addObserver(observer)
 }

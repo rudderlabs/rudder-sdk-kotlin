@@ -16,15 +16,21 @@ import com.rudderstack.integration.kotlin.braze.Utility.provideIdentifyEvent
 import com.rudderstack.integration.kotlin.braze.Utility.provideTrackEvent
 import com.rudderstack.integration.kotlin.braze.Utility.provideUserIdentity
 import com.rudderstack.integration.kotlin.braze.Utility.readFileAsJsonObject
+import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleObserver
+import com.rudderstack.sdk.kotlin.android.utils.addLifecycleObserverWithCurrentState
 import com.rudderstack.sdk.kotlin.android.utils.application
+import com.rudderstack.sdk.kotlin.android.utils.removeLifecycleObserver
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
+import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import io.mockk.MockKAnnotations
+import io.mockk.Runs
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
+import io.mockk.just
 import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.mockkStatic
@@ -40,6 +46,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.math.BigDecimal
+import com.rudderstack.sdk.kotlin.android.Analytics as AndroidAnalytics
 
 private const val pathToBrazeConfig = "config/braze_config.json"
 private const val pathToBrazeConfigWithDeDupeDisabled = "config/braze_config_with_deDupe_disabled.json"
@@ -56,6 +63,7 @@ private const val INSTALL_ATTRIBUTED = "Install Attributed"
 private const val CUSTOM_TRACK_EVENT = "Custom Track Event"
 
 private const val ORDER_COMPLETED = "Order Completed"
+private const val LIFECYCLE_MANAGEMENT_UTILS = "com.rudderstack.sdk.kotlin.android.utils.LifecycleManagementUtilsKt"
 
 class BrazeIntegrationTest {
 
@@ -105,6 +113,26 @@ class BrazeIntegrationTest {
 
         // Initialize BrazeIntegration
         brazeIntegration = BrazeIntegration().also { it.analytics = mockAnalytics }
+    }
+
+    @OptIn(InternalRudderApi::class)
+    @Test
+    fun `given a created integration, when it is torn down and created again, then it registers for activity events again`() {
+        mockkStatic(LIFECYCLE_MANAGEMENT_UTILS)
+        val androidAnalytics = mockk<AndroidAnalytics>(relaxed = true).also {
+            every { it.application } returns mockApplication
+            every { it.addLifecycleObserverWithCurrentState(any()) } just Runs
+            every { it.removeLifecycleObserver(any<ActivityLifecycleObserver>()) } just Runs
+        }
+        brazeIntegration.analytics = androidAnalytics
+
+        brazeIntegration.create(mockBrazeIntegrationConfig)
+        brazeIntegration.teardown()
+        brazeIntegration.create(mockBrazeIntegrationConfig)
+
+        verify(exactly = 2) { androidAnalytics.addLifecycleObserverWithCurrentState(brazeIntegration) }
+        verify(exactly = 1) { androidAnalytics.removeLifecycleObserver(brazeIntegration) }
+        verify(exactly = 1) { Braze.configure(any(), any()) }
     }
 
     @Test

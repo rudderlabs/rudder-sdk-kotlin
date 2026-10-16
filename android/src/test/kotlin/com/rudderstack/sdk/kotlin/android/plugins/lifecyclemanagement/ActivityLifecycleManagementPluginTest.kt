@@ -24,6 +24,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -154,5 +155,63 @@ class ActivityLifecycleManagementPluginTest {
         plugin.onActivityDestroyed(mockActivity)
 
         verify { mockObserver.onActivityDestroyed(mockActivity) }
+    }
+
+    @Nested
+    inner class AddObserverWithCurrentState {
+
+        @Test
+        fun `given a resumed activity, when an observer is added with current state, then it gets started and resumed once`() =
+            runTest {
+                plugin.onActivityStarted(mockActivity)
+                plugin.onActivityResumed(mockActivity)
+
+                plugin.addObserverWithCurrentState(mockObserver)
+                advanceUntilIdle()
+
+                assert(plugin.activityObservers.contains(mockObserver))
+                verify(exactly = 1) { mockObserver.onActivityStarted(mockActivity) }
+                verify(exactly = 1) { mockObserver.onActivityResumed(mockActivity) }
+            }
+
+        @Test
+        fun `given a paused activity, when an observer is added with current state, then it gets started only`() =
+            runTest {
+                plugin.onActivityStarted(mockActivity)
+                plugin.onActivityResumed(mockActivity)
+                plugin.onActivityPaused(mockActivity)
+
+                plugin.addObserverWithCurrentState(mockObserver)
+                advanceUntilIdle()
+
+                verify(exactly = 1) { mockObserver.onActivityStarted(mockActivity) }
+                verify(exactly = 0) { mockObserver.onActivityResumed(any()) }
+            }
+
+        @Test
+        fun `given no activity on screen, when an observer is added with current state, then it gets no event`() =
+            runTest {
+                plugin.onActivityStarted(mockActivity)
+                plugin.onActivityStopped(mockActivity)
+
+                plugin.addObserverWithCurrentState(mockObserver)
+                advanceUntilIdle()
+
+                assert(plugin.activityObservers.contains(mockObserver))
+                verify(exactly = 0) { mockObserver.onActivityStarted(any()) }
+                verify(exactly = 0) { mockObserver.onActivityResumed(any()) }
+            }
+
+        @Test
+        fun `given an observer added with current state, when the next activity starts, then it gets that event normally`() =
+            runTest {
+                val nextActivity = mockk<Activity>(relaxed = true)
+                plugin.addObserverWithCurrentState(mockObserver)
+                advanceUntilIdle()
+
+                plugin.onActivityStarted(nextActivity)
+
+                verify(exactly = 1) { mockObserver.onActivityStarted(nextActivity) }
+            }
     }
 }

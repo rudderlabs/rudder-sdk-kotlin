@@ -10,6 +10,7 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 import org.jetbrains.annotations.VisibleForTesting
+import java.lang.ref.WeakReference
 import java.util.concurrent.CopyOnWriteArrayList
 import com.rudderstack.sdk.kotlin.android.Analytics as AndroidAnalytics
 import com.rudderstack.sdk.kotlin.android.Configuration as AndroidConfiguration
@@ -24,6 +25,10 @@ internal class ActivityLifecycleManagementPlugin : Plugin, Application.ActivityL
 
     @VisibleForTesting
     internal val activityObservers = CopyOnWriteArrayList<ActivityLifecycleObserver>()
+
+    // Read and written on the main thread only, where Android delivers the activity callbacks.
+    private var startedActivity: WeakReference<Activity>? = null
+    private var isStartedActivityResumed = false
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
@@ -48,6 +53,21 @@ internal class ActivityLifecycleManagementPlugin : Plugin, Application.ActivityL
         activityObservers.add(observer)
     }
 
+    /**
+     * Adds [observer], then tells it about the activity that is on screen now: started, and resumed if it is.
+     *
+     * An observer that registers after the first activity started would otherwise miss that activity.
+     */
+    internal fun addObserverWithCurrentState(observer: ActivityLifecycleObserver) {
+        (analytics as? AndroidAnalytics)?.runOnMainThread {
+            activityObservers.add(observer)
+            startedActivity?.get()?.let { activity ->
+                observer.onActivityStarted(activity)
+                if (isStartedActivityResumed) observer.onActivityResumed(activity)
+            }
+        }
+    }
+
     internal fun removeObserver(observer: ActivityLifecycleObserver) {
         activityObservers.remove(observer)
     }
@@ -57,18 +77,27 @@ internal class ActivityLifecycleManagementPlugin : Plugin, Application.ActivityL
     }
 
     override fun onActivityStarted(activity: Activity) {
+        startedActivity = WeakReference(activity)
+        isStartedActivityResumed = false
         activityObservers.forEach { it.onActivityStarted(activity) }
     }
 
     override fun onActivityResumed(activity: Activity) {
+        startedActivity = WeakReference(activity)
+        isStartedActivityResumed = true
         activityObservers.forEach { it.onActivityResumed(activity) }
     }
 
     override fun onActivityPaused(activity: Activity) {
+        if (startedActivity?.get() === activity) isStartedActivityResumed = false
         activityObservers.forEach { it.onActivityPaused(activity) }
     }
 
     override fun onActivityStopped(activity: Activity) {
+        if (startedActivity?.get() === activity) {
+            startedActivity = null
+            isStartedActivityResumed = false
+        }
         activityObservers.forEach { it.onActivityStopped(activity) }
     }
 
