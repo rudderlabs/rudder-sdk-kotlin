@@ -15,7 +15,9 @@ import io.mockk.impl.annotations.MockK
 import io.mockk.mockk
 import io.mockk.unmockkAll
 import io.mockk.verify
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.MainCoroutineDispatcher
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -28,6 +30,7 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import kotlin.coroutines.CoroutineContext
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ActivityLifecycleManagementPluginTest {
@@ -282,5 +285,38 @@ class ActivityLifecycleManagementPluginTest {
                 verify(exactly = 1) { mockObserver.onActivityPaused(mockActivity) }
                 verify(exactly = 1) { mockObserver.onActivityStopped(mockActivity) }
             }
+
+        @Test
+        fun `given a registration queued from another thread, when the observer is removed on the main thread before the queue runs, then the removal runs after the registration`() =
+            runTest {
+                val mainDispatcher = FakeMainDispatcher(testDispatcher)
+                Dispatchers.setMain(mainDispatcher)
+                plugin.onActivityStarted(mockActivity)
+                plugin.onActivityResumed(mockActivity)
+
+                plugin.addObserverWithCurrentState(mockObserver)
+                mainDispatcher.isOnMainThread = true
+                plugin.removeObserverWithCurrentState(mockObserver)
+                advanceUntilIdle()
+
+                assert(!plugin.activityObservers.contains(mockObserver))
+                verify(exactly = 1) { mockObserver.onActivityResumed(mockActivity) }
+                verify(exactly = 1) { mockObserver.onActivityPaused(mockActivity) }
+                verify(exactly = 1) { mockObserver.onActivityStopped(mockActivity) }
+            }
     }
+}
+
+// Like the Android main dispatcher: `immediate` runs a block at once on the main thread, and queues it from other threads.
+private class FakeMainDispatcher(private val queue: CoroutineDispatcher) : MainCoroutineDispatcher() {
+
+    var isOnMainThread = false
+
+    override val immediate: MainCoroutineDispatcher = object : MainCoroutineDispatcher() {
+        override val immediate: MainCoroutineDispatcher get() = this
+        override fun isDispatchNeeded(context: CoroutineContext): Boolean = !isOnMainThread
+        override fun dispatch(context: CoroutineContext, block: Runnable) = queue.dispatch(context, block)
+    }
+
+    override fun dispatch(context: CoroutineContext, block: Runnable) = queue.dispatch(context, block)
 }
