@@ -103,7 +103,7 @@ class AdjustIntegration() : StandardIntegration, IntegrationPlugin(), ActivityLi
                 setRevenue(payload.properties)
                 addCallbackParameter(payload.context.toJsonObject(PropertiesConstants.TRAITS))
             }
-            Adjust.trackEvent(adjustEvent)
+            adjustInstance?.trackEvent(adjustEvent)
             analytics.logger.verbose("AdjustIntegration: Track event sent to Adjust.")
         } ?: run {
             analytics.logger.warn(
@@ -114,14 +114,14 @@ class AdjustIntegration() : StandardIntegration, IntegrationPlugin(), ActivityLi
     }
 
     override fun reset() {
-        Adjust.removeGlobalPartnerParameters()
+        adjustInstance?.removeGlobalPartnerParameters()
         analytics.logger.verbose("AdjustIntegration: Reset call completed.")
     }
 
     private fun Event.setSessionParams() {
-        Adjust.addGlobalPartnerParameter(ANONYMOUS_ID, anonymousId)
+        adjustInstance?.addGlobalPartnerParameter(ANONYMOUS_ID, anonymousId)
         if (userId.isNotBlank()) {
-            Adjust.addGlobalPartnerParameter(USER_ID, userId)
+            adjustInstance?.addGlobalPartnerParameter(USER_ID, userId)
         }
     }
 
@@ -140,11 +140,11 @@ class AdjustIntegration() : StandardIntegration, IntegrationPlugin(), ActivityLi
     }
 
     override fun onActivityResumed(activity: Activity) {
-        Adjust.onResume()
+        adjustInstance?.onResume()
     }
 
     override fun onActivityPaused(activity: Activity) {
-        Adjust.onPause()
+        adjustInstance?.onPause()
     }
 
     /**

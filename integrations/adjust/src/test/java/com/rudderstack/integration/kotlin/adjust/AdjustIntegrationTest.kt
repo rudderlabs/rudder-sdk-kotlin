@@ -92,13 +92,13 @@ class AdjustIntegrationTest {
         // Adjust Identify API
         every { Adjust.addGlobalCallbackParameter(any(), any()) } just Runs
         // Adjust Reset API
-        every { Adjust.removeGlobalPartnerParameters() } just Runs
+        every { mockAdjustInstance.removeGlobalPartnerParameters() } just Runs
         // Adjust Track API
         every { initAdjustEvent(any()) } returns mockAdjustEvent
         every { mockAdjustEvent.addCallbackParameter(any(), any()) } just Runs
         every { mockAdjustEvent.setRevenue(any(), any()) } just Runs
-        every { Adjust.addGlobalPartnerParameter(any(), any()) } just Runs
-        every { Adjust.trackEvent(any()) } just Runs
+        every { mockAdjustInstance.addGlobalPartnerParameter(any(), any()) } just Runs
+        every { mockAdjustInstance.trackEvent(any()) } just Runs
 
         // Mock Analytics
         every { mockAnalytics.application } returns mockApplication
@@ -135,12 +135,24 @@ class AdjustIntegrationTest {
         }
 
         @Test
-        fun `given lite mode and an event-to-token mapping, when a track event is made, then it is sent to Adjust`() {
+        fun `given lite mode, when track, identify, and reset are made, then they reach the app's instance and not the default instance`() {
             liteAdjustIntegration.create(mockAdjustIntegrationConfig)
 
             liteAdjustIntegration.track(provideTrackEvent(eventName = TRACK_EVENT_ALLOWED, properties = buildJsonObject {}))
+            liteAdjustIntegration.identify(provideIdentifyEvent())
+            liteAdjustIntegration.reset()
 
-            verify(exactly = 1) { Adjust.trackEvent(mockAdjustEvent) }
+            verify(exactly = 1) {
+                appAdjustInstance.trackEvent(mockAdjustEvent)
+                appAdjustInstance.addGlobalPartnerParameter(USER_ID, any())
+                appAdjustInstance.removeGlobalPartnerParameters()
+            }
+            verify(atLeast = 1) { appAdjustInstance.addGlobalPartnerParameter(ANONYMOUS_ID, any()) }
+            verify(exactly = 0) {
+                mockAdjustInstance.trackEvent(any())
+                mockAdjustInstance.addGlobalPartnerParameter(any(), any())
+                mockAdjustInstance.removeGlobalPartnerParameters()
+            }
         }
     }
 
@@ -203,8 +215,8 @@ class AdjustIntegrationTest {
 
         adjustIntegration.identify(identifyEvent)
 
-        verify { Adjust.addGlobalPartnerParameter(ANONYMOUS_ID, any()) }
-        verify { Adjust.addGlobalPartnerParameter(USER_ID, any()) }
+        verify { mockAdjustInstance.addGlobalPartnerParameter(ANONYMOUS_ID, any()) }
+        verify { mockAdjustInstance.addGlobalPartnerParameter(USER_ID, any()) }
     }
 
     @Test
@@ -223,10 +235,10 @@ class AdjustIntegrationTest {
         mockAdjustEvent.apply {
             verify(exactly = 1) { addCallbackParameter("key1", "value1") }
             verify(exactly = 1) { addCallbackParameter("key2", "23.45") }
-            verify(exactly = 1) { Adjust.addGlobalPartnerParameter(ANONYMOUS_ID, any()) }
+            verify(exactly = 1) { mockAdjustInstance.addGlobalPartnerParameter(ANONYMOUS_ID, any()) }
             verify(exactly = 0) { setRevenue(any(), any()) }
         }
-        verify(exactly = 1) { Adjust.trackEvent(mockAdjustEvent) }
+        verify(exactly = 1) { mockAdjustInstance.trackEvent(mockAdjustEvent) }
     }
 
     @Test
@@ -247,10 +259,10 @@ class AdjustIntegrationTest {
 
         mockAdjustEvent.apply {
             verify(exactly = 1) { addCallbackParameter("key1", "value1") }
-            verify(exactly = 1) { Adjust.addGlobalPartnerParameter(ANONYMOUS_ID, any()) }
+            verify(exactly = 1) { mockAdjustInstance.addGlobalPartnerParameter(ANONYMOUS_ID, any()) }
             verify(exactly = 1) { setRevenue(revenue, currency) }
         }
-        verify(exactly = 1) { Adjust.trackEvent(mockAdjustEvent) }
+        verify(exactly = 1) { mockAdjustInstance.trackEvent(mockAdjustEvent) }
     }
 
     @Test
@@ -267,10 +279,10 @@ class AdjustIntegrationTest {
 
         mockAdjustEvent.apply {
             verify(exactly = 0) { addCallbackParameter("key1", "value1") }
-            verify(exactly = 0) { Adjust.addGlobalPartnerParameter(ANONYMOUS_ID, any()) }
+            verify(exactly = 0) { mockAdjustInstance.addGlobalPartnerParameter(ANONYMOUS_ID, any()) }
             verify(exactly = 0) { setRevenue(any(), any()) }
         }
-        verify(exactly = 0) { Adjust.trackEvent(mockAdjustEvent) }
+        verify(exactly = 0) { mockAdjustInstance.trackEvent(mockAdjustEvent) }
     }
 
     @Test
@@ -279,7 +291,7 @@ class AdjustIntegrationTest {
 
         adjustIntegration.reset()
 
-        verify { Adjust.removeGlobalPartnerParameters() }
+        verify { mockAdjustInstance.removeGlobalPartnerParameters() }
     }
 
     @Test
@@ -314,19 +326,19 @@ class AdjustIntegrationTest {
         // Verify that the event is not tracked
         mockAdjustEvent.apply {
             verify(exactly = 0) { addCallbackParameter("key1", "value1") }
-            verify(exactly = 0) { Adjust.addGlobalPartnerParameter(ANONYMOUS_ID, any()) }
+            verify(exactly = 0) { mockAdjustInstance.addGlobalPartnerParameter(ANONYMOUS_ID, any()) }
             verify(exactly = 0) { setRevenue(any(), any()) }
         }
-        verify(exactly = 0) { Adjust.trackEvent(mockAdjustEvent) }
+        verify(exactly = 0) { mockAdjustInstance.trackEvent(mockAdjustEvent) }
 
         // Track the event with new event mapping
         adjustIntegration.track(newTrackEvent)
         // Verify that the event is tracked
         mockAdjustEvent.apply {
             verify(exactly = 1) { addCallbackParameter("key1", "value1") }
-            verify(exactly = 1) { Adjust.addGlobalPartnerParameter(ANONYMOUS_ID, any()) }
+            verify(exactly = 1) { mockAdjustInstance.addGlobalPartnerParameter(ANONYMOUS_ID, any()) }
         }
-        verify(exactly = 1) { Adjust.trackEvent(mockAdjustEvent) }
+        verify(exactly = 1) { mockAdjustInstance.trackEvent(mockAdjustEvent) }
     }
 
     @Test
@@ -342,7 +354,7 @@ class AdjustIntegrationTest {
 
         adjustIntegration.track(newTrackEvent)
 
-        verify(exactly = 1) { Adjust.trackEvent(mockAdjustEvent) }
+        verify(exactly = 1) { mockAdjustInstance.trackEvent(mockAdjustEvent) }
         verify(exactly = 1) { Adjust.initSdk(mockAdjustConfig) }
     }
 
