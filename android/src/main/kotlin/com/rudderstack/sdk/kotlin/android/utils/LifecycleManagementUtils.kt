@@ -15,7 +15,7 @@ fun Analytics.addLifecycleObserver(observer: ActivityLifecycleObserver) {
 }
 
 /**
- * Adds the given [observer], then tells it about the activity that is on screen now.
+ * Adds the given [observer], then tells it about each activity that is started now.
  *
  * Use it for an observer that registers late, for example when the source config arrives, so it does not miss
  * the activity that started before it. Remove the observer with [removeLifecycleObserverWithCurrentState], not with
@@ -41,7 +41,7 @@ fun Analytics.removeLifecycleObserver(observer: ActivityLifecycleObserver) {
 }
 
 /**
- * Removes the given [observer], then tells it that the activity on screen now paused and stopped.
+ * Removes the given [observer], then tells it that each activity that is started now paused and stopped.
  *
  * Use it for an observer added with [addLifecycleObserverWithCurrentState], so the destination SDK gets the matching
  * pause and stop when the observer goes away while an activity is on screen. Do not use it for an observer added

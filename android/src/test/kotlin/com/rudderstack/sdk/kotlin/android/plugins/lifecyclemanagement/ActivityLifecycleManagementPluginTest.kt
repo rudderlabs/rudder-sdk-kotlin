@@ -290,6 +290,35 @@ class ActivityLifecycleManagementPluginTest {
             }
     }
 
+    @Test
+    fun `given a translucent activity resumed over a paused one, when an observer is added and removed with current state, then each activity gets a balanced start and stop`() =
+        runTest {
+            val topActivity = mockk<Activity>()
+            plugin.onActivityStarted(mockActivity)
+            plugin.onActivityResumed(mockActivity)
+            plugin.onActivityPaused(mockActivity)
+            plugin.onActivityStarted(topActivity)
+            plugin.onActivityResumed(topActivity)
+
+            plugin.addObserverWithCurrentState(mockObserver)
+            advanceUntilIdle()
+            plugin.removeObserverWithCurrentState(mockObserver)
+            advanceUntilIdle()
+
+            verify(exactly = 1) {
+                mockObserver.onActivityStarted(mockActivity)
+                mockObserver.onActivityStopped(mockActivity)
+                mockObserver.onActivityStarted(topActivity)
+                mockObserver.onActivityResumed(topActivity)
+                mockObserver.onActivityPaused(topActivity)
+                mockObserver.onActivityStopped(topActivity)
+            }
+            verify(exactly = 0) {
+                mockObserver.onActivityResumed(mockActivity)
+                mockObserver.onActivityPaused(mockActivity)
+            }
+        }
+
     @Nested
     inner class LatestRequestWins {
 
