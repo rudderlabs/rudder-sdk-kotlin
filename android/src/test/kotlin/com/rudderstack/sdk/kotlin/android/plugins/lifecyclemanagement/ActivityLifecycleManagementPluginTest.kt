@@ -9,12 +9,16 @@ import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLif
 import com.rudderstack.sdk.kotlin.android.utils.mockAnalytics
 import com.rudderstack.sdk.kotlin.core.Analytics
 import io.mockk.MockKAnnotations
+import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.mockk
 import io.mockk.unmockkAll
 import io.mockk.verify
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.MainCoroutineDispatcher
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -24,7 +28,9 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import kotlin.coroutines.CoroutineContext
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ActivityLifecycleManagementPluginTest {
@@ -75,10 +81,11 @@ class ActivityLifecycleManagementPluginTest {
     }
 
     @Test
-    fun `when teardown called, it should unregister activity lifecycle callbacks`() = runTest {
+    fun `when teardown called and shutdown cancels the scope before the cleanup runs, it should still unregister activity lifecycle callbacks`() = runTest {
         plugin.activityObservers.add(mockObserver)
 
         plugin.teardown()
+        mockAnalytics.analyticsScope.cancel()
 
         advanceUntilIdle()
         verify { mockApplication.unregisterActivityLifecycleCallbacks(plugin) }
@@ -155,4 +162,161 @@ class ActivityLifecycleManagementPluginTest {
 
         verify { mockObserver.onActivityDestroyed(mockActivity) }
     }
+
+    @Nested
+    inner class AddObserverWithCurrentState {
+
+        @Test
+        fun `given a resumed activity, when an observer is added with current state, then it gets started and resumed once`() =
+            runTest {
+                plugin.onActivityStarted(mockActivity)
+                plugin.onActivityResumed(mockActivity)
+
+                plugin.addObserverWithCurrentState(mockObserver)
+                advanceUntilIdle()
+
+                assert(plugin.activityObservers.contains(mockObserver))
+                verify(exactly = 1) { mockObserver.onActivityStarted(mockActivity) }
+                verify(exactly = 1) { mockObserver.onActivityResumed(mockActivity) }
+            }
+
+        @Test
+        fun `given a paused activity, when an observer is added with current state, then it gets started only`() =
+            runTest {
+                plugin.onActivityStarted(mockActivity)
+                plugin.onActivityResumed(mockActivity)
+                plugin.onActivityPaused(mockActivity)
+
+                plugin.addObserverWithCurrentState(mockObserver)
+                advanceUntilIdle()
+
+                verify(exactly = 1) { mockObserver.onActivityStarted(mockActivity) }
+                verify(exactly = 0) { mockObserver.onActivityResumed(any()) }
+            }
+
+        @Test
+        fun `given no activity on screen, when an observer is added with current state, then it gets no event`() =
+            runTest {
+                plugin.onActivityStarted(mockActivity)
+                plugin.onActivityStopped(mockActivity)
+
+                plugin.addObserverWithCurrentState(mockObserver)
+                advanceUntilIdle()
+
+                assert(plugin.activityObservers.contains(mockObserver))
+                verify(exactly = 0) { mockObserver.onActivityStarted(any()) }
+                verify(exactly = 0) { mockObserver.onActivityResumed(any()) }
+            }
+
+        @Test
+        fun `given an observer added with current state, when the next activity starts, then it gets that event normally`() =
+            runTest {
+                val nextActivity = mockk<Activity>(relaxed = true)
+                plugin.addObserverWithCurrentState(mockObserver)
+                advanceUntilIdle()
+
+                plugin.onActivityStarted(nextActivity)
+
+                verify(exactly = 1) { mockObserver.onActivityStarted(nextActivity) }
+            }
+    }
+
+    @Nested
+    inner class RemoveObserverWithCurrentState {
+
+        @Test
+        fun `given a resumed activity, when an observer is removed with current state, then it gets paused and stopped once and no later event`() =
+            runTest {
+                plugin.addObserver(mockObserver)
+                plugin.onActivityStarted(mockActivity)
+                plugin.onActivityResumed(mockActivity)
+
+                plugin.removeObserverWithCurrentState(mockObserver)
+                advanceUntilIdle()
+                plugin.onActivityPaused(mockActivity)
+                plugin.onActivityStopped(mockActivity)
+
+                assert(!plugin.activityObservers.contains(mockObserver))
+                verify(exactly = 1) { mockObserver.onActivityPaused(mockActivity) }
+                verify(exactly = 1) { mockObserver.onActivityStopped(mockActivity) }
+            }
+
+        @Test
+        fun `given no activity on screen, when an observer is removed with current state, then it gets no event`() =
+            runTest {
+                plugin.addObserver(mockObserver)
+                plugin.onActivityStarted(mockActivity)
+                plugin.onActivityStopped(mockActivity)
+                clearMocks(mockObserver)
+
+                plugin.removeObserverWithCurrentState(mockObserver)
+                advanceUntilIdle()
+
+                assert(!plugin.activityObservers.contains(mockObserver))
+                verify(exactly = 0) { mockObserver.onActivityPaused(any()) }
+                verify(exactly = 0) { mockObserver.onActivityStopped(any()) }
+            }
+
+        @Test
+        fun `given an observer that is not added, when it is removed with current state, then it gets no event`() =
+            runTest {
+                plugin.onActivityStarted(mockActivity)
+                plugin.onActivityResumed(mockActivity)
+
+                plugin.removeObserverWithCurrentState(mockObserver)
+                advanceUntilIdle()
+
+                verify(exactly = 0) { mockObserver.onActivityPaused(any()) }
+                verify(exactly = 0) { mockObserver.onActivityStopped(any()) }
+            }
+
+        @Test
+        fun `given a resumed activity, when shutdown cancels the scope before the removal runs, then the observer is still removed, paused, and stopped`() =
+            runTest {
+                plugin.addObserver(mockObserver)
+                plugin.onActivityStarted(mockActivity)
+                plugin.onActivityResumed(mockActivity)
+
+                plugin.removeObserverWithCurrentState(mockObserver)
+                mockAnalytics.analyticsScope.cancel()
+                advanceUntilIdle()
+
+                assert(!plugin.activityObservers.contains(mockObserver))
+                verify(exactly = 1) { mockObserver.onActivityPaused(mockActivity) }
+                verify(exactly = 1) { mockObserver.onActivityStopped(mockActivity) }
+            }
+
+        @Test
+        fun `given a registration queued from another thread, when the observer is removed on the main thread before the queue runs, then the removal runs after the registration`() =
+            runTest {
+                val mainDispatcher = FakeMainDispatcher(testDispatcher)
+                Dispatchers.setMain(mainDispatcher)
+                plugin.onActivityStarted(mockActivity)
+                plugin.onActivityResumed(mockActivity)
+
+                plugin.addObserverWithCurrentState(mockObserver)
+                mainDispatcher.isOnMainThread = true
+                plugin.removeObserverWithCurrentState(mockObserver)
+                advanceUntilIdle()
+
+                assert(!plugin.activityObservers.contains(mockObserver))
+                verify(exactly = 1) { mockObserver.onActivityResumed(mockActivity) }
+                verify(exactly = 1) { mockObserver.onActivityPaused(mockActivity) }
+                verify(exactly = 1) { mockObserver.onActivityStopped(mockActivity) }
+            }
+    }
+}
+
+// Like the Android main dispatcher: `immediate` runs a block at once on the main thread, and queues it from other threads.
+private class FakeMainDispatcher(private val queue: CoroutineDispatcher) : MainCoroutineDispatcher() {
+
+    var isOnMainThread = false
+
+    override val immediate: MainCoroutineDispatcher = object : MainCoroutineDispatcher() {
+        override val immediate: MainCoroutineDispatcher get() = this
+        override fun isDispatchNeeded(context: CoroutineContext): Boolean = !isOnMainThread
+        override fun dispatch(context: CoroutineContext, block: Runnable) = queue.dispatch(context, block)
+    }
+
+    override fun dispatch(context: CoroutineContext, block: Runnable) = queue.dispatch(context, block)
 }

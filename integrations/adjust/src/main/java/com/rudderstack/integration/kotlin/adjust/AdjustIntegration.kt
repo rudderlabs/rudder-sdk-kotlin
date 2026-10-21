@@ -12,8 +12,9 @@ import com.adjust.sdk.LogLevel
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.IntegrationPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.StandardIntegration
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleObserver
-import com.rudderstack.sdk.kotlin.android.utils.addLifecycleObserver
+import com.rudderstack.sdk.kotlin.android.utils.addLifecycleObserverWithCurrentState
 import com.rudderstack.sdk.kotlin.android.utils.application
+import com.rudderstack.sdk.kotlin.android.utils.removeLifecycleObserverWithCurrentState
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
@@ -75,9 +76,10 @@ class AdjustIntegration() : StandardIntegration, IntegrationPlugin(), ActivityLi
                 attributionCallback = ::sendInstallAttributedEvent,
                 logger = analytics.logger,
             )
-            (analytics as? AndroidAnalytics)?.addLifecycleObserver(this)
             analytics.logger.verbose("AdjustIntegration: Adjust SDK initialized.")
         }
+        // Outside the init-once block: `teardown` removes the observer, and a re-added integration needs it again.
+        (analytics as? AndroidAnalytics)?.addLifecycleObserverWithCurrentState(this)
     }
 
     override fun getDestinationInstance(): Any? {
@@ -116,6 +118,11 @@ class AdjustIntegration() : StandardIntegration, IntegrationPlugin(), ActivityLi
     override fun reset() {
         adjustInstance?.removeGlobalPartnerParameters()
         analytics.logger.verbose("AdjustIntegration: Reset call completed.")
+    }
+
+    override fun teardown() {
+        super.teardown()
+        (analytics as? AndroidAnalytics)?.removeLifecycleObserverWithCurrentState(this)
     }
 
     private fun Event.setSessionParams() {
