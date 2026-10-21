@@ -57,6 +57,9 @@ abstract class IntegrationPlugin : EventPlugin {
     internal val isDestinationReady: Boolean
         get() = state == DestinationState.Ready
 
+    // The answer for a callback registered after a result. Null until the first result after setup or a reset.
+    private var lastResult: DestinationResult? = null
+
     // Kept for the handoff gate, so it costs no source-config lookup per event.
     @Volatile
     private var destinationConfig: JsonObject? = null
@@ -272,6 +275,7 @@ abstract class IntegrationPlugin : EventPlugin {
         synchronized(stateLock) {
             isPluginSetup = false
             state = DestinationState.PendingCreate
+            lastResult = null
         }
     }
 
@@ -303,27 +307,27 @@ abstract class IntegrationPlugin : EventPlugin {
     }
 
     /**
-     * Registers a callback to be invoked when the destination of this plugin is ready.
+     * Registers a callback that gets the result of the destination setup. The SDK calls each callback at most once.
      *
-     * @param callback The callback to be invoked when the destination is ready.
+     * Until the first result after the app adds the integration, the SDK stores the callback and calls it with that
+     * result. After that result, the SDK calls the callback at once with the last result. Success passes the
+     * destination instance. Failure passes `null`.
+     *
+     * @param callback The callback that gets the destination instance and the result.
      */
     // todo: refactor this API to support dynamic callbacks
     fun onDestinationReady(callback: (Any?, DestinationResult) -> Unit) {
-        synchronized(stateLock) {
-            if (!isDestinationCreated()) {
+        val result = synchronized(stateLock) {
+            lastResult ?: run {
                 destinationReadyCallbacks.add(callback)
                 return
             }
         }
-        if (isDestinationReady) {
-            callback(getDestinationInstance(), Result.Success(Unit))
-        } else {
-            callback(
-                null,
-                Result.Failure(IllegalStateException("Destination $key is absent or disabled in dashboard."))
-            )
-        }
+        callback(instanceFor(result), result)
     }
+
+    private fun instanceFor(result: DestinationResult): Any? =
+        if (result is Result.Success) getDestinationInstance() else null
 
     private fun safelyInitOrUpdateAndNotify(destinationConfig: JsonObject) {
         if (!isDestinationCreated()) {
@@ -413,12 +417,13 @@ abstract class IntegrationPlugin : EventPlugin {
             // The app can remove this integration while `create` or `update` runs.
             if (!isPluginSetup) return
             state = newState
+            lastResult = destinationResult
             destinationReadyCallbacks.toList().also { destinationReadyCallbacks.clear() }
         }
         if (callbacks.isNotEmpty()) {
             analytics.logger.debug("IntegrationPlugin[$key]: Notifying ${callbacks.size} deferred callback(s)")
         }
-        val destinationInstance = getDestinationInstance()
+        val destinationInstance = instanceFor(destinationResult)
         // A failing app callback must not change the state or stop the other callbacks.
         callbacks.forEach { callback ->
             safelyExecute(
