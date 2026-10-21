@@ -3,13 +3,14 @@ package com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment
 import android.app.Activity
 import android.app.Application
 import android.os.Bundle
-import com.rudderstack.sdk.kotlin.android.utils.runCleanupOnMainThread
+import com.rudderstack.sdk.kotlin.android.utils.queueOnMainThread
 import com.rudderstack.sdk.kotlin.android.utils.runOnMainThread
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import kotlinx.coroutines.DelicateCoroutinesApi
 import org.jetbrains.annotations.VisibleForTesting
 import java.lang.ref.WeakReference
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import com.rudderstack.sdk.kotlin.android.Analytics as AndroidAnalytics
 import com.rudderstack.sdk.kotlin.android.Configuration as AndroidConfiguration
@@ -29,6 +30,9 @@ internal class ActivityLifecycleManagementPlugin : Plugin, Application.ActivityL
     private var startedActivity: WeakReference<Activity>? = null
     private var isStartedActivityResumed = false
 
+    // The latest request for each observer that tracks the current state. Any thread writes it; the main thread applies it.
+    private val observerRequests = ConcurrentHashMap<ActivityLifecycleObserver, ObserverRequest>()
+
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
 
@@ -41,7 +45,7 @@ internal class ActivityLifecycleManagementPlugin : Plugin, Application.ActivityL
     }
 
     override fun teardown() {
-        (analytics as? AndroidAnalytics)?.runCleanupOnMainThread {
+        (analytics as? AndroidAnalytics)?.queueOnMainThread {
             application.unregisterActivityLifecycleCallbacks(this)
         }
     }
@@ -51,18 +55,18 @@ internal class ActivityLifecycleManagementPlugin : Plugin, Application.ActivityL
     }
 
     /**
-     * Adds [observer], then tells it about the activity that is on screen now: started, and resumed if it is.
+     * Asks for [observer] to get the activity events. When the observer is added, it first gets the activity that is on
+     * screen now: started, and resumed if it is.
      *
      * An observer that registers after the first activity started would otherwise miss that activity.
+     *
+     * The main thread applies the latest request of each observer. It reads [isActive] when it applies the request, and
+     * adds the observer only when [isActive] returns `true` then. So requests from several threads, in any order, end in
+     * the state that the latest request asks for.
      */
-    internal fun addObserverWithCurrentState(observer: ActivityLifecycleObserver) {
-        (analytics as? AndroidAnalytics)?.runOnMainThread {
-            activityObservers.add(observer)
-            startedActivity?.get()?.let { activity ->
-                observer.onActivityStarted(activity)
-                if (isStartedActivityResumed) observer.onActivityResumed(activity)
-            }
-        }
+    internal fun addObserverWithCurrentState(observer: ActivityLifecycleObserver, isActive: () -> Boolean = { true }) {
+        observerRequests[observer] = ObserverRequest(isActive)
+        applyRequestOnMainThread(observer)
     }
 
     internal fun removeObserver(observer: ActivityLifecycleObserver) {
@@ -70,16 +74,45 @@ internal class ActivityLifecycleManagementPlugin : Plugin, Application.ActivityL
     }
 
     /**
-     * Removes [observer], then tells it that the activity on screen now paused, if it is resumed, and stopped.
+     * Asks for [observer] to stop getting the activity events. When the observer is removed, it last gets the activity
+     * that is on screen now: paused, if it is resumed, and stopped.
      *
      * An observer removed while an activity is on screen would otherwise never get the matching pause and stop.
      */
     internal fun removeObserverWithCurrentState(observer: ActivityLifecycleObserver) {
-        (analytics as? AndroidAnalytics)?.runCleanupOnMainThread {
-            if (!activityObservers.remove(observer)) return@runCleanupOnMainThread
-            startedActivity?.get()?.let { activity ->
-                if (isStartedActivityResumed) observer.onActivityPaused(activity)
-                observer.onActivityStopped(activity)
+        observerRequests.remove(observer)
+        applyRequestOnMainThread(observer)
+    }
+
+    // Shutdown cancels the analytics scope right after teardown, so the apply must survive that cancel.
+    private fun applyRequestOnMainThread(observer: ActivityLifecycleObserver) {
+        (analytics as? AndroidAnalytics)?.queueOnMainThread { applyRequest(observer) }
+    }
+
+    // Main thread only. Each call moves the observer to the state that its latest request asks for, so it is idempotent.
+    private fun applyRequest(observer: ActivityLifecycleObserver) {
+        val request = observerRequests[observer]
+        val isWanted = request?.isActive?.invoke() == true
+        // Removes only this request, so a newer request from another thread survives.
+        if (request != null && !isWanted) observerRequests.remove(observer, request)
+
+        val isAdded = observer in activityObservers
+        val activity = startedActivity?.get()
+        when {
+            isWanted && !isAdded -> {
+                activityObservers.add(observer)
+                activity?.let {
+                    observer.onActivityStarted(it)
+                    if (isStartedActivityResumed) observer.onActivityResumed(it)
+                }
+            }
+
+            !isWanted && isAdded -> {
+                activityObservers.remove(observer)
+                activity?.let {
+                    if (isStartedActivityResumed) observer.onActivityPaused(it)
+                    observer.onActivityStopped(it)
+                }
             }
         }
     }
@@ -121,3 +154,5 @@ internal class ActivityLifecycleManagementPlugin : Plugin, Application.ActivityL
         activityObservers.forEach { it.onActivityDestroyed(activity) }
     }
 }
+
+private class ObserverRequest(val isActive: () -> Boolean)

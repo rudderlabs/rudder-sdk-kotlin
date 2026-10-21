@@ -1,6 +1,7 @@
 package com.rudderstack.sdk.kotlin.android.utils
 
 import com.rudderstack.sdk.kotlin.android.Analytics
+import com.rudderstack.sdk.kotlin.android.plugins.devicemode.IntegrationPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleObserver
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ProcessLifecycleObserver
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
@@ -17,11 +18,14 @@ fun Analytics.addLifecycleObserver(observer: ActivityLifecycleObserver) {
  * Adds the given [observer], then tells it about the activity that is on screen now.
  *
  * Use it for an observer that registers late, for example when the source config arrives, so it does not miss
- * the activity that started before it.
+ * the activity that started before it. Remove the observer with [removeLifecycleObserverWithCurrentState], not with
+ * [removeLifecycleObserver].
  */
 @InternalRudderApi
 fun Analytics.addLifecycleObserverWithCurrentState(observer: ActivityLifecycleObserver) {
-    activityLifecycleManagementPlugin.addObserverWithCurrentState(observer)
+    // A `create` that ends after the app removed the integration must not add it again.
+    val isActive = (observer as? IntegrationPlugin)?.let { integration -> { integration.isPluginSetup } } ?: { true }
+    activityLifecycleManagementPlugin.addObserverWithCurrentState(observer, isActive)
 }
 
 internal fun Analytics.addLifecycleObserver(observer: ProcessLifecycleObserver) {
@@ -40,7 +44,8 @@ fun Analytics.removeLifecycleObserver(observer: ActivityLifecycleObserver) {
  * Removes the given [observer], then tells it that the activity on screen now paused and stopped.
  *
  * Use it for an observer added with [addLifecycleObserverWithCurrentState], so the destination SDK gets the matching
- * pause and stop when the observer goes away while an activity is on screen.
+ * pause and stop when the observer goes away while an activity is on screen. Do not use it for an observer added
+ * with [addLifecycleObserver].
  */
 @InternalRudderApi
 fun Analytics.removeLifecycleObserverWithCurrentState(observer: ActivityLifecycleObserver) {
