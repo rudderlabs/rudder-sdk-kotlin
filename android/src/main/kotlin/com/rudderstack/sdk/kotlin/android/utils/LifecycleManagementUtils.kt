@@ -23,9 +23,18 @@ fun Analytics.addLifecycleObserver(observer: ActivityLifecycleObserver) {
  */
 @InternalRudderApi
 fun Analytics.addLifecycleObserverWithCurrentState(observer: ActivityLifecycleObserver) {
-    // A `create` that ends after the app removed the integration must not add it again.
-    val isActive = (observer as? IntegrationPlugin)?.let { integration -> { integration.isPluginSetup } } ?: { true }
-    activityLifecycleManagementPlugin.addObserverWithCurrentState(observer, isActive)
+    val integration = observer as? IntegrationPlugin
+    if (integration == null) {
+        activityLifecycleManagementPlugin.addObserverWithCurrentState(observer)
+    } else {
+        // Events only while the destination is ready, so consent and the dashboard switch apply. A `create` that ends
+        // after the app removed the integration does not add it again.
+        activityLifecycleManagementPlugin.addObserverWithCurrentState(
+            observer,
+            isAttached = { integration.isPluginSetup },
+            isReady = { integration.isDestinationReady },
+        )
+    }
 }
 
 internal fun Analytics.addLifecycleObserver(observer: ProcessLifecycleObserver) {

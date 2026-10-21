@@ -55,18 +55,32 @@ internal class ActivityLifecycleManagementPlugin : Plugin, Application.ActivityL
     }
 
     /**
-     * Asks for [observer] to get the activity events. When the observer is added, it first gets each activity that is
-     * started now: started, and resumed if it is.
+     * Asks for [observer] to get the activity events while [isAttached] and [isReady] return `true`. When the observer is
+     * added, it first gets each activity that is started now: started, and resumed if it is.
      *
      * An observer that registers after the first activity started would otherwise miss that activity.
      *
-     * The main thread applies the latest request of each observer. It reads [isActive] when it applies the request, and
-     * adds the observer only when [isActive] returns `true` then. So requests from several threads, in any order, end in
-     * the state that the latest request asks for.
+     * The main thread applies the latest request of each observer, and reads [isAttached] and [isReady] at that time. It
+     * adds the observer only when both return `true`, and it drops the request when [isAttached] returns `false`. So
+     * requests from several threads, in any order, end in the state that the latest request asks for. Call
+     * [refreshObserver] when [isReady] changes.
      */
-    internal fun addObserverWithCurrentState(observer: ActivityLifecycleObserver, isActive: () -> Boolean = { true }) {
-        observerRequests[observer] = ObserverRequest(isActive)
-        applyRequestOnMainThread(observer)
+    internal fun addObserverWithCurrentState(
+        observer: ActivityLifecycleObserver,
+        isAttached: () -> Boolean = { true },
+        isReady: () -> Boolean = { true },
+    ) {
+        observerRequests[observer] = ObserverRequest(isAttached, isReady)
+        (analytics as? AndroidAnalytics)?.queueOnMainThread { applyRequest(observer) }
+    }
+
+    /**
+     * Applies the request of [observer] again, after its `isReady` condition changed. Does nothing for an observer that
+     * has no request.
+     */
+    internal fun refreshObserver(observer: ActivityLifecycleObserver) {
+        if (!observerRequests.containsKey(observer)) return
+        (analytics as? AndroidAnalytics)?.queueOnMainThread { applyRequest(observer) }
     }
 
     internal fun removeObserver(observer: ActivityLifecycleObserver) {
@@ -81,20 +95,16 @@ internal class ActivityLifecycleManagementPlugin : Plugin, Application.ActivityL
      */
     internal fun removeObserverWithCurrentState(observer: ActivityLifecycleObserver) {
         observerRequests.remove(observer)
-        applyRequestOnMainThread(observer)
-    }
-
-    // Shutdown cancels the analytics scope right after teardown, so the apply must survive that cancel.
-    private fun applyRequestOnMainThread(observer: ActivityLifecycleObserver) {
         (analytics as? AndroidAnalytics)?.queueOnMainThread { applyRequest(observer) }
     }
 
     // Main thread only. Each call moves the observer to the state that its latest request asks for, so it is idempotent.
     private fun applyRequest(observer: ActivityLifecycleObserver) {
         val request = observerRequests[observer]
-        val isWanted = request?.isActive?.invoke() == true
+        val isAttached = request?.isAttached?.invoke() == true
         // Removes only this request, so a newer request from another thread survives.
-        if (request != null && !isWanted) observerRequests.remove(observer, request)
+        if (request != null && !isAttached) observerRequests.remove(observer, request)
+        val isWanted = isAttached && request?.isReady?.invoke() == true
 
         val isAdded = observer in activityObservers
         val activities = startedActivities.entries.map { it.key to it.value }
@@ -150,4 +160,4 @@ internal class ActivityLifecycleManagementPlugin : Plugin, Application.ActivityL
     }
 }
 
-private class ObserverRequest(val isActive: () -> Boolean)
+private class ObserverRequest(val isAttached: () -> Boolean, val isReady: () -> Boolean)
