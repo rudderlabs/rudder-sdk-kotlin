@@ -46,7 +46,8 @@ abstract class IntegrationPlugin : EventPlugin {
     private val isStandardIntegration: Boolean = this is StandardIntegration
 
     @Volatile
-    private var isPluginSetup = false
+    internal var isPluginSetup = false
+        private set
 
     // One lock for the state, the stored callbacks, and the remove, so neither can race a state change.
     private val stateLock = Any()

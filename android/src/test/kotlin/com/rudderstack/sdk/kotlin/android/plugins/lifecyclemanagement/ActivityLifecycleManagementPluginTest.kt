@@ -4,10 +4,13 @@ import android.app.Activity
 import android.app.Application
 import android.os.Bundle
 import com.rudderstack.sdk.kotlin.android.Configuration
+import com.rudderstack.sdk.kotlin.android.plugins.devicemode.IntegrationPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleManagementPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleObserver
+import com.rudderstack.sdk.kotlin.android.utils.addLifecycleObserverWithCurrentState
 import com.rudderstack.sdk.kotlin.android.utils.mockAnalytics
 import com.rudderstack.sdk.kotlin.core.Analytics
+import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import io.mockk.MockKAnnotations
 import io.mockk.clearMocks
 import io.mockk.every
@@ -15,9 +18,7 @@ import io.mockk.impl.annotations.MockK
 import io.mockk.mockk
 import io.mockk.unmockkAll
 import io.mockk.verify
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.MainCoroutineDispatcher
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -26,11 +27,13 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.serialization.json.JsonObject
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import kotlin.coroutines.CoroutineContext
+import com.rudderstack.sdk.kotlin.android.Analytics as AndroidAnalytics
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ActivityLifecycleManagementPluginTest {
@@ -285,38 +288,117 @@ class ActivityLifecycleManagementPluginTest {
                 verify(exactly = 1) { mockObserver.onActivityPaused(mockActivity) }
                 verify(exactly = 1) { mockObserver.onActivityStopped(mockActivity) }
             }
+    }
+
+    @Test
+    fun `given a translucent activity resumed over a paused one, when an observer is added and removed with current state, then each activity gets a balanced start and stop`() =
+        runTest {
+            val topActivity = mockk<Activity>()
+            plugin.onActivityStarted(mockActivity)
+            plugin.onActivityResumed(mockActivity)
+            plugin.onActivityPaused(mockActivity)
+            plugin.onActivityStarted(topActivity)
+            plugin.onActivityResumed(topActivity)
+
+            plugin.addObserverWithCurrentState(mockObserver)
+            advanceUntilIdle()
+            plugin.removeObserverWithCurrentState(mockObserver)
+            advanceUntilIdle()
+
+            verify(exactly = 1) {
+                mockObserver.onActivityStarted(mockActivity)
+                mockObserver.onActivityStopped(mockActivity)
+                mockObserver.onActivityStarted(topActivity)
+                mockObserver.onActivityResumed(topActivity)
+                mockObserver.onActivityPaused(topActivity)
+                mockObserver.onActivityStopped(topActivity)
+            }
+            verify(exactly = 0) {
+                mockObserver.onActivityResumed(mockActivity)
+                mockObserver.onActivityPaused(mockActivity)
+            }
+        }
+
+    @Nested
+    inner class LatestRequestWins {
 
         @Test
-        fun `given a registration queued from another thread, when the observer is removed on the main thread before the queue runs, then the removal runs after the registration`() =
+        fun `given a resumed activity, when an observer is added twice, then it is added once and gets started and resumed once`() =
             runTest {
-                val mainDispatcher = FakeMainDispatcher(testDispatcher)
-                Dispatchers.setMain(mainDispatcher)
                 plugin.onActivityStarted(mockActivity)
                 plugin.onActivityResumed(mockActivity)
 
                 plugin.addObserverWithCurrentState(mockObserver)
-                mainDispatcher.isOnMainThread = true
+                plugin.addObserverWithCurrentState(mockObserver)
+                advanceUntilIdle()
+
+                assertEquals(1, plugin.activityObservers.count { it === mockObserver })
+                verify(exactly = 1) { mockObserver.onActivityStarted(mockActivity) }
+                verify(exactly = 1) { mockObserver.onActivityResumed(mockActivity) }
+            }
+
+        @Test
+        fun `given an added observer and a resumed activity, when it is removed and added again before the main thread runs, then it stays added and gets no pause or stop`() =
+            runTest {
+                plugin.onActivityStarted(mockActivity)
+                plugin.onActivityResumed(mockActivity)
+                plugin.addObserverWithCurrentState(mockObserver)
+                advanceUntilIdle()
+
+                plugin.removeObserverWithCurrentState(mockObserver)
+                plugin.addObserverWithCurrentState(mockObserver)
+                advanceUntilIdle()
+
+                assertEquals(1, plugin.activityObservers.count { it === mockObserver })
+                verify(exactly = 1) { mockObserver.onActivityResumed(mockActivity) }
+                verify(exactly = 0) { mockObserver.onActivityPaused(any()) }
+                verify(exactly = 0) { mockObserver.onActivityStopped(any()) }
+            }
+
+        @Test
+        fun `given a resumed activity, when an observer is added and removed before the main thread runs, then it is not added and gets no event`() =
+            runTest {
+                plugin.onActivityStarted(mockActivity)
+                plugin.onActivityResumed(mockActivity)
+
+                plugin.addObserverWithCurrentState(mockObserver)
                 plugin.removeObserverWithCurrentState(mockObserver)
                 advanceUntilIdle()
 
                 assert(!plugin.activityObservers.contains(mockObserver))
-                verify(exactly = 1) { mockObserver.onActivityResumed(mockActivity) }
-                verify(exactly = 1) { mockObserver.onActivityPaused(mockActivity) }
-                verify(exactly = 1) { mockObserver.onActivityStopped(mockActivity) }
+                verify(exactly = 0) { mockObserver.onActivityStarted(any()) }
+                verify(exactly = 0) { mockObserver.onActivityStopped(any()) }
+            }
+
+        @OptIn(InternalRudderApi::class)
+        @Test
+        fun `given an integration removed while its create runs, when the create adds it with current state, then it is added only after the integration is added again`() =
+            runTest {
+                val androidAnalytics = mockAnalytics as AndroidAnalytics
+                every { androidAnalytics.activityLifecycleManagementPlugin } returns plugin
+                val integration = TestIntegration()
+                integration.setup(mockAnalytics)
+                integration.teardown()
+
+                androidAnalytics.addLifecycleObserverWithCurrentState(integration)
+                advanceUntilIdle()
+
+                assert(!plugin.activityObservers.contains(integration))
+
+                integration.setup(mockAnalytics)
+                androidAnalytics.addLifecycleObserverWithCurrentState(integration)
+                advanceUntilIdle()
+
+                assert(plugin.activityObservers.contains(integration))
             }
     }
 }
 
-// Like the Android main dispatcher: `immediate` runs a block at once on the main thread, and queues it from other threads.
-private class FakeMainDispatcher(private val queue: CoroutineDispatcher) : MainCoroutineDispatcher() {
+private class TestIntegration : IntegrationPlugin(), ActivityLifecycleObserver {
 
-    var isOnMainThread = false
+    override val key: String = "Test"
 
-    override val immediate: MainCoroutineDispatcher = object : MainCoroutineDispatcher() {
-        override val immediate: MainCoroutineDispatcher get() = this
-        override fun isDispatchNeeded(context: CoroutineContext): Boolean = !isOnMainThread
-        override fun dispatch(context: CoroutineContext, block: Runnable) = queue.dispatch(context, block)
-    }
+    override fun create(destinationConfig: JsonObject) = Unit
 
-    override fun dispatch(context: CoroutineContext, block: Runnable) = queue.dispatch(context, block)
+    override fun getDestinationInstance(): Any? = null
 }

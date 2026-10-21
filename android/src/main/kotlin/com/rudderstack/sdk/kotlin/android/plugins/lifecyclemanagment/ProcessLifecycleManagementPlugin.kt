@@ -5,7 +5,7 @@ import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
-import com.rudderstack.sdk.kotlin.android.utils.runCleanupOnMainThread
+import com.rudderstack.sdk.kotlin.android.utils.queueOnMainThread
 import com.rudderstack.sdk.kotlin.android.utils.runOnMainThread
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
@@ -34,7 +34,7 @@ internal class ProcessLifecycleManagementPlugin : Plugin, DefaultLifecycleObserv
     }
 
     override fun teardown() {
-        (analytics as? AndroidAnalytics)?.runCleanupOnMainThread {
+        (analytics as? AndroidAnalytics)?.queueOnMainThread {
             lifecycle.removeObserver(this)
         }
     }
