@@ -10,6 +10,7 @@ import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLif
 import com.rudderstack.sdk.kotlin.android.utils.addLifecycleObserverWithCurrentState
 import com.rudderstack.sdk.kotlin.android.utils.mockAnalytics
 import com.rudderstack.sdk.kotlin.core.Analytics
+import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import io.mockk.MockKAnnotations
 import io.mockk.clearMocks
@@ -372,7 +373,7 @@ class ActivityLifecycleManagementPluginTest {
 
         @OptIn(InternalRudderApi::class)
         @Test
-        fun `given an integration removed while its create runs, when the create adds it with current state, then it is added only after the integration is added again`() =
+        fun `given an integration removed while its create runs, when the create adds it with current state, then it is added only after the integration is added and created again`() =
             runTest {
                 val androidAnalytics = mockAnalytics as AndroidAnalytics
                 every { androidAnalytics.activityLifecycleManagementPlugin } returns plugin
@@ -386,6 +387,7 @@ class ActivityLifecycleManagementPluginTest {
                 assert(!plugin.activityObservers.contains(integration))
 
                 integration.setup(mockAnalytics)
+                integration.initDestination(SourceConfig.initialState())
                 androidAnalytics.addLifecycleObserverWithCurrentState(integration)
                 advanceUntilIdle()
 
