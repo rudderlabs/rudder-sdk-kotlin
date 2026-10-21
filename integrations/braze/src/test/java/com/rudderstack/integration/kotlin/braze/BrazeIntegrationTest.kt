@@ -19,7 +19,7 @@ import com.rudderstack.integration.kotlin.braze.Utility.readFileAsJsonObject
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleObserver
 import com.rudderstack.sdk.kotlin.android.utils.addLifecycleObserverWithCurrentState
 import com.rudderstack.sdk.kotlin.android.utils.application
-import com.rudderstack.sdk.kotlin.android.utils.removeLifecycleObserver
+import com.rudderstack.sdk.kotlin.android.utils.removeLifecycleObserverWithCurrentState
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
@@ -122,7 +122,7 @@ class BrazeIntegrationTest {
         val androidAnalytics = mockk<AndroidAnalytics>(relaxed = true).also {
             every { it.application } returns mockApplication
             every { it.addLifecycleObserverWithCurrentState(any()) } just Runs
-            every { it.removeLifecycleObserver(any<ActivityLifecycleObserver>()) } just Runs
+            every { it.removeLifecycleObserverWithCurrentState(any<ActivityLifecycleObserver>()) } just Runs
         }
         brazeIntegration.analytics = androidAnalytics
 
@@ -131,7 +131,7 @@ class BrazeIntegrationTest {
         brazeIntegration.create(mockBrazeIntegrationConfig)
 
         verify(exactly = 2) { androidAnalytics.addLifecycleObserverWithCurrentState(brazeIntegration) }
-        verify(exactly = 1) { androidAnalytics.removeLifecycleObserver(brazeIntegration) }
+        verify(exactly = 1) { androidAnalytics.removeLifecycleObserverWithCurrentState(brazeIntegration) }
         verify(exactly = 1) { Braze.configure(any(), any()) }
     }
 

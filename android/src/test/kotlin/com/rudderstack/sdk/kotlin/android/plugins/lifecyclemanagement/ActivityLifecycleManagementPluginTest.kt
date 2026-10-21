@@ -9,6 +9,7 @@ import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLif
 import com.rudderstack.sdk.kotlin.android.utils.mockAnalytics
 import com.rudderstack.sdk.kotlin.core.Analytics
 import io.mockk.MockKAnnotations
+import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.mockk
@@ -212,6 +213,56 @@ class ActivityLifecycleManagementPluginTest {
                 plugin.onActivityStarted(nextActivity)
 
                 verify(exactly = 1) { mockObserver.onActivityStarted(nextActivity) }
+            }
+    }
+
+    @Nested
+    inner class RemoveObserverWithCurrentState {
+
+        @Test
+        fun `given a resumed activity, when an observer is removed with current state, then it gets paused and stopped once and no later event`() =
+            runTest {
+                plugin.addObserver(mockObserver)
+                plugin.onActivityStarted(mockActivity)
+                plugin.onActivityResumed(mockActivity)
+
+                plugin.removeObserverWithCurrentState(mockObserver)
+                advanceUntilIdle()
+                plugin.onActivityPaused(mockActivity)
+                plugin.onActivityStopped(mockActivity)
+
+                assert(!plugin.activityObservers.contains(mockObserver))
+                verify(exactly = 1) { mockObserver.onActivityPaused(mockActivity) }
+                verify(exactly = 1) { mockObserver.onActivityStopped(mockActivity) }
+            }
+
+        @Test
+        fun `given no activity on screen, when an observer is removed with current state, then it gets no event`() =
+            runTest {
+                plugin.addObserver(mockObserver)
+                plugin.onActivityStarted(mockActivity)
+                plugin.onActivityStopped(mockActivity)
+                clearMocks(mockObserver)
+
+                plugin.removeObserverWithCurrentState(mockObserver)
+                advanceUntilIdle()
+
+                assert(!plugin.activityObservers.contains(mockObserver))
+                verify(exactly = 0) { mockObserver.onActivityPaused(any()) }
+                verify(exactly = 0) { mockObserver.onActivityStopped(any()) }
+            }
+
+        @Test
+        fun `given an observer that is not added, when it is removed with current state, then it gets no event`() =
+            runTest {
+                plugin.onActivityStarted(mockActivity)
+                plugin.onActivityResumed(mockActivity)
+
+                plugin.removeObserverWithCurrentState(mockObserver)
+                advanceUntilIdle()
+
+                verify(exactly = 0) { mockObserver.onActivityPaused(any()) }
+                verify(exactly = 0) { mockObserver.onActivityStopped(any()) }
             }
     }
 }

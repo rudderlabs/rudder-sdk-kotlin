@@ -72,6 +72,21 @@ internal class ActivityLifecycleManagementPlugin : Plugin, Application.ActivityL
         activityObservers.remove(observer)
     }
 
+    /**
+     * Removes [observer], then tells it that the activity on screen now paused, if it is resumed, and stopped.
+     *
+     * An observer removed while an activity is on screen would otherwise never get the matching pause and stop.
+     */
+    internal fun removeObserverWithCurrentState(observer: ActivityLifecycleObserver) {
+        (analytics as? AndroidAnalytics)?.runOnMainThread {
+            if (!activityObservers.remove(observer)) return@runOnMainThread
+            startedActivity?.get()?.let { activity ->
+                if (isStartedActivityResumed) observer.onActivityPaused(activity)
+                observer.onActivityStopped(activity)
+            }
+        }
+    }
+
     override fun onActivityCreated(activity: Activity, bundle: Bundle?) {
         activityObservers.forEach { it.onActivityCreated(activity, bundle) }
     }

@@ -14,7 +14,7 @@ import com.rudderstack.sdk.kotlin.android.plugins.devicemode.StandardIntegration
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleObserver
 import com.rudderstack.sdk.kotlin.android.utils.addLifecycleObserverWithCurrentState
 import com.rudderstack.sdk.kotlin.android.utils.application
-import com.rudderstack.sdk.kotlin.android.utils.removeLifecycleObserver
+import com.rudderstack.sdk.kotlin.android.utils.removeLifecycleObserverWithCurrentState
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
@@ -105,7 +105,7 @@ class AdjustIntegration : StandardIntegration, IntegrationPlugin(), ActivityLife
 
     override fun teardown() {
         super.teardown()
-        (analytics as? AndroidAnalytics)?.removeLifecycleObserver(this)
+        (analytics as? AndroidAnalytics)?.removeLifecycleObserverWithCurrentState(this)
     }
 
     private fun Event.setSessionParams() {

@@ -28,7 +28,7 @@ import com.adjust.sdk.AdjustEvent
 import com.rudderstack.sdk.kotlin.android.Analytics as AndroidAnalytics
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleObserver
 import com.rudderstack.sdk.kotlin.android.utils.addLifecycleObserverWithCurrentState
-import com.rudderstack.sdk.kotlin.android.utils.removeLifecycleObserver
+import com.rudderstack.sdk.kotlin.android.utils.removeLifecycleObserverWithCurrentState
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
@@ -327,7 +327,7 @@ class AdjustIntegrationTest {
         adjustIntegration.create(mockAdjustIntegrationConfig)
 
         verify(exactly = 2) { androidAnalytics.addLifecycleObserverWithCurrentState(adjustIntegration) }
-        verify(exactly = 1) { androidAnalytics.removeLifecycleObserver(adjustIntegration) }
+        verify(exactly = 1) { androidAnalytics.removeLifecycleObserverWithCurrentState(adjustIntegration) }
         verify(exactly = 1) { Adjust.initSdk(mockAdjustConfig) }
     }
 
@@ -337,7 +337,7 @@ class AdjustIntegrationTest {
         return mockk<AndroidAnalytics>(relaxed = true).also {
             every { it.application } returns mockApplication
             every { it.addLifecycleObserverWithCurrentState(any()) } just Runs
-            every { it.removeLifecycleObserver(any<ActivityLifecycleObserver>()) } just Runs
+            every { it.removeLifecycleObserverWithCurrentState(any<ActivityLifecycleObserver>()) } just Runs
         }
     }
 

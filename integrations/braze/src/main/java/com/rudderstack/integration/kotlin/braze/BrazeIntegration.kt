@@ -17,7 +17,7 @@ import com.rudderstack.sdk.kotlin.android.plugins.devicemode.StandardIntegration
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleObserver
 import com.rudderstack.sdk.kotlin.android.utils.addLifecycleObserverWithCurrentState
 import com.rudderstack.sdk.kotlin.android.utils.application
-import com.rudderstack.sdk.kotlin.android.utils.removeLifecycleObserver
+import com.rudderstack.sdk.kotlin.android.utils.removeLifecycleObserverWithCurrentState
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
@@ -227,7 +227,7 @@ class BrazeIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
 
     override fun teardown() {
         super.teardown()
-        (analytics as? AndroidAnalytics)?.removeLifecycleObserver(this)
+        (analytics as? AndroidAnalytics)?.removeLifecycleObserverWithCurrentState(this)
     }
 
     override fun onActivityStarted(activity: Activity) {
