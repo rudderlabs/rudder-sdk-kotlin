@@ -125,9 +125,14 @@ class AdjustIntegrationTest {
             AdjustIntegration(appAdjustInstance).also { it.analytics = mockAnalytics }
         }
 
+        @OptIn(InternalRudderApi::class)
         @Test
-        fun `given lite mode, when create runs twice, then Adjust is not initialised, no attribution callback is set, and the app's instance is returned`() {
+        fun `given lite mode, when create runs before and after a teardown, then Adjust is not initialised, no attribution callback or activity observer is set, and the app's instance is returned`() {
+            val androidAnalytics = mockAndroidAnalytics()
+            liteAdjustIntegration.analytics = androidAnalytics
+
             liteAdjustIntegration.create(mockAdjustIntegrationConfig)
+            liteAdjustIntegration.teardown()
             liteAdjustIntegration.create(mockAdjustIntegrationConfig)
 
             assertEquals(appAdjustInstance, liteAdjustIntegration.getDestinationInstance())
@@ -136,6 +141,7 @@ class AdjustIntegrationTest {
                 Adjust.initSdk(any())
                 Adjust.getDefaultInstance()
                 mockAdjustConfig.setOnAttributionChangedListener(any())
+                androidAnalytics.addLifecycleObserverWithCurrentState(any())
             }
         }
 

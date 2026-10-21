@@ -51,12 +51,15 @@ class AdjustIntegration() : StandardIntegration, IntegrationPlugin(), ActivityLi
      */
     constructor(adjust: AdjustInstance) : this() {
         this.adjustInstance = adjust
+        this.isLiteMode = true
     }
 
     override val key: String
         get() = ADJUST_KEY
 
     private var adjustInstance: AdjustInstance? = null
+
+    private var isLiteMode = false
 
     private lateinit var eventToTokenMappings: List<EventToTokenMapping>
 
@@ -78,8 +81,9 @@ class AdjustIntegration() : StandardIntegration, IntegrationPlugin(), ActivityLi
             )
             analytics.logger.verbose("AdjustIntegration: Adjust SDK initialized.")
         }
-        // Outside the init-once block: `teardown` removes the observer, and a re-added integration needs it again.
-        (analytics as? AndroidAnalytics)?.addLifecycleObserverWithCurrentState(this)
+        // In lite mode, the app owns the Adjust resume and pause calls. Outside the init-once block: `teardown` removes
+        // the observer.
+        if (!isLiteMode) (analytics as? AndroidAnalytics)?.addLifecycleObserverWithCurrentState(this)
     }
 
     override fun getDestinationInstance(): Any? {
