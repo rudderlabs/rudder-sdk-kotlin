@@ -11,8 +11,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import com.rudderstack.sdk.kotlin.android.Analytics as AndroidAnalytics
 
-// Read on each call, so a test can replace the main dispatcher after this file loads.
-private val MAIN_DISPATCHER get() = Dispatchers.Main.immediate
+private val MAIN_DISPATCHER = Dispatchers.Main.immediate
 
 /**
  * Runs a suspend block on a coroutine launched in `analyticsScope` with `analyticsDispatcher`
@@ -51,19 +50,19 @@ internal fun AndroidAnalytics.runOnMainThread(block: suspend () -> Unit) = analy
 }
 
 /**
- * Queues a cleanup block on the main thread, also when `analyticsScope` is cancelled before the block starts.
+ * Queues a block on the main thread, also when `analyticsScope` is cancelled before the block starts.
  *
- * The block always goes through the main-thread queue, also when the caller is on the main thread. It therefore runs
- * after a block that another thread queued before it, for example the registration that the cleanup undoes.
+ * The block always goes through the main-thread queue, also when the caller is on the main thread, so blocks run in the
+ * order they were queued.
  *
- * Shutdown cancels `analyticsScope` right after the teardown of each plugin returns. A cleanup that a teardown queues
+ * Shutdown cancels `analyticsScope` right after the teardown of each plugin returns. A block that a teardown queues
  * for the main thread would then never run. [CoroutineStart.ATOMIC] starts the coroutine even after that cancel, and
  * the coroutine stays a child of `analyticsScope`. The block does not suspend, so the cancel cannot stop it midway.
  *
  * @param block The block which needs to be executed.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
-internal fun AndroidAnalytics.runCleanupOnMainThread(block: () -> Unit) =
+internal fun AndroidAnalytics.queueOnMainThread(block: () -> Unit) =
     analyticsScope.launch(Dispatchers.Main, start = CoroutineStart.ATOMIC) {
         block()
     }
