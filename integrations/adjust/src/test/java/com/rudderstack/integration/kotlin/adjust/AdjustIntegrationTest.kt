@@ -21,6 +21,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import java.io.BufferedReader
 import com.adjust.sdk.AdjustConfig
@@ -106,6 +107,40 @@ class AdjustIntegrationTest {
         // Initialise the AdjustIntegration
         adjustIntegration = AdjustIntegration().also {
             it.analytics = mockAnalytics
+        }
+    }
+
+    @Nested
+    inner class LiteMode {
+
+        private val appAdjustInstance: AdjustInstance = mockk(relaxed = true)
+
+        // Lazy: JUnit builds this nested instance before the outer setup initialises the mocks.
+        private val liteAdjustIntegration by lazy {
+            AdjustIntegration(appAdjustInstance).also { it.analytics = mockAnalytics }
+        }
+
+        @Test
+        fun `given lite mode, when create runs twice, then Adjust is not initialised, no attribution callback is set, and the app's instance is returned`() {
+            liteAdjustIntegration.create(mockAdjustIntegrationConfig)
+            liteAdjustIntegration.create(mockAdjustIntegrationConfig)
+
+            assertEquals(appAdjustInstance, liteAdjustIntegration.getDestinationInstance())
+            verify(exactly = 0) {
+                initAdjustConfig(any(), any(), any())
+                Adjust.initSdk(any())
+                Adjust.getDefaultInstance()
+                mockAdjustConfig.setOnAttributionChangedListener(any())
+            }
+        }
+
+        @Test
+        fun `given lite mode and an event-to-token mapping, when a track event is made, then it is sent to Adjust`() {
+            liteAdjustIntegration.create(mockAdjustIntegrationConfig)
+
+            liteAdjustIntegration.track(provideTrackEvent(eventName = TRACK_EVENT_ALLOWED, properties = buildJsonObject {}))
+
+            verify(exactly = 1) { Adjust.trackEvent(mockAdjustEvent) }
         }
     }
 

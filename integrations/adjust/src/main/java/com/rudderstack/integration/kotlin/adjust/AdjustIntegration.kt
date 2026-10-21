@@ -31,9 +31,26 @@ private const val INSTALL_ATTRIBUTED_EVENT = "Install Attributed"
 
 /**
  * AdjustIntegration is a plugin that sends events to the Adjust SDK.
+ *
+ * The constructor without arguments initialises Adjust from the dashboard settings. The constructor that takes an
+ * [AdjustInstance] is lite mode: the app initialises Adjust, and the integration only maps and forwards events.
  */
 @OptIn(InternalRudderApi::class)
-class AdjustIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifecycleObserver {
+class AdjustIntegration() : StandardIntegration, IntegrationPlugin(), ActivityLifecycleObserver {
+
+    /**
+     * Creates the integration in lite mode, with an [AdjustInstance] that the app has already initialised, for
+     * example from `Adjust.getDefaultInstance()`.
+     *
+     * The integration does not initialise Adjust, set listeners or the attribution callback, or forward the activity
+     * resume and pause calls. It sends no "Install Attributed" event, whatever the dashboard setting. The dashboard
+     * settings still need valid values.
+     *
+     * @param adjust The Adjust instance that the app initialised.
+     */
+    constructor(adjust: AdjustInstance) : this() {
+        this.adjustInstance = adjust
+    }
 
     override val key: String
         get() = ADJUST_KEY
