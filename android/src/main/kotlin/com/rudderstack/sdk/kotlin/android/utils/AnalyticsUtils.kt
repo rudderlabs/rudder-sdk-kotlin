@@ -3,8 +3,10 @@ package com.rudderstack.sdk.kotlin.android.utils
 import com.rudderstack.sdk.kotlin.android.models.consent.ConsentManagementState
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import com.rudderstack.sdk.kotlin.android.Analytics as AndroidAnalytics
@@ -46,6 +48,21 @@ internal fun Analytics.runOnAnalyticsThreadAfter(previousJob: Job?, block: suspe
 internal fun AndroidAnalytics.runOnMainThread(block: suspend () -> Unit) = analyticsScope.launch(MAIN_DISPATCHER) {
     block()
 }
+
+/**
+ * Runs a cleanup block on the main thread, also when `analyticsScope` is cancelled before the block starts.
+ *
+ * Shutdown cancels `analyticsScope` right after the teardown of each plugin returns. A cleanup that a teardown queues
+ * for the main thread would then never run. [CoroutineStart.ATOMIC] starts the coroutine even after that cancel, and
+ * the coroutine stays a child of `analyticsScope`. The block does not suspend, so the cancel cannot stop it midway.
+ *
+ * @param block The block which needs to be executed.
+ */
+@OptIn(ExperimentalCoroutinesApi::class)
+internal fun AndroidAnalytics.runCleanupOnMainThread(block: () -> Unit) =
+    analyticsScope.launch(MAIN_DISPATCHER, start = CoroutineStart.ATOMIC) {
+        block()
+    }
 
 /**
  * The inactive state handed to every non-android instance, and therefore shared by all of them.

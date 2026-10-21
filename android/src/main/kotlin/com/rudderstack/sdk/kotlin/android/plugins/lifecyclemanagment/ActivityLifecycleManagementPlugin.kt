@@ -3,12 +3,11 @@ package com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment
 import android.app.Activity
 import android.app.Application
 import android.os.Bundle
+import com.rudderstack.sdk.kotlin.android.utils.runCleanupOnMainThread
 import com.rudderstack.sdk.kotlin.android.utils.runOnMainThread
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.withContext
 import org.jetbrains.annotations.VisibleForTesting
 import java.lang.ref.WeakReference
 import java.util.concurrent.CopyOnWriteArrayList
@@ -42,10 +41,8 @@ internal class ActivityLifecycleManagementPlugin : Plugin, Application.ActivityL
     }
 
     override fun teardown() {
-        (analytics as? AndroidAnalytics)?.runOnMainThread {
-            withContext(NonCancellable) {
-                application.unregisterActivityLifecycleCallbacks(this@ActivityLifecycleManagementPlugin)
-            }
+        (analytics as? AndroidAnalytics)?.runCleanupOnMainThread {
+            application.unregisterActivityLifecycleCallbacks(this)
         }
     }
 
@@ -78,8 +75,8 @@ internal class ActivityLifecycleManagementPlugin : Plugin, Application.ActivityL
      * An observer removed while an activity is on screen would otherwise never get the matching pause and stop.
      */
     internal fun removeObserverWithCurrentState(observer: ActivityLifecycleObserver) {
-        (analytics as? AndroidAnalytics)?.runOnMainThread {
-            if (!activityObservers.remove(observer)) return@runOnMainThread
+        (analytics as? AndroidAnalytics)?.runCleanupOnMainThread {
+            if (!activityObservers.remove(observer)) return@runCleanupOnMainThread
             startedActivity?.get()?.let { activity ->
                 if (isStartedActivityResumed) observer.onActivityPaused(activity)
                 observer.onActivityStopped(activity)

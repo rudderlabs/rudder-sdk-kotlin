@@ -16,6 +16,7 @@ import io.mockk.mockk
 import io.mockk.unmockkAll
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -77,10 +78,11 @@ class ActivityLifecycleManagementPluginTest {
     }
 
     @Test
-    fun `when teardown called, it should unregister activity lifecycle callbacks`() = runTest {
+    fun `when teardown called and shutdown cancels the scope before the cleanup runs, it should still unregister activity lifecycle callbacks`() = runTest {
         plugin.activityObservers.add(mockObserver)
 
         plugin.teardown()
+        mockAnalytics.analyticsScope.cancel()
 
         advanceUntilIdle()
         verify { mockApplication.unregisterActivityLifecycleCallbacks(plugin) }
@@ -263,6 +265,22 @@ class ActivityLifecycleManagementPluginTest {
 
                 verify(exactly = 0) { mockObserver.onActivityPaused(any()) }
                 verify(exactly = 0) { mockObserver.onActivityStopped(any()) }
+            }
+
+        @Test
+        fun `given a resumed activity, when shutdown cancels the scope before the removal runs, then the observer is still removed, paused, and stopped`() =
+            runTest {
+                plugin.addObserver(mockObserver)
+                plugin.onActivityStarted(mockActivity)
+                plugin.onActivityResumed(mockActivity)
+
+                plugin.removeObserverWithCurrentState(mockObserver)
+                mockAnalytics.analyticsScope.cancel()
+                advanceUntilIdle()
+
+                assert(!plugin.activityObservers.contains(mockObserver))
+                verify(exactly = 1) { mockObserver.onActivityPaused(mockActivity) }
+                verify(exactly = 1) { mockObserver.onActivityStopped(mockActivity) }
             }
     }
 }
