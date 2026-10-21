@@ -158,6 +158,39 @@ class BrazeIntegrationTest {
     }
 
     @Test
+    fun `given lite mode, when create runs twice, then Braze is not configured, the app's instance is returned, and the alias is set once`() {
+        val appBrazeInstance: Braze = mockk(relaxed = true)
+        val liteBrazeIntegration = BrazeIntegration(appBrazeInstance).also { it.analytics = mockAnalytics }
+
+        liteBrazeIntegration.create(mockBrazeIntegrationConfig)
+        liteBrazeIntegration.create(mockBrazeIntegrationConfig)
+
+        assertEquals(appBrazeInstance, liteBrazeIntegration.getDestinationInstance())
+        verify(exactly = 0) {
+            initBrazeConfig()
+            Braze.configure(any(), any())
+            Braze.getInstance(any())
+        }
+        appBrazeInstance.currentUser?.apply {
+            verify(exactly = 1) {
+                addAlias(any(), ALIAS_LABEL)
+            }
+        }
+    }
+
+    @Test
+    fun `given lite mode, when a custom track event is made, then it is logged on the app's instance`() {
+        val appBrazeInstance: Braze = mockk(relaxed = true)
+        val liteBrazeIntegration = BrazeIntegration(appBrazeInstance).also { it.analytics = mockAnalytics }
+        liteBrazeIntegration.create(mockBrazeIntegrationConfig)
+
+        liteBrazeIntegration.track(provideTrackEvent(eventName = CUSTOM_TRACK_EVENT))
+
+        verify(exactly = 1) { appBrazeInstance.logCustomEvent(CUSTOM_TRACK_EVENT) }
+        verify(exactly = 0) { mockBrazeInstance.logCustomEvent(any()) }
+    }
+
+    @Test
     fun `given the event is Install Attributed and campaign object is present, when it is made, then the attribution data is tracked`() {
         brazeIntegration.create(mockBrazeIntegrationConfig)
         val trackEvent = provideTrackEvent(

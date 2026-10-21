@@ -59,6 +59,26 @@ class MyApplication : Application() {
 }
 ```
 
+## Lite mode
+
+In lite mode, your app initialises Braze and passes the instance to the integration. The integration then only maps
+events and sends them to that instance.
+
+1. Add the Braze Android SDK to your app dependencies.
+2. Initialise Braze with your own configuration, and set up the Braze sessions as Braze documents.
+3. Pass the Braze instance to the integration:
+
+```kotlin
+analytics.add(BrazeIntegration(Braze.getInstance(this)))
+```
+
+In lite mode, the integration:
+
+- Does not configure Braze, set the Braze log level, or open and close Braze sessions.
+- Sets the `rudder_id` alias and applies the mapping settings from the dashboard, as in the standard mode.
+- Waits for the source config before it sends events. The dashboard settings still need valid values, but lite mode
+  does not use the API key or the endpoint.
+
 ## Recommended ecommerce events
 
 When the **`useEcommerceRecommendedEvents`** flag is enabled on the Braze destination, supported RudderStack
