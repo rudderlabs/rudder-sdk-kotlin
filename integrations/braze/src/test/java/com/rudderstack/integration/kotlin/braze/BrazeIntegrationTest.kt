@@ -116,14 +116,19 @@ class BrazeIntegrationTest {
     }
 
     @OptIn(InternalRudderApi::class)
-    @Test
-    fun `given a created integration, when it is torn down and created again, then it registers for activity events again`() {
+    private fun mockAndroidAnalytics(): AndroidAnalytics {
         mockkStatic(LIFECYCLE_MANAGEMENT_UTILS)
-        val androidAnalytics = mockk<AndroidAnalytics>(relaxed = true).also {
+        return mockk<AndroidAnalytics>(relaxed = true).also {
             every { it.application } returns mockApplication
             every { it.addLifecycleObserverWithCurrentState(any()) } just Runs
             every { it.removeLifecycleObserverWithCurrentState(any<ActivityLifecycleObserver>()) } just Runs
         }
+    }
+
+    @OptIn(InternalRudderApi::class)
+    @Test
+    fun `given a created integration, when it is torn down and created again, then it registers for activity events again`() {
+        val androidAnalytics = mockAndroidAnalytics()
         brazeIntegration.analytics = androidAnalytics
 
         brazeIntegration.create(mockBrazeIntegrationConfig)
@@ -185,12 +190,15 @@ class BrazeIntegrationTest {
         }
     }
 
+    @OptIn(InternalRudderApi::class)
     @Test
-    fun `given lite mode, when create runs twice, then Braze is not configured, the app's instance is returned, and the alias is set once`() {
+    fun `given lite mode, when create runs before and after a teardown, then Braze is not configured, no activity observer is added, the app's instance is returned, and the alias is set once`() {
+        val androidAnalytics = mockAndroidAnalytics()
         val appBrazeInstance: Braze = mockk(relaxed = true)
-        val liteBrazeIntegration = BrazeIntegration(appBrazeInstance).also { it.analytics = mockAnalytics }
+        val liteBrazeIntegration = BrazeIntegration(appBrazeInstance).also { it.analytics = androidAnalytics }
 
         liteBrazeIntegration.create(mockBrazeIntegrationConfig)
+        liteBrazeIntegration.teardown()
         liteBrazeIntegration.create(mockBrazeIntegrationConfig)
 
         assertEquals(appBrazeInstance, liteBrazeIntegration.getDestinationInstance())
@@ -198,6 +206,7 @@ class BrazeIntegrationTest {
             initBrazeConfig()
             Braze.configure(any(), any())
             Braze.getInstance(any())
+            androidAnalytics.addLifecycleObserverWithCurrentState(any())
         }
         appBrazeInstance.currentUser?.apply {
             verify(exactly = 1) {

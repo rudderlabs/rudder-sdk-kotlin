@@ -52,19 +52,22 @@ class BrazeIntegration() : StandardIntegration, IntegrationPlugin(), ActivityLif
     /**
      * Creates the integration in lite mode, with a [Braze] instance that the app has already initialised.
      *
-     * The integration does not configure Braze or set the Braze log level. The dashboard settings still need valid
-     * values.
+     * The integration does not configure Braze, set the Braze log level, or open and close Braze sessions. The
+     * dashboard settings still need valid values.
      *
      * @param braze The Braze instance that the app initialised.
      */
     constructor(braze: Braze) : this() {
         this.braze = braze
+        this.isLiteMode = true
     }
 
     override val key: String
         get() = BRAZE_KEY
 
     private var braze: Braze? = null
+
+    private var isLiteMode = false
 
     private var hasSetUserAlias = false
 
@@ -84,8 +87,8 @@ class BrazeIntegration() : StandardIntegration, IntegrationPlugin(), ActivityLif
             setUserAlias()
             hasSetUserAlias = true
         }
-        // Outside the init-once block: `teardown` removes the observer, and a re-added integration needs it again.
-        (analytics as? AndroidAnalytics)?.addLifecycleObserverWithCurrentState(this)
+        // In lite mode, the app owns the Braze sessions. Outside the init-once block: `teardown` removes the observer.
+        if (!isLiteMode) (analytics as? AndroidAnalytics)?.addLifecycleObserverWithCurrentState(this)
     }
 
     /**
