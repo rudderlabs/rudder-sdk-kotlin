@@ -7,6 +7,7 @@ import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.IntegrationPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleManagementPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleObserver
+import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ObserverDecision
 import com.rudderstack.sdk.kotlin.android.utils.addLifecycleObserverWithCurrentState
 import com.rudderstack.sdk.kotlin.android.utils.mockAnalytics
 import com.rudderstack.sdk.kotlin.core.Analytics
@@ -175,7 +176,7 @@ class ActivityLifecycleManagementPluginTest {
                 plugin.onActivityStarted(mockActivity)
                 plugin.onActivityResumed(mockActivity)
 
-                plugin.addObserverWithCurrentState(mockObserver)
+                plugin.addObserverWithCurrentState(mockObserver) { ObserverDecision.OBSERVE }
                 advanceUntilIdle()
 
                 assert(plugin.activityObservers.contains(mockObserver))
@@ -190,7 +191,7 @@ class ActivityLifecycleManagementPluginTest {
                 plugin.onActivityResumed(mockActivity)
                 plugin.onActivityPaused(mockActivity)
 
-                plugin.addObserverWithCurrentState(mockObserver)
+                plugin.addObserverWithCurrentState(mockObserver) { ObserverDecision.OBSERVE }
                 advanceUntilIdle()
 
                 verify(exactly = 1) { mockObserver.onActivityStarted(mockActivity) }
@@ -203,7 +204,7 @@ class ActivityLifecycleManagementPluginTest {
                 plugin.onActivityStarted(mockActivity)
                 plugin.onActivityStopped(mockActivity)
 
-                plugin.addObserverWithCurrentState(mockObserver)
+                plugin.addObserverWithCurrentState(mockObserver) { ObserverDecision.OBSERVE }
                 advanceUntilIdle()
 
                 assert(plugin.activityObservers.contains(mockObserver))
@@ -215,7 +216,7 @@ class ActivityLifecycleManagementPluginTest {
         fun `given an observer added with current state, when the next activity starts, then it gets that event normally`() =
             runTest {
                 val nextActivity = mockk<Activity>(relaxed = true)
-                plugin.addObserverWithCurrentState(mockObserver)
+                plugin.addObserverWithCurrentState(mockObserver) { ObserverDecision.OBSERVE }
                 advanceUntilIdle()
 
                 plugin.onActivityStarted(nextActivity)
@@ -300,7 +301,7 @@ class ActivityLifecycleManagementPluginTest {
             plugin.onActivityStarted(topActivity)
             plugin.onActivityResumed(topActivity)
 
-            plugin.addObserverWithCurrentState(mockObserver)
+            plugin.addObserverWithCurrentState(mockObserver) { ObserverDecision.OBSERVE }
             advanceUntilIdle()
             plugin.removeObserverWithCurrentState(mockObserver)
             advanceUntilIdle()
@@ -328,8 +329,8 @@ class ActivityLifecycleManagementPluginTest {
                 plugin.onActivityStarted(mockActivity)
                 plugin.onActivityResumed(mockActivity)
 
-                plugin.addObserverWithCurrentState(mockObserver)
-                plugin.addObserverWithCurrentState(mockObserver)
+                plugin.addObserverWithCurrentState(mockObserver) { ObserverDecision.OBSERVE }
+                plugin.addObserverWithCurrentState(mockObserver) { ObserverDecision.OBSERVE }
                 advanceUntilIdle()
 
                 assertEquals(1, plugin.activityObservers.count { it === mockObserver })
@@ -342,11 +343,11 @@ class ActivityLifecycleManagementPluginTest {
             runTest {
                 plugin.onActivityStarted(mockActivity)
                 plugin.onActivityResumed(mockActivity)
-                plugin.addObserverWithCurrentState(mockObserver)
+                plugin.addObserverWithCurrentState(mockObserver) { ObserverDecision.OBSERVE }
                 advanceUntilIdle()
 
                 plugin.removeObserverWithCurrentState(mockObserver)
-                plugin.addObserverWithCurrentState(mockObserver)
+                plugin.addObserverWithCurrentState(mockObserver) { ObserverDecision.OBSERVE }
                 advanceUntilIdle()
 
                 assertEquals(1, plugin.activityObservers.count { it === mockObserver })
@@ -361,7 +362,7 @@ class ActivityLifecycleManagementPluginTest {
                 plugin.onActivityStarted(mockActivity)
                 plugin.onActivityResumed(mockActivity)
 
-                plugin.addObserverWithCurrentState(mockObserver)
+                plugin.addObserverWithCurrentState(mockObserver) { ObserverDecision.OBSERVE }
                 plugin.removeObserverWithCurrentState(mockObserver)
                 advanceUntilIdle()
 
