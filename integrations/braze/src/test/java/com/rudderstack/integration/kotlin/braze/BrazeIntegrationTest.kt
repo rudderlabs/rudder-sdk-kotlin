@@ -206,7 +206,7 @@ class BrazeIntegrationTest {
             initBrazeConfig()
             Braze.configure(any(), any())
             Braze.getInstance(any())
-            androidAnalytics.addLifecycleObserverWithCurrentState(any())
+            androidAnalytics.addLifecycleObserverWithCurrentState(any<BrazeIntegration>())
         }
         appBrazeInstance.currentUser?.apply {
             verify(exactly = 1) {
