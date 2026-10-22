@@ -3,7 +3,6 @@ package com.rudderstack.integration.kotlin.facebook
 import android.app.Application
 import android.os.Bundle
 import com.facebook.FacebookSdk
-import com.facebook.LoggingBehavior
 import com.facebook.appevents.AppEventsConstants
 import com.facebook.appevents.AppEventsLogger
 import com.rudderstack.sdk.kotlin.android.Analytics
@@ -298,44 +297,18 @@ class FacebookIntegrationTest {
     }
 
     @Test
-    fun `when logLevel in configuration is debug, then logging is enabled for facebook sdk`() {
-        val mockConfig = mockk<Configuration>(relaxed = true)
-        every { mockConfig.logLevel } returns Logger.LogLevel.DEBUG
-        every { mockAnalytics.configuration } returns mockConfig
-
-        createFacebookIntegration()
-
-        verify {
-            FacebookSdk.setIsDebugEnabled(true)
-            FacebookSdk.addLoggingBehavior(LoggingBehavior.APP_EVENTS)
-        }
-    }
-
-    @Test
-    fun `when logLevel in configuration is verbose, then logging is enabled for facebook sdk`() {
+    fun `given a verbose log level, when the integration is created, then it does not activate the app or set Facebook debug flags`() {
         val mockConfig = mockk<Configuration>(relaxed = true)
         every { mockConfig.logLevel } returns Logger.LogLevel.VERBOSE
         every { mockAnalytics.configuration } returns mockConfig
 
         createFacebookIntegration()
 
-        verify {
-            FacebookSdk.setIsDebugEnabled(true)
-            FacebookSdk.addLoggingBehavior(LoggingBehavior.APP_EVENTS)
-        }
-    }
-
-    @Test
-    fun `when logLevel in configuration is info, then logging is not enabled for facebook sdk`() {
-        val mockConfig = mockk<Configuration>(relaxed = true)
-        every { mockConfig.logLevel } returns Logger.LogLevel.INFO
-        every { mockAnalytics.configuration } returns mockConfig
-
-        createFacebookIntegration()
-
         verify(exactly = 0) {
-            FacebookSdk.setIsDebugEnabled(true)
-            FacebookSdk.addLoggingBehavior(LoggingBehavior.APP_EVENTS)
+            AppEventsLogger.activateApp(any<Application>(), any<String>())
+            AppEventsLogger.activateApp(any())
+            FacebookSdk.setIsDebugEnabled(any())
+            FacebookSdk.addLoggingBehavior(any())
         }
     }
 

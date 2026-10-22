@@ -3,7 +3,6 @@ package com.rudderstack.integration.kotlin.facebook
 import android.os.Bundle
 import androidx.annotation.VisibleForTesting
 import com.facebook.FacebookSdk
-import com.facebook.LoggingBehavior
 import com.facebook.appevents.AppEventsConstants
 import com.facebook.appevents.AppEventsLogger
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.IntegrationPlugin
@@ -13,7 +12,6 @@ import com.rudderstack.sdk.kotlin.android.utils.getInt
 import com.rudderstack.sdk.kotlin.android.utils.getString
 import com.rudderstack.sdk.kotlin.core.ecommerce.ECommerceEvents
 import com.rudderstack.sdk.kotlin.core.ecommerce.ECommerceParamNames
-import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.ScreenEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
@@ -44,15 +42,8 @@ class FacebookIntegration : StandardIntegration, IntegrationPlugin() {
         get() = FACEBOOK_KEY
 
     public override fun create(destinationConfig: JsonObject) {
-        val config = destinationConfig.parseConfig<FacebookDestinationConfig>()
-        val isFirstCreate = facebookAppEventsLogger == null
-        if (isFirstCreate && analytics.configuration.logLevel <= Logger.LogLevel.DEBUG) {
-            FacebookSdk.setIsDebugEnabled(true)
-            FacebookSdk.addLoggingBehavior(LoggingBehavior.APP_EVENTS)
-        }
-        setDataProcessingOptions(config)
-        if (isFirstCreate) {
-            AppEventsLogger.activateApp(analytics.application, config.appId)
+        setDataProcessingOptions(destinationConfig.parseConfig<FacebookDestinationConfig>())
+        if (facebookAppEventsLogger == null) {
             facebookAppEventsLogger = provideAppEventsLogger()
         }
     }

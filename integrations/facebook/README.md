@@ -54,3 +54,13 @@ class MyApplication : Application() {
     }
 }
 ```
+
+## Facebook SDK setup
+
+Your app sets up the Facebook SDK. The integration only maps events and sends them to Facebook.
+
+- Add your Facebook app ID and client token to `AndroidManifest.xml`, as the Facebook Android SDK guide describes. The Facebook SDK then starts and logs the app activation itself.
+- If you set `com.facebook.sdk.AutoLogAppEventsEnabled` to `false`, call `AppEventsLogger.activateApp(application)` in your app.
+- To see the Facebook debug logs, call `FacebookSdk.setIsDebugEnabled(true)` and `FacebookSdk.addLoggingBehavior(LoggingBehavior.APP_EVENTS)` in your app.
+
+The integration still sets the data processing options from the dashboard settings.
