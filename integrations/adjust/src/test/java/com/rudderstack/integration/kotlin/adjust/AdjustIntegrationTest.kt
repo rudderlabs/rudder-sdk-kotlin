@@ -141,7 +141,7 @@ class AdjustIntegrationTest {
                 Adjust.initSdk(any())
                 Adjust.getDefaultInstance()
                 mockAdjustConfig.setOnAttributionChangedListener(any())
-                androidAnalytics.addLifecycleObserverWithCurrentState(any())
+                androidAnalytics.addLifecycleObserverWithCurrentState(any<AdjustIntegration>())
             }
         }
 
