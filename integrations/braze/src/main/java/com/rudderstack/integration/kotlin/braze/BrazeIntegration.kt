@@ -42,14 +42,34 @@ private const val BRAZE_KEY = "Braze"
 
 /**
  * BrazeIntegration is a plugin that sends events to the Braze SDK.
+ *
+ * The constructor without arguments initialises Braze from the dashboard settings. The constructor that takes a
+ * [Braze] instance is lite mode: the app initialises Braze, and the integration only maps and forwards events.
  */
 @OptIn(InternalRudderApi::class)
-class BrazeIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifecycleObserver {
+class BrazeIntegration() : StandardIntegration, IntegrationPlugin(), ActivityLifecycleObserver {
+
+    /**
+     * Creates the integration in lite mode, with a [Braze] instance that the app has already initialised.
+     *
+     * The integration does not configure Braze, set the Braze log level, or open and close Braze sessions. The
+     * dashboard settings still need valid values.
+     *
+     * @param braze The Braze instance that the app initialised.
+     */
+    constructor(braze: Braze) : this() {
+        this.braze = braze
+        this.isLiteMode = true
+    }
 
     override val key: String
         get() = BRAZE_KEY
 
     private var braze: Braze? = null
+
+    private var isLiteMode = false
+
+    private var hasSetUserAlias = false
 
     private var previousIdentifyTraits: IdentifyTraits? = null
 
@@ -60,14 +80,15 @@ class BrazeIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
             ?: throw IllegalArgumentException("BrazeIntegration: The destination config is empty.")
         this.brazeConfig = config
         braze ?: run {
-            initBraze(analytics.application, config, analytics.logger, analytics.configuration.logLevel).also {
-                braze = it
-                setUserAlias()
-            }
+            braze = initBraze(analytics.application, config, analytics.logger, analytics.configuration.logLevel)
             analytics.logger.verbose("BrazeIntegration: Braze SDK initialized")
         }
-        // Outside the init-once block: `teardown` removes the observer, and a re-added integration needs it again.
-        (analytics as? AndroidAnalytics)?.addLifecycleObserverWithCurrentState(this)
+        if (!hasSetUserAlias) {
+            setUserAlias()
+            hasSetUserAlias = true
+        }
+        // In lite mode, the app owns the Braze sessions. Outside the init-once block: `teardown` removes the observer.
+        if (!isLiteMode) (analytics as? AndroidAnalytics)?.addLifecycleObserverWithCurrentState(this)
     }
 
     /**
