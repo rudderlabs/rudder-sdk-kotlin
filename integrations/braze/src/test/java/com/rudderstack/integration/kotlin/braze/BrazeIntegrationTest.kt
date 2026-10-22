@@ -121,7 +121,7 @@ class BrazeIntegrationTest {
         mockkStatic(LIFECYCLE_MANAGEMENT_UTILS)
         val androidAnalytics = mockk<AndroidAnalytics>(relaxed = true).also {
             every { it.application } returns mockApplication
-            every { it.addLifecycleObserverWithCurrentState(any()) } just Runs
+            every { it.addLifecycleObserverWithCurrentState(any<BrazeIntegration>()) } just Runs
             every { it.removeLifecycleObserverWithCurrentState(any<ActivityLifecycleObserver>()) } just Runs
         }
         brazeIntegration.analytics = androidAnalytics
