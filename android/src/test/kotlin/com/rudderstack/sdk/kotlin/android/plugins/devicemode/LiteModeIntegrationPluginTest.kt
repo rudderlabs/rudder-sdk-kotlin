@@ -290,6 +290,40 @@ class LiteModeIntegrationPluginTest {
             assertTrue(plugin.isDestinationReady)
         }
 
+    @Test
+    fun `given a pending callback and an instance lookup that throws, when create succeeds, then the callback gets the failure once and the next config calls create again`() =
+        runTest {
+            val instanceError = IllegalStateException("Instance failed")
+            val callback = mockk<(Any?, DestinationResult) -> Unit>(relaxed = true)
+            plugin.onDestinationReady(callback)
+            plugin.instanceError = instanceError
+
+            plugin.initDestination(sourceConfig)
+
+            assertFalse(plugin.isDestinationReady)
+            verify(exactly = 1) { callback.invoke(null, match { (it as? Result.Failure)?.error === instanceError }) }
+
+            plugin.instanceError = null
+            plugin.initDestination(sourceConfig)
+
+            assertEquals(2, plugin.createCount)
+            assertTrue(plugin.isDestinationReady)
+            verify(exactly = 1) { callback.invoke(any(), any()) }
+        }
+
+    @Test
+    fun `given a ready integration, when a late callback throws, then the app does not get the exception and the next late callback gets success`() =
+        runTest {
+            val lastCallback = mockk<(Any?, DestinationResult) -> Unit>(relaxed = true)
+            plugin.initDestination(sourceConfig)
+
+            plugin.onDestinationReady { _, _ -> throw IllegalStateException("Callback failed") }
+            plugin.onDestinationReady(lastCallback)
+
+            verify(exactly = 1) { lastCallback.invoke(appInstance, ofType(Result.Success::class) as DestinationResult) }
+            assertTrue(plugin.isDestinationReady)
+        }
+
     private fun decodeSourceConfig(path: String): SourceConfig =
         LenientJson.decodeFromString<SourceConfig>(readFileAsString(path))
 }

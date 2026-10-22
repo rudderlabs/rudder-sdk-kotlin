@@ -323,7 +323,7 @@ abstract class IntegrationPlugin : EventPlugin {
                 return
             }
         }
-        callback(instanceFor(result), result)
+        safelyNotify { callback(instanceFor(result), result) }
     }
 
     private fun instanceFor(result: DestinationResult): Any? =
@@ -413,6 +413,8 @@ abstract class IntegrationPlugin : EventPlugin {
         if (state == DestinationState.PendingCreate) DestinationState.PendingCreate else DestinationState.Paused
 
     private fun changeStateAndNotify(newState: DestinationState, destinationResult: DestinationResult) {
+        // Before the state change: if it throws, the caller reports a failure to the stored callbacks.
+        val destinationInstance = instanceFor(destinationResult)
         val callbacks = synchronized(stateLock) {
             // The app can remove this integration while `create` or `update` runs.
             if (!isPluginSetup) return
@@ -423,18 +425,19 @@ abstract class IntegrationPlugin : EventPlugin {
         if (callbacks.isNotEmpty()) {
             analytics.logger.debug("IntegrationPlugin[$key]: Notifying ${callbacks.size} deferred callback(s)")
         }
-        val destinationInstance = instanceFor(destinationResult)
-        // A failing app callback must not change the state or stop the other callbacks.
-        callbacks.forEach { callback ->
-            safelyExecute(
-                block = { callback(destinationInstance, destinationResult) },
-                onException = { exception ->
-                    analytics.logger.error(
-                        "IntegrationPlugin: A ready callback of destination $key failed. Error: ${exception.message}"
-                    )
-                }
-            )
-        }
+        callbacks.forEach { callback -> safelyNotify { callback(destinationInstance, destinationResult) } }
+    }
+
+    // A failing app callback must not change the state or stop the other callbacks.
+    private fun safelyNotify(notify: () -> Unit) {
+        safelyExecute(
+            block = notify,
+            onException = { exception ->
+                analytics.logger.error(
+                    "IntegrationPlugin: A ready callback of destination $key failed. Error: ${exception.message}"
+                )
+            }
+        )
     }
 
     private fun applyDefaultPlugins() {
