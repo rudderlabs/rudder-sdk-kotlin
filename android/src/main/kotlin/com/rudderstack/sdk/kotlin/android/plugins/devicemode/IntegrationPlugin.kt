@@ -420,7 +420,7 @@ abstract class IntegrationPlugin : EventPlugin {
             state = newState
             destinationReadyCallbacks.toList().also { destinationReadyCallbacks.clear() }
         }
-        // An integration gets the activity events only while it is ready.
+        // An integration added with current state gets the activity events only while it is ready.
         if (hasReadinessChanged && this is ActivityLifecycleObserver) {
             (analytics as? AndroidAnalytics)?.activityLifecycleManagementPlugin?.refreshObserver(this)
         }
