@@ -49,18 +49,7 @@ internal fun AndroidAnalytics.runOnMainThread(block: suspend () -> Unit) = analy
     block()
 }
 
-/**
- * Queues a block on the main thread, also when `analyticsScope` is cancelled before the block starts.
- *
- * The block always goes through the main-thread queue, also when the caller is on the main thread, so blocks run in the
- * order they were queued.
- *
- * Shutdown cancels `analyticsScope` right after the teardown of each plugin returns. A block that a teardown queues
- * for the main thread would then never run. [CoroutineStart.ATOMIC] starts the coroutine even after that cancel, and
- * the coroutine stays a child of `analyticsScope`. The block does not suspend, so the cancel cannot stop it midway.
- *
- * @param block The block which needs to be executed.
- */
+/** Queues [block] on the main thread. [CoroutineStart.ATOMIC] runs it even after shutdown cancels the scope. */
 @OptIn(ExperimentalCoroutinesApi::class)
 internal fun AndroidAnalytics.queueOnMainThread(block: () -> Unit) =
     analyticsScope.launch(Dispatchers.Main, start = CoroutineStart.ATOMIC) {

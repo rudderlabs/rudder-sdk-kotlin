@@ -9,8 +9,6 @@ import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import kotlinx.coroutines.DelicateCoroutinesApi
 import org.jetbrains.annotations.VisibleForTesting
-import java.util.WeakHashMap
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import com.rudderstack.sdk.kotlin.android.Analytics as AndroidAnalytics
 import com.rudderstack.sdk.kotlin.android.Configuration as AndroidConfiguration
@@ -26,12 +24,11 @@ internal class ActivityLifecycleManagementPlugin : Plugin, Application.ActivityL
     @VisibleForTesting
     internal val activityObservers = CopyOnWriteArrayList<ActivityLifecycleObserver>()
 
-    // Each started activity, and whether it is resumed. Several can be started: a translucent activity on top, or split
-    // screen. Read and written on the main thread only, where Android delivers the activity callbacks.
-    private val startedActivities = WeakHashMap<Activity, Boolean>()
+    private val startedActivities = StartedActivities()
 
-    // The latest request for each observer that tracks the current state. Any thread writes it; the main thread applies it.
-    private val observerRequests = ConcurrentHashMap<ActivityLifecycleObserver, ObserverRequest>()
+    private val currentStateObservers = CurrentStateObservers(activityObservers, startedActivities) { block ->
+        (analytics as? AndroidAnalytics)?.queueOnMainThread(block)
+    }
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
@@ -54,77 +51,26 @@ internal class ActivityLifecycleManagementPlugin : Plugin, Application.ActivityL
         activityObservers.add(observer)
     }
 
-    /**
-     * Asks for [observer] to get the activity events while [isAttached] and [isReady] return `true`. When the observer is
-     * added, it first gets each activity that is started now: started, and resumed if it is.
-     *
-     * An observer that registers after the first activity started would otherwise miss that activity.
-     *
-     * The main thread applies the latest request of each observer, and reads [isAttached] and [isReady] at that time. It
-     * adds the observer only when both return `true`, and it drops the request when [isAttached] returns `false`. So
-     * requests from several threads, in any order, end in the state that the latest request asks for. Call
-     * [refreshObserver] when [isReady] changes.
-     */
-    internal fun addObserverWithCurrentState(
-        observer: ActivityLifecycleObserver,
-        isAttached: () -> Boolean = { true },
-        isReady: () -> Boolean = { true },
-    ) {
-        observerRequests[observer] = ObserverRequest(isAttached, isReady)
-        (analytics as? AndroidAnalytics)?.queueOnMainThread { applyRequest(observer) }
-    }
-
-    /**
-     * Applies the request of [observer] again, after its `isReady` condition changed. Does nothing for an observer that
-     * has no request.
-     */
-    internal fun refreshObserver(observer: ActivityLifecycleObserver) {
-        if (!observerRequests.containsKey(observer)) return
-        (analytics as? AndroidAnalytics)?.queueOnMainThread { applyRequest(observer) }
-    }
-
     internal fun removeObserver(observer: ActivityLifecycleObserver) {
         activityObservers.remove(observer)
     }
 
-    /**
-     * Asks for [observer] to stop getting the activity events. When the observer is removed, it last gets each activity
-     * that is started now: paused, if it is resumed, and stopped.
-     *
-     * An observer removed while an activity is on screen would otherwise never get the matching pause and stop.
-     */
-    internal fun removeObserverWithCurrentState(observer: ActivityLifecycleObserver) {
-        observerRequests.remove(observer)
-        (analytics as? AndroidAnalytics)?.queueOnMainThread { applyRequest(observer) }
+    /** Adds [observer] while [policy] decides to observe; on each add, it first gets each started activity. */
+    internal fun addObserverWithCurrentState(
+        observer: ActivityLifecycleObserver,
+        policy: ObserverPolicy = ObserverPolicy { ObserverDecision.OBSERVE },
+    ) {
+        currentStateObservers.add(observer, policy)
     }
 
-    // Main thread only. Each call moves the observer to the state that its latest request asks for, so it is idempotent.
-    private fun applyRequest(observer: ActivityLifecycleObserver) {
-        val request = observerRequests[observer]
-        val isAttached = request?.isAttached?.invoke() == true
-        // Removes only this request, so a newer request from another thread survives.
-        if (request != null && !isAttached) observerRequests.remove(observer, request)
-        val isWanted = isAttached && request?.isReady?.invoke() == true
+    /** Asks the policy of [observer] again. Call it when the policy can decide differently. */
+    internal fun refreshObserver(observer: ActivityLifecycleObserver) {
+        currentStateObservers.refresh(observer)
+    }
 
-        val isAdded = observer in activityObservers
-        val activities = startedActivities.entries.map { it.key to it.value }
-        when {
-            isWanted && !isAdded -> {
-                activityObservers.add(observer)
-                activities.forEach { (activity, isResumed) ->
-                    observer.onActivityStarted(activity)
-                    if (isResumed) observer.onActivityResumed(activity)
-                }
-            }
-
-            !isWanted && isAdded -> {
-                activityObservers.remove(observer)
-                activities.forEach { (activity, isResumed) ->
-                    if (isResumed) observer.onActivityPaused(activity)
-                    observer.onActivityStopped(activity)
-                }
-            }
-        }
+    /** Removes [observer]. It last gets the pause and the stop of each activity that is started now. */
+    internal fun removeObserverWithCurrentState(observer: ActivityLifecycleObserver) {
+        currentStateObservers.remove(observer)
     }
 
     override fun onActivityCreated(activity: Activity, bundle: Bundle?) {
@@ -132,22 +78,22 @@ internal class ActivityLifecycleManagementPlugin : Plugin, Application.ActivityL
     }
 
     override fun onActivityStarted(activity: Activity) {
-        startedActivities[activity] = false
+        startedActivities.onStarted(activity)
         activityObservers.forEach { it.onActivityStarted(activity) }
     }
 
     override fun onActivityResumed(activity: Activity) {
-        startedActivities[activity] = true
+        startedActivities.onResumed(activity)
         activityObservers.forEach { it.onActivityResumed(activity) }
     }
 
     override fun onActivityPaused(activity: Activity) {
-        if (activity in startedActivities) startedActivities[activity] = false
+        startedActivities.onPaused(activity)
         activityObservers.forEach { it.onActivityPaused(activity) }
     }
 
     override fun onActivityStopped(activity: Activity) {
-        startedActivities.remove(activity)
+        startedActivities.onStopped(activity)
         activityObservers.forEach { it.onActivityStopped(activity) }
     }
 
@@ -159,5 +105,3 @@ internal class ActivityLifecycleManagementPlugin : Plugin, Application.ActivityL
         activityObservers.forEach { it.onActivityDestroyed(activity) }
     }
 }
-
-private class ObserverRequest(val isAttached: () -> Boolean, val isReady: () -> Boolean)
