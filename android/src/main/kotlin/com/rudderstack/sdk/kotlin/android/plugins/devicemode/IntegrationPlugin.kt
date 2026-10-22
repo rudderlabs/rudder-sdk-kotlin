@@ -17,7 +17,6 @@ import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.plugins.EventPlugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.PluginChain
-import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import com.rudderstack.sdk.kotlin.core.internals.utils.safelyExecute
 import kotlinx.serialization.json.JsonObject
@@ -412,7 +411,6 @@ abstract class IntegrationPlugin : EventPlugin {
     private fun notReadyState(): DestinationState =
         if (state == DestinationState.PendingCreate) DestinationState.PendingCreate else DestinationState.Paused
 
-    @OptIn(InternalRudderApi::class)
     private fun changeStateAndNotify(newState: DestinationState, destinationResult: DestinationResult) {
         var hasReadinessChanged = false
         val callbacks = synchronized(stateLock) {
