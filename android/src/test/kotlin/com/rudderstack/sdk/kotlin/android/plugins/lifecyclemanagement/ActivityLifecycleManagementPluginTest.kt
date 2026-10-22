@@ -11,7 +11,6 @@ import com.rudderstack.sdk.kotlin.android.utils.addLifecycleObserverWithCurrentS
 import com.rudderstack.sdk.kotlin.android.utils.mockAnalytics
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
-import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import io.mockk.MockKAnnotations
 import io.mockk.clearMocks
 import io.mockk.every
@@ -371,7 +370,6 @@ class ActivityLifecycleManagementPluginTest {
                 verify(exactly = 0) { mockObserver.onActivityStopped(any()) }
             }
 
-        @OptIn(InternalRudderApi::class)
         @Test
         fun `given an integration removed while its create runs, when the create adds it with current state, then it is added only after the integration is added and created again`() =
             runTest {

@@ -5,7 +5,6 @@ import com.rudderstack.sdk.kotlin.android.Configuration
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleManagementPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleObserver
 import com.rudderstack.sdk.kotlin.android.utils.addLifecycleObserverWithCurrentState
-import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import com.rudderstack.sdk.kotlin.android.Analytics as AndroidAnalytics
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.utils.MockStandardIntegrationPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.utils.ReplaceConsentStateAction
@@ -468,7 +467,6 @@ private fun gatedSourceConfig(consents: List<String> = listOf("marketing"), stra
     )
 }
 
-@OptIn(InternalRudderApi::class)
 private class ActivityObservingIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifecycleObserver {
 
     override val key: String = "MockDestination"
