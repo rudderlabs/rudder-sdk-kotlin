@@ -25,6 +25,10 @@ import org.junit.jupiter.api.Test
 import java.io.BufferedReader
 import com.adjust.sdk.AdjustConfig
 import com.adjust.sdk.AdjustEvent
+import com.rudderstack.sdk.kotlin.android.Analytics as AndroidAnalytics
+import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleObserver
+import com.rudderstack.sdk.kotlin.android.utils.addLifecycleObserverWithCurrentState
+import com.rudderstack.sdk.kotlin.android.utils.removeLifecycleObserverWithCurrentState
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
@@ -50,6 +54,7 @@ private const val USER_ID = "userId"
 private const val TRACK_EVENT_ALLOWED = "Track event Android"
 private const val TRACK_EVENT_DENY = "Track event random"
 private const val TRACK_EVENT_ALLOWED_NEW = "Track event new"
+private const val LIFECYCLE_MANAGEMENT_UTILS = "com.rudderstack.sdk.kotlin.android.utils.LifecycleManagementUtilsKt"
 
 class AdjustIntegrationTest {
 
@@ -309,6 +314,31 @@ class AdjustIntegrationTest {
 
         verify(exactly = 1) { Adjust.trackEvent(mockAdjustEvent) }
         verify(exactly = 1) { Adjust.initSdk(mockAdjustConfig) }
+    }
+
+    @OptIn(InternalRudderApi::class)
+    @Test
+    fun `given a created integration, when it is torn down and created again, then it registers for activity events again`() {
+        val androidAnalytics = mockAndroidAnalytics()
+        adjustIntegration.analytics = androidAnalytics
+
+        adjustIntegration.create(mockAdjustIntegrationConfig)
+        adjustIntegration.teardown()
+        adjustIntegration.create(mockAdjustIntegrationConfig)
+
+        verify(exactly = 2) { androidAnalytics.addLifecycleObserverWithCurrentState(adjustIntegration) }
+        verify(exactly = 1) { androidAnalytics.removeLifecycleObserverWithCurrentState(adjustIntegration) }
+        verify(exactly = 1) { Adjust.initSdk(mockAdjustConfig) }
+    }
+
+    @OptIn(InternalRudderApi::class)
+    private fun mockAndroidAnalytics(): AndroidAnalytics {
+        mockkStatic(LIFECYCLE_MANAGEMENT_UTILS)
+        return mockk<AndroidAnalytics>(relaxed = true).also {
+            every { it.application } returns mockApplication
+            every { it.addLifecycleObserverWithCurrentState(any<AdjustIntegration>()) } just Runs
+            every { it.removeLifecycleObserverWithCurrentState(any<ActivityLifecycleObserver>()) } just Runs
+        }
     }
 
     @Test
