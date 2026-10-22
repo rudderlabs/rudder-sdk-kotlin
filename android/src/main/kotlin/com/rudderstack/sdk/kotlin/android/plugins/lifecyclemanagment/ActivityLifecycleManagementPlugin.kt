@@ -56,10 +56,7 @@ internal class ActivityLifecycleManagementPlugin : Plugin, Application.ActivityL
     }
 
     /** Adds [observer] while [policy] decides to observe; on each add, it first gets each started activity. */
-    internal fun addObserverWithCurrentState(
-        observer: ActivityLifecycleObserver,
-        policy: ObserverPolicy = ObserverPolicy { ObserverDecision.OBSERVE },
-    ) {
+    internal fun addObserverWithCurrentState(observer: ActivityLifecycleObserver, policy: ObserverPolicy) {
         currentStateObservers.add(observer, policy)
     }
 

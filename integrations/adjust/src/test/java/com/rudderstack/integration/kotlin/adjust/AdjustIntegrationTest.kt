@@ -336,7 +336,7 @@ class AdjustIntegrationTest {
         mockkStatic(LIFECYCLE_MANAGEMENT_UTILS)
         return mockk<AndroidAnalytics>(relaxed = true).also {
             every { it.application } returns mockApplication
-            every { it.addLifecycleObserverWithCurrentState(any()) } just Runs
+            every { it.addLifecycleObserverWithCurrentState(any<AdjustIntegration>()) } just Runs
             every { it.removeLifecycleObserverWithCurrentState(any<ActivityLifecycleObserver>()) } just Runs
         }
     }

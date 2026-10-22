@@ -15,16 +15,12 @@ fun Analytics.addLifecycleObserver(observer: ActivityLifecycleObserver) {
     activityLifecycleManagementPlugin.addObserver(observer)
 }
 
-/** Adds a late [observer], which first gets each started activity. Remove it with the `WithCurrentState` variant. */
+/** Adds a late [integration]; it gets each started activity while ready. Remove it with the `WithCurrentState` variant. */
 @InternalRudderApi
-fun Analytics.addLifecycleObserverWithCurrentState(observer: ActivityLifecycleObserver) {
-    val integration = observer as? IntegrationPlugin
-    if (integration == null) {
-        activityLifecycleManagementPlugin.addObserverWithCurrentState(observer)
-        return
-    }
-    // Events only while the destination is ready, so consent and the dashboard switch apply.
-    activityLifecycleManagementPlugin.addObserverWithCurrentState(observer) {
+fun <T> Analytics.addLifecycleObserverWithCurrentState(
+    integration: T
+) where T : IntegrationPlugin, T : ActivityLifecycleObserver {
+    activityLifecycleManagementPlugin.addObserverWithCurrentState(integration) {
         when {
             !integration.isPluginSetup -> ObserverDecision.FORGET
             integration.isDestinationReady -> ObserverDecision.OBSERVE
