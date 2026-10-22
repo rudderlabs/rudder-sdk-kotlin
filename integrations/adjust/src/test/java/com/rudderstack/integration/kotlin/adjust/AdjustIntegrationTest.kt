@@ -21,6 +21,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import java.io.BufferedReader
 import com.adjust.sdk.AdjustConfig
@@ -96,13 +97,13 @@ class AdjustIntegrationTest {
         // Adjust Identify API
         every { Adjust.addGlobalCallbackParameter(any(), any()) } just Runs
         // Adjust Reset API
-        every { Adjust.removeGlobalPartnerParameters() } just Runs
+        every { mockAdjustInstance.removeGlobalPartnerParameters() } just Runs
         // Adjust Track API
         every { initAdjustEvent(any()) } returns mockAdjustEvent
         every { mockAdjustEvent.addCallbackParameter(any(), any()) } just Runs
         every { mockAdjustEvent.setRevenue(any(), any()) } just Runs
-        every { Adjust.addGlobalPartnerParameter(any(), any()) } just Runs
-        every { Adjust.trackEvent(any()) } just Runs
+        every { mockAdjustInstance.addGlobalPartnerParameter(any(), any()) } just Runs
+        every { mockAdjustInstance.trackEvent(any()) } just Runs
 
         // Mock Analytics
         every { mockAnalytics.application } returns mockApplication
@@ -111,6 +112,58 @@ class AdjustIntegrationTest {
         // Initialise the AdjustIntegration
         adjustIntegration = AdjustIntegration().also {
             it.analytics = mockAnalytics
+        }
+    }
+
+    @Nested
+    inner class LiteMode {
+
+        private val appAdjustInstance: AdjustInstance = mockk(relaxed = true)
+
+        // Lazy: JUnit builds this nested instance before the outer setup initialises the mocks.
+        private val liteAdjustIntegration by lazy {
+            AdjustIntegration(appAdjustInstance).also { it.analytics = mockAnalytics }
+        }
+
+        @OptIn(InternalRudderApi::class)
+        @Test
+        fun `given lite mode, when create runs before and after a teardown, then Adjust is not initialised, no attribution callback or activity observer is set, and the app's instance is returned`() {
+            val androidAnalytics = mockAndroidAnalytics()
+            liteAdjustIntegration.analytics = androidAnalytics
+
+            liteAdjustIntegration.create(mockAdjustIntegrationConfig)
+            liteAdjustIntegration.teardown()
+            liteAdjustIntegration.create(mockAdjustIntegrationConfig)
+
+            assertEquals(appAdjustInstance, liteAdjustIntegration.getDestinationInstance())
+            verify(exactly = 0) {
+                initAdjustConfig(any(), any(), any())
+                Adjust.initSdk(any())
+                Adjust.getDefaultInstance()
+                mockAdjustConfig.setOnAttributionChangedListener(any())
+                androidAnalytics.addLifecycleObserverWithCurrentState(any<AdjustIntegration>())
+            }
+        }
+
+        @Test
+        fun `given lite mode, when track, identify, and reset are made, then they reach the app's instance and not the default instance`() {
+            liteAdjustIntegration.create(mockAdjustIntegrationConfig)
+
+            liteAdjustIntegration.track(provideTrackEvent(eventName = TRACK_EVENT_ALLOWED, properties = buildJsonObject {}))
+            liteAdjustIntegration.identify(provideIdentifyEvent())
+            liteAdjustIntegration.reset()
+
+            verify(exactly = 1) {
+                appAdjustInstance.trackEvent(mockAdjustEvent)
+                appAdjustInstance.addGlobalPartnerParameter(USER_ID, any())
+                appAdjustInstance.removeGlobalPartnerParameters()
+            }
+            verify(atLeast = 1) { appAdjustInstance.addGlobalPartnerParameter(ANONYMOUS_ID, any()) }
+            verify(exactly = 0) {
+                mockAdjustInstance.trackEvent(any())
+                mockAdjustInstance.addGlobalPartnerParameter(any(), any())
+                mockAdjustInstance.removeGlobalPartnerParameters()
+            }
         }
     }
 
@@ -173,8 +226,8 @@ class AdjustIntegrationTest {
 
         adjustIntegration.identify(identifyEvent)
 
-        verify { Adjust.addGlobalPartnerParameter(ANONYMOUS_ID, any()) }
-        verify { Adjust.addGlobalPartnerParameter(USER_ID, any()) }
+        verify { mockAdjustInstance.addGlobalPartnerParameter(ANONYMOUS_ID, any()) }
+        verify { mockAdjustInstance.addGlobalPartnerParameter(USER_ID, any()) }
     }
 
     @Test
@@ -193,10 +246,10 @@ class AdjustIntegrationTest {
         mockAdjustEvent.apply {
             verify(exactly = 1) { addCallbackParameter("key1", "value1") }
             verify(exactly = 1) { addCallbackParameter("key2", "23.45") }
-            verify(exactly = 1) { Adjust.addGlobalPartnerParameter(ANONYMOUS_ID, any()) }
+            verify(exactly = 1) { mockAdjustInstance.addGlobalPartnerParameter(ANONYMOUS_ID, any()) }
             verify(exactly = 0) { setRevenue(any(), any()) }
         }
-        verify(exactly = 1) { Adjust.trackEvent(mockAdjustEvent) }
+        verify(exactly = 1) { mockAdjustInstance.trackEvent(mockAdjustEvent) }
     }
 
     @Test
@@ -217,10 +270,10 @@ class AdjustIntegrationTest {
 
         mockAdjustEvent.apply {
             verify(exactly = 1) { addCallbackParameter("key1", "value1") }
-            verify(exactly = 1) { Adjust.addGlobalPartnerParameter(ANONYMOUS_ID, any()) }
+            verify(exactly = 1) { mockAdjustInstance.addGlobalPartnerParameter(ANONYMOUS_ID, any()) }
             verify(exactly = 1) { setRevenue(revenue, currency) }
         }
-        verify(exactly = 1) { Adjust.trackEvent(mockAdjustEvent) }
+        verify(exactly = 1) { mockAdjustInstance.trackEvent(mockAdjustEvent) }
     }
 
     @Test
@@ -237,10 +290,10 @@ class AdjustIntegrationTest {
 
         mockAdjustEvent.apply {
             verify(exactly = 0) { addCallbackParameter("key1", "value1") }
-            verify(exactly = 0) { Adjust.addGlobalPartnerParameter(ANONYMOUS_ID, any()) }
+            verify(exactly = 0) { mockAdjustInstance.addGlobalPartnerParameter(ANONYMOUS_ID, any()) }
             verify(exactly = 0) { setRevenue(any(), any()) }
         }
-        verify(exactly = 0) { Adjust.trackEvent(mockAdjustEvent) }
+        verify(exactly = 0) { mockAdjustInstance.trackEvent(mockAdjustEvent) }
     }
 
     @Test
@@ -249,7 +302,7 @@ class AdjustIntegrationTest {
 
         adjustIntegration.reset()
 
-        verify { Adjust.removeGlobalPartnerParameters() }
+        verify { mockAdjustInstance.removeGlobalPartnerParameters() }
     }
 
     @Test
@@ -284,19 +337,19 @@ class AdjustIntegrationTest {
         // Verify that the event is not tracked
         mockAdjustEvent.apply {
             verify(exactly = 0) { addCallbackParameter("key1", "value1") }
-            verify(exactly = 0) { Adjust.addGlobalPartnerParameter(ANONYMOUS_ID, any()) }
+            verify(exactly = 0) { mockAdjustInstance.addGlobalPartnerParameter(ANONYMOUS_ID, any()) }
             verify(exactly = 0) { setRevenue(any(), any()) }
         }
-        verify(exactly = 0) { Adjust.trackEvent(mockAdjustEvent) }
+        verify(exactly = 0) { mockAdjustInstance.trackEvent(mockAdjustEvent) }
 
         // Track the event with new event mapping
         adjustIntegration.track(newTrackEvent)
         // Verify that the event is tracked
         mockAdjustEvent.apply {
             verify(exactly = 1) { addCallbackParameter("key1", "value1") }
-            verify(exactly = 1) { Adjust.addGlobalPartnerParameter(ANONYMOUS_ID, any()) }
+            verify(exactly = 1) { mockAdjustInstance.addGlobalPartnerParameter(ANONYMOUS_ID, any()) }
         }
-        verify(exactly = 1) { Adjust.trackEvent(mockAdjustEvent) }
+        verify(exactly = 1) { mockAdjustInstance.trackEvent(mockAdjustEvent) }
     }
 
     @Test
@@ -312,7 +365,7 @@ class AdjustIntegrationTest {
 
         adjustIntegration.track(newTrackEvent)
 
-        verify(exactly = 1) { Adjust.trackEvent(mockAdjustEvent) }
+        verify(exactly = 1) { mockAdjustInstance.trackEvent(mockAdjustEvent) }
         verify(exactly = 1) { Adjust.initSdk(mockAdjustConfig) }
     }
 
