@@ -18,6 +18,7 @@ import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.plugins.PluginChain
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import com.rudderstack.sdk.kotlin.core.internals.utils.safelyExecute
+import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -165,13 +166,25 @@ abstract class IntegrationPlugin : EventPlugin {
         notifyFailureAndMarkNotReady(ConsentDeniedException(errorMessage))
     }
 
+    // An error in one destination must not stop the event queue that serves every destination.
+    @Suppress("TooGenericExceptionCaught")
     final override suspend fun intercept(event: Event): Event {
         if (isDestinationReady) {
-            event.copy<Event>()
-                .let { pluginChain.applyPlugins(Plugin.PluginType.PreProcess, it) }
-                ?.let { pluginChain.applyPlugins(Plugin.PluginType.OnProcess, it) }
-                ?.let { gateAndRestoreConsentStamp(it) }
-                ?.let { handleEvent(it) }
+            try {
+                event.copy<Event>()
+                    .let { pluginChain.applyPlugins(Plugin.PluginType.PreProcess, it) }
+                    ?.let { pluginChain.applyPlugins(Plugin.PluginType.OnProcess, it) }
+                    ?.let { gateAndRestoreConsentStamp(it) }
+                    ?.let { handleEvent(it) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                analytics.logger.error(
+                    "IntegrationPlugin: Destination $key failed to handle the ${event.type} event " +
+                        "(messageId=${event.messageId}).",
+                    e
+                )
+            }
         }
 
         return event

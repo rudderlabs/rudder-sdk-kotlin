@@ -1,6 +1,8 @@
 package com.rudderstack.sdk.kotlin.android.plugins.devicemode
 
 import com.rudderstack.sdk.kotlin.android.Configuration
+import com.rudderstack.sdk.kotlin.android.plugins.devicemode.utils.MockDestinationSdk
+import com.rudderstack.sdk.kotlin.android.plugins.devicemode.utils.MockLiteIntegrationPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.utils.MockStandardIntegrationPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.utils.ReplaceConsentStateAction
 import com.rudderstack.sdk.kotlin.android.utils.mockAnalytics
@@ -317,6 +319,36 @@ class IntegrationsManagementPluginTest {
                 } else {
                     coVerify(exactly = 0) { integrationPlugin.intercept(event) }
                 }
+            }
+        }
+
+    @Test
+    fun `given two integrations where the first throws in track, when events are processed, then the second gets every event and the error names the destination and event`() =
+        runTest {
+            val failingInstance = mockk<MockDestinationSdk>(relaxed = true)
+            every { failingInstance.trackEvent(any()) } throws IllegalStateException("Track failed")
+            val nextInstance = mockk<MockDestinationSdk>(relaxed = true)
+            integrationsManagementPlugin.setup(mockAnalytics)
+            integrationsManagementPlugin.addIntegration(MockLiteIntegrationPlugin(failingInstance))
+            integrationsManagementPlugin.addIntegration(MockLiteIntegrationPlugin(nextInstance))
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
+            advanceUntilIdle()
+            val firstEvent = TrackEvent("first", emptyJsonObject).also { applyBaseDataToEvent(it) }
+            val secondEvent = TrackEvent("second", emptyJsonObject).also { applyBaseDataToEvent(it) }
+
+            integrationsManagementPlugin.intercept(firstEvent)
+            integrationsManagementPlugin.intercept(secondEvent)
+            advanceUntilIdle()
+
+            verify(exactly = 1) { nextInstance.trackEvent("first") }
+            verify(exactly = 1) { nextInstance.trackEvent("second") }
+            verify(exactly = 1) { failingInstance.trackEvent("second") }
+            val logger = mockAnalytics.logger
+            verify(exactly = 1) {
+                logger.error(
+                    match { it.contains("MockDestination") && it.contains(firstEvent.messageId) },
+                    ofType(IllegalStateException::class)
+                )
             }
         }
 
