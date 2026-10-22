@@ -324,6 +324,20 @@ class LiteModeIntegrationPluginTest {
             assertTrue(plugin.isDestinationReady)
         }
 
+    @Test
+    fun `given a ready integration whose instance lookup now throws, when a late callback registers, then it gets the error as a failure with no instance`() =
+        runTest {
+            val instanceError = IllegalStateException("Instance failed")
+            val lateCallback = mockk<(Any?, DestinationResult) -> Unit>(relaxed = true)
+            plugin.initDestination(sourceConfig)
+            plugin.instanceError = instanceError
+
+            plugin.onDestinationReady(lateCallback)
+
+            verify(exactly = 1) { lateCallback.invoke(null, match { (it as? Result.Failure)?.error === instanceError }) }
+            assertTrue(plugin.isDestinationReady)
+        }
+
     private fun decodeSourceConfig(path: String): SourceConfig =
         LenientJson.decodeFromString<SourceConfig>(readFileAsString(path))
 }

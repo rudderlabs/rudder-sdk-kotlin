@@ -316,6 +316,7 @@ abstract class IntegrationPlugin : EventPlugin {
      * @param callback The callback that gets the destination instance and the result.
      */
     // todo: refactor this API to support dynamic callbacks
+    @Suppress("TooGenericExceptionCaught")
     fun onDestinationReady(callback: (Any?, DestinationResult) -> Unit) {
         val result = synchronized(stateLock) {
             lastResult ?: run {
@@ -323,7 +324,13 @@ abstract class IntegrationPlugin : EventPlugin {
                 return
             }
         }
-        safelyNotify { callback(instanceFor(result), result) }
+        // A failed instance lookup still gives the callback a result: the error, as a failure.
+        val (instance, lateResult) = try {
+            instanceFor(result) to result
+        } catch (e: Exception) {
+            null to Result.Failure(e)
+        }
+        safelyNotify { callback(instance, lateResult) }
     }
 
     private fun instanceFor(result: DestinationResult): Any? =
