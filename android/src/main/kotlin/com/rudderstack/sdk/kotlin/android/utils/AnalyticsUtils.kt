@@ -3,8 +3,10 @@ package com.rudderstack.sdk.kotlin.android.utils
 import com.rudderstack.sdk.kotlin.android.models.consent.ConsentManagementState
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import com.rudderstack.sdk.kotlin.android.Analytics as AndroidAnalytics
@@ -46,6 +48,13 @@ internal fun Analytics.runOnAnalyticsThreadAfter(previousJob: Job?, block: suspe
 internal fun AndroidAnalytics.runOnMainThread(block: suspend () -> Unit) = analyticsScope.launch(MAIN_DISPATCHER) {
     block()
 }
+
+/** Queues [block] on the main thread. [CoroutineStart.ATOMIC] runs it even after shutdown cancels the scope. */
+@OptIn(ExperimentalCoroutinesApi::class)
+internal fun AndroidAnalytics.queueOnMainThread(block: () -> Unit) =
+    analyticsScope.launch(Dispatchers.Main, start = CoroutineStart.ATOMIC) {
+        block()
+    }
 
 /**
  * The inactive state handed to every non-android instance, and therefore shared by all of them.

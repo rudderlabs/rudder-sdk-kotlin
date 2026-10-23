@@ -16,15 +16,21 @@ import com.rudderstack.integration.kotlin.braze.Utility.provideIdentifyEvent
 import com.rudderstack.integration.kotlin.braze.Utility.provideTrackEvent
 import com.rudderstack.integration.kotlin.braze.Utility.provideUserIdentity
 import com.rudderstack.integration.kotlin.braze.Utility.readFileAsJsonObject
+import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleObserver
+import com.rudderstack.sdk.kotlin.android.utils.addLifecycleObserverWithCurrentState
 import com.rudderstack.sdk.kotlin.android.utils.application
+import com.rudderstack.sdk.kotlin.android.utils.removeLifecycleObserverWithCurrentState
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
+import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import io.mockk.MockKAnnotations
+import io.mockk.Runs
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
+import io.mockk.just
 import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.mockkStatic
@@ -40,6 +46,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.math.BigDecimal
+import com.rudderstack.sdk.kotlin.android.Analytics as AndroidAnalytics
 
 private const val pathToBrazeConfig = "config/braze_config.json"
 private const val pathToBrazeConfigWithDeDupeDisabled = "config/braze_config_with_deDupe_disabled.json"
@@ -56,6 +63,7 @@ private const val INSTALL_ATTRIBUTED = "Install Attributed"
 private const val CUSTOM_TRACK_EVENT = "Custom Track Event"
 
 private const val ORDER_COMPLETED = "Order Completed"
+private const val LIFECYCLE_MANAGEMENT_UTILS = "com.rudderstack.sdk.kotlin.android.utils.LifecycleManagementUtilsKt"
 
 class BrazeIntegrationTest {
 
@@ -107,6 +115,31 @@ class BrazeIntegrationTest {
         brazeIntegration = BrazeIntegration().also { it.analytics = mockAnalytics }
     }
 
+    @OptIn(InternalRudderApi::class)
+    private fun mockAndroidAnalytics(): AndroidAnalytics {
+        mockkStatic(LIFECYCLE_MANAGEMENT_UTILS)
+        return mockk<AndroidAnalytics>(relaxed = true).also {
+            every { it.application } returns mockApplication
+            every { it.addLifecycleObserverWithCurrentState(any<BrazeIntegration>()) } just Runs
+            every { it.removeLifecycleObserverWithCurrentState(any<ActivityLifecycleObserver>()) } just Runs
+        }
+    }
+
+    @OptIn(InternalRudderApi::class)
+    @Test
+    fun `given a created integration, when it is torn down and created again, then it registers for activity events again`() {
+        val androidAnalytics = mockAndroidAnalytics()
+        brazeIntegration.analytics = androidAnalytics
+
+        brazeIntegration.create(mockBrazeIntegrationConfig)
+        brazeIntegration.teardown()
+        brazeIntegration.create(mockBrazeIntegrationConfig)
+
+        verify(exactly = 2) { androidAnalytics.addLifecycleObserverWithCurrentState(brazeIntegration) }
+        verify(exactly = 1) { androidAnalytics.removeLifecycleObserverWithCurrentState(brazeIntegration) }
+        verify(exactly = 1) { Braze.configure(any(), any()) }
+    }
+
     @Test
     fun `given integration initialisation attempt has not made, when instance is requested, then null is returned`() {
         val actualAdjustInstance = brazeIntegration.getDestinationInstance()
@@ -155,6 +188,43 @@ class BrazeIntegrationTest {
                 addAlias(any(), ALIAS_LABEL)
             }
         }
+    }
+
+    @OptIn(InternalRudderApi::class)
+    @Test
+    fun `given lite mode, when create runs before and after a teardown, then Braze is not configured, no activity observer is added, the app's instance is returned, and the alias is set once`() {
+        val androidAnalytics = mockAndroidAnalytics()
+        val appBrazeInstance: Braze = mockk(relaxed = true)
+        val liteBrazeIntegration = BrazeIntegration(appBrazeInstance).also { it.analytics = androidAnalytics }
+
+        liteBrazeIntegration.create(mockBrazeIntegrationConfig)
+        liteBrazeIntegration.teardown()
+        liteBrazeIntegration.create(mockBrazeIntegrationConfig)
+
+        assertEquals(appBrazeInstance, liteBrazeIntegration.getDestinationInstance())
+        verify(exactly = 0) {
+            initBrazeConfig()
+            Braze.configure(any(), any())
+            Braze.getInstance(any())
+            androidAnalytics.addLifecycleObserverWithCurrentState(any<BrazeIntegration>())
+        }
+        appBrazeInstance.currentUser?.apply {
+            verify(exactly = 1) {
+                addAlias(any(), ALIAS_LABEL)
+            }
+        }
+    }
+
+    @Test
+    fun `given lite mode, when a custom track event is made, then it is logged on the app's instance`() {
+        val appBrazeInstance: Braze = mockk(relaxed = true)
+        val liteBrazeIntegration = BrazeIntegration(appBrazeInstance).also { it.analytics = mockAnalytics }
+        liteBrazeIntegration.create(mockBrazeIntegrationConfig)
+
+        liteBrazeIntegration.track(provideTrackEvent(eventName = CUSTOM_TRACK_EVENT))
+
+        verify(exactly = 1) { appBrazeInstance.logCustomEvent(CUSTOM_TRACK_EVENT) }
+        verify(exactly = 0) { mockBrazeInstance.logCustomEvent(any()) }
     }
 
     @Test

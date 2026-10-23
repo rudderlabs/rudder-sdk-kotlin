@@ -1,6 +1,11 @@
 package com.rudderstack.sdk.kotlin.android.plugins.devicemode
 
+import android.app.Activity
 import com.rudderstack.sdk.kotlin.android.Configuration
+import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleManagementPlugin
+import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleObserver
+import com.rudderstack.sdk.kotlin.android.utils.addLifecycleObserverWithCurrentState
+import com.rudderstack.sdk.kotlin.android.Analytics as AndroidAnalytics
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.utils.MockStandardIntegrationPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.utils.ReplaceConsentStateAction
 import com.rudderstack.sdk.kotlin.android.utils.mockAnalytics
@@ -202,6 +207,43 @@ class ConsentGatingTest {
 
             verify(exactly = 1) { plugin.track(match { it.event == "while-granted" }) }
             verify(exactly = 0) { plugin.track(match { it.event == "while-revoked" }) }
+        }
+
+    // Activity events
+
+    @Test
+    fun `given a created integration that observes activities, when consent is revoked and granted again, then it stops and then resumes getting activity events`() =
+        runTest(testDispatcher) {
+            val lifecyclePlugin = ActivityLifecycleManagementPlugin().also { it.setup(mockAnalytics) }
+            every { mockAnalytics.activityLifecycleManagementPlugin } returns lifecyclePlugin
+            val activity = mockk<Activity>()
+            lifecyclePlugin.onActivityStarted(activity)
+            lifecyclePlugin.onActivityResumed(activity)
+            val integration = spyk(ActivityObservingIntegration())
+            stubConsentState(consentState(allowed = listOf("marketing")))
+            integration.setup(mockAnalytics)
+
+            integration.initDestination(gatedSourceConfig())
+            testScheduler.advanceUntilIdle()
+
+            assertTrue(lifecyclePlugin.activityObservers.contains(integration))
+            verify(exactly = 1) { integration.onActivityStarted(activity) }
+
+            stubConsentState(consentState(allowed = listOf("something-else")))
+            integration.initDestination(gatedSourceConfig())
+            testScheduler.advanceUntilIdle()
+
+            assertFalse(lifecyclePlugin.activityObservers.contains(integration))
+            verify(exactly = 1) { integration.onActivityPaused(activity) }
+            verify(exactly = 1) { integration.onActivityStopped(activity) }
+
+            stubConsentState(consentState(allowed = listOf("marketing")))
+            integration.initDestination(gatedSourceConfig())
+            testScheduler.advanceUntilIdle()
+
+            assertTrue(lifecyclePlugin.activityObservers.contains(integration))
+            verify(exactly = 2) { integration.onActivityStarted(activity) }
+            verify(exactly = 2) { integration.onActivityResumed(activity) }
         }
 
     // Cloud mode
@@ -423,4 +465,15 @@ private fun gatedSourceConfig(consents: List<String> = listOf("marketing"), stra
         }
         """
     )
+}
+
+private class ActivityObservingIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifecycleObserver {
+
+    override val key: String = "MockDestination"
+
+    override fun create(destinationConfig: JsonObject) {
+        (analytics as AndroidAnalytics).addLifecycleObserverWithCurrentState(this)
+    }
+
+    override fun getDestinationInstance(): Any? = null
 }
