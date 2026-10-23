@@ -38,6 +38,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -602,6 +603,39 @@ class StandardIntegrationPluginTest {
 
             assertEquals(1, plugin.updateCount)
             assertTrue(plugin.isDestinationReady)
+        }
+
+    @Test
+    fun `given a standard integration whose create returns without an instance, when a callback registers, then it waits and gets the instance from the next create`() =
+        runTest {
+            val vendorInstance = Any()
+            var createCount = 0
+            val plugin = object : StandardIntegration, IntegrationPlugin() {
+                var instance: Any? = null
+
+                override val key: String
+                    get() = "MockDestination"
+
+                override fun create(destinationConfig: JsonObject) {
+                    if (createCount++ > 0) instance = vendorInstance
+                }
+
+                override fun getDestinationInstance(): Any? = instance
+            }
+            plugin.setup(mockAnalytics)
+            plugin.initDestination(sourceConfigWithCorrectApiKey)
+            val results = mutableListOf<Pair<Any?, DestinationResult>>()
+
+            plugin.onDestinationReady { instance, result -> results += instance to result }
+
+            assertTrue(results.isEmpty())
+
+            plugin.initDestination(sourceConfigWithCorrectApiKey)
+
+            assertEquals(2, createCount)
+            assertEquals(1, results.size)
+            assertSame(vendorInstance, results.single().first)
+            assertTrue(results.single().second is Result.Success)
         }
 
     private fun mockInitialiseSdk() {

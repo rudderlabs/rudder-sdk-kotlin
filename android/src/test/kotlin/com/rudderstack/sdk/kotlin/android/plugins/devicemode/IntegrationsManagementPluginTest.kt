@@ -1,6 +1,8 @@
 package com.rudderstack.sdk.kotlin.android.plugins.devicemode
 
 import com.rudderstack.sdk.kotlin.android.Configuration
+import com.rudderstack.sdk.kotlin.android.plugins.devicemode.utils.MockDestinationSdk
+import com.rudderstack.sdk.kotlin.android.plugins.devicemode.utils.MockLiteIntegrationPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.utils.MockStandardIntegrationPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.utils.ReplaceConsentStateAction
 import com.rudderstack.sdk.kotlin.android.utils.mockAnalytics
@@ -209,6 +211,33 @@ class IntegrationsManagementPluginTest {
             advanceUntilIdle()
 
             verify(exactly = 1) { integrationPlugin.initDestination(sourceConfigWithAnotherCorrectApiKey) }
+        }
+
+    @Test
+    fun `given an integration whose create fails and whose callback throws, when two configs arrive, then the next integration gets both configs and the queued event`() =
+        runTest {
+            val failingIntegration = MockLiteIntegrationPlugin(mockk(relaxed = true)).apply {
+                createError = IllegalStateException("Create failed")
+            }
+            val nextInstance = mockk<MockDestinationSdk>(relaxed = true)
+            val nextIntegration = MockLiteIntegrationPlugin(nextInstance)
+            integrationsManagementPlugin.setup(mockAnalytics)
+            integrationsManagementPlugin.addIntegration(failingIntegration)
+            integrationsManagementPlugin.addIntegration(nextIntegration)
+            failingIntegration.onDestinationReady { _, _ -> throw IllegalStateException("Callback failed") }
+            val event = TrackEvent("queued", emptyJsonObject).also { applyBaseDataToEvent(it) }
+            integrationsManagementPlugin.intercept(event)
+            advanceUntilIdle()
+
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
+            advanceUntilIdle()
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithAnotherCorrectApiKey))
+            advanceUntilIdle()
+
+            assertEquals(2, failingIntegration.createCount)
+            assertEquals(1, nextIntegration.createCount)
+            assertEquals(1, nextIntegration.updateCount)
+            verify(exactly = 1) { nextInstance.trackEvent("queued") }
         }
 
     @Test

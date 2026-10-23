@@ -191,6 +191,26 @@ class ConsentGatingTest {
         }
 
     @Test
+    fun `given a revoke mid session, when a callback is registered, then it gets the consent denial at once with no instance`() =
+        runTest(testDispatcher) {
+            stubConsentState(consentState(allowed = listOf("marketing")))
+            plugin.setup(mockAnalytics)
+            plugin.initDestination(gatedSourceConfig())
+            stubConsentState(consentState(allowed = listOf("something-else")))
+            plugin.initDestination(gatedSourceConfig())
+
+            var receivedInstance: Any? = Unit
+            var receivedResult: DestinationResult? = null
+            plugin.onDestinationReady { instance, result ->
+                receivedInstance = instance
+                receivedResult = result
+            }
+
+            assertNull(receivedInstance)
+            assertTrue((receivedResult as? Result.Failure)?.error is ConsentDeniedException)
+        }
+
+    @Test
     fun `given a consent flip without reinitialization, when an event is intercepted, then the event gate drops it live`() =
         runTest(testDispatcher) {
             stubConsentState(consentState(allowed = listOf("marketing")))
