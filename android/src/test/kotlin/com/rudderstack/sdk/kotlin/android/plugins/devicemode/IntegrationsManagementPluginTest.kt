@@ -350,6 +350,36 @@ class IntegrationsManagementPluginTest {
         }
 
     @Test
+    fun `given two integrations where the first throws in track, when events are processed, then the second gets every event and the error names the destination and event`() =
+        runTest {
+            val failingInstance = mockk<MockDestinationSdk>(relaxed = true)
+            every { failingInstance.trackEvent(any()) } throws IllegalStateException("Track failed")
+            val nextInstance = mockk<MockDestinationSdk>(relaxed = true)
+            integrationsManagementPlugin.setup(mockAnalytics)
+            integrationsManagementPlugin.addIntegration(MockLiteIntegrationPlugin(failingInstance))
+            integrationsManagementPlugin.addIntegration(MockLiteIntegrationPlugin(nextInstance))
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
+            advanceUntilIdle()
+            val firstEvent = TrackEvent("first", emptyJsonObject).also { applyBaseDataToEvent(it) }
+            val secondEvent = TrackEvent("second", emptyJsonObject).also { applyBaseDataToEvent(it) }
+
+            integrationsManagementPlugin.intercept(firstEvent)
+            integrationsManagementPlugin.intercept(secondEvent)
+            advanceUntilIdle()
+
+            verify(exactly = 1) { nextInstance.trackEvent("first") }
+            verify(exactly = 1) { nextInstance.trackEvent("second") }
+            verify(exactly = 1) { failingInstance.trackEvent("second") }
+            val logger = mockAnalytics.logger
+            verify(exactly = 1) {
+                logger.error(
+                    match { it.contains("MockDestination") && it.contains(firstEvent.messageId) },
+                    ofType(IllegalStateException::class)
+                )
+            }
+        }
+
+    @Test
     fun `given an integration, when teardown is called, then that integration's teardown is also called`() = runTest {
         integrationsManagementPlugin.setup(mockAnalytics)
         integrationsManagementPlugin.addIntegration(integrationPlugin)
