@@ -544,11 +544,44 @@ class StandardIntegrationPluginTest {
     }
 
     @Test
-    fun `given a standard integration that is ready with no instance, when a callback registers, then it waits for the next result and gets the instance`() =
+    fun `given an integration whose create returns without an instance, when the next config arrives, then create runs again and not update`() =
         runTest {
-            val vendorInstance = Any()
+            var createCount = 0
             val plugin = object : StandardIntegration, IntegrationPlugin() {
                 var instance: Any? = null
+                var updateCount = 0
+
+                override val key: String
+                    get() = "MockDestination"
+
+                override fun create(destinationConfig: JsonObject) {
+                    if (createCount++ > 0) instance = Any()
+                }
+
+                override fun update(destinationConfig: JsonObject) {
+                    updateCount++
+                }
+
+                override fun getDestinationInstance(): Any? = instance
+            }
+            plugin.setup(mockAnalytics)
+
+            plugin.initDestination(sourceConfigWithCorrectApiKey)
+            plugin.initDestination(sourceConfigWithCorrectApiKey)
+            plugin.initDestination(sourceConfigWithCorrectApiKey)
+
+            assertEquals(2, createCount)
+            assertEquals(1, plugin.updateCount)
+            assertNotNull(plugin.getDestinationInstance())
+            assertTrue(plugin.isDestinationReady)
+        }
+
+    @Test
+    fun `given a created integration, when its instance lookup fails before the next config, then update runs and the config collection goes on`() =
+        runTest {
+            var lookupCount = 0
+            val plugin = object : StandardIntegration, IntegrationPlugin() {
+                var updateCount = 0
 
                 override val key: String
                     get() = "MockDestination"
@@ -556,7 +589,35 @@ class StandardIntegrationPluginTest {
                 override fun create(destinationConfig: JsonObject) = Unit
 
                 override fun update(destinationConfig: JsonObject) {
-                    instance = vendorInstance
+                    updateCount++
+                }
+
+                // The second lookup is the one that decides between create and update for the second config.
+                override fun getDestinationInstance(): Any =
+                    if (++lookupCount == 2) throw IllegalStateException("Lookup failed") else Any()
+            }
+            plugin.setup(mockAnalytics)
+
+            plugin.initDestination(sourceConfigWithCorrectApiKey)
+            plugin.initDestination(sourceConfigWithCorrectApiKey)
+
+            assertEquals(1, plugin.updateCount)
+            assertTrue(plugin.isDestinationReady)
+        }
+
+    @Test
+    fun `given a standard integration whose create returns without an instance, when a callback registers, then it waits and gets the instance from the next create`() =
+        runTest {
+            val vendorInstance = Any()
+            var createCount = 0
+            val plugin = object : StandardIntegration, IntegrationPlugin() {
+                var instance: Any? = null
+
+                override val key: String
+                    get() = "MockDestination"
+
+                override fun create(destinationConfig: JsonObject) {
+                    if (createCount++ > 0) instance = vendorInstance
                 }
 
                 override fun getDestinationInstance(): Any? = instance
@@ -571,6 +632,7 @@ class StandardIntegrationPluginTest {
 
             plugin.initDestination(sourceConfigWithCorrectApiKey)
 
+            assertEquals(2, createCount)
             assertEquals(1, results.size)
             assertSame(vendorInstance, results.single().first)
             assertTrue(results.single().second is Result.Success)

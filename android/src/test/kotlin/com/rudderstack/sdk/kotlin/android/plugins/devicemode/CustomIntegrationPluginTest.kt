@@ -224,7 +224,7 @@ class CustomIntegrationPluginTest {
         }
 
     @Test
-    fun `given a custom integration that holds no instance, when two configs arrive, then create runs once and a later callback gets success`() =
+    fun `given a custom integration that holds no instance, when two configs arrive, then create runs for each and a later callback gets success`() =
         runTest(testDispatcher) {
             var createCount = 0
             val customPlugin = object : IntegrationPlugin() {
@@ -244,7 +244,7 @@ class CustomIntegrationPluginTest {
             val callback = mockk<(Any?, DestinationResult) -> Unit>(relaxed = true)
             customPlugin.onDestinationReady(callback)
 
-            assertEquals(1, createCount)
+            assertEquals(2, createCount)
             verify(exactly = 1) { callback.invoke(null, ofType(Result.Success::class) as DestinationResult) }
         }
 
