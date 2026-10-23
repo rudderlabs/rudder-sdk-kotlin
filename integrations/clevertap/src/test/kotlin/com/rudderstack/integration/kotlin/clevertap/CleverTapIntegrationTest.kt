@@ -202,6 +202,46 @@ class CleverTapIntegrationTest {
     }
 
     @Nested
+    inner class LiteMode {
+
+        private val appCleverTap: CleverTapAPI = mockk(relaxed = true)
+
+        // Lazy: JUnit builds this nested instance before the outer setup initialises the mocks.
+        private val liteIntegration by lazy { CleverTapIntegration(appCleverTap).also { it.analytics = mockAnalytics } }
+
+        @Test
+        fun `given blank dashboard credentials, when create runs before and after a teardown, then CleverTap is not set up and the app's instance is kept`() {
+            val blankCredentialsConfig = buildJsonObject {
+                put("accountId", " ")
+                put("accountToken", "")
+            }
+
+            liteIntegration.create(blankCredentialsConfig)
+            liteIntegration.teardown()
+            liteIntegration.create(blankCredentialsConfig)
+
+            assertEquals(appCleverTap, liteIntegration.getDestinationInstance())
+            verify(exactly = 0) {
+                CleverTapAPI.changeCredentials(any(), any())
+                CleverTapAPI.changeCredentials(any(), any(), any())
+                CleverTapAPI.setDebugLevel(any<CleverTapAPI.LogLevel>())
+                CleverTapAPI.getDefaultInstance(any<Application>())
+                ActivityLifecycleCallback.register(any())
+            }
+        }
+
+        @Test
+        fun `given lite mode, when a track event is made, then the app's instance receives it`() {
+            liteIntegration.create(mockIntegrationConfig)
+
+            liteIntegration.track(provideTrackEvent(eventName = "Product Viewed"))
+
+            verify(exactly = 1) { appCleverTap.pushEvent("Product Viewed") }
+            verify(exactly = 0) { mockCleverTap.pushEvent(any<String>()) }
+        }
+    }
+
+    @Nested
     inner class Identify {
 
         @Test
