@@ -7,6 +7,7 @@ import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Lifecycle
 import com.rudderstack.sdk.kotlin.android.utils.application
 import com.rudderstack.sdk.kotlin.core.Analytics
+import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.RudderOption
@@ -127,6 +128,38 @@ class SprigIntegrationTest {
             sprigIntegration.create(mockSprigConfig)
 
             verify(exactly = 1) { Sprig.configure(any(), any()) }
+        }
+    }
+
+    @Nested
+    inner class LiteMode {
+
+        // Lazy: JUnit builds this nested instance before the outer setup initialises the mocks.
+        private val liteIntegration by lazy { SprigIntegration(Sprig).also { it.analytics = mockAnalytics } }
+
+        @Test
+        fun `given lite mode, when create runs before and after a teardown, then Sprig is not configured, the log listener is added each time, and the app's instance is kept`() {
+            every { mockAnalytics.configuration.logLevel } returns Logger.LogLevel.VERBOSE
+            every { Sprig.removeEventListener(any(), any()) } just Runs
+
+            liteIntegration.create(mockSprigConfig)
+            liteIntegration.teardown()
+            liteIntegration.create(mockSprigConfig)
+
+            assertEquals(Sprig, liteIntegration.getDestinationInstance())
+            verify(exactly = 0) { Sprig.configure(any(), any()) }
+            verify(exactly = 2) { Sprig.addEventListener(any(), any()) }
+        }
+
+        @Test
+        fun `given lite mode and a survey host activity, when a track event is made, then Sprig can present a survey`() {
+            liteIntegration.create(mockSprigConfig)
+            val activity = mockSurveyHostActivity()
+            liteIntegration.setFragmentActivity(activity)
+
+            liteIntegration.track(provideTrackEvent(eventName = "Survey Trigger"))
+
+            verify(exactly = 1) { Sprig.trackAndPresent(any<EventPayload>(), activity) }
         }
     }
 

@@ -214,6 +214,33 @@ class IntegrationsManagementPluginTest {
         }
 
     @Test
+    fun `given an integration whose create fails and whose callback throws, when two configs arrive, then the next integration gets both configs and the queued event`() =
+        runTest {
+            val failingIntegration = MockLiteIntegrationPlugin(mockk(relaxed = true)).apply {
+                createError = IllegalStateException("Create failed")
+            }
+            val nextInstance = mockk<MockDestinationSdk>(relaxed = true)
+            val nextIntegration = MockLiteIntegrationPlugin(nextInstance)
+            integrationsManagementPlugin.setup(mockAnalytics)
+            integrationsManagementPlugin.addIntegration(failingIntegration)
+            integrationsManagementPlugin.addIntegration(nextIntegration)
+            failingIntegration.onDestinationReady { _, _ -> throw IllegalStateException("Callback failed") }
+            val event = TrackEvent("queued", emptyJsonObject).also { applyBaseDataToEvent(it) }
+            integrationsManagementPlugin.intercept(event)
+            advanceUntilIdle()
+
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithCorrectApiKey))
+            advanceUntilIdle()
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithAnotherCorrectApiKey))
+            advanceUntilIdle()
+
+            assertEquals(2, failingIntegration.createCount)
+            assertEquals(1, nextIntegration.createCount)
+            assertEquals(1, nextIntegration.updateCount)
+            verify(exactly = 1) { nextInstance.trackEvent("queued") }
+        }
+
+    @Test
     fun `given an initialised integration, when flush is called for management plugin, then integration plugin's flush is called`() =
         runTest {
             integrationsManagementPlugin.setup(mockAnalytics)

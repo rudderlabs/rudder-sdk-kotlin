@@ -13,6 +13,7 @@ class MockLiteIntegrationPlugin(private val appInstance: MockDestinationSdk) : S
         private set
     internal var createError: Exception? = null
     internal var onCreate: (() -> Unit)? = null
+    internal var instanceError: Exception? = null
 
     override val key: String
         get() = "MockDestination"
@@ -27,7 +28,7 @@ class MockLiteIntegrationPlugin(private val appInstance: MockDestinationSdk) : S
         updateCount++
     }
 
-    override fun getDestinationInstance(): Any = appInstance
+    override fun getDestinationInstance(): Any = instanceError?.let { throw it } ?: appInstance
 
     override fun track(payload: TrackEvent) {
         appInstance.trackEvent(payload.event)
