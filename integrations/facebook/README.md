@@ -54,3 +54,11 @@ class MyApplication : Application() {
     }
 }
 ```
+
+## Facebook SDK setup
+
+Your app sets up the Facebook SDK. The integration does not set it up.
+
+- Add your Facebook app ID and client token to `AndroidManifest.xml`, as the Facebook Android SDK guide describes. The Facebook SDK then starts when your app starts.
+- When the integration starts, it calls `AppEventsLogger.activateApp` and sets the data processing options from the dashboard settings.
+- When the RudderStack log level is `DEBUG` or `VERBOSE`, the integration also turns on the Facebook debug logs.
