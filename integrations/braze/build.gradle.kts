@@ -117,6 +117,7 @@ dependencies {
     testImplementation(libs.mockk)
     testImplementation(libs.mockk.agent)
     testImplementation(libs.json.assert)
+    testImplementation(libs.navigation.runtime) // MockK needs it to mock AndroidAnalytics
 }
 
 apply(from = rootProject.file("gradle/publishing/publishing.gradle.kts"))
