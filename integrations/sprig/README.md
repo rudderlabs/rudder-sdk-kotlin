@@ -90,3 +90,20 @@ class MainActivity : FragmentActivity() {
 ```
 
 Clearing the reference in `onPause` prevents Sprig from attempting a fragment transaction on an activity that has already saved its instance state. When no activity is set (or the stored activity is not in at least the `STARTED` state), the integration falls back to `Sprig.track` and in-app surveys are not presented.
+
+## Lite mode
+
+In lite mode, your app configures Sprig and passes the instance to the integration. The integration then only maps
+events and sends them to Sprig.
+
+```kotlin
+Sprig.configure(application, "<ENVIRONMENT_ID>")
+analytics.add(SprigIntegration(Sprig))
+```
+
+In lite mode, the integration:
+
+- Does not call `Sprig.configure`. The dashboard environment ID is not used, so it can hold any value.
+- Waits for the source config before it sends events.
+- Forwards the Sprig log output to the RudderStack logger, as in the standard mode.
+- Presents surveys in the same way. Call `setFragmentActivity` as [Presenting in-app surveys](#presenting-in-app-surveys) describes.
