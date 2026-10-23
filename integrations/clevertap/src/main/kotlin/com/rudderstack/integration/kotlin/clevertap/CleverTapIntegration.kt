@@ -22,12 +22,31 @@ private const val CLEVERTAP_KEY = "CleverTap"
 
 /**
  * CleverTapIntegration is a plugin that sends events to the CleverTap Android SDK.
+ *
+ * The constructor without arguments initialises CleverTap from the dashboard settings. The constructor that takes a
+ * [CleverTapAPI] instance is lite mode: the app initialises CleverTap, and the integration only maps and forwards
+ * events.
  */
 @OptIn(InternalRudderApi::class)
-class CleverTapIntegration : StandardIntegration, IntegrationPlugin() {
+class CleverTapIntegration() : StandardIntegration, IntegrationPlugin() {
+
+    /**
+     * Creates the integration in lite mode, with a [CleverTapAPI] instance that the app has already initialised.
+     *
+     * The integration does not set the CleverTap credentials or debug level, and does not register CleverTap's
+     * activity tracking. The dashboard credentials are not used.
+     *
+     * @param cleverTap The CleverTap instance that the app initialised.
+     */
+    constructor(cleverTap: CleverTapAPI) : this() {
+        this.appCleverTap = cleverTap
+        this.cleverTap = cleverTap
+    }
 
     override val key: String
         get() = CLEVERTAP_KEY
+
+    private var appCleverTap: CleverTapAPI? = null
 
     private var cleverTap: CleverTapAPI? = null
 
@@ -79,7 +98,7 @@ class CleverTapIntegration : StandardIntegration, IntegrationPlugin() {
 
     override fun teardown() {
         super.teardown()
-        cleverTap = null
+        cleverTap = appCleverTap
     }
 
     /**
