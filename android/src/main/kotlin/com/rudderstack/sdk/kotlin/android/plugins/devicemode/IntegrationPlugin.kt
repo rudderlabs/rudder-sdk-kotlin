@@ -74,7 +74,8 @@ abstract class IntegrationPlugin : EventPlugin {
     abstract val key: String
 
     /**
-     * Creates the destination. The SDK calls this method once, with the first valid configuration.
+     * Creates the destination. The SDK calls this method with the first valid configuration. It calls this method
+     * again with a later valid configuration while [getDestinationInstance] returns `null`.
      *
      * Initialise the destination SDK here, unless the integration already holds an instance that the app passed.
      * Throw an exception when the destination cannot be created. The SDK then calls this method again with the next
@@ -329,14 +330,24 @@ abstract class IntegrationPlugin : EventPlugin {
     }
 
     private fun safelyInitOrUpdateAndNotify(destinationConfig: JsonObject) {
-        if (!isDestinationCreated()) {
+        // Older integrations return from a failed `create` without an error and no instance, and expect `create` again.
+        if (!isDestinationCreated() || !holdsInstance()) {
             safelyCreateAndNotify(destinationConfig)
         } else {
             safelyUpdateAndNotify(destinationConfig)
         }
     }
 
-    // Not derived from the instance: an integration can hold one before `create` runs, or never hold one.
+    // A failed lookup counts as an instance, so the state alone decides and the config collection does not stop.
+    @Suppress("TooGenericExceptionCaught")
+    private fun holdsInstance(): Boolean = try {
+        getDestinationInstance() != null
+    } catch (e: Exception) {
+        analytics.logger.error("IntegrationPlugin: The instance lookup of destination $key failed. Error: ${e.message}")
+        true
+    }
+
+    // Not derived from the instance: a lite integration holds one before `create` runs.
     private fun isDestinationCreated(): Boolean = state != DestinationState.PendingCreate
 
     private fun safelyCreateAndNotify(destinationConfig: JsonObject) {

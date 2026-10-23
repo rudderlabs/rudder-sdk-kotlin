@@ -542,6 +542,68 @@ class StandardIntegrationPluginTest {
         }
     }
 
+    @Test
+    fun `given an integration whose create returns without an instance, when the next config arrives, then create runs again and not update`() =
+        runTest {
+            var createCount = 0
+            val plugin = object : StandardIntegration, IntegrationPlugin() {
+                var instance: Any? = null
+                var updateCount = 0
+
+                override val key: String
+                    get() = "MockDestination"
+
+                override fun create(destinationConfig: JsonObject) {
+                    if (createCount++ > 0) instance = Any()
+                }
+
+                override fun update(destinationConfig: JsonObject) {
+                    updateCount++
+                }
+
+                override fun getDestinationInstance(): Any? = instance
+            }
+            plugin.setup(mockAnalytics)
+
+            plugin.initDestination(sourceConfigWithCorrectApiKey)
+            plugin.initDestination(sourceConfigWithCorrectApiKey)
+            plugin.initDestination(sourceConfigWithCorrectApiKey)
+
+            assertEquals(2, createCount)
+            assertEquals(1, plugin.updateCount)
+            assertNotNull(plugin.getDestinationInstance())
+            assertTrue(plugin.isDestinationReady)
+        }
+
+    @Test
+    fun `given a created integration, when its instance lookup fails before the next config, then update runs and the config collection goes on`() =
+        runTest {
+            var lookupCount = 0
+            val plugin = object : StandardIntegration, IntegrationPlugin() {
+                var updateCount = 0
+
+                override val key: String
+                    get() = "MockDestination"
+
+                override fun create(destinationConfig: JsonObject) = Unit
+
+                override fun update(destinationConfig: JsonObject) {
+                    updateCount++
+                }
+
+                // The second lookup is the one that decides between create and update for the second config.
+                override fun getDestinationInstance(): Any =
+                    if (++lookupCount == 2) throw IllegalStateException("Lookup failed") else Any()
+            }
+            plugin.setup(mockAnalytics)
+
+            plugin.initDestination(sourceConfigWithCorrectApiKey)
+            plugin.initDestination(sourceConfigWithCorrectApiKey)
+
+            assertEquals(1, plugin.updateCount)
+            assertTrue(plugin.isDestinationReady)
+        }
+
     private fun mockInitialiseSdk() {
         every { plugin.initialiseMockSdk(match { it.contains(apiKeyRegex) }) } throws IllegalArgumentException("Invalid API key")
         every { plugin.initialiseMockSdk(match { !it.contains(apiKeyRegex) }) } answers {
