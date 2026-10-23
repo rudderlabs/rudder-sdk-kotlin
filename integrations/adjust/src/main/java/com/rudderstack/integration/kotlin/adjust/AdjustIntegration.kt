@@ -12,8 +12,9 @@ import com.adjust.sdk.LogLevel
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.IntegrationPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.StandardIntegration
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleObserver
-import com.rudderstack.sdk.kotlin.android.utils.addLifecycleObserver
+import com.rudderstack.sdk.kotlin.android.utils.addLifecycleObserverWithCurrentState
 import com.rudderstack.sdk.kotlin.android.utils.application
+import com.rudderstack.sdk.kotlin.android.utils.removeLifecycleObserverWithCurrentState
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.IdentifyEvent
@@ -31,14 +32,34 @@ private const val INSTALL_ATTRIBUTED_EVENT = "Install Attributed"
 
 /**
  * AdjustIntegration is a plugin that sends events to the Adjust SDK.
+ *
+ * The constructor without arguments initialises Adjust from the dashboard settings. The constructor that takes an
+ * [AdjustInstance] is lite mode: the app initialises Adjust, and the integration only maps and forwards events.
  */
 @OptIn(InternalRudderApi::class)
-class AdjustIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifecycleObserver {
+class AdjustIntegration() : StandardIntegration, IntegrationPlugin(), ActivityLifecycleObserver {
+
+    /**
+     * Creates the integration in lite mode, with an [AdjustInstance] that the app has already initialised, for
+     * example from `Adjust.getDefaultInstance()`.
+     *
+     * The integration does not initialise Adjust, set listeners or the attribution callback, or forward the activity
+     * resume and pause calls. It sends no "Install Attributed" event, whatever the dashboard setting. The dashboard
+     * settings still need valid values.
+     *
+     * @param adjust The Adjust instance that the app initialised.
+     */
+    constructor(adjust: AdjustInstance) : this() {
+        this.adjustInstance = adjust
+        this.isLiteMode = true
+    }
 
     override val key: String
         get() = ADJUST_KEY
 
     private var adjustInstance: AdjustInstance? = null
+
+    private var isLiteMode = false
 
     private lateinit var eventToTokenMappings: List<EventToTokenMapping>
 
@@ -58,9 +79,11 @@ class AdjustIntegration : StandardIntegration, IntegrationPlugin(), ActivityLife
                 attributionCallback = ::sendInstallAttributedEvent,
                 logger = analytics.logger,
             )
-            (analytics as? AndroidAnalytics)?.addLifecycleObserver(this)
             analytics.logger.verbose("AdjustIntegration: Adjust SDK initialized.")
         }
+        // In lite mode, the app owns the Adjust resume and pause calls. Outside the init-once block: `teardown` removes
+        // the observer.
+        if (!isLiteMode) (analytics as? AndroidAnalytics)?.addLifecycleObserverWithCurrentState(this)
     }
 
     override fun getDestinationInstance(): Any? {
@@ -86,7 +109,7 @@ class AdjustIntegration : StandardIntegration, IntegrationPlugin(), ActivityLife
                 setRevenue(payload.properties)
                 addCallbackParameter(payload.context.toJsonObject(PropertiesConstants.TRAITS))
             }
-            Adjust.trackEvent(adjustEvent)
+            adjustInstance?.trackEvent(adjustEvent)
             analytics.logger.verbose("AdjustIntegration: Track event sent to Adjust.")
         } ?: run {
             analytics.logger.warn(
@@ -97,14 +120,19 @@ class AdjustIntegration : StandardIntegration, IntegrationPlugin(), ActivityLife
     }
 
     override fun reset() {
-        Adjust.removeGlobalPartnerParameters()
+        adjustInstance?.removeGlobalPartnerParameters()
         analytics.logger.verbose("AdjustIntegration: Reset call completed.")
     }
 
+    override fun teardown() {
+        super.teardown()
+        (analytics as? AndroidAnalytics)?.removeLifecycleObserverWithCurrentState(this)
+    }
+
     private fun Event.setSessionParams() {
-        Adjust.addGlobalPartnerParameter(ANONYMOUS_ID, anonymousId)
+        adjustInstance?.addGlobalPartnerParameter(ANONYMOUS_ID, anonymousId)
         if (userId.isNotBlank()) {
-            Adjust.addGlobalPartnerParameter(USER_ID, userId)
+            adjustInstance?.addGlobalPartnerParameter(USER_ID, userId)
         }
     }
 
@@ -123,11 +151,11 @@ class AdjustIntegration : StandardIntegration, IntegrationPlugin(), ActivityLife
     }
 
     override fun onActivityResumed(activity: Activity) {
-        Adjust.onResume()
+        adjustInstance?.onResume()
     }
 
     override fun onActivityPaused(activity: Activity) {
-        Adjust.onPause()
+        adjustInstance?.onPause()
     }
 
     /**

@@ -5,6 +5,7 @@ import com.rudderstack.sdk.kotlin.android.models.consent.toConsentManagementStat
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing.ConsentGatePlugin
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing.EventFilteringPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.eventprocessing.IntegrationOptionsPlugin
+import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleObserver
 import com.rudderstack.sdk.kotlin.android.utils.consentState
 import com.rudderstack.sdk.kotlin.android.utils.findDestination
 import com.rudderstack.sdk.kotlin.android.utils.mergeWithHigherPriorityTo
@@ -23,6 +24,7 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicBoolean
+import com.rudderstack.sdk.kotlin.android.Analytics as AndroidAnalytics
 
 private const val DELIVERY_HALTED_NOTICE = "No events will be sent to this destination."
 
@@ -46,7 +48,8 @@ abstract class IntegrationPlugin : EventPlugin {
     private val isStandardIntegration: Boolean = this is StandardIntegration
 
     @Volatile
-    private var isPluginSetup = false
+    internal var isPluginSetup = false
+        private set
 
     // One lock for the state, the stored callbacks, and the remove, so neither can race a state change.
     private val stateLock = Any()
@@ -425,14 +428,20 @@ abstract class IntegrationPlugin : EventPlugin {
     private fun changeStateAndNotify(newState: DestinationState, destinationResult: DestinationResult) {
         // Before the state change: if it throws, the caller reports a failure to the stored callbacks.
         val destinationInstance = instanceFor(destinationResult)
+        var hasReadinessChanged = false
         val callbacks = synchronized(stateLock) {
             // The app can remove this integration while `create` or `update` runs.
             if (!isPluginSetup) return
+            hasReadinessChanged = (state == DestinationState.Ready) != (newState == DestinationState.Ready)
             state = newState
             lastResult = destinationResult
             keepsLateCallbacks = newState == DestinationState.PendingCreate ||
                 (isStandardIntegration && destinationResult is Result.Success && destinationInstance == null)
             destinationReadyCallbacks.toList().also { destinationReadyCallbacks.clear() }
+        }
+        // An integration added with current state gets the activity events only while it is ready.
+        if (hasReadinessChanged && this is ActivityLifecycleObserver) {
+            (analytics as? AndroidAnalytics)?.activityLifecycleManagementPlugin?.refreshObserver(this)
         }
         if (callbacks.isNotEmpty()) {
             analytics.logger.debug("IntegrationPlugin[$key]: Notifying ${callbacks.size} deferred callback(s)")
