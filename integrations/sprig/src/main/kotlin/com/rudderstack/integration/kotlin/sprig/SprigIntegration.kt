@@ -27,12 +27,29 @@ internal const val MAX_ATTRIBUTE_KEY_LENGTH = 256
 
 /**
  * SprigIntegration is a plugin that sends events to the Sprig SDK.
+ *
+ * The constructor without arguments configures Sprig from the dashboard settings. The constructor that takes a
+ * [Sprig] instance is lite mode: the app configures Sprig, and the integration only maps and forwards events.
  */
 @OptIn(InternalRudderApi::class)
-class SprigIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifecycleObserver {
+class SprigIntegration() : StandardIntegration, IntegrationPlugin(), ActivityLifecycleObserver {
+
+    /**
+     * Creates the integration in lite mode, with the [Sprig] instance that the app has already configured.
+     *
+     * The integration does not call `Sprig.configure`. It still forwards the Sprig log output to the RudderStack
+     * logger, and tracks the current activity to present surveys. The dashboard settings still need valid values.
+     *
+     * @param sprig The Sprig instance that the app configured.
+     */
+    constructor(sprig: Sprig) : this() {
+        this.appSprig = sprig
+    }
 
     override val key: String
         get() = SPRIG_KEY
+
+    private var appSprig: Sprig? = null
 
     private var sprig: Sprig? = null
 
@@ -46,10 +63,11 @@ class SprigIntegration : StandardIntegration, IntegrationPlugin(), ActivityLifec
             val config = destinationConfig.parseConfig<SprigConfig>(analytics.logger)
                 ?: throw IllegalArgumentException("SprigIntegration: The destination config is empty.")
             loggingListener = registerSprigLogging(analytics.logger, analytics.configuration.logLevel)
-            sprig = Sprig
-            sprig?.configure(analytics.application.applicationContext, config.environmentId)
+            sprig = appSprig ?: Sprig.also {
+                it.configure(analytics.application.applicationContext, config.environmentId)
+                analytics.logger.info("SprigIntegration: Sprig SDK initialized")
+            }
             (analytics as? AndroidAnalytics)?.addLifecycleObserver(this)
-            analytics.logger.info("SprigIntegration: Sprig SDK initialized")
         }
     }
 
