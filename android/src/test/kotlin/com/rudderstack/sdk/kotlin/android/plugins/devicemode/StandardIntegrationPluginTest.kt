@@ -38,6 +38,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -541,6 +542,39 @@ class StandardIntegrationPluginTest {
             verify(exactly = 1) { plugin.update(any()) }
         }
     }
+
+    @Test
+    fun `given a standard integration that is ready with no instance, when a callback registers, then it waits for the next result and gets the instance`() =
+        runTest {
+            val vendorInstance = Any()
+            val plugin = object : StandardIntegration, IntegrationPlugin() {
+                var instance: Any? = null
+
+                override val key: String
+                    get() = "MockDestination"
+
+                override fun create(destinationConfig: JsonObject) = Unit
+
+                override fun update(destinationConfig: JsonObject) {
+                    instance = vendorInstance
+                }
+
+                override fun getDestinationInstance(): Any? = instance
+            }
+            plugin.setup(mockAnalytics)
+            plugin.initDestination(sourceConfigWithCorrectApiKey)
+            val results = mutableListOf<Pair<Any?, DestinationResult>>()
+
+            plugin.onDestinationReady { instance, result -> results += instance to result }
+
+            assertTrue(results.isEmpty())
+
+            plugin.initDestination(sourceConfigWithCorrectApiKey)
+
+            assertEquals(1, results.size)
+            assertSame(vendorInstance, results.single().first)
+            assertTrue(results.single().second is Result.Success)
+        }
 
     private fun mockInitialiseSdk() {
         every { plugin.initialiseMockSdk(match { it.contains(apiKeyRegex) }) } throws IllegalArgumentException("Invalid API key")

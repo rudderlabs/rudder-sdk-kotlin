@@ -88,7 +88,7 @@ class LiteModeIntegrationPluginTest {
         }
 
     @Test
-    fun `given a lite integration with a pending callback, when the first config disables the destination, then the pending and late callbacks get failure once and create runs only with a later enabled config`() =
+    fun `given a lite integration with a pending callback, when the first config disables the destination, then the pending callback gets the failure and a late callback waits for the success of a later enabled config`() =
         runTest {
             val callback = mockk<(Any?, DestinationResult) -> Unit>(relaxed = true)
             plugin.onDestinationReady(callback)
@@ -99,20 +99,17 @@ class LiteModeIntegrationPluginTest {
             assertFalse(plugin.isDestinationReady)
             verify(exactly = 1) { callback.invoke(null, ofType(Result.Failure::class) as DestinationResult) }
 
-            var lateResult: DestinationResult? = null
             val lateCallback = mockk<(Any?, DestinationResult) -> Unit>(relaxed = true)
-            every { lateCallback.invoke(any(), any()) } answers { lateResult = secondArg() }
             plugin.onDestinationReady(lateCallback)
 
-            verify(exactly = 1) { lateCallback.invoke(null, any()) }
-            assertTrue((lateResult as? Result.Failure)?.error?.message.orEmpty().contains("disabled in dashboard"))
+            verify(exactly = 0) { lateCallback.invoke(any(), any()) }
 
             plugin.initDestination(sourceConfig)
 
             assertEquals(1, plugin.createCount)
             assertTrue(plugin.isDestinationReady)
             verify(exactly = 1) { callback.invoke(any(), any()) }
-            verify(exactly = 1) { lateCallback.invoke(any(), any()) }
+            verify(exactly = 1) { lateCallback.invoke(appInstance, ofType(Result.Success::class) as DestinationResult) }
         }
 
     @Test
@@ -215,7 +212,7 @@ class LiteModeIntegrationPluginTest {
         }
 
     @Test
-    fun `given a lite integration whose create throws, when the next config arrives, then the pending and late callbacks get the failure with no instance and create runs again`() =
+    fun `given a lite integration whose create throws, when the next config arrives, then the pending callback gets the failure, and a late callback waits for the success of the next create`() =
         runTest {
             val createError = IllegalStateException("Create failed")
             val callback = mockk<(Any?, DestinationResult) -> Unit>(relaxed = true)
@@ -230,7 +227,7 @@ class LiteModeIntegrationPluginTest {
             val lateCallback = mockk<(Any?, DestinationResult) -> Unit>(relaxed = true)
             plugin.onDestinationReady(lateCallback)
 
-            verify(exactly = 1) { lateCallback.invoke(null, match { (it as? Result.Failure)?.error === createError }) }
+            verify(exactly = 0) { lateCallback.invoke(any(), any()) }
 
             plugin.createError = null
             plugin.initDestination(sourceConfig)
@@ -238,6 +235,7 @@ class LiteModeIntegrationPluginTest {
             assertEquals(2, plugin.createCount)
             assertEquals(0, plugin.updateCount)
             assertTrue(plugin.isDestinationReady)
+            verify(exactly = 1) { lateCallback.invoke(appInstance, ofType(Result.Success::class) as DestinationResult) }
         }
 
     @Test

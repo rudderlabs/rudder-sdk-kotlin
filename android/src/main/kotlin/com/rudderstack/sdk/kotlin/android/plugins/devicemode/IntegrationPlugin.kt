@@ -60,6 +60,9 @@ abstract class IntegrationPlugin : EventPlugin {
     // The answer for a callback registered after a result. Null until the first result after setup or a reset.
     private var lastResult: DestinationResult? = null
 
+    // Late callbacks wait for the next result: the destination was never set up, or a standard one has no instance.
+    private var keepsLateCallbacks = false
+
     // Kept for the handoff gate, so it costs no source-config lookup per event.
     @Volatile
     private var destinationConfig: JsonObject? = null
@@ -309,9 +312,9 @@ abstract class IntegrationPlugin : EventPlugin {
     /**
      * Registers a callback that gets the result of the destination setup. The SDK calls each callback at most once.
      *
-     * Until the first result after the app adds the integration, the SDK stores the callback and calls it with that
-     * result. After that result, the SDK calls the callback at once with the last result. Success passes the
-     * destination instance. Failure passes `null`.
+     * Until the destination is set up, the SDK stores the callback and calls it with the next result. After the setup,
+     * the SDK calls the callback at once with the last result. Success passes the destination instance. Failure passes
+     * `null`. A standard destination that is ready with no instance keeps the callback until the next result.
      *
      * @param callback The callback that gets the destination instance and the result.
      */
@@ -319,7 +322,7 @@ abstract class IntegrationPlugin : EventPlugin {
     @Suppress("TooGenericExceptionCaught")
     fun onDestinationReady(callback: (Any?, DestinationResult) -> Unit) {
         val result = synchronized(stateLock) {
-            lastResult ?: run {
+            lastResult?.takeUnless { keepsLateCallbacks } ?: run {
                 destinationReadyCallbacks.add(callback)
                 return
             }
@@ -427,6 +430,8 @@ abstract class IntegrationPlugin : EventPlugin {
             if (!isPluginSetup) return
             state = newState
             lastResult = destinationResult
+            keepsLateCallbacks = newState == DestinationState.PendingCreate ||
+                (isStandardIntegration && destinationResult is Result.Success && destinationInstance == null)
             destinationReadyCallbacks.toList().also { destinationReadyCallbacks.clear() }
         }
         if (callbacks.isNotEmpty()) {
