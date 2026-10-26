@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file.
 
 - **device-mode:** Answer late ready callbacks with the last result after setup ([#372](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/372)) ([ea10c94](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/ea10c9446431108204d33f521994c8ab58e6d9f2))
 - **android:** Send the current activity to late lifecycle observers ([#368](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/368)) ([8188a2c](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/8188a2c3c8a9cd30c3155fdf3eadaa9c997c3bb6))
+- **android:** Add lite mode to device-mode integrations ([#367](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/367)) ([947dc0f](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/947dc0fbb25d64e54d69f2edbbe4776018b0d56f))
 
 ## Bug Fixes
 

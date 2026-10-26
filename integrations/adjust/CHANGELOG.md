@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file.
 
 - **adjust:** Add a lite mode constructor that takes the app's Adjust instance ([#371](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/371)) ([74dc863](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/74dc863f140a3313518a0826fce4d90254519b01))
 - **android:** Send the current activity to late lifecycle observers ([#368](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/368)) ([8188a2c](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/8188a2c3c8a9cd30c3155fdf3eadaa9c997c3bb6))
+- **android:** Add lite mode to device-mode integrations ([#367](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/367)) ([947dc0f](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/947dc0fbb25d64e54d69f2edbbe4776018b0d56f))
 
 ## Dependency Updates
 
