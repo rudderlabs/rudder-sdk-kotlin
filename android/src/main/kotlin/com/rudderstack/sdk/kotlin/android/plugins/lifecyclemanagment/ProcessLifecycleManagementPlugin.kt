@@ -5,12 +5,11 @@ import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
+import com.rudderstack.sdk.kotlin.android.utils.queueOnMainThread
 import com.rudderstack.sdk.kotlin.android.utils.runOnMainThread
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.withContext
 import java.util.concurrent.CopyOnWriteArrayList
 import com.rudderstack.sdk.kotlin.android.Analytics as AndroidAnalytics
 
@@ -35,10 +34,8 @@ internal class ProcessLifecycleManagementPlugin : Plugin, DefaultLifecycleObserv
     }
 
     override fun teardown() {
-        (analytics as? AndroidAnalytics)?.runOnMainThread {
-            withContext(NonCancellable) {
-                lifecycle.removeObserver(this@ProcessLifecycleManagementPlugin)
-            }
+        (analytics as? AndroidAnalytics)?.queueOnMainThread {
+            lifecycle.removeObserver(this)
         }
     }
 

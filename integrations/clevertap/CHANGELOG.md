@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+# [2.1.0](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.integration.kotlin.clevertap@v2.0.0...com.rudderstack.integration.kotlin.clevertap@v2.1.0) (2026-10-26)
+
+## Features
+
+- **clevertap:** Add a lite mode constructor that takes the app's CleverTap instance ([#370](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/370)) ([8ca1087](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/8ca10879b8f21eb4684931ca1f25f33636aac7dd))
+
+## Dependency Updates
+
+- The following workspace dependencies were updated
+  - dependencies
+    - @rudderstack/android bumped from 2.0.0 to 2.1.0
+
+
 # [2.0.0](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.integration.kotlin.clevertap@v1.0.1...com.rudderstack.integration.kotlin.clevertap@v2.0.0) (2026-09-29)
 
 ## ⚠ Breaking Changes

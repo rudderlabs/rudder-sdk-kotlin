@@ -3,12 +3,11 @@ package com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment
 import android.app.Activity
 import android.app.Application
 import android.os.Bundle
+import com.rudderstack.sdk.kotlin.android.utils.queueOnMainThread
 import com.rudderstack.sdk.kotlin.android.utils.runOnMainThread
 import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.withContext
 import org.jetbrains.annotations.VisibleForTesting
 import java.util.concurrent.CopyOnWriteArrayList
 import com.rudderstack.sdk.kotlin.android.Analytics as AndroidAnalytics
@@ -25,6 +24,12 @@ internal class ActivityLifecycleManagementPlugin : Plugin, Application.ActivityL
     @VisibleForTesting
     internal val activityObservers = CopyOnWriteArrayList<ActivityLifecycleObserver>()
 
+    private val startedActivities = StartedActivities()
+
+    private val currentStateObservers = CurrentStateObservers(activityObservers, startedActivities) { block ->
+        (analytics as? AndroidAnalytics)?.queueOnMainThread(block)
+    }
+
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
 
@@ -37,10 +42,8 @@ internal class ActivityLifecycleManagementPlugin : Plugin, Application.ActivityL
     }
 
     override fun teardown() {
-        (analytics as? AndroidAnalytics)?.runOnMainThread {
-            withContext(NonCancellable) {
-                application.unregisterActivityLifecycleCallbacks(this@ActivityLifecycleManagementPlugin)
-            }
+        (analytics as? AndroidAnalytics)?.queueOnMainThread {
+            application.unregisterActivityLifecycleCallbacks(this)
         }
     }
 
@@ -52,23 +55,42 @@ internal class ActivityLifecycleManagementPlugin : Plugin, Application.ActivityL
         activityObservers.remove(observer)
     }
 
+    /** Adds [observer] while [policy] decides to observe; on each add, it first gets each started activity. */
+    internal fun addObserverWithCurrentState(observer: ActivityLifecycleObserver, policy: ObserverPolicy) {
+        currentStateObservers.add(observer, policy)
+    }
+
+    /** Asks the policy of [observer] again. Call it when the policy can decide differently. */
+    internal fun refreshObserver(observer: ActivityLifecycleObserver) {
+        currentStateObservers.refresh(observer)
+    }
+
+    /** Removes [observer]. It last gets the pause and the stop of each activity that is started now. */
+    internal fun removeObserverWithCurrentState(observer: ActivityLifecycleObserver) {
+        currentStateObservers.remove(observer)
+    }
+
     override fun onActivityCreated(activity: Activity, bundle: Bundle?) {
         activityObservers.forEach { it.onActivityCreated(activity, bundle) }
     }
 
     override fun onActivityStarted(activity: Activity) {
+        startedActivities.onStarted(activity)
         activityObservers.forEach { it.onActivityStarted(activity) }
     }
 
     override fun onActivityResumed(activity: Activity) {
+        startedActivities.onResumed(activity)
         activityObservers.forEach { it.onActivityResumed(activity) }
     }
 
     override fun onActivityPaused(activity: Activity) {
+        startedActivities.onPaused(activity)
         activityObservers.forEach { it.onActivityPaused(activity) }
     }
 
     override fun onActivityStopped(activity: Activity) {
+        startedActivities.onStopped(activity)
         activityObservers.forEach { it.onActivityStopped(activity) }
     }
 

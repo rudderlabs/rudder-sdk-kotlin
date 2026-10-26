@@ -62,6 +62,28 @@ class MyApplication : Application() {
 
 The integration initializes CleverTap from the dashboard fields `accountId`, `accountToken`, and optional `region`. If `region` is blank or `none`, the default CleverTap credential setup is used.
 
+## Lite mode
+
+In lite mode, your app initialises CleverTap and passes the instance to the integration. The integration then only
+maps events and sends them to that instance.
+
+1. Set up CleverTap as CleverTap's Android guide describes: the account credentials in the app manifest, and
+   `ActivityLifecycleCallback.register(this)` in `Application.onCreate`, before `super.onCreate()`.
+2. Pass the CleverTap instance to the integration:
+
+```kotlin
+CleverTapAPI.getDefaultInstance(this)?.let { cleverTap ->
+    analytics.add(CleverTapIntegration(cleverTap))
+}
+```
+
+In lite mode, the integration:
+
+- Does not set the CleverTap credentials or debug level, and does not register CleverTap's activity tracking.
+- Waits for the source config before it sends events. The dashboard credentials are not used, so they can hold any
+  value.
+- Keeps the helper methods `pushNotificationClickedEvent`, `pushDeepLink` and `setAppForeground`.
+
 ## Supported RudderStack Events
 
 ### Identify

@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+# [3.0.1](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.integration.kotlin.appsflyer@v3.0.0...com.rudderstack.integration.kotlin.appsflyer@v3.0.1) (2026-10-26)
+
+## Dependency Updates
+
+- The following workspace dependencies were updated
+  - dependencies
+    - @rudderstack/android bumped from 2.0.0 to 2.1.0
+
+
 # [3.0.0](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.integration.kotlin.appsflyer@v2.1.0...com.rudderstack.integration.kotlin.appsflyer@v3.0.0) (2026-09-29)
 
 ## Dependency Updates

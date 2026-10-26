@@ -38,6 +38,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -541,6 +542,101 @@ class StandardIntegrationPluginTest {
             verify(exactly = 1) { plugin.update(any()) }
         }
     }
+
+    @Test
+    fun `given an integration whose create returns without an instance, when the next config arrives, then create runs again and not update`() =
+        runTest {
+            var createCount = 0
+            val plugin = object : StandardIntegration, IntegrationPlugin() {
+                var instance: Any? = null
+                var updateCount = 0
+
+                override val key: String
+                    get() = "MockDestination"
+
+                override fun create(destinationConfig: JsonObject) {
+                    if (createCount++ > 0) instance = Any()
+                }
+
+                override fun update(destinationConfig: JsonObject) {
+                    updateCount++
+                }
+
+                override fun getDestinationInstance(): Any? = instance
+            }
+            plugin.setup(mockAnalytics)
+
+            plugin.initDestination(sourceConfigWithCorrectApiKey)
+            plugin.initDestination(sourceConfigWithCorrectApiKey)
+            plugin.initDestination(sourceConfigWithCorrectApiKey)
+
+            assertEquals(2, createCount)
+            assertEquals(1, plugin.updateCount)
+            assertNotNull(plugin.getDestinationInstance())
+            assertTrue(plugin.isDestinationReady)
+        }
+
+    @Test
+    fun `given a created integration, when its instance lookup fails before the next config, then update runs and the config collection goes on`() =
+        runTest {
+            var lookupCount = 0
+            val plugin = object : StandardIntegration, IntegrationPlugin() {
+                var updateCount = 0
+
+                override val key: String
+                    get() = "MockDestination"
+
+                override fun create(destinationConfig: JsonObject) = Unit
+
+                override fun update(destinationConfig: JsonObject) {
+                    updateCount++
+                }
+
+                // The second lookup is the one that decides between create and update for the second config.
+                override fun getDestinationInstance(): Any =
+                    if (++lookupCount == 2) throw IllegalStateException("Lookup failed") else Any()
+            }
+            plugin.setup(mockAnalytics)
+
+            plugin.initDestination(sourceConfigWithCorrectApiKey)
+            plugin.initDestination(sourceConfigWithCorrectApiKey)
+
+            assertEquals(1, plugin.updateCount)
+            assertTrue(plugin.isDestinationReady)
+        }
+
+    @Test
+    fun `given a standard integration whose create returns without an instance, when a callback registers, then it waits and gets the instance from the next create`() =
+        runTest {
+            val vendorInstance = Any()
+            var createCount = 0
+            val plugin = object : StandardIntegration, IntegrationPlugin() {
+                var instance: Any? = null
+
+                override val key: String
+                    get() = "MockDestination"
+
+                override fun create(destinationConfig: JsonObject) {
+                    if (createCount++ > 0) instance = vendorInstance
+                }
+
+                override fun getDestinationInstance(): Any? = instance
+            }
+            plugin.setup(mockAnalytics)
+            plugin.initDestination(sourceConfigWithCorrectApiKey)
+            val results = mutableListOf<Pair<Any?, DestinationResult>>()
+
+            plugin.onDestinationReady { instance, result -> results += instance to result }
+
+            assertTrue(results.isEmpty())
+
+            plugin.initDestination(sourceConfigWithCorrectApiKey)
+
+            assertEquals(2, createCount)
+            assertEquals(1, results.size)
+            assertSame(vendorInstance, results.single().first)
+            assertTrue(results.single().second is Result.Success)
+        }
 
     private fun mockInitialiseSdk() {
         every { plugin.initialiseMockSdk(match { it.contains(apiKeyRegex) }) } throws IllegalArgumentException("Invalid API key")

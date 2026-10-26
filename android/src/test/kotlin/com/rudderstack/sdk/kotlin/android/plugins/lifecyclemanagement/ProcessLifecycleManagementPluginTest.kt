@@ -14,6 +14,7 @@ import io.mockk.unmockkAll
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -70,10 +71,11 @@ class ProcessLifecycleManagementPluginTest {
     }
 
     @Test
-    fun `when teardown called, then it should unregister process lifecycle observer`() = runTest {
+    fun `when teardown called and shutdown cancels the scope before the cleanup runs, then it should still unregister process lifecycle observer`() = runTest {
         plugin.addObserver(mockObserver)
 
         plugin.teardown()
+        mockAnalytics.analyticsScope.cancel()
 
         advanceUntilIdle()
         verify { mockLifecycle.removeObserver(plugin) }

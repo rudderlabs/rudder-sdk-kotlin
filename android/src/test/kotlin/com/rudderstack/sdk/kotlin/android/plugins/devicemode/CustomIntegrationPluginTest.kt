@@ -22,7 +22,9 @@ import io.mockk.verify
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.JsonObject
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -219,6 +221,31 @@ class CustomIntegrationPluginTest {
             plugin.initDestination(sourceConfigWithAnotherCorrectApiKey)
 
             verify(exactly = 0) { plugin.update(any()) }
+        }
+
+    @Test
+    fun `given a custom integration that holds no instance, when two configs arrive, then create runs for each and a later callback gets success`() =
+        runTest(testDispatcher) {
+            var createCount = 0
+            val customPlugin = object : IntegrationPlugin() {
+                override val key: String
+                    get() = "MockDestination"
+
+                override fun create(destinationConfig: JsonObject) {
+                    createCount++
+                }
+
+                override fun getDestinationInstance(): Any? = null
+            }
+            customPlugin.setup(mockAnalytics)
+
+            customPlugin.initDestination(sourceConfig)
+            customPlugin.initDestination(sourceConfig)
+            val callback = mockk<(Any?, DestinationResult) -> Unit>(relaxed = true)
+            customPlugin.onDestinationReady(callback)
+
+            assertEquals(2, createCount)
+            verify(exactly = 1) { callback.invoke(null, ofType(Result.Success::class) as DestinationResult) }
         }
 
     private fun mockInitialiseSdk() {

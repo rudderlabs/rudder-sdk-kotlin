@@ -54,3 +54,25 @@ class MyApplication : Application() {
     }
 }
 ```
+
+## Lite mode
+
+In lite mode, your app initialises Adjust and passes the instance to the integration. The integration then only maps
+events to Adjust event tokens and sends them.
+
+1. Initialise Adjust with your own `AdjustConfig`: app token, environment, listeners, and the attribution callback.
+2. Pass the Adjust instance to the integration:
+
+```kotlin
+analytics.add(AdjustIntegration(Adjust.getDefaultInstance()))
+```
+
+In lite mode, the integration:
+
+- Does not initialise Adjust, set listeners, or forward the activity resume and pause calls to Adjust.
+- Sends no "Install Attributed" event. If you need it, send it with your own `track` call from your attribution
+  callback. The dashboard setting `enableInstallAttributionTracking` has no effect.
+- Uses the event-to-token mapping from the dashboard, and adds the `anonymousId` and `userId` partner parameters, as
+  in the standard mode. `reset` removes all global partner parameters, also the ones that your app added.
+- Waits for the source config before it sends events. The dashboard settings still need valid values, but lite mode
+  does not use the app token.
