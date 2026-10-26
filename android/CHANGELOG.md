@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+# [2.1.0](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.sdk.kotlin.android@v2.0.0...com.rudderstack.sdk.kotlin.android@v2.1.0) (2026-10-26)
+
+## Features
+
+- **device-mode:** Answer late ready callbacks with the last result after setup ([#372](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/372)) ([ea10c94](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/ea10c9446431108204d33f521994c8ab58e6d9f2))
+- **android:** Send the current activity to late lifecycle observers ([#368](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/368)) ([8188a2c](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/8188a2c3c8a9cd30c3155fdf3eadaa9c997c3bb6))
+- **android:** Add lite mode to device-mode integrations ([#367](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/367)) ([947dc0f](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/947dc0fbb25d64e54d69f2edbbe4776018b0d56f))
+
+## Bug Fixes
+
+- **device-mode:** Keep delivering events when one destination throws ([#374](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/374)) ([2dd7e6d](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/2dd7e6d13c03a4eb0bd3a5cf310bba1233f61ad2))
+- **device-mode:** Call create again while an integration holds no instance ([#377](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/377)) ([213c294](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/213c2940836c011bca3c868cb3add24c98695acd))
+
+
 # [2.0.0](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.sdk.kotlin.android@v1.8.0...com.rudderstack.sdk.kotlin.android@v2.0.0) (2026-09-29)
 
 ## ⚠ Breaking Changes

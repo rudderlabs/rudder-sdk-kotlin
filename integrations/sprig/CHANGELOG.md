@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+# [2.1.0](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.integration.kotlin.sprig@v2.0.0...com.rudderstack.integration.kotlin.sprig@v2.1.0) (2026-10-26)
+
+## Features
+
+- **sprig:** Add a lite mode constructor that takes the app's Sprig instance ([#373](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/373)) ([632b225](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/632b2252237d675d4367a281823d43e251611bb3))
+- **android:** Add lite mode to device-mode integrations ([#367](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/367)) ([947dc0f](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/947dc0fbb25d64e54d69f2edbbe4776018b0d56f))
+
+## Dependency Updates
+
+- The following workspace dependencies were updated
+  - dependencies
+    - @rudderstack/android bumped from 2.0.0 to 2.1.0
+
+
 # [2.0.0](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.integration.kotlin.sprig@v1.0.3...com.rudderstack.integration.kotlin.sprig@v2.0.0) (2026-09-29)
 
 ## Dependency Updates
