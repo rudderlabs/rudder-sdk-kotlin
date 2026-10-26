@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+# [2.1.0](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.integration.kotlin.adjust@v2.0.0...com.rudderstack.integration.kotlin.adjust@v2.1.0) (2026-10-26)
+
+## Features
+
+- **adjust:** Add a lite mode constructor that takes the app's Adjust instance ([#371](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/371)) ([74dc863](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/74dc863f140a3313518a0826fce4d90254519b01))
+- **android:** Send the current activity to late lifecycle observers ([#368](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/368)) ([8188a2c](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/8188a2c3c8a9cd30c3155fdf3eadaa9c997c3bb6))
+
+## Dependency Updates
+
+- The following workspace dependencies were updated
+  - dependencies
+    - @rudderstack/android bumped from 2.0.0 to 2.1.0
+
+
 # [2.0.0](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.integration.kotlin.adjust@v1.4.3...com.rudderstack.integration.kotlin.adjust@v2.0.0) (2026-09-29)
 
 ## Dependency Updates
