@@ -1,0 +1,43 @@
+import org.gradle.api.artifacts.result.UnresolvedDependencyResult
+import org.gradle.api.artifacts.component.ProjectComponentSelector
+
+// The submission plugin's resolution task uses Gradle's lenient resolution
+// result. Check the same configurations after the plugin resolves each project.
+gradle.beforeProject { project ->
+    project.tasks.configureEach { task ->
+        if (task.name == 'ForceDependencyResolutionPlugin_resolveProjectDependencies') {
+            task.doLast {
+                def safelyResolvable = null
+                try {
+                    safelyResolvable = Class.forName('org.gradle.internal.deprecation.DeprecatableConfiguration')
+                        .getMethod('canSafelyBeResolved')
+                } catch (ReflectiveOperationException ignored) {
+                    // Match the plugin's fallback on Gradle versions without this API.
+                }
+                def failures = []
+                project.configurations.each { configuration ->
+                    def canResolve = safelyResolvable == null ? configuration.canBeResolved : safelyResolvable.invoke(configuration)
+                    if (canResolve) {
+                        configuration.incoming.resolutionResult.allDependencies.each { dependency ->
+                            if (dependency instanceof UnresolvedDependencyResult) {
+                                // Kotlin metadata cannot choose the local Android build variant.
+                                // Android runtime/test graphs are resolved separately.
+                                def knownAndroidMetadataMismatch = (configuration.name == 'implementationDependenciesMetadata' &&
+                                    dependency.attempted instanceof ProjectComponentSelector &&
+                                    dependency.attempted.projectPath == ':android' &&
+                                    dependency.failure.cause?.class?.name == 'org.gradle.internal.component.resolution.failure.exception.VariantSelectionByAttributesException' &&
+                                    dependency.failure.cause?.message?.contains('cannot choose between the following variants of project :android'))
+                                if (!knownAndroidMetadataMismatch) {
+                                    failures << "${project.path}:${configuration.name}: ${dependency.attempted} (${dependency.failure.message})"
+                                }
+                            }
+                        }
+                    }
+                }
+                if (!failures.empty) {
+                    throw new GradleException('Dependency graph resolution is incomplete:\n' + failures.join('\n'))
+                }
+            }
+        }
+    }
+}

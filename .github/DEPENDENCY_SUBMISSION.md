@@ -8,7 +8,12 @@ The `Gradle Dependency Submission` workflow resolves the root build with JDK 17
 and the checked-in wrapper. The Gradle submission task covers all included
 projects, including both sample apps and all integration modules. The workflow also
 resolves `buildSrc` explicitly, including its test/runtime inputs. No project or
-configuration is excluded. Test and build dependencies remain in the graph with
+configuration is excluded. The strict resolution check rejects unresolved
+dependencies before submission. One known exception is the local `:android`
+project in `implementationDependenciesMetadata`: Kotlin metadata cannot choose
+between Android debug and release variants. The Android runtime and test
+classpaths are resolved separately. Other unresolved entries still fail the run.
+Test and build dependencies remain in the graph with
 development scope; non-test runtime classpaths have runtime scope. `buildSrc`
 dependencies have development scope.
 

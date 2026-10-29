@@ -12,6 +12,7 @@ on:
       - 'gradle/**'
       - 'gradlew*'
       - 'buildSrc/**'
+      - '.github/gradle/verify-dependency-resolution.init.gradle'
       - '.github/workflows/dependency-submission.yml'
   pull_request:
     paths:
@@ -23,6 +24,7 @@ on:
       - 'gradle/**'
       - 'gradlew*'
       - 'buildSrc/**'
+      - '.github/gradle/verify-dependency-resolution.init.gradle'
       - '.github/workflows/dependency-submission.yml'
   schedule:
     - cron: '23 6 * * 1' # Weekly refresh for dependencies with version ranges.
@@ -77,7 +79,9 @@ jobs:
           artifact-retention-days: 7
           cache-provider: basic
           validate-wrappers: true
-          additional-arguments: --no-configuration-cache --no-configure-on-demand --no-daemon
+          additional-arguments: >-
+            --no-configuration-cache --no-configure-on-demand --no-daemon
+            --init-script .github/gradle/verify-dependency-resolution.init.gradle
 
       - name: Check dependency inventory
         shell: python
