@@ -12,16 +12,16 @@ dependencies {
     implementation("com.rudderstack.sdk.kotlin:android:<latest_version>")
     
     // Add the Adjust integration
-    implementation("com.rudderstack.sdk.kotlin:adjust:<latest_version>")
+    implementation("com.rudderstack.integration.kotlin:adjust:<latest_version>")
 }
 ```
 
 ## Supported Native Adjust Version
 
-This integration supports Adjust Android SDK version:
+This integration supports Adjust Android SDK versions in the range:
 
-```
-5.1.0
+```text
+[5.1.0, 6.0.0)
 ```
 
 ## Usage

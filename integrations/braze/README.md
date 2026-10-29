@@ -8,10 +8,10 @@ The Braze integration allows you to send your event data from RudderStack to Bra
 
 ## Supported Native Braze Version
 
-This integration supports Braze Android SDK version:
+This integration supports Braze Android SDK versions in the range:
 
-```
-35.0.0
+```text
+[35.0.0, 36.0.0)
 ```
 
 ## Installation
@@ -24,7 +24,7 @@ dependencies {
     implementation("com.rudderstack.sdk.kotlin:android:<latest_version>")
     
     // Add the Braze integration
-    implementation("com.rudderstack.sdk.kotlin:braze:<latest_version>")
+    implementation("com.rudderstack.integration.kotlin:braze:<latest_version>")
 }
 ```
 
