@@ -59,25 +59,52 @@ class MyApplication : Application() {
 }
 ```
 
-## Lite mode
+## Use your own Braze instance
 
-In lite mode, your app initialises Braze and passes the instance to the integration. The integration then only maps
-events and sends them to that instance.
+In the default setup, the integration initializes Braze from the destination configuration. Instead, your app can
+initialize Braze and pass that instance to the integration. The integration then only maps events and sends them to
+your instance. This needs integration version 2.1.0 or higher.
 
-1. Add the Braze Android SDK to your app dependencies.
-2. Initialise Braze with your own configuration, and set up the Braze sessions as Braze documents.
-3. Pass the Braze instance to the integration:
+1. Add the Braze Android SDK to your app dependencies. Use a version in the range `[35.0.0, 36.0.0)`. The integration
+   adds the Braze SDK at runtime scope only, so your code can't call Braze without this dependency.
 
 ```kotlin
+dependencies {
+    implementation("com.braze:android-sdk-ui:<version>")
+}
+```
+
+2. Initialize Braze with your own configuration.
+3. Register the Braze activity listener. With your own instance, the integration doesn't open Braze sessions.
+4. Pass the Braze instance to the integration:
+
+```kotlin
+import com.braze.Braze
+import com.braze.BrazeActivityLifecycleCallbackListener
+import com.braze.configuration.BrazeConfig
+import com.rudderstack.integration.kotlin.braze.BrazeIntegration
+
+Braze.configure(
+    this,
+    BrazeConfig.Builder()
+        .setApiKey("<BRAZE_API_KEY>")
+        .setCustomEndpoint("<BRAZE_ENDPOINT>")
+        .build()
+)
+registerActivityLifecycleCallbacks(BrazeActivityLifecycleCallbackListener())
+
 analytics.add(BrazeIntegration(Braze.getInstance(this)))
 ```
 
-In lite mode, the integration:
+With your own instance, the integration:
 
-- Does not configure Braze, set the Braze log level, or open and close Braze sessions.
-- Sets the `rudder_id` alias and applies the mapping settings from the dashboard, as in the standard mode.
-- Waits for the source config before it sends events. The dashboard settings still need valid values, but lite mode
-  does not use the API key or the endpoint.
+- Doesn't initialize Braze, set the Braze log level, or open and close Braze sessions.
+- Still sets the `rudder_id` alias and applies the mapping settings in the destination configuration.
+- Waits for the source configuration before it sends events.
+
+The integration still checks the connection settings. Set the **Data Center** and an App Identifier key, as in the
+default setup: the default key, or the Android key when platform-specific keys are on. The integration doesn't use
+them to initialize Braze.
 
 ## Recommended ecommerce events
 
