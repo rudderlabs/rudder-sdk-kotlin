@@ -12,16 +12,16 @@ dependencies {
     implementation("com.rudderstack.sdk.kotlin:android:<latest_version>")
     
     // Add the Adjust integration
-    implementation("com.rudderstack.sdk.kotlin:adjust:<latest_version>")
+    implementation("com.rudderstack.integration.kotlin:adjust:<latest_version>")
 }
 ```
 
 ## Supported Native Adjust Version
 
-This integration supports Adjust Android SDK version:
+This integration supports Adjust Android SDK versions in the range:
 
-```
-5.1.0
+```text
+[5.1.0, 6.0.0)
 ```
 
 ## Usage
@@ -55,24 +55,49 @@ class MyApplication : Application() {
 }
 ```
 
-## Lite mode
+## Use your own Adjust instance
 
-In lite mode, your app initialises Adjust and passes the instance to the integration. The integration then only maps
-events to Adjust event tokens and sends them.
+In the default setup, the integration initializes Adjust from the destination configuration. Instead, your app can
+initialize Adjust and pass that instance to the integration. The integration then only maps events to Adjust event
+tokens and sends them. This needs integration version 2.1.0 or higher.
 
-1. Initialise Adjust with your own `AdjustConfig`: app token, environment, listeners, and the attribution callback.
-2. Pass the Adjust instance to the integration:
+1. Add the Adjust Android SDK to your app dependencies. Use a version in the range `[5.1.0, 6.0.0)`. The integration
+   adds the Adjust SDK at runtime scope only, so your code can't call Adjust without this dependency.
 
 ```kotlin
+dependencies {
+    implementation("com.adjust.sdk:adjust-android:<version>")
+}
+```
+
+2. Initialize Adjust with your own `AdjustConfig`, for example, the app token, the environment, and your listeners.
+3. Pass the Adjust instance to the integration:
+
+```kotlin
+import com.adjust.sdk.Adjust
+import com.adjust.sdk.AdjustConfig
+import com.rudderstack.integration.kotlin.adjust.AdjustIntegration
+
+val adjustConfig = AdjustConfig(this, "<ADJUST_APP_TOKEN>", AdjustConfig.ENVIRONMENT_PRODUCTION)
+adjustConfig.setOnAttributionChangedListener { attribution ->
+    // Handle the attribution
+}
+Adjust.initSdk(adjustConfig)
+
 analytics.add(AdjustIntegration(Adjust.getDefaultInstance()))
 ```
 
-In lite mode, the integration:
+With your own instance, the integration:
 
-- Does not initialise Adjust, set listeners, or forward the activity resume and pause calls to Adjust.
-- Sends no "Install Attributed" event. If you need it, send it with your own `track` call from your attribution
-  callback. The dashboard setting `enableInstallAttributionTracking` has no effect.
-- Uses the event-to-token mapping from the dashboard, and adds the `anonymousId` and `userId` partner parameters, as
-  in the standard mode. `reset` removes all global partner parameters, also the ones that your app added.
-- Waits for the source config before it sends events. The dashboard settings still need valid values, but lite mode
-  does not use the app token.
+- Doesn't initialize Adjust, set its log level, set listeners, or forward the activity resume and pause calls.
+- Doesn't turn on sending in the background. The default setup turns it on. To keep it, call
+  `adjustConfig.enableSendingInBackground()` before `Adjust.initSdk`.
+- Doesn't send the "Install Attributed" event, even when the destination configuration turns it on. To send it, call
+  `track` from your own attribution callback.
+- Still maps events with the event-to-token mapping in the destination configuration, and adds the `anonymousId` and
+  `userId` partner parameters.
+- Waits for the source configuration before it sends events.
+
+The **App Token** connection setting still needs a value. The integration doesn't use it.
+
+In both setups, `reset` removes all Adjust global partner parameters, also the ones that your app added.

@@ -91,19 +91,56 @@ class MainActivity : FragmentActivity() {
 
 Clearing the reference in `onPause` prevents Sprig from attempting a fragment transaction on an activity that has already saved its instance state. When no activity is set (or the stored activity is not in at least the `STARTED` state), the integration falls back to `Sprig.track` and in-app surveys are not presented.
 
-## Lite mode
+## Use your own Sprig instance
 
-In lite mode, your app configures Sprig and passes the instance to the integration. The integration then only maps
-events and sends them to Sprig.
+In the default setup, the integration configures Sprig from the destination configuration. Instead, your app can
+configure Sprig and pass that instance to the integration. The integration then only maps events and sends them to
+Sprig. This needs integration version 2.1.0 or higher.
+
+1. Add the Sprig Android SDK to your app dependencies. Use a version in the range `[2.23.0, 3.0.0)`. The integration
+   adds the Sprig SDK at runtime scope only, so your code can't call Sprig without this dependency.
 
 ```kotlin
-Sprig.configure(application, "<ENVIRONMENT_ID>")
-analytics.add(SprigIntegration(Sprig))
+dependencies {
+    implementation("com.userleap:userleap-android-sdk:<version>")
+}
 ```
 
-In lite mode, the integration:
+2. In `RudderAnalyticsUtils`, create the integration with the Sprig instance, and configure Sprig at the start of
+   `initialize`:
 
-- Does not call `Sprig.configure`. The dashboard environment ID is not used, so it can hold any value.
-- Waits for the source config before it sends events.
-- Forwards the Sprig log output to the RudderStack logger, as in the standard mode.
-- Presents surveys in the same way. Call `setFragmentActivity` as [Presenting in-app surveys](#presenting-in-app-surveys) describes.
+```kotlin
+import com.userleap.Sprig
+
+object RudderAnalyticsUtils {
+
+    lateinit var analytics: Analytics
+    val sprigIntegration = SprigIntegration(Sprig)
+
+    fun initialize(application: Application) {
+        Sprig.configure(application, "<SPRIG_ENVIRONMENT_ID>")
+
+        analytics = Analytics(
+            configuration = Configuration(
+                writeKey = "<WRITE_KEY>",
+                application = application,
+                dataPlaneUrl = "<DATA_PLANE_URL>",
+            )
+        )
+        analytics.add(sprigIntegration)
+    }
+}
+```
+
+If your app already configures Sprig, keep that setup and skip the `configure` call. Configure Sprig before you add
+the integration.
+
+With your own instance, the integration:
+
+- Doesn't call `Sprig.configure`.
+- Still forwards the Sprig log output to the RudderStack logger.
+- Still presents surveys in the same way. Call `setFragmentActivity` as [Presenting in-app surveys](#presenting-in-app-surveys) describes.
+- Still calls Sprig `logout` on `reset`.
+- Waits for the source configuration before it sends events.
+
+The **Environment ID** connection setting still needs a value. The integration doesn't use it.
