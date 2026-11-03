@@ -31,6 +31,8 @@ private const val pathToSourceConfigWithEmptyBlackListEvents =
     "eventfilteringsourceconfig/source_config_with_empty_black_list_events.json"
 private const val pathToSourceConfigWithEventFilteringDisabled =
     "eventfilteringsourceconfig/source_config_with_event_filtering_disabled.json"
+private const val pathToSourceConfigWithMissingEventFilteringOption =
+    "eventfilteringsourceconfig/source_config_with_missing_event_filtering_option.json"
 
 class EventFilteringPluginTest {
 
@@ -53,6 +55,9 @@ class EventFilteringPluginTest {
     )
     private val sourceConfigWithEventFilteringDisabled = LenientJson.decodeFromString<SourceConfig>(
         readFileAsString(pathToSourceConfigWithEventFilteringDisabled)
+    )
+    private val sourceConfigWithMissingEventFilteringOption = LenientJson.decodeFromString<SourceConfig>(
+        readFileAsString(pathToSourceConfigWithMissingEventFilteringOption)
     )
 
     @BeforeEach
@@ -237,6 +242,35 @@ class EventFilteringPluginTest {
             assertNull(eventFilteringPlugin.intercept(event1))
             assertNull(eventFilteringPlugin.intercept(event2))
             assertNull(eventFilteringPlugin.intercept(event3))
+        }
+
+    @Test
+    fun `given a blackList rule, when a sourceConfig without the filtering option is emitted, then the plugin clears the rule`() =
+        runTest(testDispatcher) {
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithBlackListEvents))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val blackListedEvent = TrackEvent("Track Event 3", emptyJsonObject)
+            assertNull(eventFilteringPlugin.intercept(blackListedEvent))
+
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithMissingEventFilteringOption))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            assertEquals(blackListedEvent, eventFilteringPlugin.intercept(blackListedEvent))
+        }
+
+    @Test
+    fun `given a whiteList rule, when teardown is called, then the plugin clears the rule`() =
+        runTest(testDispatcher) {
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithWhiteListEvents))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val nonWhiteListedEvent = TrackEvent("Track Event 3", emptyJsonObject)
+            assertNull(eventFilteringPlugin.intercept(nonWhiteListedEvent))
+
+            eventFilteringPlugin.teardown()
+
+            assertEquals(nonWhiteListedEvent, eventFilteringPlugin.intercept(nonWhiteListedEvent))
         }
 
     @Test

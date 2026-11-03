@@ -12,7 +12,6 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
-import java.util.concurrent.CopyOnWriteArrayList
 
 private const val WHITE_LIST_EVENTS = "whitelistedEvents"
 private const val BLACK_LIST_EVENTS = "blacklistedEvents"
@@ -33,8 +32,7 @@ internal class EventFilteringPlugin(private val key: String) : Plugin {
     override lateinit var analytics: Analytics
 
     @Volatile
-    private var filteringOption = String.empty()
-    private val filteringList = CopyOnWriteArrayList<String>()
+    private var filteringRule = FilteringRule()
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
@@ -59,20 +57,20 @@ internal class EventFilteringPlugin(private val key: String) : Plugin {
     }
 
     override fun teardown() {
-        filteringList.clear()
+        filteringRule = FilteringRule()
     }
 
     private fun shouldDropEvent(eventName: String): Boolean {
-        return when (filteringOption) {
-            WHITE_LIST_EVENTS -> eventName !in filteringList
-            BLACK_LIST_EVENTS -> eventName in filteringList
+        val rule = filteringRule
+        return when (rule.option) {
+            WHITE_LIST_EVENTS -> eventName !in rule.events
+            BLACK_LIST_EVENTS -> eventName in rule.events
             else -> false
         }
     }
 
     private fun listenForConfigChanges() {
-        // todo: use integrations dispatcher here and then we don't need to use CopyOnWriteArrayList for filteringList
-        analytics.analyticsScope.launch {
+        analytics.analyticsScope.launch(analytics.integrationsDispatcher) {
             analytics.sourceConfigState
                 .observeDispatched()
                 .filter { it.source.isSourceEnabled }
@@ -84,15 +82,15 @@ internal class EventFilteringPlugin(private val key: String) : Plugin {
     }
 
     private fun updateFilteringConfiguration(destinationConfig: JsonObject?) {
-        filteringOption = destinationConfig?.getString(EVENT_FILTERING_OPTION).orEmpty()
-        filteringList.clear()
+        val option = destinationConfig?.getString(EVENT_FILTERING_OPTION).orEmpty()
 
-        if (filteringOption.isBlank()) {
+        if (option.isBlank()) {
             analytics.logger.debug("EventFilteringPlugin: Missing event filtering option for destination: $key")
+            filteringRule = FilteringRule()
             return
         }
 
-        filteringList.addAll(getEventFilteringList(filteringOption, destinationConfig))
+        filteringRule = FilteringRule(option, getEventFilteringList(option, destinationConfig).toSet())
     }
 
     private fun getEventFilteringList(eventFilteringOption: String, destinationConfig: JsonObject?): List<String> {
@@ -126,5 +124,10 @@ internal class EventFilteringPlugin(private val key: String) : Plugin {
     @Serializable
     data class FilteredEvent(
         val eventName: String,
+    )
+
+    private data class FilteringRule(
+        val option: String = String.empty(),
+        val events: Set<String> = emptySet(),
     )
 }
