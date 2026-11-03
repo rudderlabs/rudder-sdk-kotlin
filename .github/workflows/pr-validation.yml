@@ -17,6 +17,8 @@ jobs:
   pr-title-check:
     name: PR Title Check
     runs-on: arc-amd64
+    timeout-minutes: 5
+    # The checkout loads the local composite action. The title comes from the event payload.
     permissions:
       contents: read
     steps:
@@ -27,6 +29,8 @@ jobs:
 
       - name: Checkout code
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          persist-credentials: false
 
       - name: Check PR Title
         uses: ./.github/actions/pr-title-check

@@ -1,0 +1,103 @@
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 0
+    cooldown:
+      default-days: 7
+    labels:
+      - "dependencies"
+      - "github-actions"
+    groups:
+      github-actions-deps:
+        applies-to: version-updates
+        patterns:
+          - "*"
+
+  - package-ecosystem: "gradle"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 0
+    cooldown:
+      default-days: 7
+    labels:
+      - "dependencies"
+      - "gradle"
+    groups:
+      # Kotlin compiler + kotlinx libraries should move together
+      kotlin-and-kotlinx:
+        applies-to: version-updates
+        patterns:
+          - "org.jetbrains.kotlin*"
+          - "org.jetbrains.kotlinx*"
+
+      androidx:
+        applies-to: version-updates
+        patterns:
+          - "androidx.*"
+
+      testing:
+        applies-to: version-updates
+        patterns:
+          - "org.junit*"
+          - "io.mockk*"
+          - "org.skyscreamer*"
+
+      build-plugins:
+        applies-to: version-updates
+        patterns:
+          - "com.android.tools.build*"
+          - "io.gitlab.arturbosch.detekt*"
+          - "io.github.gradle-nexus*"
+
+      # Strictly bounded integration SDKs: minor and patch updates only
+      integrations:
+        applies-to: version-updates
+        patterns:
+          - "com.adjust.sdk*"
+          - "com.appsflyer*"
+          - "com.google.firebase*"
+          - "com.facebook.android*"
+          - "com.braze*"
+          - "com.android.installreferrer*"
+          - "com.clevertap.android*"
+          - "com.userleap*"
+        update-types:
+          - "minor"
+          - "patch"
+
+      sample-app-deps:
+        applies-to: version-updates
+        patterns:
+          - "com.google.android.gms*"
+          - "com.jakewharton.timber*"
+
+    # Keep major upgrades to bounded integration SDKs out of automated PRs.
+    ignore:
+      - dependency-name: "com.adjust.sdk*"
+        update-types:
+          - "version-update:semver-major"
+      - dependency-name: "com.appsflyer*"
+        update-types:
+          - "version-update:semver-major"
+      - dependency-name: "com.google.firebase*"
+        update-types:
+          - "version-update:semver-major"
+      - dependency-name: "com.facebook.android*"
+        update-types:
+          - "version-update:semver-major"
+      - dependency-name: "com.braze*"
+        update-types:
+          - "version-update:semver-major"
+      - dependency-name: "com.android.installreferrer*"
+        update-types:
+          - "version-update:semver-major"
+      - dependency-name: "com.clevertap.android*"
+        update-types:
+          - "version-update:semver-major"
+      - dependency-name: "com.userleap*"
+        update-types:
+          - "version-update:semver-major"
