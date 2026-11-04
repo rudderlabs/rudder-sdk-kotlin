@@ -29,7 +29,9 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.annotations.VisibleForTesting
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 
 private const val SOURCE_CONFIG_ENDPOINT = "/sourceConfig"
@@ -41,8 +43,8 @@ private const val KOTLIN = "kotlin"
 private const val WRITE_KEY = "writeKey"
 
 private const val SOURCE_CONFIG_RETRY_ATTEMPT = 5
-private val SOURCE_CONFIG_REFRESH_INTERVAL_MILLIS = 1.hours.inWholeMilliseconds
-private val MIN_TEST_REFRESH_INTERVAL_MILLIS = 1.minutes.inWholeMilliseconds
+private val SOURCE_CONFIG_REFRESH_INTERVAL = 1.hours
+private val MIN_TEST_REFRESH_INTERVAL = 1.minutes
 
 private typealias FailureHandler = suspend (NetworkErrorStatus) -> SourceConfig?
 
@@ -66,7 +68,7 @@ class SourceConfigManager(
     private var lastFetchEndMillis: Long? = null
 
     @Volatile
-    private var refreshIntervalMillis = SOURCE_CONFIG_REFRESH_INTERVAL_MILLIS
+    private var refreshInterval = SOURCE_CONFIG_REFRESH_INTERVAL
 
     internal fun fetchCachedSourceConfigAndNotifyObservers() {
         readCachedSourceConfig()?.let(::notifyObservers)
@@ -99,8 +101,8 @@ class SourceConfigManager(
      * Sets a shorter refresh interval for end-to-end tests, with a minimum of one minute. Call it on the main thread.
      */
     @InternalRudderApi
-    fun setRefreshIntervalForTesting(intervalMillis: Long) {
-        refreshIntervalMillis = intervalMillis.coerceAtLeast(MIN_TEST_REFRESH_INTERVAL_MILLIS)
+    fun setRefreshIntervalForTesting(interval: Duration) {
+        refreshInterval = interval.coerceAtLeast(MIN_TEST_REFRESH_INTERVAL)
         if (refreshJob?.isActive == true) {
             stopPeriodicRefresh()
             startPeriodicRefresh()
@@ -124,7 +126,7 @@ class SourceConfigManager(
     private fun refreshPeriodically() = analytics.analyticsScope.launch(analytics.analyticsDispatcher) {
         launchFetchJob?.join()
         while (isActive) {
-            delay(timeUntilNextFetchMillis(lastFetchEndMillis, refreshIntervalMillis))
+            delay(timeUntilNextFetch(lastFetchEndMillis, refreshInterval))
             analytics.connectivityState.flow.first { it }
             fetchAndNotifyObservers(onFailure = ::handleRefreshFailure)
         }
@@ -177,7 +179,7 @@ class SourceConfigManager(
     private suspend fun retryWithBackoff(): SourceConfig? {
         val backOffPolicy = provideBackoffPolicy()
         repeat(SOURCE_CONFIG_RETRY_ATTEMPT) { attempt ->
-            delay(backOffPolicy.nextDelayInMillis())
+            delay(backOffPolicy.nextDelayInMillis().milliseconds)
             logger.verbose("SourceConfigManager: Retrying fetching of SourceConfig, attempt: ${attempt + 1}")
             requestSourceConfig { null }?.let { return it }
         }
@@ -243,9 +245,10 @@ internal fun Analytics.getQuery() = when (getPlatformType()) {
     }
 }
 
-private fun timeUntilNextFetchMillis(lastFetchEndMillis: Long?, intervalMillis: Long): Long {
-    val elapsedMillis = lastFetchEndMillis?.let { DateTimeUtils.getSystemCurrentTime() - it } ?: return 0
-    return if (elapsedMillis < 0) 0 else (intervalMillis - elapsedMillis).coerceAtLeast(0)
+private fun timeUntilNextFetch(lastFetchEndMillis: Long?, interval: Duration): Duration {
+    lastFetchEndMillis ?: return Duration.ZERO
+    val elapsed = (DateTimeUtils.getSystemCurrentTime() - lastFetchEndMillis).milliseconds
+    return if (elapsed.isNegative()) Duration.ZERO else (interval - elapsed).coerceAtLeast(Duration.ZERO)
 }
 
 private fun Result.Success<String>.toSourceConfig(logger: Logger): SourceConfig {

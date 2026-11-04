@@ -39,6 +39,7 @@ import org.junit.jupiter.params.provider.MethodSource
 import org.junit.jupiter.api.Assertions.assertEquals
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 private const val downloadedSourceConfig = "config/source_config_with_single_destination.json"
 
@@ -449,7 +450,7 @@ class SourceConfigManagerTest {
                 sourceConfigManager.startPeriodicRefresh()
                 advanceBy(0)
 
-                sourceConfigManager.setRefreshIntervalForTesting(1_000)
+                sourceConfigManager.setRefreshIntervalForTesting(1.seconds)
                 advanceBy(1.minutes.inWholeMilliseconds - 1)
                 verify(exactly = 1) { httpClient.getData() }
 
