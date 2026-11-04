@@ -4,8 +4,10 @@ import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.provideSpyBlock
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.CancellationException
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 class ExceptionHandlingTest {
 
@@ -49,5 +51,14 @@ class ExceptionHandlingTest {
         }
 
         assertNull(result)
+    }
+
+    @Test
+    fun `given the coroutine is cancelled, when a block is executed safely, then the cancellation is rethrown and not logged`() {
+        assertThrows<CancellationException> {
+            safelyExecute(mockLogger) { throw CancellationException("cancelled") }
+        }
+
+        verify(exactly = 0) { mockLogger.error(any(), any()) }
     }
 }
