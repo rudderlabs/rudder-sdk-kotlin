@@ -190,7 +190,7 @@ class SourceConfigManager(
         return null
     }
 
-    // A refresh makes one attempt and never shuts down the SDK, so a 400 from a cache miss cannot delete stored events.
+    // A refresh never shuts down the SDK: uploads and the next launch already handle an invalid write key.
     private fun handleRefreshFailure(error: NetworkErrorStatus): SourceConfig? {
         logger.debug(
             "SourceConfigManager: ${error.formatStatusCodeMessage()}. " +
