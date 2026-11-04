@@ -10,6 +10,7 @@ import com.rudderstack.sdk.kotlin.core.internals.network.Success
 import com.rudderstack.sdk.kotlin.core.internals.network.createPostConfig
 import com.rudderstack.sdk.kotlin.core.internals.network.formatStatusCodeMessage
 import com.rudderstack.sdk.kotlin.core.internals.network.toEventUploadResult
+import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.policies.backoff.MaxAttemptsWithBackoff
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.DateTimeUtils
@@ -23,6 +24,7 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import com.rudderstack.sdk.kotlin.core.internals.utils.encodeToBase64
 import com.rudderstack.sdk.kotlin.core.internals.utils.generateUUID
 import com.rudderstack.sdk.kotlin.core.internals.utils.handleInvalidWriteKey
+import com.rudderstack.sdk.kotlin.core.internals.utils.isSourceEnabled
 import com.rudderstack.sdk.kotlin.core.internals.utils.parseFilePaths
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -63,8 +65,6 @@ internal class EventUpload(
     private var lastBatchAnonymousId = String.empty()
     private val storage get() = analytics.storage
 
-    // This job is required to mainly stop the upload process when the source is disabled.
-    // The type is null to clear the job reference when the source is disabled.
     private var uploadJob: Job? = null
 
     internal fun start() {
@@ -99,6 +99,11 @@ internal class EventUpload(
         for (filePath in fileUrlList) {
             // ensureActive will help in cancelling the coroutine
             coroutineContext.ensureActive()
+            if (!analytics.isSourceEnabled()) {
+                analytics.logger.debug("EventUpload: Source is disabled. Keeping the remaining batch files for later")
+                maxAttemptsWithBackoff.reset()
+                return
+            }
 
             try {
                 storage.readBatchContent(filePath)?.let { batch ->
@@ -160,7 +165,7 @@ internal class EventUpload(
                     handleNonRetryAbleError(result, filePath)
                 }
             }
-        } while (result is RetryAbleEventUploadError)
+        } while (result is RetryAbleEventUploadError && analytics.isSourceEnabled())
     }
 
     @OptIn(UseWithCaution::class)
@@ -186,10 +191,13 @@ internal class EventUpload(
             NonRetryAbleEventUploadError.ERROR_404 -> {
                 analytics.logger.error(
                     "EventUpload: ${status.formatStatusCodeMessage()}. Source is disabled. " +
-                        "Stopping the events upload process until the source is enabled again."
+                        "Keeping the stored events until the source is enabled again."
                 )
-                cancel()
-                analytics.disableSource()
+                // Only a mobile source config can enable the source again while the app runs.
+                when (analytics.getPlatformType()) {
+                    PlatformType.Mobile -> analytics.disableSource()
+                    PlatformType.Server -> cancel()
+                }
             }
 
             NonRetryAbleEventUploadError.ERROR_413 -> {

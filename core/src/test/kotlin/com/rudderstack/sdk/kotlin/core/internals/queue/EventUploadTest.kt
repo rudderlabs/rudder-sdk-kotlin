@@ -6,6 +6,7 @@ import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClient
 import com.rudderstack.sdk.kotlin.core.internals.network.NetworkErrorStatus
+import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.policies.backoff.MaxAttemptsWithBackoff
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
@@ -40,7 +41,9 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
@@ -296,34 +299,78 @@ class EventUploadTest {
         verify(exactly = 1) { mockStorage.remove(singleFilePath) }
     }
 
-    @Test
-    fun `given server returns source is disabled as error, when flush is called, then the upload queue is stopped`() {
-        prepareMultipleBatch()
-        // Mock batch content reading
-        filePaths.forEach { path ->
-            every { mockStorage.readBatchContent(path) } returns batchPayload
-        }
-        // Mock the behavior for HttpClient
-        every { mockHttpClient.sendData(batchPayload, any()) } returns Result.Failure(
-            error = NetworkErrorStatus.Error404,
-        )
+    @Nested
+    inner class SourceDisabled {
 
-        processMessage()
+        private val sourceConfigState = State(SourceConfig.initialState())
 
-        // Verify network attempt is made and event is not removed from storage
-        verify(exactly = 1) { mockHttpClient.sendData(batchPayload, any()) }
-        filePaths.forEach { path ->
-            verify(exactly = 0) { mockStorage.remove(path) }
+        @BeforeEach
+        fun setUp() {
+            every { mockAnalytics.sourceConfigState } returns sourceConfigState
+            every { mockAnalytics.getPlatformType() } returns PlatformType.Mobile
+            prepareMultipleBatch()
+            filePaths.forEach { path -> every { mockStorage.readBatchContent(path) } returns batchPayload }
         }
 
-        clearMocks(mockHttpClient)
+        @Test
+        fun `given a mobile source, when the server returns 404, then the uploader disables the source, keeps its job and keeps every batch file`() {
+            every { mockHttpClient.sendData(batchPayload, any()) } returns Result.Failure(NetworkErrorStatus.Error404)
 
-        // Re-attempting to flush the same batch
-        eventUpload.flush()
-        testDispatcher.scheduler.advanceUntilIdle()
+            processMessage()
 
-        // Verify this time network attempt is not made again
-        verify(exactly = 0) { mockHttpClient.sendData(batchPayload, any()) }
+            assertFalse(sourceConfigState.value.source.isSourceEnabled)
+            verify(exactly = 1) { mockHttpClient.sendData(batchPayload, any()) }
+            verify(exactly = 0) { mockStorage.remove(any<String>()) }
+            verify(exactly = 0) { eventUpload.cancel() }
+        }
+
+        @Test
+        fun `given a 404 paused the uploads, when the source is enabled again and a flush arrives, then the same uploader sends each stored batch once`() {
+            every { mockHttpClient.sendData(batchPayload, any()) } returnsMany listOf(
+                Result.Failure(NetworkErrorStatus.Error404),
+                Result.Success("Ok"),
+                Result.Success("Ok"),
+            )
+            processMessage()
+
+            sourceConfigState.dispatch(SourceConfig.UpdateAction(SourceConfig.initialState()))
+            eventUpload.flush()
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify(exactly = 3) { mockHttpClient.sendData(batchPayload, any()) }
+            filePaths.forEach { path -> verify(exactly = 1) { mockStorage.remove(path) } }
+            verify(exactly = 1) { eventUpload.start() }
+            verify(exactly = 0) { eventUpload.cancel() }
+        }
+
+        @Test
+        fun `given an upload waits to retry, when the source becomes disabled, then the uploader stops the retries and keeps every batch file`() {
+            every { mockHttpClient.sendData(batchPayload, any()) } returns Result.Failure(NetworkErrorStatus.ErrorUnknown)
+            coEvery { mockMaxAttemptsWithBackoff.delayWithBackoff() } answers {
+                sourceConfigState.dispatch(SourceConfig.DisableSourceAction())
+            }
+
+            processMessage()
+
+            verify(exactly = 1) { mockHttpClient.sendData(batchPayload, any()) }
+            verify(exactly = 0) { mockStorage.remove(any<String>()) }
+            verify(exactly = 1) { mockMaxAttemptsWithBackoff.reset() }
+        }
+
+        @Test
+        fun `given a server source, when the server returns 404, then the uploader stops and later flushes send nothing`() {
+            every { mockAnalytics.getPlatformType() } returns PlatformType.Server
+            every { mockHttpClient.sendData(batchPayload, any()) } returns Result.Failure(NetworkErrorStatus.Error404)
+            processMessage()
+            clearMocks(mockHttpClient)
+
+            eventUpload.flush()
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify(exactly = 1) { eventUpload.cancel() }
+            verify(exactly = 0) { mockHttpClient.sendData(any(), any()) }
+            verify(exactly = 0) { mockStorage.remove(any<String>()) }
+        }
     }
 
     @Test
