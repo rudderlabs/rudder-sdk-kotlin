@@ -74,7 +74,7 @@ class SourceConfigManager(
         readCachedSourceConfig()?.let(::notifyObservers)
     }
 
-    internal fun refreshSourceConfigAndNotifyObservers() {
+    internal fun fetchSourceConfigAtLaunchAndNotifyObservers() {
         launchFetchJob = analytics.notifyOnlyOnceOnConnectionAvailable {
             fetchAndNotifyObservers(onFailure = ::handleLaunchFetchFailure)
         }
@@ -212,18 +212,13 @@ class SourceConfigManager(
     }
 }
 
-private fun Analytics.createGetHttpClientFactory(): HttpClient {
-    val authHeaderString: String = configuration.writeKey.encodeToBase64()
-    val query = getQuery()
-
-    return HttpClientImpl.createGetHttpClient(
-        baseUrl = configuration.controlPlaneUrl,
-        endPoint = SOURCE_CONFIG_ENDPOINT,
-        authHeaderString = authHeaderString,
-        query = query,
-        logger = logger,
-    )
-}
+private fun Analytics.createGetHttpClientFactory(): HttpClient = HttpClientImpl.createGetHttpClient(
+    baseUrl = configuration.controlPlaneUrl,
+    endPoint = SOURCE_CONFIG_ENDPOINT,
+    authHeaderString = configuration.writeKey.encodeToBase64(),
+    query = getQuery(),
+    logger = logger,
+)
 
 @VisibleForTesting
 internal fun Analytics.getQuery() = when (getPlatformType()) {

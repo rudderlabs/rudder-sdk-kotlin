@@ -111,7 +111,7 @@ class SourceConfigManagerTest {
             val downloadedSourceConfigString = readFileAsString(downloadedSourceConfig)
             every { httpClient.getData() } returns Result.Success(downloadedSourceConfigString)
 
-            sourceConfigManager.refreshSourceConfigAndNotifyObservers()
+            sourceConfigManager.fetchSourceConfigAtLaunchAndNotifyObservers()
             testDispatcher.scheduler.advanceUntilIdle()
             simulateConnectionAvailability()
 
@@ -131,7 +131,7 @@ class SourceConfigManagerTest {
     @Test
     fun `given connection is unavailable, when source config is fetched, then it is neither stored nor any of the observer is notified`() =
         runTest(testDispatcher) {
-            sourceConfigManager.refreshSourceConfigAndNotifyObservers()
+            sourceConfigManager.fetchSourceConfigAtLaunchAndNotifyObservers()
             testDispatcher.scheduler.advanceUntilIdle()
             // As connection is not available, we are not simulating connection availability.
 
@@ -148,7 +148,7 @@ class SourceConfigManagerTest {
                 error = NetworkErrorStatus.ErrorRetry(),
             )
 
-            sourceConfigManager.refreshSourceConfigAndNotifyObservers()
+            sourceConfigManager.fetchSourceConfigAtLaunchAndNotifyObservers()
             testDispatcher.scheduler.advanceUntilIdle()
             simulateConnectionAvailability()
 
@@ -163,7 +163,7 @@ class SourceConfigManagerTest {
         runTest(testDispatcher) {
             every { httpClient.getData() } throws Exception()
 
-            sourceConfigManager.refreshSourceConfigAndNotifyObservers()
+            sourceConfigManager.fetchSourceConfigAtLaunchAndNotifyObservers()
             testDispatcher.scheduler.advanceUntilIdle()
             simulateConnectionAvailability()
 
@@ -181,7 +181,7 @@ class SourceConfigManagerTest {
                 error = NetworkErrorStatus.Error400,
             )
 
-            sourceConfigManager.refreshSourceConfigAndNotifyObservers()
+            sourceConfigManager.fetchSourceConfigAtLaunchAndNotifyObservers()
             testDispatcher.scheduler.advanceUntilIdle()
             simulateConnectionAvailability()
 
@@ -201,7 +201,7 @@ class SourceConfigManagerTest {
             error = errorStatus,
         )
 
-        sourceConfigManager.refreshSourceConfigAndNotifyObservers()
+        sourceConfigManager.fetchSourceConfigAtLaunchAndNotifyObservers()
         testDispatcher.scheduler.advanceUntilIdle()
         simulateConnectionAvailability()
 
@@ -224,7 +224,7 @@ class SourceConfigManagerTest {
             Result.Success(downloadedSourceConfigString)
         )
 
-        sourceConfigManager.refreshSourceConfigAndNotifyObservers()
+        sourceConfigManager.fetchSourceConfigAtLaunchAndNotifyObservers()
         testDispatcher.scheduler.advanceUntilIdle()
         simulateConnectionAvailability()
 
@@ -352,7 +352,7 @@ class SourceConfigManagerTest {
         @Test
         fun `given the launch fetch waits for the network, when the loop starts, then the loop waits for the launch fetch`() =
             runRefreshTest {
-                sourceConfigManager.refreshSourceConfigAndNotifyObservers()
+                sourceConfigManager.fetchSourceConfigAtLaunchAndNotifyObservers()
                 sourceConfigManager.startPeriodicRefresh()
                 advanceBy(0)
                 verify(exactly = 0) { httpClient.getData() }
@@ -468,7 +468,7 @@ class SourceConfigManagerTest {
         }
 
         private fun TestScope.completeLaunchFetch() {
-            sourceConfigManager.refreshSourceConfigAndNotifyObservers()
+            sourceConfigManager.fetchSourceConfigAtLaunchAndNotifyObservers()
             simulateConnectionAvailability()
             verify(exactly = 1) { httpClient.getData() }
         }
