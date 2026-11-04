@@ -358,6 +358,21 @@ class EventUploadTest {
         }
 
         @Test
+        fun `given the only batch waits to retry, when the source becomes disabled, then the uploader resets the backoff and keeps the retry headers`() {
+            prepareSingleBatch(batchPayload)
+            every { mockHttpClient.sendData(batchPayload, any()) } returns Result.Failure(NetworkErrorStatus.ErrorUnknown)
+            coEvery { mockMaxAttemptsWithBackoff.delayWithBackoff() } answers {
+                sourceConfigState.dispatch(SourceConfig.DisableSourceAction())
+            }
+
+            processMessage()
+
+            verify(exactly = 1) { mockMaxAttemptsWithBackoff.reset() }
+            coVerify(exactly = 0) { mockRetryHeadersProvider.clear() }
+            verify(exactly = 0) { mockStorage.remove(singleFilePath) }
+        }
+
+        @Test
         fun `given a server source, when the server returns 404, then the uploader stops and later flushes send nothing`() {
             every { mockAnalytics.getPlatformType() } returns PlatformType.Server
             every { mockHttpClient.sendData(batchPayload, any()) } returns Result.Failure(NetworkErrorStatus.Error404)

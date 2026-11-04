@@ -101,7 +101,6 @@ internal class EventUpload(
             coroutineContext.ensureActive()
             if (!analytics.isSourceEnabled()) {
                 analytics.logger.debug("EventUpload: Source is disabled. Keeping the remaining batch files for later")
-                maxAttemptsWithBackoff.reset()
                 return
             }
 
@@ -166,6 +165,8 @@ internal class EventUpload(
                 }
             }
         } while (result is RetryAbleEventUploadError && analytics.isSourceEnabled())
+        // The source became disabled during the retries; the retry headers stay for the next attempt.
+        if (result is RetryAbleEventUploadError) maxAttemptsWithBackoff.reset()
     }
 
     @OptIn(UseWithCaution::class)
