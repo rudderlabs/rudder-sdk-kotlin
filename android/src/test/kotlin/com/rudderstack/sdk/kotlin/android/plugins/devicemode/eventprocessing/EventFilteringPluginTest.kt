@@ -33,6 +33,8 @@ private const val pathToSourceConfigWithEventFilteringDisabled =
     "eventfilteringsourceconfig/source_config_with_event_filtering_disabled.json"
 private const val pathToSourceConfigWithMissingEventFilteringOption =
     "eventfilteringsourceconfig/source_config_with_missing_event_filtering_option.json"
+private const val pathToSourceConfigWithMalformedWhiteListEvents =
+    "eventfilteringsourceconfig/source_config_with_malformed_white_list_events.json"
 
 class EventFilteringPluginTest {
 
@@ -58,6 +60,9 @@ class EventFilteringPluginTest {
     )
     private val sourceConfigWithMissingEventFilteringOption = LenientJson.decodeFromString<SourceConfig>(
         readFileAsString(pathToSourceConfigWithMissingEventFilteringOption)
+    )
+    private val sourceConfigWithMalformedWhiteListEvents = LenientJson.decodeFromString<SourceConfig>(
+        readFileAsString(pathToSourceConfigWithMalformedWhiteListEvents)
     )
 
     @BeforeEach
@@ -257,6 +262,31 @@ class EventFilteringPluginTest {
             testDispatcher.scheduler.advanceUntilIdle()
 
             assertEquals(blackListedEvent, eventFilteringPlugin.intercept(blackListedEvent))
+        }
+
+    @Test
+    fun `given a blackList rule, when a sourceConfig with a malformed whiteList is emitted, then the plugin keeps the blackList rule`() =
+        runTest(testDispatcher) {
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithBlackListEvents))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithMalformedWhiteListEvents))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val blackListedEvent = TrackEvent("Track Event 3", emptyJsonObject)
+            val otherEvent = TrackEvent("Track Event 1", emptyJsonObject)
+            assertNull(eventFilteringPlugin.intercept(blackListedEvent))
+            assertEquals(otherEvent, eventFilteringPlugin.intercept(otherEvent))
+        }
+
+    @Test
+    fun `given no rule, when the first sourceConfig has a malformed whiteList, then the plugin allows every event`() =
+        runTest(testDispatcher) {
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithMalformedWhiteListEvents))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val event = TrackEvent("Track Event 3", emptyJsonObject)
+            assertEquals(event, eventFilteringPlugin.intercept(event))
         }
 
     @Test

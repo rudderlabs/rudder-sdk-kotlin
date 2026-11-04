@@ -90,10 +90,14 @@ internal class EventFilteringPlugin(private val key: String) : Plugin {
             return
         }
 
-        filteringRule = FilteringRule(option, getEventFilteringList(option, destinationConfig).toSet())
+        val events = getEventFilteringList(option, destinationConfig) ?: run {
+            analytics.logger.debug("EventFilteringPlugin: Keeping the previous filtering rule for destination: $key")
+            return
+        }
+        filteringRule = FilteringRule(option, events.toSet())
     }
 
-    private fun getEventFilteringList(eventFilteringOption: String, destinationConfig: JsonObject?): List<String> {
+    private fun getEventFilteringList(eventFilteringOption: String, destinationConfig: JsonObject?): List<String>? {
         val listKey = when (eventFilteringOption) {
             WHITE_LIST_EVENTS -> WHITE_LIST_EVENTS
             BLACK_LIST_EVENTS -> BLACK_LIST_EVENTS
@@ -104,20 +108,20 @@ internal class EventFilteringPlugin(private val key: String) : Plugin {
 
         if (serializedEvents.isNullOrBlank()) {
             analytics.logger.error("EventFilteringPlugin: Missing $listKey in destination config for: $key")
-            return emptyList()
+            return null
         }
 
         return parseFilteredEvents(serializedEvents)
     }
 
-    private fun parseFilteredEvents(serializedEvents: String): List<String> {
+    private fun parseFilteredEvents(serializedEvents: String): List<String>? {
         return try {
             LenientJson.decodeFromString<List<FilteredEvent>>(serializedEvents).mapNotNull {
                 it.eventName.trim().takeIf { name -> name.isNotEmpty() }
             }
         } catch (e: IllegalArgumentException) {
             analytics.logger.error("EventFilteringPlugin: Error decoding event list: ${e.message}")
-            emptyList()
+            null
         }
     }
 
