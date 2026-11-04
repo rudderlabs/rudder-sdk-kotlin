@@ -44,8 +44,10 @@ private const val SOURCE_CONFIG_RETRY_ATTEMPT = 5
 private val SOURCE_CONFIG_REFRESH_INTERVAL_MILLIS = 1.hours.inWholeMilliseconds
 private val MIN_TEST_REFRESH_INTERVAL_MILLIS = 1.minutes.inWholeMilliseconds
 
+private typealias FailureHandler = suspend (NetworkErrorStatus) -> SourceConfig?
+
 /**
- * Manager for handling source config.
+ * Fetches the source config at launch and while the app is in the foreground, and notifies its observers.
  */
 @InternalRudderApi
 class SourceConfigManager(
@@ -54,6 +56,9 @@ class SourceConfigManager(
     private val httpClientFactory: HttpClient = analytics.createGetHttpClientFactory(),
 ) {
 
+    private val logger get() = analytics.logger
+
+    // The refresh loop waits for this job, so the launch fetch and a refresh never run at the same time.
     private var launchFetchJob: Job? = null
     private var refreshJob: Job? = null
 
@@ -64,32 +69,12 @@ class SourceConfigManager(
     private var refreshIntervalMillis = SOURCE_CONFIG_REFRESH_INTERVAL_MILLIS
 
     internal fun fetchCachedSourceConfigAndNotifyObservers() {
-        fetchCachedSourceConfig()?.let { sourceConfig ->
-            notifyObservers(sourceConfig)
-        }
-    }
-
-    private fun fetchCachedSourceConfig(): SourceConfig? {
-        val cachedSourceConfig = analytics.storage.readString(
-            StorageKeys.SOURCE_CONFIG_PAYLOAD,
-            defaultVal = String.empty()
-        )
-
-        return if (cachedSourceConfig.isNotEmpty()) {
-            LenientJson.decodeFromString<SourceConfig>(cachedSourceConfig).let { sourceConfig ->
-                analytics.logger.debug("SourceConfigManager: SourceConfig fetched from storage: $sourceConfig")
-                sourceConfig
-            }
-        } else {
-            analytics.logger.debug("SourceConfigManager: SourceConfig not found in storage")
-            null
-        }
+        readCachedSourceConfig()?.let(::notifyObservers)
     }
 
     internal fun refreshSourceConfigAndNotifyObservers() {
-        launchFetchJob = this.analytics.notifyOnlyOnceOnConnectionAvailable {
-            downloadSourceConfig()?.let { storeAndNotifyObservers(it) }
-            markFetchEnded()
+        launchFetchJob = analytics.notifyOnlyOnceOnConnectionAvailable {
+            fetchAndNotifyObservers(onFailure = ::handleLaunchFetchFailure)
         }
     }
 
@@ -98,17 +83,7 @@ class SourceConfigManager(
      */
     @InternalRudderApi
     fun startPeriodicRefresh() {
-        refreshJob = refreshJob.createIfInactive {
-            analytics.analyticsScope.launch(analytics.analyticsDispatcher) {
-                launchFetchJob?.join()
-                while (isActive) {
-                    delay(timeUntilNextFetchMillis(lastFetchEndMillis, refreshIntervalMillis))
-                    analytics.connectivityState.flow.first { it }
-                    fetchOnceAndNotifyObservers()
-                    markFetchEnded()
-                }
-            }
-        }
+        refreshJob = refreshJob.createIfInactive(newJob = ::refreshPeriodically)
     }
 
     /**
@@ -132,100 +107,105 @@ class SourceConfigManager(
         }
     }
 
-    private fun markFetchEnded() {
+    private fun readCachedSourceConfig(): SourceConfig? {
+        val cachedSourceConfig = analytics.storage.readString(
+            StorageKeys.SOURCE_CONFIG_PAYLOAD,
+            defaultVal = String.empty()
+        )
+        if (cachedSourceConfig.isEmpty()) {
+            logger.debug("SourceConfigManager: SourceConfig not found in storage")
+            return null
+        }
+        return LenientJson.decodeFromString<SourceConfig>(cachedSourceConfig).also {
+            logger.debug("SourceConfigManager: SourceConfig fetched from storage: $it")
+        }
+    }
+
+    private fun refreshPeriodically() = analytics.analyticsScope.launch(analytics.analyticsDispatcher) {
+        launchFetchJob?.join()
+        while (isActive) {
+            delay(timeUntilNextFetchMillis(lastFetchEndMillis, refreshIntervalMillis))
+            analytics.connectivityState.flow.first { it }
+            fetchAndNotifyObservers(onFailure = ::handleRefreshFailure)
+        }
+    }
+
+    private suspend fun fetchAndNotifyObservers(onFailure: FailureHandler) {
+        downloadSourceConfig(onFailure)?.let { sourceConfig ->
+            storeSourceConfig(sourceConfig)
+            notifyObservers(sourceConfig)
+        }
         lastFetchEndMillis = DateTimeUtils.getSystemCurrentTime()
     }
 
-    // A refresh makes one attempt and never shuts down the SDK, so a 400 from a cache miss cannot delete stored events.
-    private suspend fun fetchOnceAndNotifyObservers() {
-        val sourceConfig = withContext(analytics.networkDispatcher) {
-            safelyExecute(analytics.logger) {
-                fetchSourceConfigWithFallback { failure ->
-                    analytics.logger.debug(
-                        "SourceConfigManager: ${failure.error.formatStatusCodeMessage()}. " +
-                            "Keeping the current SourceConfig until the next refresh."
-                    )
-                    null
-                }
-            }
-        }
-        sourceConfig?.let { storeAndNotifyObservers(it) }
-    }
-
-    private suspend fun storeAndNotifyObservers(sourceConfig: SourceConfig) {
-        storeSourceConfig(sourceConfig)
-        notifyObservers(sourceConfig)
-    }
-
-    private suspend fun downloadSourceConfig(): SourceConfig? {
+    private suspend fun downloadSourceConfig(onFailure: FailureHandler): SourceConfig? {
         return withContext(analytics.networkDispatcher) {
-            safelyExecute(analytics.logger) {
-                fetchSourceConfigWithFallback { failureResult ->
-                    getSourceConfigOnFailure(failureResult)
-                }
-            }
+            safelyExecute(logger) { requestSourceConfig(onFailure) }
+        }
+    }
+
+    private suspend fun requestSourceConfig(onFailure: FailureHandler): SourceConfig? {
+        return when (val result = httpClientFactory.getData()) {
+            is Result.Success -> result.toSourceConfig(logger)
+            is Result.Failure -> onFailure(result.error)
         }
     }
 
     @OptIn(UseWithCaution::class)
-    private suspend fun getSourceConfigOnFailure(result: Result.Failure<NetworkErrorStatus>): SourceConfig? =
-        when (val error = result.error) {
-            NetworkErrorStatus.Error400 -> {
-                analytics.logger.error(
-                    "SourceConfigManager: ${error.formatStatusCodeMessage()}. " +
-                        "Invalid write key. Ensure the write key is valid."
-                )
-                analytics.handleInvalidWriteKey()
-                null
-            }
-
-            NetworkErrorStatus.Error401,
-            NetworkErrorStatus.Error404,
-            NetworkErrorStatus.Error413,
-            is NetworkErrorStatus.ErrorRetry,
-            NetworkErrorStatus.ErrorUnknown,
-            NetworkErrorStatus.ErrorNetworkUnavailable,
-            NetworkErrorStatus.ErrorTimeout -> {
-                analytics.logger.debug(
-                    "SourceConfigManager: ${error.formatStatusCodeMessage()}. Retrying to fetch SourceConfig."
-                )
-                fetchSourceConfigWithBackOff()
-            }
+    private suspend fun handleLaunchFetchFailure(error: NetworkErrorStatus): SourceConfig? = when (error) {
+        NetworkErrorStatus.Error400 -> {
+            logger.error(
+                "SourceConfigManager: ${error.formatStatusCodeMessage()}. " +
+                    "Invalid write key. Ensure the write key is valid."
+            )
+            analytics.handleInvalidWriteKey()
+            null
         }
 
-    private suspend fun fetchSourceConfigWithBackOff(): SourceConfig? {
+        NetworkErrorStatus.Error401,
+        NetworkErrorStatus.Error404,
+        NetworkErrorStatus.Error413,
+        is NetworkErrorStatus.ErrorRetry,
+        NetworkErrorStatus.ErrorUnknown,
+        NetworkErrorStatus.ErrorNetworkUnavailable,
+        NetworkErrorStatus.ErrorTimeout -> {
+            logger.debug("SourceConfigManager: ${error.formatStatusCodeMessage()}. Retrying to fetch SourceConfig.")
+            retryWithBackoff()
+        }
+    }
+
+    private suspend fun retryWithBackoff(): SourceConfig? {
         val backOffPolicy = provideBackoffPolicy()
         repeat(SOURCE_CONFIG_RETRY_ATTEMPT) { attempt ->
             delay(backOffPolicy.nextDelayInMillis())
-            analytics.logger.verbose("SourceConfigManager: Retrying fetching of SourceConfig, attempt: ${attempt + 1}")
-
-            fetchSourceConfigWithFallback { null }?.let { return it }
+            logger.verbose("SourceConfigManager: Retrying fetching of SourceConfig, attempt: ${attempt + 1}")
+            requestSourceConfig { null }?.let { return it }
         }
-        analytics.logger.warn(
+        logger.warn(
             "SourceConfigManager: All retry attempts for fetching SourceConfig " +
                 "have been exhausted. Returning null"
         )
         return null
     }
 
-    private inline fun fetchSourceConfigWithFallback(
-        onFailure: (Result.Failure<NetworkErrorStatus>) -> SourceConfig?
-    ): SourceConfig? {
-        return when (val result = httpClientFactory.getData()) {
-            is Result.Success -> result.toSourceConfig(analytics.logger)
-            is Result.Failure -> onFailure(result)
-        }
+    // A refresh makes one attempt and never shuts down the SDK, so a 400 from a cache miss cannot delete stored events.
+    private fun handleRefreshFailure(error: NetworkErrorStatus): SourceConfig? {
+        logger.debug(
+            "SourceConfigManager: ${error.formatStatusCodeMessage()}. " +
+                "Keeping the current SourceConfig until the next refresh."
+        )
+        return null
     }
 
     private suspend fun storeSourceConfig(sourceConfig: SourceConfig) {
         withContext(analytics.keyValueStorageDispatcher) {
-            analytics.logger.verbose("SourceConfigManager: Storing sourceConfig in storage")
+            logger.verbose("SourceConfigManager: Storing sourceConfig in storage")
             sourceConfig.storeSourceConfig(analytics.storage)
         }
     }
 
     private fun notifyObservers(sourceConfig: SourceConfig) {
-        analytics.logger.verbose("SourceConfigManager: Notifying observers with sourceConfig")
+        logger.verbose("SourceConfigManager: Notifying observers with sourceConfig")
         sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfig))
     }
 }
