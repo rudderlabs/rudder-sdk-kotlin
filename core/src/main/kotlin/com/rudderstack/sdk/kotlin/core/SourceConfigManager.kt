@@ -11,18 +11,26 @@ import com.rudderstack.sdk.kotlin.core.internals.policies.backoff.BackOffPolicy
 import com.rudderstack.sdk.kotlin.core.internals.policies.backoff.ExponentialBackOffPolicy
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
+import com.rudderstack.sdk.kotlin.core.internals.utils.DateTimeUtils
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import com.rudderstack.sdk.kotlin.core.internals.utils.LenientJson
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
+import com.rudderstack.sdk.kotlin.core.internals.utils.createIfInactive
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import com.rudderstack.sdk.kotlin.core.internals.utils.encodeToBase64
 import com.rudderstack.sdk.kotlin.core.internals.utils.handleInvalidWriteKey
 import com.rudderstack.sdk.kotlin.core.internals.utils.notifyOnlyOnceOnConnectionAvailable
 import com.rudderstack.sdk.kotlin.core.internals.utils.safelyExecute
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.annotations.VisibleForTesting
+import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.minutes
 
 private const val SOURCE_CONFIG_ENDPOINT = "/sourceConfig"
 private const val PLATFORM = "p"
@@ -33,6 +41,8 @@ private const val KOTLIN = "kotlin"
 private const val WRITE_KEY = "writeKey"
 
 private const val SOURCE_CONFIG_RETRY_ATTEMPT = 5
+private val SOURCE_CONFIG_REFRESH_INTERVAL_MILLIS = 1.hours.inWholeMilliseconds
+private val MIN_TEST_REFRESH_INTERVAL_MILLIS = 1.minutes.inWholeMilliseconds
 
 /**
  * Manager for handling source config.
@@ -43,6 +53,15 @@ class SourceConfigManager(
     private val sourceConfigState: State<SourceConfig>,
     private val httpClientFactory: HttpClient = analytics.createGetHttpClientFactory(),
 ) {
+
+    private var launchFetchJob: Job? = null
+    private var refreshJob: Job? = null
+
+    @Volatile
+    private var lastFetchEndMillis: Long? = null
+
+    @Volatile
+    private var refreshIntervalMillis = SOURCE_CONFIG_REFRESH_INTERVAL_MILLIS
 
     internal fun fetchCachedSourceConfigAndNotifyObservers() {
         fetchCachedSourceConfig()?.let { sourceConfig ->
@@ -68,12 +87,74 @@ class SourceConfigManager(
     }
 
     internal fun refreshSourceConfigAndNotifyObservers() {
-        this.analytics.notifyOnlyOnceOnConnectionAvailable {
-            downloadSourceConfig()?.let { sourceConfig ->
-                storeSourceConfig(sourceConfig)
-                notifyObservers(sourceConfig)
+        launchFetchJob = this.analytics.notifyOnlyOnceOnConnectionAvailable {
+            downloadSourceConfig()?.let { storeAndNotifyObservers(it) }
+            markFetchEnded()
+        }
+    }
+
+    /**
+     * Starts the foreground refresh loop, which fetches the source config once per refresh interval.
+     */
+    @InternalRudderApi
+    fun startPeriodicRefresh() {
+        refreshJob = refreshJob.createIfInactive {
+            analytics.analyticsScope.launch(analytics.analyticsDispatcher) {
+                launchFetchJob?.join()
+                while (isActive) {
+                    delay(timeUntilNextFetchMillis(lastFetchEndMillis, refreshIntervalMillis))
+                    analytics.connectivityState.flow.first { it }
+                    fetchOnceAndNotifyObservers()
+                    markFetchEnded()
+                }
             }
         }
+    }
+
+    /**
+     * Stops the foreground refresh loop and discards the result of a fetch in progress.
+     */
+    @InternalRudderApi
+    fun stopPeriodicRefresh() {
+        refreshJob?.cancel()
+        refreshJob = null
+    }
+
+    /**
+     * Sets a shorter refresh interval for end-to-end tests, with a minimum of one minute. Call it on the main thread.
+     */
+    @InternalRudderApi
+    fun setRefreshIntervalForTesting(intervalMillis: Long) {
+        refreshIntervalMillis = intervalMillis.coerceAtLeast(MIN_TEST_REFRESH_INTERVAL_MILLIS)
+        if (refreshJob?.isActive == true) {
+            stopPeriodicRefresh()
+            startPeriodicRefresh()
+        }
+    }
+
+    private fun markFetchEnded() {
+        lastFetchEndMillis = DateTimeUtils.getSystemCurrentTime()
+    }
+
+    // A refresh makes one attempt and never shuts down the SDK, so a 400 from a cache miss cannot delete stored events.
+    private suspend fun fetchOnceAndNotifyObservers() {
+        val sourceConfig = withContext(analytics.networkDispatcher) {
+            safelyExecute(analytics.logger) {
+                fetchSourceConfigWithFallback { failure ->
+                    analytics.logger.debug(
+                        "SourceConfigManager: ${failure.error.formatStatusCodeMessage()}. " +
+                            "Keeping the current SourceConfig until the next refresh."
+                    )
+                    null
+                }
+            }
+        }
+        sourceConfig?.let { storeAndNotifyObservers(it) }
+    }
+
+    private suspend fun storeAndNotifyObservers(sourceConfig: SourceConfig) {
+        storeSourceConfig(sourceConfig)
+        notifyObservers(sourceConfig)
     }
 
     private suspend fun downloadSourceConfig(): SourceConfig? {
@@ -180,6 +261,11 @@ internal fun Analytics.getQuery() = when (getPlatformType()) {
             WRITE_KEY to this.configuration.writeKey,
         )
     }
+}
+
+private fun timeUntilNextFetchMillis(lastFetchEndMillis: Long?, intervalMillis: Long): Long {
+    val elapsedMillis = lastFetchEndMillis?.let { DateTimeUtils.getSystemCurrentTime() - it } ?: return 0
+    return if (elapsedMillis < 0) 0 else (intervalMillis - elapsedMillis).coerceAtLeast(0)
 }
 
 private fun Result.Success<String>.toSourceConfig(logger: Logger): SourceConfig {

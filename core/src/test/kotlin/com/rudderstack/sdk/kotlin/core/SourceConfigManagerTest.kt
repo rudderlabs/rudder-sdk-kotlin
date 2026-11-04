@@ -7,6 +7,7 @@ import com.rudderstack.sdk.kotlin.core.internals.network.HttpClient
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
+import com.rudderstack.sdk.kotlin.core.internals.utils.DateTimeUtils
 import com.rudderstack.sdk.kotlin.core.internals.utils.LenientJson
 import com.rudderstack.sdk.kotlin.core.internals.utils.MockBackOffPolicy
 import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
@@ -18,20 +19,26 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.mockk
+import io.mockk.mockkObject
 import io.mockk.mockkStatic
 import io.mockk.spyk
+import io.mockk.unmockkObject
 import io.mockk.verify
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
 import org.junit.jupiter.api.Assertions.assertEquals
+import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.minutes
 
 private const val downloadedSourceConfig = "config/source_config_with_single_destination.json"
 
@@ -276,6 +283,199 @@ class SourceConfigManagerTest {
         assertEquals(testVersion, query["v"])
         assertEquals(testWriteKey, query["writeKey"])
         assertEquals(3, query.size)
+    }
+
+    @Nested
+    inner class PeriodicRefresh {
+
+        private val interval = 1.hours.inWholeMilliseconds
+        private var clockOffsetMillis = 0L
+
+        @BeforeEach
+        fun setUpClock() {
+            mockkObject(DateTimeUtils)
+            every { DateTimeUtils.getSystemCurrentTime() } answers {
+                testDispatcher.scheduler.currentTime - clockOffsetMillis
+            }
+            every { httpClient.getData() } returns Result.Success(readFileAsString(downloadedSourceConfig))
+        }
+
+        @AfterEach
+        fun tearDownClock() {
+            unmockkObject(DateTimeUtils)
+        }
+
+        @Test
+        fun `given a launch fetch, when the app stays in the foreground, then the loop fetches once per interval`() =
+            runRefreshTest {
+                completeLaunchFetch()
+
+                sourceConfigManager.startPeriodicRefresh()
+                sourceConfigManager.startPeriodicRefresh()
+                advanceBy(interval - 1)
+                verify(exactly = 1) { httpClient.getData() }
+
+                advanceBy(1)
+                verify(exactly = 2) { httpClient.getData() }
+
+                advanceBy(interval)
+                verify(exactly = 3) { httpClient.getData() }
+            }
+
+        @Test
+        fun `given the last fetch is older than the interval, when the app comes to the foreground, then the loop fetches at once`() =
+            runRefreshTest {
+                completeLaunchFetch()
+                advanceBy(interval)
+
+                sourceConfigManager.startPeriodicRefresh()
+                advanceBy(0)
+
+                verify(exactly = 2) { httpClient.getData() }
+            }
+
+        @Test
+        fun `given the last fetch is newer than the interval, when the app comes to the foreground, then the loop waits for the rest of the interval`() =
+            runRefreshTest {
+                completeLaunchFetch()
+                advanceBy(interval / 2)
+
+                sourceConfigManager.startPeriodicRefresh()
+                advanceBy(interval / 2 - 1)
+                verify(exactly = 1) { httpClient.getData() }
+
+                advanceBy(1)
+                verify(exactly = 2) { httpClient.getData() }
+            }
+
+        @Test
+        fun `given the launch fetch waits for the network, when the loop starts, then the loop waits for the launch fetch`() =
+            runRefreshTest {
+                sourceConfigManager.refreshSourceConfigAndNotifyObservers()
+                sourceConfigManager.startPeriodicRefresh()
+                advanceBy(0)
+                verify(exactly = 0) { httpClient.getData() }
+
+                simulateConnectionAvailability()
+                advanceBy(interval - 1)
+                verify(exactly = 1) { httpClient.getData() }
+            }
+
+        @Test
+        fun `given a refresh is cancelled while it fetches, when the app returns to the foreground, then the loop fetches at once`() =
+            runRefreshTest {
+                completeLaunchFetch()
+                var calls = 0
+                every { httpClient.getData() } answers {
+                    calls++
+                    if (calls == 1) sourceConfigManager.stopPeriodicRefresh()
+                    Result.Success(readFileAsString(downloadedSourceConfig))
+                }
+                advanceBy(interval)
+                sourceConfigManager.startPeriodicRefresh()
+                advanceBy(0)
+                assertEquals(1, calls)
+                verify(exactly = 1) { sourceConfigState.dispatch(any()) }
+
+                advanceBy(1.minutes.inWholeMilliseconds)
+                sourceConfigManager.startPeriodicRefresh()
+                advanceBy(0)
+
+                assertEquals(2, calls)
+                verify(exactly = 2) { sourceConfigState.dispatch(any()) }
+            }
+
+        @Test
+        fun `given the device is offline when a refresh is due, when the device comes online, then the loop fetches`() =
+            runRefreshTest {
+                completeLaunchFetch()
+                connectivityFlow.value = false
+
+                sourceConfigManager.startPeriodicRefresh()
+                advanceBy(interval)
+                verify(exactly = 1) { httpClient.getData() }
+
+                simulateConnectionAvailability()
+                verify(exactly = 2) { httpClient.getData() }
+            }
+
+        @OptIn(UseWithCaution::class)
+        @Test
+        fun `given a refresh gets a 400, when the loop continues, then the SDK keeps its config and fetches at the next interval`() =
+            runRefreshTest {
+                completeLaunchFetch()
+                every { httpClient.getData() } returns Result.Failure(error = NetworkErrorStatus.Error400)
+
+                sourceConfigManager.startPeriodicRefresh()
+                advanceBy(interval)
+                advanceBy(interval)
+
+                verify(exactly = 3) { httpClient.getData() }
+                coVerify(exactly = 0) { analytics.handleInvalidWriteKey() }
+                coVerify(exactly = 0) { analytics.shutdown() }
+                verify(exactly = 1) { sourceConfigState.dispatch(any()) }
+            }
+
+        @Test
+        fun `given a refresh gets an invalid body, when the refresh ends, then the SDK keeps its config`() =
+            runRefreshTest {
+                completeLaunchFetch()
+                every { httpClient.getData() } returns Result.Success("not a source config")
+
+                sourceConfigManager.startPeriodicRefresh()
+                advanceBy(interval)
+
+                verify(exactly = 2) { httpClient.getData() }
+                verify(exactly = 1) { sourceConfigState.dispatch(any()) }
+                coVerify(exactly = 1) { analytics.storage.write(StorageKeys.SOURCE_CONFIG_PAYLOAD, any<String>()) }
+            }
+
+        @Test
+        fun `given the clock moved back after the last fetch, when the app comes to the foreground, then the loop fetches at once`() =
+            runRefreshTest {
+                completeLaunchFetch()
+                clockOffsetMillis = 10.minutes.inWholeMilliseconds
+
+                sourceConfigManager.startPeriodicRefresh()
+                advanceBy(0)
+
+                verify(exactly = 2) { httpClient.getData() }
+            }
+
+        @Test
+        fun `given a running loop, when a test sets an interval below one minute, then the loop restarts with a one minute interval`() =
+            runRefreshTest {
+                completeLaunchFetch()
+                sourceConfigManager.startPeriodicRefresh()
+                advanceBy(0)
+
+                sourceConfigManager.setRefreshIntervalForTesting(1_000)
+                advanceBy(1.minutes.inWholeMilliseconds - 1)
+                verify(exactly = 1) { httpClient.getData() }
+
+                advanceBy(1)
+                verify(exactly = 2) { httpClient.getData() }
+            }
+
+        // runTest drains the scheduler at the end, so the endless loop must stop inside the test body.
+        private fun runRefreshTest(block: suspend TestScope.() -> Unit) = runTest(testDispatcher) {
+            try {
+                block()
+            } finally {
+                sourceConfigManager.stopPeriodicRefresh()
+            }
+        }
+
+        private fun TestScope.completeLaunchFetch() {
+            sourceConfigManager.refreshSourceConfigAndNotifyObservers()
+            simulateConnectionAvailability()
+            verify(exactly = 1) { httpClient.getData() }
+        }
+
+        private fun advanceBy(millis: Long) {
+            testDispatcher.scheduler.advanceTimeBy(millis)
+            testDispatcher.scheduler.runCurrent()
+        }
     }
 
     companion object {
