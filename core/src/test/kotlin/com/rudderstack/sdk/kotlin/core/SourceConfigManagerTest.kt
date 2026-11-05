@@ -418,6 +418,24 @@ class SourceConfigManagerTest {
             }
 
         @Test
+        fun `given a refresh gets a 5xx, when the loop continues, then the SDK makes one attempt per interval with no backoff retries`() =
+            runRefreshTest {
+                completeLaunchFetch()
+                every { httpClient.getData() } returns Result.Failure(error = NetworkErrorStatus.ErrorRetry(statusCode = 503))
+
+                sourceConfigManager.startPeriodicRefresh()
+                advanceBy(interval)
+                verify(exactly = 2) { httpClient.getData() }
+
+                advanceBy(interval - 1)
+                verify(exactly = 2) { httpClient.getData() }
+
+                advanceBy(1)
+                verify(exactly = 3) { httpClient.getData() }
+                verify(exactly = 1) { sourceConfigState.dispatch(any()) }
+            }
+
+        @Test
         fun `given a refresh gets an invalid body, when the refresh ends, then the SDK keeps its config`() =
             runRefreshTest {
                 completeLaunchFetch()
