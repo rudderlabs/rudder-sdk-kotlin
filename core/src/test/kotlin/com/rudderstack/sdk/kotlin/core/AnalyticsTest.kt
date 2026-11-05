@@ -287,7 +287,7 @@ class AnalyticsTest {
         assertEquals(mockSourceConfigManager, mobileAnalytics.sourceConfigManager)
         verify(exactly = 1) {
             mockSourceConfigManager.fetchCachedSourceConfigAndNotifyObservers()
-            mockSourceConfigManager.refreshSourceConfigAndNotifyObservers()
+            mockSourceConfigManager.fetchSourceConfigAtLaunchAndNotifyObservers()
         }
     }
 
@@ -296,7 +296,7 @@ class AnalyticsTest {
         verify(exactly = 0) {
             provideSourceConfigManager(any(), any())
             mockSourceConfigManager.fetchCachedSourceConfigAndNotifyObservers()
-            mockSourceConfigManager.refreshSourceConfigAndNotifyObservers()
+            mockSourceConfigManager.fetchSourceConfigAtLaunchAndNotifyObservers()
         }
     }
 
