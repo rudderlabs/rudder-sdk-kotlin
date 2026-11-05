@@ -35,6 +35,8 @@ private const val pathToSourceConfigWithMissingEventFilteringOption =
     "eventfilteringsourceconfig/source_config_with_missing_event_filtering_option.json"
 private const val pathToSourceConfigWithMalformedWhiteListEvents =
     "eventfilteringsourceconfig/source_config_with_malformed_white_list_events.json"
+private const val pathToSourceConfigWithNonStringBlackListEventName =
+    "eventfilteringsourceconfig/source_config_with_non_string_black_list_event_name.json"
 
 class EventFilteringPluginTest {
 
@@ -63,6 +65,9 @@ class EventFilteringPluginTest {
     )
     private val sourceConfigWithMalformedWhiteListEvents = LenientJson.decodeFromString<SourceConfig>(
         readFileAsString(pathToSourceConfigWithMalformedWhiteListEvents)
+    )
+    private val sourceConfigWithNonStringBlackListEventName = LenientJson.decodeFromString<SourceConfig>(
+        readFileAsString(pathToSourceConfigWithNonStringBlackListEventName)
     )
 
     @BeforeEach
@@ -277,6 +282,39 @@ class EventFilteringPluginTest {
             val otherEvent = TrackEvent("Track Event 1", emptyJsonObject)
             assertNull(eventFilteringPlugin.intercept(blackListedEvent))
             assertEquals(otherEvent, eventFilteringPlugin.intercept(otherEvent))
+        }
+
+    @Test
+    fun `given a blackList rule, when a blackList entry has a non-string event name, then the plugin keeps the previous blackList rule`() =
+        runTest(testDispatcher) {
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithBlackListEvents))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithNonStringBlackListEventName))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val blackListedEvent = TrackEvent("Track Event 3", emptyJsonObject)
+            assertNull(eventFilteringPlugin.intercept(blackListedEvent))
+        }
+
+    @Test
+    fun `given a blackList rule and a malformed refresh, when the app restarts with the cached malformed config, then the new plugin has no rule`() =
+        runTest(testDispatcher) {
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithBlackListEvents))
+            testDispatcher.scheduler.advanceUntilIdle()
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithMalformedWhiteListEvents))
+            testDispatcher.scheduler.advanceUntilIdle()
+            val blackListedEvent = TrackEvent("Track Event 3", emptyJsonObject)
+            assertNull(eventFilteringPlugin.intercept(blackListedEvent))
+
+            // A restart creates a new plugin, and the cached malformed config is its first config.
+            val pluginAfterRestart = EventFilteringPlugin("MockDestination")
+            every { mockAnalytics.sourceConfigState } returns State(initialState = SourceConfig.initialState())
+            pluginAfterRestart.setup(mockAnalytics)
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithMalformedWhiteListEvents))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            assertEquals(blackListedEvent, pluginAfterRestart.intercept(blackListedEvent))
         }
 
     @Test

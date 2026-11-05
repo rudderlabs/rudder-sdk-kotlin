@@ -6,16 +6,18 @@ import com.rudderstack.sdk.kotlin.core.Analytics
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
-import com.rudderstack.sdk.kotlin.core.internals.utils.LenientJson
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
-import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 
 private const val WHITE_LIST_EVENTS = "whitelistedEvents"
 private const val BLACK_LIST_EVENTS = "blacklistedEvents"
 private const val EVENT_FILTERING_OPTION = "eventFilteringOption"
+private const val EVENT_NAME = "eventName"
 
 /**
  * A plugin to filter events based on the event filtering option provided in the destination config.
@@ -104,31 +106,29 @@ internal class EventFilteringPlugin(private val key: String) : Plugin {
             else -> return emptyList()
         }
 
-        val serializedEvents = destinationConfig?.get(listKey)?.toString()
-
-        if (serializedEvents.isNullOrBlank()) {
+        val events = destinationConfig?.get(listKey) ?: run {
             analytics.logger.error("EventFilteringPlugin: Missing $listKey in destination config for: $key")
             return null
         }
 
-        return parseFilteredEvents(serializedEvents)
+        return parseFilteredEvents(events)
     }
 
-    private fun parseFilteredEvents(serializedEvents: String): List<String>? {
-        return try {
-            LenientJson.decodeFromString<List<FilteredEvent>>(serializedEvents).mapNotNull {
-                it.eventName.trim().takeIf { name -> name.isNotEmpty() }
-            }
-        } catch (e: IllegalArgumentException) {
-            analytics.logger.error("EventFilteringPlugin: Error decoding event list: ${e.message}")
-            null
+    // One invalid entry rejects the whole list, so a partly read list never replaces a valid rule.
+    private fun parseFilteredEvents(events: JsonElement): List<String>? {
+        val entries = events as? JsonArray ?: return logInvalidEventList()
+        val names = entries.map { entry ->
+            val name = (entry as? JsonObject)?.get(EVENT_NAME) as? JsonPrimitive
+            if (name?.isString != true) return logInvalidEventList()
+            name.content.trim()
         }
+        return names.filter { it.isNotEmpty() }
     }
 
-    @Serializable
-    data class FilteredEvent(
-        val eventName: String,
-    )
+    private fun logInvalidEventList(): List<String>? {
+        analytics.logger.error("EventFilteringPlugin: Invalid event list in destination config for: $key")
+        return null
+    }
 
     private data class FilteringRule(
         val option: String = String.empty(),
