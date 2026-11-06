@@ -272,6 +272,29 @@ class StandardIntegrationPluginTest {
         }
 
     @Test
+    fun `given an initialised integration, when the destination is disabled and enabled again, then no event reaches it while paused and events reach the same instance after`() =
+        runTest {
+            plugin.initDestination(sourceConfigWithCorrectApiKey)
+            val enabledConfig = plugin.destinationConfig
+            val instanceBeforeDisable = plugin.getDestinationInstance() as MockDestinationSdk
+            val sourceConfigWithDisabledDestination = LenientJson.decodeFromString<SourceConfig>(
+                readFileAsString(pathToSourceConfigWithDestinationDisabled)
+            )
+
+            plugin.initDestination(sourceConfigWithDisabledDestination)
+            plugin.intercept(TrackEvent("While Paused", emptyJsonObject).also { applyBaseDataToEvent(it) })
+            plugin.initDestination(sourceConfigWithCorrectApiKey)
+            plugin.intercept(TrackEvent("After Enable", emptyJsonObject).also { applyBaseDataToEvent(it) })
+
+            assertTrue(plugin.isDestinationReady)
+            assertSame(instanceBeforeDisable, plugin.getDestinationInstance())
+            // A re-enable that ran create() again would pass the instance check, because the mock keeps its instance.
+            verify(exactly = 1) { plugin.update(enabledConfig) }
+            verify(exactly = 0) { instanceBeforeDisable.trackEvent("While Paused") }
+            verify(exactly = 1) { instanceBeforeDisable.trackEvent("After Enable") }
+        }
+
+    @Test
     fun `given an initialised integration, when its intercept called with TrackEvent, then trackEvent is called for destination`() =
         runTest {
             plugin.initDestination(sourceConfigWithCorrectApiKey)
