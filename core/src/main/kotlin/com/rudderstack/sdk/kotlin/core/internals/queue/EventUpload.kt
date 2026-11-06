@@ -40,6 +40,8 @@ private const val BATCH_ENDPOINT = "/v1/batch"
 private val ANONYMOUS_ID_REGEX = """"anonymousId"\s*:\s*"([^"]+)"""".toRegex()
 private const val UPLOAD_SIG = "#!upload"
 
+private enum class BatchOutcome { DONE, PAUSED }
+
 /**
  * EventUpload is responsible for uploading events to the RudderStack data plane.
  */
@@ -92,30 +94,34 @@ internal class EventUpload(
         }
     }
 
-    @Suppress("TooGenericExceptionCaught")
     private suspend fun processAndUploadEvent() {
         val fileUrlList = storage.readString(StorageKeys.EVENT, String.empty()).parseFilePaths()
         analytics.logger.debug("EventUpload: Processing ${fileUrlList.size} batch file(s) for upload")
         for (filePath in fileUrlList) {
             // ensureActive will help in cancelling the coroutine
             coroutineContext.ensureActive()
-            if (!analytics.isSourceEnabled()) {
+            // A later batch must not upload first: its success would clear the paused batch's retry headers.
+            if (!analytics.isSourceEnabled() || uploadBatchFile(filePath) == BatchOutcome.PAUSED) {
                 analytics.logger.debug("EventUpload: Source is disabled. Keeping the remaining batch files for later")
                 return
             }
+        }
+    }
 
-            try {
-                storage.readBatchContent(filePath)?.let { batch ->
-                    updateAnonymousIdHeaderIfChanged(batch)
-                    uploadEvents(batch, filePath)
-                } ?: analytics.logger.warn("EventUpload: Batch file returned null content, skipping")
-            } catch (e: CancellationException) {
-                analytics.logger.error("EventUpload: Job was cancelled. Stopping the upload process.", e)
-                throw e
-            } catch (e: Exception) {
-                analytics.logger.error("EventUpload: Error when processing batch payload. Deleting the file.", e)
-                cleanup(filePath)
-            }
+    @Suppress("TooGenericExceptionCaught")
+    private suspend fun uploadBatchFile(filePath: String): BatchOutcome {
+        return try {
+            storage.readBatchContent(filePath)?.let { batch ->
+                updateAnonymousIdHeaderIfChanged(batch)
+                uploadEvents(batch, filePath)
+            } ?: BatchOutcome.DONE.also { analytics.logger.warn("EventUpload: Batch file returned null content, skipping") }
+        } catch (e: CancellationException) {
+            analytics.logger.error("EventUpload: Job was cancelled. Stopping the upload process.", e)
+            throw e
+        } catch (e: Exception) {
+            analytics.logger.error("EventUpload: Error when processing batch payload. Deleting the file.", e)
+            cleanup(filePath)
+            BatchOutcome.DONE
         }
     }
 
@@ -135,7 +141,7 @@ internal class EventUpload(
         }
     }
 
-    private suspend fun uploadEvents(batchPayload: String, filePath: String) {
+    private suspend fun uploadEvents(batchPayload: String, filePath: String): BatchOutcome {
         val batchId = storage.getBatchId(filePath)
         var result: EventUploadResult
         do {
@@ -165,8 +171,16 @@ internal class EventUpload(
                 }
             }
         } while (result is RetryAbleEventUploadError && analytics.isSourceEnabled())
-        // The source became disabled during the retries; the retry headers stay for the next attempt.
-        if (result is RetryAbleEventUploadError) maxAttemptsWithBackoff.reset()
+
+        return when {
+            // The source became disabled during the retries; the retry headers stay for the next attempt.
+            result is RetryAbleEventUploadError -> {
+                maxAttemptsWithBackoff.reset()
+                BatchOutcome.PAUSED
+            }
+            result == NonRetryAbleEventUploadError.ERROR_404 -> BatchOutcome.PAUSED
+            else -> BatchOutcome.DONE
+        }
     }
 
     @OptIn(UseWithCaution::class)

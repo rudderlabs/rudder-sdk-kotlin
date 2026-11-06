@@ -373,6 +373,28 @@ class EventUploadTest {
         }
 
         @Test
+        fun `given a disable stops the retries of the first batch, when a refresh enables the source before the next file, then the second batch waits and the retry headers stay`() {
+            every { mockStorage.readBatchContent(filePaths[0]) } returns batchPayload1
+            every { mockStorage.readBatchContent(filePaths[1]) } returns batchPayload2
+            every { mockHttpClient.sendData(batchPayload1, any()) } returns Result.Failure(NetworkErrorStatus.ErrorUnknown)
+            every { mockHttpClient.sendData(batchPayload2, any()) } returns Result.Success("Ok")
+            coEvery { mockMaxAttemptsWithBackoff.delayWithBackoff() } answers {
+                sourceConfigState.dispatch(SourceConfig.DisableSourceAction())
+            }
+            // The reset runs right after the retry loop exits, which is the window before the next file check.
+            every { mockMaxAttemptsWithBackoff.reset() } answers {
+                sourceConfigState.dispatch(SourceConfig.UpdateAction(SourceConfig.initialState()))
+            }
+
+            processMessage()
+
+            verify(exactly = 1) { mockHttpClient.sendData(batchPayload1, any()) }
+            verify(exactly = 0) { mockHttpClient.sendData(batchPayload2, any()) }
+            coVerify(exactly = 0) { mockRetryHeadersProvider.clear() }
+            verify(exactly = 0) { mockStorage.remove(any<String>()) }
+        }
+
+        @Test
         fun `given a server source, when the server returns 404, then the uploader stops and later flushes send nothing`() {
             every { mockAnalytics.getPlatformType() } returns PlatformType.Server
             every { mockHttpClient.sendData(batchPayload, any()) } returns Result.Failure(NetworkErrorStatus.Error404)
