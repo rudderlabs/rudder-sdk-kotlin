@@ -30,11 +30,11 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.annotations.VisibleForTesting
-import kotlin.coroutines.coroutineContext
 
 private const val BATCH_ENDPOINT = "/v1/batch"
 private val ANONYMOUS_ID_REGEX = """"anonymousId"\s*:\s*"([^"]+)"""".toRegex()
@@ -99,7 +99,7 @@ internal class EventUpload(
         analytics.logger.debug("EventUpload: Processing ${fileUrlList.size} batch file(s) for upload")
         for (filePath in fileUrlList) {
             // ensureActive will help in cancelling the coroutine
-            coroutineContext.ensureActive()
+            currentCoroutineContext().ensureActive()
             // A later batch must not upload first: its success would clear the paused batch's retry headers.
             if (!analytics.isSourceEnabled() || uploadBatchFile(filePath) == BatchOutcome.PAUSED) {
                 analytics.logger.debug("EventUpload: Source is disabled. Keeping the remaining batch files for later")
@@ -172,13 +172,14 @@ internal class EventUpload(
             }
         } while (result is RetryAbleEventUploadError && analytics.isSourceEnabled())
 
-        return when {
-            // The source became disabled during the retries; the retry headers stay for the next attempt.
-            result is RetryAbleEventUploadError -> {
+        // The source became disabled during the retries; the retry headers stay for the next attempt.
+        return when (result) {
+            is RetryAbleEventUploadError -> {
                 maxAttemptsWithBackoff.reset()
                 BatchOutcome.PAUSED
             }
-            result == NonRetryAbleEventUploadError.ERROR_404 -> BatchOutcome.PAUSED
+
+            NonRetryAbleEventUploadError.ERROR_404 -> BatchOutcome.PAUSED
             else -> BatchOutcome.DONE
         }
     }
