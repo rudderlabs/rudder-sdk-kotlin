@@ -33,6 +33,7 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
@@ -144,6 +145,16 @@ class FacebookIntegrationTest {
 
         facebookIntegration.update(sourceConfigWithDataUseEnabled)
         verify(exactly = 1) { FacebookSdk.setDataProcessingOptions(arrayOf("LDU"), 0, 0) }
+    }
+
+    @Test
+    fun `given a created integration, when the destination is disabled and update gets an empty config, then update throws and the data processing options stay`() {
+        facebookIntegration.create(readJsonObjectFromFile(pathToSourceConfigWithLimitedDataUseEnabled))
+
+        assertThrows<IllegalArgumentException> { facebookIntegration.update(emptyJsonObject) }
+
+        verify(exactly = 1) { FacebookSdk.setDataProcessingOptions(arrayOf("LDU"), 0, 0) }
+        verify(exactly = 0) { FacebookSdk.setDataProcessingOptions(arrayOf()) }
     }
 
     @Test
