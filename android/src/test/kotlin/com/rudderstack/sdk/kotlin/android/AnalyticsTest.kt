@@ -7,6 +7,7 @@ import com.rudderstack.sdk.kotlin.android.logger.AndroidLogger
 import com.rudderstack.sdk.kotlin.android.models.reset.ResetEntries as AndroidResetEntries
 import com.rudderstack.sdk.kotlin.android.models.reset.ResetOptions as AndroidResetOptions
 import com.rudderstack.sdk.kotlin.android.plugins.DeviceInfoPlugin
+import com.rudderstack.sdk.kotlin.android.plugins.SourceConfigRefreshPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleManagementPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ProcessLifecycleManagementPlugin
 import com.rudderstack.sdk.kotlin.core.AnalyticsConfiguration
@@ -98,6 +99,11 @@ class AnalyticsTest {
         mockkConstructor(ActivityLifecycleManagementPlugin::class)
         every {
             anyConstructed<ActivityLifecycleManagementPlugin>().setup(any())
+        } just Runs
+
+        mockkConstructor(SourceConfigRefreshPlugin::class)
+        every {
+            anyConstructed<SourceConfigRefreshPlugin>().setup(any())
         } just Runs
 
         // Mock Analytics Configuration
