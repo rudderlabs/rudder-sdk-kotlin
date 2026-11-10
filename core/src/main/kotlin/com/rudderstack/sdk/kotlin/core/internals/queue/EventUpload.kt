@@ -10,6 +10,7 @@ import com.rudderstack.sdk.kotlin.core.internals.network.Success
 import com.rudderstack.sdk.kotlin.core.internals.network.createPostConfig
 import com.rudderstack.sdk.kotlin.core.internals.network.formatStatusCodeMessage
 import com.rudderstack.sdk.kotlin.core.internals.network.toEventUploadResult
+import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.policies.backoff.MaxAttemptsWithBackoff
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.DateTimeUtils
@@ -23,20 +24,23 @@ import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import com.rudderstack.sdk.kotlin.core.internals.utils.encodeToBase64
 import com.rudderstack.sdk.kotlin.core.internals.utils.generateUUID
 import com.rudderstack.sdk.kotlin.core.internals.utils.handleInvalidWriteKey
+import com.rudderstack.sdk.kotlin.core.internals.utils.isSourceEnabled
 import com.rudderstack.sdk.kotlin.core.internals.utils.parseFilePaths
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.annotations.VisibleForTesting
-import kotlin.coroutines.coroutineContext
 
 private const val BATCH_ENDPOINT = "/v1/batch"
 private val ANONYMOUS_ID_REGEX = """"anonymousId"\s*:\s*"([^"]+)"""".toRegex()
 private const val UPLOAD_SIG = "#!upload"
+
+private enum class BatchOutcome { DONE, PAUSED }
 
 /**
  * EventUpload is responsible for uploading events to the RudderStack data plane.
@@ -63,8 +67,6 @@ internal class EventUpload(
     private var lastBatchAnonymousId = String.empty()
     private val storage get() = analytics.storage
 
-    // This job is required to mainly stop the upload process when the source is disabled.
-    // The type is null to clear the job reference when the source is disabled.
     private var uploadJob: Job? = null
 
     internal fun start() {
@@ -92,26 +94,34 @@ internal class EventUpload(
         }
     }
 
-    @Suppress("TooGenericExceptionCaught")
     private suspend fun processAndUploadEvent() {
         val fileUrlList = storage.readString(StorageKeys.EVENT, String.empty()).parseFilePaths()
         analytics.logger.debug("EventUpload: Processing ${fileUrlList.size} batch file(s) for upload")
         for (filePath in fileUrlList) {
             // ensureActive will help in cancelling the coroutine
-            coroutineContext.ensureActive()
-
-            try {
-                storage.readBatchContent(filePath)?.let { batch ->
-                    updateAnonymousIdHeaderIfChanged(batch)
-                    uploadEvents(batch, filePath)
-                } ?: analytics.logger.warn("EventUpload: Batch file returned null content, skipping")
-            } catch (e: CancellationException) {
-                analytics.logger.error("EventUpload: Job was cancelled. Stopping the upload process.", e)
-                throw e
-            } catch (e: Exception) {
-                analytics.logger.error("EventUpload: Error when processing batch payload. Deleting the file.", e)
-                cleanup(filePath)
+            currentCoroutineContext().ensureActive()
+            // A later batch must not upload first: its success would clear the paused batch's retry headers.
+            if (!analytics.isSourceEnabled() || uploadBatchFile(filePath) == BatchOutcome.PAUSED) {
+                analytics.logger.debug("EventUpload: Source is disabled. Keeping the remaining batch files for later")
+                return
             }
+        }
+    }
+
+    @Suppress("TooGenericExceptionCaught")
+    private suspend fun uploadBatchFile(filePath: String): BatchOutcome {
+        return try {
+            storage.readBatchContent(filePath)?.let { batch ->
+                updateAnonymousIdHeaderIfChanged(batch)
+                uploadEvents(batch, filePath)
+            } ?: BatchOutcome.DONE.also { analytics.logger.warn("EventUpload: Batch file returned null content, skipping") }
+        } catch (e: CancellationException) {
+            analytics.logger.error("EventUpload: Job was cancelled. Stopping the upload process.", e)
+            throw e
+        } catch (e: Exception) {
+            analytics.logger.error("EventUpload: Error when processing batch payload. Deleting the file.", e)
+            cleanup(filePath)
+            BatchOutcome.DONE
         }
     }
 
@@ -131,7 +141,7 @@ internal class EventUpload(
         }
     }
 
-    private suspend fun uploadEvents(batchPayload: String, filePath: String) {
+    private suspend fun uploadEvents(batchPayload: String, filePath: String): BatchOutcome {
         val batchId = storage.getBatchId(filePath)
         var result: EventUploadResult
         do {
@@ -160,7 +170,18 @@ internal class EventUpload(
                     handleNonRetryAbleError(result, filePath)
                 }
             }
-        } while (result is RetryAbleEventUploadError)
+        } while (result is RetryAbleEventUploadError && analytics.isSourceEnabled())
+
+        // The source became disabled during the retries; the retry headers stay for the next attempt.
+        return when (result) {
+            is RetryAbleEventUploadError -> {
+                maxAttemptsWithBackoff.reset()
+                BatchOutcome.PAUSED
+            }
+
+            NonRetryAbleEventUploadError.ERROR_404 -> BatchOutcome.PAUSED
+            else -> BatchOutcome.DONE
+        }
     }
 
     @OptIn(UseWithCaution::class)
@@ -186,10 +207,13 @@ internal class EventUpload(
             NonRetryAbleEventUploadError.ERROR_404 -> {
                 analytics.logger.error(
                     "EventUpload: ${status.formatStatusCodeMessage()}. Source is disabled. " +
-                        "Stopping the events upload process until the source is enabled again."
+                        "Keeping the stored events until the source is enabled again."
                 )
-                cancel()
-                analytics.disableSource()
+                // Only a mobile source config can enable the source again while the app runs.
+                when (analytics.getPlatformType()) {
+                    PlatformType.Mobile -> analytics.disableSource()
+                    PlatformType.Server -> cancel()
+                }
             }
 
             NonRetryAbleEventUploadError.ERROR_413 -> {
