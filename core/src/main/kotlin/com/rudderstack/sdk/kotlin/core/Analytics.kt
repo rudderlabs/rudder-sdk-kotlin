@@ -135,7 +135,7 @@ open class Analytics protected constructor(
             sourceConfigState = sourceConfigState
         ).apply {
             fetchCachedSourceConfigAndNotifyObservers()
-            refreshSourceConfigAndNotifyObservers()
+            fetchSourceConfigAtLaunchAndNotifyObservers()
         }
     }
 

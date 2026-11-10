@@ -21,6 +21,7 @@ import com.rudderstack.sdk.kotlin.android.plugins.LocaleInfoPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.NetworkInfoPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.OSInfoPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.ScreenInfoPlugin
+import com.rudderstack.sdk.kotlin.android.plugins.SourceConfigRefreshPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.TimezoneInfoPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.IntegrationPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.devicemode.IntegrationsManagementPlugin
@@ -358,6 +359,8 @@ class Analytics(
 
         // Setup source config
         setupSourceConfig()
+        // Added after setupSourceConfig, because the lifecycle replays onStart to a new observer at once.
+        add(SourceConfigRefreshPlugin())
     }
 
     override fun getPlatformType(): PlatformType = PlatformType.Mobile
