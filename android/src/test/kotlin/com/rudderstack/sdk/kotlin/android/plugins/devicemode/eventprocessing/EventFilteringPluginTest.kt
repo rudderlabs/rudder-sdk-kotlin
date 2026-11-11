@@ -298,7 +298,7 @@ class EventFilteringPluginTest {
         }
 
     @Test
-    fun `given a blackList rule and a malformed refresh, when the app restarts with the cached malformed config, then the new plugin has no rule`() =
+    fun `given a blackList rule and a malformed refresh, when the app restarts with the cached malformed whiteList, then the new plugin blocks every event`() =
         runTest(testDispatcher) {
             mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithBlackListEvents))
             testDispatcher.scheduler.advanceUntilIdle()
@@ -314,13 +314,24 @@ class EventFilteringPluginTest {
             mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithMalformedWhiteListEvents))
             testDispatcher.scheduler.advanceUntilIdle()
 
-            assertEquals(blackListedEvent, pluginAfterRestart.intercept(blackListedEvent))
+            assertNull(pluginAfterRestart.intercept(blackListedEvent))
+            assertNull(pluginAfterRestart.intercept(TrackEvent("Track Event 1", emptyJsonObject)))
         }
 
     @Test
-    fun `given no rule, when the first sourceConfig has a malformed whiteList, then the plugin allows every event`() =
+    fun `given no rule, when the first sourceConfig has a malformed whiteList, then the plugin blocks every event`() =
         runTest(testDispatcher) {
             mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithMalformedWhiteListEvents))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            assertNull(eventFilteringPlugin.intercept(TrackEvent("Track Event 1", emptyJsonObject)))
+            assertNull(eventFilteringPlugin.intercept(TrackEvent("Track Event 3", emptyJsonObject)))
+        }
+
+    @Test
+    fun `given no rule, when the first sourceConfig has a malformed blackList, then the plugin allows every event`() =
+        runTest(testDispatcher) {
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithNonStringBlackListEventName))
             testDispatcher.scheduler.advanceUntilIdle()
 
             val event = TrackEvent("Track Event 3", emptyJsonObject)

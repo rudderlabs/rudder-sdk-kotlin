@@ -33,8 +33,9 @@ internal class EventFilteringPlugin(private val key: String) : Plugin {
 
     override lateinit var analytics: Analytics
 
+    // Null until the first config arrives, so an invalid first list can still give the empty list it always gave.
     @Volatile
-    private var filteringRule = FilteringRule()
+    private var filteringRule: FilteringRule? = null
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
@@ -59,11 +60,11 @@ internal class EventFilteringPlugin(private val key: String) : Plugin {
     }
 
     override fun teardown() {
-        filteringRule = FilteringRule()
+        filteringRule = null
     }
 
     private fun shouldDropEvent(eventName: String): Boolean {
-        val rule = filteringRule
+        val rule = filteringRule ?: return false
         return when (rule.option) {
             WHITE_LIST_EVENTS -> eventName !in rule.events
             BLACK_LIST_EVENTS -> eventName in rule.events
@@ -92,11 +93,12 @@ internal class EventFilteringPlugin(private val key: String) : Plugin {
             return
         }
 
-        val events = getEventFilteringList(option, destinationConfig) ?: run {
+        val events = getEventFilteringList(option, destinationConfig)
+        if (events == null && filteringRule != null) {
             analytics.logger.debug("EventFilteringPlugin: Keeping the previous filtering rule for destination: $key")
             return
         }
-        filteringRule = FilteringRule(option, events.toSet())
+        filteringRule = FilteringRule(option, events.orEmpty().toSet())
     }
 
     private fun getEventFilteringList(eventFilteringOption: String, destinationConfig: JsonObject?): List<String>? {
