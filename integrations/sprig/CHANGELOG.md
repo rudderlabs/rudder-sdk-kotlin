@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+# [2.1.1](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.integration.kotlin.sprig@v2.1.0...com.rudderstack.integration.kotlin.sprig@v2.1.1) (2026-11-12)
+
+## Dependency Updates
+
+- The following workspace dependencies were updated
+  - dependencies
+    - @rudderstack/android bumped from 2.1.0 to 2.2.0
+
+
 # [2.1.0](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.integration.kotlin.sprig@v2.0.0...com.rudderstack.integration.kotlin.sprig@v2.1.0) (2026-10-26)
 
 ## Features

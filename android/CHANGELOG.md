@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+# [2.2.0](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.sdk.kotlin.android@v2.1.0...com.rudderstack.sdk.kotlin.android@v2.2.0) (2026-11-12)
+
+## Features
+
+- **android:** Refresh the source config while the app is in the foreground ([#386](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/386)) ([ee93729](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/ee93729985f795ad85e932dbcda8c4e59e84785d))
+
+## Bug Fixes
+
+- **android:** Keep the empty list for an invalid first filter list ([#389](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/389)) ([858a3a8](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/858a3a8c42d2d45655a8472ea0d28d805b205655))
+- **android:** Replace the event filter rule in one step ([#384](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/384)) ([48860ba](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/48860bae8c557cad2cd474fa21fdbe380025da3b))
+
+## Dependency Updates
+
+- The following workspace dependencies were updated
+  - dependencies
+    - @rudderstack/core bumped from 1.8.0 to 1.9.0
+
+
 # [2.1.0](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.sdk.kotlin.android@v2.0.0...com.rudderstack.sdk.kotlin.android@v2.1.0) (2026-10-26)
 
 ## Features
