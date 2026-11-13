@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+# [1.9.0](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.sdk.kotlin.core@v1.8.0...com.rudderstack.sdk.kotlin.core@v1.9.0) (2026-11-12)
+
+## Features
+
+- **android:** Refresh the source config while the app is in the foreground ([#386](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/386)) ([ee93729](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/ee93729985f795ad85e932dbcda8c4e59e84785d))
+
+## Bug Fixes
+
+- **core:** Pause uploads on a 404 and flush on re-enable ([#387](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/387)) ([2cd33b8](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/2cd33b8c301454036b5791b889d2e8c5cbbc42be))
+
+
 # [1.8.0](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.sdk.kotlin.core@v1.7.0...com.rudderstack.sdk.kotlin.core@v1.8.0) (2026-09-29)
 
 ## Features
