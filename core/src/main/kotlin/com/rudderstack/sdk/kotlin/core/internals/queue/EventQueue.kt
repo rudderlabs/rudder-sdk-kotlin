@@ -12,6 +12,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.withIndex
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -67,11 +68,12 @@ internal class EventQueue(
                 sourceConfigState.flow
                     .map { it.source.isSourceEnabled }
                     .distinctUntilChanged()
-                    .collect { isSourceEnabled ->
+                    .withIndex()
+                    .collect { (index, isSourceEnabled) ->
                         if (isSourceEnabled) {
                             flushPoliciesFacade.schedule(analytics)
-                            // TODO: Uncomment the following line, after dynamic update of source config is implemented
-                            // eventUpload.start()
+                            // After the first value, an enabled value follows a disabled one.
+                            if (index > 0) this@EventQueue.flush()
                         } else {
                             flushPoliciesFacade.cancelSchedule()
                         }

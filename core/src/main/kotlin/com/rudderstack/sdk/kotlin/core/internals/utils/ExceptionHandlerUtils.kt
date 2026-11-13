@@ -1,6 +1,7 @@
 package com.rudderstack.sdk.kotlin.core.internals.utils
 
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
+import kotlinx.coroutines.CancellationException
 
 /**
  * Executes the given block and catches any exception that occurs.
@@ -60,6 +61,8 @@ inline fun safelyExecute(block: () -> Unit, onException: (Exception) -> Unit, on
 inline fun <T> safelyExecute(logger: Logger, block: () -> T?): T? {
     return try {
         block()
+    } catch (e: CancellationException) {
+        throw e
     } catch (e: Exception) {
         defaultExceptionHandler(
             errorMsg = "Exception occurred:",

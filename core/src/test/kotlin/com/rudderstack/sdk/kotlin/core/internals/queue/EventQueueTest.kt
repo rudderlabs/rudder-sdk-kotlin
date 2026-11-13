@@ -36,6 +36,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -466,5 +467,56 @@ class EventQueueTest {
         eventQueue.stop()
 
         verify { mockEventUpload.cancel() }
+    }
+
+    @Nested
+    inner class SourceReEnabled {
+
+        private val sourceConfigState = State(SourceConfig.initialState())
+
+        @BeforeEach
+        fun setUp() {
+            every { mockAnalytics.sourceConfigState } returns sourceConfigState
+            every { mockAnalytics.getPlatformType() } returns PlatformType.Mobile
+        }
+
+        @Test
+        fun `given the source is enabled at start, when the queue starts, then the queue sends no flush`() {
+            eventQueue.start()
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify(exactly = 0) { mockEventUpload.flush() }
+        }
+
+        @Test
+        fun `given the source is disabled, when the source is enabled again, then the queue flushes once and keeps the same uploader`() {
+            eventQueue.start()
+            testDispatcher.scheduler.advanceUntilIdle()
+            sourceConfigState.dispatch(SourceConfig.DisableSourceAction())
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            sourceConfigState.dispatch(SourceConfig.UpdateAction(SourceConfig.initialState()))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify(exactly = 1) { mockEventUpload.flush() }
+            verify(exactly = 2) { mockFlushPoliciesFacade.schedule(mockAnalytics) }
+            verify(exactly = 1) { mockEventUpload.start() }
+            verify(exactly = 0) { mockEventUpload.cancel() }
+        }
+
+        @Test
+        fun `given the queue does not see a short disable, when the next flush signal arrives, then the queue still sends it to the uploader`() {
+            eventQueue.start()
+            testDispatcher.scheduler.advanceUntilIdle()
+            sourceConfigState.dispatch(SourceConfig.DisableSourceAction())
+            sourceConfigState.dispatch(SourceConfig.UpdateAction(SourceConfig.initialState()))
+            testDispatcher.scheduler.advanceUntilIdle()
+            verify(exactly = 0) { mockEventUpload.flush() }
+
+            eventQueue.flush()
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify(exactly = 1) { mockEventUpload.flush() }
+        }
     }
 }

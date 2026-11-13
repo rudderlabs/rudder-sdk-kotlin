@@ -31,6 +31,12 @@ private const val pathToSourceConfigWithEmptyBlackListEvents =
     "eventfilteringsourceconfig/source_config_with_empty_black_list_events.json"
 private const val pathToSourceConfigWithEventFilteringDisabled =
     "eventfilteringsourceconfig/source_config_with_event_filtering_disabled.json"
+private const val pathToSourceConfigWithMissingEventFilteringOption =
+    "eventfilteringsourceconfig/source_config_with_missing_event_filtering_option.json"
+private const val pathToSourceConfigWithMalformedWhiteListEvents =
+    "eventfilteringsourceconfig/source_config_with_malformed_white_list_events.json"
+private const val pathToSourceConfigWithNonStringBlackListEventName =
+    "eventfilteringsourceconfig/source_config_with_non_string_black_list_event_name.json"
 
 class EventFilteringPluginTest {
 
@@ -53,6 +59,15 @@ class EventFilteringPluginTest {
     )
     private val sourceConfigWithEventFilteringDisabled = LenientJson.decodeFromString<SourceConfig>(
         readFileAsString(pathToSourceConfigWithEventFilteringDisabled)
+    )
+    private val sourceConfigWithMissingEventFilteringOption = LenientJson.decodeFromString<SourceConfig>(
+        readFileAsString(pathToSourceConfigWithMissingEventFilteringOption)
+    )
+    private val sourceConfigWithMalformedWhiteListEvents = LenientJson.decodeFromString<SourceConfig>(
+        readFileAsString(pathToSourceConfigWithMalformedWhiteListEvents)
+    )
+    private val sourceConfigWithNonStringBlackListEventName = LenientJson.decodeFromString<SourceConfig>(
+        readFileAsString(pathToSourceConfigWithNonStringBlackListEventName)
     )
 
     @BeforeEach
@@ -237,6 +252,104 @@ class EventFilteringPluginTest {
             assertNull(eventFilteringPlugin.intercept(event1))
             assertNull(eventFilteringPlugin.intercept(event2))
             assertNull(eventFilteringPlugin.intercept(event3))
+        }
+
+    @Test
+    fun `given a blackList rule, when a sourceConfig without the filtering option is emitted, then the plugin clears the rule`() =
+        runTest(testDispatcher) {
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithBlackListEvents))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val blackListedEvent = TrackEvent("Track Event 3", emptyJsonObject)
+            assertNull(eventFilteringPlugin.intercept(blackListedEvent))
+
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithMissingEventFilteringOption))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            assertEquals(blackListedEvent, eventFilteringPlugin.intercept(blackListedEvent))
+        }
+
+    @Test
+    fun `given a blackList rule, when a sourceConfig with a malformed whiteList is emitted, then the plugin keeps the blackList rule`() =
+        runTest(testDispatcher) {
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithBlackListEvents))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithMalformedWhiteListEvents))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val blackListedEvent = TrackEvent("Track Event 3", emptyJsonObject)
+            val otherEvent = TrackEvent("Track Event 1", emptyJsonObject)
+            assertNull(eventFilteringPlugin.intercept(blackListedEvent))
+            assertEquals(otherEvent, eventFilteringPlugin.intercept(otherEvent))
+        }
+
+    @Test
+    fun `given a blackList rule, when a blackList entry has a non-string event name, then the plugin keeps the previous blackList rule`() =
+        runTest(testDispatcher) {
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithBlackListEvents))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithNonStringBlackListEventName))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val blackListedEvent = TrackEvent("Track Event 3", emptyJsonObject)
+            assertNull(eventFilteringPlugin.intercept(blackListedEvent))
+        }
+
+    @Test
+    fun `given a blackList rule and a malformed refresh, when the app restarts with the cached malformed whiteList, then the new plugin blocks every event`() =
+        runTest(testDispatcher) {
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithBlackListEvents))
+            testDispatcher.scheduler.advanceUntilIdle()
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithMalformedWhiteListEvents))
+            testDispatcher.scheduler.advanceUntilIdle()
+            val blackListedEvent = TrackEvent("Track Event 3", emptyJsonObject)
+            assertNull(eventFilteringPlugin.intercept(blackListedEvent))
+
+            // A restart creates a new plugin, and the cached malformed config is its first config.
+            val pluginAfterRestart = EventFilteringPlugin("MockDestination")
+            every { mockAnalytics.sourceConfigState } returns State(initialState = SourceConfig.initialState())
+            pluginAfterRestart.setup(mockAnalytics)
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithMalformedWhiteListEvents))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            assertNull(pluginAfterRestart.intercept(blackListedEvent))
+            assertNull(pluginAfterRestart.intercept(TrackEvent("Track Event 1", emptyJsonObject)))
+        }
+
+    @Test
+    fun `given no rule, when the first sourceConfig has a malformed whiteList, then the plugin blocks every event`() =
+        runTest(testDispatcher) {
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithMalformedWhiteListEvents))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            assertNull(eventFilteringPlugin.intercept(TrackEvent("Track Event 1", emptyJsonObject)))
+            assertNull(eventFilteringPlugin.intercept(TrackEvent("Track Event 3", emptyJsonObject)))
+        }
+
+    @Test
+    fun `given no rule, when the first sourceConfig has a malformed blackList, then the plugin allows every event`() =
+        runTest(testDispatcher) {
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithNonStringBlackListEventName))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val event = TrackEvent("Track Event 3", emptyJsonObject)
+            assertEquals(event, eventFilteringPlugin.intercept(event))
+        }
+
+    @Test
+    fun `given a whiteList rule, when teardown is called, then the plugin clears the rule`() =
+        runTest(testDispatcher) {
+            mockAnalytics.sourceConfigState.dispatch(SourceConfig.UpdateAction(sourceConfigWithWhiteListEvents))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val nonWhiteListedEvent = TrackEvent("Track Event 3", emptyJsonObject)
+            assertNull(eventFilteringPlugin.intercept(nonWhiteListedEvent))
+
+            eventFilteringPlugin.teardown()
+
+            assertEquals(nonWhiteListedEvent, eventFilteringPlugin.intercept(nonWhiteListedEvent))
         }
 
     @Test

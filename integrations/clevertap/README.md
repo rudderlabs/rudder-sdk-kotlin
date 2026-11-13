@@ -62,14 +62,26 @@ class MyApplication : Application() {
 
 The integration initializes CleverTap from the dashboard fields `accountId`, `accountToken`, and optional `region`. If `region` is blank or `none`, the default CleverTap credential setup is used.
 
-## Lite mode
+## Use your own CleverTap instance
 
-In lite mode, your app initialises CleverTap and passes the instance to the integration. The integration then only
-maps events and sends them to that instance.
+In the default setup, the integration initializes CleverTap from the destination configuration. Instead, your app can
+set up CleverTap and pass that instance to the integration. The integration then only maps events and sends them to
+your instance. This needs integration version 2.1.0 or higher.
 
-1. Set up CleverTap as CleverTap's Android guide describes: the account credentials in the app manifest, and
-   `ActivityLifecycleCallback.register(this)` in `Application.onCreate`, before `super.onCreate()`.
-2. Pass the CleverTap instance to the integration:
+1. Add the CleverTap Android SDK to your app dependencies. Use a version in the range `[8.4.1, 9.0.0)`. The
+   integration adds the CleverTap SDK at runtime scope only, so your code can't call CleverTap without this
+   dependency.
+
+```kotlin
+dependencies {
+    implementation("com.clevertap.android:clevertap-android-sdk:<version>")
+}
+```
+
+2. Add your CleverTap account ID and token to the app manifest, as in [Lifecycle and Push Handling](#lifecycle-and-push-handling).
+   If your account uses a region, also add `CLEVERTAP_REGION`.
+3. In `Application.onCreate`, call `ActivityLifecycleCallback.register(this)` before `super.onCreate()`. Then create
+   the CleverTap instance and pass it to the integration:
 
 ```kotlin
 CleverTapAPI.getDefaultInstance(this)?.let { cleverTap ->
@@ -77,12 +89,18 @@ CleverTapAPI.getDefaultInstance(this)?.let { cleverTap ->
 }
 ```
 
-In lite mode, the integration:
+You can also pass an instance that you create with your own `CleverTapInstanceConfig`. In the default setup, the
+integration always uses the default CleverTap instance.
 
-- Does not set the CleverTap credentials or debug level, and does not register CleverTap's activity tracking.
-- Waits for the source config before it sends events. The dashboard credentials are not used, so they can hold any
-  value.
+With your own instance, the integration:
+
+- Doesn't set the CleverTap credentials or the debug level, and doesn't register CleverTap's activity tracking.
+- Waits for the source configuration before it sends events.
 - Keeps the helper methods `pushNotificationClickedEvent`, `pushDeepLink` and `setAppForeground`.
+
+The **Account ID** and **Account Token** connection settings still need a value. The integration doesn't use them.
+For the default instance, the manifest entries decide the account. For an instance from `CleverTapInstanceConfig`,
+that config decides the account. `CleverTapAPI.getDefaultInstance` returns only the default instance.
 
 ## Supported RudderStack Events
 
