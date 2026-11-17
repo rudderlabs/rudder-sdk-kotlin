@@ -7,7 +7,8 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * The write keys that a running instance in this process holds.
  *
- * Two instances for one write key share one store on disk, and break each other's uploads.
+ * Two instances for one write key can share one store, and break each other's uploads.
+ * So one write key has at most one running instance.
  * A weak reference frees the write key of an instance that the garbage collector removed.
  */
 internal object RunningWriteKeys {

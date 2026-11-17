@@ -117,7 +117,7 @@ open class Analytics protected constructor(
 
     init {
         logger.info("Analytics(core): Initialized with configuration: $configuration")
-        if (usesStoreOnDisk() && !RunningWriteKeys.claim(this)) {
+        if (!RunningWriteKeys.claim(this)) {
             isAnalyticsShutdown = true
             logger.error(
                 "Analytics(core): An instance for this write key already runs in this process. This instance does " +
@@ -132,9 +132,6 @@ open class Analytics protected constructor(
             }.onFailure { shutdown() }.getOrThrow()
         }
     }
-
-    // A mobile instance always stores on disk; a core instance does so only with file storage.
-    private fun usesStoreOnDisk() = getPlatformType() == PlatformType.Mobile || configuration.storageType == StorageType.FILE
 
     private fun runForBaseTypeOnly() {
         if (this::class == Analytics::class) {

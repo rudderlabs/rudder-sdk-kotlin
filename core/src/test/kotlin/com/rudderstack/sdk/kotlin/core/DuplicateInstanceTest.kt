@@ -23,6 +23,8 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
 
 private const val DUPLICATE_ERROR = "An instance for this write key already runs in this process"
 
@@ -45,15 +47,18 @@ class DuplicateInstanceTest {
         unmockkAll()
     }
 
-    @Test
-    fun `given a running instance for a write key, when a second instance is created for it, then only the first stores events`() {
+    @ParameterizedTest
+    @EnumSource(StorageType::class)
+    fun `given a running instance for a write key, when a second instance is created for it, then only the first stores events`(
+        storageType: StorageType
+    ) {
         val writeKey = uniqueWriteKey()
-        val first = Analytics(fileConfiguration(writeKey))
+        val first = Analytics(configuration(writeKey, storageType))
 
-        val second = Analytics(fileConfiguration(writeKey))
+        val second = Analytics(configuration(writeKey, storageType))
         second.track("second-event")
         second.shutdown()
-        val third = Analytics(fileConfiguration(writeKey))
+        val third = Analytics(configuration(writeKey, storageType))
         first.track("first-event")
         processEvents(first)
 
@@ -69,9 +74,9 @@ class DuplicateInstanceTest {
     @Test
     fun `given the running instance shuts down, when a new instance is created for its write key, then the new instance starts`() {
         val writeKey = uniqueWriteKey()
-        Analytics(fileConfiguration(writeKey)).shutdown()
+        Analytics(configuration(writeKey)).shutdown()
 
-        val next = Analytics(fileConfiguration(writeKey))
+        val next = Analytics(configuration(writeKey))
 
         assertFalse(next.isAnalyticsShutdown)
         assertEquals(0, instances[1].duplicateErrors())
@@ -81,23 +86,19 @@ class DuplicateInstanceTest {
     fun `given an instance whose start fails, when a new instance is created for its write key, then the new instance starts`() {
         val writeKey = uniqueWriteKey()
         failNextStart = true
-        assertThrows<IllegalStateException> { Analytics(fileConfiguration(writeKey)) }
+        assertThrows<IllegalStateException> { Analytics(configuration(writeKey)) }
 
-        val next = Analytics(fileConfiguration(writeKey))
+        val next = Analytics(configuration(writeKey))
 
         assertFalse(next.isAnalyticsShutdown)
         assertEquals(0, instances[1].duplicateErrors())
     }
 
     @Test
-    fun `given instances that share no store on disk, when they are created, then all of them start`() {
-        val sharedKey = uniqueWriteKey()
+    fun `given instances with different write keys, when they are created, then all of them start`() {
+        val differentKeys = List(3) { Analytics(configuration(uniqueWriteKey())) }
 
-        val differentKeys = listOf(Analytics(fileConfiguration(uniqueWriteKey())), Analytics(fileConfiguration(uniqueWriteKey())))
-        val inMemory = List(2) { Analytics(Configuration(writeKey = sharedKey, dataPlaneUrl = "<data_plane_url>")) }
-        val inMemorySubclass = List(2) { CustomAnalytics(Configuration(writeKey = sharedKey, dataPlaneUrl = "<data_plane_url>")) }
-
-        (differentKeys + inMemory + inMemorySubclass).forEach { assertFalse(it.isAnalyticsShutdown) }
+        differentKeys.forEach { assertFalse(it.isAnalyticsShutdown) }
         instances.forEach { assertEquals(0, it.duplicateErrors()) }
     }
 
@@ -108,11 +109,9 @@ class DuplicateInstanceTest {
         )
     }
 
-    private fun fileConfiguration(writeKey: String) =
-        Configuration(writeKey = writeKey, dataPlaneUrl = "<data_plane_url>", storageType = StorageType.FILE)
+    private fun configuration(writeKey: String, storageType: StorageType = StorageType.FILE) =
+        Configuration(writeKey = writeKey, dataPlaneUrl = "<data_plane_url>", storageType = storageType)
 
-    // Fully qualified: this package declares a test constant named UUID, and other tests mock generateUUID().
-    private fun uniqueWriteKey() = "write-key-${java.util.UUID.randomUUID()}"
 
     private inner class MockedInstance {
         val storage: Storage = mockk(relaxed = true)
@@ -147,6 +146,3 @@ class DuplicateInstanceTest {
         }
     }
 }
-
-private class CustomAnalytics(configuration: Configuration) :
-    Analytics(configuration, provideAnalyticsConfiguration(configuration) { _, _ -> error("The test mocks the configuration") })

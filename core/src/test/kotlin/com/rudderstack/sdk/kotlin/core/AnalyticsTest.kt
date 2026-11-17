@@ -144,7 +144,7 @@ class AnalyticsTest {
     @Test
     fun `when anonymousId is fetched, then it should return UUID as the anonymousId`() {
         every { mockStorage.readString(StorageKeys.ANONYMOUS_ID, defaultVal = any()) } returns UUID
-        analytics = spyk(Analytics(configuration = configuration))
+        analytics = spyk(Analytics(configuration = provideConfiguration()))
 
         val anonymousId = analytics.anonymousId
 
@@ -177,7 +177,9 @@ class AnalyticsTest {
         runTest(testDispatcher) {
             // simulate empty storage: readString returns whatever default was passed
             every { mockStorage.readString(StorageKeys.ANONYMOUS_ID, defaultVal = any()) } answers { secondArg<String>() }
-            analytics = spyk(Analytics(configuration = configuration))
+            // Stops the setup instance's flush timer, which would otherwise keep runTest from finishing.
+            analytics.shutdown()
+            analytics = spyk(Analytics(configuration = provideConfiguration()))
             testDispatcher.scheduler.runCurrent()
             disableSource()
 
@@ -188,7 +190,9 @@ class AnalyticsTest {
     fun `given anonymousId is not persisted, when an event is enqueued at init, then anonymousId is persisted before the event is written`() =
         runTest(testDispatcher) {
             every { mockStorage.readString(StorageKeys.ANONYMOUS_ID, defaultVal = any()) } answers { secondArg<String>() }
-            analytics = spyk(Analytics(configuration = configuration))
+            // Stops the setup instance's flush timer, which would otherwise keep runTest from finishing.
+            analytics.shutdown()
+            analytics = spyk(Analytics(configuration = provideConfiguration()))
 
             analytics.track(name = TRACK_EVENT_NAME, properties = provideSampleJsonPayload(), options = provideRudderOption())
             testDispatcher.scheduler.runCurrent()
@@ -275,7 +279,7 @@ class AnalyticsTest {
     @Test
     fun `given platform type is mobile, when SDK is initialised, then SourceConfigManager should be initialised and source config observers should be notified`() {
         // Create a mobile platform analytics instance
-        val mobileAnalytics = object : Analytics(configuration = configuration) {
+        val mobileAnalytics = object : Analytics(configuration = provideConfiguration()) {
             override fun getPlatformType(): PlatformType = PlatformType.Mobile
 
             init {
@@ -945,7 +949,7 @@ class AnalyticsTest {
 
 private fun provideConfiguration() =
     Configuration(
-        writeKey = "<writeKey>",
+        writeKey = uniqueWriteKey(),
         dataPlaneUrl = "<data_plane_url>",
     )
 
