@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 private const val DUPLICATE_ERROR = "An instance for this write key already runs in this process"
 
@@ -30,6 +31,7 @@ class DuplicateInstanceTest {
     private val testDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
     private val instances = mutableListOf<MockedInstance>()
+    private var failNextStart = false
 
     @BeforeEach
     fun setup() {
@@ -76,13 +78,26 @@ class DuplicateInstanceTest {
     }
 
     @Test
+    fun `given an instance whose start fails, when a new instance is created for its write key, then the new instance starts`() {
+        val writeKey = uniqueWriteKey()
+        failNextStart = true
+        assertThrows<IllegalStateException> { Analytics(fileConfiguration(writeKey)) }
+
+        val next = Analytics(fileConfiguration(writeKey))
+
+        assertFalse(next.isAnalyticsShutdown)
+        assertEquals(0, instances[1].duplicateErrors())
+    }
+
+    @Test
     fun `given instances that share no store on disk, when they are created, then all of them start`() {
         val sharedKey = uniqueWriteKey()
 
         val differentKeys = listOf(Analytics(fileConfiguration(uniqueWriteKey())), Analytics(fileConfiguration(uniqueWriteKey())))
         val inMemory = List(2) { Analytics(Configuration(writeKey = sharedKey, dataPlaneUrl = "<data_plane_url>")) }
+        val inMemorySubclass = List(2) { CustomAnalytics(Configuration(writeKey = sharedKey, dataPlaneUrl = "<data_plane_url>")) }
 
-        (differentKeys + inMemory).forEach { assertFalse(it.isAnalyticsShutdown) }
+        (differentKeys + inMemory + inMemorySubclass).forEach { assertFalse(it.isAnalyticsShutdown) }
         instances.forEach { assertEquals(0, it.duplicateErrors()) }
     }
 
@@ -106,7 +121,10 @@ class DuplicateInstanceTest {
 
         init {
             every { storage.readString(StorageKeys.ANONYMOUS_ID, defaultVal = any()) } returns ANONYMOUS_ID
-            every { storage.getLibraryVersion() } returns object : LibraryVersion {
+            if (failNextStart) {
+                failNextStart = false
+                every { storage.getLibraryVersion() } throws IllegalStateException("storage failed")
+            } else every { storage.getLibraryVersion() } returns object : LibraryVersion {
                 override fun getLibraryName(): String = "com.rudderstack.kotlin.sdk"
                 override fun getVersionName(): String = "1.0.0"
             }
@@ -129,3 +147,6 @@ class DuplicateInstanceTest {
         }
     }
 }
+
+private class CustomAnalytics(configuration: Configuration) :
+    Analytics(configuration, provideAnalyticsConfiguration(configuration) { _, _ -> error("The test mocks the configuration") })

@@ -107,7 +107,8 @@ class Analytics(
                         "deniedConsentIds in Configuration."
                 )
             }
-            setup()
+            // A failed start shuts the instance down, so it does not keep the write key.
+            runCatching { setup() }.onFailure { shutdown() }.getOrThrow()
         }
     }
 

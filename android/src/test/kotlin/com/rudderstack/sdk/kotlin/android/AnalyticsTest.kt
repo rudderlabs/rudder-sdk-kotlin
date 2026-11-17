@@ -47,10 +47,12 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 private const val DEFAULT_SESSION_ID: Long = 1234567890L
 private const val NEW_SESSION_ID: Long = 9876543210L
@@ -151,6 +153,18 @@ class AnalyticsTest {
         verify(exactly = 1) { mockLogger.error(match { it.contains("already runs in this process") }, any()) }
         verify(exactly = 1) { mockAnalyticsConfiguration.sourceConfigManager = any() }
         verify(exactly = 1) { anyConstructed<ProcessLifecycleManagementPlugin>().setup(any()) }
+    }
+
+    @Test
+    fun `given an instance whose setup fails, when a new instance is created for its write key, then the new instance starts`() {
+        val writeKey = uniqueWriteKey()
+        every { anyConstructed<ProcessLifecycleManagementPlugin>().setup(any()) } throws IllegalStateException("setup failed")
+        assertThrows<IllegalStateException> { Analytics(Configuration(application = mockApplication, writeKey = writeKey, dataPlaneUrl = "<data_plane_url>")) }
+        every { anyConstructed<ProcessLifecycleManagementPlugin>().setup(any()) } just Runs
+
+        val next = Analytics(Configuration(application = mockApplication, writeKey = writeKey, dataPlaneUrl = "<data_plane_url>"))
+
+        assertNotNull(next.anonymousId)
     }
 
     @Test

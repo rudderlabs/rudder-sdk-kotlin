@@ -124,14 +124,17 @@ open class Analytics protected constructor(
                     "not start and ignores every call. Reuse the running instance, or call shutdown() on it first."
             )
         } else {
-            runForBaseTypeOnly()
-            processEvents(storeAnonymousId())
-            setup()
+            // A failed start shuts the instance down, so it does not keep the write key.
+            runCatching {
+                runForBaseTypeOnly()
+                processEvents(storeAnonymousId())
+                setup()
+            }.onFailure { shutdown() }.getOrThrow()
         }
     }
 
-    // In-memory instances share no store, so only an instance with a store on disk holds its write key.
-    private fun usesStoreOnDisk() = this::class != Analytics::class || configuration.storageType == StorageType.FILE
+    // A mobile instance always stores on disk; a core instance does so only with file storage.
+    private fun usesStoreOnDisk() = getPlatformType() == PlatformType.Mobile || configuration.storageType == StorageType.FILE
 
     private fun runForBaseTypeOnly() {
         if (this::class == Analytics::class) {
