@@ -10,6 +10,7 @@ import com.rudderstack.sdk.kotlin.android.plugins.DeviceInfoPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.SourceConfigRefreshPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleManagementPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ProcessLifecycleManagementPlugin
+import com.rudderstack.sdk.kotlin.android.utils.uniqueWriteKey
 import com.rudderstack.sdk.kotlin.core.AnalyticsConfiguration
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
@@ -129,7 +130,7 @@ class AnalyticsTest {
 
         configuration = Configuration(
             application = mockApplication,
-            writeKey = "<writeKey>",
+            writeKey = uniqueWriteKey(),
             dataPlaneUrl = "<data_plane_url>",
         )
         analytics = Analytics(configuration)
@@ -140,6 +141,16 @@ class AnalyticsTest {
     fun tearDown() {
         // Although we don't need this in the current test class, it is needed due to the know issue with the use of Dispatchers.main.
         Dispatchers.resetMain()
+    }
+
+    @Test
+    fun `given a running instance for a write key, when a second instance is created for it, then the second does not start`() {
+        val second = Analytics(configuration)
+
+        assertNull(second.anonymousId)
+        verify(exactly = 1) { mockLogger.error(match { it.contains("already runs in this process") }, any()) }
+        verify(exactly = 1) { mockAnalyticsConfiguration.sourceConfigManager = any() }
+        verify(exactly = 1) { anyConstructed<ProcessLifecycleManagementPlugin>().setup(any()) }
     }
 
     @Test

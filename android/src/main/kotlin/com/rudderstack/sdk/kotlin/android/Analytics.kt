@@ -98,14 +98,17 @@ class Analytics(
     )
 
     init {
-        if (configuration.consentManagement.enabled && !consentManagementState.value.active) {
-            logger.info(
-                "Analytics(android): Consent management is enabled but no consent IDs were supplied; " +
-                    "consent management is inactive for this session. Supply allowedConsentIds or " +
-                    "deniedConsentIds in Configuration."
-            )
+        // The core does not start an instance whose write key another instance holds.
+        if (isAnalyticsActive()) {
+            if (configuration.consentManagement.enabled && !consentManagementState.value.active) {
+                logger.info(
+                    "Analytics(android): Consent management is enabled but no consent IDs were supplied; " +
+                        "consent management is inactive for this session. Supply allowedConsentIds or " +
+                        "deniedConsentIds in Configuration."
+                )
+            }
+            setup()
         }
-        setup()
     }
 
     /**
