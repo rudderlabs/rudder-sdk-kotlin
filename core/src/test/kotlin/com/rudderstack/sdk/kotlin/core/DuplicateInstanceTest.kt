@@ -6,6 +6,7 @@ import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.storage.LibraryVersion
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
+import com.rudderstack.sdk.kotlin.core.internals.utils.RunningWriteKeys
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
@@ -19,6 +20,8 @@ import kotlinx.coroutines.test.TestScope
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -92,6 +95,30 @@ class DuplicateInstanceTest {
 
         assertFalse(next.isAnalyticsShutdown)
         assertEquals(0, instances[1].duplicateErrors())
+    }
+
+    @Test
+    fun `given a running and a refused instance for a write key, when a wrapper looks up the write key, then it finds only the running instance while it runs`() {
+        val writeKey = uniqueWriteKey()
+        assertNull(RunningWriteKeys.find(writeKey))
+
+        val running = Analytics(configuration(writeKey))
+        Analytics(configuration(writeKey))
+        assertSame(running, RunningWriteKeys.find(writeKey))
+
+        running.shutdown()
+        assertNull(RunningWriteKeys.find(writeKey))
+    }
+
+    @Test
+    fun `given a platform type, when its core start completes, then a wrapper finds it only after the platform type marks it started`() {
+        val writeKey = uniqueWriteKey()
+        val platform = object : Analytics(configuration(writeKey), MockedInstance().also { instances += it }.configuration) {}
+        assertNull(RunningWriteKeys.find(writeKey))
+
+        RunningWriteKeys.markStarted(platform)
+
+        assertSame(platform, RunningWriteKeys.find(writeKey))
     }
 
     @Test

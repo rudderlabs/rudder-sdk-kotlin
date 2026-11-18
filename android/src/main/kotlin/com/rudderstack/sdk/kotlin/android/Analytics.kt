@@ -40,6 +40,7 @@ import com.rudderstack.sdk.kotlin.core.internals.platform.Platform
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.plugins.Plugin
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
+import com.rudderstack.sdk.kotlin.core.internals.utils.RunningWriteKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.isAnalyticsActive
 import com.rudderstack.sdk.kotlin.core.internals.utils.isSourceEnabled
 import com.rudderstack.sdk.kotlin.core.provideAnalyticsConfiguration
@@ -109,6 +110,7 @@ class Analytics(
             }
             // A failed start shuts the instance down, so it does not keep the write key.
             runCatching { setup() }.onFailure { shutdown() }.getOrThrow()
+            RunningWriteKeys.markStarted(this)
         }
     }
 

@@ -14,6 +14,7 @@ import com.rudderstack.sdk.kotlin.android.utils.uniqueWriteKey
 import com.rudderstack.sdk.kotlin.core.AnalyticsConfiguration
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.utils.RunningWriteKeys
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
@@ -49,6 +50,7 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -165,6 +167,18 @@ class AnalyticsTest {
         val next = Analytics(Configuration(application = mockApplication, writeKey = writeKey, dataPlaneUrl = "<data_plane_url>"))
 
         assertNotNull(next.anonymousId)
+    }
+
+    @Test
+    fun `given an instance whose Android setup runs, when a wrapper looks up its write key, then it finds the instance only after the setup`() {
+        val writeKey = uniqueWriteKey()
+        var foundDuringSetup: com.rudderstack.sdk.kotlin.core.Analytics? = null
+        every { anyConstructed<ProcessLifecycleManagementPlugin>().setup(any()) } answers { foundDuringSetup = RunningWriteKeys.find(writeKey) }
+
+        val started = Analytics(Configuration(application = mockApplication, writeKey = writeKey, dataPlaneUrl = "<data_plane_url>"))
+
+        assertNull(foundDuringSetup)
+        assertSame(started, RunningWriteKeys.find(writeKey))
     }
 
     @Test

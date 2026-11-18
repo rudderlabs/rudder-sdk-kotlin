@@ -129,6 +129,8 @@ open class Analytics protected constructor(
                 runForBaseTypeOnly()
                 processEvents(storeAnonymousId())
                 setup()
+                // A platform type marks itself after its own start, so a wrapper SDK never finds a half-started instance.
+                if (this::class == Analytics::class) RunningWriteKeys.markStarted(this)
             }.onFailure { shutdown() }.getOrThrow()
         }
     }

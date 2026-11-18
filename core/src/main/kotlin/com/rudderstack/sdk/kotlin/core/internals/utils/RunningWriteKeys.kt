@@ -11,19 +11,33 @@ import java.util.concurrent.ConcurrentHashMap
  * So one write key has at most one running instance.
  * A weak reference frees the write key of an instance that the garbage collector removed.
  */
-internal object RunningWriteKeys {
+@InternalRudderApi
+object RunningWriteKeys {
 
-    private val instances = ConcurrentHashMap<String, WeakReference<Analytics>>()
+    private val instances = ConcurrentHashMap<String, Holder>()
+
+    /**
+     * Returns the running instance for [writeKey] after its start completes, or `null`. A wrapper SDK uses it to share a native instance.
+     */
+    fun find(writeKey: String): Analytics? =
+        instances[writeKey]?.takeIf { it.started }?.analytics?.takeUnless { it.isAnalyticsShutdown }
+
+    /**
+     * Lets [find] return [analytics]. The most derived type of [analytics] calls it at the end of its start.
+     */
+    fun markStarted(analytics: Analytics) {
+        instances[analytics.configuration.writeKey]?.takeIf { it.analytics === analytics }?.started = true
+    }
 
     /**
      * Records [analytics] for its write key. Returns `false` when another running instance already holds it.
      */
-    fun claim(analytics: Analytics): Boolean {
+    internal fun claim(analytics: Analytics): Boolean {
         var claimed = false
         instances.compute(analytics.configuration.writeKey) { _, current ->
-            val holder = current?.get()
+            val holder = current?.analytics
             claimed = holder == null || holder.isAnalyticsShutdown
-            if (claimed) WeakReference(analytics) else current
+            if (claimed) Holder(analytics) else current
         }
         return claimed
     }
@@ -31,9 +45,17 @@ internal object RunningWriteKeys {
     /**
      * Frees the write key of [analytics], when [analytics] holds it.
      */
-    fun release(analytics: Analytics) {
+    internal fun release(analytics: Analytics) {
         instances.computeIfPresent(analytics.configuration.writeKey) { _, current ->
-            if (current.get() === analytics) null else current
+            if (current.analytics === analytics) null else current
         }
+    }
+
+    private class Holder(analytics: Analytics) {
+        private val reference = WeakReference(analytics)
+        val analytics: Analytics? get() = reference.get()
+
+        @Volatile
+        var started = false
     }
 }
