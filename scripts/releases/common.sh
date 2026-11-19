@@ -105,6 +105,11 @@ get_module_tag_prefix() {
     local group_id artifact_id
     group_id=$(echo "$info" | cut -d'|' -f2)
     artifact_id=$(echo "$info" | cut -d'|' -f3)
+    # Callers use a command substitution, which ignores set -e, so a failed Gradle call must stop here.
+    if [[ -z "$group_id" || -z "$artifact_id" ]]; then
+        echo "Error: no group ID or artifact ID for module: $module" >&2
+        exit 1
+    fi
     echo "${group_id}.${artifact_id}"
     return 0
 }
