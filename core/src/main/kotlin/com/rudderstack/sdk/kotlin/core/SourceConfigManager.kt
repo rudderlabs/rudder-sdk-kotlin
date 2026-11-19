@@ -41,6 +41,8 @@ private const val BUILD_VERSION = "bv"
 private const val ANDROID = "android"
 private const val KOTLIN = "kotlin"
 private const val WRITE_KEY = "writeKey"
+private const val REFRESH = "refresh"
+private const val REFRESH_VALUE = "true"
 
 private const val SOURCE_CONFIG_RETRY_ATTEMPT = 5
 private val SOURCE_CONFIG_REFRESH_INTERVAL = 1.hours
@@ -55,7 +57,8 @@ private typealias FailureHandler = suspend (NetworkErrorStatus) -> SourceConfig?
 class SourceConfigManager(
     private val analytics: Analytics,
     private val sourceConfigState: State<SourceConfig>,
-    private val httpClientFactory: HttpClient = analytics.createGetHttpClientFactory(),
+    private val httpClientFactory: HttpClient = analytics.createGetHttpClientFactory(analytics.getQuery()),
+    private val refreshHttpClient: HttpClient = analytics.createGetHttpClientFactory(analytics.getRefreshQuery()),
 ) {
 
     private val logger get() = analytics.logger
@@ -76,7 +79,7 @@ class SourceConfigManager(
 
     internal fun fetchSourceConfigAtLaunchAndNotifyObservers() {
         launchFetchJob = analytics.notifyOnlyOnceOnConnectionAvailable {
-            fetchAndNotifyObservers(onFailure = ::handleLaunchFetchFailure)
+            fetchAndNotifyObservers(httpClientFactory, onFailure = ::handleLaunchFetchFailure)
         }
     }
 
@@ -128,26 +131,26 @@ class SourceConfigManager(
         while (isActive) {
             delay(timeUntilNextFetch(lastFetchEndMillis, refreshInterval))
             analytics.connectivityState.flow.first { it }
-            fetchAndNotifyObservers(onFailure = ::handleRefreshFailure)
+            fetchAndNotifyObservers(refreshHttpClient, onFailure = ::handleRefreshFailure)
         }
     }
 
-    private suspend fun fetchAndNotifyObservers(onFailure: FailureHandler) {
-        downloadSourceConfig(onFailure)?.let { sourceConfig ->
+    private suspend fun fetchAndNotifyObservers(httpClient: HttpClient, onFailure: FailureHandler) {
+        downloadSourceConfig(httpClient, onFailure)?.let { sourceConfig ->
             storeSourceConfig(sourceConfig)
             notifyObservers(sourceConfig)
         }
         lastFetchEndMillis = DateTimeUtils.getSystemCurrentTime()
     }
 
-    private suspend fun downloadSourceConfig(onFailure: FailureHandler): SourceConfig? {
+    private suspend fun downloadSourceConfig(httpClient: HttpClient, onFailure: FailureHandler): SourceConfig? {
         return withContext(analytics.networkDispatcher) {
-            safelyExecute(logger) { requestSourceConfig(onFailure) }
+            safelyExecute(logger) { requestSourceConfig(httpClient, onFailure) }
         }
     }
 
-    private suspend fun requestSourceConfig(onFailure: FailureHandler): SourceConfig? {
-        return when (val result = httpClientFactory.getData()) {
+    private suspend fun requestSourceConfig(httpClient: HttpClient, onFailure: FailureHandler): SourceConfig? {
+        return when (val result = httpClient.getData()) {
             is Result.Success -> result.toSourceConfig(logger)
             is Result.Failure -> onFailure(result.error)
         }
@@ -181,7 +184,7 @@ class SourceConfigManager(
         repeat(SOURCE_CONFIG_RETRY_ATTEMPT) { attempt ->
             delay(backOffPolicy.nextDelayInMillis().milliseconds)
             logger.verbose("SourceConfigManager: Retrying fetching of SourceConfig, attempt: ${attempt + 1}")
-            requestSourceConfig { null }?.let { return it }
+            requestSourceConfig(httpClientFactory) { null }?.let { return it }
         }
         logger.warn(
             "SourceConfigManager: All retry attempts for fetching SourceConfig " +
@@ -212,13 +215,14 @@ class SourceConfigManager(
     }
 }
 
-private fun Analytics.createGetHttpClientFactory(): HttpClient = HttpClientImpl.createGetHttpClient(
-    baseUrl = configuration.controlPlaneUrl,
-    endPoint = SOURCE_CONFIG_ENDPOINT,
-    authHeaderString = configuration.writeKey.encodeToBase64(),
-    query = getQuery(),
-    logger = logger,
-)
+private fun Analytics.createGetHttpClientFactory(query: Map<String, String>): HttpClient =
+    HttpClientImpl.createGetHttpClient(
+        baseUrl = configuration.controlPlaneUrl,
+        endPoint = SOURCE_CONFIG_ENDPOINT,
+        authHeaderString = configuration.writeKey.encodeToBase64(),
+        query = query,
+        logger = logger,
+    )
 
 @VisibleForTesting
 internal fun Analytics.getQuery() = when (getPlatformType()) {
@@ -239,6 +243,10 @@ internal fun Analytics.getQuery() = when (getPlatformType()) {
         )
     }
 }
+
+// The refresh parameter lets the backend logs tell a refresh from a launch fetch.
+@VisibleForTesting
+internal fun Analytics.getRefreshQuery() = getQuery() + (REFRESH to REFRESH_VALUE)
 
 private fun timeUntilNextFetch(lastFetchEndMillis: Long?, interval: Duration): Duration {
     lastFetchEndMillis ?: return Duration.ZERO

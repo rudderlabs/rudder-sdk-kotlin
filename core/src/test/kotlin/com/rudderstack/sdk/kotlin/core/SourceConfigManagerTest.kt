@@ -66,7 +66,7 @@ class SourceConfigManagerTest {
         every { analytics.connectivityState } returns mockState
         every { mockState.flow } returns connectivityFlow
 
-        sourceConfigManager = SourceConfigManager(analytics, sourceConfigState, httpClient)
+        sourceConfigManager = SourceConfigManager(analytics, sourceConfigState, httpClient, httpClient)
     }
 
     @Test
@@ -286,6 +286,16 @@ class SourceConfigManagerTest {
         assertEquals(3, query.size)
     }
 
+    @Test
+    fun `given mobile platform, when getRefreshQuery is called, then it adds the refresh parameter to the launch query`() = runTest(testDispatcher) {
+        every { analytics.getPlatformType() } returns PlatformType.Mobile
+        every { analytics.configuration.writeKey } returns "test-write-key"
+        every { analytics.storage.getLibraryVersion().getVersionName() } returns "1.0.0"
+        every { analytics.storage.getLibraryVersion().getBuildVersion() } returns "100"
+
+        assertEquals(analytics.getQuery() + ("refresh" to "true"), analytics.getRefreshQuery())
+    }
+
     @Nested
     inner class PeriodicRefresh {
 
@@ -474,6 +484,22 @@ class SourceConfigManagerTest {
 
                 advanceBy(1)
                 verify(exactly = 2) { httpClient.getData() }
+            }
+
+        @Test
+        fun `given separate launch and refresh clients, when the loop refreshes, then only the refresh uses the refresh client`() =
+            runRefreshTest {
+                val refreshHttpClient: HttpClient = mockk()
+                every { refreshHttpClient.getData() } returns Result.Success(readFileAsString(downloadedSourceConfig))
+                sourceConfigManager = SourceConfigManager(analytics, sourceConfigState, httpClient, refreshHttpClient)
+                completeLaunchFetch()
+                verify(exactly = 0) { refreshHttpClient.getData() }
+
+                sourceConfigManager.startPeriodicRefresh()
+                advanceBy(interval)
+
+                verify(exactly = 1) { httpClient.getData() }
+                verify(exactly = 1) { refreshHttpClient.getData() }
             }
 
         // runTest drains the scheduler at the end, so the endless loop must stop inside the test body.
