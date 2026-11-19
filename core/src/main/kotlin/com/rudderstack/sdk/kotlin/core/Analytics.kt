@@ -35,6 +35,7 @@ import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.storage.inmemory.provideInMemoryStorage
 import com.rudderstack.sdk.kotlin.core.internals.storage.provideBasicStorage
 import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
+import com.rudderstack.sdk.kotlin.core.internals.utils.RunningWriteKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
 import com.rudderstack.sdk.kotlin.core.internals.utils.addNameAndCategoryToProperties
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
@@ -116,9 +117,22 @@ open class Analytics protected constructor(
 
     init {
         logger.info("Analytics(core): Initialized with configuration: $configuration")
-        runForBaseTypeOnly()
-        processEvents(storeAnonymousId())
-        setup()
+        if (!RunningWriteKeys.claim(this)) {
+            isAnalyticsShutdown = true
+            logger.error(
+                "Analytics(core): An instance for this write key already runs in this process. This instance does " +
+                    "not start and ignores every call. Reuse the running instance, or call shutdown() on it first."
+            )
+        } else {
+            // A failed start shuts the instance down, so it does not keep the write key.
+            runCatching {
+                runForBaseTypeOnly()
+                processEvents(storeAnonymousId())
+                setup()
+                // A platform type marks itself after its own start, so a wrapper SDK never finds a half-started instance.
+                if (this::class == Analytics::class) RunningWriteKeys.markStarted(this)
+            }.onFailure { shutdown() }.getOrThrow()
+        }
     }
 
     private fun runForBaseTypeOnly() {
@@ -382,6 +396,7 @@ open class Analytics protected constructor(
         if (!isAnalyticsActive()) return
 
         isAnalyticsShutdown = true
+        RunningWriteKeys.release(this)
         logger.info("Analytics(core): Initiating shutdown")
 
         processEventChannel.close()
