@@ -10,9 +10,11 @@ import com.rudderstack.sdk.kotlin.android.plugins.DeviceInfoPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.SourceConfigRefreshPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ActivityLifecycleManagementPlugin
 import com.rudderstack.sdk.kotlin.android.plugins.lifecyclemanagment.ProcessLifecycleManagementPlugin
+import com.rudderstack.sdk.kotlin.android.utils.uniqueWriteKey
 import com.rudderstack.sdk.kotlin.core.AnalyticsConfiguration
 import com.rudderstack.sdk.kotlin.core.internals.logger.Logger
 import com.rudderstack.sdk.kotlin.core.internals.logger.LoggerAnalytics
+import com.rudderstack.sdk.kotlin.core.internals.utils.RunningWriteKeys
 import com.rudderstack.sdk.kotlin.core.internals.models.Event
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
@@ -46,10 +48,13 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 private const val DEFAULT_SESSION_ID: Long = 1234567890L
 private const val NEW_SESSION_ID: Long = 9876543210L
@@ -129,7 +134,7 @@ class AnalyticsTest {
 
         configuration = Configuration(
             application = mockApplication,
-            writeKey = "<writeKey>",
+            writeKey = uniqueWriteKey(),
             dataPlaneUrl = "<data_plane_url>",
         )
         analytics = Analytics(configuration)
@@ -140,6 +145,40 @@ class AnalyticsTest {
     fun tearDown() {
         // Although we don't need this in the current test class, it is needed due to the know issue with the use of Dispatchers.main.
         Dispatchers.resetMain()
+    }
+
+    @Test
+    fun `given a running instance for a write key, when a second instance is created for it, then the second does not start`() {
+        val second = Analytics(configuration)
+
+        assertNull(second.anonymousId)
+        verify(exactly = 1) { mockLogger.error(match { it.contains("already runs in this process") }, any()) }
+        verify(exactly = 1) { mockAnalyticsConfiguration.sourceConfigManager = any() }
+        verify(exactly = 1) { anyConstructed<ProcessLifecycleManagementPlugin>().setup(any()) }
+    }
+
+    @Test
+    fun `given an instance whose setup fails, when a new instance is created for its write key, then the new instance starts`() {
+        val writeKey = uniqueWriteKey()
+        every { anyConstructed<ProcessLifecycleManagementPlugin>().setup(any()) } throws IllegalStateException("setup failed")
+        assertThrows<IllegalStateException> { Analytics(Configuration(application = mockApplication, writeKey = writeKey, dataPlaneUrl = "<data_plane_url>")) }
+        every { anyConstructed<ProcessLifecycleManagementPlugin>().setup(any()) } just Runs
+
+        val next = Analytics(Configuration(application = mockApplication, writeKey = writeKey, dataPlaneUrl = "<data_plane_url>"))
+
+        assertNotNull(next.anonymousId)
+    }
+
+    @Test
+    fun `given an instance whose Android setup runs, when a wrapper looks up its write key, then it finds the instance only after the setup`() {
+        val writeKey = uniqueWriteKey()
+        var foundDuringSetup: com.rudderstack.sdk.kotlin.core.Analytics? = null
+        every { anyConstructed<ProcessLifecycleManagementPlugin>().setup(any()) } answers { foundDuringSetup = RunningWriteKeys.find(writeKey) }
+
+        val started = Analytics(Configuration(application = mockApplication, writeKey = writeKey, dataPlaneUrl = "<data_plane_url>"))
+
+        assertNull(foundDuringSetup)
+        assertSame(started, RunningWriteKeys.find(writeKey))
     }
 
     @Test
