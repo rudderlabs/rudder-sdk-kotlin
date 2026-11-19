@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+# [2.0.3](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.integration.kotlin.firebase@v2.0.2...com.rudderstack.integration.kotlin.firebase@v2.0.3) (2026-11-19)
+
+## Bug Fixes
+
+- **firebase:** Support firebase bom 34 and 35 ([#393](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/393)) ([cde18d4](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/cde18d414ae155142f7870bf4f3a1ca55885cdc4))
+
+## Dependency Updates
+
+- The following workspace dependencies were updated
+  - dependencies
+    - @rudderstack/android bumped from 2.2.0 to 2.3.0
+
+
 # [2.0.2](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.integration.kotlin.firebase@v2.0.1...com.rudderstack.integration.kotlin.firebase@v2.0.2) (2026-11-12)
 
 ## Dependency Updates

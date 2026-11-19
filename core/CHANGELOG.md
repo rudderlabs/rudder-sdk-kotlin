@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+# [1.10.0](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.sdk.kotlin.core@v1.9.0...com.rudderstack.sdk.kotlin.core@v1.10.0) (2026-11-19)
+
+## Features
+
+- Refuse a second running instance for a write key ([#392](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/392)) ([2721793](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/27217935693c9d3074d9521c91b2a45d0df9a3eb))
+- **core:** Add context.wrapperLibrary for wrapper sdks ([#391](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/391)) ([9969d06](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/9969d06fef052ab3176886b590efa8a506f8b2eb))
+
+
 # [1.9.0](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.sdk.kotlin.core@v1.8.0...com.rudderstack.sdk.kotlin.core@v1.9.0) (2026-11-12)
 
 ## Features
