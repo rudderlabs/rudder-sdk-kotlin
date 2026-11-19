@@ -21,7 +21,9 @@ import com.rudderstack.sdk.kotlin.core.internals.storage.LibraryVersion
 import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.internals.utils.DateTimeUtils
+import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
 import com.rudderstack.sdk.kotlin.core.internals.utils.UseWithCaution
+import com.rudderstack.sdk.kotlin.core.internals.utils.WrapperLibrary
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import com.rudderstack.sdk.kotlin.core.internals.utils.generateUUID
 import io.mockk.MockKAnnotations
@@ -33,6 +35,7 @@ import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.mockkObject
 import io.mockk.mockkStatic
+import io.mockk.slot
 import io.mockk.spyk
 import io.mockk.verify
 import io.mockk.verifyOrder
@@ -46,10 +49,13 @@ import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.put
 import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
@@ -139,6 +145,12 @@ class AnalyticsTest {
 
         // Analytics instance
         analytics = spyk(Analytics(configuration = configuration))
+    }
+
+    @OptIn(InternalRudderApi::class)
+    @AfterEach
+    fun tearDown() {
+        WrapperLibrary.clear()
     }
 
     @Test
@@ -865,6 +877,35 @@ class AnalyticsTest {
                 messages.any { it.contains("SchemaGuardPlugin") && it.contains("\"library\"") },
                 "Expected a base-key override warning for \"library\", got: $messages"
             )
+        }
+
+    @OptIn(InternalRudderApi::class)
+    @Test
+    fun `given a wrapper library is set, when an event is tracked, then the stored event carries it and the guard does not warn`() =
+        runTest(testDispatcher) {
+            WrapperLibrary.set("rudder-sdk-flutter", "4.0.0")
+
+            analytics.track(TRACK_EVENT_NAME)
+            testDispatcher.scheduler.runCurrent()
+            disableSource()
+
+            val payload = slot<String>()
+            coVerify { mockStorage.write(StorageKeys.EVENT, capture(payload)) }
+            val context = Json.parseToJsonElement(payload.captured).jsonObject["context"]!!.jsonObject
+            val expectedContext = buildJsonObject {
+                put("library", buildJsonObject {
+                    put("name", "com.rudderstack.kotlin.sdk")
+                    put("version", "1.0.0")
+                })
+                put("wrapperLibrary", buildJsonObject {
+                    put("name", "rudder-sdk-flutter")
+                    put("version", "4.0.0")
+                })
+            }
+            JSONAssert.assertEquals(expectedContext.toString(), context.toString(), false)
+            val messages = mutableListOf<String>()
+            verify(atLeast = 0) { mockAnalyticsConfiguration.logger.warn(capture(messages)) }
+            assertTrue(messages.none { it.contains("SchemaGuardPlugin") }, "Expected no guard warning, got: $messages")
         }
 
     @Test
