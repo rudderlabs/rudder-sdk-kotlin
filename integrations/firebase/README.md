@@ -25,7 +25,7 @@ dependencies {
 This integration supports Google Firebase Analytics via the following Firebase BoM versions:
 
 ```
-[32.2.2, 33.8.0)
+[33.7.0, 36.0.0)
 ```
 
 ## Usage

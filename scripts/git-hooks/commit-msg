@@ -7,8 +7,8 @@ if [ -n "$GLOBAL_HOOKS_PATH" ] && [ -x "$GLOBAL_HOOKS_PATH/commit-msg" ]; then
 fi
 # --- End Global Hook Forwarding ---
 
-# Path to the commit message file
-commit_message_file=".git/COMMIT_EDITMSG"
+# Git passes the message file path; in a worktree, .git is a file, not a folder
+commit_message_file="${1:-.git/COMMIT_EDITMSG}"
 
 # Read the commit message
 commit_message=$(cat "$commit_message_file")
