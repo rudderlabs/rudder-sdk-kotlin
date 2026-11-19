@@ -34,6 +34,10 @@ const val ANONYMOUS_ID = "<anonymous-id>"
 internal const val UUID = "c323f9d5-aa04-4305-ba8d-1eff5e99f468"
 internal const val MESSAGE_ID = "<message-id>"
 
+// The SDK refuses a second running instance for a write key, so each real instance in a test needs its own.
+// Fully qualified, because this package declares a constant named UUID.
+fun uniqueWriteKey(): String = "<writeKey>-${java.util.UUID.randomUUID()}"
+
 fun mockAnalytics(testScope: TestScope, testDispatcher: TestDispatcher): Analytics {
     val mock = mockk<Analytics>(relaxed = true)
     every { mock.analyticsScope } returns testScope
