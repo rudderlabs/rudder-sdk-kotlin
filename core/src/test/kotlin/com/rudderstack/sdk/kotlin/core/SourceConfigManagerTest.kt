@@ -4,6 +4,7 @@ import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig.Companion.serializer
 import com.rudderstack.sdk.kotlin.core.internals.network.NetworkErrorStatus
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClient
+import com.rudderstack.sdk.kotlin.core.internals.network.HttpClientImpl
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
@@ -487,19 +488,39 @@ class SourceConfigManagerTest {
             }
 
         @Test
-        fun `given separate launch and refresh clients, when the loop refreshes, then only the refresh uses the refresh client`() =
+        fun `given the default clients, when the launch fetch retries and the loop refreshes, then only the refresh request has the refresh parameter`() =
             runRefreshTest {
-                val refreshHttpClient: HttpClient = mockk()
-                every { refreshHttpClient.getData() } returns Result.Success(readFileAsString(downloadedSourceConfig))
-                sourceConfigManager = SourceConfigManager(analytics, sourceConfigState, httpClient, refreshHttpClient)
-                completeLaunchFetch()
-                verify(exactly = 0) { refreshHttpClient.getData() }
+                val launchClient: HttpClientImpl = mockk()
+                val refreshClient: HttpClientImpl = mockk()
+                val sourceConfigJson = readFileAsString(downloadedSourceConfig)
+                every { analytics.getPlatformType() } returns PlatformType.Mobile
+                mockkObject(HttpClientImpl.Companion)
+                every { HttpClientImpl.createGetHttpClient(any(), any(), any(), any(), any(), any(), any()) } answers {
+                    if (arg<Map<String, String>>(3)["refresh"] == "true") refreshClient else launchClient
+                }
+                every { launchClient.getData() } returnsMany listOf(
+                    Result.Failure(error = NetworkErrorStatus.ErrorRetry()),
+                    Result.Success(sourceConfigJson),
+                )
+                every { refreshClient.getData() } returns Result.Success(sourceConfigJson)
+                mockkStatic(::provideBackoffPolicy)
+                every { provideBackoffPolicy() } returns MockBackOffPolicy()
 
-                sourceConfigManager.startPeriodicRefresh()
-                advanceBy(interval)
+                try {
+                    sourceConfigManager = SourceConfigManager(analytics, sourceConfigState)
+                    sourceConfigManager.fetchSourceConfigAtLaunchAndNotifyObservers()
+                    simulateConnectionAvailability()
+                    testDispatcher.scheduler.advanceUntilIdle()
+                    verify(exactly = 2) { launchClient.getData() }
+                    verify(exactly = 0) { refreshClient.getData() }
 
-                verify(exactly = 1) { httpClient.getData() }
-                verify(exactly = 1) { refreshHttpClient.getData() }
+                    sourceConfigManager.startPeriodicRefresh()
+                    advanceBy(interval)
+                    verify(exactly = 2) { launchClient.getData() }
+                    verify(exactly = 1) { refreshClient.getData() }
+                } finally {
+                    unmockkObject(HttpClientImpl.Companion)
+                }
             }
 
         // runTest drains the scheduler at the end, so the endless loop must stop inside the test body.
