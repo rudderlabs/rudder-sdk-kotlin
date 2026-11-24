@@ -54,7 +54,7 @@ runs:
     - name: Report coverage
       shell: bash
       run: |
-        ./gradlew koverXmlReportSdk koverLogSdk
+        ./gradlew :koverXmlReportSdk :koverLogSdk
         line="$(grep -o '<counter type="LINE" missed="[0-9]*" covered="[0-9]*"/>' build/reports/kover/reportSdk.xml | tail -1)"
         missed="$(echo "$line" | sed -E 's/.*missed="([0-9]+)".*/\1/')"
         covered="$(echo "$line" | sed -E 's/.*covered="([0-9]+)".*/\1/')"

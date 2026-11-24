@@ -93,7 +93,7 @@ subprojects {
 }
 
 // Test coverage for the publishable SDK modules: JVM tests of :core and release unit tests of the
-// Android modules. Run the tests first, then `./gradlew koverXmlReportSdk koverLogSdk`.
+// Android modules. Run the tests first, then `./gradlew :koverXmlReportSdk :koverLogSdk`.
 val coveredModules = setOf(":core", ":android") + project(":integrations").subprojects.map { it.path }
 kover {
     merge {
