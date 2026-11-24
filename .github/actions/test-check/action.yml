@@ -50,6 +50,23 @@ runs:
           "$ANDROID_MODULES" "testReleaseUnitTest" \
           "$JVM_MODULES" "test"
 
+    # Kover instruments the test tasks above, so this step reuses their results.
+    - name: Report coverage
+      shell: bash
+      run: |
+        ./gradlew :koverXmlReportSdk :koverLogSdk
+        line="$(grep -o '<counter type="LINE" missed="[0-9]*" covered="[0-9]*"/>' build/reports/kover/reportSdk.xml | tail -1)"
+        missed="$(echo "$line" | sed -E 's/.*missed="([0-9]+)".*/\1/')"
+        covered="$(echo "$line" | sed -E 's/.*covered="([0-9]+)".*/\1/')"
+        percent="$(awk -v c="$covered" -v m="$missed" 'BEGIN { printf "%.2f", 100 * c / (c + m) }')"
+        echo "SDK line coverage (core, android, integrations): ${percent}% (${covered}/$((covered + missed)))" | tee -a "$GITHUB_STEP_SUMMARY"
+
+    - name: Upload coverage report
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      with:
+        name: coverage-report-${{ github.run_id }}
+        path: build/reports/kover/reportSdk.xml
+
     - name: Upload test reports
       if: always()
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

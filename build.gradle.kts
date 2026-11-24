@@ -14,6 +14,7 @@ plugins {
     alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.detekt) apply false
     alias(libs.plugins.nexus)
+    alias(libs.plugins.kover)
 }
 
 tasks.register<Delete>("clean") {
@@ -88,6 +89,19 @@ subprojects {
             }
         }
         extensions.findByType<org.jetbrains.kotlin.gradle.dsl.KotlinProjectExtension>()?.coreLibrariesVersion = "1.9.0"
+    }
+}
+
+// Test coverage for the publishable SDK modules: JVM tests of :core and release unit tests of the
+// Android modules. Run the tests first, then `./gradlew :koverXmlReportSdk :koverLogSdk`.
+val coveredModules = setOf(":core", ":android") + project(":integrations").subprojects.map { it.path }
+kover {
+    merge {
+        subprojects { it.path in coveredModules }
+        createVariant("sdk") {
+            add("jvm", optional = true)
+            add("release", optional = true)
+        }
     }
 }
 
