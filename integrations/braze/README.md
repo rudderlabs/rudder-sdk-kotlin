@@ -4,7 +4,7 @@ The Braze integration allows you to send your event data from RudderStack to Bra
 
 ## Requirements
 
-- Android SDK version 25 or higher
+- Android SDK version 21 or higher
 
 ## Supported Native Braze Version
 
