@@ -71,8 +71,10 @@ android {
         sourceCompatibility = RudderStackBuildConfig.Build.JAVA_VERSION
         targetCompatibility = RudderStackBuildConfig.Build.JAVA_VERSION
     }
-    kotlinOptions {
-        jvmTarget = RudderStackBuildConfig.Build.JVM_TARGET
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.fromTarget(RudderStackBuildConfig.Build.JVM_TARGET))
+        }
     }
     buildFeatures {
         buildConfig = true
