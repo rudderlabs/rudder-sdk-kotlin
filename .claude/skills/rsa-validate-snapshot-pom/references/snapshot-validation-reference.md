@@ -189,7 +189,7 @@ Dependencies (4 total):
 | `org.jetbrains.kotlin` | `kotlin-stdlib-jdk8` | `1.9.0` | compile | pinned |
 | `com.rudderstack.sdk.kotlin` | `android` | _(tracks release)_ | runtime | internal - variable |
 | `androidx.core` | `core-ktx` | `1.16.0` | runtime | pinned |
-| `com.facebook.android` | `facebook-android-sdk` | `[18.0.1, 19.0.0)` | runtime | range - fixed |
+| `com.facebook.android` | `facebook-android-sdk` | `[19.0.0, 20.0.0)` | runtime | range - fixed |
 
 ---
 

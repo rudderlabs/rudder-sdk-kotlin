@@ -138,7 +138,7 @@ For each module, run these checks against the baseline reference:
   - af-android-sdk: `[6.17.0, 7.0.0)`
   - installreferrer: `[2.2, 3.0)`
   - android-sdk-ui (braze): `[35.0.0, 36.0.0)`
-  - facebook-android-sdk: `[18.0.1, 19.0.0)`
+  - facebook-android-sdk: `[19.0.0, 20.0.0)`
   - firebase-bom: `[33.7.0, 34.0.0)`
   - userleap-android-sdk (sprig): `[2.23.0, 3.0.0)`
 
