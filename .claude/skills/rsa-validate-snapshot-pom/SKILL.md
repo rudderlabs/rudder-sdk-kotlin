@@ -139,7 +139,7 @@ For each module, run these checks against the baseline reference:
   - installreferrer: `[2.2, 3.0)`
   - android-sdk-ui (braze): `[35.0.0, 36.0.0)`
   - facebook-android-sdk: `[18.0.1, 19.0.0)`
-  - firebase-bom: `[33.7.0, 34.0.0)`
+  - firebase-bom: `[35.0.0, 36.0.0)`
   - userleap-android-sdk (sprig): `[2.23.0, 3.0.0)`
 
 **Check 9: Internal version consistency**
