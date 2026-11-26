@@ -20,6 +20,10 @@ dependencies {
 }
 ```
 
+## Requirements
+
+- Android SDK version 24 or higher
+
 ## Supported Native Firebase Version
 
 This integration supports Google Firebase Analytics via the following Firebase BoM versions:
