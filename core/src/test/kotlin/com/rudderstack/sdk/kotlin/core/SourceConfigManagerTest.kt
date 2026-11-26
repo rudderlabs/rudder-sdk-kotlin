@@ -4,6 +4,7 @@ import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig
 import com.rudderstack.sdk.kotlin.core.internals.models.SourceConfig.Companion.serializer
 import com.rudderstack.sdk.kotlin.core.internals.network.NetworkErrorStatus
 import com.rudderstack.sdk.kotlin.core.internals.network.HttpClient
+import com.rudderstack.sdk.kotlin.core.internals.network.HttpClientImpl
 import com.rudderstack.sdk.kotlin.core.internals.utils.Result
 import com.rudderstack.sdk.kotlin.core.internals.statemanagement.State
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
@@ -66,7 +67,7 @@ class SourceConfigManagerTest {
         every { analytics.connectivityState } returns mockState
         every { mockState.flow } returns connectivityFlow
 
-        sourceConfigManager = SourceConfigManager(analytics, sourceConfigState, httpClient)
+        sourceConfigManager = SourceConfigManager(analytics, sourceConfigState, httpClient, httpClient)
     }
 
     @Test
@@ -286,6 +287,16 @@ class SourceConfigManagerTest {
         assertEquals(3, query.size)
     }
 
+    @Test
+    fun `given mobile platform, when getRefreshQuery is called, then it adds the refresh parameter to the launch query`() = runTest(testDispatcher) {
+        every { analytics.getPlatformType() } returns PlatformType.Mobile
+        every { analytics.configuration.writeKey } returns "test-write-key"
+        every { analytics.storage.getLibraryVersion().getVersionName() } returns "1.0.0"
+        every { analytics.storage.getLibraryVersion().getBuildVersion() } returns "100"
+
+        assertEquals(analytics.getQuery() + ("refresh" to "true"), analytics.getRefreshQuery())
+    }
+
     @Nested
     inner class PeriodicRefresh {
 
@@ -474,6 +485,42 @@ class SourceConfigManagerTest {
 
                 advanceBy(1)
                 verify(exactly = 2) { httpClient.getData() }
+            }
+
+        @Test
+        fun `given the default clients, when the launch fetch retries and the loop refreshes, then only the refresh request has the refresh parameter`() =
+            runRefreshTest {
+                val launchClient: HttpClientImpl = mockk()
+                val refreshClient: HttpClientImpl = mockk()
+                val sourceConfigJson = readFileAsString(downloadedSourceConfig)
+                every { analytics.getPlatformType() } returns PlatformType.Mobile
+                mockkObject(HttpClientImpl.Companion)
+                every { HttpClientImpl.createGetHttpClient(any(), any(), any(), any(), any(), any(), any()) } answers {
+                    if (arg<Map<String, String>>(3)["refresh"] == "true") refreshClient else launchClient
+                }
+                every { launchClient.getData() } returnsMany listOf(
+                    Result.Failure(error = NetworkErrorStatus.ErrorRetry()),
+                    Result.Success(sourceConfigJson),
+                )
+                every { refreshClient.getData() } returns Result.Success(sourceConfigJson)
+                mockkStatic(::provideBackoffPolicy)
+                every { provideBackoffPolicy() } returns MockBackOffPolicy()
+
+                try {
+                    sourceConfigManager = SourceConfigManager(analytics, sourceConfigState)
+                    sourceConfigManager.fetchSourceConfigAtLaunchAndNotifyObservers()
+                    simulateConnectionAvailability()
+                    testDispatcher.scheduler.advanceUntilIdle()
+                    verify(exactly = 2) { launchClient.getData() }
+                    verify(exactly = 0) { refreshClient.getData() }
+
+                    sourceConfigManager.startPeriodicRefresh()
+                    advanceBy(interval)
+                    verify(exactly = 2) { launchClient.getData() }
+                    verify(exactly = 1) { refreshClient.getData() }
+                } finally {
+                    unmockkObject(HttpClientImpl.Companion)
+                }
             }
 
         // runTest drains the scheduler at the end, so the endless loop must stop inside the test body.
