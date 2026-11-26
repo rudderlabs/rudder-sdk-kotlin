@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+# [1.11.0](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.sdk.kotlin.core@v1.10.0...com.rudderstack.sdk.kotlin.core@v1.11.0) (2026-11-26)
+
+## Features
+
+- **core:** Mark source config refresh requests with a query parameter ([#395](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/395)) ([481d195](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/481d195bb5b2e0556543b515a01011911782206b))
+
+
 # [1.10.0](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.sdk.kotlin.core@v1.9.0...com.rudderstack.sdk.kotlin.core@v1.10.0) (2026-11-19)
 
 ## Features

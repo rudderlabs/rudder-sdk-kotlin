@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+# [3.0.0](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.integration.kotlin.facebook@v2.0.3...com.rudderstack.integration.kotlin.facebook@v3.0.0) (2026-11-26)
+
+## ⚠ Breaking Changes
+
+- **facebook:** Require Facebook Android SDK 19 ([#402](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/402)) ([0d76d5e](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/0d76d5ec5d0f6dcb4950f1735a5e84eceec5e748))
+
+## Features
+
+- **facebook:** Require Facebook Android SDK 19 ([#402](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/402)) ([0d76d5e](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/0d76d5ec5d0f6dcb4950f1735a5e84eceec5e748))
+
+## Dependency Updates
+
+- The following workspace dependencies were updated
+  - dependencies
+    - @rudderstack/android bumped from 2.3.0 to 2.3.1
+
+
 # [2.0.3](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.integration.kotlin.facebook@v2.0.2...com.rudderstack.integration.kotlin.facebook@v2.0.3) (2026-11-19)
 
 ## Dependency Updates

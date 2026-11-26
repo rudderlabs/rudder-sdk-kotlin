@@ -166,7 +166,7 @@ Dependencies (4 total):
 | `org.jetbrains.kotlin` | `kotlin-stdlib-jdk8` | `1.9.0` | compile | pinned |
 | `com.rudderstack.sdk.kotlin` | `android` | _(tracks release)_ | runtime | internal - variable |
 | `androidx.core` | `core-ktx` | `1.16.0` | runtime | pinned |
-| `com.braze` | `android-sdk-ui` | `[35.0.0, 36.0.0)` | runtime | range - fixed |
+| `com.braze` | `android-sdk-ui` | `[45.0.0, 46.0.0)` | runtime | range - fixed |
 
 ---
 
@@ -189,7 +189,7 @@ Dependencies (4 total):
 | `org.jetbrains.kotlin` | `kotlin-stdlib-jdk8` | `1.9.0` | compile | pinned |
 | `com.rudderstack.sdk.kotlin` | `android` | _(tracks release)_ | runtime | internal - variable |
 | `androidx.core` | `core-ktx` | `1.16.0` | runtime | pinned |
-| `com.facebook.android` | `facebook-android-sdk` | `[18.0.1, 19.0.0)` | runtime | range - fixed |
+| `com.facebook.android` | `facebook-android-sdk` | `[19.0.0, 20.0.0)` | runtime | range - fixed |
 
 ---
 
@@ -212,7 +212,7 @@ Dependencies (4 total):
 | `org.jetbrains.kotlin` | `kotlin-stdlib-jdk8` | `1.9.0` | compile | pinned |
 | `com.rudderstack.sdk.kotlin` | `android` | _(tracks release)_ | runtime | internal - variable |
 | `androidx.core` | `core-ktx` | `1.16.0` | runtime | pinned |
-| `com.google.firebase` | `firebase-bom` | `[33.7.0, 34.0.0)` | runtime | range - fixed |
+| `com.google.firebase` | `firebase-bom` | `[35.0.0, 36.0.0)` | runtime | range - fixed |
 
 ---
 

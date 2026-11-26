@@ -71,8 +71,10 @@ android {
         sourceCompatibility = RudderStackBuildConfig.Build.JAVA_VERSION
         targetCompatibility = RudderStackBuildConfig.Build.JAVA_VERSION
     }
-    kotlinOptions {
-        jvmTarget = RudderStackBuildConfig.Build.JVM_TARGET
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.fromTarget(RudderStackBuildConfig.Build.JVM_TARGET))
+        }
     }
     buildFeatures {
         buildConfig = true
@@ -91,7 +93,7 @@ dependencies {
     // RudderStack Integrations
     // implementation(project(":integrations:adjust"))
     // implementation(project(":integrations:appsflyer"))
-    // implementation(project(":integrations:braze")) // This requires minimum Sdk version of 25 and above.
+    // implementation(project(":integrations:braze"))
     // implementation(project(":integrations:clevertap"))
     // implementation(project(":integrations:facebook"))
     // implementation(project(":integrations:firebase"))

@@ -331,6 +331,9 @@ class ConsentGatingTest {
                 override val key: String get() = "MockDestination"
                 override fun create(destinationConfig: JsonObject) = throw failure
                 override fun getDestinationInstance(): Any? = null
+
+                // Kotlin 2.3 compiles an inherited default method as a bridge, and MockK does not record bridge calls.
+                override fun track(payload: TrackEvent) = Unit
             })
             var receivedResult: DestinationResult? = null
             failing.setup(mockAnalytics)
@@ -496,4 +499,13 @@ private class ActivityObservingIntegration : StandardIntegration, IntegrationPlu
     }
 
     override fun getDestinationInstance(): Any? = null
+
+    // Kotlin 2.3 compiles inherited default methods as bridges, and MockK does not record bridge calls.
+    override fun onActivityStarted(activity: Activity) = Unit
+
+    override fun onActivityResumed(activity: Activity) = Unit
+
+    override fun onActivityPaused(activity: Activity) = Unit
+
+    override fun onActivityStopped(activity: Activity) = Unit
 }

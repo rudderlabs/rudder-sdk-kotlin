@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+# [2.1.3](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.integration.kotlin.adjust@v2.1.2...com.rudderstack.integration.kotlin.adjust@v2.1.3) (2026-11-26)
+
+## Dependency Updates
+
+- The following workspace dependencies were updated
+  - dependencies
+    - @rudderstack/android bumped from 2.3.0 to 2.3.1
+
+
 # [2.1.2](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.integration.kotlin.adjust@v2.1.1...com.rudderstack.integration.kotlin.adjust@v2.1.2) (2026-11-19)
 
 ## Dependency Updates

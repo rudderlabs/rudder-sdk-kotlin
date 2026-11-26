@@ -90,6 +90,10 @@ subprojects {
         }
         extensions.findByType<org.jetbrains.kotlin.gradle.dsl.KotlinProjectExtension>()?.coreLibrariesVersion = "1.9.0"
     }
+    // Kotlin 2.2 changed how interface default methods compile. Keep the old bytecode for binary compatibility.
+    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile>().configureEach {
+        compilerOptions.jvmDefault.set(org.jetbrains.kotlin.gradle.dsl.JvmDefaultMode.DISABLE)
+    }
 }
 
 // Test coverage for the publishable SDK modules: JVM tests of :core and release unit tests of the

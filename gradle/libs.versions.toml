@@ -6,7 +6,7 @@ android-core-ktx = "1.16.0"
 detekt = "1.23.6"
 json-assert = "1.5.0"
 junit-bom = "5.11.4"
-kotlin = "2.1.21"
+kotlin = "2.3.21"
 kotlinx-coroutines-core = "1.8.0"
 kotlinx-serialization-json = "1.5.1"
 kover = "0.9.11"
@@ -19,9 +19,9 @@ nexus = "2.0.0"
 adjust-android = { strictly = "[5.1.0, 6.0.0)", prefer = "5.1.0" }
 appsflyer-android-sdk = { strictly = "[7.0.1, 8.0.0)", prefer = "7.0.1" }
 android-installreferrer = { strictly = "[2.2, 3.0)", prefer = "2.2" }
-firebase-bom = { strictly = "[33.7.0, 36.0.0)", prefer = "33.7.0" }
-facebook-android-sdk = { strictly = "[18.0.1, 19.0.0)", prefer = "18.0.1" }
-android-sdk-ui = { strictly = "[35.0.0, 36.0.0)", prefer = "35.0.0" } #braze
+firebase-bom = { strictly = "[35.0.0, 36.0.0)", prefer = "35.0.0" }
+facebook-android-sdk = { strictly = "[19.0.0, 20.0.0)", prefer = "19.0.0" }
+android-sdk-ui = { strictly = "[45.0.0, 46.0.0)", prefer = "45.0.0" } #braze
 clevertap-android-sdk = { strictly = "[8.4.1, 9.0.0)", prefer = "8.4.1" }
 userleap-android-sdk = { strictly = "[2.23.0, 3.0.0)", prefer = "2.23.0" }
 fragment-ktx = "1.8.9"

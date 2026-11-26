@@ -40,7 +40,7 @@ android {
     compileSdk = RudderStackBuildConfig.AndroidBuild.COMPILE_SDK
 
     defaultConfig {
-        minSdk = RudderStackBuildConfig.AndroidBuild.MIN_SDK
+        minSdk = 24 // Firebase Analytics 24 requires API 24
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
@@ -56,8 +56,10 @@ android {
         sourceCompatibility = RudderStackBuildConfig.Build.JAVA_VERSION
         targetCompatibility = RudderStackBuildConfig.Build.JAVA_VERSION
     }
-    kotlinOptions {
-        jvmTarget = RudderStackBuildConfig.Build.JVM_TARGET
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.fromTarget(RudderStackBuildConfig.Build.JVM_TARGET))
+        }
     }
     kotlin {
         jvmToolchain(RudderStackBuildConfig.Build.JVM_TOOLCHAIN)

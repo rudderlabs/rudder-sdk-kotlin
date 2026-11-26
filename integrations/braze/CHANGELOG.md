@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+# [3.0.0](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.integration.kotlin.braze@v2.1.2...com.rudderstack.integration.kotlin.braze@v3.0.0) (2026-11-26)
+
+## ⚠ Breaking Changes
+
+- **braze:** Require Braze Android SDK 45 and minSdk 21 ([#401](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/401)) ([0d230f1](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/0d230f1828b8f13c58a4118ce00044e16ccf254a))
+
+## Features
+
+- **braze:** Require Braze Android SDK 45 and minSdk 21 ([#401](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/401)) ([0d230f1](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/0d230f1828b8f13c58a4118ce00044e16ccf254a))
+
+## Dependency Updates
+
+- The following workspace dependencies were updated
+  - dependencies
+    - @rudderstack/android bumped from 2.3.0 to 2.3.1
+
+
 # [2.1.2](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.integration.kotlin.braze@v2.1.1...com.rudderstack.integration.kotlin.braze@v2.1.2) (2026-11-19)
 
 ## Dependency Updates

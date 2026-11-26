@@ -4,14 +4,14 @@ The Braze integration allows you to send your event data from RudderStack to Bra
 
 ## Requirements
 
-- Android SDK version 25 or higher
+- Android SDK version 21 or higher
 
 ## Supported Native Braze Version
 
 This integration supports Braze Android SDK versions in the range:
 
 ```text
-[35.0.0, 36.0.0)
+[45.0.0, 46.0.0)
 ```
 
 ## Installation
@@ -65,7 +65,7 @@ In the default setup, the integration initializes Braze from the destination con
 initialize Braze and pass that instance to the integration. The integration then only maps events and sends them to
 your instance. This needs integration version 2.1.0 or higher.
 
-1. Add the Braze Android SDK to your app dependencies. Use a version in the range `[35.0.0, 36.0.0)`. The integration
+1. Add the Braze Android SDK to your app dependencies. Use a version in the range `[45.0.0, 46.0.0)`. The integration
    adds the Braze SDK at runtime scope only, so your code can't call Braze without this dependency.
 
 ```kotlin
