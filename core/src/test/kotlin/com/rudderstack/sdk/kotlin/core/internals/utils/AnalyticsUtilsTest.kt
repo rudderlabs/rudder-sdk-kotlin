@@ -13,6 +13,7 @@ import com.rudderstack.sdk.kotlin.core.internals.storage.Storage
 import com.rudderstack.sdk.kotlin.core.internals.storage.StorageKeys
 import com.rudderstack.sdk.kotlin.core.provideAnalyticsConfiguration
 import com.rudderstack.sdk.kotlin.core.provideSourceConfigManager
+import com.rudderstack.sdk.kotlin.core.uniqueWriteKey
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
@@ -239,7 +240,7 @@ class AnalyticsUtilsTest {
     }
 
     private fun provideConfiguration() = Configuration(
-        writeKey = "<writeKey>",
+        writeKey = uniqueWriteKey(),
         dataPlaneUrl = "<data_plane_url>",
     )
 

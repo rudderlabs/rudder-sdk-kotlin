@@ -6,6 +6,8 @@ import com.rudderstack.sdk.kotlin.core.internals.models.TrackEvent
 import com.rudderstack.sdk.kotlin.core.internals.models.emptyJsonObject
 import com.rudderstack.sdk.kotlin.core.internals.platform.PlatformType
 import com.rudderstack.sdk.kotlin.core.internals.storage.LibraryVersion
+import com.rudderstack.sdk.kotlin.core.internals.utils.InternalRudderApi
+import com.rudderstack.sdk.kotlin.core.internals.utils.WrapperLibrary
 import com.rudderstack.sdk.kotlin.core.internals.utils.empty
 import io.mockk.MockKAnnotations
 import io.mockk.every
@@ -14,6 +16,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.skyscreamer.jsonassert.JSONAssert
@@ -28,8 +31,13 @@ private const val KOTLIN_LIBRARY_VERSION = "1.0.1"
 private const val ANDROID_LIBRARY_NAME = "com.rudderstack.android.sdk"
 private const val ANDROID_LIBRARY_VERSION = "1.0.2"
 
+private const val WRAPPER_LIBRARY_KEY = "wrapperLibrary"
+private const val WRAPPER_LIBRARY_NAME = "rudder-sdk-flutter"
+private const val WRAPPER_LIBRARY_VERSION = "4.0.0"
+
 private const val EVENT_NAME = "Sample Event"
 
+@OptIn(InternalRudderApi::class)
 class LibraryInfoPluginTest {
 
     @MockK
@@ -38,6 +46,11 @@ class LibraryInfoPluginTest {
     @BeforeEach
     fun setup() {
         MockKAnnotations.init(this, relaxed = true)
+    }
+
+    @AfterEach
+    fun tearDown() {
+        WrapperLibrary.clear()
     }
 
     @Test
@@ -95,6 +108,27 @@ class LibraryInfoPluginTest {
                 actual.toString(),
                 true
             )
+        }
+
+    @Test
+    fun `given a wrapper library is set, when library info plugin is intercepted, then wrapper library info is attached next to library info`() =
+        runTest {
+            every { mockAnalytics.storage.getLibraryVersion() } returns provideLibraryVersion(PlatformType.Mobile)
+            val message = provideEvent()
+            val libraryInfoPlugin = LibraryInfoPlugin()
+
+            libraryInfoPlugin.setup(mockAnalytics)
+            WrapperLibrary.set(WRAPPER_LIBRARY_NAME, WRAPPER_LIBRARY_VERSION)
+            libraryInfoPlugin.intercept(message)
+
+            val expected = buildJsonObject {
+                provideLibraryContextPayload(PlatformType.Mobile).forEach { (key, value) -> put(key, value) }
+                put(WRAPPER_LIBRARY_KEY, buildJsonObject {
+                    put(LIBRARY_NAME_KEY, WRAPPER_LIBRARY_NAME)
+                    put(LIBRARY_VERSION_KEY, WRAPPER_LIBRARY_VERSION)
+                })
+            }
+            JSONAssert.assertEquals(expected.toString(), message.context.toString(), true)
         }
 }
 

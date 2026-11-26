@@ -17,7 +17,11 @@ import io.mockk.spyk
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.TestScope
 import java.io.BufferedReader
+import java.util.UUID
 import com.rudderstack.sdk.kotlin.android.Analytics as AndroidAnalytics
+
+// The SDK refuses a second running instance for a write key, so each real instance in a test needs its own.
+fun uniqueWriteKey(): String = "test-write-key-${UUID.randomUUID()}"
 
 fun mockAnalytics(testScope: TestScope, testDispatcher: TestDispatcher): AndroidAnalytics {
     val mockAnalytics = mockk<AndroidAnalytics>(relaxed = true)

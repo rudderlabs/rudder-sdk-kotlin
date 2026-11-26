@@ -96,6 +96,12 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
+      - name: Setup JDK
+        uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        with:
+          distribution: temurin
+          java-version: '17'
+
       - name: Create tags
         shell: bash
         env:
@@ -130,6 +136,12 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
+
+      - name: Setup JDK
+        uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        with:
+          distribution: temurin
+          java-version: '17'
 
       - name: Create releases
         shell: bash

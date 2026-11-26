@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+# [2.3.0](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.sdk.kotlin.android@v2.2.0...com.rudderstack.sdk.kotlin.android@v2.3.0) (2026-11-19)
+
+## Features
+
+- Refuse a second running instance for a write key ([#392](https://github.com/rudderlabs/rudder-sdk-kotlin/pull/392)) ([2721793](https://github.com/rudderlabs/rudder-sdk-kotlin/commit/27217935693c9d3074d9521c91b2a45d0df9a3eb))
+
+## Dependency Updates
+
+- The following workspace dependencies were updated
+  - dependencies
+    - @rudderstack/core bumped from 1.9.0 to 1.10.0
+
+
 # [2.2.0](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.sdk.kotlin.android@v2.1.0...com.rudderstack.sdk.kotlin.android@v2.2.0) (2026-11-12)
 
 ## Features
