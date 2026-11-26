@@ -42,7 +42,7 @@ android {
     }
 
     defaultConfig {
-        minSdk = 25
+        minSdk = RudderStackBuildConfig.AndroidBuild.MIN_SDK
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
