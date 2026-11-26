@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+# [2.3.1](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.sdk.kotlin.android@v2.3.0...com.rudderstack.sdk.kotlin.android@v2.3.1) (2026-11-26)
+
+## Dependency Updates
+
+- The following workspace dependencies were updated
+  - dependencies
+    - @rudderstack/core bumped from 1.10.0 to 1.11.0
+
+
 # [2.3.0](https://github.com/rudderlabs/rudder-sdk-kotlin/compare/com.rudderstack.sdk.kotlin.android@v2.2.0...com.rudderstack.sdk.kotlin.android@v2.3.0) (2026-11-19)
 
 ## Features
