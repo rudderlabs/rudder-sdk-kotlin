@@ -23,6 +23,7 @@ dependencies {
 ## Requirements
 
 - Android SDK version 24 or higher
+- Kotlin 2.3 or higher in your app. Firebase BoM 35 libraries carry Kotlin 2.4 metadata, which older Kotlin compilers cannot read, even when your code makes no Firebase calls.
 
 ## Supported Native Firebase Version
 
