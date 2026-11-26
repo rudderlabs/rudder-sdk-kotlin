@@ -40,7 +40,7 @@ android {
     compileSdk = RudderStackBuildConfig.AndroidBuild.COMPILE_SDK
 
     defaultConfig {
-        minSdk = RudderStackBuildConfig.AndroidBuild.MIN_SDK
+        minSdk = 24 // Firebase Analytics 24 requires API 24
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")

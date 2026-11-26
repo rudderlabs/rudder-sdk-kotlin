@@ -212,7 +212,7 @@ Dependencies (4 total):
 | `org.jetbrains.kotlin` | `kotlin-stdlib-jdk8` | `1.9.0` | compile | pinned |
 | `com.rudderstack.sdk.kotlin` | `android` | _(tracks release)_ | runtime | internal - variable |
 | `androidx.core` | `core-ktx` | `1.16.0` | runtime | pinned |
-| `com.google.firebase` | `firebase-bom` | `[33.7.0, 34.0.0)` | runtime | range - fixed |
+| `com.google.firebase` | `firebase-bom` | `[35.0.0, 36.0.0)` | runtime | range - fixed |
 
 ---
 
