@@ -18,10 +18,10 @@ dependencies {
 
 ## Supported Native Facebook SDK Version
 
-This integration supports Facebook Android SDK version:
+This integration supports Facebook Android SDK versions in the range:
 
 ```
-18.0.1
+[19.0.0, 20.0.0)
 ```
 
 ## Usage

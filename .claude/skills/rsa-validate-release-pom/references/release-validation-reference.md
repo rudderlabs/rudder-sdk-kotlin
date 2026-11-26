@@ -239,7 +239,7 @@ Dependencies (4 total):
 | `org.jetbrains.kotlin` | `kotlin-stdlib-jdk8` | `1.9.0` | compile | pinned |
 | `com.rudderstack.sdk.kotlin` | `android` | `[{android_version}, 2.0.0)` | runtime | internal - range (lower = android version) |
 | `androidx.core` | `core-ktx` | `1.16.0` | runtime | pinned |
-| `com.facebook.android` | `facebook-android-sdk` | `[18.0.1, 19.0.0)` | runtime | range - fixed |
+| `com.facebook.android` | `facebook-android-sdk` | `[19.0.0, 20.0.0)` | runtime | range - fixed |
 
 Artifacts:
 | Type | Filename pattern |

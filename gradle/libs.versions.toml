@@ -19,7 +19,7 @@ adjust-android = { strictly = "[5.1.0, 6.0.0)", prefer = "5.1.0" }
 appsflyer-android-sdk = { strictly = "[7.0.1, 8.0.0)", prefer = "7.0.1" }
 android-installreferrer = { strictly = "[2.2, 3.0)", prefer = "2.2" }
 firebase-bom = { strictly = "[33.7.0, 36.0.0)", prefer = "33.7.0" }
-facebook-android-sdk = { strictly = "[18.0.1, 19.0.0)", prefer = "18.0.1" }
+facebook-android-sdk = { strictly = "[19.0.0, 20.0.0)", prefer = "19.0.0" }
 android-sdk-ui = { strictly = "[45.0.0, 46.0.0)", prefer = "45.0.0" } #braze
 clevertap-android-sdk = { strictly = "[8.4.1, 9.0.0)", prefer = "8.4.1" }
 userleap-android-sdk = { strictly = "[2.23.0, 3.0.0)", prefer = "2.23.0" }
