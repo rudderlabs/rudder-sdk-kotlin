@@ -1,0 +1,41 @@
+name: SonarCloud Coverage
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  sonarcloud-coverage:
+    name: SonarCloud coverage
+    runs-on: arc-amd64
+    timeout-minutes: 30
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout code
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          fetch-depth: 0 # SonarCloud uses history for blame and new-code detection
+          persist-credentials: false
+
+      - name: List modules
+        id: modules
+        uses: ./.github/actions/setup-and-list-modules
+
+      - name: Run tests and generate the Kover report
+        uses: ./.github/actions/test-check
+        with:
+          android_modules: ${{ steps.modules.outputs.android_modules }}
+          jvm_modules: ${{ steps.modules.outputs.jvm_modules }}
+
+      - name: Run SonarCloud Analysis
+        uses: ./.github/actions/sonarcloud-analysis
+        with:
+          sonar_token: ${{ secrets.SONAR_TOKEN }}
+          coverage_report: build/reports/kover/reportSdk.xml

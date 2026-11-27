@@ -5,6 +5,10 @@ inputs:
   sonar_token:
     description: 'SonarCloud token for analysis'
     required: true
+  coverage_report:
+    description: 'Path to a Kover report in JaCoCo XML format'
+    default: ''
+    required: false
 
 runs:
   using: 'composite'
@@ -31,6 +35,8 @@ runs:
       uses: SonarSource/sonarqube-scan-action@fd88b7d7ccbaefd23d8f36f73b59db7a3d246602
       env:
         SONAR_TOKEN: ${{ inputs.sonar_token }}
+      with:
+        args: ${{ inputs.coverage_report != '' && format('-Dsonar.coverage.jacoco.xmlReportPaths={0}', inputs.coverage_report) || '' }}
 
     - name: SonarCloud Analysis Result
       shell: bash
